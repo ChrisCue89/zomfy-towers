@@ -1,6 +1,7 @@
 // Die Spielschleife. Besitzt alle Systeme und schaltet zwischen den Modi
-// play (spielen), dialog, menu, craft (Werkbank) und sleep (Schlafen,
-// Ausruhen, Werkeln mit Abblende) um.
+// play (spielen), dialog, menu, craft (Werkbank), report (Morgenbericht) und
+// sleep (Schlafen, Ausruhen, Werkeln, verlorene Nacht, Ohnmacht – jeweils mit
+// Abblende) um.
 
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
@@ -11,6 +12,9 @@ import { createNewState, hoursOf, clockText, DAY_MINUTES } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
 import { Builder } from './builder.js';
 import { Gathering } from './gathering.js';
+import { Nights } from './nights.js';
+import { Combat } from './combat.js';
+import { Rng } from './rng.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
@@ -19,19 +23,25 @@ import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
 import { Player } from '../entities/player.js';
+import { Horde } from '../entities/horde.js';
+import { TowerSystem } from '../entities/towers.js';
+import { Loot } from '../entities/loot.js';
 import { UICanvas, COLORS } from '../ui/ui.js';
 import { Hud } from '../ui/hud.js';
 import { DialogBox } from '../ui/dialog.js';
 import { Menu } from '../ui/menu.js';
 import { BuildBar } from '../ui/buildbar.js';
 import { CraftingMenu } from '../ui/crafting.js';
+import { ReportPanel } from '../ui/report.js';
 import { drawText, measure, GLYPH_ROWS } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
 import { DIALOGE } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
+import { upgradeValue } from '../data/upgrades.js';
+import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -41,7 +51,7 @@ const FLAG_AFTER_DIALOG = {
 };
 
 /** Ausruhen: Zieluhrzeit je Aktion. */
-const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 21.5 };
+const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 20.4 };
 
 const SLEEP = { fadeOut: 1.0, black: 1.2, fadeIn: 0.9 };
 const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
@@ -58,6 +68,9 @@ export class Game {
     this.clock = 0; // Sekunden seit dem Start (für kurze Sperren)
     this.sleep = null;
     this.goal = null; // { id, text }
+    this.hitstop = 0; // Trefferstopp: Simulation hält kurz an
+    this.benchReady = 0; // ab wann die Bank wieder heilt (this.clock)
+    this.homeWarned = -99;
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
     this.intro = { t: 0, duration: 1.9 };
@@ -89,6 +102,21 @@ export class Game {
     this.gathering = new Gathering(this);
     this.buildbar = new BuildBar(this);
     this.crafting = new CraftingMenu(this);
+    this.report = new ReportPanel(this);
+    const rng = new Rng(CONFIG.world.seed + 99);
+    this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
+      onKill: (z) => this.onZombieKilled(z),
+      onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
+      onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
+      onBarricadeHit: (b, dmg) => this.onBarricadeHit(b, dmg),
+      onDamage: (z, amount, source) => {
+        if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
+      },
+    });
+    this.towers = new TowerSystem({ scene: this.scene, world: this.world, horde: this.horde, effects: this.effects });
+    this.loot = new Loot(this.scene, rng);
+    this.nights = new Nights(this);
+    this.combat = new Combat(this);
     this.portraits = renderPortraits();
 
     this.saves = new SaveStore({ disabled: CONFIG.noSave, config: CONFIG });
@@ -190,11 +218,28 @@ export class Game {
     this.player.lanternLit = p.lantern;
     this.rig.jumpTo(this.player.position.x, this.player.position.z);
     this.updateHeldItem(false);
+    this.horde.load(st.horde);
+    this.loot.load(st.loot);
+    this.towers.clear();
+    this.nights.reset();
+    this.nights.load(st.hordeQueue);
+    st.player.hp = Math.min(Math.max(1, st.player.hp), this.combat.maxHp);
     this.updateGoals(true);
+    if (st.report) this.showReport();
+  }
+
+  /** Bewegliches (Horde, Loot, Haltbarkeit) in den Zustand übernehmen. */
+  snapshot() {
+    const st = this.state;
+    st.horde = this.horde.toState();
+    st.hordeQueue = this.nights.toState();
+    st.loot = this.loot.toState();
+    st.world.buildings = this.world.buildings.toState();
   }
 
   quietSave() {
     if (!this.ready) return;
+    this.snapshot();
     this.saves.save(this.state);
   }
 
@@ -308,7 +353,7 @@ export class Game {
     if (it.action === 'sleep') this.requestSleep();
     else if (it.action === 'takeAxe') this.takeAxe();
     else if (it.use === 'werkbank') this.openCrafting();
-    else if (it.use === 'bank') this.startDialog('bank');
+    else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (this.gathering.interact(it)) return;
@@ -350,6 +395,22 @@ export class Game {
     });
   }
 
+  /** Loot ist bei Mika angekommen. */
+  collectLoot(res, x, y, z) {
+    const st = this.state;
+    st.inventory[res] = (st.inventory[res] || 0) + 1;
+    if (this.nights.active || (st.night.n === st.time.day && !st.report)) st.night.loot[res] = (st.night.loot[res] || 0) + 1;
+    this.hud.floater(x, y + 0.6, z, '+1', res, 0, true);
+    if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
+      st.flags.fundZahnrad = true;
+      this.hud.toast(T.meldungen.ersterFund(T.ressourcen.zahnraeder), res, 3);
+    }
+    if (res === 'moderkerne' && !st.flags.fundModerkern) {
+      st.flags.fundModerkern = true;
+      this.hud.toast(T.meldungen.ersterFund(T.ressourcen.moderkerne), res, 3);
+    }
+  }
+
   openCrafting() {
     this.builder.cancel();
     this.mode = 'craft';
@@ -383,9 +444,24 @@ export class Game {
     return true;
   }
 
+  /** Bank: Hinsetzen heilt Mika (alle 30 s); nachts ohne Dialog, das hält nicht auf. */
+  useBench() {
+    const st = this.state;
+    const hurt = st.player.hp < this.combat.maxHp - 0.5;
+    if (hurt && this.clock >= this.benchReady) {
+      st.player.hp = this.combat.maxHp;
+      this.benchReady = this.clock + 30;
+      this.hud.toast(T.meldungen.verschnauft, 'herz', 2.2);
+    } else if (hurt) {
+      this.hud.say(T.meldungen.ausserPuste, 2.5);
+    }
+    if (!this.nights.active) this.startDialog('bank');
+    else if (!hurt) this.hud.say(T.meldungen.keineZeit, 2.5);
+  }
+
   requestSleep() {
-    const hours = hoursOf(this.state.time.minute);
-    if (hours >= 6 && hours < 18) this.startDialog('bettFrueh');
+    // Erst schlafen, wenn die Nacht dieses Tages vorbei ist (DESIGN.md 5)
+    if (!this.nights.canSleep()) this.startDialog('bettHorde');
     else this.startSleep();
   }
 
@@ -411,7 +487,7 @@ export class Game {
 
   updateSleep(dt) {
     const s = this.sleep;
-    const timing = s.kind === 'sleep' ? SLEEP : REST;
+    const timing = s.kind === 'sleep' || s.kind === 'lost' || s.kind === 'faint' ? SLEEP : REST;
     s.t += dt;
     // Die schwarze Tageskarte lässt sich mit E, Leertaste oder Klick überspringen.
     if (s.advanced && s.t < timing.fadeOut + timing.black && (this.input.pressed('confirm') || this.input.mouse.clicked)) s.t = timing.fadeOut + timing.black;
@@ -423,6 +499,11 @@ export class Game {
       } else if (s.kind === 'work') {
         this.state.time.minute = Math.min(DAY_MINUTES - 1, this.state.time.minute + s.hours * 60);
         if (s.onBlack) s.onBlack();
+      } else if (s.kind === 'lost') {
+        this.applyLoss();
+        this.advanceToMorning();
+      } else if (s.kind === 'faint') {
+        this.applyFaint();
       } else {
         this.advanceToMorning();
       }
@@ -430,10 +511,11 @@ export class Game {
     if (s.t >= timing.fadeOut + timing.black + timing.fadeIn) {
       this.sleep = null;
       this.mode = 'play';
-      if (s.kind === 'sleep') {
+      if (s.kind === 'sleep' || s.kind === 'lost' || s.kind === 'faint') {
         // Aufwachen: ein Gedanke statt eines Dialogs – man kann sofort loslaufen.
         this.suppressed = { id: 'bett', until: Infinity };
-        this.hud.say(DIALOGE.morgen(this.state)[0].t, 4.5);
+        if (s.kind !== 'faint') this.hud.say(DIALOGE.morgen(this.state)[0].t, 4.5);
+        if (this.state.report) this.showReport();
       } else if (s.kind === 'work' && s.onDone) {
         s.onDone();
       }
@@ -446,6 +528,8 @@ export class Game {
     st.time.day += 1;
     st.time.minute = CONFIG.time.wakeMinute;
     st.stats.nightsSlept += 1;
+    st.player.hp = this.combat.maxHp; // ausgeschlafen
+    this.horde.list = this.horde.list.filter((z) => z.state !== 'dying');
     const w = this.world.shelter.wakeSpot;
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
     this.onNewDay();
@@ -461,6 +545,110 @@ export class Game {
   onNewDay() {
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.events.emit('newDay', this.state.time.day);
+  }
+
+  showReport() {
+    const st = this.state;
+    if (!st.report) return;
+    this.report.open(st.report);
+    st.report = null;
+    this.mode = 'report';
+  }
+
+  // --- Horde: Treffer, Tod, Loot, verlorene Nacht --------------------------------
+
+  onZombieKilled(z) {
+    const st = this.state;
+    st.stats.kills = (st.stats.kills || 0) + 1;
+    if (this.nights.active) st.night.kills += 1;
+    const factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
+    this.loot.drop(z.x, z.z, z.def.loot, factor);
+    this.effects.splat(z.x, 0.6, z.z, 'moos', 12, 0.9);
+  }
+
+  onHouseHit(dmg, z) {
+    const st = this.state;
+    st.world.homeHp -= dmg;
+    this.hud.homeFlash = 0.3;
+    const p = this.world.pathing.attackPoint(z.x, z.z);
+    this.effects.chips(p.x, 0.8, p.z, 'holz', 4);
+    if (this.clock - this.homeWarned > 25) {
+      this.homeWarned = this.clock;
+      this.hud.toast(T.horde.zuhauseTreffer, 'warnung', 2.6);
+    }
+    if (st.world.homeHp <= 0) {
+      if (this.nights.active) this.loseNight();
+      else st.world.homeHp = Math.max(1, HOUSE_LEVELS[st.world.houseLevel].hp * 0.25); // Tagsüber bricht nichts durch
+    }
+  }
+
+  onBarricadeHit(b, dmg) {
+    b.hp -= dmg;
+    const c = this.world.buildings.bounds(b);
+    this.effects.chips(c.x, 0.6, c.z, 'holz', 5);
+    if (b.hp > 0) return;
+    this.world.buildings.remove(b.id);
+    this.world.refreshInteractions();
+    this.effects.dust(c.x, c.z, 1.2);
+    this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
+    if (this.nights.active) this.state.night.broken = (this.state.night.broken || 0) + 1;
+    if (this.builder.selection === b.id) this.builder.cancel();
+  }
+
+  /** Mika geht zu Boden: nachts verliert man die Nacht, tagsüber nur Zeit. */
+  knockedOut() {
+    if (this.mode === 'sleep') return;
+    if (this.nights.active) this.loseNight();
+    else {
+      this.builder.cancel();
+      this.mode = 'sleep';
+      this.sleep = { t: 0, advanced: false, kind: 'faint' };
+    }
+  }
+
+  loseNight() {
+    if (this.mode === 'sleep' && this.sleep?.kind === 'lost') return;
+    this.builder.cancel();
+    this.dialog.active = false;
+    this.crafting.close();
+    this.menu.close();
+    this.mode = 'sleep';
+    this.sleep = { t: 0, advanced: false, kind: 'lost' };
+  }
+
+  /** Folgen einer verlorenen Nacht (OFFENE-FRAGEN.md Nr. 4). Nie Spielende. */
+  applyLoss() {
+    const st = this.state;
+    const losses = {};
+    for (const res of RESOURCES) {
+      if (RARE_RESOURCES.includes(res) || res === 'zahnraeder') continue;
+      const share = res === 'schrott' ? 0.25 : 0.1;
+      const n = Math.floor((st.inventory[res] || 0) * share);
+      if (n > 0) {
+        st.inventory[res] -= n;
+        losses[res] = n;
+      }
+    }
+    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp) b.hp = Math.max(0, b.hp - BUILDINGS[b.type].hp / 3);
+    st.world.homeHp = HOUSE_LEVELS[st.world.houseLevel].hp * 0.5;
+    this.horde.clear();
+    this.loot.clear();
+    this.towers.clear();
+    st.night.losses = losses;
+    this.nights.finishNight(false);
+  }
+
+  /** Ohnmacht am Tag: zwei Stunden später im Bett, ohne Verluste. */
+  applyFaint() {
+    const st = this.state;
+    st.time.minute = Math.min(st.time.minute + 120, DAY_MINUTES - 1);
+    const w = this.world.shelter.wakeSpot;
+    Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
+    this.player.place(w.x, w.z, w.facing);
+    this.rig.jumpTo(w.x, w.z);
+    this.world.fadeValue = 1;
+    st.player.hp = this.combat.maxHp * 0.5;
+    this.horde.list = this.horde.list.filter((z) => !z.day);
   }
 
   openMenu() {
@@ -484,6 +672,12 @@ export class Game {
     const input = this.input;
     this.clock += dt;
     if (input.pressed('debug')) this.showDebug = !this.showDebug;
+    if (this.hitstop > 0) {
+      // Trefferstopp: ein, zwei Bilder lang steht alles still
+      this.hitstop -= dt;
+      this.hud.update(dt);
+      return;
+    }
     if (this.intro.t < this.intro.duration) {
       this.intro.t += dt;
       if (this.pendingIntro && this.intro.t > this.intro.duration * 0.7 && this.mode === 'play') {
@@ -513,6 +707,10 @@ export class Game {
         this.crafting.update(input);
         this.player.idle(dt);
         break;
+      case 'report':
+        if (this.report.update(dt, input)) this.mode = 'play';
+        this.player.idle(dt);
+        break;
       case 'sleep':
         this.updateSleep(dt);
         this.player.idle(dt);
@@ -523,6 +721,7 @@ export class Game {
 
     const hours = hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
+    this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, upgradeValue(this.state, 'radius'), (res, x, y, z) => this.collectLoot(res, x, y, z));
     this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
     this.updateGoals();
@@ -561,6 +760,7 @@ export class Game {
     }
     if (input.pressed('lantern')) this.toggleLantern();
 
+    this.player.speedFactor = upgradeValue(this.state, 'tempo');
     this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
     const p = this.player.position;
     const sp = this.state.player;
@@ -569,7 +769,26 @@ export class Game {
     sp.facing = this.player.facing;
 
     const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui);
-    this.builder.update(dt, input, pointerFree);
+    const rest = this.builder.update(dt, input, pointerFree);
+    if (this.mode !== 'play') return;
+    // Übrig gebliebener Klick in die Welt: zuschlagen (in Richtung Mauszeiger)
+    if (rest === 'click' && !this.player.busy) {
+      const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
+      const pp = this.player.position;
+      if (ground) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
+      else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
+    }
+
+    // Die Welt lebt: Horde, Türme, Nacht
+    this.nights.update(dt);
+    if (this.mode !== 'play') return;
+    const inside = this.world.playerInside;
+    this.horde.update(dt, {
+      player: { x: p.x, z: p.z, inside, alive: this.state.player.hp > 0 },
+      lightSlow: (x, z) => this.towers.lightSlow(x, z),
+    });
+    this.towers.update(dt);
+    this.combat.update(dt);
     if (this.mode !== 'play') return;
 
     // Beim Platzieren setzt E den Bau – dann keine Interaktion.
@@ -610,7 +829,12 @@ export class Game {
     }
     const h = hoursOf(time.minute);
     const flags = this.state.flags;
-    if (!flags.abendHinweis && h >= 20.25 && h < 23 && !this.player.holdingLantern) {
+    const before = hoursOf(time.minute - dt / CONFIG.time.secondsPerGameMinute);
+    if (before < 20 && h >= 20 && h < 20.5) this.hud.toast(T.horde.bald, 'warnung', 4);
+    if (!flags.abendHorde && h >= 19 && h < 20.5 && !this.world.buildings.towers.length) {
+      flags.abendHorde = true;
+      this.startDialog('abendHorde');
+    } else if (!flags.abendHinweis && h >= 20.25 && h < 23 && !this.player.holdingLantern) {
       flags.abendHinweis = true;
       this.startDialog('abendHinweis');
     } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4)) {
@@ -673,6 +897,9 @@ export class Game {
   }
 
   render() {
+    this.horde.render();
+    this.towers.render();
+    this.loot.render();
     sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
     this.pixel.render(this.scene, this.rig, this.world.dayNight.look);
 
@@ -693,7 +920,8 @@ export class Game {
     this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
-    this.hud.drawToasts(ui); // Meldungen liegen über der Werkbank
+    this.report.draw(ui);
+    this.hud.drawToasts(ui); // Meldungen liegen über Werkbank und Bericht
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
@@ -712,14 +940,18 @@ export class Game {
 
   drawSleep(ui) {
     const s = this.sleep;
-    const timing = s.kind === 'sleep' ? SLEEP : REST;
+    const long = s.kind === 'sleep' || s.kind === 'lost' || s.kind === 'faint';
+    const timing = long ? SLEEP : REST;
     const t = s.t;
     let fade;
     if (t < timing.fadeOut) fade = t / timing.fadeOut;
     else if (t < timing.fadeOut + timing.black) fade = 1;
     else fade = 1 - (t - timing.fadeOut - timing.black) / timing.fadeIn;
-    ui.ditherFill(Math.max(0, Math.min(1, fade)), s.kind === 'sleep' ? COLORS.night : COLORS.inset);
-    if (s.kind !== 'sleep') {
+    ui.ditherFill(Math.max(0, Math.min(1, fade)), long ? COLORS.night : COLORS.inset);
+    if (s.kind === 'lost' || s.kind === 'faint') {
+      const text = s.kind === 'lost' ? (t < timing.fadeOut ? T.horde.verloren : T.horde.keller) : T.horde.ohnmacht;
+      if (t < timing.fadeOut + timing.black) ui.textCentered(text, ui.width / 2, ui.height / 2 - 6, s.kind === 'lost' ? COLORS.buildBad : COLORS.textWarm, { outline: COLORS.outline });
+    } else if (s.kind !== 'sleep') {
       const text = s.kind === 'work' ? s.text : T.schlaf.warten;
       if (t > timing.fadeOut * 0.5 && t < timing.fadeOut + timing.black) ui.textCentered(text, ui.width / 2, ui.height / 2 - 6, COLORS.textWarm, { outline: COLORS.outline });
     } else if (t < timing.fadeOut * 0.9) {
@@ -815,6 +1047,17 @@ export class Game {
           }
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
+      leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
+      zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
+      nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}` } : null,
+      schlurferImBild: this.horde.list.filter((z) => {
+        if (z.state === 'dying') return false;
+        const q = this.worldToUi(z.x, 0.8, z.z);
+        return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
+      }).length,
+      schlurferAusserhalb: this.hud.edgeCount || 0,
+      lootAmBoden: this.loot.items.length,
+      bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
       meldungen: this.hud.toasts.map((t) => t.text),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
     };
@@ -871,6 +1114,75 @@ export class Game {
         return 'ok';
       },
       buildings: () => game.world.buildings.toState(),
+      spawnZombie(type, x, z) {
+        const zo = game.horde.spawn(type, { x, z });
+        zo.state = 'walk';
+        return zo.id;
+      },
+      zombies: () => game.horde.list.map((z) => ({ id: z.id, type: z.type, x: z.x, z: z.z, hp: z.hp, state: z.state })),
+      killAllZombies() {
+        for (const z of [...game.horde.list]) if (z.state !== 'dying') game.horde.kill(z, 'test');
+      },
+      lootItems: () => game.loot.items.map((l) => ({ res: l.res, x: l.x, z: l.z })),
+      setHomeHp(v) {
+        game.state.world.homeHp = v;
+      },
+      towerDebug: () => game.world.buildings.towers.map((t) => ({ id: t.id, cool: t.cool, angle: t.headAngle, hp: t.hp, proj: game.towers.projectiles.length })),
+      /** Horde an/aus (nur für ruhige Prüf-Bilder); aus räumt auch die Lichtung. */
+      setHorde(on) {
+        game.nights.enabled = on;
+        if (!on) game.horde.clear();
+      },
+      setDay(n) {
+        game.state.time.day = n;
+      },
+      /** Nacht des laufenden Tages sofort beenden (gewonnen oder verloren). */
+      endNight(won = true) {
+        const day = game.state.time.day;
+        if (game.state.night.n !== day) game.nights.beginNight(day);
+        game.nights.queue.length = 0;
+        game.horde.clear();
+        game.nights.finishNight(won);
+      },
+      setPlayerHp(v) {
+        game.state.player.hp = v;
+      },
+      nightState: () => JSON.parse(JSON.stringify({ night: game.state.night, active: game.nights.active, queue: game.nights.queue.length, alive: game.horde.alive })),
+      upgradeTower(id, level, spec) {
+        const b = game.world.buildings.get(id);
+        if (!b) return false;
+        game.builder.upgradeTower(b, level, spec);
+        return true;
+      },
+      pathBlocked: (cells) => game.world.pathing.wouldBlock(cells),
+      debugPath() {
+        const pa = game.world.pathing;
+        return {
+          targets: pa.targets.length,
+          home: pa.home,
+          entries: Object.values(pa.entries).map((e) => ({ name: e.name, x: e.x, z: e.z, walk: pa.walk[e.k], brute: pa.brute[e.k] })),
+          reachable: Array.from(pa.walk).filter((v) => v < 1e8).length,
+          map: (() => {
+            const g = game.world.grid;
+            const rows = [];
+            for (let j = 0; j < g.height; j++) {
+              let row = '';
+              for (let i = 0; i < g.width; i++) {
+                const k = j * g.width + i;
+                if (!g.inside[k]) row += ' ';
+                else if (g.blocked[k]) row += '#';
+                else if (g.occupant[k] !== null) row += 'B';
+                else if (pa.walk[k] === 0) row += 'o';
+                else if (pa.walk[k] >= 1e8) row += 'x';
+                else row += '.';
+              }
+              rows.push(`${String(g.minZ + j).padStart(3)} ${row}`);
+            }
+            return rows;
+          })(),
+        };
+      },
+      selectBuilding: (id) => game.builder.select(id),
       demolish: (id) => game.builder.demolish(id),
       /** Kacheln der Bauleiste in CSS-Pixeln (Mittelpunkt). */
       buildbarLayout() {

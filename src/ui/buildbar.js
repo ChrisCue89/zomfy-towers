@@ -169,6 +169,7 @@ export class BuildBar {
       const size = iconSize(option.icon);
       drawIcon(ctx, option.icon, rect.x + Math.floor((rect.w - size.w) / 2), rect.y + 2 + Math.max(0, Math.floor((16 - size.h) / 2)));
       if (!ready) ui.ditherRect(rect.x + 1, rect.y + 1, rect.w - 2, 18, 0.35, COLORS.inset);
+      if (option.badge) drawTiny(ctx, option.badge, rect.x + rect.w - 6, rect.y + 2, ready ? COLORS.textWarm : COLORS.textDim);
       this.drawCost(ctx, option, rect);
       // Füllbalken: wie nah bin ich dran?
       const barW = rect.w - 4;

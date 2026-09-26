@@ -13,6 +13,15 @@ const CHIPS = {
 };
 const LEAVES = [c(P.g6), c(P.g7), c(P.g5), c(P.g8)];
 const DUST = [c(P.e8), c(P.e9), c(P.s8)];
+const SPLAT = {
+  kuerbis: [c(P.f4), c(P.f5), c(P.f3), c(P.g5)],
+  feuer: [c(P.f5), c(P.f6), c(P.f3), c(P.f7)],
+  wasser: [c(P.b5), c(P.b4), c(0xd8f0ff)],
+  frost: [c(0xe8f8ff), c(P.b5), c(P.a4)],
+  schlamm: [c(P.e3), c(P.e4), c(P.e2)],
+  moos: [c(P.g5), c(P.g6), c(P.t4), c(P.a1)],
+  funken: [c(P.f7), c(P.f8), c(P.s8)],
+};
 
 export class Effects {
   /** @param {import('./particles.js').Particles} particles */
@@ -71,6 +80,83 @@ export class Effects {
         windFactor: 2,
       });
     }
+  }
+
+  /** Spritzer in alle Richtungen (Kürbis, Wasser, Schlamm, Moos beim Tod …). */
+  splat(x, y, z, kind = 'kuerbis', count = 12, power = 1) {
+    const colors = SPLAT[kind] || SPLAT.kuerbis;
+    const r = this.rng;
+    for (let i = 0; i < count; i++) {
+      const a = r.range(0, Math.PI * 2);
+      const s = r.range(0.6, 2.4) * power;
+      this.particles.spawn({
+        x: x + r.range(-0.1, 0.1),
+        y: y + r.range(0, 0.2),
+        z: z + r.range(-0.1, 0.1),
+        vx: Math.cos(a) * s,
+        vy: r.range(1.2, 3.4) * power,
+        vz: Math.sin(a) * s * 0.8,
+        life: r.range(0.4, 0.8),
+        size0: kind === 'frost' ? 3 : 2,
+        size1: 1,
+        color0: colors[i % colors.length],
+        alpha0: 1,
+        alpha1: 0.7,
+        drag: 1.4,
+        lift: kind === 'frost' ? -2 : -9,
+        windFactor: 0,
+      });
+    }
+  }
+
+  /** Wasserstrahl eines Rasensprengers in Richtung angle. */
+  spray(x, y, z, angle, reach, kind = 'wasser') {
+    const colors = SPLAT[kind] || SPLAT.wasser;
+    const r = this.rng;
+    const a = angle + r.range(-0.25, 0.25);
+    const s = reach * r.range(1.6, 2.2);
+    this.particles.spawn({
+      x,
+      y,
+      z,
+      vx: Math.sin(a) * s,
+      vy: r.range(1.4, 2.2),
+      vz: Math.cos(a) * s,
+      life: r.range(0.45, 0.6),
+      size0: 2,
+      size1: kind === 'frost' ? 4 : 2,
+      color0: colors[Math.floor(r.range(0, colors.length))],
+      alpha0: 0.95,
+      alpha1: kind === 'frost' ? 0.2 : 0.6,
+      drag: 1.8,
+      lift: kind === 'frost' ? -1 : -7,
+      windFactor: 0.2,
+    });
+  }
+
+  /** Flammen auf brennendem Boden. */
+  flames(x, z, radius) {
+    const r = this.rng;
+    const a = r.range(0, Math.PI * 2);
+    const d = Math.sqrt(r.next()) * radius;
+    this.particles.spawn({
+      x: x + Math.cos(a) * d,
+      y: 0.05,
+      z: z + Math.sin(a) * d * 0.8,
+      vx: 0,
+      vy: r.range(0.6, 1.2),
+      vz: 0,
+      life: r.range(0.35, 0.6),
+      size0: 3,
+      size1: 1,
+      color0: SPLAT.feuer[Math.floor(r.range(0, 4))],
+      color1: c(P.f2),
+      alpha0: 1,
+      alpha1: 0.3,
+      drag: 0.5,
+      lift: 1.5,
+      windFactor: 0.5,
+    });
   }
 
   /** Staubwolke am Boden (Bauen, Abreißen, Ausbau). */

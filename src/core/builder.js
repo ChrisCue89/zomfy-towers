@@ -1,19 +1,25 @@
 // Bauen: Optionen der Bauleiste, Platzieren mit Vorschau, Auswählen,
-// Abreißen und der Ausbau des Zuhauses. Die Bauleiste (ui/buildbar.js)
-// zeigt nur an, was hier entschieden wird.
+// Ausbauen, Reparieren, Abreißen und der Ausbau des Zuhauses. Die Bauleiste
+// (ui/buildbar.js) zeigt nur an, was hier entschieden wird.
+//
+// Reiter: Türme · Figur · Zuhause (DESIGN.md 6.6). Ist ein Turm ausgewählt,
+// zeigt die Leiste seine Ausbau- und Spezialisierungsoptionen.
 //
 // Platzieren: Die Vorschau folgt der Maus, sobald sie bewegt wurde – sonst
 // steht sie vor der Figur (reine Tastatur: Q … wählen, E setzt).
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
-import { BUILDINGS, HOME_TAB, HOUSE_LEVELS, footprint } from '../data/buildings.js';
+import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint } from '../data/buildings.js';
+import { TOWERS, towerStats, towerInvested, TOWER_REFUND } from '../data/towers.js';
+import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
 
 /** Bauleisten-Optionen, die beim ersten Bezahlbar-Werden eine Meldung bekommen. */
-const ANNOUNCE = new Set(['werkbank', 'huette']);
+const ANNOUNCE = new Set(['werkbank', 'huette', 'bolzen', 'specA', 'specB']);
+const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
 
 export class Builder {
   /** @param {import('./game.js').Game} game */
@@ -32,12 +38,16 @@ export class Builder {
   // --- Bauleiste ------------------------------------------------------------------
 
   tabs() {
-    return ['zuhause'];
+    return ['tuerme', 'figur', 'zuhause'];
   }
 
   selectionTitle() {
     const b = this.selected();
-    return b ? T.bauten[b.type] : null;
+    if (!b) return null;
+    const name = T.bauten[b.type];
+    if (!BUILDINGS[b.type].tower) return name;
+    const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
+    return `${name} ${b.level}${spec}`;
   }
 
   selected() {
@@ -48,60 +58,145 @@ export class Builder {
   options(tab) {
     const b = this.selected();
     if (b) return this.selectionOptions(b);
+    if (tab === 'tuerme') return this.buildOptions(TOWER_TAB);
+    if (tab === 'figur') return this.figureOptions();
     if (tab === 'zuhause') return this.homeOptions();
     return [];
   }
 
-  homeOptions() {
+  /** Bau-Optionen (Platzieren) für eine Liste von Arten. */
+  buildOptions(types) {
     const inv = this.game.state.inventory;
     const buildings = this.world.buildings;
-    const options = HOME_TAB.map((type) => {
+    return types.map((type) => {
       const def = BUILDINGS[type];
       const full = def.max && buildings.count(type) >= def.max;
-      return this.option({
-        id: type,
-        icon: def.icon,
-        name: T.bauten[type],
-        info: T.bautenInfo[type],
-        cost: def.cost,
-        disabled: full,
-        disabledText: def.max === 1 ? T.bauleiste.schonGebaut : T.bauleiste.genug,
-        action: () => this.startPlacement(type),
-      }, inv);
+      return this.option(
+        {
+          id: type,
+          icon: def.icon,
+          name: T.bauten[type],
+          info: def.tower ? `${T.bautenInfo[type]} ${this.statLine(type, 1, null)}` : T.bautenInfo[type],
+          cost: def.cost,
+          disabled: full,
+          disabledText: def.max === 1 ? T.bauleiste.schonGebaut : T.bauleiste.genug,
+          action: () => this.startPlacement(type),
+        },
+        inv
+      );
     });
+  }
+
+  homeOptions() {
+    const inv = this.game.state.inventory;
+    const options = this.buildOptions(HOME_TAB);
     const level = this.game.state.world.houseLevel;
     const next = HOUSE_LEVELS[level + 1];
     options.push(
-      this.option({
-        id: 'huette',
-        icon: 'huette',
-        name: next ? T.bauten.huette : T.bauten.huetteFertig,
-        info: next ? T.bautenInfo.huette : T.bauleiste.hausMax,
-        cost: next ? next.cost : {},
-        disabled: !next,
-        disabledText: T.bauleiste.hausMax,
-        action: () => this.askHouseUpgrade(),
-      }, inv)
+      this.option(
+        {
+          id: 'huette',
+          icon: 'huette',
+          name: next ? T.bauten.huette : T.bauten.huetteFertig,
+          info: next ? T.bautenInfo.huette : T.bauleiste.hausMax,
+          cost: next ? next.cost : {},
+          disabled: !next,
+          disabledText: T.bauleiste.hausMax,
+          action: () => this.askHouseUpgrade(),
+        },
+        inv
+      )
+    );
+    const repair = this.repairCost();
+    options.push(
+      this.option(
+        {
+          id: 'reparieren',
+          icon: 'reparieren',
+          name: T.bauleiste.reparieren,
+          info: T.bautenInfo.reparieren,
+          cost: repair || {},
+          disabled: !repair,
+          disabledText: T.bauleiste.nichtsKaputt,
+          action: () => this.repairAll(),
+        },
+        inv
+      )
     );
     return options;
   }
 
-  selectionOptions(building) {
-    const def = BUILDINGS[building.type];
-    return [
-      {
-        id: `abriss-${building.id}`,
-        icon: 'abriss',
-        name: T.bauleiste.abreissen,
-        info: T.bautenInfo.abriss,
-        cost: {},
-        refund: def.cost,
-        affordable: true,
-        progress: 1,
-        confirm: true,
-        action: () => this.demolish(building.id),
-      },
-    ];
+  figureOptions() {
+    const st = this.game.state;
+    return UPGRADE_ORDER.map((id) => {
+      const u = UPGRADES[id];
+      const level = st.upgrades[id] || 0;
+      const maxed = level >= u.cost.length;
+      const [name, info] = T.figur[id];
+      const nextValue = u.values[Math.min(level + 1, u.values.length - 1)];
+      return this.option(
+        {
+          id: `figur-${id}`,
+          icon: u.icon,
+          name: `${name} ${Math.min(level + 1, u.cost.length)}/${u.cost.length}`,
+          info: maxed ? T.figur.max : info(num(nextValue)),
+          cost: maxed ? {} : u.cost[level],
+          disabled: maxed,
+          disabledText: T.figur.max,
+          badge: String(level),
+          action: () => this.buyUpgrade(id),
+        },
+        st.inventory
+      );
+    });
+  }
+
+  selectionOptions(b) {
+    const inv = this.game.state.inventory;
+    const def = BUILDINGS[b.type];
+    const options = [];
+    if (def.tower) {
+      const t = TOWERS[b.type];
+      if (b.level === 1) {
+        options.push(this.option({ id: 'stufe2', icon: def.icon, badge: '2', name: T.bauleiste.stufe(2), info: this.statLine(b.type, 2, null), cost: t.base[1].cost, action: () => this.upgradeTower(b, 2, null) }, inv));
+      } else if (b.level === 2) {
+        for (const spec of ['A', 'B']) {
+          const [name, info] = T.tuerme[spec][b.type];
+          options.push(this.option({ id: `spec${spec}`, icon: def.icon, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, action: () => this.upgradeTower(b, 3, spec) }, inv));
+        }
+      } else if (b.level < 5) {
+        const [name] = T.tuerme[b.spec][b.type];
+        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
+      } else {
+        options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
+      }
+    }
+    if (def.hp && b.hp < def.hp) {
+      const cost = this.buildingRepairCost(b);
+      options.push(this.option({ id: `rep-${b.id}`, icon: 'reparieren', name: T.bauleiste.reparieren, info: T.bautenInfo.reparieren, cost, action: () => this.repairBuilding(b) }, inv));
+    }
+    const refund = def.tower ? scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND) : def.cost;
+    options.push({
+      id: `abriss-${b.id}`,
+      icon: 'abriss',
+      name: T.bauleiste.abreissen,
+      info: def.tower ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      cost: {},
+      refund,
+      affordable: true,
+      progress: 1,
+      confirm: true,
+      action: () => this.demolish(b.id),
+    });
+    return options;
+  }
+
+  /** »Schaden 21 · 1,2/s · 5,2 m« */
+  statLine(type, level, spec) {
+    const s = towerStats(type, level, spec);
+    if (type === 'laternenturm') return `+${Math.round(s.aura * 100)} % Schaden · ${num(s.auraRange)} m`;
+    if (type === 'sprenger') return `Bremst ${Math.round(s.slow * 100)} % · ${num(s.range)} m`;
+    return `Schaden ${Math.round(s.damage)} · ${num(s.rate)}/s · ${num(s.range)} m`;
   }
 
   option(o, inv) {
@@ -123,6 +218,76 @@ export class Builder {
     if (!ANNOUNCE.has(option.id) || this.announced.has(option.id)) return;
     this.announced.add(option.id);
     this.game.hud.toast(T.meldungen.bereit(option.name), option.icon, 3.2);
+  }
+
+  // --- Figur und Türme ausbauen -------------------------------------------------------
+
+  buyUpgrade(id) {
+    const st = this.game.state;
+    const u = UPGRADES[id];
+    const level = st.upgrades[id] || 0;
+    if (level >= u.cost.length || !pay(st.inventory, u.cost[level])) return;
+    st.upgrades[id] = level + 1;
+    if (id === 'leben') st.player.hp += u.values[level + 1] - u.values[level];
+    this.game.hud.toast(T.meldungen.aufgewertet(T.figur[id][0], level + 1), u.icon, 2.4);
+    this.game.effects.splat(this.game.player.position.x, 1.2, this.game.player.position.z, 'funken', 14, 0.8);
+    this.game.quietSave();
+  }
+
+  upgradeTower(b, level, spec) {
+    const t = TOWERS[b.type];
+    const cost = level <= 2 ? t.base[level - 1].cost : t.specs[spec].levels[level - 3].cost;
+    if (!pay(this.game.state.inventory, cost)) return;
+    this.world.buildings.upgrade(b, level, spec);
+    this.game.state.world.buildings = this.world.buildings.toState();
+    const c = this.world.buildings.bounds(b);
+    this.game.effects.dust(c.x, c.z, 1.2);
+    this.game.effects.splat(c.x, 1.5, c.z, 'funken', 16, 0.9);
+    this.game.hud.toast(T.meldungen.ausgebaut(this.selectionTitle() || T.bauten[b.type]), BUILDINGS[b.type].icon, 2.6);
+    this.game.quietSave();
+  }
+
+  // --- Reparieren ------------------------------------------------------------------------
+
+  buildingRepairCost(b) {
+    const def = BUILDINGS[b.type];
+    const missingHp = (def.hp - b.hp) / def.hp;
+    if (missingHp <= 0) return null;
+    if (def.tower) return { holz: Math.max(1, Math.ceil(missingHp * 4)), schrott: Math.max(1, Math.ceil(missingHp * 4)) };
+    return { holz: Math.max(1, Math.ceil(missingHp * 3)) };
+  }
+
+  /** Gesamtkosten, um Zuhause, Türme und Barrikaden zu flicken (oder null). */
+  repairCost() {
+    const st = this.game.state;
+    const total = {};
+    const add = (c) => {
+      for (const [r, n] of Object.entries(c || {})) total[r] = (total[r] || 0) + n;
+    };
+    const maxHome = HOUSE_LEVELS[st.world.houseLevel].hp;
+    const home = maxHome - st.world.homeHp;
+    if (home > 0.5) add({ holz: Math.ceil(home / 20), schrott: Math.ceil(home / 50) });
+    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && b.hp < BUILDINGS[b.type].hp) add(this.buildingRepairCost(b));
+    return Object.keys(total).length ? total : null;
+  }
+
+  repairAll() {
+    const st = this.game.state;
+    const cost = this.repairCost();
+    if (!cost || !pay(st.inventory, cost)) return;
+    st.world.homeHp = HOUSE_LEVELS[st.world.houseLevel].hp;
+    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp) b.hp = BUILDINGS[b.type].hp;
+    st.world.buildings = this.world.buildings.toState();
+    this.game.hud.toast(T.meldungen.repariert, 'reparieren', 2.4);
+    this.game.quietSave();
+  }
+
+  repairBuilding(b) {
+    const cost = this.buildingRepairCost(b);
+    if (!cost || !pay(this.game.state.inventory, cost)) return;
+    b.hp = BUILDINGS[b.type].hp;
+    this.game.state.world.buildings = this.world.buildings.toState();
+    this.game.hud.toast(T.meldungen.repariert, 'reparieren', 2);
   }
 
   // --- Platzieren ---------------------------------------------------------------------
@@ -174,6 +339,7 @@ export class Builder {
 
   /**
    * Pro Bild nach der Bewegung der Figur: Vorschau, Drehen, Setzen, Auswählen.
+   * Gibt 'click' zurück, wenn ein Klick in die Welt übrig bleibt (→ Schlag).
    * @param {import('./input.js').Input} input
    * @param {boolean} pointerFree Maus ist nicht über einer Leiste
    */
@@ -195,10 +361,11 @@ export class Builder {
         input.consume('use');
         this.tryPlace();
       }
-      return;
+      return null;
     }
 
-    // Kein Platzieren: Klick auf einen Bau wählt ihn aus (oder hebt die Auswahl auf).
+    // Kein Platzieren: Klick auf einen Bau wählt ihn aus, sonst ist es ein Schlag.
+    let rest = null;
     this.hovered = pointerFree ? this.pick() : null;
     if (pointerFree && input.mouse.clicked) {
       const b = this.hovered;
@@ -208,6 +375,8 @@ export class Builder {
       } else if (this.selection !== null) {
         input.consumeClick();
         this.cancel();
+      } else {
+        rest = 'click';
       }
     }
     const sel = this.selected();
@@ -221,6 +390,7 @@ export class Builder {
       this.selection = null;
       this.preview.hide();
     }
+    return rest;
   }
 
   /**
@@ -256,17 +426,22 @@ export class Builder {
     const pl = this.placement;
     const hud = this.game.hud;
     if (!pl.ok) {
-      const lack = Object.entries(missing(this.game.state.inventory, pl.cost))
-        .map(([res, n]) => `${n} ${T.ressourcen[res]}`)
-        .join(', ');
-      const text = { max: T.bauleiste.schonGebaut, belegt: T.meldungen.keinPlatz, figur: T.meldungen.figurImWeg, teuer: T.bauleiste.fehlt(lack) }[pl.reason];
-      hud.toast(text || T.meldungen.keinPlatz, null, 1.8);
+      const text = {
+        max: T.bauleiste.schonGebaut,
+        belegt: T.meldungen.keinPlatz,
+        figur: T.meldungen.figurImWeg,
+        weg: T.bauleiste.weg,
+        teuer: T.bauleiste.fehlt(this.lackText(pl.cost)),
+      }[pl.reason];
+      hud.toast(text || T.meldungen.keinPlatz, null, 2);
       return;
     }
     const state = this.game.state;
     if (!pay(state.inventory, pl.cost)) return;
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
     if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
+    b.headAngle = Math.PI; // Türme schauen anfangs nach Norden (zum Wald)
+    if (b.head) b.head.rotation.y = b.headAngle;
     this.world.refreshInteractions();
     state.world.buildings = this.world.buildings.toState();
     state.stats.built += 1;
@@ -285,21 +460,33 @@ export class Builder {
       state.flags.werkbankGebaut = true;
       this.game.startDialog('werkbankGebaut');
     }
+    if (def.tower && !state.flags.ersterTurm) {
+      state.flags.ersterTurm = true;
+      this.game.startDialog('ersterTurm');
+    }
+  }
+
+  lackText(cost) {
+    return Object.entries(missing(this.game.state.inventory, cost))
+      .map(([res, n]) => `${n} ${T.ressourcen[res]}`)
+      .join(', ');
   }
 
   demolish(id) {
     const buildings = this.world.buildings;
     const b = buildings.get(id);
     if (!b) return;
+    const def = BUILDINGS[b.type];
+    const refund = def.tower ? scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND) : def.cost;
     buildings.remove(id);
     this.world.refreshInteractions();
     const state = this.game.state;
-    gain(state.inventory, BUILDINGS[b.type].cost);
+    gain(state.inventory, refund);
     state.world.buildings = buildings.toState();
     this.selection = null;
     this.preview.hide();
-    const c = { x: b.i + footprint(b.type, b.turns).w / 2, z: b.j + footprint(b.type, b.turns).d / 2 };
-    this.game.effects.dust(c.x, c.z, 1.5);
+    const { w, d } = footprint(b.type, b.turns);
+    this.game.effects.dust(b.i + w / 2, b.j + d / 2, 1.5);
     this.game.hud.toast(T.meldungen.abgerissen(T.bauten[b.type]), 'abriss', 2.2);
     this.game.quietSave();
   }
@@ -308,7 +495,8 @@ export class Builder {
 
   /**
    * Zielfeld und Auswahl als scharfe Pixel-Umrandung über der Szene (lesbarer als
-   * getönte Flächen), dazu kleine Rastermarken an freien Feldern ringsum.
+   * getönte Flächen), dazu kleine Rastermarken an freien Feldern ringsum und
+   * die Reichweite von Türmen als gepunkteter Kreis.
    * @param {import('../ui/ui.js').UICanvas} ui
    */
   drawOverlay(ui) {
@@ -327,6 +515,15 @@ export class Builder {
       ui.frame(r.x, r.y, r.w, r.h, color);
       ui.frame(r.x + 1, r.y + 1, r.w - 2, r.h - 2, color);
     };
+    const ring = (cx, cz, radius, color) => {
+      const steps = Math.max(24, Math.round(radius * 18));
+      for (let k = 0; k < steps; k++) {
+        const a = (k / steps) * Math.PI * 2;
+        const p = g.worldToUi(cx + Math.cos(a) * radius, 0, cz + Math.sin(a) * radius);
+        ui.rect(Math.round(p.x), Math.round(p.y), 2, 1, k % 2 ? color : COLORS.outline);
+      }
+    };
+    if (pl && TOWER_TAB.includes(pl.type)) this.drawHordePaths(ui);
     if (pl) {
       const { w, d } = footprint(pl.type, pl.turns);
       const grid = this.world.grid;
@@ -345,10 +542,12 @@ export class Builder {
           for (const [x, y] of [[r.x, r.y], [r.x + r.w - 2, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 2, r.y + r.h - 1]]) ui.rect(x, y, 2, 1, COLORS.textWarm);
         }
       }
+      if (BUILDINGS[pl.type].tower) ring(cx, cz, towerStats(pl.type, 1, null).range, COLORS.textWarm);
       thick(box(pl.i, pl.j, w, d), pl.ok ? COLORS.buildOk : COLORS.buildBad);
     }
     if (sel) {
       const b = this.world.buildings.bounds(sel);
+      if (BUILDINGS[sel.type].tower) ring(b.x, b.z, towerStats(sel.type, sel.level, sel.spec).range, COLORS.gold);
       thick(box(b.i, b.j, b.w, b.d), COLORS.gold);
     }
     if (hov) {
@@ -356,6 +555,35 @@ export class Builder {
       const b = this.world.buildings.bounds(hov);
       const r = box(b.i, b.j, b.w, b.d);
       ui.frame(r.x, r.y, r.w, r.h, COLORS.textWarm);
+    }
+  }
+
+  /**
+   * Wegvorschau beim Turm- und Barrikadenbau: Punkte laufen die Wege der
+   * Horde entlang, vom Waldrand bis an die Hauswand (DESIGN.md 6.11).
+   */
+  drawHordePaths(ui) {
+    const g = this.game;
+    const pathing = this.world.pathing;
+    const step = 0.45;
+    const shift = (g.clock * 1.2) % step;
+    for (const name of Object.keys(pathing.entries)) {
+      const points = pathing.trace(name);
+      let carry = shift;
+      for (let k = 1; k < points.length; k++) {
+        const a = points[k - 1];
+        const b = points[k];
+        const len = Math.hypot(b.x - a.x, b.z - a.z);
+        let s = carry;
+        for (; s < len; s += step) {
+          const p = g.worldToUi(a.x + ((b.x - a.x) * s) / len, 0, a.z + ((b.z - a.z) * s) / len);
+          const x = Math.round(p.x);
+          const y = Math.round(p.y);
+          ui.rect(x - 1, y - 1, 4, 4, COLORS.outline);
+          ui.rect(x, y, 2, 2, COLORS.buildBad);
+        }
+        carry = s - len;
+      }
     }
   }
 
@@ -379,6 +607,8 @@ export class Builder {
     }
     this.game.startWork(T.schlaf.werkeln, 2, () => {
       state.world.houseLevel = level;
+      // Mehr Standfestigkeit: der Zugewinn kommt obendrauf
+      state.world.homeHp += next.hp - HOUSE_LEVELS[level - 1].hp;
       this.world.setHouseLevel(level);
       this.game.pushPlayerOut();
     }, () => {
@@ -387,4 +617,14 @@ export class Builder {
       this.game.quietSave();
     });
   }
+}
+
+/** Kosten mit Faktor (abgerundet), z. B. 70 % Rückgabe. */
+function scale(cost, factor) {
+  const out = {};
+  for (const [res, n] of Object.entries(cost)) {
+    const v = Math.floor(n * factor);
+    if (v > 0) out[res] = v;
+  }
+  return out;
 }

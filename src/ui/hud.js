@@ -4,6 +4,7 @@
 
 import { T } from '../data/texts.js';
 import { RESOURCES, RARE_RESOURCES, ITEMS, HOTBAR_SIZE } from '../data/items.js';
+import { HOUSE_LEVELS } from '../data/buildings.js';
 import { clockText, hoursOf } from '../core/state.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, drawTiny } from './font.js';
@@ -30,7 +31,10 @@ export class Hud {
     this.itemLabel = { text: '', time: 0 };
     this.hint = { text: '', time: 0 };
     this.goalFlash = 0;
+    this.homeFlash = 0;
     this.speech = null; // { text, time, duration }
+    this.banner = null; // { text, time }
+    this.numbers = []; // Schadenszahlen
     this.prompt = null; // { text, x, y }
     this.debugLines = null;
     this.slotRects = [];
@@ -49,10 +53,36 @@ export class Hud {
     if (this.toasts.length > 4) this.toasts.shift();
   }
 
-  /** Schwebendes »+n« mit Symbol an einer Weltposition. */
-  floater(x, y, z, text, icon, stack = 0) {
-    this.floaters.push({ x, y, z, text, icon, t: -stack * 0.12, stack });
+  /**
+   * Schwebendes »+n« mit Symbol an einer Weltposition. merge: kurz
+   * hintereinander eingesammeltes Loot zählt in einer Zahl hoch.
+   */
+  floater(x, y, z, text, icon, stack = 0, merge = false) {
+    if (merge) {
+      const same = this.floaters.find((f) => f.merge && f.icon === icon && f.t < 0.6);
+      if (same) {
+        same.count += 1;
+        same.text = `+${same.count}`;
+        same.t = Math.min(same.t, 0.2);
+        same.x = x;
+        same.y = y;
+        same.z = z;
+        return;
+      }
+    }
+    this.floaters.push({ x, y, z, text, icon, t: -stack * 0.12, stack, merge, count: 1 });
     if (this.floaters.length > 12) this.floaters.shift();
+  }
+
+  /** Großer kurzer Schriftzug oben in der Mitte (»Welle 2/4«). */
+  showBanner(text) {
+    this.banner = { text, time: 0 };
+  }
+
+  /** Schadenszahl an einer Weltposition (rot, wenn Mika getroffen wurde). */
+  damageNumber(x, y, z, amount, hurt = false) {
+    this.numbers.push({ x: x + (Math.random() - 0.5) * 0.3, y, z, text: String(amount), hurt, t: 0 });
+    if (this.numbers.length > 24) this.numbers.shift();
   }
 
   /** Gedanke der Figur als Sprechblase über dem Kopf (hält das Spiel nicht an). */
@@ -76,6 +106,13 @@ export class Hud {
     this.itemLabel.time = Math.max(0, this.itemLabel.time - dt);
     this.hint.time = Math.max(0, this.hint.time - dt);
     this.goalFlash = Math.max(0, this.goalFlash - dt);
+    this.homeFlash = Math.max(0, this.homeFlash - dt);
+    for (const n of this.numbers) n.t += dt;
+    this.numbers = this.numbers.filter((n) => n.t < 0.7);
+    if (this.banner) {
+      this.banner.time += dt;
+      if (this.banner.time > 2.4) this.banner = null;
+    }
     if (this.speech) {
       this.speech.time += dt;
       if (this.speech.time >= this.speech.duration) this.speech = null;
@@ -87,10 +124,17 @@ export class Hud {
    * @param {{hotbar: boolean, prompt: boolean}} show
    */
   draw(ui, show) {
+    if (show.prompt) {
+      this.drawZombieBars(ui);
+      this.drawNumbers(ui);
+      this.drawEdgeMarkers(ui);
+    }
     this.drawClock(ui);
     this.drawGoal(ui);
     this.drawResources(ui);
+    this.drawNightBar(ui);
     this.drawFloaters(ui);
+    if (show.hotbar) this.drawPlayerHp(ui);
     if (show.prompt) this.drawSpeech(ui);
     if (show.hotbar) this.drawHotbar(ui);
     if (show.prompt && this.prompt) this.drawPrompt(ui, this.prompt);
@@ -179,6 +223,97 @@ export class Hud {
       const y = Math.round(p.y - 14 - rise - f.stack * 12);
       ui.text(f.text, x, y, COLORS.textWarm, { outline: COLORS.outline });
       if (f.icon) drawIcon(ui.ctx, f.icon, x + measure(f.text) + 2, y + 2);
+    }
+  }
+
+  /** Oben Mitte: Nacht, Welle und Standfestigkeit des Zuhauses. */
+  drawNightBar(ui) {
+    const g = this.game;
+    const st = g.state;
+    const max = HOUSE_LEVELS[st.world.houseLevel].hp;
+    const active = g.nights.active;
+    const damaged = st.world.homeHp < max - 0.5;
+    if (!active && !damaged && !this.banner) return;
+    const cx = Math.round(ui.width / 2);
+    if (active || damaged) {
+      const w = 124;
+      const x = cx - w / 2;
+      const y = 4;
+      ui.panel(x, y, w, 30);
+      const plan = g.nights.plan;
+      const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}` : T.horde.zuhause;
+      ui.textCentered(label, cx, y + 2, active ? COLORS.textWarm : COLORS.text);
+      const q = Math.max(0, Math.min(1, st.world.homeHp / max));
+      drawIcon(ui.ctx, 'haus', x + 5, y + 15);
+      ui.rect(x + 20, y + 19, w - 26, 5, COLORS.outline);
+      const hit = this.homeFlash > 0 && Math.floor(this.homeFlash * 12) % 2 === 0;
+      ui.rect(x + 21, y + 20, Math.max(0, Math.round((w - 28) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
+    }
+    if (this.banner) {
+      const b = this.banner;
+      if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, 40, 2, COLORS.gold);
+    }
+  }
+
+  /** Mikas Lebensbalken über der Schnellleiste. */
+  drawPlayerHp(ui) {
+    const g = this.game;
+    const max = g.combat.maxHp;
+    const hp = g.state.player.hp;
+    if (hp >= max - 0.5 && !g.nights.active) return;
+    const r = this.hotbarRect(ui);
+    const y = r.y - 8;
+    const w = r.w - 8;
+    ui.rect(r.x + 4, y, w, 5, COLORS.outline);
+    const q = Math.max(0, Math.min(1, hp / max));
+    const flash = g.combat.hurtFlash > 0 && Math.floor(g.combat.hurtFlash * 16) % 2 === 0;
+    ui.rect(r.x + 5, y + 1, Math.max(0, Math.round((w - 2) * q)), 3, flash ? COLORS.text : q > 0.3 ? COLORS.red : COLORS.buildBad);
+    drawIcon(ui.ctx, 'herz', r.x + w - 2, y - 2);
+  }
+
+  /** Kleine Lebensbalken über verletzten Schlurfern. */
+  drawZombieBars(ui) {
+    const g = this.game;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying' || z.hp >= z.maxHp) continue;
+      const p = g.worldToUi(z.x, 2.05 * z.def.scale, z.z);
+      const w = z.type === 'anfuehrer' ? 30 : z.type === 'brummer' ? 20 : 12;
+      const x = Math.round(p.x - w / 2);
+      const y = Math.round(p.y);
+      ui.rect(x, y, w, 3, COLORS.outline);
+      ui.rect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * (z.hp / z.maxHp))), 1, z.freezeT > 0 ? COLORS.green : COLORS.buildBad);
+    }
+  }
+
+  drawNumbers(ui) {
+    for (const n of this.numbers) {
+      const p = this.game.worldToUi(n.x, n.y, n.z);
+      const rise = Math.round(n.t * 22);
+      ui.text(n.text, Math.round(p.x - measure(n.text) / 2), Math.round(p.y - 10 - rise), n.hurt ? COLORS.buildBad : COLORS.text, { outline: COLORS.outline });
+    }
+  }
+
+  /** Pfeile am Bildrand zu Schlurfern außerhalb des Bildes. */
+  drawEdgeMarkers(ui) {
+    const g = this.game;
+    let n = 0;
+    this.edgeCount = 0;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying' || n >= 10) continue;
+      const p = g.worldToUi(z.x, 0.8, z.z);
+      if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) continue;
+      const cx = ui.width / 2;
+      const cy = ui.height / 2;
+      const dx = p.x - cx;
+      const dy = p.y - cy;
+      const k = Math.min((cx - 10) / Math.abs(dx || 1e-3), (cy - 10) / Math.abs(dy || 1e-3));
+      const x = Math.round(cx + dx * k);
+      const y = Math.round(cy + dy * k);
+      const color = z.type === 'anfuehrer' ? COLORS.gold : COLORS.buildBad;
+      ui.rect(x - 2, y - 2, 5, 5, COLORS.outline);
+      ui.rect(x - 1, y - 1, 3, 3, color);
+      n++;
+      this.edgeCount = n;
     }
   }
 

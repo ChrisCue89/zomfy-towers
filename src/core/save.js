@@ -7,6 +7,16 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v2 -> v3: Meilenstein 3 (Nächte, Türme, Loot). Neue Felder mit Standardwerten;
+  // die erste Nacht beginnt am aktuellen Tag.
+  2: (data) => ({
+    ...data,
+    version: 3,
+    player: { ...(data.player || {}), hp: 100 },
+    upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
+    world: { ...(data.world || {}), homeHp: (data.world?.houseLevel || 1) >= 2 ? 450 : 300 },
+    night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
+  }),
   // v1 -> v2: Meilenstein 2 (Sammeln, Crafting, Bauen). „Technik“ wird zu
   // Zahnrädern, die Laterne wandert aus der Schnellleiste in die linke Hand.
   1: (data) => {

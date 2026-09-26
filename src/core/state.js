@@ -3,7 +3,7 @@
 
 import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -13,13 +13,20 @@ export function createNewState(config) {
   return {
     version: SAVE_VERSION,
     time: { day: 1, minute: config.time.newGameMinute },
-    player: { x: -0.625, z: 0.25, facing: 0, lantern: false },
+    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100 },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
-    world: { houseLevel: 1, buildings: [], nodes: {}, searched: {} },
+    upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
+    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null },
+    // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
+    night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
+    horde: [], // lebende Schlurfer (zum Weiterspielen nach dem Neuladen)
+    hordeQueue: [], // noch ausstehende Schlurfer der laufenden Welle
+    loot: [], // Loot am Boden
+    report: null, // Morgenbericht, der noch gezeigt werden muss
     flags: {},
-    stats: { nightsSlept: 0, gathered: 0, built: 0 },
+    stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0 },
   };
 }
 
@@ -52,6 +59,7 @@ export function sanitizeState(data, config) {
   out.player.z = num(data.player?.z, base.player.z, -40, 40);
   out.player.facing = num(data.player?.facing, 0, -10, 10);
   out.player.lantern = Boolean(data.player?.lantern);
+  out.player.hp = num(data.player?.hp, 100, 1, 1000);
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
@@ -66,16 +74,41 @@ export function sanitizeState(data, config) {
   out.stats.nightsSlept = Math.floor(num(data.stats?.nightsSlept, 0, 0, 1e6));
   out.stats.gathered = Math.floor(num(data.stats?.gathered, 0, 0, 1e9));
   out.stats.built = Math.floor(num(data.stats?.built, 0, 0, 1e9));
+  out.stats.kills = Math.floor(num(data.stats?.kills, 0, 0, 1e9));
+  out.stats.nightsWon = Math.floor(num(data.stats?.nightsWon, 0, 0, 1e6));
+  out.stats.nightsLost = Math.floor(num(data.stats?.nightsLost, 0, 0, 1e6));
+  for (const k of Object.keys(out.upgrades)) out.upgrades[k] = Math.floor(num(data.upgrades?.[k], 0, 0, 3));
   out.tools.axt = Boolean(data.tools?.axt);
   out.tools.spitzhacke = Boolean(data.tools?.spitzhacke);
   const w = data.world || {};
   out.world.houseLevel = Math.floor(num(w.houseLevel, 1, 1, 2));
+  out.world.homeHp = num(w.homeHp, out.world.houseLevel >= 2 ? 450 : 300, 0, 5000);
+  if (w.dayEvents && Number.isFinite(w.dayEvents.day)) out.world.dayEvents = { day: Math.floor(w.dayEvents.day), done: Math.floor(num(w.dayEvents.done, 0, 0, 99)) };
+  const n = data.night || {};
+  out.night = {
+    n: Math.floor(num(n.n, 0, 0, 1e6)),
+    wave: Math.floor(num(n.wave, 0, 0, 99)),
+    done: n.done !== false,
+    won: Boolean(n.won),
+    kills: Math.floor(num(n.kills, 0, 0, 1e6)),
+    loot: {},
+    homeStart: num(n.homeStart, out.world.homeHp, 0, 5000),
+  };
+  for (const r of RESOURCES) if (Number.isFinite(n.loot?.[r])) out.night.loot[r] = Math.floor(n.loot[r]);
+  const listOf = (v) => (Array.isArray(v) ? v.filter((e) => e && typeof e === 'object') : []);
+  out.horde = listOf(data.horde).filter((z) => typeof z.type === 'string' && Number.isFinite(z.x) && Number.isFinite(z.z)).slice(0, 300);
+  out.hordeQueue = listOf(data.hordeQueue).slice(0, 300);
+  out.loot = listOf(data.loot).filter((l) => typeof l.res === 'string' && Number.isFinite(l.x) && Number.isFinite(l.z)).slice(0, 300);
+  out.report = data.report && typeof data.report === 'object' ? data.report : null;
   if (Array.isArray(w.buildings)) {
     out.world.buildings = w.buildings
       .filter((b) => b && typeof b.type === 'string' && Number.isFinite(b.i) && Number.isFinite(b.j))
       .map((b) => {
         const entry = { id: Math.floor(num(b.id, 0, 0, 1e9)), type: b.type, i: Math.floor(b.i), j: Math.floor(b.j), turns: Math.floor(num(b.turns, 0, 0, 3)) };
         if (Number.isFinite(b.day)) entry.day = Math.floor(b.day);
+        if (Number.isFinite(b.level)) entry.level = Math.floor(num(b.level, 1, 1, 5));
+        if (b.spec === 'A' || b.spec === 'B') entry.spec = b.spec;
+        if (Number.isFinite(b.hp)) entry.hp = num(b.hp, 100, 0, 1000);
         return entry;
       });
   }

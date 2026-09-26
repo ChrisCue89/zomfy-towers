@@ -1,6 +1,6 @@
 // Lichtinseln: warme Lichtkreise auf dem Boden für Lampen, die kein echtes
 // Punktlicht bekommen (die Zahl der three.js-Lichter muss konstant bleiben).
-// Mischmodus: Ziel × (1 + Quelle) + Quelle × 0,35 – der Boden wird warm
+// Mischmodus: Ziel × (1 + Quelle) + warmes Grundlicht – der Boden wird warm
 // aufgehellt und bekommt auch nachts auf dunklem Grund sichtbares Licht. Die
 // Palettenabbildung macht daraus gestufte Ringe.
 
@@ -25,7 +25,7 @@ void main() {
   if (a < 0.003) discard;
   gl_FragColor = vec4(uColor * a, 1.0);
   #ifdef ADDITIVE
-  gl_FragColor.rgb *= 0.35;
+  gl_FragColor.rgb *= 0.14;
   #endif
 }
 `;
@@ -49,7 +49,8 @@ export class LightPools {
     });
     this.addMaterial = this.material.clone();
     this.addMaterial.defines = { ADDITIVE: '' };
-    this.addMaterial.uniforms = this.material.uniforms;
+    // Grundlicht: gedämpftes, sattes Orange (sonst wirkt der Kreis nachts milchig)
+    this.addMaterial.uniforms = { uColor: { value: new THREE.Color(1.8, 0.75, 0.2) }, uLevel: this.material.uniforms.uLevel };
     this.addMaterial.blendSrc = THREE.OneFactor;
     this.addMaterial.blendDst = THREE.OneFactor;
     this.geometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);

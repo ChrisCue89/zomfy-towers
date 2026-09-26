@@ -35,6 +35,7 @@ export class Player {
     this.lanternLit = false;
     this.lanternSwing = 0;
     this.heldTool = null; // Werkzeug in der rechten Hand (aus der Schnellleiste)
+    this.speedFactor = 1; // Aufwertung »Tempo«
     this.action = null;
     this._lanternWorld = new THREE.Vector3();
   }
@@ -88,7 +89,7 @@ export class Player {
     }
     this.updateAction(dt);
 
-    const speed = run ? this.config.runSpeed : this.config.walkSpeed;
+    const speed = (run ? this.config.runSpeed : this.config.walkSpeed) * this.speedFactor;
     const len = Math.hypot(move.x, move.z);
     const dirX = len > 0 ? move.x / len : 0;
     const dirZ = len > 0 ? move.z / len : 0;

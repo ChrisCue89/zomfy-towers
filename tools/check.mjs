@@ -5,7 +5,8 @@
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
-// screenshots/, prüft Speichern/Laden und misst Bildzeiten.
+// screenshots/, prüft Speichern/Laden, Sammeln und Bauen, Türme, Horde und
+// Nächte und misst Bildzeiten.
 
 import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, statSync, mkdirSync, existsSync } from 'node:fs';
@@ -132,10 +133,13 @@ async function runBrowserChecks() {
     // --- 1. Rundgang mit Screenshots (ohne Speichern) ---------------------------
     const tour = await openGame(browser, `${url}index.html?test&nosave`, 'Rundgang');
     const { page } = tour;
-    // Einmalige Hinweis-Dialoge würden die Bilder verdecken.
+    // Einmalige Hinweis-Dialoge würden die Bilder verdecken; die Horde bleibt
+    // für diese ruhigen Bilder im Wald (Nächte prüft Abschnitt 4).
     await page.evaluate(() => {
       window.zomfy.setFlag('abendHinweis');
       window.zomfy.setFlag('spaetHinweis');
+      window.zomfy.setFlag('abendHorde');
+      window.zomfy.setHorde(false);
     });
 
     await shot(page, 'morgen', () => {
@@ -266,18 +270,27 @@ async function runBrowserChecks() {
       }
     } });
     await first.page.evaluate(() => {
+      window.zomfy.setHorde(false);
       window.zomfy.setTime(15, 30);
       window.zomfy.teleport(-1.375, -4.125, 3.14);
-      window.zomfy.interact('bett'); // am Tag: Rückfrage „Jetzt schon schlafen?“
-      window.zomfy.answer(0); // „Ja, bis morgen.“ (vorgewählt ist „Noch nicht.“)
+      window.zomfy.interact('bett'); // vor der Nacht: »Erst muss die Nacht vorbei sein.«
+    });
+    const vorNacht = await first.page.evaluate(() => ({ mode: window.zomfy.mode, day: window.zomfy.state().time.day }));
+    await first.page.evaluate(() => {
+      window.zomfy.finishDialog();
+      window.zomfy.endNight(true);
+      window.zomfy.interact('bett');
     });
     const asleep = await first.page.evaluate(() => window.zomfy.mode);
-    if (asleep === 'sleep') note('✓ Bett: Rückfrage am Tag, Antwort „Ja“ startet den Schlaf');
-    else fail(`Bett: nach der Antwort ist der Modus „${asleep}“ statt „sleep“`);
+    if (vorNacht.mode === 'dialog' && asleep === 'sleep') note('✓ Bett: vor der Nacht gesperrt, nach der Nacht schläft Mika');
+    else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 2) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 3) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
+    const bericht = await first.page.evaluate(() => window.zomfy.mode);
+    if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
+    else fail(`Morgenbericht: Modus „${bericht}“ statt „report“`);
     await first.page.screenshot({ path: join(SHOTS, 'aufwachen.png') });
     note('  Screenshot: screenshots/aufwachen.png');
     await first.page.reload();
@@ -310,9 +323,13 @@ async function runBrowserChecks() {
     // --- 3. Meilenstein 2: Sammeln, Bauen, Werkbank, Hütte ---------------------------
     await runBuildChecks(browser, url);
 
-    // --- 4. Große Auflösung (Full HD) --------------------------------------------------
+    // --- 4. Meilenstein 3: Türme, Horde, Loot, Nächte ---------------------------------
+    await runNightChecks(browser, url);
+
+    // --- 5. Große Auflösung (Full HD) --------------------------------------------------
     const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
     await shot(hd.page, 'nacht-fullhd', () => {
+      window.zomfy.setHorde(false);
       window.zomfy.setFlag('abendHinweis');
       window.zomfy.finishDialog();
       window.zomfy.teleport(2.25, -0.75, 0.5);
@@ -340,6 +357,8 @@ async function runBuildChecks(browser, url) {
   await z(() => {
     window.zomfy.setFlag('abendHinweis');
     window.zomfy.setFlag('spaetHinweis');
+    window.zomfy.setFlag('abendHorde');
+    window.zomfy.setHorde(false);
     window.zomfy.setTime(9, 0);
   });
 
@@ -388,12 +407,16 @@ async function runBuildChecks(browser, url) {
   if (erste >= 2 && st2.inventory.schrott === st.inventory.schrott) note(`✓ Durchsuchen: +${erste} Schrott, zweites Mal am selben Tag leer`);
   else fail(`Durchsuchen: Ertrag ${erste}, danach ${st2.inventory.schrott - st.inventory.schrott}`);
 
-  // Werkbank über die Bauleiste: Taste Q, dann E setzt vor der Figur
+  // Werkbank über die Bauleiste: Tab zweimal (Türme → Figur → Zuhause), Q, dann E setzt vor der Figur
   await z(() => {
     window.zomfy.give({ holz: 20, stein: 10 });
     window.zomfy.teleport(3.5, 2.5, 0);
   });
   await settle(page, 3);
+  await page.keyboard.press('Tab');
+  await settle(page, 2);
+  await page.keyboard.press('Tab');
+  await settle(page, 2);
   await page.keyboard.press('KeyQ');
   await settle(page, 3);
   const plan = await z(() => window.zomfy.placement);
@@ -401,14 +424,16 @@ async function runBuildChecks(browser, url) {
   await settle(page, 3);
   await z(() => window.zomfy.finishDialog());
   const bauten = await z(() => window.zomfy.buildings());
-  if (plan && plan.type === 'werkbank' && bauten.some((b) => b.type === 'werkbank')) note('✓ Bauleiste: Q wählt die Werkbank, E setzt sie vor die Figur');
+  if (plan && plan.type === 'werkbank' && bauten.some((b) => b.type === 'werkbank')) note('✓ Bauleiste: Tab wechselt zum Reiter Zuhause, Q wählt die Werkbank, E setzt sie');
   else fail(`Bauleiste: Werkbank nicht gebaut (Plan ${JSON.stringify(plan)}, Bauten ${JSON.stringify(bauten)})`);
   const zweite = await z(() => window.zomfy.build('werkbank', -6, 4));
   if (zweite === 'max') note('✓ Bauleiste: nur eine Werkbank möglich');
   else fail(`Bauleiste: zweite Werkbank ergab „${zweite}“`);
 
-  // Esc bricht das Platzieren ab, ohne das Menü zu öffnen
-  await page.keyboard.press('KeyR');
+  // Esc bricht das Platzieren ab, ohne das Menü zu öffnen (Tab: zurück zu den Türmen, C = Barrikade)
+  await page.keyboard.press('Tab');
+  await settle(page, 2);
+  await page.keyboard.press('KeyC');
   await settle(page, 3);
   await page.keyboard.press('Escape');
   await settle(page, 3);
@@ -492,8 +517,8 @@ async function runBuildChecks(browser, url) {
   await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
   await z(() => window.zomfy.finishDialog());
   st = await state();
-  if (st.world.houseLevel === 2 && Object.keys(st.flags).filter((k) => k.startsWith('ziel_')).length === 5) note('✓ Zuhause: zur Hütte ausgebaut, alle fünf Ziele erreicht');
-  else fail(`Zuhause: Stufe ${st.world.houseLevel}, Ziele ${Object.keys(st.flags).filter((k) => k.startsWith('ziel_'))}`);
+  if (st.world.houseLevel === 2 && st.world.homeHp === 450) note('✓ Zuhause: zur Hütte ausgebaut, Standfestigkeit 450');
+  else fail(`Zuhause: Stufe ${st.world.houseLevel}, Standfestigkeit ${st.world.homeHp}`);
   // Laufen gegen die neue Anbau-Wand (von der Veranda aus nach Norden)
   await z(() => window.zomfy.teleport(4.0, -1.95, Math.PI));
   await page.keyboard.down('KeyW');
@@ -526,16 +551,22 @@ async function runBuildChecks(browser, url) {
     },
   });
   await one.page.evaluate(() => {
-    window.zomfy.give({ holz: 20, stein: 5 });
+    window.zomfy.setHorde(false);
+    window.zomfy.give({ holz: 20, stein: 5, schrott: 45, zahnraeder: 1 });
     window.zomfy.build('werkbank', 3, 5);
     window.zomfy.build('barrikade', 6, 2);
+    window.zomfy.build('bolzen', -7, -4);
     window.zomfy.finishDialog();
+    const turm = window.zomfy.buildings().find((b) => b.type === 'bolzen');
+    window.zomfy.upgradeTower(turm.id, 2);
+    window.zomfy.upgradeTower(turm.id, 3, 'B');
     window.zomfy.teleport(4.5, 2.0, 0);
   });
   await one.page.reload();
   await one.page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await one.page.evaluate(() => window.zomfy.buildings());
-  if (geladen.length === 2 && geladen.some((b) => b.type === 'werkbank' && b.i === 3 && b.j === 5)) note('✓ Laden: Bauten stehen nach dem Neuladen wieder an ihrem Platz');
+  const turmGeladen = geladen.find((b) => b.type === 'bolzen');
+  if (geladen.length === 3 && geladen.some((b) => b.type === 'werkbank' && b.i === 3 && b.j === 5) && turmGeladen?.level === 3 && turmGeladen?.spec === 'B') note('✓ Laden: Bauten und Turm (Stufe 3, Spezialisierung B) stehen nach dem Neuladen wieder da');
   else fail(`Laden: Bauten nach dem Neuladen ${JSON.stringify(geladen)}`);
   checkMessages(one);
   await one.context.close();
@@ -560,11 +591,194 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 2 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1) {
-    note('✓ Migration: Spielstand v1 wird zu v2 (Technik -> Zahnräder, Laterne auf F)');
+  if (migriert.version === 3 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v3 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
+
+  const v2 = await openGame(browser, saveUrl, 'Alter Spielstand (v2)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-v2')) {
+        localStorage.setItem(
+          'zomfy-towers.spielstand',
+          JSON.stringify({
+            version: 2,
+            time: { day: 4, minute: 300 },
+            player: { x: 2, z: 3, facing: 0, lantern: false },
+            inventory: { holz: 12, stein: 4, fasern: 2, schrott: 9, stoff: 1, zahnraeder: 1 },
+            tools: { axt: true, spitzhacke: false },
+            hotbar: { slots: ['axt', null, null, null, null, null, null, null], selected: 0 },
+            world: { houseLevel: 1, buildings: [{ id: 1, type: 'barrikade', i: 6, j: 2, turns: 0 }], nodes: {} },
+            flags: { introGesehen: true },
+            stats: { nightsSlept: 3 },
+          })
+        );
+        sessionStorage.setItem('zomfy-v2', '1');
+      }
+    },
+  });
+  const v3 = await v2.page.evaluate(() => window.zomfy.state());
+  if (v3.version === 3 && v3.time.day === 4 && v3.player.hp === 100 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v3 (Leben, Zuhause, Bauten bleiben)');
+  } else fail(`Migration v2: ${JSON.stringify(v3)}`);
+  checkMessages(v2);
+  await v2.context.close();
+}
+
+/**
+ * Meilenstein 3: Türme, Horde, Loot, Nacht und Morgenbericht. Läuft in festen
+ * Simulationsschritten (Playtest-Brücke), damit das Ergebnis nicht von der
+ * Rechengeschwindigkeit abhängt.
+ */
+async function runNightChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Nächte und Türme');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const state = () => z(() => window.zomfy.state());
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde']) window.zomfy.setFlag(f);
+    window.zomfy.setTime(9, 0);
+    window.zomfy.teleport(-3, 1.5, 0);
+    window.zomfy.give({ schrott: 60, zahnraeder: 2, holz: 10 });
+  });
+  await step(100);
+
+  // Turm mit der Tastatur: Q wählt den Bolzenwerfer, E setzt ihn vor die Figur
+  await page.keyboard.press('KeyQ');
+  await step(100);
+  const plan = await z(() => window.zomfy.placement);
+  await page.keyboard.press('KeyE');
+  await step(100);
+  await z(() => window.zomfy.finishDialog());
+  const turm = (await z(() => window.zomfy.buildings())).find((b) => b.type === 'bolzen');
+  if (plan?.type === 'bolzen' && turm) note(`✓ Türme: Q wählt den Bolzenwerfer, E setzt ihn (Feld ${turm.i}, ${turm.j})`);
+  else fail(`Türme: kein Bolzenwerfer gebaut (Plan ${JSON.stringify(plan)})`);
+
+  // Ein Bau, der der Horde den letzten Weg abschneidet, wird abgelehnt
+  const weg = await z(() => {
+    const e = window.zomfy.debugPath().entries[0];
+    return window.zomfy.build('barrikade', Math.floor(e.x), Math.floor(e.z));
+  });
+  if (weg === 'weg') note('✓ Wege: Bau auf dem letzten Weg der Horde wird abgelehnt');
+  else fail(`Wege: Bau auf dem Waldpfad ergab „${weg}“ statt „weg“`);
+
+  // Der Turm erledigt einen Schlurfer, der Loot fallen lässt
+  if (turm) {
+    await z((t) => window.zomfy.spawnZombie('schlurfer', t.i - 3.5, t.j + 0.5), turm);
+    let kills = 0;
+    for (let k = 0; k < 24 && !kills; k++) {
+      await step(500);
+      kills = (await state()).stats.kills || 0;
+    }
+    const loot = await z(() => window.zomfy.lootItems());
+    if (kills === 1 && loot.length) note(`✓ Türme: Bolzenwerfer erledigt einen Schlurfer, Loot liegt am Boden (${loot.map((l) => l.res).join(', ')})`);
+    else fail(`Türme: ${kills} Abschüsse, ${loot.length} Loot`);
+
+    // Einsammeln: hinlaufen reicht, der Magnet zieht es heran
+    const vorher = (await state()).inventory.schrott;
+    if (loot.length) await z((l) => window.zomfy.teleport(l.x + 0.8, l.z, 0), loot[0]);
+    await step(2000);
+    const nachher = (await state()).inventory.schrott;
+    const liegt = (await z(() => window.zomfy.lootItems())).length;
+    if (nachher > vorher && liegt < loot.length) note(`✓ Loot: im Sammelradius eingesammelt (Schrott ${vorher} → ${nachher})`);
+    else fail(`Loot: nicht eingesammelt (Schrott ${vorher} → ${nachher}, liegt noch ${liegt})`);
+
+    // Ausbauen über die Auswahl: Q = Stufe 2, dann Q = Spezialisierung A
+    await z((id) => window.zomfy.selectBuilding(id), turm.id);
+    await step(100);
+    await page.keyboard.press('KeyQ');
+    await step(100);
+    await page.keyboard.press('KeyQ');
+    await step(100);
+    const aus = (await z(() => window.zomfy.buildings())).find((b) => b.id === turm.id);
+    if (aus?.level === 3 && aus?.spec === 'A') note('✓ Ausbau: Stufe 2, dann Spezialisierung A über die Bauleiste');
+    else fail(`Ausbau: Turm steht auf ${JSON.stringify(aus)}`);
+    await page.keyboard.press('Escape');
+    await step(100);
+  }
+
+  // Wegvorschau beim Turmbau als Bild
+  await z(() => window.zomfy.teleport(-4, 0.5, 0));
+  await page.keyboard.press('KeyQ');
+  await step(600);
+  await page.screenshot({ path: join(SHOTS, 'turm-bauen.png') });
+  note('  Screenshot: screenshots/turm-bauen.png');
+  await page.keyboard.press('Escape');
+  await step(100);
+
+  // Nacht 1: drei Türme ums Haus, die Horde kommt um 20:30 in Wellen
+  await z(() => {
+    window.zomfy.build('bolzen', -7, -4);
+    window.zomfy.build('bolzen', 1, -9);
+    window.zomfy.teleport(0.5, 1.0, 0);
+    window.zomfy.setTime(20, 25);
+  });
+  await step(6000);
+  const n1 = await z(() => window.zomfy.nightState());
+  if (n1.night.n === 1 && n1.night.wave >= 1 && n1.alive + n1.queue > 0) note(`✓ Nacht: um 20:30 kommt Welle 1 (${n1.alive + n1.queue} Schlurfer)`);
+  else fail(`Nacht: Welle 1 kam nicht (${JSON.stringify(n1)})`);
+  // Welle 1 kommt aus dem Nordwesten: von der Nordseite aus zusehen, wie sie
+  // an den Türmen ankommt (weit genug weg, dass niemand Mika angreift)
+  await z(() => window.zomfy.teleport(1, -11, 0));
+  for (let k = 0; k < 30; k++) {
+    await step(1000);
+    if ((await z(() => window.zomfyView())).schlurferImBild >= 3) break;
+  }
+  await step(1200);
+  await page.screenshot({ path: join(SHOTS, 'horde.png') });
+  note('  Screenshot: screenshots/horde.png');
+  await z(() => window.zomfy.teleport(0.5, 1.0, 0));
+  let nacht = n1;
+  for (let k = 0; k < 60 && !nacht.night.done; k++) {
+    await step(5000);
+    nacht = await z(() => window.zomfy.nightState());
+  }
+  const home = (await state()).world.homeHp;
+  if (nacht.night.done && nacht.night.won) note(`✓ Nacht 1 überstanden: ${nacht.night.kills} Schlurfer besiegt, Zuhause ${home}/300`);
+  else fail(`Nacht 1: nicht geschafft (${JSON.stringify(nacht)}, Zuhause ${home})`);
+
+  // Schlafen, Morgenbericht, weiter mit E
+  await z(() => window.zomfy.interact('bett'));
+  for (let k = 0; k < 20 && (await z(() => window.zomfy.mode)) === 'sleep'; k++) await step(1000);
+  const view = await z(() => window.zomfyView());
+  if (view.modus === 'report' && view.bericht?.length) note(`✓ Morgenbericht: ${view.bericht[0]}`);
+  else fail(`Morgenbericht fehlt (Modus ${view.modus})`);
+  await step(600);
+  await page.screenshot({ path: join(SHOTS, 'bericht.png') });
+  note('  Screenshot: screenshots/bericht.png');
+  await page.keyboard.press('KeyE');
+  await step(200);
+  if ((await z(() => window.zomfy.mode)) === 'play') note('✓ Morgenbericht: E schließt ihn');
+  else fail('Morgenbericht: E schließt ihn nicht');
+
+  // Nacht 2 verloren: kostet Material, nie den Spielstand
+  const vorVerlust = await state();
+  await z(() => {
+    window.zomfy.setTime(20, 28);
+    window.zomfy.teleport(6, 4, 0);
+  });
+  await step(3000);
+  await z(() => {
+    window.zomfy.setHomeHp(3);
+    window.zomfy.spawnZombie('brummer', -3.2, -6.6);
+    window.zomfy.spawnZombie('brummer', 3.2, -6.6);
+  });
+  for (let k = 0; k < 30; k++) {
+    await step(1000);
+    const m = await z(() => window.zomfy.mode);
+    if (m === 'report') break;
+  }
+  const verloren = await state();
+  const bericht2 = (await z(() => window.zomfyView())).bericht || [];
+  const schrottWeg = vorVerlust.inventory.schrott - verloren.inventory.schrott;
+  if (verloren.stats.nightsLost === 1 && verloren.time.day === 3 && schrottWeg > 0 && verloren.world.homeHp > 0 && bericht2.length) {
+    note(`✓ Verlorene Nacht: ${schrottWeg} Schrott weg, Zuhause wieder ${verloren.world.homeHp}, Tag 3 beginnt (${bericht2[0]})`);
+  } else fail(`Verlorene Nacht: ${JSON.stringify({ lost: verloren.stats.nightsLost, day: verloren.time.day, schrottWeg, home: verloren.world.homeHp, bericht2 })}`);
+  checkMessages(session);
+  await session.context.close();
 }
 
 const syntaxOk = checkSyntax();

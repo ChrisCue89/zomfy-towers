@@ -8,6 +8,13 @@
 import * as THREE from 'three';
 import { damp } from '../core/math.js';
 
+const JITTER = [
+  [1, 0],
+  [0, -1],
+  [-1, 0],
+  [0, 1],
+];
+
 export class CameraRig {
   constructor(renderConfig, cameraConfig) {
     this.cfg = cameraConfig;
@@ -28,6 +35,8 @@ export class CameraRig {
     this._up = new THREE.Vector3(0, this.cos, -this.sin);
     this._ideal = new THREE.Vector3();
     this._projected = new THREE.Vector3();
+    this.shake = 0; // Sekunden Wackeln (Treffer), ganze Pixel
+    this._shakeTick = 0;
   }
 
   setViewport(rtWidth, rtHeight) {
@@ -67,6 +76,7 @@ export class CameraRig {
     const tz = target.z + (this.cfg.focusOffsetZ || 0) + (velocity ? velocity.z * ahead * 0.25 : 0);
     this.focus.x = damp(this.focus.x, tx, this.cfg.followSharpness, dt);
     this.focus.z = damp(this.focus.z, tz, this.cfg.followSharpness, dt);
+    this.shake = Math.max(0, this.shake - dt);
     this.applyBounds();
     this.place();
   }
@@ -82,12 +92,14 @@ export class CameraRig {
     const sx = Math.round(cx / px) * px;
     const sy = Math.round(cy / px) * px;
     this.residual.set((cx - sx) / px, (cy - sy) / px);
+    // Wackeln: ein ganzer Pixel reihum, nach dem Rest – sonst glättet es sich weg
+    const [jx, jy] = this.shake > 0 ? JITTER[this._shakeTick++ % JITTER.length] : [0, 0];
     cam.position.copy(ideal);
-    cam.position.x += sx - cx;
-    cam.position.addScaledVector(this._up, sy - cy);
+    cam.position.x += sx - cx + jx * px;
+    cam.position.addScaledVector(this._up, sy - cy + jy * px);
     cam.updateMatrixWorld(true);
     // Pixelindex des linken unteren Render-Target-Pixels in Weltpixeln.
-    this.ditherOffset.set(Math.round(sx / px - this.rtWidth / 2), Math.round(sy / px - this.rtHeight / 2));
+    this.ditherOffset.set(Math.round(sx / px - this.rtWidth / 2) + jx, Math.round(sy / px - this.rtHeight / 2) + jy);
   }
 
   /**

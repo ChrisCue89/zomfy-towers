@@ -76,8 +76,10 @@ src/config.js         Alle Stellschrauben + URL-Parameter
 src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       state.js (Spielzustand), save.js (Speichern, Migration),
                       inventory (Kosten/Vorrat), builder (Bauleiste, Platzieren,
-                      Auswahl, Abreißen, Hausausbau), gathering (Sammeln,
-                      Durchsuchen)
+                      Auswahl, Turm-Ausbau, Reparieren, Abreißen, Hausausbau,
+                      Wegvorschau), gathering (Sammeln, Durchsuchen), nights
+                      (Tagesschlurfer, Wellen, Sieg/Niederlage, Bericht),
+                      combat (Schlag, Lebenspunkte der Figur)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -87,12 +89,22 @@ src/world/            world (Zusammenbau + Update), layout (Grundriss +
                       Ressourcenquellen), terrain, nature, shelter (Stufen),
                       props, colliders, daynight, lights, particles, effects
                       (Späne, Staub), grid (Bauraster), resources (Quellen),
-                      buildings + buildingModels (Bauten), buildPreview
-                      (Geistermodell, Felder), lightPools (Lichtinseln)
-src/entities/         player, characters (Figuren-Bauer)
-src/ui/               font, icons, ui (Leinwand + Panels), hud, dialog, menu,
-                      buildbar (Bauleiste), crafting (Werkbank)
-src/data/             texts, dialogs, items, buildings, recipes, goals
+                      buildings + buildingModels (Bauten), towerModels
+                      (Türme je Stufe/Spezialisierung), buildPreview
+                      (Geistermodell, Felder), lightPools (Lichtinseln),
+                      pathing (Waldpfade, Flussfelder, Mazing, Wegvorschau)
+src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
+                      Instancing, Zustände, Angriffe), zombieModels, towers
+                      (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
+                      Magnet, Zerfall)
+src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
+                      Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
+                      buildbar (Bauleiste), crafting (Werkbank), report
+                      (Morgenbericht)
+src/data/             texts, dialogs, items, buildings, recipes, goals,
+                      towers (Werte je Stufe/Spezialisierung), zombies,
+                      waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
+                      (Figur-Aufwertungen)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
@@ -105,7 +117,8 @@ Grundprinzipien:
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `play`, `dialog`, `menu`, `craft` (Werkbank),
-  `sleep` (Schlafen, Ausruhen, Werkeln mit Abblende). Zeit läuft nur in
+  `report` (Morgenbericht), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
 - **Klicks werden in `update()` ausgewertet**, nicht beim Zeichnen (sonst
@@ -124,7 +137,15 @@ Grundprinzipien:
 - **Bauraster:** 1-m-Zellen (`grid.js`), statisch blockiert ist alles mit
   Kollision plus die Grundfläche aller Ausbaustufen des Zuhauses. Bauten
   belegen Zellen, bekommen eine Kollision und eine Interaktion (benutzen
-  oder mit E auswählen). Ab Meilenstein 3 rechnet die Horde darauf.
+  oder mit E auswählen). Die Horde rechnet darauf zwei Flussfelder
+  (`pathing.js`): `walk` (Bauten sperren) und `brute` (Brummer gehen durch
+  Barrikaden). Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der
+  einen Waldpfad abschneidet, wird mit Grund `weg` abgelehnt.
+- **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
+  `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
+  als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
+  Werte stehen in `src/data/zombies.js`, `towers.js`, `waves.js` – dort
+  wird balanciert, nicht im Code.
 - **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
   eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
 
@@ -151,8 +172,13 @@ Grundprinzipien:
    echten Tasten und Mausklicks: Axt, Baum fällen (E halten), Werkzeugpflicht,
    Durchsuchen, Bauleiste (Q, E), Esc bricht ab, Platzieren per Mausklick aufs
    richtige Feld, belegte Felder, Abreißen, Spitzhacke, Hüttenausbau,
-   Kollision des Anbaus, Bauten nach Neuladen, Migration v1 → v2 (Bilder:
-   werkbank, bauen, huette, huette-nacht). **Jede Konsolenmeldung
+   Kollision des Anbaus, Bauten nach Neuladen, Migration v1 → v3 und
+   v2 → v3 (Bilder: werkbank, bauen, huette, huette-nacht); ab Meilenstein 3
+   in festen Simulationsschritten: Turm mit Q/E, Ablehnung auf dem letzten
+   Weg, Abschuss mit Loot, Einsammeln, Ausbau über die Auswahl, Welle um
+   20:30, Nacht 1 mit drei Türmen gewonnen, Schlafen erst nach der Nacht,
+   Morgenbericht, verlorene Nacht mit Folgen (Bilder: turm-bauen, horde,
+   bericht). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -190,6 +216,11 @@ DESIGN.md bleiben verbindlich.
 | `?debug` | Entwickler-Anzeige an (sonst F3), `window.zomfy` |
 | `?test` | Test-Modus: kein Intro, `window.zomfy` (Uhr stellen, versetzen, …) |
 | `?playtest` | Playtest-Brücke: `window.__zomfyStep(ms)`, `window.zomfyView()` (nur lesen) |
+
+Im Test-Modus kann `window.zomfy` außerdem Schlurfer erzeugen
+(`spawnZombie`), die Horde abschalten (`setHorde(false)` für ruhige Bilder),
+eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`) und die
+Wege als Textkarte zeigen (`debugPath`).
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |
 | `?seed=123` | Anderer Welt-Seed |
 

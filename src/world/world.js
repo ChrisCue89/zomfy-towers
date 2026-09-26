@@ -13,6 +13,7 @@ import { BuildGrid } from './grid.js';
 import { ResourceNodes } from './resources.js';
 import { Buildings } from './buildings.js';
 import { LightPools } from './lightPools.js';
+import { Pathing, homeRect } from './pathing.js';
 import { DayNight } from './daynight.js';
 import { WarmLights } from './lights.js';
 import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js';
@@ -75,6 +76,9 @@ export class World {
       lights: this.lights,
       seed,
     });
+    this.pathing = new Pathing(this.grid, (id) => this.buildings.get(id));
+    this.pathing.setHome(homeRect(1));
+    this.buildings.pathing = this.pathing;
 
     this.particles = new Particles(800, seed);
     scene.add(this.particles.object);
@@ -141,6 +145,7 @@ export class World {
     this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
     this.heightZones = this.shelter.heightZones;
+    this.pathing.setHome(homeRect(level));
     this.refreshInteractions();
   }
 

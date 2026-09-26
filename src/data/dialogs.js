@@ -19,7 +19,8 @@ const hourOf = (state) => (6 + (state.time.minute || 0) / 60) % 24;
 function restAnswers(state) {
   const h = hourOf(state);
   if (h >= 6 && h < 17.5) return [{ t: 'Bis zum Abend ausruhen', aktion: 'wartenAbend' }, { t: 'Weitermachen', standard: true }];
-  if (h >= 17.5 && h < 21) return [{ t: 'Bis in die Nacht sitzen bleiben', aktion: 'wartenNacht' }, { t: 'Weitermachen', standard: true }];
+  // Abends nur bis kurz vor der Horde – in die Nacht hinein wird nicht gewartet
+  if (h >= 17.5 && h < 20.25) return [{ t: 'Warten, bis die Horde kommt', aktion: 'wartenNacht' }, { t: 'Weitermachen', standard: true }];
   return null;
 }
 
@@ -135,6 +136,19 @@ export const DIALOGE = {
   ],
 
   hausFertig: [{ s: 'mika', t: 'Geschafft. Das ist keine Notunterkunft mehr. Das ist eine Hütte. Meine Hütte.' }],
+
+  ersterTurm: [
+    { s: 'mika', t: 'Ein Bolzenwerfer. Der schießt von selbst auf alles, was aus dem Wald geschlurft kommt.' },
+    { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft. Nah am Haus kommen alle vorbei.' },
+    { s: 'mika', t: 'Heute Nacht kommt die Horde. Was sie liegen lässt, sammle ich ein – dafür gibt es neue Türme.' },
+  ],
+
+  abendHorde: [
+    { s: 'mika', t: 'Es wird dunkel. Aus dem Wald kommt ein Stöhnen … Heute Nacht kommt die Horde.' },
+    { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.' },
+  ],
+
+  bettHorde: [{ s: 'mika', t: 'Schlafen? Nicht, solange die Horde kommt. Erst muss die Nacht vorbei sein.' }],
 
   bank: (state) => withRest([{ s: 'mika', t: 'Eine Bank, selbst gebaut. Sitzt sich gleich doppelt so gut.' }], state),
 

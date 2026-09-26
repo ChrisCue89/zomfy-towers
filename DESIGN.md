@@ -205,15 +205,19 @@ Verteidigung mit immer stärkeren Nächten weiter.
 | 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht (Beute, Schäden), reparieren |
 | 08:00–17:00 | **Tag** | Sammeln, craften, bauen, erkunden; vereinzelte Schlurfer, selten ein kleiner Angriff |
 | 17:00–20:30 | **Abend** | Verteidigung ausbauen, Türme stellen; erste Vorboten |
-| 20:30–04:30 | **Nacht** | Die Horde in mehreren Wellen, Anführer in besonderen Nächten |
+| 20:30–05:30 | **Nacht** | Die Horde in mehreren Wellen, Anführer in besonderen Nächten |
 | danach | **Schlafen** | Im eigenen Bett: Tag endet, Spiel speichert, nächster Morgen |
 
 - Ein voller Tag dauert bei normalem Tempo etwa 14 Minuten Echtzeit
-  (1 Spielminute ≈ 0,6 s). Am Lagerfeuer oder im Sessel kann man bis zum
-  Abend bzw. in die Nacht ausruhen.
+  (1 Spielminute ≈ 0,6 s). Am Lagerfeuer, im Sessel oder auf der Bank kann
+  man bis zum Abend bzw. bis kurz vor der Horde ausruhen – in die Nacht
+  hinein wird nicht gewartet.
 - Ein Spieltag zählt von 06:00 bis 06:00. Schlafen führt zum Morgen 06:30.
-- Während die Horde unterwegs ist, kann man nicht schlafen (»Draußen ist es
-  zu laut«). Ist die letzte Welle besiegt, ist die Nacht gewonnen.
+- Schlafen geht erst, wenn die Nacht des Tages vorbei ist (»Erst muss die
+  Nacht vorbei sein«). Ist die letzte Welle besiegt – oder bricht um 05:30
+  der Morgen an und die letzten Schlurfer fliehen –, ist die Nacht gewonnen.
+- Um 20:00 warnt eine Meldung vor der Horde; wer um 19:00 noch keinen Turm
+  hat, bekommt einen Hinweis von Mika.
 - In Dialogen und im Menü steht die Zeit still. Bauen geht jederzeit.
 
 ## 6. Systeme
@@ -309,6 +313,9 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
   Zuhauses), sieht sichtbar anders aus und schaltet Neues frei.
 - **Einrichten:** Möbel im Inneren geben Gemütlichkeit; hohe Gemütlichkeit
   bringt Morgen-Boni (»gut ausgeschlafen«) und freut Überlebende.
+- **Sitzbank:** Hinsetzen heilt Mika sofort (höchstens alle 30 Sekunden) –
+  eine Verschnaufpause mitten in der Nacht, ohne Dialog. Tagsüber kann man
+  dort auch ausruhen.
 
 ### 6.9 Türme
 
@@ -356,15 +363,32 @@ blockieren Felder** – man lenkt die Horde also mit seinem Aufbau (»Mazing«).
 Ein Bauplatz, der das Zuhause vollständig abschneiden würde, wird abgelehnt.
 Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
 
+- Vier Waldpfade: Westen, Osten, Nordwesten, Nordosten. Eine Welle kommt in
+  den ersten Nächten von einer Seite, ab Nacht 3 manchmal von zwei; die
+  Meldung sagt, woher (»Welle 1 von 3 – aus dem Westen!«). Rote Marken am
+  Bildrand zeigen Schlurfer außerhalb des Bildes.
+- **Wegvorschau:** Beim Setzen von Türmen und Barrikaden laufen rote Punkte
+  die Wege der Horde entlang, vom Waldrand bis an die Hauswand. Alle Wege
+  treffen sich am Haus – dort lohnen die ersten Türme am meisten.
+- Am Haus angekommen, schlagen die Schlurfer auf die nächste Wand ein.
+
 ### 6.12 Verlorene Nacht, Morgenbericht, Reparatur
 
 - Sinkt die Standfestigkeit des Zuhauses auf null oder geht die Figur zu
   Boden, ist die Nacht verloren: Mika verschanzt sich im Keller, die Nacht
   endet sofort.
-- Folgen: ein Teil des Vorrats ist weg, Türme und Barrikaden sind beschädigt,
-  das Zuhause braucht Reparatur. **Nie Spielende, nie Verlust des
-  Spielstands.**
-- **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot, Schäden.
+- Folgen: ein Viertel des Schrotts und ein Zehntel der übrigen
+  Tagesmaterialien sind weg (Zahnräder und Moderkerne bleiben), Türme und
+  Barrikaden verlieren ein Drittel ihrer Haltbarkeit (ein Turm ohne
+  Haltbarkeit schweigt), das Zuhause steht danach bei der Hälfte. **Nie
+  Spielende, nie Verlust des Spielstands.**
+- **Tagsüber bricht nichts durch:** Tagesschlurfer bringen das Zuhause
+  höchstens auf ein Viertel. Geht Mika am Tag zu Boden, wacht sie zwei
+  Stunden später im Bett auf, ohne Verluste.
+- **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot, Schäden,
+  Verluste. `E` schließt ihn.
+- **Reparieren** über die Bauleiste (Reiter Zuhause: alles auf einmal, oder
+  einzeln über die Auswahl eines Baus) kostet Holz und Schrott.
 
 ### 6.13 Nahkampf und eigene Figur
 
@@ -467,7 +491,7 @@ Schlafen, Ausruhen am Feuer, Prüfskript mit Screenshots.
 Spitzhacke herstellen, Barrikaden setzen und die Unterkunft zur Hütte
 ausbauen.
 
-### Meilenstein 3 – Nächte, Türme und Loot (großer Meilenstein)
+### Meilenstein 3 – Nächte, Türme und Loot (großer Meilenstein) ✓
 
 - Schlurfer-Arten mit Animationen, Anführer; Tagesstreuner und kleine
   Angriffe; Horde in Wellen, jede Nacht stärker.

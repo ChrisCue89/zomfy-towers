@@ -5,6 +5,71 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 3 – Nächte, Türme und Loot ✓
+
+**Fertig**
+
+- **Die Horde:** sechs Arten mit eigener Silhouette (Schlurfer mit Blume,
+  Flitzer mit Kapuze, Schwärmer mit Pilzkappen, Brummer mit Leitkegel und
+  Panzerplatten, Leuchtpilz mit glühendem Hut, Anführer mit Geweihkrone und
+  Moosumhang), leuchtende Augen, Schlurf- und Schlaganimation, Aufblitzen
+  bei Treffern, Rückstoß, Zerfallen in Moos. Gezeichnet mit Instancing
+  (bis 110 Schlurfer je Art).
+- **Wege:** vier Waldpfade, zwei Flussfelder auf dem Bauraster (Bauten
+  sperren; Brummer schlagen sich durch Barrikaden), Ablehnung eines Baus,
+  der den letzten Weg abschneidet, Angriff auf die nächste Hauswand.
+  **Wegvorschau** beim Turm- und Barrikadenbau: rote Punkte laufen die Wege
+  entlang.
+- **Nächte:** ab 20:30 Wellen aus angesagter Richtung (Banner, Meldung,
+  Randmarken), jede Nacht mehr Wellen, mehr Schlurfer, mehr Leben und neue
+  Arten (Flitzer ab Nacht 2, Schwärmer 3, Brummer 4, Leuchtpilze 6),
+  Anführer jede fünfte Nacht. Tagsüber träge Einzelgänger und kleine Trupps.
+  Warnung um 20:00, Hinweis um 19:00 ohne Turm. Nacht-Leiste mit Welle und
+  Standfestigkeit des Zuhauses.
+- **Vier Türme** mit fünf Stufen und je zwei Spezialisierungen (Bolzenwerfer:
+  Scharfschütze/Repetierer, Kürbiskatapult: Feuer-/Streukürbis,
+  Rasensprenger: Frostnebel/Schlammschleuder, Laternenturm:
+  Leuchtfeuer/Glückslaterne), drehender Kopf, Geschosse, Spritzer,
+  brennender Boden, Auren, Stufen-Plaketten am Sockel.
+- **Loot:** Schrott, Zahnräder, Moderkerne fallen, wo ein Schlurfer stirbt,
+  fliegen im Sammelradius zur Figur, blinken und zerfallen nach 75 s.
+- **Bauleiste** mit den Reitern Türme · Figur · Zuhause: Turm wählen,
+  setzen, anklicken → Stufe 2, Spezialisierung A/B, weitere Stufen,
+  Reparieren, Abreißen (70 %). Figur-Aufwertungen: Sammelradius,
+  Lebenskraft, Schlagkraft, Tempo.
+- **Nahkampf (Übergang):** Klick schlägt mit Axt oder Faust (Bogen,
+  Trefferstopp, Rückstoß, Schadenszahlen, ein Pixel Kamerawackeln),
+  Lebenspunkte mit Regeneration, Bank heilt sofort.
+- **Verlorene Nacht:** Zuhause auf null oder Mika am Boden → Keller,
+  Morgen; ein Viertel Schrott und ein Zehntel der Tagesmaterialien weg,
+  Bauten angeschlagen, Zuhause bei der Hälfte – nie Spielende. Tagsüber
+  bricht nichts durch. **Morgenbericht** nach jeder Nacht.
+- Schlafen erst nach der Nacht; Ausruhen abends nur bis kurz vor der Horde.
+- Ziele: Axt → erster Turm → erste Nacht → Werkbank → Spitzhacke →
+  Barrikaden → Turm auf Stufe 3 → Hütte.
+- Spielstand v3 mit Migration (Leben, Standfestigkeit, Aufwertungen, Nacht,
+  Horde, Loot und Turmstufen werden gespeichert).
+- Prüfskript: Turm, Ablehnung, Abschuss, Loot, Ausbau, Welle, gewonnene und
+  verlorene Nacht, Bericht, Migration v2 → v3.
+
+**Balance (Simulation mit fester Schrittweite, passive Figur)**
+
+- Nacht 1 mit drei Bolzenwerfern am Haus: gewonnen, Zuhause 300/300. Mit
+  zwei Türmen am Haus hält es zwei Wellen, die dritte aus der offenen
+  Richtung bricht durch – mit etwas Nahkampf ist sie zu halten.
+- Türme weit weg vom Haus (6 m vor der Tür): verloren. Daraus entstand die
+  Wegvorschau und Mikas Hinweis »Nah am Haus kommen alle vorbei«.
+- Nacht 2 mit drei Türmen: gewonnen (260/300); Nacht 3 mit vier Türmen,
+  zwei davon Stufe 2: gewonnen (300/300); Nacht 5 (Anführer) mit fünf
+  Türmen bis Stufe 3: bis 02:00 ohne Schaden am Zuhause (Simulation dort
+  beendet).
+
+**Offen**
+
+- Playtest-Runde für Meilenstein 3.
+
+---
+
 ## Meilenstein 2 – Playtest-Runde 1 und Nachbesserung
 
 **Testspieler:** Jonas 5/10, Mira 8/10, Theo 7/10, Kira 7/10 – Berichte und
