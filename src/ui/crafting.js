@@ -20,7 +20,10 @@ export class CraftingMenu {
 
   open() {
     this.isOpen = true;
-    this.focus = 0;
+    // Zuerst das, was man sich leisten kann (nicht das schon Vorhandene)
+    const list = this.recipes();
+    const first = list.findIndex((r) => r.affordable);
+    this.focus = first >= 0 ? first : Math.max(0, list.findIndex((r) => !r.owned));
   }
 
   close() {

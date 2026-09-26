@@ -93,6 +93,11 @@ export class Input {
     return this.pressedCodes.has(code);
   }
 
+  /** Tastendruck einer Aktion verbrauchen (niemand sonst sieht ihn in diesem Bild). */
+  consume(action) {
+    for (const code of BINDINGS[action]) this.pressedCodes.delete(code);
+  }
+
   /** Bewegungsrichtung aus den Tasten (x = Osten, z = Süden). */
   moveVector() {
     return {

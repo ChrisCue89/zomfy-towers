@@ -59,14 +59,15 @@ export class Gathering {
     g.effects.chips(node.x, y, node.z, CHIP_KIND[node.kind], last ? 12 : 7);
     this.give(gains, node.x, y + 0.6, node.z);
     if (last) {
-      if (node.kind === 'baum') g.effects.leaves(node.x, node.z, node.model.startsWith('jung') ? 1.8 : 3);
+      if (node.kind === 'baum') g.effects.leaves(node.x, node.z, node.model.startsWith('jung') ? 1.8 : 3, 40);
+      g.effects.dust(node.x, node.z, node.kind === 'baum' ? 1.4 : 0.9, 16);
       this.deplete(node);
     }
   }
 
   deplete(node) {
     const g = this.game;
-    g.world.resources.setDepleted(node, true);
+    g.world.resources.startFall(node);
     g.state.world.nodes[node.id] = { until: g.state.time.day + node.rules.regrowDays };
     this.repeat = null;
   }

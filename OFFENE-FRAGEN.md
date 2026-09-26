@@ -78,6 +78,11 @@ einsammeln – das Risiko-gegen-Belohnung-Moment ginge verloren.
 ### 9. Abreißen und Verkaufen
 **Entscheidung:** Zuhause-Bauten geben alles zurück, Türme 70 % aller
 investierten Kosten.
+*Warum (nach Playtest m2-r1 bestätigt):* Umstellen soll im Zuhause nichts
+kosten – das ist gemütlich und lädt zum Ausprobieren ein. Das einzige Loch
+(Flachsbeet abreißen und sofort wieder ernten) ist geschlossen: Ein neues
+Beet ist erst am nächsten Tag reif. Bei Türmen kostet ein Fehlgriff dagegen
+Loot (Säule »Jede Entscheidung kostet«).
 
 ## Figur und Kampf
 
@@ -138,6 +143,14 @@ Werkbank → Spitzhacke → drei Barrikaden → Hütte). Erreichte Ziele melden 
 kurz und bleiben erreicht. Kein Tutorial-Text, keine Pfeile.
 *Warum:* Die Testspieler aus Meilenstein 1 fanden alles, aber nichts zu tun.
 Ein einziges Ziel gibt Richtung, ohne die Gemütlichkeit zu stören.
+
+### 20. Wie knapp ist Stein am Anfang?
+**Entscheidung:** Die Werkbank kostet 2 Stein (so viel liegt im Startvorrat),
+die Spitzhacke 2 Stein, fünf gut sichtbare Steinhaufen liegen auf der
+Lichtung, Bäume und Felsen wachsen nach 2 Tagen nach. Der Hüttenausbau
+(30 Holz, 12 Stein, 5 Stoff, 8 Schrott) ist ein Ziel für Tag 2.
+*Warum:* In Runde m2-r1 scheiterte ein Tester ohne Anleitung am Stein. Der
+erste Bau muss ohne Suche gelingen; Knappheit gehört in die späteren Ziele.
 
 ## Technik mit Auswirkung aufs Design
 

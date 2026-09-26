@@ -16,10 +16,10 @@ import { buildBirch, buildDeciduous, buildFir, buildRock } from './nature.js';
  * tool: nötiges Werkzeug oder null (mit der Hand).
  */
 export const NODE_RULES = {
-  baum: { tool: 'axt', hits: 4, yield: { holz: 1 }, bonus: { holz: 2 }, regrowDays: 3, prompt: 'hacken', sound: 'holz' },
-  felsen: { tool: 'spitzhacke', hits: 4, yield: { stein: 1 }, bonus: { stein: 2 }, regrowDays: 4, prompt: 'abbauen', sound: 'stein' },
+  baum: { tool: 'axt', hits: 4, yield: { holz: 1 }, bonus: { holz: 2 }, regrowDays: 2, prompt: 'hacken', sound: 'holz' },
+  felsen: { tool: 'spitzhacke', hits: 4, yield: { stein: 1 }, bonus: { stein: 2 }, regrowDays: 2, prompt: 'abbauen', sound: 'stein' },
   kiesel: { tool: null, hits: 1, yield: { stein: 2 }, bonus: {}, regrowDays: 1, prompt: 'aufsammeln', sound: 'stein' },
-  gras: { tool: null, hits: 2, yield: { fasern: 1 }, bonus: { fasern: 1 }, regrowDays: 2, prompt: 'rupfen', sound: 'gras' },
+  gras: { tool: null, hits: 2, yield: { fasern: 1 }, bonus: { fasern: 1 }, regrowDays: 1, prompt: 'rupfen', sound: 'gras' },
   aeste: { tool: null, hits: 1, yield: { holz: 2 }, bonus: {}, regrowDays: 1, prompt: 'aufsammeln', sound: 'holz' },
   schrott: { tool: null, hits: 1, search: true, regrowDays: 1, prompt: 'durchsuchen', sound: 'schrott' },
 };
@@ -44,44 +44,64 @@ function buildStump(seed, radius = 2) {
   return m;
 }
 
+/** Faserbusch: dichter Horst mit hellen Spitzen und goldenen Samenrispen. */
 function buildTallGrass(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 26; i++) {
     const x = rng.int(-3, 2);
     const z = rng.int(-2, 2);
-    const h = rng.int(2, 4);
-    for (let y = 0; y < h; y++) m.set(x, y, z, y === h - 1 ? (rng.chance(0.5) ? P.g8 : P.g7) : y === 0 ? P.g5 : P.g6);
+    const h = rng.int(3, 6);
+    for (let y = 0; y < h; y++) m.set(x, y, z, y === h - 1 ? (rng.chance(0.5) ? P.g9 : P.g8) : y === 0 ? P.g4 : P.g6);
+    if (rng.chance(0.35)) m.set(x, h, z, P.f6);
   }
-  if (rng.chance(0.7)) m.set(rng.int(-2, 1), 4, rng.int(-1, 1), P.a4);
   return m;
 }
 
+/** Lose Steine: ein kleiner Haufen heller Brocken auf einem Fleck Erde – hebt sich vom Gras ab. */
 function buildPebbles(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 7; i++) {
-    const x = rng.int(-3, 2);
-    const z = rng.int(-2, 2);
-    const c = rng.pick([P.s5, P.s6, P.s7, P.s4]);
-    m.set(x, 0, z, c);
-    if (rng.chance(0.35)) m.set(x, 1, z, P.s7);
+  m.box(-4, 0, -3, 3, 0, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -3 || z === 2) ? null : hash3(x, y, z, seed) < 0.5 ? P.e3 : P.e4));
+  const stones = [[-2, -1, 2], [1, 0, 2], [-1, 1, 1], [0, -2, 1], [2, 1, 1]];
+  for (const [x, z, h] of stones) {
+    const c = rng.pick([P.s7, P.s8, P.s6]);
+    m.box(x, 1, z, x + 1, h, z + 1, (vx, vy) => (vy === h ? P.s9 : c));
   }
+  m.set(-1, 3, 0, P.s9);
   return m;
 }
 
+/** Äste: ein zusammengeschnürtes Bündel, das man im Gras sieht. */
 function buildBranches(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 3; i++) {
-    const x0 = rng.int(-4, -1);
-    const z0 = rng.int(-2, 2);
-    const len = rng.int(4, 7);
-    const dz = rng.int(-1, 1);
-    m.line(x0, 0, z0, x0 + len, 0, z0 + dz, i % 2 ? P.e3 : P.e4);
-    m.set(x0 + 2, 1, z0, P.g5);
+  for (let i = 0; i < 5; i++) {
+    const z0 = rng.int(-2, 1);
+    const y = i < 3 ? 0 : 1;
+    m.line(-4, y, z0, 3, y, z0 + rng.int(-1, 1), i % 2 ? P.e4 : P.e6);
   }
+  m.box(-1, 0, -2, -1, 2, 1, P.e8); // Schnur
+  m.set(2, 2, 0, P.g6).set(-3, 1, -1, P.g5);
   return m;
+}
+
+/** Rotes Stoffband um den Stamm: Diesen Baum darf man fällen. */
+function ribbon(m, y) {
+  const trunk = [];
+  for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) if (m.has(x, y, z)) trunk.push([x, z]);
+  for (const [x, z] of trunk) {
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx;
+      const nz = z + dz;
+      if (m.has(nx, y, nz)) continue;
+      m.set(nx, y, nz, P.a0);
+      m.set(nx, y + 1, nz, P.r3);
+    }
+  }
+  // lose Enden
+  const [ex, ez] = trunk.length ? trunk[trunk.length - 1] : [0, 0];
+  m.set(ex + 1, y - 1, ez + 1, P.a0).set(ex + 1, y - 2, ez + 1, P.r3);
 }
 
 function buildScrapPile(seed) {
@@ -104,18 +124,25 @@ function buildScrapPile(seed) {
 }
 
 function treeModel(model, seed) {
+  let m;
   switch (model) {
     case 'birke':
-      return buildBirch(seed, 1.0);
+      m = buildBirch(seed, 1.0);
+      break;
     case 'tanne':
-      return buildFir(seed, 0.85);
+      m = buildFir(seed, 0.85);
+      break;
     case 'eiche':
-      return buildDeciduous(seed, 0.9);
+      m = buildDeciduous(seed, 0.9);
+      break;
     case 'jungtanne':
-      return buildFir(seed, 0.6);
+      m = buildFir(seed, 0.6);
+      break;
     default:
-      return buildDeciduous(seed, 0.62);
+      m = buildDeciduous(seed, 0.62);
   }
+  ribbon(m, 5);
+  return m;
 }
 
 // --- Verwaltung -----------------------------------------------------------------
@@ -206,13 +233,33 @@ export class ResourceNodes {
     node.interaction.enabled = !depleted;
   }
 
-  /** Wackeln nach einem Treffer. */
+  /** Letzter Treffer: die Quelle sackt in sich zusammen, dann bleibt der Stumpf. */
+  startFall(node) {
+    node.depleted = true;
+    node.interaction.enabled = false;
+    node.fall = 0.3;
+  }
+
+  /** Wackeln und Pulsen nach einem Treffer, Zusammensacken nach dem letzten. */
   update(dt) {
     for (const node of this.nodes) {
+      if (node.fall > 0) {
+        node.fall = Math.max(0, node.fall - dt);
+        const q = 1 - node.fall / 0.3;
+        node.object.scale.set(1 + q * 0.3, Math.max(0.05, 1 - q * q), 1 + q * 0.3);
+        if (node.fall === 0) {
+          node.object.scale.set(1, 1, 1);
+          node.object.position.x = node.x;
+          this.setDepleted(node, true);
+        }
+        continue;
+      }
       if (node.shake <= 0) continue;
       node.shake = Math.max(0, node.shake - dt * 3.5);
       // Nur seitlich versetzen, nicht kippen: die Modelle haben keine Seitenflächen.
-      node.object.position.x = node.x + Math.sin(node.shake * 40) * node.shake * 0.05;
+      node.object.position.x = node.x + Math.sin(node.shake * 40) * node.shake * 0.09;
+      const pulse = 1 + node.shake * node.shake * 0.06;
+      node.object.scale.set(pulse, 1 + node.shake * node.shake * 0.04, pulse);
     }
   }
 }

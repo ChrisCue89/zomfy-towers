@@ -242,21 +242,21 @@ const ICONS = {
     ],
   },
   huette: {
-    legend: { k: P.e1, R: P.r3, W: P.e6, Y: P.f6, D: P.e3, G: P.g7 },
+    legend: { k: P.e1, R: P.r3, W: P.e6, Y: P.f6, D: P.e3 },
     rows: [
-      '......kk........',
-      '.....kRRk.......',
-      '....kRRRRk......',
-      '...kRRRRRRk.....',
-      '..kRRRRRRRRk....',
-      '...kWWWWWWk.....',
-      '...kYYWkDWk..k..',
-      '...kYYWkDWk.kGk.',
-      '...kWWWkDWkkGGGk',
-      '...kkkkkkkk.kGk.',
-      '.............k..',
+      '......kk....k...',
+      '.....kRRk..kYk..',
+      '....kRRRRkkYYYk.',
+      '...kRRRRRRkkYk..',
+      '..kRRRRRRRRkYk..',
+      '...kWWWWWWkkYk..',
+      '...kYYWkDWk.kk..',
+      '...kYYWkDWk.....',
+      '...kWWWkDWk.....',
+      '...kkkkkkkk.....',
     ],
   },
+
   abriss: {
     legend: { r: P.r4, k: P.r1 },
     rows: [

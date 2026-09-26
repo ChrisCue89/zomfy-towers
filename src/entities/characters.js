@@ -174,22 +174,22 @@ export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
   };
 }
 
-/** Axt: Stiel nach unten (−y), Blatt am Ende. */
+/** Axt: heller Stiel nach unten (−y), breites, blankes Blatt mit roter Bindung. */
 function buildAxeModel() {
   const m = new VoxelModel();
-  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e5));
-  m.box(0, -8, 1, 0, -6, 2, P.s6);
-  m.set(0, -8, 3, P.s8).set(0, -7, 3, P.s8).set(0, -6, 3, P.s8);
-  m.set(0, -7, -1, P.s5);
+  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e6));
+  m.box(0, -9, 1, 0, -5, 2, P.s7);
+  m.set(0, -9, 3, P.s9).set(0, -8, 3, P.s9).set(0, -7, 3, P.s9).set(0, -6, 3, P.s9).set(0, -5, 3, P.s9);
+  m.set(0, -7, -1, P.r3);
   return m;
 }
 
-/** Spitzhacke: Stiel nach unten, quer liegender Kopf. */
+/** Spitzhacke: dunkler Stiel, quer liegender dunkler Kopf mit hellen Spitzen. */
 function buildPickaxeModel() {
   const m = new VoxelModel();
-  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e5));
-  m.box(0, -8, -3, 0, -8, 3, P.s5);
-  m.set(0, -7, -3, P.s4).set(0, -7, 3, P.s4);
+  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e2 : P.e4));
+  m.box(0, -8, -3, 0, -8, 3, P.s3);
+  m.set(0, -7, -4, P.s8).set(0, -7, 4, P.s8).set(0, -8, -4, P.s6).set(0, -8, 4, P.s6);
   return m;
 }
 

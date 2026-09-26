@@ -354,7 +354,7 @@ async function runBuildChecks(browser, url) {
   else fail(`Axt: nicht genommen (${JSON.stringify(st.tools)}, ${JSON.stringify(st.hotbar)})`);
 
   // Baum fällen: E gedrückt halten, bis er fällt
-  await z(() => window.zomfy.teleport(-11.3, -2.5, -Math.PI / 2));
+  await z(() => window.zomfy.teleport(-6.85, -2.75, -Math.PI / 2));
   await settle(page, 3);
   const holzVorher = st.inventory.holz;
   await page.keyboard.down('KeyE');

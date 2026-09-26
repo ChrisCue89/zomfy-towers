@@ -276,6 +276,10 @@ export class Game {
       break;
     }
     if (current?.id !== this.goal?.id) this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
+    if (this.goal) {
+      const p = current.progress ? current.progress(this) : null;
+      this.goal.progress = p ? `(${Math.min(p[0], p[1])}/${p[1]})` : null;
+    }
   }
 
   // --- Dialoge, Menü, Schlafen ------------------------------------------------
@@ -373,7 +377,8 @@ export class Game {
       this.addToHotbar(recipe.gives.tool);
     }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
-    this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
+    const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
+    this.hud.toast(gives ? T.meldungen.verwertet(gives[1], T.ressourcen[gives[0]]) : T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
     this.quietSave();
     return true;
   }
@@ -579,6 +584,11 @@ export class Game {
         else if (it && it.id === sup.id) it = null;
       }
     }
+    // Kurz über die Reichweite hinausgerutscht? E trifft trotzdem, was eben noch angezeigt war.
+    if (!it && input.pressed('use') && !this.builder.placement && !this.player.busy) {
+      it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.45);
+      if (it && this.suppressed && it.id === this.suppressed.id) it = null;
+    }
     this.currentInteraction = it;
     if (it && input.pressed('use')) {
       this.interact(it);
@@ -642,6 +652,26 @@ export class Game {
     return this.rig.unproject(m.x + 1.5, this.pixel.height - m.y - 0.5, 0, out);
   }
 
+  /**
+   * Kann man hier gerade nichts holen? Dann zeigt der Hinweis das (gedimmt),
+   * statt erst beim Drücken zu scheitern.
+   */
+  interactionStatus(it) {
+    const st = this.state;
+    if (it.node) {
+      const node = this.world.resources.byId.get(it.node);
+      if (!node) return null;
+      if (node.rules.tool && !st.tools[node.rules.tool]) return T.aktionen.brauchtWerkzeug(T.gegenstaende[node.rules.tool]);
+      if (node.rules.search && st.world.searched[node.id] === st.time.day) return T.aktionen.heuteLeer;
+    }
+    if (it.search && st.world.searched[it.id] === st.time.day) return T.aktionen.heuteLeer;
+    if (it.use === 'ernten') {
+      const b = this.world.buildings.get(it.building);
+      if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
+    }
+    return null;
+  }
+
   render() {
     sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
     this.pixel.render(this.scene, this.rig, this.world.dayNight.look);
@@ -650,8 +680,10 @@ export class Game {
     ui.begin(this.input.mouse);
     const it = this.mode === 'play' ? this.currentInteraction : null;
     if (it) {
-      const pos = this.worldToUi(it.x, this.world.heightAt(it.x, it.z) + 1.3, it.z);
-      this.hud.prompt = { text: T.aktionen[it.prompt], x: pos.x, y: pos.y };
+      const ground = this.world.heightAt(it.x, it.z);
+      const pos = this.worldToUi(it.x, ground + 1.3, it.z);
+      const status = this.interactionStatus(it);
+      this.hud.prompt = { text: status || T.aktionen[it.prompt], dim: Boolean(status), x: pos.x, y: pos.y, target: this.worldToUi(it.x, ground, it.z) };
     } else {
       this.hud.prompt = null;
     }
@@ -661,6 +693,7 @@ export class Game {
     this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
+    this.hud.drawToasts(ui); // Meldungen liegen über der Werkbank
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);

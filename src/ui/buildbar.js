@@ -110,7 +110,7 @@ export class BuildBar {
       return;
     }
     if (!option.affordable) {
-      this.game.hud.toast(T.meldungen.zuTeuer, null, 2);
+      this.game.hud.toast(option.missingText || T.meldungen.zuTeuer, null, 2.2);
       return;
     }
     if (option.confirm && (!this.armed || this.armed.id !== option.id)) {
@@ -147,8 +147,9 @@ export class BuildBar {
       drawTiny(ctx, 'TAB', tx + 2, L.y - 9, COLORS.textDim);
     } else {
       const tw = measure(L.title) + 10;
-      ui.panel(L.x, L.y - 15, tw, 17, { fill: COLORS.fillLight, highlight: null });
-      ui.text(L.title, L.x + 5, L.y - 14, COLORS.gold);
+      const tx = Math.min(L.x, ui.width - tw - 4);
+      ui.panel(tx, L.y - 15, tw, 17, { fill: COLORS.fillLight, highlight: null });
+      ui.text(L.title, tx + 5, L.y - 14, COLORS.gold);
     }
     ui.panel(L.x, L.y, L.w, L.h);
 
@@ -167,7 +168,7 @@ export class BuildBar {
       });
       const size = iconSize(option.icon);
       drawIcon(ctx, option.icon, rect.x + Math.floor((rect.w - size.w) / 2), rect.y + 2 + Math.max(0, Math.floor((16 - size.h) / 2)));
-      if (!ready) ui.ditherRect(rect.x + 1, rect.y + 1, rect.w - 2, 18, 0.55, COLORS.inset);
+      if (!ready) ui.ditherRect(rect.x + 1, rect.y + 1, rect.w - 2, 18, 0.35, COLORS.inset);
       this.drawCost(ctx, option, rect);
       // Füllbalken: wie nah bin ich dran?
       const barW = rect.w - 4;
@@ -186,11 +187,23 @@ export class BuildBar {
 
   drawCost(ctx, option, rect) {
     if (option.disabled) {
-      drawTiny(ctx, '-', rect.x + rect.w / 2 - 1, rect.y + 20, COLORS.textDim);
+      // Häkchen: gebaut bzw. fertig
+      const cx = rect.x + Math.floor(rect.w / 2) - 3;
+      const cy = rect.y + 21;
+      ctx.fillStyle = COLORS.green;
+      for (const [x, y] of [[0, 2], [1, 3], [2, 4], [3, 3], [4, 2], [5, 1], [6, 0]]) ctx.fillRect(cx + x, cy + y, 1, 1);
       return;
     }
-    const entries = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
+    let entries = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
     if (!entries.length) return;
+    // Passt der ganze Preis nicht ins Feld, zeigen wir die ersten Posten und »+«
+    const width = (list) => list.reduce((w, [, v]) => w + String(v).length * 4 + 5, 0) - 1;
+    let more = false;
+    while (entries.length > 1 && width(entries) > rect.w - 6) {
+      entries = entries.slice(0, -1);
+      more = true;
+    }
+    if (more) drawTiny(ctx, '+', rect.x + rect.w - 5, rect.y + 20, COLORS.textDim);
     const inv = this.game.state.inventory;
     const widths = entries.map(([, v]) => String(v).length * 4 + 5);
     const total = widths.reduce((a, b) => a + b, 0) - 1;

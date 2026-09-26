@@ -95,7 +95,6 @@ export class Hud {
     if (show.hotbar) this.drawHotbar(ui);
     if (show.prompt && this.prompt) this.drawPrompt(ui, this.prompt);
     if (show.hotbar) this.drawLabels(ui);
-    this.drawToasts(ui);
     if (this.debugLines) this.drawDebug(ui);
   }
 
@@ -125,11 +124,12 @@ export class Hud {
     if (!goal) return;
     const x = 4;
     const y = 41;
-    const w = measure(goal.text) + 24;
+    const text = goal.progress ? `${goal.text} ${goal.progress}` : goal.text;
+    const w = measure(text) + 24;
     const flash = this.goalFlash > 0 && Math.floor(this.goalFlash * 8) % 2 === 0;
     ui.panel(x, y, w, 17, { frame: flash ? COLORS.gold : COLORS.frame });
     drawIcon(ui.ctx, 'ziel', x + 5, y + 3);
-    ui.text(goal.text, x + 17, y + 2, flash ? COLORS.gold : COLORS.textWarm);
+    ui.text(text, x + 17, y + 2, flash ? COLORS.gold : COLORS.textWarm);
   }
 
   visibleResources() {
@@ -270,17 +270,27 @@ export class Hud {
     const label = prompt.text;
     const w = measure(label) + 24;
     const h = 17;
+    // Ziel am Boden markieren: vier kleine Ecken, damit man sieht, worauf E wirkt
+    if (prompt.target) {
+      const tx = Math.round(prompt.target.x);
+      const ty = Math.round(prompt.target.y);
+      const color = prompt.dim ? COLORS.textDim : COLORS.textWarm;
+      for (const [dx, dy, ex, ey] of [[-9, -5, 1, 1], [8, -5, -1, 1], [-9, 5, 1, -1], [8, 5, -1, -1]]) {
+        ui.rect(tx + dx, ty + dy, 2, 1, color);
+        ui.rect(tx + dx + (ex < 0 ? 1 : 0), ty + dy + ey, 1, 1, color);
+      }
+    }
     const x = Math.round(Math.min(ui.width - w - 2, Math.max(2, prompt.x - w / 2)));
     const y = Math.round(Math.min(ui.height - 60, Math.max(40, prompt.y - h)));
     ui.panel(x, y, w, h);
     // Tastenkappe
-    ui.inset(x + 4, y + 3, 11, 11, { fill: COLORS.textWarm, border: COLORS.outline });
+    ui.inset(x + 4, y + 3, 11, 11, { fill: prompt.dim ? COLORS.textDim : COLORS.textWarm, border: COLORS.outline });
     ui.text(T.tasten.benutzen, x + 7, y + 1, COLORS.outline);
-    ui.text(label, x + 19, y + 2, COLORS.text);
+    ui.text(label, x + 19, y + 2, prompt.dim ? COLORS.textDim : COLORS.text);
   }
 
   drawToasts(ui) {
-    let y = 40;
+    let y = 64;
     for (const t of this.toasts) {
       const w = measure(t.text) + (t.icon ? 26 : 12);
       const slide = Math.min(1, t.time / 0.18);

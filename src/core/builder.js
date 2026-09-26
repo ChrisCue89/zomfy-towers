@@ -24,6 +24,7 @@ export class Builder {
     this.placement = null; // { type, optionId, name, cost, turns, i, j, ok, reason }
     this.selection = null; // Bau-ID
     this.useMouse = false;
+    this.hovered = null; // Bau unter dem Mauszeiger
     this.announced = new Set();
     this._ground = new THREE.Vector3();
   }
@@ -190,14 +191,17 @@ export class Builder {
       this.preview.showPlacement(pl.type, pl.turns, i, j, pl.ok);
       const click = pointerFree && input.mouse.clicked;
       if (click) input.consumeClick();
-      if (click || input.pressed('use')) this.tryPlace();
+      if (click || input.pressed('use')) {
+        input.consume('use');
+        this.tryPlace();
+      }
       return;
     }
 
-    // Kein Platzieren: Klick in die Welt wählt einen Bau aus (oder hebt die Auswahl auf).
+    // Kein Platzieren: Klick auf einen Bau wählt ihn aus (oder hebt die Auswahl auf).
+    this.hovered = pointerFree ? this.pick() : null;
     if (pointerFree && input.mouse.clicked) {
-      const ground = this.game.pointerGround(this._ground);
-      const b = ground ? this.world.buildings.atCell(Math.floor(ground.x), Math.floor(ground.z)) : null;
+      const b = this.hovered;
       if (b) {
         input.consumeClick();
         this.select(b.id);
@@ -219,6 +223,30 @@ export class Builder {
     }
   }
 
+  /**
+   * Bau unter dem Mauszeiger: Jeder Bau ist auf dem Bildschirm ein Kasten
+   * (Grundfläche × Höhe). Getroffen wird der vorderste.
+   */
+  pick() {
+    const g = this.game;
+    const m = g.input.mouse;
+    if (!m.inside) return null;
+    let best = null;
+    let bestZ = -Infinity;
+    for (const b of this.world.buildings.list) {
+      const { w, d } = footprint(b.type, b.turns);
+      const h = BUILDINGS[b.type].height || 1.2;
+      const a = g.worldToUi(b.i, h, b.j);
+      const c = g.worldToUi(b.i + w, 0, b.j + d);
+      if (m.x < a.x - 1 || m.x > c.x + 1 || m.y < a.y - 1 || m.y > c.y + 1) continue;
+      if (b.j + d > bestZ) {
+        bestZ = b.j + d;
+        best = b;
+      }
+    }
+    return best;
+  }
+
   select(id) {
     this.placement = null;
     this.selection = id;
@@ -228,13 +256,17 @@ export class Builder {
     const pl = this.placement;
     const hud = this.game.hud;
     if (!pl.ok) {
-      const text = { max: T.bauleiste.schonGebaut, belegt: T.meldungen.keinPlatz, figur: T.meldungen.figurImWeg, teuer: T.meldungen.zuTeuer }[pl.reason];
+      const lack = Object.entries(missing(this.game.state.inventory, pl.cost))
+        .map(([res, n]) => `${n} ${T.ressourcen[res]}`)
+        .join(', ');
+      const text = { max: T.bauleiste.schonGebaut, belegt: T.meldungen.keinPlatz, figur: T.meldungen.figurImWeg, teuer: T.bauleiste.fehlt(lack) }[pl.reason];
       hud.toast(text || T.meldungen.keinPlatz, null, 1.8);
       return;
     }
     const state = this.game.state;
     if (!pay(state.inventory, pl.cost)) return;
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
+    if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
     this.world.refreshInteractions();
     state.world.buildings = this.world.buildings.toState();
     state.stats.built += 1;
@@ -282,7 +314,8 @@ export class Builder {
   drawOverlay(ui) {
     const pl = this.placement;
     const sel = this.selected();
-    if (!pl && !sel) return;
+    const hov = !pl && this.hovered && this.hovered !== sel ? this.hovered : null;
+    if (!pl && !sel && !hov) return;
     const g = this.game;
     const box = (i, j, w, d) => {
       const a = g.worldToUi(i, 0, j);
@@ -301,9 +334,14 @@ export class Builder {
       const cz = pl.j + d / 2;
       for (let j = Math.floor(cz) - 4; j <= Math.floor(cz) + 4; j++) {
         for (let i = Math.floor(cx) - 4; i <= Math.floor(cx) + 4; i++) {
-          if (Math.hypot(i + 0.5 - cx, j + 0.5 - cz) > 3.6 || !grid.isFree(i, j)) continue;
+          if (Math.hypot(i + 0.5 - cx, j + 0.5 - cz) > 3.6) continue;
           if (i >= pl.i && i < pl.i + w && j >= pl.j && j < pl.j + d) continue;
           const r = box(i, j, 1, 1);
+          if (!grid.isFree(i, j)) {
+            // belegt: kleiner roter Punkt in der Mitte (so sieht man, warum es rot wird)
+            if (grid.index(i, j) >= 0 && grid.inside[grid.index(i, j)]) ui.rect(r.x + r.w / 2 - 1, r.y + r.h / 2, 2, 1, COLORS.buildBad);
+            continue;
+          }
           for (const [x, y] of [[r.x, r.y], [r.x + r.w - 2, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 2, r.y + r.h - 1]]) ui.rect(x, y, 2, 1, COLORS.textWarm);
         }
       }
@@ -312,6 +350,12 @@ export class Builder {
     if (sel) {
       const b = this.world.buildings.bounds(sel);
       thick(box(b.i, b.j, b.w, b.d), COLORS.gold);
+    }
+    if (hov) {
+      // Was träfe ein Klick? Dünner Rahmen um den Bau unter der Maus.
+      const b = this.world.buildings.bounds(hov);
+      const r = box(b.i, b.j, b.w, b.d);
+      ui.frame(r.x, r.y, r.w, r.h, COLORS.textWarm);
     }
   }
 

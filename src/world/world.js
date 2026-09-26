@@ -114,7 +114,7 @@ export class World {
     this.porchLight = L.addLight({ position: s.lights.porch, color: 0xffc070, intensity: 3.6, distance: 6.5, mode: 'lamp', flickerSpeed: 3, flickerAmount: 0.05 });
     this.tableLight = L.addLight({ position: s.lights.table, color: 0xffb865, intensity: 5.6, distance: 8, mode: 'lamp', flickerSpeed: 2.5, flickerAmount: 0.04 });
     this.stoveLight = L.addLight({ position: s.lights.stove, color: 0xff7a3a, intensity: 1.8, distance: 3.5, mode: 'always', dayFactor: 0.5, flickerSpeed: 6, flickerAmount: 0.18 });
-    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.8, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
+    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.2, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
     this.lanternLight.on = false;
 
     L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });
@@ -179,7 +179,7 @@ export class World {
   }
 
   /** Nächste benutzbare Stelle in Reichweite, bevorzugt in Blickrichtung. */
-  findInteraction(x, z, facing) {
+  findInteraction(x, z, facing, grace = 0) {
     const fx = Math.sin(facing);
     const fz = Math.cos(facing);
     let best = null;
@@ -192,7 +192,7 @@ export class World {
       const dx = it.x - x;
       const dz = it.z - z;
       const d = Math.hypot(dx, dz);
-      if (d > it.radius) continue;
+      if (d > it.radius + grace) continue;
       const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
       const score = d - facingDot * 0.5;
       if (score < bestScore) {

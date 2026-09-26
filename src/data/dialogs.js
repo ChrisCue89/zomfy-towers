@@ -32,8 +32,8 @@ function withRest(lines, state) {
 
 export const DIALOGE = {
   intro: [
-    { s: 'mika', t: 'Eine Lichtung, eine Hütte mit Dach und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
-    { s: 'mika', t: 'Die Hütte ist wacklig, aber sie hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
+    { s: 'mika', t: 'Eine Lichtung, ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
+    { s: 'mika', t: 'Die Notunterkunft ist wacklig, aber sie hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
     { s: 'mika', t: 'Am Hackklotz steckt sogar noch eine Axt. Damit fange ich an – und heute Abend schlafe ich im eigenen Bett.' },
   ],
 
@@ -116,7 +116,7 @@ export const DIALOGE = {
 
   axtFund: [
     { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich die jungen Bäume auf der Lichtung fällen.' },
-    { s: 'mika', t: 'Mit Holz und Stein baue ich mir zuerst eine Werkbank. Die Bauleiste unten rechts zeigt, was geht.' },
+    { s: 'mika', t: 'Die Bäume mit dem roten Band darf ich fällen. Lose Steine liegen auf der Wiese. Daraus baue ich eine Werkbank – die Leiste unten rechts zeigt, was geht.' },
   ],
 
   autoErstmals: [

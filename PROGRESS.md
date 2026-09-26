@@ -5,6 +5,46 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 2 – Playtest-Runde 1 und Nachbesserung
+
+**Testspieler:** Jonas 5/10, Mira 8/10, Theo 7/10, Kira 7/10 – Berichte und
+Auswertung in `playtests/m2-r1/` (`ZUSAMMENFASSUNG.md`).
+
+**Gefunden**
+
+- Blocker: Ohne Lesen kam man nicht an Stein (Kiesel unsichtbar, Felsen nur
+  mit Spitzhacke, Werkbank verbrauchte allen Stein).
+- Spielfluss: Flachsbeet-Trick (abreißen, neu bauen, wieder ernten), Stein
+  an Tag 1 zu knapp und zu langsames Nachwachsen, Quellen nicht von der
+  Kulisse zu unterscheiden, ein E-Druck löste zwei Dinge aus, Bauten nur am
+  Fuß anklickbar, kaum Treffer-Gefühl beim Sammeln.
+- Feinschliff: Meldungen über dem Ziel, abgeschnittene Titel und Preise,
+  fehlende Hinweise auf Rennen, leere Quellen ohne Hinweis u. v. m.
+
+**Geändert**
+
+- Stein: Werkbank 2 statt 4, Spitzhacke 2 statt 3, Hütte 12 statt 16 (Stoff
+  5 statt 6); fünf sichtbare Steinhaufen auf Erdflecken; Nachwachsen nach
+  2 Tagen (Gras nach 1).
+- Lesbarkeit: rote Stoffbänder an fällbaren Bäumen, auffällige Faserbüsche
+  und Astbündel, versteckten Felsen und Schrotthaufen versetzt, Axt und
+  Spitzhacke farblich getrennt, neues Symbol für den Hüttenausbau.
+- Treffer-Gefühl: Wackeln mit Pulsen, Zusammensacken mit Staub und Laub.
+- Bauen: Auswahl über den ganzen Bau plus Rahmen unter der Maus, belegte
+  Felder rot markiert, neues Beet erst morgen reif, E wird beim Setzen
+  verbraucht, Bauleiste mit Häkchen, gekürzten Preisen, lesbaren Titeln.
+- Hinweise: gedimmt »Heute leer – morgen wieder« / »Spitzhacke nötig«,
+  Zielmarkierung am Boden, E mit etwas Spielraum, Meldungen unter dem Ziel
+  und über der Werkbank, »1 Schrott gewonnen«, Startzeile mit Rennen,
+  Zähler am Barrikaden-Ziel.
+- OFFENE-FRAGEN.md Nr. 9 (bestätigt) und Nr. 20 (Stein am Anfang).
+
+**Offen**
+
+- Kontrollrunde (Jonas, Theo) auf dem nachgebesserten Stand.
+
+---
+
 ## Meilenstein 2 – Sammeln, Crafting und Bauen ✓
 
 **Fertig**
@@ -57,7 +97,7 @@ prüfen ab jetzt in jeder Runde »Erkennt man, was was ist?«.
 
 **Offen**
 
-- Playtest-Runde für Meilenstein 2.
+- Playtest-Runde für Meilenstein 2 – erledigt, siehe oben.
 
 ---
 

@@ -104,6 +104,8 @@ export const T = {
     axtNehmen: 'Axt nehmen',
     auswaehlen: 'Auswählen',
     ernten: 'Ernten',
+    brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
+    heuteLeer: 'Heute leer – morgen wieder',
   },
   tasten: {
     benutzen: 'E',
@@ -134,9 +136,10 @@ export const T = {
     bereit: (name) => `${name} ist jetzt bezahlbar`,
     nichtsGefunden: 'Nur Staub und rostige Schrauben.',
     ersterFund: (name) => `Erster Fund: ${name}!`,
-    geerntet: 'Heute schon geerntet. Morgen wächst mehr.',
+    verwertet: (n, name) => `${n} ${name} gewonnen`,
+    geerntet: 'Heute gibt es hier nichts zu ernten. Morgen wieder.',
     zielErreicht: 'Ziel erreicht!',
-    hinweisStart: 'WASD laufen · E benutzen · F Laterne · Esc Menü',
+    hinweisStart: 'WASD laufen · Umschalt rennen · E benutzen · F Laterne',
   },
   schlaf: {
     gutenacht: 'Gute Nacht …',
