@@ -1,0 +1,96 @@
+// Alle Texte der Oberfläche. Dialoge stehen in dialogs.js.
+// Jedes Zeichen muss in der Pixelschrift (src/ui/font.js) vorhanden sein.
+
+export const T = {
+  spielName: 'Zomfy Towers',
+  laden: 'Zomfy Towers wird geladen …',
+  tag: 'Tag',
+  phasen: {
+    morgen: 'Morgen',
+    tag: 'Tag',
+    abend: 'Abend',
+    nacht: 'Nacht',
+  },
+  // Feinere Tageszeiten nur für die Anzeige (Spiellogik nutzt die vier Phasen).
+  tageszeiten: [
+    [5, 'Morgengrauen'],
+    [6, 'Morgen'],
+    [8, 'Vormittag'],
+    [11, 'Mittag'],
+    [14, 'Nachmittag'],
+    [17, 'Abend'],
+    [19.5, 'Dämmerung'],
+    [21, 'Nacht'],
+  ],
+  ressourcen: {
+    holz: 'Holz',
+    stein: 'Stein',
+    fasern: 'Fasern',
+    schrott: 'Schrott',
+    stoff: 'Stoff',
+    technik: 'Technik',
+  },
+  gegenstaende: {
+    laterne: 'Laterne',
+    leer: 'Leere Hände',
+  },
+  aktionen: {
+    schlafen: 'Schlafen',
+    radio: 'Radio hören',
+    ofen: 'Ofen ansehen',
+    feuer: 'Ins Feuer schauen',
+    lesen: 'Lesen',
+    nachsehen: 'Nachsehen',
+    ansehen: 'Ansehen',
+    schaukeln: 'Schaukeln',
+    hinsetzen: 'Hinsetzen',
+  },
+  tasten: {
+    benutzen: 'E',
+    weiter: 'E',
+  },
+  meldungen: {
+    gespeichert: 'Spielstand gespeichert',
+    speichernFehler: 'Speichern nicht möglich',
+    speichernAus: 'Test-Modus: Speichern aus',
+    willkommen: 'Willkommen zurück!',
+    defekt: 'Der alte Spielstand war beschädigt. Er wurde beiseitegelegt.',
+    laterneAn: 'Laterne an',
+    laterneAus: 'Laterne weggesteckt',
+    neuerTag: (tag) => `Tag ${tag}`,
+    hinweisStart: 'WASD laufen · E benutzen · F Laterne · Esc Menü',
+  },
+  schlaf: {
+    gutenacht: 'Gute Nacht …',
+    tagKarte: (tag) => `Tag ${tag}`,
+    warten: 'Die Zeit vergeht …',
+  },
+  menue: {
+    titel: 'Pause',
+    weiter: 'Weiter spielen',
+    steuerung: 'Steuerung',
+    vollbild: 'Vollbild',
+    neuesSpiel: 'Neues Spiel',
+    zurueck: 'Zurück',
+    sicherFrage: 'Wirklich neu beginnen? Der Spielstand wird gelöscht.',
+    sicherJa: 'Ja, neu beginnen',
+    sicherNein: 'Lieber nicht',
+    fusszeile: 'Meilenstein 1 – Fundament und Look',
+  },
+  steuerung: [
+    ['W A S D / Pfeile', 'Laufen'],
+    ['Umschalt', 'Rennen'],
+    ['E / Leertaste', 'Benutzen, weiter'],
+    ['1–8 / Mausrad', 'Schnellleiste'],
+    ['F', 'Laterne an/aus'],
+    ['Esc', 'Menü'],
+    ['F3', 'Entwickler-Anzeige'],
+  ],
+  fehler: {
+    webgl: 'Dein Browser kann leider kein WebGL 2.\nZomfy Towers braucht es für die 3D-Welt.',
+    allgemein: 'Da ist leider etwas schiefgegangen:',
+  },
+  debug: {
+    titel: 'Entwickler',
+  },
+};
