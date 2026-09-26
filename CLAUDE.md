@@ -79,7 +79,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Auswahl, Turm-Ausbau, Reparieren, Abreißen, Hausausbau,
                       Wegvorschau), gathering (Sammeln, Durchsuchen), nights
                       (Tagesschlurfer, Wellen, Sieg/Niederlage, Bericht),
-                      combat (Schlag, Lebenspunkte der Figur)
+                      combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
+                      Erfahrung, Perk-Vergabe)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -100,11 +101,12 @@ src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank), report
-                      (Morgenbericht)
+                      (Morgenbericht), perkChoice (Perk-Wahl)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung), zombies,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
-                      (Figur-Aufwertungen)
+                      (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
+                      perks (Erfahrungskurve, Perks und ihre Wirkung)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
@@ -117,7 +119,7 @@ Grundprinzipien:
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `play`, `dialog`, `menu`, `craft` (Werkbank),
-  `report` (Morgenbericht), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `report` (Morgenbericht), `perk` (Perk-Wahl), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -129,8 +131,8 @@ Grundprinzipien:
   Q R T G C V, Tab) → Schnellleiste → Abbrechen (Esc/Rechtsklick, vor dem
   Menü) → Bewegung → Builder (Vorschau, Setzen, Auswahl per Klick) →
   Interaktion (E) → Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel,
-  `confirm` (E/Enter/Leertaste) in Dialogen und Menüs – die Leertaste wird
-  in Meilenstein 4 zum Ausweichen.
+  `confirm` (E/Enter/Leertaste) in Dialogen und Menüs, `dodge` (Leertaste)
+  im Spiel. Im Trefferstopp bleiben Tastendrücke liegen (`frozenFrame`).
 - **Die Maus wählt nur, wenn sie bewegt wird** (`input.mouse.moved`), sonst
   überschreibt ein ruhender Zeiger die Tastaturwahl. Vorgewählt ist in
   Rückfragen immer die harmlose Antwort (`standard: true` in dialogs.js).
@@ -178,7 +180,9 @@ Grundprinzipien:
    Weg, Abschuss mit Loot, Einsammeln, Ausbau über die Auswahl, Welle um
    20:30, Nacht 1 mit drei Türmen gewonnen, Schlafen erst nach der Nacht,
    Morgenbericht, verlorene Nacht mit Folgen (Bilder: turm-bauen, horde,
-   bericht). **Jede Konsolenmeldung
+   bericht); ab Meilenstein 4: Waffe bauen, Treffer in Mausrichtung,
+   Betäubung, Ausweichrolle, Erfahrung, Perk-Wahl, Waffen-Aufwertung,
+   Speichern v4 (Bilder: nahkampf, perks). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -219,8 +223,9 @@ DESIGN.md bleiben verbindlich.
 
 Im Test-Modus kann `window.zomfy` außerdem Schlurfer erzeugen
 (`spawnZombie`), die Horde abschalten (`setHorde(false)` für ruhige Bilder),
-eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`) und die
-Wege als Textkarte zeigen (`debugPath`).
+eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`), die Wege
+als Textkarte zeigen (`debugPath`), Erfahrung geben (`giveXp`), Waffen
+geben (`giveWeapon`) und Perks wählen (`choosePerk`).
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |
 | `?seed=123` | Anderer Welt-Seed |
 

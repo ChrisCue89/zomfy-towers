@@ -28,6 +28,7 @@ const TINT = {
   frozen: new THREE.Color(0.75, 0.95, 1.5),
   burning: new THREE.Color(1.5, 0.95, 0.6),
   slowed: new THREE.Color(0.85, 0.97, 1.2),
+  stunned: new THREE.Color(1.35, 1.25, 0.75),
 };
 
 /** Unsichtbares Gerüst einer Art: Gelenke als Object3D, Teile als Anker. */
@@ -141,6 +142,7 @@ export class Horde {
       slow: 0,
       slowT: 0,
       freezeT: 0,
+      stunT: 0, // betäubt (Bratpfanne): steht, der Kopf taumelt
       burn: 0,
       burnT: 0,
       kx: 0,
@@ -206,6 +208,12 @@ export class Horde {
     z.freezeT = Math.max(z.freezeT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
   }
 
+  /** Betäuben (Nahkampf): steht still, schlägt nicht. Zähe nur halb so lange. */
+  stun(z, time) {
+    if (z.state === 'dying') return;
+    z.stunT = Math.max(z.stunT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+  }
+
   ignite(z, dps, time) {
     if (z.state === 'dying') return;
     z.burn = Math.max(z.burn, dps);
@@ -253,6 +261,7 @@ export class Horde {
       z.slowT = Math.max(0, z.slowT - dt);
       if (z.slowT <= 0) z.slow = 0;
       z.freezeT = Math.max(0, z.freezeT - dt);
+      z.stunT = Math.max(0, z.stunT - dt);
       if (z.burnT > 0) {
         z.burnT -= dt;
         z.burnAcc = (z.burnAcc || 0) + z.burn * dt;
@@ -275,7 +284,7 @@ export class Horde {
         }
       }
 
-      const frozen = z.freezeT > 0;
+      const frozen = z.freezeT > 0 || z.stunT > 0;
       let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - (ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0));
       if (frozen) speed = 0;
       z.cooldown = Math.max(0, z.cooldown - dt);
@@ -480,7 +489,7 @@ export class Horde {
       counts[z.type]++;
       this.pose(kind.rig, z);
       kind.rig.root.updateMatrixWorld(true);
-      const tint = z.flash > 0 ? TINT.flash : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
+      const tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
       for (const name of kind.parts) {
         const mesh = kind.meshes[name];
         mesh.setMatrixAt(k, kind.rig.anchors[name].matrixWorld);
@@ -505,7 +514,7 @@ export class Horde {
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
     const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || (z.state === 'chase' && z.windup <= 0);
-    const amt = z.freezeT > 0 ? 0 : moving ? 1 : 0.15;
+    const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
     let lean = run ? 0.32 : 0.14;
     let fall = 0;
@@ -524,6 +533,8 @@ export class Horde {
     p.legL.rotation.x = walk * 0.62 * amt;
     p.legR.rotation.x = -walk * 0.45 * amt;
     p.head.rotation.set(0.1 + Math.sin(t * 1.3 + z.id) * 0.06, Math.sin(t * 0.7 + z.id) * 0.2, 0.18 * Math.sin(t * 0.9 + z.id * 2));
+    // Betäubt: der Kopf kreist benommen
+    if (z.stunT > 0) p.head.rotation.set(0.25 + Math.cos(t * 9) * 0.2, 0, Math.sin(t * 9) * 0.45);
     // Arme: klassisch nach vorn gestreckt; beim Schlag hoch und herunter
     let arm = run ? -0.4 - walk * 0.7 * amt : -1.35 + Math.sin(z.phase * 1.3) * 0.12 * amt;
     if (z.attackAnim > 0) {

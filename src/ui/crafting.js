@@ -41,7 +41,7 @@ export class CraftingMenu {
   recipes() {
     const g = this.game;
     return RECIPES.map((r) => {
-      const owned = r.once && r.gives.tool && g.state.tools[r.gives.tool];
+      const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
     });
   }

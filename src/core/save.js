@@ -7,6 +7,15 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v3 -> v4: Meilenstein 4 (Waffen, Erfahrung, Perks). Alles beginnt bei null.
+  3: (data) => ({
+    ...data,
+    version: 4,
+    player: { ...(data.player || {}), xp: 0, level: 1 },
+    weapons: {},
+    perks: {},
+    perkChoice: null,
+  }),
   // v2 -> v3: Meilenstein 3 (Nächte, Türme, Loot). Neue Felder mit Standardwerten;
   // die erste Nacht beginnt am aktuellen Tag.
   2: (data) => ({

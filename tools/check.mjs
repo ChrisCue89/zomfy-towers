@@ -2,6 +2,9 @@
 //
 //   node tools/check.mjs            volle Prüfung im Headless-Browser
 //   node tools/check.mjs --syntax   nur Syntax aller Module
+//   node tools/check.mjs --nur=nahkampf,naechte
+//                                   nur einzelne Abschnitte (rundgang, speichern,
+//                                   bauen, naechte, nahkampf, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -18,6 +21,9 @@ import { start } from './serve.mjs';
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const SHOTS = join(ROOT, 'screenshots');
 const args = new Set(process.argv.slice(2));
+const only = [...args].find((a) => a.startsWith('--nur='))?.slice(6).split(',') || null;
+/** Soll dieser Abschnitt laufen? (ohne --nur: alle) */
+const want = (part) => !only || only.includes(part);
 
 function listSources(dir) {
   const out = [];
@@ -119,7 +125,50 @@ async function runBrowserChecks() {
   mkdirSync(SHOTS, { recursive: true });
   const { server, url } = await start(0);
   const browser = await launchBrowser(chromium);
+  let dayStats = null;
+  let nightStats = null;
   try {
+    if (want('rundgang')) ({ dayStats, nightStats } = await runTour(browser, url));
+    if (want('speichern')) await runSaveChecks(browser, url);
+
+    // --- 3. Meilenstein 2: Sammeln, Bauen, Werkbank, Hütte ---------------------------
+    if (want('bauen')) await runBuildChecks(browser, url);
+
+    // --- 4. Meilenstein 3: Türme, Horde, Loot, Nächte ---------------------------------
+    if (want('naechte')) await runNightChecks(browser, url);
+
+    // --- 5. Meilenstein 4: Nahkampf, Waffen, Ausweichen, Perks -------------------------
+    if (want('nahkampf')) await runCombatChecks(browser, url);
+
+    // --- 6. Große Auflösung (Full HD) --------------------------------------------------
+    if (want('hd')) {
+      const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
+      await shot(hd.page, 'nacht-fullhd', () => {
+        window.zomfy.setHorde(false);
+        window.zomfy.setFlag('abendHinweis');
+        window.zomfy.finishDialog();
+        window.zomfy.teleport(2.25, -0.75, 0.5);
+        window.zomfy.toggleLantern();
+      });
+      checkMessages(hd);
+      await hd.context.close();
+    }
+
+    if (dayStats && nightStats) {
+      note('');
+      note('Leistung (Headless-Chromium mit Software-WebGL – echte GPUs sind um ein Vielfaches schneller):');
+      note(`  Tag:   ${dayStats.frameMs.toFixed(1)} ms/Bild, ${dayStats.calls} Draw-Calls, ${Math.round(dayStats.triangles / 1000)}k Dreiecke, ${dayStats.width}×${dayStats.height} @${dayStats.scale}x`);
+      note(`  Nacht: ${nightStats.frameMs.toFixed(1)} ms/Bild, ${nightStats.calls} Draw-Calls, ${Math.round(nightStats.triangles / 1000)}k Dreiecke`);
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+}
+
+/** Abschnitte 0 und 1: Spielstart mit Intro, Rundgang mit Bildern, Laufen, Laterne, Ausruhen, Schrift. */
+async function runTour(browser, url) {
+  {
     // --- 0. Erster Eindruck: neues Spiel mit Einblenden und Intro -----------------
     const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart');
     await intro.page.evaluate(() => window.zomfy.setDebug(false));
@@ -193,8 +242,9 @@ async function runBrowserChecks() {
       window.zomfy.teleport(0, 2, 0);
     });
     const before = await page.evaluate(() => window.zomfy.state().player);
+    // In Bildern statt in Millisekunden – unter Last (langsame Bilder) sonst zu kurz
     await page.keyboard.down('KeyW');
-    await page.waitForTimeout(1200);
+    await settle(page, 45);
     await page.keyboard.up('KeyW');
     await settle(page, 5);
     const after = await page.evaluate(() => window.zomfy.state().player);
@@ -260,7 +310,13 @@ async function runBrowserChecks() {
 
     checkMessages(tour);
     await tour.context.close();
+    return { dayStats, nightStats };
+  }
+}
 
+/** Abschnitt 2: Bett, Schlafen, Speichern und Laden, kaputter Spielstand. */
+async function runSaveChecks(browser, url) {
+  {
     // --- 2. Speichern und Laden -----------------------------------------------------
     const saveUrl = `${url}index.html?test`;
     const first = await openGame(browser, saveUrl, 'Speichern', { init: () => {
@@ -286,7 +342,7 @@ async function runBrowserChecks() {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 3) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 4) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -318,33 +374,6 @@ async function runBrowserChecks() {
     else fail(`Kaputter Spielstand falsch behandelt: ${JSON.stringify(brokenState)}`);
     checkMessages(broken);
     await broken.context.close();
-
-
-    // --- 3. Meilenstein 2: Sammeln, Bauen, Werkbank, Hütte ---------------------------
-    await runBuildChecks(browser, url);
-
-    // --- 4. Meilenstein 3: Türme, Horde, Loot, Nächte ---------------------------------
-    await runNightChecks(browser, url);
-
-    // --- 5. Große Auflösung (Full HD) --------------------------------------------------
-    const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
-    await shot(hd.page, 'nacht-fullhd', () => {
-      window.zomfy.setHorde(false);
-      window.zomfy.setFlag('abendHinweis');
-      window.zomfy.finishDialog();
-      window.zomfy.teleport(2.25, -0.75, 0.5);
-      window.zomfy.toggleLantern();
-    });
-    checkMessages(hd);
-    await hd.context.close();
-
-    note('');
-    note('Leistung (Headless-Chromium mit Software-WebGL – echte GPUs sind um ein Vielfaches schneller):');
-    note(`  Tag:   ${dayStats.frameMs.toFixed(1)} ms/Bild, ${dayStats.calls} Draw-Calls, ${Math.round(dayStats.triangles / 1000)}k Dreiecke, ${dayStats.width}×${dayStats.height} @${dayStats.scale}x`);
-    note(`  Nacht: ${nightStats.frameMs.toFixed(1)} ms/Bild, ${nightStats.calls} Draw-Calls, ${Math.round(nightStats.triangles / 1000)}k Dreiecke`);
-  } finally {
-    await browser.close();
-    server.close();
   }
 }
 
@@ -496,10 +525,15 @@ async function runBuildChecks(browser, url) {
   });
   await settle(page, 5);
   const steinVorVerwerten = (await state()).inventory.stein;
-  for (const key of ['KeyS', 'KeyS', 'KeyE']) {
-    await page.keyboard.press(key); // runter zu »Stein zu Schrott verwerten«, einmal E
-    await settle(page, 3);
+  // Mit S bis »Stein zu Schrott verwerten« (die Liste wächst mit den Meilensteinen), dann einmal E
+  for (let k = 0; k < 12; k++) {
+    const zeilen = (await z(() => window.zomfyView().werkbank)) || [];
+    if (zeilen.some((l) => l.startsWith('> Stein zu Schrott'))) break;
+    await page.keyboard.press('KeyS');
+    await settle(page, 2);
   }
+  await page.keyboard.press('KeyE');
+  await settle(page, 3);
   const nachEinmal = (await state()).inventory.stein;
   await page.keyboard.press('KeyE');
   await settle(page, 3);
@@ -604,8 +638,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 3 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v3 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 4 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v4 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -632,8 +666,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
-  if (v3.version === 3 && v3.time.day === 4 && v3.player.hp === 100 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v3 (Leben, Zuhause, Bauten bleiben)');
+  if (v3.version === 4 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v4 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -649,7 +683,15 @@ async function runNightChecks(browser, url) {
   const { page } = session;
   const z = (fn, arg) => page.evaluate(fn, arg);
   const state = () => z(() => window.zomfy.state());
-  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  // Stufenaufstiege (Meilenstein 4) öffnen die Perk-Wahl und halten das Spiel an:
+  // unterwegs einfach die erste Karte nehmen
+  const step = async (ms) => {
+    await z((t) => window.__zomfyStep(t), ms);
+    await z(() => {
+      const choice = window.zomfy.state().perkChoice;
+      if (window.zomfy.mode === 'perk' && choice) window.zomfy.choosePerk(choice[0]);
+    });
+  };
   await z(() => {
     window.__zomfyHold = true;
     for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde']) window.zomfy.setFlag(f);
@@ -786,6 +828,134 @@ async function runNightChecks(browser, url) {
   if (verloren.stats.nightsLost === 1 && verloren.time.day === 3 && schrottWeg > 0 && verloren.world.homeHp > 0 && bericht2.length) {
     note(`✓ Verlorene Nacht: ${schrottWeg} Schrott weg, Zuhause wieder ${verloren.world.homeHp}, Tag 3 beginnt (${bericht2[0]})`);
   } else fail(`Verlorene Nacht: ${JSON.stringify({ lost: verloren.stats.nightsLost, day: verloren.time.day, schrottWeg, home: verloren.world.homeHp, bericht2 })}`);
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * Meilenstein 4: Waffen, Treffer, Betäubung, Ausweichrolle, Erfahrung,
+ * Perk-Wahl, Waffen-Aufwertung und Speichern (feste Simulationsschritte).
+ */
+async function runCombatChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Nahkampf und Perks', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m4')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m4', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const state = () => z(() => window.zomfy.state());
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const click = async (x, y, zz) => {
+    const t = await z(([a, b, c]) => window.zomfy.screenOf(a, b, c), [x, y, zz]);
+    await page.mouse.move(t.x, t.y);
+    await step(34);
+    await page.mouse.down();
+    await step(34);
+    await page.mouse.up();
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'introGesehen']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(10, 0);
+    window.zomfy.give({ holz: 30, stein: 20, schrott: 60, fasern: 20, stoff: 10, zahnraeder: 2 });
+    window.zomfy.teleport(0.5, 2.5, 0);
+  });
+  await step(100);
+
+  // Waffe an der Werkbank bauen: landet in der Schnellleiste und in der Hand
+  const gebaut = await z(() => window.zomfy.craft('schaufel'));
+  const hand = await z(() => window.zomfy.combatInfo().weapon);
+  if (gebaut && hand === 'schaufel') note('✓ Waffen: Schaufel gebaut, liegt in der Schnellleiste und in der Hand');
+  else fail(`Waffen: Schaufel ${gebaut ? 'gebaut' : 'nicht gebaut'}, in der Hand: ${hand}`);
+
+  // Klick in Richtung eines Schlurfers: Schaufel trifft mit 16
+  await z(() => window.zomfy.spawnZombie('schlurfer', 0.5, 3.7));
+  await click(0.5, 0, 3.7);
+  await step(400);
+  const getroffen = (await z(() => window.zomfy.zombies()))[0];
+  if (getroffen && Math.round(getroffen.hp) === 14) note('✓ Nahkampf: Klick schlägt in Richtung Maus, Schaufel trifft mit 16');
+  else fail(`Nahkampf: Schlurfer nach dem Schlag ${JSON.stringify(getroffen)}`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(900);
+
+  // Bratpfanne betäubt
+  await z(() => window.zomfy.craft('pfanne'));
+  await z(() => window.zomfy.spawnZombie('brummer', 0.5, 3.8));
+  await click(0.5, 0, 3.8);
+  await step(450);
+  const betaeubt = (await z(() => window.zomfy.zombies()))[0];
+  await page.screenshot({ path: join(SHOTS, 'nahkampf.png') });
+  note('  Screenshot: screenshots/nahkampf.png');
+  if (betaeubt && betaeubt.stun > 0 && betaeubt.hp < 150) note(`✓ Nahkampf: Bratpfanne trifft (${150 - Math.round(betaeubt.hp)} durch die Panzerung) und betäubt`);
+  else fail(`Nahkampf: Brummer nach der Pfanne ${JSON.stringify(betaeubt)}`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(900);
+
+  // Ausweichrolle: Leertaste, kurz unverwundbar, ein gutes Stück weiter
+  const vorRolle = await state();
+  await page.keyboard.down('KeyD');
+  await step(34);
+  await page.keyboard.press('Space');
+  await step(34);
+  const rolle = await z(() => window.zomfy.combatInfo());
+  await step(300);
+  await page.keyboard.up('KeyD');
+  await step(50);
+  const nachRolle = await state();
+  const weg = nachRolle.player.x - vorRolle.player.x;
+  if (rolle.action === 'roll' && rolle.invulnerable > 0 && weg > 1.2) note(`✓ Ausweichen: Leertaste rollt ${weg.toFixed(1)} m, dabei unverwundbar`);
+  else fail(`Ausweichen: ${JSON.stringify(rolle)}, Weg ${weg.toFixed(2)} m`);
+
+  // Erfahrung: Nahkampf-Abschuss zählt doppelt; Stufenaufstieg öffnet die Perk-Wahl
+  const xpVorher = (await state()).player.xp;
+  await z((pl) => window.zomfy.spawnZombie('schwaermer', pl.x, pl.z + 1.1), nachRolle.player);
+  await click(nachRolle.player.x, 0, nachRolle.player.z + 1.1);
+  await step(700);
+  const xpNachher = (await state()).player.xp;
+  if (xpNachher - xpVorher >= 1) note(`✓ Erfahrung: Abschuss im Nahkampf gibt ${xpNachher - xpVorher} Erfahrung`);
+  else fail(`Erfahrung: ${xpVorher} -> ${xpNachher}`);
+  await z(() => window.zomfy.giveXp(30));
+  await step(700);
+  const wahl = await z(() => ({ mode: window.zomfy.mode, view: window.zomfyView().perkWahl }));
+  await page.screenshot({ path: join(SHOTS, 'perks.png') });
+  note('  Screenshot: screenshots/perks.png');
+  await page.keyboard.press('Digit1');
+  await step(100);
+  const nachWahl = await state();
+  if (wahl.mode === 'perk' && wahl.view?.length === 3 && Object.keys(nachWahl.perks).length === 1) note(`✓ Perks: Stufe ${nachWahl.player.level}, drei Karten, Taste 1 wählt (${Object.keys(nachWahl.perks)[0]})`);
+  else fail(`Perks: Wahl ${JSON.stringify(wahl)}, danach ${JSON.stringify(nachWahl.perks)}`);
+  // Weitere offene Wahl (mehrere Stufen auf einmal) gleich mit erledigen
+  for (let k = 0; k < 4 && (await z(() => window.zomfy.mode)) === 'perk'; k++) {
+    await step(600);
+    await page.keyboard.press('Digit2');
+    await step(100);
+  }
+
+  // Waffen-Aufwertung über den Reiter »Figur« (C = Waffe in der Hand)
+  await page.keyboard.press('Tab');
+  await step(100);
+  await page.keyboard.press('KeyC');
+  await step(100);
+  const aufgewertet = (await state()).weapons.pfanne;
+  if (aufgewertet === 2) note('✓ Waffen: Bratpfanne über die Bauleiste (Figur, C) auf Stufe 2');
+  else fail(`Waffen: Bratpfanne auf Stufe ${aufgewertet}`);
+
+  // Speichern und Laden: Waffen, Stufe und Perks bleiben
+  await z(() => window.zomfy.sleepNow());
+  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 }).catch(() => {});
+  for (let k = 0; k < 30 && (await z(() => window.zomfy.mode)) === 'sleep'; k++) await step(1000);
+  const gespeichert = await state();
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  const geladen = await state();
+  if (geladen.version === 4 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+    note(`✓ Speichern v4: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
+  } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);
   await session.context.close();
 }

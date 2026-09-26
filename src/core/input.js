@@ -8,7 +8,8 @@ const BINDINGS = {
   right: ['KeyD', 'ArrowRight'],
   run: ['ShiftLeft', 'ShiftRight'],
   use: ['KeyE', 'Enter', 'NumpadEnter'],
-  confirm: ['KeyE', 'Space', 'Enter', 'NumpadEnter'], // Dialoge und Menüs (Leertaste wird später Ausweichen)
+  confirm: ['KeyE', 'Space', 'Enter', 'NumpadEnter'], // Dialoge und Menüs
+  dodge: ['Space'], // im Spiel: Ausweichrolle
   lantern: ['KeyF'],
   menu: ['Escape', 'KeyP'],
   debug: ['F3'],

@@ -394,15 +394,35 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
 
 - Die Figur ist die **letzte Verteidigungslinie**. Tagesschlurfer erledigt man
   selbst; nachts muss man ran, wenn die Horde durchbricht.
-- **Angriff** mit der linken Maustaste (in Richtung des Mauszeigers),
-  **Ausweichen** mit der Leertaste (kurze Rolle, unverwundbar).
-- **Waffen** mit spürbar verschiedenem Spielgefühl: Schaufel (ausgewogen),
-  Bratpfanne (langsam, wuchtig, betäubt), Rechen (große Reichweite, trifft
-  mehrere), Fäustlinge (schnelle Schlagfolgen). Waffen werden an der Werkbank
-  gebaut und über die Bauleiste mit Loot aufgewertet.
-- **Erfahrung und Perks:** Kämpfe geben Erfahrung. Jede Stufe bringt einen
-  Perk (Auswahl aus dreien), z. B. mehr Sammelradius, Ausweich-Konter,
-  Reparieren im Vorbeigehen, Schadensbonus nahe Türmen.
+- **Angriff** mit der linken Maustaste (in Richtung des Mauszeigers);
+  gedrückt halten schlägt weiter, ein Klick mitten im Schwung wird
+  vorgemerkt. Mika schlägt mit dem, was sie in der Hand hat (Schnellleiste):
+  Waffe, Axt, Spitzhacke – sonst mit den Fäusten.
+- **Ausweichen** mit der Leertaste: kurze Rolle (0,3 s, gut 1,5 m) in
+  Laufrichtung, dabei unverwundbar, danach 0,75 s Pause. Eine Rolle bricht
+  einen Schwung ab.
+- **Waffen** mit spürbar verschiedenem Spielgefühl, gebaut an der Werkbank
+  und zweimal aufgewertet über die Bauleiste (Reiter »Figur«, Taste C, die
+  Waffe in der Hand):
+
+| Waffe | Gefühl | Schaden | Tempo | Reichweite | Besonderes |
+|---|---|---|---|---|---|
+| Fäuste | Notbehelf | 6 | 2,6/s | 1,25 m | – |
+| Axt | Werkzeug, solide | 12 | 2,2/s | 1,55 m | trifft bis zu 3 |
+| Schaufel | ausgewogen | 16 | 1,9/s | 1,7 m | guter Rückstoß |
+| Bratpfanne | langsam, wuchtig | 30 | 1,0/s | 1,45 m | betäubt 0,9 s (Zähe halb so lange) |
+| Rechen | große Reichweite | 10 | 1,4/s | 2,3 m | trifft bis zu 5 |
+| Fäustlinge | schnelle Schlagfolge | 7 | 3,6/s | 1,25 m | jeder 3. Treffer in Folge doppelt |
+
+  Stufe 2 und 3 machen ×1,35 bzw. ×1,75 Schaden.
+- **Erfahrung und Perks:** Jeder besiegte Schlurfer gibt Erfahrung – im
+  Nahkampf doppelt, Tagesstreuner halb. Jede Stufe bringt eine Wahl aus drei
+  Perks; das Spiel hält dafür an. Neun Perks mit je zwei oder drei Stufen:
+  Sammlerherz (Sammelradius), Konter (nach dem Ausweichen doppelt), Flick-
+  schusterin (Bauten in der Nähe flicken sich), Rückendeckung (mehr Schaden
+  nahe Türmen), Zähe Natur (Treffer heilen), Flinke Hände (Schlagtempo),
+  Dickes Fell (weniger Schaden), Glückspilz (mehr Schrott), Zweiter Atem
+  (früher regenerieren).
 - **Aufwertungen der Figur** in der Bauleiste: Sammelradius, Lebenskraft,
   Schlagkraft, Tempo.
 
@@ -506,7 +526,7 @@ ausbauen.
 einsammeln, Türme bauen und spezialisieren – mit spürbar steigender
 Schwierigkeit und einer Anführernacht.
 
-### Meilenstein 4 – Nahkampf, Waffen und Perks
+### Meilenstein 4 – Nahkampf, Waffen und Perks ✓
 
 - Direkter Nahkampf mit Treffer-Feedback, Ausweichrolle, Lebenspunkte.
 - Vier Waffen mit eigenem Spielgefühl, Bau an der Werkbank, Aufwertung in

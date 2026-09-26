@@ -2,8 +2,10 @@
 // Änderungen am Aufbau: SAVE_VERSION erhöhen und Migration in save.js ergänzen.
 
 import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
+import { WEAPON_ORDER } from '../data/weapons.js';
+import { PERKS, PERK_IDS } from '../data/perks.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -13,11 +15,14 @@ export function createNewState(config) {
   return {
     version: SAVE_VERSION,
     time: { day: 1, minute: config.time.newGameMinute },
-    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100 },
+    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1 },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
+    weapons: {}, // gebaute Waffen: Name -> Stufe (1–3)
+    perks: {}, // gewählte Perks: Name -> Stufe
+    perkChoice: null, // offene Perk-Wahl (drei Namen), falls beim Speichern noch nicht gewählt
     world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null },
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
     night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
@@ -60,6 +65,8 @@ export function sanitizeState(data, config) {
   out.player.facing = num(data.player?.facing, 0, -10, 10);
   out.player.lantern = Boolean(data.player?.lantern);
   out.player.hp = num(data.player?.hp, 100, 1, 1000);
+  out.player.xp = num(data.player?.xp, 0, 0, 1e7);
+  out.player.level = Math.floor(num(data.player?.level, 1, 1, 99));
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
@@ -78,6 +85,12 @@ export function sanitizeState(data, config) {
   out.stats.nightsWon = Math.floor(num(data.stats?.nightsWon, 0, 0, 1e6));
   out.stats.nightsLost = Math.floor(num(data.stats?.nightsLost, 0, 0, 1e6));
   for (const k of Object.keys(out.upgrades)) out.upgrades[k] = Math.floor(num(data.upgrades?.[k], 0, 0, 3));
+  for (const k of WEAPON_ORDER) if (Number.isFinite(data.weapons?.[k])) out.weapons[k] = Math.floor(num(data.weapons[k], 1, 1, 3));
+  for (const k of PERK_IDS) if (Number.isFinite(data.perks?.[k])) out.perks[k] = Math.floor(num(data.perks[k], 0, 0, PERKS[k].max));
+  if (Array.isArray(data.perkChoice)) {
+    const choice = data.perkChoice.filter((id) => PERK_IDS.includes(id)).slice(0, 3);
+    out.perkChoice = choice.length ? choice : null;
+  }
   out.tools.axt = Boolean(data.tools?.axt);
   out.tools.spitzhacke = Boolean(data.tools?.spitzhacke);
   const w = data.world || {};

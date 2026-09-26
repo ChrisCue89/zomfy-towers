@@ -10,6 +10,11 @@ export const RARE_RESOURCES = ['moderkerne'];
 export const ITEMS = {
   axt: { icon: 'axt', tool: true },
   spitzhacke: { icon: 'spitzhacke', tool: true },
+  // Waffen (Meilenstein 4): ebenfalls in der rechten Hand
+  schaufel: { icon: 'schaufel', tool: true, weapon: true },
+  pfanne: { icon: 'pfanne', tool: true, weapon: true },
+  rechen: { icon: 'rechen', tool: true, weapon: true },
+  faeustlinge: { icon: 'faeustlinge', tool: true, weapon: true },
 };
 
 export const HOTBAR_SIZE = 8;

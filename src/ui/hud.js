@@ -9,6 +9,9 @@ import { clockText, hoursOf } from '../core/state.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, drawTiny } from './font.js';
 import { drawIcon, iconSize } from './icons.js';
+import { xpForLevel } from '../data/perks.js';
+
+const SWOOSH_TIME = 0.16;
 
 const SLOT = 20;
 const SLOT_GAP = 2;
@@ -35,6 +38,7 @@ export class Hud {
     this.speech = null; // { text, time, duration }
     this.banner = null; // { text, time }
     this.numbers = []; // Schadenszahlen
+    this.swooshes = []; // Schwung-Bögen im Nahkampf
     this.prompt = null; // { text, x, y }
     this.debugLines = null;
     this.slotRects = [];
@@ -80,6 +84,25 @@ export class Hud {
   }
 
   /** Schadenszahl an einer Weltposition (rot, wenn Mika getroffen wurde). */
+  /** Schwung-Bogen vor Mika: eine helle Sichel läuft einmal durch den Schlagbereich. */
+  swoosh(x, z, angle, reach, arc) {
+    this.swooshes.push({ x, z, angle, reach, arc, t: 0 });
+  }
+
+  drawSwooshes(ui) {
+    for (const w of this.swooshes) {
+      const q = w.t / SWOOSH_TIME;
+      const n = 11;
+      for (let k = 0; k < n; k++) {
+        const f = k / (n - 1);
+        if (f > q + 0.2 || f < q - 0.5) continue; // nur der vordere Teil der Sichel
+        const a = w.angle - w.arc + 2 * w.arc * f;
+        const p = this.game.worldToUi(w.x + Math.sin(a) * w.reach, 0.85, w.z + Math.cos(a) * w.reach);
+        ui.rect(Math.round(p.x), Math.round(p.y), 2, 2, f > q - 0.15 ? COLORS.text : COLORS.textDim);
+      }
+    }
+  }
+
   damageNumber(x, y, z, amount, hurt = false) {
     this.numbers.push({ x: x + (Math.random() - 0.5) * 0.3, y, z, text: String(amount), hurt, t: 0 });
     if (this.numbers.length > 24) this.numbers.shift();
@@ -109,6 +132,8 @@ export class Hud {
     this.homeFlash = Math.max(0, this.homeFlash - dt);
     for (const n of this.numbers) n.t += dt;
     this.numbers = this.numbers.filter((n) => n.t < 0.7);
+    for (const w of this.swooshes) w.t += dt;
+    this.swooshes = this.swooshes.filter((w) => w.t < SWOOSH_TIME);
     if (this.banner) {
       this.banner.time += dt;
       if (this.banner.time > 2.4) this.banner = null;
@@ -126,6 +151,7 @@ export class Hud {
   draw(ui, show) {
     if (show.prompt) {
       this.drawZombieBars(ui);
+      this.drawSwooshes(ui);
       this.drawNumbers(ui);
       this.drawEdgeMarkers(ui);
     }
@@ -135,6 +161,7 @@ export class Hud {
     this.drawNightBar(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
+    if (show.hotbar) this.drawXp(ui);
     if (show.prompt) this.drawActionProgress(ui);
     if (show.prompt) this.drawSpeech(ui);
     if (show.hotbar) this.drawHotbar(ui);
@@ -277,13 +304,30 @@ export class Hud {
     const hp = g.state.player.hp;
     if (hp >= max - 0.5 && !g.nights.active) return;
     const r = this.hotbarRect(ui);
-    const y = r.y - 8;
+    const y = r.y - 11;
     const w = r.w - 8;
     ui.rect(r.x + 4, y, w, 5, COLORS.outline);
     const q = Math.max(0, Math.min(1, hp / max));
     const flash = g.combat.hurtFlash > 0 && Math.floor(g.combat.hurtFlash * 16) % 2 === 0;
     ui.rect(r.x + 5, y + 1, Math.max(0, Math.round((w - 2) * q)), 3, flash ? COLORS.text : q > 0.3 ? COLORS.red : COLORS.buildBad);
     drawIcon(ui.ctx, 'herz', r.x + w - 2, y - 2);
+  }
+
+  /** Erfahrung: schmaler goldener Balken direkt über der Schnellleiste, links die Stufe. */
+  drawXp(ui) {
+    const pl = this.game.state.player;
+    if (pl.level <= 1 && pl.xp <= 0) return;
+    const r = this.hotbarRect(ui);
+    const y = r.y - 3;
+    const label = String(pl.level);
+    const lw = label.length * 4 + 3;
+    ui.rect(r.x + 4, y - 3, lw + 1, 7, COLORS.outline);
+    drawTiny(ui.ctx, label, r.x + 6, y - 2, COLORS.gold);
+    const x = r.x + 5 + lw;
+    const w = r.w - 9 - lw;
+    ui.rect(x, y, w, 3, COLORS.outline);
+    const q = Math.max(0, Math.min(1, pl.xp / xpForLevel(pl.level)));
+    if (q > 0) ui.rect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * q)), 1, COLORS.gold);
   }
 
   /** Kleine Lebensbalken über verletzten Schlurfern. */

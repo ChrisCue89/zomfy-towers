@@ -196,6 +196,37 @@ Stufe 3 bringen → Hütte.
 *Warum:* Der Kern ist die Verteidigung; der erste Turm muss an Tag 1 stehen.
 Werkbank und Spitzhacke folgen, wenn die erste Nacht geschafft ist.
 
+## Nahkampf (Meilenstein 4)
+
+### 24. Womit schlägt Mika – und wie wechselt man die Waffe?
+**Entscheidung:** Mit dem, was sie in der Hand hat: Die Schnellleiste
+(1–8, Mausrad) hält Werkzeuge und Waffen; die Auswahl ist auch die Waffe.
+Ohne Werkzeug gibt es Fäuste. Beim Sammeln nimmt Mika weiterhin das passende
+Werkzeug von selbst.
+*Warum:* Kein zweites Waffen-Menü, keine neue Taste. Wer die Schaufel in der
+Hand hat, sieht sie auch – die Figur zeigt, womit sie gleich zuschlägt.
+
+### 25. Woher kommt Erfahrung?
+**Entscheidung:** Jeder besiegte Schlurfer gibt Erfahrung (Art: `xp`), im
+Nahkampf doppelt, Tagesstreuner halb so viel. Auch Turm-Abschüsse zählen.
+*Warum:* Wer auf Türme setzt, soll trotzdem aufsteigen; wer rausgeht und
+kämpft, steigt schneller auf (Risiko gegen Belohnung, wie beim Loot).
+
+### 26. Hält die Perk-Wahl das Spiel an?
+**Entscheidung:** Ja. Bei einem Stufenaufstieg öffnet sich sofort die Wahl
+aus drei Karten (1/2/3, A/D + E oder Klick), in der ersten halben Sekunde
+zählen keine Eingaben. Mehrere Stufen auf einmal ergeben mehrere Wahlen
+nacheinander. Eine offene Wahl wird mitgespeichert.
+*Warum:* Mitten in der Nacht in Ruhe entscheiden zu können, ist gemütlicher
+als ein Menü, das man unter Druck wegklickt – und die Sperre verhindert,
+dass hektisches Drücken eine Karte wählt.
+
+### 27. Leertaste: Bestätigen oder Ausweichen?
+**Entscheidung:** Im Spiel weicht die Leertaste aus; in Dialogen, Menüs,
+Bericht und Perk-Wahl bestätigt sie weiterhin. Die Rolle geht auch mitten
+im Schwung (bricht ihn ab), aber nicht beim Durchsuchen oder Werkeln.
+*Warum:* Ausweichen muss sofort gehen, gerade wenn man sich verschätzt hat.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -13,6 +13,7 @@ import { T } from '../data/texts.js';
 import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint } from '../data/buildings.js';
 import { TOWERS, towerStats, towerInvested, TOWER_REFUND } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
+import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -129,7 +130,7 @@ export class Builder {
 
   figureOptions() {
     const st = this.game.state;
-    return UPGRADE_ORDER.map((id) => {
+    const options = UPGRADE_ORDER.map((id) => {
       const u = UPGRADES[id];
       const level = st.upgrades[id] || 0;
       const maxed = level >= u.cost.length;
@@ -150,6 +151,50 @@ export class Builder {
         st.inventory
       );
     });
+    const weapon = this.weaponToUpgrade();
+    if (weapon) options.push(this.weaponOption(weapon));
+    return options;
+  }
+
+  /** Welche Waffe die Leiste zum Aufwerten anbietet: die in der Hand, sonst die erste gebaute. */
+  weaponToUpgrade() {
+    const st = this.game.state;
+    const held = this.game.player.heldTool;
+    if (held && WEAPONS[held]?.cost && st.weapons[held]) return held;
+    return WEAPON_ORDER.find((id) => st.weapons[id]) || null;
+  }
+
+  weaponOption(id) {
+    const st = this.game.state;
+    const level = st.weapons[id];
+    const maxed = level >= 3;
+    const next = maxed ? level : level + 1;
+    const damage = Math.round(weaponStats(id, { ...st, weapons: { ...st.weapons, [id]: next } }).damage);
+    return this.option(
+      {
+        id: `waffe-${id}`,
+        icon: WEAPONS[id].icon,
+        name: T.figur.waffe(T.gegenstaende[id], next),
+        info: maxed ? T.figur.max : T.figur.waffeInfo(damage),
+        cost: maxed ? {} : WEAPONS[id].upgrades[level - 1],
+        disabled: maxed,
+        disabledText: T.figur.max,
+        badge: String(level),
+        action: () => this.upgradeWeapon(id),
+      },
+      st.inventory
+    );
+  }
+
+  upgradeWeapon(id) {
+    const st = this.game.state;
+    const level = st.weapons[id] || 0;
+    if (!level || level >= 3 || !pay(st.inventory, WEAPONS[id].upgrades[level - 1])) return;
+    st.weapons[id] = level + 1;
+    const p = this.game.player.position;
+    this.game.effects.splat(p.x, 1.2, p.z, 'funken', 12, 0.8);
+    this.game.hud.toast(T.meldungen.waffeAufgewertet(T.gegenstaende[id], level + 1), WEAPONS[id].icon, 2.4);
+    this.game.quietSave();
   }
 
   selectionOptions(b) {

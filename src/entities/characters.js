@@ -193,7 +193,48 @@ function buildPickaxeModel() {
   return m;
 }
 
-const TOOL_MODELS = { axt: buildAxeModel, spitzhacke: buildPickaxeModel };
+/** Schaufel: langer heller Stiel mit Griff, graues Blatt unten. */
+function buildShovelModel() {
+  const m = new VoxelModel();
+  m.box(0, -8, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e6));
+  m.box(0, 1, -1, 0, 1, 1, P.e3);
+  m.box(0, -12, -1, 0, -9, 1, (x, y, z) => (y === -12 ? P.s8 : z === 0 ? P.s6 : P.s5));
+  return m;
+}
+
+/** Bratpfanne: kurzer dunkler Griff, schwere schwarze Pfanne mit hellem Rand. */
+function buildPanModel() {
+  const m = new VoxelModel();
+  m.box(0, -4, 0, 0, 0, 0, P.e2);
+  m.box(0, -9, -2, 0, -5, 2, (x, y, z) => (Math.abs(z) === 2 || y === -9 || y === -5 ? P.s4 : P.s2));
+  return m;
+}
+
+/** Rechen: langer Stiel, Querholz mit Zinken. */
+function buildRakeModel() {
+  const m = new VoxelModel();
+  m.box(0, -10, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e6));
+  m.box(0, -11, -3, 0, -11, 3, P.e4);
+  for (let z = -3; z <= 3; z += 2) m.set(0, -12, z, P.s6);
+  return m;
+}
+
+/** Fäustlinge: dicker roter Strickhandschuh mit weißem Bündchen. */
+function buildMittenModel() {
+  const m = new VoxelModel();
+  m.box(-1, -2, -1, 1, 0, 1, (x, y, z) => (y === 0 ? P.s9 : (x + y + z) % 2 ? P.f2 : P.f3));
+  m.set(0, -1, 2, P.f2);
+  return m;
+}
+
+const TOOL_MODELS = {
+  axt: buildAxeModel,
+  spitzhacke: buildPickaxeModel,
+  schaufel: buildShovelModel,
+  pfanne: buildPanModel,
+  rechen: buildRakeModel,
+  faeustlinge: buildMittenModel,
+};
 
 /** Oberkörper und Kopf als ein Voxel-Modell – für Porträts. */
 export function buildBustModel(spec) {

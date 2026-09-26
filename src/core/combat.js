@@ -1,16 +1,21 @@
-// Nahkampf der Figur (Meilenstein 3: ein Schlag – Meilenstein 4 baut ihn aus)
-// und ihre Lebenspunkte. Linksklick schlägt in Richtung des Mauszeigers
-// (ohne Maus: in Blickrichtung). Treffer blitzen weiß auf, stoßen zurück und
-// halten das Spiel ein, zwei Bilder lang an (Trefferstopp).
+// Nahkampf der Figur (DESIGN.md 6.13) und ihre Lebenspunkte. Linksklick
+// schlägt in Richtung des Mauszeigers (ohne Maus: in Blickrichtung) mit dem,
+// was Mika in der Hand hat: Waffe, Axt, Spitzhacke – sonst mit den Fäusten.
+// Leertaste: Ausweichrolle (kurz unverwundbar). Treffer blitzen weiß auf,
+// stoßen zurück, betäuben (Bratpfanne) und halten das Spiel ein, zwei Bilder
+// lang an (Trefferstopp). Besiegte Schlurfer geben Erfahrung, jede Stufe
+// eine Perk-Wahl (data/perks.js).
 
 import { T } from '../data/texts.js';
 import { upgradeValue } from '../data/upgrades.js';
+import { WEAPONS, weaponStats } from '../data/weapons.js';
+import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
+import { BUILDINGS } from '../data/buildings.js';
 
-const SWING = { duration: 0.42, hitAt: 0.16 };
-const REACH = 1.55;
-const ARC = Math.cos((65 * Math.PI) / 180);
-const REGEN_DELAY = 5;
 const REGEN_RATE = 4;
+const ROLL = { duration: 0.3, speed: 7, cooldown: 0.75, invulnerable: 0.34 };
+const COMBO_WINDOW = 0.8;
+const TOWER_NEAR = 3.5;
 
 export class Combat {
   /** @param {import('./game.js').Game} game */
@@ -19,6 +24,11 @@ export class Combat {
     this.sinceHurt = 99;
     this.invulnerable = 0;
     this.hurtFlash = 0;
+    this.rollCooldown = 0;
+    this.combo = 0;
+    this.sinceHit = 99;
+    this.counterReady = false; // Perk »Konter«: nach dem Ausweichen trifft der nächste Schlag härter
+    this.warned = false;
   }
 
   get maxHp() {
@@ -29,53 +39,129 @@ export class Combat {
     return this.game.state.player.hp;
   }
 
-  update(dt) {
-    const st = this.game.state;
-    this.sinceHurt += dt;
-    this.invulnerable = Math.max(0, this.invulnerable - dt);
-    this.hurtFlash = Math.max(0, this.hurtFlash - dt);
-    const max = this.maxHp;
-    if (st.player.hp > max) st.player.hp = max;
-    if (this.sinceHurt > REGEN_DELAY && st.player.hp < max) st.player.hp = Math.min(max, st.player.hp + REGEN_RATE * dt);
+  /** Womit Mika gerade zuschlägt (Name aus weapons.js). */
+  get weaponId() {
+    const g = this.game;
+    const held = g.player.heldTool;
+    return held && weaponStats(held, g.state) ? held : 'faeuste';
   }
 
-  /** Schlag in Richtung (dx, dz). */
+  update(dt) {
+    const g = this.game;
+    const st = g.state;
+    this.sinceHurt += dt;
+    this.sinceHit += dt;
+    this.invulnerable = Math.max(0, this.invulnerable - dt);
+    this.hurtFlash = Math.max(0, this.hurtFlash - dt);
+    this.rollCooldown = Math.max(0, this.rollCooldown - dt);
+    const max = this.maxHp;
+    if (st.player.hp > max) st.player.hp = max;
+    if (this.sinceHurt > perkValue(st, 'zweiterAtem') && st.player.hp < max) st.player.hp = Math.min(max, st.player.hp + REGEN_RATE * dt);
+    // Perk »Flickschusterin«: Bauten in der Nähe flicken sich
+    const fix = perkValue(st, 'flicker');
+    if (fix > 0) {
+      const p = g.player.position;
+      for (const b of g.world.buildings.list) {
+        if (b.hp === undefined) continue;
+        const max = BUILDINGS[b.type].hp;
+        if (b.hp >= max) continue;
+        const c = g.world.buildings.bounds(b);
+        if (Math.hypot(c.x - p.x, c.z - p.z) < 2.5) b.hp = Math.min(max, b.hp + fix * dt);
+      }
+    }
+  }
+
+  /** Schlag in Richtung (dx, dz) mit dem, was Mika in der Hand hat. */
   attack(dx, dz) {
     const g = this.game;
     const p = g.player;
+    const id = this.weaponId;
+    const w = weaponStats(id, g.state) || WEAPONS.faeuste;
     const len = Math.hypot(dx, dz);
     const face = len > 0.01 ? { x: p.position.x + dx / len, z: p.position.z + dz / len } : null;
-    const tool = g.state.tools.axt ? 'axt' : null;
+    const duration = 1 / (w.rate * perkValue(g.state, 'flink'));
     return p.startAction('swing', {
-      ...SWING,
-      tool,
+      duration,
+      hitAt: duration * 0.38,
+      tool: id === 'faeuste' ? null : id,
       face,
-      onHit: () => this.hit(tool),
+      onHit: () => this.hit(id, w),
     });
   }
 
-  hit(tool) {
+  hit(id, w) {
     const g = this.game;
+    const st = g.state;
     const p = g.player.position;
     const fx = Math.sin(g.player.facing);
     const fz = Math.cos(g.player.facing);
-    const base = (tool ? 12 : 6) * upgradeValue(g.state, 'schlag');
-    let hits = 0;
+    const arc = Math.cos((w.arc * Math.PI) / 180);
+    g.hud.swoosh(p.x, p.z, g.player.facing, w.reach * 0.8, ((w.arc * Math.PI) / 180) * 0.85);
+    const found = [];
     for (const z of g.horde.list) {
       if (z.state === 'dying' || z.state === 'enter') continue;
       const dx = z.x - p.x;
       const dz = z.z - p.z;
       const d = Math.hypot(dx, dz);
-      if (d > REACH + z.def.radius) continue;
-      if (d > 0.3 && (dx * fx + dz * fz) / d < ARC) continue;
-      hits++;
-      g.horde.damage(z, base, { push: 0.55, fromX: p.x, fromZ: p.z, source: 'spieler' });
-      g.effects.splat(z.x, 0.8, z.z, 'moos', 6, 0.7);
+      if (d > w.reach + z.def.radius) continue;
+      if (d > 0.3 && (dx * fx + dz * fz) / d < arc) continue;
+      found.push({ z, d });
     }
-    if (hits) {
-      g.hitstop = 0.05;
-      g.rig.shake = 0.12;
+    if (!found.length) {
+      this.combo = 0;
+      return;
     }
+    found.sort((a, b) => a.d - b.d);
+    // Schnelle Folge: jeder n-te Treffer (Fäustlinge) trifft doppelt
+    this.combo = this.sinceHit <= COMBO_WINDOW ? this.combo + 1 : 1;
+    this.sinceHit = 0;
+    let factor = upgradeValue(st, 'schlag');
+    const comboHit = Boolean(w.combo && this.combo % w.combo === 0);
+    if (comboHit) factor *= 2;
+    if (this.counterReady) {
+      factor *= perkValue(st, 'konter');
+      this.counterReady = false;
+    }
+    if (g.world.buildings.towers.some((t) => {
+      const c = g.world.buildings.bounds(t);
+      return Math.hypot(c.x - p.x, c.z - p.z) < TOWER_NEAR;
+    })) factor *= perkValue(st, 'turmfreund');
+    const targets = found.slice(0, w.targets);
+    for (const { z } of targets) {
+      const killed = g.horde.damage(z, w.damage * factor, { push: w.push * (comboHit ? 1.6 : 1), fromX: p.x, fromZ: p.z, source: 'spieler' });
+      if (w.stun && !killed) g.horde.stun(z, w.stun);
+      g.effects.splat(z.x, 0.8, z.z, 'moos', comboHit ? 12 : 6, comboHit ? 1.1 : 0.7);
+    }
+    const heal = perkValue(st, 'lebensraub') * targets.length;
+    if (heal > 0) st.player.hp = Math.min(this.maxHp, st.player.hp + heal);
+    g.hitstop = comboHit || w.stun ? 0.08 : 0.05;
+    g.rig.shake = comboHit || w.stun ? 0.18 : 0.12;
+  }
+
+  /** Kann Mika gerade ausweichen? */
+  get canRoll() {
+    const p = this.game.player;
+    return this.rollCooldown <= 0 && (!p.action || p.action.kind === 'swing');
+  }
+
+  /** Ausweichrolle in Richtung (dx, dz) – ohne Richtung in Blickrichtung. */
+  roll(dx, dz) {
+    const g = this.game;
+    const p = g.player;
+    if (!this.canRoll) return false;
+    let len = Math.hypot(dx, dz);
+    if (len < 0.1) {
+      dx = Math.sin(p.facing);
+      dz = Math.cos(p.facing);
+      len = 1;
+    }
+    p.action = null; // eine Rolle bricht einen Schwung ab
+    p.startAction('roll', { duration: ROLL.duration, dir: { x: dx / len, z: dz / len }, speed: ROLL.speed });
+    this.rollCooldown = ROLL.cooldown;
+    this.invulnerable = Math.max(this.invulnerable, ROLL.invulnerable);
+    if (perkValue(g.state, 'konter') > 1) this.counterReady = true;
+    g.effects.dust(p.position.x, p.position.z, 0.5, 8);
+    return true;
   }
 
   /** Mika wird getroffen. */
@@ -83,6 +169,7 @@ export class Combat {
     const g = this.game;
     if (this.invulnerable > 0 || g.mode !== 'play') return;
     const st = g.state;
+    amount *= perkValue(st, 'dickesFell');
     st.player.hp = Math.max(0, st.player.hp - amount);
     this.sinceHurt = 0;
     this.invulnerable = 0.35;
@@ -104,5 +191,49 @@ export class Combat {
       g.hud.toast(T.horde.wenigLeben, 'herz', 3);
     }
     if (st.player.hp >= this.maxHp * 0.5) this.warned = false;
+  }
+
+  /**
+   * Erfahrung für einen besiegten Schlurfer (im Nahkampf doppelt). Beim
+   * Stufenaufstieg öffnet das Spiel die Perk-Wahl.
+   */
+  gainXp(amount) {
+    const g = this.game;
+    const pl = g.state.player;
+    pl.xp += amount;
+    let up = false;
+    while (pl.xp >= xpForLevel(pl.level)) {
+      pl.xp -= xpForLevel(pl.level);
+      pl.level += 1;
+      up = true;
+    }
+    if (up) g.hud.toast(T.perks.stufeAuf(pl.level), 'ziel', 2.4);
+    this.offerPerk();
+  }
+
+  /** Noch nicht gewählte Perks (eine Wahl pro Stufe, solange es welche gibt). */
+  get owedPerks() {
+    const st = this.game.state;
+    const taken = PERK_IDS.reduce((n, id) => n + perkLevel(st, id), 0);
+    const possible = PERK_IDS.reduce((n, id) => n + PERKS[id].max, 0);
+    return Math.max(0, Math.min(st.player.level - 1, possible) - taken);
+  }
+
+  /** Nächste Perk-Wahl bereitlegen (das Spiel zeigt sie im Modus »perk«). */
+  offerPerk() {
+    const st = this.game.state;
+    if (st.perkChoice || this.owedPerks <= 0) return;
+    const choice = rollPerkChoice(st, this.game.world.particles.rng);
+    if (choice.length) st.perkChoice = choice;
+  }
+
+  /** Perk nehmen. */
+  choosePerk(id) {
+    const st = this.game.state;
+    if (!st.perkChoice || !st.perkChoice.includes(id)) return false;
+    st.perks[id] = (st.perks[id] || 0) + 1;
+    st.perkChoice = null;
+    this.offerPerk();
+    return true;
   }
 }

@@ -33,6 +33,8 @@ import { Menu } from '../ui/menu.js';
 import { BuildBar } from '../ui/buildbar.js';
 import { CraftingMenu } from '../ui/crafting.js';
 import { ReportPanel } from '../ui/report.js';
+import { PerkChoice } from '../ui/perkChoice.js';
+import { perkValue, PERKS, xpForLevel } from '../data/perks.js';
 import { drawText, measure, GLYPH_ROWS } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
@@ -71,6 +73,8 @@ export class Game {
     this.hitstop = 0; // Trefferstopp: Simulation hält kurz an
     this.benchReady = 0; // ab wann die Bank wieder heilt (this.clock)
     this.treeHintUntil = 0; // Absage am Waldbaum nicht bei jedem Tastendruck
+    this.attackHeld = false; // Maustaste nach einem Schlag in die Welt gehalten
+    this.attackQueued = false; // Klick mitten im Schwung: gleich noch einmal
     this.homeWarned = -99;
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
@@ -104,9 +108,10 @@ export class Game {
     this.buildbar = new BuildBar(this);
     this.crafting = new CraftingMenu(this);
     this.report = new ReportPanel(this);
+    this.perkChoice = new PerkChoice(this);
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
-      onKill: (z) => this.onZombieKilled(z),
+      onKill: (z, source) => this.onZombieKilled(z, source),
       onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
       onBarricadeHit: (b, dmg) => this.onBarricadeHit(b, dmg),
@@ -183,7 +188,8 @@ export class Game {
   /** Ein Simulationsschritt inklusive Eingabe-Abschluss. */
   step(dt) {
     this.update(dt);
-    this.input.endFrame();
+    // Im Trefferstopp bleiben Tastendrücke liegen (sonst verpufft ein Druck genau dann)
+    if (!this.frozenFrame) this.input.endFrame();
     this.frame++;
     if (this.frame === 3) this.ready = true;
     if (this.frameWaiters.length) {
@@ -440,9 +446,19 @@ export class Game {
       st.tools[recipe.gives.tool] = true;
       this.addToHotbar(recipe.gives.tool);
     }
+    if (recipe.gives.weapon) {
+      st.weapons[recipe.gives.weapon] = 1;
+      this.addToHotbar(recipe.gives.weapon);
+    }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
-    this.hud.toast(gives ? T.meldungen.verwertet(gives[1], T.ressourcen[gives[0]]) : T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
+    if (gives) this.hud.toast(T.meldungen.verwertet(gives[1], T.ressourcen[gives[0]]), recipe.icon, 2);
+    else if (recipe.gives.weapon) this.hud.toast(T.meldungen.waffeGebaut(T.rezepte[recipe.id]), recipe.icon, 2.6);
+    else this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
+    if (recipe.gives.weapon && !st.flags.ersteWaffe) {
+      st.flags.ersteWaffe = true;
+      this.hud.showHint(T.meldungen.ausweichen, 8);
+    }
     this.quietSave();
     return true;
   }
@@ -578,13 +594,17 @@ export class Game {
 
   // --- Horde: Treffer, Tod, Loot, verlorene Nacht --------------------------------
 
-  onZombieKilled(z) {
+  onZombieKilled(z, source) {
     const st = this.state;
     st.stats.kills = (st.stats.kills || 0) + 1;
     if (this.nights.active) st.night.kills += 1;
     const factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
     this.loot.drop(z.x, z.z, z.def.loot, factor);
+    // Perk »Glückspilz«: manchmal ein Stück Schrott mehr
+    if (this.world.particles.rng.next() < perkValue(st, 'glueckspilz')) this.loot.drop(z.x, z.z, { schrott: [1, 1] }, 1);
     this.effects.splat(z.x, 0.6, z.z, 'moos', 12, 0.9);
+    // Erfahrung: im Nahkampf doppelt, Tagesschlurfer halb
+    this.combat.gainXp(z.def.xp * (source === 'spieler' ? 2 : 1) * (z.day ? 0.5 : 1));
   }
 
   onHouseHit(dmg, z) {
@@ -693,7 +713,8 @@ export class Game {
     const input = this.input;
     this.clock += dt;
     if (input.pressed('debug')) this.showDebug = !this.showDebug;
-    if (this.hitstop > 0) {
+    this.frozenFrame = this.hitstop > 0;
+    if (this.frozenFrame) {
       // Trefferstopp: ein, zwei Bilder lang steht alles still
       this.hitstop -= dt;
       this.hud.update(dt);
@@ -732,6 +753,17 @@ export class Game {
         if (this.report.update(dt, input)) this.mode = 'play';
         this.player.idle(dt);
         break;
+      case 'perk': {
+        const chosen = this.perkChoice.update(input, dt);
+        if (chosen && this.combat.choosePerk(chosen)) {
+          this.perkChoice.close();
+          this.mode = 'play';
+          this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
+          this.quietSave();
+        }
+        this.player.idle(dt);
+        break;
+      }
       case 'sleep':
         this.updateSleep(dt);
         this.player.idle(dt);
@@ -742,7 +774,8 @@ export class Game {
 
     const hours = hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
-    this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, upgradeValue(this.state, 'radius'), (res, x, y, z) => this.collectLoot(res, x, y, z));
+    const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
+    this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z));
     this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
     this.updateGoals();
@@ -782,6 +815,10 @@ export class Game {
     if (input.pressed('lantern')) this.toggleLantern();
 
     this.player.speedFactor = upgradeValue(this.state, 'tempo');
+    if (input.pressed('dodge')) {
+      const m = input.moveVector();
+      this.combat.roll(m.x, m.z);
+    }
     this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
     const p = this.player.position;
     const sp = this.state.player;
@@ -792,12 +829,26 @@ export class Game {
     const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui);
     const rest = this.builder.update(dt, input, pointerFree);
     if (this.mode !== 'play') return;
-    // Übrig gebliebener Klick in die Welt: zuschlagen (in Richtung Mauszeiger)
-    if (rest === 'click' && !this.player.busy) {
-      const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
-      const pp = this.player.position;
-      if (ground) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
-      else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
+    // Übrig gebliebener Klick in die Welt: zuschlagen (in Richtung Mauszeiger).
+    // Gedrückt halten schlägt weiter; ein Klick mitten im Schwung wird vorgemerkt.
+    if (rest === 'click') this.attackHeld = true;
+    else if (!input.mouse.down) this.attackHeld = false;
+    const wantsAttack = rest === 'click' || (this.attackHeld && input.mouse.down) || this.attackQueued;
+    if (wantsAttack && !this.builder.placement) {
+      const act = this.player.action;
+      if (!act) {
+        this.attackQueued = false;
+        const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
+        const pp = this.player.position;
+        if (ground && this.input.mouse.inside) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
+        else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
+      } else if (rest === 'click' && act.kind === 'swing') this.attackQueued = true;
+    }
+    // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an)
+    if (this.state.perkChoice && !this.perkChoice.isOpen) {
+      this.perkChoice.open(this.state.perkChoice, this.state.player.level);
+      this.mode = 'perk';
+      return;
     }
 
     // Die Welt lebt: Horde, Türme, Nacht
@@ -945,8 +996,10 @@ export class Game {
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
     this.report.draw(ui);
+    this.perkChoice.draw(ui);
     // Meldungen liegen über dem Bericht; bei offener Werkbank darunter (nicht über dem Titel)
-    this.hud.drawToasts(ui, this.crafting.isOpen ? this.crafting.bottom(ui) : 64);
+    const toastY = this.crafting.isOpen ? this.crafting.bottom(ui) : this.perkChoice.isOpen ? this.perkChoice.bottom(ui) : 64;
+    this.hud.drawToasts(ui, toastY);
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
@@ -1085,6 +1138,11 @@ export class Game {
       bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
       meldungen: this.hud.toasts.map((t) => t.text),
       gedanke: this.hud.speech && this.hud.speech.time < this.hud.speech.duration ? this.hud.speech.text : null,
+      stufe: st.player.level,
+      erfahrung: `${Math.floor(st.player.xp)}/${xpForLevel(st.player.level)}`,
+      inDerHand: T.gegenstaende[this.player.heldTool] || T.gegenstaende.leer,
+      perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => `${k + 1}: ${T.perks[id][0]} – ${T.perks[id][1]}`) : null,
+      perks: Object.entries(st.perks).map(([id, n]) => `${T.perks[id][0]} ${n}`),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
     };
   }
@@ -1145,7 +1203,7 @@ export class Game {
         zo.state = 'walk';
         return zo.id;
       },
-      zombies: () => game.horde.list.map((z) => ({ id: z.id, type: z.type, x: z.x, z: z.z, hp: z.hp, state: z.state })),
+      zombies: () => game.horde.list.map((z) => ({ id: z.id, type: z.type, x: z.x, z: z.z, hp: z.hp, state: z.state, stun: z.stunT })),
       killAllZombies() {
         for (const z of [...game.horde.list]) if (z.state !== 'dying') game.horde.kill(z, 'test');
       },
@@ -1162,6 +1220,21 @@ export class Game {
       setDay(n) {
         game.state.time.day = n;
       },
+      /** Erfahrung geben (wie besiegte Schlurfer). */
+      giveXp: (n) => game.combat.gainXp(n),
+      choosePerk(id) {
+        const ok = game.combat.choosePerk(id);
+        if (ok && game.mode === 'perk') {
+          game.perkChoice.close();
+          game.mode = 'play';
+        }
+        return ok;
+      },
+      giveWeapon(id, level = 1) {
+        game.state.weapons[id] = level;
+        game.addToHotbar(id);
+      },
+      combatInfo: () => ({ weapon: game.combat.weaponId, invulnerable: game.combat.invulnerable, rollCooldown: game.combat.rollCooldown, action: game.player.action?.kind || null }),
       /** Nacht des laufenden Tages sofort beenden (gewonnen oder verloren). */
       endNight(won = true) {
         const day = game.state.time.day;

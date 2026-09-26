@@ -64,6 +64,8 @@ export class Player {
       hit: false,
       tool: options.tool ?? null,
       progress: options.progress || false, // Balken über dem Kopf (Durchsuchen, Ernten)
+      dir: options.dir || null, // Ausweichrolle: Richtung und Tempo
+      speed: options.speed || 0,
       onHit: options.onHit || null,
       onDone: options.onDone || null,
       onCancel: options.onCancel || null,
@@ -83,8 +85,9 @@ export class Player {
    */
   update(dt, move, run) {
     this.time += dt;
+    const roll = this.action && this.action.kind === 'roll' ? this.action : null;
     if (this.action) {
-      // Durchsuchen bricht ab, wenn man losläuft; Schwünge laufen zu Ende.
+      // Durchsuchen bricht ab, wenn man losläuft; Schwünge und Rollen laufen zu Ende.
       const moving = Math.hypot(move.x, move.z) > 0.1;
       if (this.action.kind === 'search' && moving) {
         const cancelled = this.action;
@@ -101,8 +104,16 @@ export class Player {
     const targetVX = dirX * speed * Math.min(1, len);
     const targetVZ = dirZ * speed * Math.min(1, len);
     const sharp = len > 0 ? 14 : 18;
-    this.velocity.x = damp(this.velocity.x, targetVX, sharp, dt);
-    this.velocity.z = damp(this.velocity.z, targetVZ, sharp, dt);
+    if (roll) {
+      // Ausweichrolle: fester Schwung in eine Richtung, zum Ende hin langsamer
+      const k = 1 - 0.5 * (roll.t / roll.duration);
+      this.velocity.x = roll.dir.x * roll.speed * k;
+      this.velocity.z = roll.dir.z * roll.speed * k;
+      this.facing = Math.atan2(roll.dir.x, roll.dir.z);
+    } else {
+      this.velocity.x = damp(this.velocity.x, targetVX, sharp, dt);
+      this.velocity.z = damp(this.velocity.z, targetVZ, sharp, dt);
+    }
 
     const beforeX = this.position.x;
     const beforeZ = this.position.z;
@@ -157,6 +168,14 @@ export class Player {
     p.head.rotation.y = Math.sin(this.time * 0.35) * 0.18 * idle;
     p.head.rotation.z = Math.sin(this.phase) * 0.04 * amt;
     p.body.rotation.x = 0;
+    if (a && a.kind === 'roll') {
+      // Hechtsprung: tief nach vorn, Beine angezogen
+      const q = Math.sin((a.t / a.duration) * Math.PI);
+      p.body.rotation.x = q * 1.05;
+      p.body.position.y = -q * 0.12;
+      p.legL.rotation.x = -q * 1.1;
+      p.legR.rotation.x = -q * 0.8;
+    }
 
     // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl)
     const shownTool = a ? a.tool : this.heldTool;

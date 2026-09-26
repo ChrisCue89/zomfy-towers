@@ -5,6 +5,39 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 4 – Nahkampf, Waffen und Perks ✓
+
+**Fertig**
+
+- **Waffen:** Schaufel (ausgewogen), Bratpfanne (langsam, wuchtig, betäubt),
+  Rechen (Reichweite, trifft bis zu fünf), Fäustlinge (schnelle Folge,
+  jeder dritte Treffer doppelt) – gebaut an der Werkbank, zweimal
+  aufwertbar über die Bauleiste (Reiter »Figur«, Taste C). Mika schlägt mit
+  dem, was sie in der Hand hat; ohne Werkzeug mit den Fäusten. Eigene
+  Modelle in der Hand und Symbole.
+- **Nahkampf:** Klick schlägt in Mausrichtung, gedrückt halten schlägt
+  weiter, ein Klick mitten im Schwung wird vorgemerkt. Schwung-Bogen,
+  Trefferstopp, Kamerawackeln, Rückstoß, betäubte Schlurfer taumeln
+  (gelblicher Schimmer, kreisender Kopf).
+- **Ausweichen** mit der Leertaste: kurze Rolle, unverwundbar, bricht einen
+  Schwung ab; Hinweis beim ersten Waffenbau.
+- **Erfahrung und Perks:** Abschüsse geben Erfahrung (Nahkampf doppelt),
+  Stufenbalken über der Schnellleiste; jede Stufe eine Wahl aus drei von
+  neun Perks (Sammlerherz, Konter, Flickschusterin, Rückendeckung, Zähe
+  Natur, Flinke Hände, Dickes Fell, Glückspilz, Zweiter Atem). Das Spiel
+  hält dafür an; eine offene Wahl wird mitgespeichert.
+- Neues Ziel »Baue an der Werkbank eine Waffe«.
+- Tastendrücke im Trefferstopp gehen nicht mehr verloren (vorher konnte
+  ein Druck genau dann verpuffen).
+- Spielstand v4 mit Migration; Prüfskript mit Waffe, Treffer, Betäubung,
+  Rolle, Erfahrung, Perk-Wahl, Waffen-Aufwertung und Speichern.
+
+**Offen**
+
+- Playtest-Runde für Meilenstein 4.
+
+---
+
 ## Meilenstein 2 – Kontrollrunde (m2-r2) und Nachbesserung
 
 **Testspieler:** Jonas 7/10 (vorher 5/10), Theo 8/10 (vorher 7/10) –
