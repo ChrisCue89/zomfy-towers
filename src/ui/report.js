@@ -42,11 +42,17 @@ export class ReportPanel {
     const out = [];
     out.push({ text: T.bericht.besiegt(r.kills) });
     out.push({ text: T.bericht.eingesammelt, res: r.loot, empty: T.bericht.nichts });
-    out.push({ text: T.bericht.zuhause(r.homeLost) });
+    if (r.preLoss > 0) out.push({ text: T.bericht.vorher(Math.round(r.preLoss)) });
+    out.push({ text: r.fell ? T.bericht.gefallen(r.homeNow, r.homeMax) : T.bericht.zuhause(r.homeLost, r.homeNow, r.homeMax) });
     if (r.broken) out.push({ text: T.bericht.kaputt(r.broken) });
+    if (r.lootLeft > 0) out.push({ text: T.bericht.beuteDraussen(r.lootLeft), warm: true });
     if (!r.won && r.losses) {
       out.push({ text: T.bericht.verlust, res: r.losses, bad: true, empty: T.bericht.nichts });
       out.push({ text: T.bericht.trost, dim: true });
+    } else if (r.won) {
+      // Ein Gedanke von Mika zum Schluss (m3-r1: »sehr nüchtern«)
+      const heil = (r.homeNow !== undefined ? r.homeNow >= r.homeMax : !r.homeLost) && !r.broken;
+      out.push({ text: heil ? T.bericht.schlussHeil : T.bericht.schlussKratzer, dim: true });
     }
     return out;
   }
@@ -68,7 +74,7 @@ export class ReportPanel {
     ui.rect(x + 10, y + 20, w - 20, 1, COLORS.frameDark);
     let cy = y + 27;
     for (const l of lines) {
-      ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : COLORS.text);
+      ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : l.warm ? COLORS.gold : COLORS.text);
       if (l.res) {
         let cx = x + 12 + measure(l.text) + 8;
         const entries = RESOURCES.map((res) => [res, l.res[res] || 0]).filter(([, n]) => n > 0);

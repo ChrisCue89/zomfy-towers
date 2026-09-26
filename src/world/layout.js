@@ -7,7 +7,7 @@ export const V = 1 / 8; // Voxelgröße
 export const LAYOUT = {
   // Begehbare Fläche: Superellipse (Exponent 4) – fast ein abgerundetes Rechteck.
   clearing: { cx: 0, cz: 0.5, rx: 16, rz: 12.5, power: 4 },
-  cameraBounds: { minX: -9.5, maxX: 9.5, minZ: -6.5, maxZ: 7.5 },
+  cameraBounds: { minX: -9.5, maxX: 9.5, minZ: -8.5, maxZ: 7.5 },
 
   // Notunterkunft: Ursprung = Südwest-Ecke unten, 40 × 28 Voxel (5 × 3,5 m).
   shelter: { x: -2.5, z: -6.0, width: 40, depth: 28 },

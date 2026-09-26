@@ -20,7 +20,7 @@ export const TOWERS = {
     projectile: 'bolzen',
     base: [
       { cost: { schrott: 8 }, damage: 14, rate: 1.1, range: 5.5 },
-      { cost: { schrott: 10 }, damage: 21, rate: 1.2, range: 6 },
+      { cost: { schrott: 8 }, damage: 23, rate: 1.25, range: 6 },
     ],
     specs: {
       A: {
@@ -46,7 +46,7 @@ export const TOWERS = {
     projectile: 'kuerbis',
     base: [
       { cost: { schrott: 10 }, damage: 18, rate: 0.45, range: 6, splash: 1.2 },
-      { cost: { schrott: 12 }, damage: 26, rate: 0.5, range: 6.5, splash: 1.3 },
+      { cost: { schrott: 10 }, damage: 28, rate: 0.5, range: 6.5, splash: 1.3 },
     ],
     specs: {
       A: {
@@ -72,7 +72,7 @@ export const TOWERS = {
     projectile: 'wasser',
     base: [
       { cost: { schrott: 9 }, damage: 3, rate: 4, range: 3.5, slow: 0.35, slowTime: 1.2 },
-      { cost: { schrott: 11 }, damage: 4, rate: 4, range: 3.9, slow: 0.45, slowTime: 1.4 },
+      { cost: { schrott: 9 }, damage: 4, rate: 4, range: 3.9, slow: 0.45, slowTime: 1.4 },
     ],
     specs: {
       A: {
@@ -97,8 +97,8 @@ export const TOWERS = {
     role: 'unterstuetzung',
     projectile: null,
     base: [
-      { cost: { schrott: 12 }, aura: 0.15, auraRange: 3.2, range: 3.2 },
-      { cost: { schrott: 14 }, aura: 0.25, auraRange: 3.5, range: 3.5 },
+      { cost: { schrott: 12 }, aura: 0.25, auraRange: 3.8, range: 3.8, lightSlow: 0.1 },
+      { cost: { schrott: 12 }, aura: 0.35, auraRange: 4.1, range: 4.1, lightSlow: 0.12 },
     ],
     specs: {
       A: {
@@ -138,3 +138,17 @@ export function towerInvested(type, level, spec) {
 }
 
 export const TOWER_REFUND = 0.7;
+
+/**
+ * Jeder weitere Turm derselben Art kostet 2 Schrott mehr (höchstens +8) –
+ * sonst lohnt nur das Streuen billiger Bolzenwerfer, nie das Aufrüsten (m3-r1).
+ */
+export const TOWER_EXTRA = 2;
+export const TOWER_EXTRA_MAX = 8;
+
+/** Baukosten des nächsten Turms, wenn schon `count` dieser Art stehen. */
+export function towerBuildCost(type, count) {
+  const base = TOWERS[type].base[0].cost;
+  const extra = Math.min(TOWER_EXTRA_MAX, TOWER_EXTRA * count);
+  return { ...base, schrott: (base.schrott || 0) + extra };
+}

@@ -19,8 +19,8 @@ export const T = {
     [11, 'Mittag'],
     [14, 'Nachmittag'],
     [17, 'Abend'],
-    [19.5, 'Dämmerung'],
-    [21, 'Nacht'],
+    [19.25, 'Dämmerung'],
+    [20.5, 'Nacht'], // mit der Horde (20:30)
   ],
   ressourcen: {
     holz: 'Holz',
@@ -84,6 +84,11 @@ export const T = {
     hoechste: 'Höchste Stufe erreicht.',
     reparieren: 'Reparieren',
     nichtsKaputt: 'Alles heil.',
+    erstWelle: 'Erst die Welle abwehren – dann flicken.',
+    staffel: (n) => `Jeder weitere dieser Art kostet ${n} Schrott mehr.`,
+    wegeHinweis: 'Kreis: Reichweite · Pünktchen: Weg der Horde.',
+    wegeHinweisKurz: 'Pünktchen: Weg der Horde.',
+    teilweise: (p) => `Der Vorrat reicht für ${p} %.`,
     weg: 'Die Horde braucht einen Weg zum Haus.',
     kaputt: 'Kaputt – erst reparieren.',
     setzen: 'Klick oder E setzt · Mausrad dreht · Esc bricht ab',
@@ -119,9 +124,12 @@ export const T = {
   },
   horde: {
     richtung: { west: 'aus dem Westen', ost: 'aus dem Osten', nordwest: 'aus dem Nordwesten', nordost: 'aus dem Nordosten' },
+    richtungKurz: { west: 'Westen', ost: 'Osten', nordwest: 'Nordwesten', nordost: 'Nordosten' },
     und: ' und ',
     welle: (n, von, woher) => `Welle ${n} von ${von} – ${woher}!`,
     welleKurz: (n, von) => `Welle ${n}/${von}`,
+    aus: (woher) => `Aus: ${woher}`,
+    gleich: (woher) => `Gleich: ${woher}`,
     trupp: (woher) => `Ein kleiner Trupp nähert sich ${woher}.`,
     nachtBeginnt: (n) => `Nacht ${n}: Die Horde kommt.`,
     anfuehrerNacht: 'Heute Nacht kommt ein Anführer!',
@@ -129,13 +137,16 @@ export const T = {
     geschafftKurz: 'Nacht geschafft!',
     wenigLeben: 'Mika ist schwer angeschlagen – weg von der Horde!',
     bald: 'Bald kommt die Horde – um 20:30!',
-    zuhauseTreffer: 'Das Zuhause wird angegriffen!',
+    zuhauseTreffer: (seite) => `Das Zuhause wird angegriffen – ${seite}!`,
+    zuhauseKurz: 'Schlurfer am Zuhause!',
+    seite: { nord: 'an der Nordwand', sued: 'an der Südwand', ost: 'an der Ostwand', west: 'an der Westwand' },
     zuhause: 'Zuhause',
     nacht: (n) => `Nacht ${n}`,
     laut: 'Draußen ist es zu laut. Erst muss die Nacht vorbei sein.',
     verloren: 'Die Horde bricht durch …',
     keller: 'Mika verschanzt sich im Keller.',
     ohnmacht: 'Mika wird schwarz vor Augen …',
+    gerettet: 'Gerade noch ins Haus geschafft. Durchatmen – die Türme halten.',
     barrikadeWeg: 'Eine Barrikade ist zerschlagen!',
   },
   bericht: {
@@ -144,7 +155,17 @@ export const T = {
     besiegt: (k) => `Besiegte Schlurfer: ${k}`,
     eingesammelt: 'Eingesammelt:',
     nichts: 'nichts',
-    zuhause: (d) => (d > 0 ? `Das Zuhause hat ${d} Standfestigkeit verloren.` : 'Das Zuhause ist unversehrt.'),
+    zuhause: (d, jetzt, max) =>
+      d > 0
+        ? `In der Nacht hat das Zuhause ${d} Standfestigkeit verloren (jetzt ${jetzt ?? '?'}/${max ?? '?'}).`
+        : jetzt !== undefined && jetzt < max
+          ? `In der Nacht kein neuer Kratzer (jetzt ${jetzt}/${max}).`
+          : 'Das Zuhause ist unversehrt.',
+    vorher: (d) => `Schon am Abend haben Streuner ${d} Standfestigkeit abgenagt.`,
+    beuteDraussen: (n) => (n === 1 ? 'Draußen liegt noch ein Beutestück – bald zerfällt es!' : `Draußen liegen noch ${n} Beutestücke – bald zerfallen sie!`),
+    schlussHeil: 'Keinen Kratzer abbekommen. Das Frühstück schmeckt heute doppelt gut.',
+    schlussKratzer: 'Ein paar Bretter, ein paar Nägel – dann ist das wieder gut.',
+    gefallen: (jetzt, max) => `Das Zuhause ist gefallen. Notdürftig geflickt: ${jetzt}/${max}.`,
     verlust: 'Verloren:',
     kaputt: (n) => `${n} Barrikade(n) zerschlagen.`,
     trost: 'Die Türme sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).',
@@ -153,7 +174,7 @@ export const T = {
   werkbank: {
     titel: 'Werkbank',
     hinweis: 'W/S wählen · E herstellen · Esc schließen',
-    nochmal: (info) => `Nochmal E: ${info}`,
+    halten: (info) => `E halten: ${info}`,
     vorhanden: 'schon da',
   },
   aktionen: {
@@ -199,6 +220,10 @@ export const T = {
     brauchtWerkzeug: (werkzeug) => `Dafür brauche ich eine ${werkzeug}.`,
     schonDurchsucht: 'Heute schon durchsucht. Morgen wieder.',
     abgebrochen: 'Abgebrochen – dabei stehen bleiben.',
+    autoErstmals: 'Im Kofferraum liegt noch brauchbarer Kram. Mal nachsehen …',
+    // Gedanken am Abend – als Sprechblase, damit sie nie mitten in der Welle anhalten
+    abendLaterne: 'Es wird dunkel. Mit der Laterne sehe ich mehr. (Taste F)',
+    spaet: 'Geschafft für heute. Ich sollte bald ins Bett.',
     waldbaum: 'Der ist mir zu mächtig. Fällen kann ich die Bäume mit dem rot-weißen Band.',
     gestruepp: 'Nur Gestrüpp. Holz gibt es an den Bäumen mit dem rot-weißen Band.',
     verschnauft: 'Kurz verschnauft – wieder bei Kräften',
@@ -221,6 +246,7 @@ export const T = {
     aufgewertet: (name, stufe) => `${name} auf Stufe ${stufe}`,
     ausgebaut: (name) => `${name} ausgebaut`,
     repariert: 'Alles wieder heil.',
+    teilRepariert: (p) => `Geflickt, so gut es ging (${p} %).`,
     hinweisStart: 'WASD laufen · Umschalt rennen · E benutzen · Klick schlagen',
   },
   schlaf: {
@@ -232,7 +258,7 @@ export const T = {
   ziele: {
     axt: 'Nimm die Axt vom Hackklotz.',
     turm: 'Durchsuche Schrott, baue einen Bolzenwerfer.',
-    nacht: 'Überstehe die erste Nacht.',
+    nacht: 'Überstehe eine Nacht, ohne dass das Zuhause fällt.',
     werkbank: 'Sammle Holz und Stein, baue eine Werkbank.',
     spitzhacke: 'Stelle an der Werkbank eine Spitzhacke her.',
     barrikaden: 'Lenke die Horde mit drei Barrikaden um.',
@@ -249,7 +275,7 @@ export const T = {
     sicherFrage: 'Wirklich neu beginnen? Der Spielstand wird gelöscht.',
     sicherJa: 'Ja, neu beginnen',
     sicherNein: 'Lieber nicht',
-    fusszeile: 'Meilenstein 2 – Sammeln, Crafting und Bauen',
+    fusszeile: 'Meilenstein 3 – Nächte, Türme und Loot',
   },
   steuerung: [
     ['W A S D / Pfeile', 'Laufen'],

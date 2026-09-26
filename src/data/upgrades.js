@@ -4,7 +4,7 @@
 export const UPGRADES = {
   radius: {
     icon: 'magnet',
-    values: [1.6, 2.4, 3.2, 4.2], // Sammelradius in Metern
+    values: [2.0, 2.8, 3.6, 4.6], // Sammelradius in Metern (m3-r1: Grundwert war zu klein)
     cost: [{ schrott: 6 }, { schrott: 12 }, { schrott: 20, zahnraeder: 1 }],
   },
   leben: {

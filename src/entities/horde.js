@@ -15,7 +15,7 @@
 //   dying    umfallen und im Boden versinken
 
 import * as THREE from 'three';
-import { createWorldMaterial } from '../render/materials.js';
+import { createWorldMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { V } from '../world/layout.js';
 import { ZOMBIES } from '../data/zombies.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
@@ -72,12 +72,16 @@ export class Horde {
     this.list = [];
     this.nextId = 1;
     this.time = 0;
-    this.material = createWorldMaterial();
+    this.material = createWorldMaterial({ selfLight: 0.2 }); // nachts erkennbar, nicht nur die Augen
     this.glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
+    // Hinter dem Haus (und anderen Verdeckungen) bleiben Schlurfer als Umriss sichtbar
+    this.silhouetteMaterial = createSilhouetteMaterial(0xa88fd0, 0.5);
     this.kinds = {};
     this.group = new THREE.Group();
     this.group.name = 'Horde';
     scene.add(this.group);
+    const silhouettes = [];
+    this.silhouettes = silhouettes;
     for (const type of ZOMBIE_TYPES) {
       const parts = zombieParts(type, 11 + type.length);
       const meshes = {};
@@ -94,8 +98,19 @@ export class Horde {
         mesh.frustumCulled = false;
         mesh.count = 0;
         mesh.visible = false;
+        mesh.renderOrder = 2;
         this.group.add(mesh);
         meshes[p.name] = mesh;
+        if (!p.glow) {
+          const sil = new THREE.InstancedMesh(geo, this.silhouetteMaterial, MAX_PER_TYPE);
+          sil.instanceMatrix = mesh.instanceMatrix; // dieselben Matrizen, nur anders gezeichnet
+          sil.frustumCulled = false;
+          sil.count = 0;
+          sil.visible = false;
+          sil.renderOrder = 1;
+          this.group.add(sil);
+          silhouettes.push({ type, mesh: sil });
+        }
       }
       this.kinds[type] = { rig: new Rig(parts), meshes, parts: parts.map((p) => p.name) };
     }
@@ -472,8 +487,17 @@ export class Horde {
   /** Haltung berechnen und in die Instanzen schreiben. */
   render() {
     const counts = {};
+    const living = {};
     for (const type of ZOMBIE_TYPES) counts[type] = 0;
-    for (const z of this.list) {
+    // Erst die Lebenden, dann die Sterbenden: Umrisse zeigen nur die Lebenden
+    // (wer im Boden versinkt, soll nicht als Umriss durch die Erde schimmern).
+    const order = this._order || (this._order = []);
+    order.length = 0;
+    for (const z of this.list) if (z.state !== 'dying') order.push(z);
+    for (const type of ZOMBIE_TYPES) living[type] = 0;
+    for (const z of order) living[z.type] = Math.min(MAX_PER_TYPE, living[z.type] + 1);
+    for (const z of this.list) if (z.state === 'dying') order.push(z);
+    for (const z of order) {
       const kind = this.kinds[z.type];
       const k = counts[z.type];
       if (k >= MAX_PER_TYPE) continue;
@@ -496,6 +520,10 @@ export class Horde {
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       }
+    }
+    for (const s of this.silhouettes) {
+      s.mesh.count = living[s.type];
+      s.mesh.visible = living[s.type] > 0;
     }
   }
 

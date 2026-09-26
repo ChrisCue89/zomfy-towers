@@ -143,6 +143,15 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
 - **Man muss auf einen Blick erkennen, was was ist:** Figur, Schlurfer-Arten,
   Türme, Loot, Werkzeuge, Rohstoffquellen, Bauten. Lesbarkeit geht vor
   Stimmung.
+- **Nachts** bleibt die Welt dunkel, aber alles, worum es im Kampf geht,
+  bekommt einen Hauch Eigenlicht in der eigenen Farbe: Schlurfer, Bauten und
+  Türme, Loot (das zusätzlich funkelt), das Geistermodell beim Bauen.
+  Schüsse leuchten (Bolzen mit Leuchtspur, heller Wasserfächer).
+- **Verdeckt** etwas (Dach, Baumkrone) Schlurfer oder Figur, scheinen sie als
+  gerasterter Umriss durch – Schlurfer lavendel, Mika gold. Liegt etwas
+  außerhalb des Bildes, zeigen Randmarken hin: Pfeile für Schlurfer (mit
+  Anzahl), eine Haus-Marke bei Angriffen aufs Zuhause, Rauten für Loot.
+- Im Getümmel treten Einblendungen (»E Fasern rupfen«) zurück.
 - Der jetzige Stand (Meilenstein 1–2) ist ein erster, **zu grober** Durchgang:
   große Voxel, wenige Pixel pro Meter, sparsame Animation. Das ist bewusst so,
   solange die Mechaniken wachsen – aber nicht das Ziel.
@@ -274,9 +283,10 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
   ein Moderkern.
 - Man sammelt es, indem man in die Nähe läuft. Im **Sammelradius** fliegt es
   von selbst zur Figur und wird mit einem »+1« verbucht.
-- Loot zerfällt nach gut einer Minute (es blinkt vorher). Wer viel sammeln
-  will, muss nachts raus aus der sicheren Zone und rein ins Getümmel –
-  Risiko gegen Belohnung.
+- Loot zerfällt nach zwei Minuten (es blinkt vorher). Es funkelt ab und zu,
+  glimmt nachts, und Rauten am Bildrand zeigen, wo außerhalb des Bildes noch
+  etwas liegt. Wer viel sammeln will, muss nachts raus aus der sicheren Zone
+  und rein ins Getümmel – Risiko gegen Belohnung.
 - Der Sammelradius ist eine Aufwertung der Figur in der Bauleiste.
 
 ### 6.6 Bauleiste
@@ -292,7 +302,10 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
 - **Turm bauen:** Option wählen, auf dem Raster platzieren (grün = passt,
   rot = geht nicht), Klick setzt. Rechtsklick oder `Esc` bricht ab.
 - **Turm ausbauen:** Turm anklicken (oder davorstehen und `E`). Die Leiste
-  zeigt dann seine Ausbau- und Spezialisierungsoptionen und »Abreißen«.
+  zeigt dann seine Ausbau- und Spezialisierungsoptionen und »Abreißen«
+  (immer auf `V`, mit Rückfrage – ein gewohntes `Q`/`R` reißt nie etwas ab).
+  Steht ein Schlurfer unter dem Mauszeiger, ist ein Klick ein Schlag, keine
+  Auswahl.
 - Bauen und Ausbauen geht **jederzeit**, auch mitten in der Nacht.
 
 ### 6.7 Crafting (Werkbank)
@@ -331,7 +344,8 @@ Stufe 4 und 5 bauen die gewählte Richtung aus.
 | **Laternenturm** | Unterstützung benachbarter Türme | **Leuchtfeuer** – stärkere Schadens-Aura, Licht bremst die Horde | **Glückslaterne** – mehr Loot von allem, was im Licht fällt |
 
 - Bau und Stufe 2 kosten Schrott, Stufe 3–4 zusätzlich **Zahnräder**, Stufe 5
-  einen **Moderkern**.
+  einen **Moderkern**. Jeder weitere Turm derselben Art kostet 2 Schrott mehr
+  (höchstens +8), damit sich Aufrüsten gegen bloßes Streuen lohnt.
 - Dazu **Barrikaden** (günstige Wände zum Lenken der Horde).
 
 ### 6.10 Die Horde
@@ -353,7 +367,11 @@ Stufe 4 und 5 bauen die gewählte Richtung aus.
   mithält**.
 - **Tagsüber** streifen vereinzelte, träge Schlurfer umher (wenig Loot), und
   ein- bis zweimal am Tag kommt ein kleiner Trupp. Tagesschlurfer greifen
-  nicht gezielt an, solange man baut oder sammelt – sie stören nie ernsthaft.
+  nicht gezielt an, solange man baut oder sammelt – sie stören nie ernsthaft:
+  Am Zuhause nagen sie langsam und höchstens bis zur Hälfte, und ein Angriff
+  meldet sich groß mit der Wand, an der er passiert.
+- Die Punkte einer Nacht steigen gleichmäßig (Nacht 1: 18, 2: 25, 3: 32,
+  4: 41, 5: 52), egal auf wie viele Wellen sie sich verteilen.
 
 ### 6.11 Wege der Horde
 
@@ -365,30 +383,39 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
 
 - Vier Waldpfade: Westen, Osten, Nordwesten, Nordosten. Eine Welle kommt in
   den ersten Nächten von einer Seite, ab Nacht 3 manchmal von zwei; die
-  Meldung sagt, woher (»Welle 1 von 3 – aus dem Westen!«). Rote Marken am
-  Bildrand zeigen Schlurfer außerhalb des Bildes.
-- **Wegvorschau:** Beim Setzen von Türmen und Barrikaden laufen rote Punkte
-  die Wege der Horde entlang, vom Waldrand bis an die Hauswand. Alle Wege
-  treffen sich am Haus – dort lohnen die ersten Türme am meisten.
+  Meldung sagt, woher (»Welle 1 von 3 – aus dem Westen!«), die Nachtleiste
+  behält es (»Aus: Westen«) und kündigt zwischen den Wellen die nächste an
+  (»Gleich: Osten«). Pfeile am Bildrand zeigen Schlurfer außerhalb des Bildes.
+- **Wegvorschau:** Beim Setzen jedes Baus laufen rote Punkte die Wege der
+  Horde entlang, vom Waldrand bis an die Hauswand; die Tafel erklärt Kreis
+  (Reichweite) und Punkte. Alle Wege treffen sich am Haus – dort lohnen die
+  ersten Türme am meisten.
 - Am Haus angekommen, schlagen die Schlurfer auf die nächste Wand ein.
 
 ### 6.12 Verlorene Nacht, Morgenbericht, Reparatur
 
-- Sinkt die Standfestigkeit des Zuhauses auf null oder geht die Figur zu
-  Boden, ist die Nacht verloren: Mika verschanzt sich im Keller, die Nacht
-  endet sofort.
+- Sinkt die Standfestigkeit des Zuhauses auf null, ist die Nacht verloren:
+  Mika verschanzt sich im Keller, die Nacht endet sofort. Geht Mika nachts zu
+  Boden, rettet sie sich ins Haus und kommt mit 40 % Leben wieder – die Nacht
+  läuft weiter.
 - Folgen: ein Viertel des Schrotts und ein Zehntel der übrigen
   Tagesmaterialien sind weg (Zahnräder und Moderkerne bleiben), Türme und
   Barrikaden verlieren ein Drittel ihrer Haltbarkeit (ein Turm ohne
-  Haltbarkeit schweigt), das Zuhause steht danach bei der Hälfte. **Nie
-  Spielende, nie Verlust des Spielstands.**
+  Haltbarkeit schweigt), das Zuhause wird notdürftig auf ein Viertel geflickt
+  – nie besser, als es zu Beginn der Nacht war. **Nie Spielende, nie Verlust
+  des Spielstands.**
 - **Tagsüber bricht nichts durch:** Tagesschlurfer bringen das Zuhause
-  höchstens auf ein Viertel. Geht Mika am Tag zu Boden, wacht sie zwei
+  höchstens auf die Hälfte. Geht Mika am Tag zu Boden, wacht sie zwei
   Stunden später im Bett auf, ohne Verluste.
-- **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot, Schäden,
-  Verluste. `E` schließt ihn.
+- **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot (auch das nach
+  der letzten Welle), was Streuner schon vor der Nacht abgenagt haben, der
+  Schaden der Nacht mit dem Stand danach, Beute, die noch draußen liegt,
+  Verluste – und zum Schluss ein Gedanke von Mika. Er bleibt im Spielstand,
+  bis man ihn mit `E` schließt.
 - **Reparieren** über die Bauleiste (Reiter Zuhause: alles auf einmal, oder
-  einzeln über die Auswahl eines Baus) kostet Holz und Schrott.
+  einzeln über die Auswahl eines Baus) kostet Holz und Schrott; reicht der
+  Vorrat nicht, wird anteilig geflickt. Solange nachts eine Welle läuft,
+  geht Reparieren nicht – erst abwehren, dann flicken.
 
 ### 6.13 Nahkampf und eigene Figur
 

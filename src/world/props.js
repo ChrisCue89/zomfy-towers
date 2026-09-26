@@ -518,13 +518,13 @@ export function createProps({ seed, materials, colliders }) {
   const cb = LAYOUT.choppingBlock;
   add(buildChoppingBlock(seed + 13), cb.x, cb.z, { name: 'Hackklotz' });
   const stuckAxe = add(buildStuckAxe(), cb.x, cb.z, { name: 'Axt' });
-  colliders.addCircle(cb.x, cb.z, 0.4);
+  colliders.addCircle(cb.x, cb.z, 0.32);
   const axeInteraction = { id: 'hackklotz', x: cb.x, z: cb.z, radius: 1.5, prompt: 'axtNehmen', action: 'takeAxe' };
   interactions.push(axeInteraction);
   const s = LAYOUT.shelter;
   const barrel = { x: s.x + s.width * V + 0.375, z: s.z + s.depth * V - 0.375 };
   add(buildRainBarrel(seed + 14), barrel.x, barrel.z, { name: 'Regentonne' });
-  colliders.addCircle(barrel.x, barrel.z, 0.4);
+  colliders.addCircle(barrel.x, barrel.z, 0.33);
   interactions.push({ id: 'regentonne', x: barrel.x, z: barrel.z, radius: 1.2, prompt: 'ansehen', dialog: 'regentonne', inside: false });
   const garden = LAYOUT.garden;
   add(buildGardenBed(seed + 15), garden.x, garden.z, { name: 'Beet' });

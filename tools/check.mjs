@@ -487,7 +487,7 @@ async function runBuildChecks(browser, url) {
   if (st.inventory.stein === steinVorFelsen + 1) note('✓ Werkzeug: mit Spitzhacke gibt der Felsen Stein');
   else fail(`Werkzeug: Felsen gab ${st.inventory.stein - steinVorFelsen} Stein`);
 
-  // Werkbank-Menü: Verwerten braucht einen zweiten Druck (ein Fehlgriff kostet sonst Stein)
+  // Werkbank-Menü: Verwerten nur mit gehaltenem E (ein kurzer Druck kostet nichts)
   await z(() => {
     window.zomfy.give({ stein: 3 });
     const bank = window.zomfy.buildings().find((b) => b.type === 'werkbank');
@@ -497,15 +497,18 @@ async function runBuildChecks(browser, url) {
   await settle(page, 5);
   const steinVorVerwerten = (await state()).inventory.stein;
   for (const key of ['KeyS', 'KeyS', 'KeyE']) {
-    await page.keyboard.press(key); // runter zu »Stein zu Schrott verwerten«, einmal E
+    await page.keyboard.press(key); // runter zu »Stein zu Schrott verwerten«, einmal kurz E
     await settle(page, 3);
   }
-  const nachEinmal = (await state()).inventory.stein;
-  await page.keyboard.press('KeyE');
+  const nachTippen = (await state()).inventory.stein;
+  await page.keyboard.down('KeyE');
+  await settle(page, 30);
+  await page.keyboard.up('KeyE');
   await settle(page, 3);
-  const nachZweimal = (await state()).inventory.stein;
-  if (nachEinmal === steinVorVerwerten && nachZweimal === steinVorVerwerten - 3) note('✓ Werkbank: Verwerten erst beim zweiten E (Rückfrage)');
-  else fail(`Werkbank: Stein ${steinVorVerwerten} -> nach einem E ${nachEinmal} -> nach zwei E ${nachZweimal}`);
+  const nachHalten = (await state()).inventory.stein;
+  const verwertet = steinVorVerwerten - nachHalten;
+  if (nachTippen === steinVorVerwerten && verwertet >= 3 && verwertet % 3 === 0) note(`✓ Werkbank: kurzer Druck verwertet nichts, gehaltenes E schon (${verwertet} Stein zu Schrott)`);
+  else fail(`Werkbank: Stein ${steinVorVerwerten} -> nach kurzem E ${nachTippen} -> nach gehaltenem E ${nachHalten}`);
   await settle(page, 25);
   await page.screenshot({ path: join(SHOTS, 'werkbank.png') });
   note('  Screenshot: screenshots/werkbank.png');
@@ -659,6 +662,23 @@ async function runNightChecks(browser, url) {
   });
   await step(100);
 
+  // Tagsüber nagen Schlurfer das Zuhause höchstens bis zur Hälfte an
+  await z(() => {
+    window.zomfy.setHomeHp(160);
+    window.zomfy.spawnZombie('brummer', 3.2, -6.4);
+  });
+  await step(8000);
+  const tagHp = (await state()).world.homeHp;
+  await z(() => {
+    window.zomfy.setHorde(false); // räumt ohne Abschuss und Loot ab
+    window.zomfy.setHorde(true);
+    window.zomfy.setHomeHp(300);
+    window.zomfy.teleport(-3, 1.5, 0);
+  });
+  await step(1500);
+  if (tagHp >= 150 && tagHp < 160) note(`✓ Tagsüber: Schlurfer nagen das Zuhause höchstens bis zur Hälfte an (${Math.round(tagHp)}/300)`);
+  else fail(`Tagsüber: Zuhause ${tagHp}/300 (erwartet 150 bis 159)`);
+
   // Turm mit der Tastatur: Q wählt den Bolzenwerfer, E setzt ihn vor die Figur
   await page.keyboard.press('KeyQ');
   await step(100);
@@ -680,7 +700,11 @@ async function runNightChecks(browser, url) {
 
   // Der Turm erledigt einen Schlurfer, der Loot fallen lässt
   if (turm) {
-    await z((t) => window.zomfy.spawnZombie('schlurfer', t.i - 3.5, t.j + 0.5), turm);
+    // Mika geht aus dem Sammelradius, sonst fliegt das Loot sofort heran
+    await z((t) => {
+      window.zomfy.teleport(t.i + 4, t.j + 0.5, 0);
+      window.zomfy.spawnZombie('schlurfer', t.i - 3.5, t.j + 0.5);
+    }, turm);
     let kills = 0;
     for (let k = 0; k < 24 && !kills; k++) {
       await step(500);
@@ -689,6 +713,13 @@ async function runNightChecks(browser, url) {
     const loot = await z(() => window.zomfy.lootItems());
     if (kills === 1 && loot.length) note(`✓ Türme: Bolzenwerfer erledigt einen Schlurfer, Loot liegt am Boden (${loot.map((l) => l.res).join(', ')})`);
     else fail(`Türme: ${kills} Abschüsse, ${loot.length} Loot`);
+
+    // Liegt die Beute außerhalb des Bildes, zeigt eine Raute am Rand hin
+    await z((l) => window.zomfy.teleport(l.x + 13, l.z, 0), loot[0] || { x: 0, z: 0 });
+    await step(300);
+    const marken = (await z(() => window.zomfyView())).randMarken || [];
+    if (marken.some((m) => m.startsWith('beute'))) note(`✓ Loot: außerhalb des Bildes zeigt eine Randmarke hin (${marken.join(', ')})`);
+    else fail(`Loot: keine Randmarke (${JSON.stringify(marken)})`);
 
     // Einsammeln: hinlaufen reicht, der Magnet zieht es heran
     const vorher = (await state()).inventory.schrott;
@@ -709,6 +740,16 @@ async function runNightChecks(browser, url) {
     const aus = (await z(() => window.zomfy.buildings())).find((b) => b.id === turm.id);
     if (aus?.level === 3 && aus?.spec === 'A') note('✓ Ausbau: Stufe 2, dann Spezialisierung A über die Bauleiste');
     else fail(`Ausbau: Turm steht auf ${JSON.stringify(aus)}`);
+
+    // Abreißen liegt auf V: ein gewohntes R (sonst Katapult) reißt nie einen Turm ab
+    for (const key of ['KeyR', 'KeyR', 'KeyV']) {
+      await page.keyboard.press(key);
+      await step(100);
+    }
+    const stehtNoch = (await z(() => window.zomfy.buildings())).some((b) => b.id === turm.id);
+    const rueckfrage = ((await z(() => window.zomfyView())).meldungen || []).some((m) => m.startsWith('Nochmal'));
+    if (stehtNoch && rueckfrage) note('✓ Auswahl: R reißt nichts ab, Abreißen liegt auf V (mit Rückfrage)');
+    else fail(`Auswahl: Turm steht noch ${stehtNoch}, Rückfrage ${rueckfrage}`);
     await page.keyboard.press('Escape');
     await step(100);
   }
@@ -723,16 +764,35 @@ async function runNightChecks(browser, url) {
   await step(100);
 
   // Nacht 1: drei Türme ums Haus, die Horde kommt um 20:30 in Wellen
-  await z(() => {
+  const staffel = await z(() => {
+    const vor = window.zomfy.state().inventory.schrott;
     window.zomfy.build('bolzen', -7, -4);
+    const zweiter = vor - window.zomfy.state().inventory.schrott;
     window.zomfy.build('bolzen', 1, -9);
     window.zomfy.teleport(0.5, 1.0, 0);
     window.zomfy.setTime(20, 25);
+    return zweiter;
   });
+  if (staffel === 10) note('✓ Staffelpreis: der zweite Bolzenwerfer kostet 10 statt 8 Schrott');
+  else fail(`Staffelpreis: zweiter Bolzenwerfer kostete ${staffel}`);
   await step(6000);
   const n1 = await z(() => window.zomfy.nightState());
   if (n1.night.n === 1 && n1.night.wave >= 1 && n1.alive + n1.queue > 0) note(`✓ Nacht: um 20:30 kommt Welle 1 (${n1.alive + n1.queue} Schlurfer)`);
   else fail(`Nacht: Welle 1 kam nicht (${JSON.stringify(n1)})`);
+  const richtung = (await z(() => window.zomfyView())).nacht?.richtung || '';
+  if (richtung.startsWith('Aus: ')) note(`✓ Nachtleiste: zeigt, woher die Welle kommt („${richtung}“)`);
+  else fail(`Nachtleiste: keine Richtung („${richtung}“)`);
+  const repWelle = await z(() => {
+    const hp = window.zomfy.state().world.homeHp;
+    window.zomfy.setHomeHp(250);
+    const o = window.zomfy.buildOptions().find((x) => x.id === 'reparieren');
+    window.zomfy.repairAll();
+    const nach = window.zomfy.state().world.homeHp;
+    window.zomfy.setHomeHp(hp);
+    return { disabled: o?.disabled, nach };
+  });
+  if (repWelle.disabled && repWelle.nach === 250) note('✓ Reparieren: mitten in der Welle gesperrt');
+  else fail(`Reparieren in der Welle: ${JSON.stringify(repWelle)}`);
   // Bild: ein Trupp kommt von Süden aufs Haus zu und läuft den Türmen vor die Bolzen
   await z(() => {
     for (let k = 0; k < 5; k++) window.zomfy.spawnZombie(k === 2 ? 'brummer' : 'schlurfer', -5.5 + k * 1.6, 6.2 + (k % 2) * 0.6);
@@ -748,6 +808,18 @@ async function runNightChecks(browser, url) {
   const home = (await state()).world.homeHp;
   if (nacht.night.done && nacht.night.won) note(`✓ Nacht 1 überstanden: ${nacht.night.kills} Schlurfer besiegt, Zuhause ${home}/300`);
   else fail(`Nacht 1: nicht geschafft (${JSON.stringify(nacht)}, Zuhause ${home})`);
+
+  // Nach der Nacht: Reparieren geht wieder – reicht der Vorrat nicht, dann anteilig
+  const teil = await z(() => {
+    const s = window.zomfy.state();
+    window.zomfy.setHomeHp(100);
+    window.zomfy.give({ holz: 2 - (s.inventory.holz || 0), schrott: 10 - (s.inventory.schrott || 0) });
+    window.zomfy.repairAll();
+    const n = window.zomfy.state();
+    return { hp: n.world.homeHp, holz: n.inventory.holz };
+  });
+  if (teil.hp > 100 && teil.hp < 300 && teil.holz === 0) note(`✓ Reparieren: Vorrat reicht nur teilweise – Zuhause 100 → ${Math.round(teil.hp)}`);
+  else fail(`Teilreparatur: ${JSON.stringify(teil)}`);
 
   // Schlafen, Morgenbericht, weiter mit E
   await z(() => window.zomfy.interact('bett'));

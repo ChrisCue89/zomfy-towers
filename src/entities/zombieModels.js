@@ -106,7 +106,7 @@ function buildHead(s, seed) {
     case 'kegel':
       // Warnkegel als Helm: orange mit weißem Streifen
       m.box(-3, 11, -3, 2, 11, 1, P.f3);
-      m.box(-2, 12, -2, 1, 12, 0, P.a4);
+      m.box(-1, 12, -2, 0, 12, -1, P.a4); // der Streifen außen leuchtet (buildHeadGlow)
       m.box(-2, 13, -2, 1, 13, 0, P.f3);
       m.box(-1, 14, -1, 0, 15, -1, P.f4);
       break;
@@ -135,6 +135,10 @@ function buildHeadGlow(s) {
   const m = new VoxelModel();
   m.set(-2, 9, 2, s.eyes).set(1, 9, 2, s.eyes);
   m.set(-2, 9, -4, 0xb6f07a).set(1, 8, -4, 0xb6f07a).set(0, 10, -4, 0x8ee0a0);
+  if (s.extra === 'kegel') {
+    // Reflektorstreifen am Warnkegel: nachts erkennt man den Brummer sofort
+    m.box(-2, 12, -2, 1, 12, 0, (x, y, z) => (z === 0 || x === -2 || x === 1 ? 0xf4f0e0 : null));
+  }
   if (s.extra === 'leuchthut') {
     m.box(-4, 11, -4, 3, 11, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -4 || z === 2) ? null : 0x6cc0ae));
     m.box(-3, 12, -3, 2, 12, 1, (x, y, z) => ((x + z) % 3 === 0 ? 0xf7f3ea : 0x8ee0cc));

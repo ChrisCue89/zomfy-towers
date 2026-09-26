@@ -18,7 +18,7 @@ export const ZOMBIES = {
     hitRate: 0.6,
     scale: 1,
     radius: 0.28,
-    loot: { schrott: [1, 2] },
+    loot: { schrott: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
     xp: 1,
   },
   flitzer: {
@@ -30,7 +30,7 @@ export const ZOMBIES = {
     hitRate: 1,
     scale: 0.95,
     radius: 0.25,
-    loot: { schrott: [1, 2] },
+    loot: { schrott: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
     xp: 1,
   },
   schwaermer: {

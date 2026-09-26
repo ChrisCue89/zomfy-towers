@@ -7,6 +7,7 @@
 import { T } from '../data/texts.js';
 import { planNight, planDay, NIGHT_START, NIGHT_END } from '../data/waves.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
+import { HOUSE_LEVELS } from '../data/buildings.js';
 
 export class Nights {
   /** @param {import('./game.js').Game} game */
@@ -16,6 +17,7 @@ export class Nights {
     this.dayPlan = null;
     this.queue = []; // noch zu erscheinende Schlurfer { type, entry, delay }
     this.enabled = true; // aus nur für Prüf-Bilder (window.zomfy.setHorde)
+    this.lastMinute = null; // für Zeitsprünge (Ausruhen, Werkeln)
   }
 
   get state() {
@@ -52,18 +54,24 @@ export class Nights {
     const minute = st.time.minute;
     this.ensurePlans();
 
-    // Tagesschlurfer
+    // Tagesschlurfer. Nach einem Zeitsprung (Ausruhen, Werkeln) kommt nicht alles
+    // Verpasste auf einmal – wer ruht, verpasst die Streuner.
+    const jumped = this.lastMinute !== null && minute - this.lastMinute > 20;
+    this.lastMinute = minute;
     if (minute < NIGHT_START) {
-      const done = st.world.dayEvents?.day === st.time.day ? st.world.dayEvents.done : 0;
+      const today = st.world.dayEvents?.day === st.time.day ? st.world.dayEvents : null;
+      const done = today ? today.done : 0;
       const events = this.dayPlan.events;
       let k = done;
       while (k < events.length && minute >= events[k].at) {
         const e = events[k];
-        this.spawnGroup('schlurfer', e.entry, e.count, { day: true });
-        if (e.count > 1) g.hud.toast(T.horde.trupp(T.horde.richtung[e.entry]), 'warnung', 3.5);
+        if (!jumped) {
+          this.spawnGroup('schlurfer', e.entry, e.count, { day: true });
+          if (e.count > 1) g.hud.toast(T.horde.trupp(T.horde.richtung[e.entry]), 'warnung', 3.5);
+        }
         k++;
       }
-      st.world.dayEvents = { day: st.time.day, done: k };
+      st.world.dayEvents = { day: st.time.day, done: k, lost: today?.lost || 0 };
     }
 
     // Die Nacht beginnt (danach ist st.night ein neues Objekt – erst hier lesen)
@@ -78,7 +86,7 @@ export class Nights {
         for (const s of wave.spawns) this.queue.push({ ...s });
         const from = wave.entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
         g.hud.toast(T.horde.welle(night.wave, plan.waves.length, from), 'warnung', 4);
-        g.hud.showBanner(T.horde.welleKurz(night.wave, plan.waves.length));
+        g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
       }
       // Morgengrauen: Wer noch da ist, flieht in den Wald
       if (minute >= NIGHT_END) {
@@ -104,6 +112,21 @@ export class Nights {
     if (this.active && night.wave >= this.plan.waves.length && !this.queue.length && g.horde.alive === 0) this.finishNight(true);
   }
 
+  /**
+   * »aus dem Westen« für die laufende Welle; ist sie besiegt und kommt noch
+   * eine, deren Richtung (»Gleich: Osten«). Null, wenn nichts mehr kommt.
+   */
+  directionText() {
+    const plan = this.plan;
+    const night = this.state;
+    if (!plan || !this.active) return null;
+    const names = (wave) => wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und);
+    const cleared = this.game.horde.alive === 0 && !this.queue.length;
+    if ((cleared || night.wave === 0) && night.wave < plan.waves.length) return T.horde.gleich(names(plan.waves[night.wave]));
+    if (night.wave > 0 && !cleared) return T.horde.aus(names(plan.waves[night.wave - 1]));
+    return null;
+  }
+
   spawnGroup(type, entryName, count, { day = false, hpFactor = 1 } = {}) {
     const g = this.game;
     const entry = g.world.pathing.entries[entryName];
@@ -118,7 +141,9 @@ export class Nights {
     const st = this.game.state;
     this.plan = planNight(n, this.seed(), ENTRY_NAMES);
     this.queue.length = 0;
-    st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, lost: false };
+    // Was Streuner schon vor der Nacht abgenagt haben, nennt der Morgenbericht extra
+    const preLoss = st.world.dayEvents?.day === n ? Math.round(st.world.dayEvents.lost || 0) : 0;
+    st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false };
     this.game.hud.toast(T.horde.nachtBeginnt(n), 'mond', 4);
     if (n % 5 === 0) this.game.hud.toast(T.horde.anfuehrerNacht, 'warnung', 5);
   }
@@ -144,7 +169,11 @@ export class Nights {
       won,
       kills: night.kills,
       loot: { ...night.loot },
-      homeLost: Math.max(0, Math.round(night.homeStart - st.world.homeHp)),
+      homeLost: night.fell ? Math.round(night.homeStart) : Math.max(0, Math.round(night.homeStart - st.world.homeHp)),
+      fell: Boolean(night.fell),
+      homeNow: Math.round(st.world.homeHp),
+      homeMax: HOUSE_LEVELS[st.world.houseLevel].hp,
+      preLoss: night.preLoss || 0,
       losses: night.losses || null,
       broken: night.broken || 0,
     };
