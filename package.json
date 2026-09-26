@@ -1,0 +1,11 @@
+{
+  "name": "zomfy-towers",
+  "private": true,
+  "description": "Gemütliche Endzeit mit Zombies – 3D-Pixel-Art-Browserspiel ohne Build-Schritt.",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs 8080",
+    "check": "node tools/check.mjs",
+    "check:syntax": "node tools/check.mjs --syntax"
+  }
+}
