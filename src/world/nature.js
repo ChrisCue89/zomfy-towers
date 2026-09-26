@@ -349,31 +349,6 @@ export function createNature({ seed, materials, colliders, blockers }) {
     bushesPlaced++;
   }
 
-  // --- Einzelne Bäume und Steine auf der Lichtung ---
-  const solo = [
-    ['birch0', -13.5, -6.5, 0.3],
-    ['birch1', 12.75, -3.0, 0.3],
-    ['birch0', 13.5, 5.5, 0.3],
-    ['fir2', -14.0, 7.0, 0.35],
-    ['oak1', 13.0, -9.5, 0.4],
-  ];
-  for (const [name, x, z, r] of solo) {
-    scatter.place(name, x, z, rng.int(0, 3));
-    colliders.addCircle(x, z, r);
-  }
-  const stones = [
-    ['rock2', 12.25, 2.25, 0.75],
-    ['rock0', -12.5, -1.0, 0.5],
-    ['rock1', 6.25, -3.25, 0.3],
-    ['rock3', -6.0, 5.5, 0.4],
-    ['rock1', 10.5, 6.25, 0.3],
-    ['rock0', -3.75, 10.5, 0.45],
-  ];
-  for (const [name, x, z, r] of stones) {
-    scatter.place(name, x, z, rng.int(0, 3));
-    colliders.addCircle(x, z, r);
-  }
-
   // --- Gras und Blumen ---
   let tuftsPlaced = 0;
   let flowersPlaced = 0;

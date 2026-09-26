@@ -41,7 +41,7 @@ function wallColor(t, y, x, z, seed) {
   return c;
 }
 
-function buildBase(seed) {
+function buildBase(seed, level = 1) {
   const m = new VoxelModel();
   // Unterbau aus Paletten
   m.box(0, 0, 0, W - 1, 1, D - 1, (x, y, z) => {
@@ -126,8 +126,14 @@ function buildBase(seed) {
   m.box(17, FLOOR, 24, 18, FLOOR + 1, 25, P.r3);
   m.box(16, FLOOR + 2, 23, 19, FLOOR + 3, 26, (x, y, z) => (hash3(x, y, z, seed) < 0.35 ? null : y === FLOOR + 3 ? P.g6 : P.g5));
 
-  // Stufe vor der Tür
-  m.box(8, 0, 28, 16, 1, 30, (x, y, z) => (y === 1 ? (z === 30 ? P.e5 : P.e6) : P.e3));
+  if (level >= 2) {
+    // Durchgang in den Anbau (Ostwand), mit Rahmen
+    m.remove(W - 1, FLOOR, 14, W - 1, 17, 20);
+    m.box(W - 1, 18, 13, W - 1, 18, 21, P.e2);
+  } else {
+    // Stufe vor der Tür (ab Stufe 2 ersetzt die Veranda sie)
+    m.box(8, 0, 28, 16, 1, 30, (x, y, z) => (y === 1 ? (z === 30 ? P.e5 : P.e6) : P.e3));
+  }
   return m;
 }
 
@@ -321,20 +327,154 @@ function buildCandleGlow() {
   return new VoxelModel().set(3, FLOOR + 5, 12, 0xffffff);
 }
 
+
+// --- Ausbaustufe 2: Hütte ------------------------------------------------------
+// Anbau im Osten (x 40..57, z 6..27) mit Leseecke, Veranda über die ganze Front.
+
+const AX0 = W;
+const AX1 = W + 17;
+const AZ0 = 6;
+
+function annexRoofHeight(x) {
+  return 21 - Math.floor((x - AX0) / 4);
+}
+
+function buildAnnexBase(seed) {
+  const m = new VoxelModel();
+  m.box(AX0, 0, AZ0, AX1, 1, D - 1, (x, y, z) => ((z === D - 1 || x === AX1) && x % 8 === 7 ? P.e2 : y === 1 ? P.e4 : P.e3));
+  // Dielen mit Flickenteppich
+  m.box(AX0, 2, AZ0, AX1, 2, D - 1, (x, y, z) => {
+    if (x >= 44 && x <= 53 && z >= 14 && z <= 22) {
+      const border = x === 44 || x === 53 || z === 14 || z === 22;
+      return border ? P.d2 : (x + z) % 3 === 0 ? P.d4 : P.d3;
+    }
+    return Math.floor(z / 3) % 2 ? P.e5 : P.e6;
+  });
+  // Nord- und Ostwand
+  for (let y = FLOOR; y <= 19; y++) {
+    for (let x = AX0; x <= AX1; x++) m.set(x, y, AZ0, wallColor(x, y, x, AZ0, seed + 7));
+    for (let z = AZ0; z < D; z++) m.set(AX1, y, z, wallColor(z, y, AX1, z, seed + 8));
+  }
+  // Bücherregal an der Nordwand
+  m.box(42, FLOOR, AZ0 + 1, 51, FLOOR + 10, AZ0 + 2, (x, y, z) => {
+    if (x === 42 || x === 51 || y === FLOOR || y === FLOOR + 5 || y === FLOOR + 10) return P.e3;
+    if (z === AZ0 + 1) return P.e2;
+    const books = [P.r3, P.b3, P.g5, P.f5, P.a2, P.e7];
+    return hash3(x, Math.floor(y / 5), 0, seed) < 0.15 ? null : books[(x * 3 + Math.floor(y / 5)) % books.length];
+  });
+  // Ohrensessel (Blick nach Südwesten) und Stehlampe
+  m.box(52, FLOOR, 10, 55, FLOOR + 2, 13, P.a2);
+  m.box(55, FLOOR + 3, 10, 55, FLOOR + 7, 13, P.a2);
+  m.box(52, FLOOR + 3, 10, 54, FLOOR + 4, 10, P.a2).box(52, FLOOR + 3, 13, 54, FLOOR + 4, 13, P.a2);
+  m.box(53, FLOOR + 3, 11, 54, FLOOR + 3, 12, P.a3);
+  m.box(55, FLOOR, 15, 55, FLOOR + 10, 15, P.s3);
+  m.box(54, FLOOR + 11, 14, 56, FLOOR + 12, 16, P.e7);
+  // Große Zimmerpflanze
+  m.box(41, FLOOR, 23, 42, FLOOR + 1, 24, P.r3);
+  m.ellipsoid(42, FLOOR + 5, 24, 2.5, 3.5, 2.5, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? null : y > FLOOR + 5 ? P.g6 : P.g5));
+  return m;
+}
+
+function buildAnnexFront(seed) {
+  const m = new VoxelModel();
+  for (let y = FLOOR; y <= 19; y++) {
+    for (let x = AX0; x <= AX1; x++) {
+      if (x >= 46 && x <= 52 && y >= 8 && y <= 13) continue;
+      m.set(x, y, D - 1, wallColor(x, y, x, D - 1, seed + 9));
+    }
+  }
+  m.box(45, 7, D - 1, 53, 14, D - 1, (x, y) => (x === 45 || x === 53 || y === 7 || y === 14 ? P.e2 : null));
+  m.box(49, 8, D - 1, 49, 13, D - 1, P.e2);
+  m.box(44, 7, D, 54, 7, D, P.e6);
+  // Kräuter im Kasten
+  m.box(45, 5, D, 53, 6, D + 1, (x, y) => (y === 6 ? P.e5 : P.e4));
+  for (let x = 45; x <= 53; x++) m.set(x, 7, D + 1, x % 2 ? P.g6 : P.a3);
+  return m;
+}
+
+function buildAnnexGlass() {
+  const m = new VoxelModel();
+  for (let x = 46; x <= 52; x++) for (let y = 8; y <= 13; y++) if (x !== 49) m.set(x, y, D - 1, 0xffffff);
+  return m;
+}
+
+function buildAnnexRoof(seed) {
+  const m = new VoxelModel();
+  for (let x = AX0; x <= AX1 + 2; x++) {
+    const h = annexRoofHeight(x);
+    for (let z = AZ0 - 2; z <= D + 1; z++) {
+      const grey = Math.floor((z + 2) / 6) % 3 === 1;
+      m.set(x, h, z, grey ? (x % 2 ? P.s4 : P.s5) : x % 2 ? P.r2 : P.r3);
+      m.set(x, h - 1, z, grey ? P.s3 : P.r1);
+    }
+  }
+  // Giebelwand zwischen Anbauwand und Dach
+  for (let x = AX0; x <= AX1; x++) {
+    for (let y = 20; y < annexRoofHeight(x) - 1; y++) {
+      m.set(x, y, D - 1, y % 2 ? P.e5 : P.e4);
+      m.set(x, y, AZ0, P.e4);
+    }
+  }
+  // Regenrinne mit Tonne
+  for (let z = AZ0 - 2; z <= D + 1; z++) m.set(AX1 + 3, annexRoofHeight(AX1 + 2) - 1, z, P.s5);
+  return m;
+}
+
+function buildDeck() {
+  const m = new VoxelModel();
+  const x0 = -2;
+  const x1 = AX1 + 1;
+  m.box(x0, 0, D, x1, 1, D + 5, (x, y, z) => (y === 1 ? (Math.floor(x / 3) % 2 ? P.e5 : P.e6) : P.e3));
+  // Geländer vorn mit Lücke für die Treppe vor der Tür
+  for (let x = x0; x <= x1; x++) {
+    if (x >= DOOR.x0 - 1 && x <= DOOR.x1 + 1) continue;
+    const post = (x - x0) % 6 === 0 || x === x1 || x === DOOR.x0 - 2 || x === DOOR.x1 + 2;
+    if (post) m.box(x, 2, D + 5, x, 6, D + 5, P.e3);
+    m.set(x, 6, D + 5, P.e4);
+  }
+  // Seitengeländer
+  for (let z = D; z <= D + 5; z++) {
+    m.set(x0, 6, z, P.e4).set(x1, 6, z, P.e4);
+  }
+  m.box(x0, 2, D, x0, 5, D, P.e3).box(x1, 2, D, x1, 5, D, P.e3);
+  // Treppe
+  m.box(DOOR.x0 - 1, 0, D + 6, DOOR.x1 + 1, 0, D + 7, P.e5);
+  // Blumentöpfe am Geländer
+  for (const [x, c] of [[24, P.a0], [34, P.f6], [44, P.a3]]) {
+    m.box(x, 2, D + 4, x + 1, 3, D + 4, P.r3);
+    m.set(x, 4, D + 4, P.g5).set(x + 1, 4, D + 4, c);
+  }
+  return m;
+}
+
 /**
  * Baut die Notunterkunft.
  * @returns {object} group, fade-Uniform, Lichtpositionen, Interaktionen, Kollision
  */
-export function createShelter({ seed, colliders }) {
+/** Materialien der Unterkunft – einmal anlegen, bei jedem Ausbau wiederverwenden. */
+/**
+ * Grundfläche des Zuhauses auf dem Bauraster (Weltkoordinaten), inklusive
+ * Veranda, Stufe und einem freien Streifen vor der Tür.
+ */
+export function shelterFootprint(level) {
   const { x: ox, z: oz } = LAYOUT.shelter;
-  const group = new THREE.Group();
-  group.name = 'Notunterkunft';
-  group.position.set(ox, 0, oz);
+  const wx = (vx) => ox + vx * V;
+  const wz = (vz) => oz + vz * V;
+  return level >= 2
+    ? [
+        { minX: wx(-3), maxX: wx(AX1 + 4), minZ: wz(-2), maxZ: wz(D + 8) },
+        { minX: wx(DOOR.x0 - 4), maxX: wx(DOOR.x1 + 5), minZ: wz(D + 8), maxZ: wz(D + 16) },
+      ]
+    : [
+        { minX: wx(-2), maxX: wx(W + 2), minZ: wz(-2), maxZ: wz(D + 3) },
+        { minX: wx(DOOR.x0 - 4), maxX: wx(DOOR.x1 + 5), minZ: wz(D + 3), maxZ: wz(D + 16) },
+      ];
+}
 
+export function createShelterMaterials() {
   const baseMat = createWorldMaterial({ occluder: true });
   const fadeMat = createWorldMaterial({ occluder: true, fade: true });
   const fade = fadeMat.userData.fade;
-
   const glow = {
     window: createGlowMaterial(0xffffff, { fade: true, fadeUniform: fade }),
     fairy: createGlowMaterial(0xffffff, { fade: true, fadeUniform: fade, vertexColors: true }),
@@ -343,6 +483,16 @@ export function createShelter({ seed, colliders }) {
     lamp: createGlowMaterial(0xffffff),
     candle: createGlowMaterial(0xffffff),
   };
+  return { baseMat, fadeMat, fade, glow };
+}
+
+export function createShelter({ seed, colliders, level = 1, materials }) {
+  const { x: ox, z: oz } = LAYOUT.shelter;
+  const group = new THREE.Group();
+  group.name = level >= 2 ? 'Hütte' : 'Notunterkunft';
+  group.position.set(ox, 0, oz);
+  const { baseMat, fadeMat, fade, glow } = materials;
+  const ownColliders = [];
 
   // Sichtbare Flächen für die Kamera, Schatten über einen Stellvertreter.
   const mesh = (model, material, { shadow = 'full', jitter = 0.05 } = {}) => {
@@ -358,7 +508,7 @@ export function createShelter({ seed, colliders }) {
     return visual;
   };
 
-  const base = mesh(buildBase(seed), baseMat);
+  const base = mesh(buildBase(seed, level), baseMat);
   const front = mesh(buildFront(seed), fadeMat);
   const roofParts = buildRoof(seed);
   const roof = mesh(roofParts.model, fadeMat);
@@ -381,24 +531,51 @@ export function createShelter({ seed, colliders }) {
   doorPivot.add(door);
 
   group.add(base, front, roof, awning, windowGlass, fairyWire, fairy, lanternGlass, stoveGlow, lampGlow, candleGlow, doorPivot);
+  if (level >= 2) {
+    group.add(
+      mesh(buildAnnexBase(seed), baseMat),
+      mesh(buildAnnexFront(seed), fadeMat),
+      mesh(buildAnnexRoof(seed), fadeMat),
+      mesh(buildAnnexGlass(), glow.window, { shadow: 'none', jitter: 0 }),
+      mesh(buildDeck(), baseMat)
+    );
+  }
 
   // --- Kollision (Weltkoordinaten) ---
   const wx = (vx) => ox + vx * V;
   const wz = (vz) => oz + vz * V;
-  colliders.addBox(wx(0), wz(0), wx(1), wz(D), 'wand');
-  colliders.addBox(wx(W - 1), wz(0), wx(W), wz(D), 'wand');
-  colliders.addBox(wx(0), wz(0), wx(W), wz(1), 'wand');
-  colliders.addBox(wx(0), wz(D - 1), wx(DOOR.x0), wz(D), 'wand');
-  colliders.addBox(wx(DOOR.x1 + 1), wz(D - 1), wx(W), wz(D), 'wand');
-  colliders.addBox(wx(1), wz(2), wx(15), wz(10), 'bett');
-  colliders.addBox(wx(2), wz(11), wx(5), wz(14), 'nachttisch');
-  colliders.addBox(wx(30), wz(2), wx(38), wz(7), 'ofen');
-  colliders.addBox(wx(23), wz(22), wx(33), wz(26), 'tisch');
-  colliders.addBox(wx(26), wz(18), wx(29), wz(21), 'stuhl');
-  colliders.addBox(wx(2), wz(21), wx(7), wz(26), 'kiste');
-  colliders.addBox(wx(16), wz(23), wx(20), wz(26), 'pflanze');
-  colliders.addCircle(wx(5.5), wz(40.5), 0.12);
-  colliders.addCircle(wx(20.5), wz(40.5), 0.12);
+  const box = (x0, z0, x1, z1, tag) => ownColliders.push(colliders.addBox(wx(x0), wz(z0), wx(x1), wz(z1), tag));
+  box(0, 0, 1, D, 'wand');
+  if (level >= 2) {
+    box(W - 1, 0, W, 14, 'wand');
+    box(W - 1, 21, W, D, 'wand');
+    box(AX0, AZ0, AX1 + 1, AZ0 + 1, 'wand');
+    box(AX1, AZ0, AX1 + 1, D, 'wand');
+    box(AX0, D - 1, AX1 + 1, D, 'wand');
+    box(W - 1, 0, AX1 + 1, AZ0, 'wand');
+    box(42, AZ0 + 1, 52, AZ0 + 3, 'regal');
+    box(52, 10, 56, 14, 'sessel');
+    box(40, 22, 44, 26, 'pflanze');
+    // Geländer der Veranda (Lücke vor der Treppe)
+    box(-2, D + 5, DOOR.x0 - 1, D + 6, 'gelaender');
+    box(DOOR.x1 + 2, D + 5, AX1 + 2, D + 6, 'gelaender');
+    box(-3, D, -2, D + 6, 'gelaender');
+    box(AX1 + 1, D, AX1 + 2, D + 6, 'gelaender');
+  } else {
+    box(W - 1, 0, W, D, 'wand');
+  }
+  box(0, 0, W, 1, 'wand');
+  box(0, D - 1, DOOR.x0, D, 'wand');
+  box(DOOR.x1 + 1, D - 1, W, D, 'wand');
+  box(1, 2, 15, 10, 'bett');
+  box(2, 11, 5, 14, 'nachttisch');
+  box(30, 2, 38, 7, 'ofen');
+  box(23, 22, 33, 26, 'tisch');
+  box(26, 18, 29, 21, 'stuhl');
+  box(2, 21, 7, 26, 'kiste');
+  box(16, 23, 20, 26, 'pflanze');
+  ownColliders.push(colliders.addCircle(wx(5.5), wz(40.5), 0.12));
+  ownColliders.push(colliders.addCircle(wx(20.5), wz(40.5), 0.12));
 
   const toWorld = (vx, vy, vz) => new THREE.Vector3(wx(vx), vy * V, wz(vz));
 
@@ -413,12 +590,28 @@ export function createShelter({ seed, colliders }) {
       stove: toWorld(32.5, FLOOR + 3, 8),
     },
     chimney: toWorld(roofParts.chimneyTop.x, roofParts.chimneyTop.y, roofParts.chimneyTop.z),
-    interior: { minX: wx(1), maxX: wx(W - 1), minZ: wz(1), maxZ: wz(D - 1) },
+    level,
+    colliders: ownColliders,
+    interiors:
+      level >= 2
+        ? [
+            { minX: wx(1), maxX: wx(W - 1), minZ: wz(1), maxZ: wz(D - 1) },
+            { minX: wx(W - 1), maxX: wx(AX1), minZ: wz(AZ0 + 1), maxZ: wz(D - 1) },
+          ]
+        : [{ minX: wx(1), maxX: wx(W - 1), minZ: wz(1), maxZ: wz(D - 1) }],
+    footprint: shelterFootprint(level),
     floorHeight: FLOOR * V,
-    heightZones: [
-      { minX: wx(0), maxX: wx(W), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
-      { minX: wx(8), maxX: wx(17), minZ: wz(D), maxZ: wz(31), y: 2 * V },
-    ],
+    heightZones:
+      level >= 2
+        ? [
+            { minX: wx(0), maxX: wx(AX1 + 1), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
+            { minX: wx(-2), maxX: wx(AX1 + 2), minZ: wz(D), maxZ: wz(D + 6), y: 2 * V },
+            { minX: wx(DOOR.x0 - 1), maxX: wx(DOOR.x1 + 2), minZ: wz(D + 6), maxZ: wz(D + 8), y: 1 * V },
+          ]
+        : [
+            { minX: wx(0), maxX: wx(W), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
+            { minX: wx(8), maxX: wx(17), minZ: wz(D), maxZ: wz(31), y: 2 * V },
+          ],
     // inside: nur von drinnen benutzbar (nicht durch die Wand)
     interactions: [
       { id: 'bett', x: wx(8), z: wz(8), radius: 1.35, prompt: 'schlafen', action: 'sleep', inside: true },

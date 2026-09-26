@@ -26,9 +26,14 @@ WebGL 2 (aktuelle Desktop-Browser).
 |---|---|
 | W A S D / Pfeiltasten | Laufen |
 | Umschalt | Rennen |
-| E / Enter / Leertaste | Benutzen, Dialog weiter |
+| E / Enter | Benutzen, sammeln (gedrückt halten sammelt weiter) |
+| Leertaste | Dialog weiter |
 | 1–8 / Mausrad | Schnellleiste |
 | F | Laterne an/aus |
+| Q R T G C V | Bauleiste (Tab wechselt den Reiter) |
+| Linksklick / E | Bau setzen, Bau auswählen |
+| Mausrad beim Bauen | Drehen |
+| Rechtsklick / Esc | Bauen abbrechen, Auswahl aufheben |
 | Esc | Menü |
 | F3 | Entwickler-Anzeige |
 

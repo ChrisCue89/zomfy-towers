@@ -86,13 +86,22 @@ export class Colliders {
     return pos;
   }
 
+  /** Hindernis entfernen (z. B. beim Abreißen oder Umbauen). */
+  remove(collider) {
+    const list = 'r' in collider ? this.circles : this.boxes;
+    const index = list.indexOf(collider);
+    if (index >= 0) list.splice(index, 1);
+  }
+
   /** Liegt der Punkt (mit Rand) in einem Hindernis? Die Außengrenze zählt nicht. */
   blocks(x, z, margin = 0) {
     for (const c of this.circles) {
+      if (!c.enabled) continue;
       const r = c.r + margin;
       if ((x - c.x) ** 2 + (z - c.z) ** 2 < r * r) return true;
     }
     for (const b of this.boxes) {
+      if (!b.enabled) continue;
       if (x > b.minX - margin && x < b.maxX + margin && z > b.minZ - margin && z < b.maxZ + margin) return true;
     }
     return false;

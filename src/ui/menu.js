@@ -86,7 +86,7 @@ export class Menu {
     } else if (hovered >= 0 && input.mouse.clicked) {
       input.consumeClick();
       buttons[hovered].action();
-    } else if (input.pressed('use')) {
+    } else if (input.pressed('confirm')) {
       buttons[Math.min(this.focus, buttons.length - 1)].action();
     } else if (input.pressed('menu')) {
       if (this.screen === 'main') this.game.closeMenu();

@@ -1,5 +1,6 @@
 // Die Spielschleife. Besitzt alle Systeme und schaltet zwischen den Modi
-// play (spielen), dialog, menu und sleep (Schlafen/Tageswechsel) um.
+// play (spielen), dialog, menu, craft (Werkbank) und sleep (Schlafen,
+// Ausruhen, Werkeln mit Abblende) um.
 
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
@@ -7,22 +8,30 @@ import { Events } from './events.js';
 import { Input } from './input.js';
 import { SaveStore } from './save.js';
 import { createNewState, hoursOf, clockText, DAY_MINUTES } from './state.js';
+import { canAfford, pay, gain } from './inventory.js';
+import { Builder } from './builder.js';
+import { Gathering } from './gathering.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits } from '../render/portrait.js';
 import { World } from '../world/world.js';
+import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
 import { Player } from '../entities/player.js';
 import { UICanvas, COLORS } from '../ui/ui.js';
 import { Hud } from '../ui/hud.js';
 import { DialogBox } from '../ui/dialog.js';
 import { Menu } from '../ui/menu.js';
+import { BuildBar } from '../ui/buildbar.js';
+import { CraftingMenu } from '../ui/crafting.js';
 import { drawText, measure, GLYPH_ROWS } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
 import { DIALOGE } from '../data/dialogs.js';
-import { HOTBAR_SIZE } from '../data/items.js';
+import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
+import { BUILDINGS } from '../data/buildings.js';
+import { GOALS } from '../data/goals.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -34,7 +43,7 @@ const FLAG_AFTER_DIALOG = {
 /** Ausruhen: Zieluhrzeit je Aktion. */
 const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 21.5 };
 
-const SLEEP = { fadeOut: 1.0, black: 1.7, fadeIn: 0.9 };
+const SLEEP = { fadeOut: 1.0, black: 1.2, fadeIn: 0.9 };
 const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
 
 export class Game {
@@ -45,9 +54,10 @@ export class Game {
     this.frameTimes = [];
     this.showDebug = CONFIG.debug;
     this.currentInteraction = null;
-    this.suppressed = null; // Interaktion, die bis zum Weggehen ruht
-    this.previousSlot = 1;
+    this.suppressed = null; // { id, until } – Interaktion ruht bis zum Weggehen oder bis `until`
+    this.clock = 0; // Sekunden seit dem Start (für kurze Sperren)
     this.sleep = null;
+    this.goal = null; // { id, text }
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
     this.intro = { t: 0, duration: 1.9 };
@@ -64,6 +74,7 @@ export class Game {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0d0b18);
     this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, renderConfig: CONFIG.render });
+    this.effects = new Effects(this.world.particles);
     this.player = new Player({ world: this.world, config: CONFIG.player });
     this.scene.add(this.player.object);
     this.world.attachPlayerLantern(this.player.character.lantern.glow);
@@ -74,6 +85,10 @@ export class Game {
     this.hud = new Hud(this);
     this.dialog = new DialogBox(this);
     this.menu = new Menu(this);
+    this.builder = new Builder(this);
+    this.gathering = new Gathering(this);
+    this.buildbar = new BuildBar(this);
+    this.crafting = new CraftingMenu(this);
     this.portraits = renderPortraits();
 
     this.saves = new SaveStore({ disabled: CONFIG.noSave, config: CONFIG });
@@ -96,8 +111,10 @@ export class Game {
 
     if (loaded.status === 'corrupt') this.hud.toast(T.meldungen.defekt, null, 6);
     if (loaded.status === 'ok') this.hud.toast(T.meldungen.willkommen, 'haus');
-    if (this.isNewGame && !CONFIG.skipIntro) this.pendingIntro = true;
-    else if (this.isNewGame) this.hud.showHint(T.meldungen.hinweisStart, 14);
+    // Einführung auch nach einem Neuladen mitten im Intro noch einmal zeigen
+    const introOpen = this.isNewGame || !this.state.flags.introGesehen;
+    if (introOpen && !CONFIG.skipIntro) this.pendingIntro = true;
+    else if (introOpen) this.hud.showHint(T.meldungen.hinweisStart, 14);
     if (CONFIG.test) this.intro.t = this.intro.duration;
 
     this.setFavicon();
@@ -153,12 +170,27 @@ export class Game {
 
   // --- Zustand ---------------------------------------------------------------
 
-  /** Spielzustand auf Welt und Figur übertragen. */
+  /** Spielzustand auf Welt und Figur übertragen (Laden, neues Spiel). */
   applyState() {
-    const p = this.state.player;
+    const st = this.state;
+    this.builder.cancel();
+    this.world.setHouseLevel(st.world.houseLevel);
+    this.world.buildings.load(st.world.buildings);
+    st.world.buildings = this.world.buildings.toState();
+    this.world.resources.apply(st.world, st.time.day);
+    const axe = this.world.props.axe;
+    axe.object.visible = !st.tools.axt;
+    Object.assign(axe.interaction, st.tools.axt ? { prompt: 'ansehen', action: null, dialog: 'hackklotz' } : { prompt: 'axtNehmen', action: 'takeAxe', dialog: null });
+    this.world.refreshInteractions();
+
+    const p = st.player;
     this.player.place(p.x, p.z, p.facing);
-    this.rig.jumpTo(p.x, p.z);
+    this.pushPlayerOut();
+    this.player.holdingLantern = p.lantern;
+    this.player.lanternLit = p.lantern;
+    this.rig.jumpTo(this.player.position.x, this.player.position.z);
     this.updateHeldItem(false);
+    this.updateGoals(true);
   }
 
   quietSave() {
@@ -170,7 +202,6 @@ export class Game {
     this.saves.clear();
     this.state = createNewState(CONFIG);
     this.isNewGame = true;
-    this.previousSlot = 1;
     this.applyState();
     this.menu.close();
     this.mode = 'play';
@@ -178,7 +209,16 @@ export class Game {
     this.pendingIntro = true;
   }
 
-  // --- Schnellleiste und Laterne --------------------------------------------
+  /** Figur aus Hindernissen schieben (nach Umbau oder Laden). */
+  pushPlayerOut() {
+    const p = this.player.position;
+    this.world.colliders.resolve(p, CONFIG.player.radius);
+    p.y = this.world.heightAt(p.x, p.z);
+    this.player.syncObject();
+    Object.assign(this.state.player, { x: p.x, z: p.z });
+  }
+
+  // --- Schnellleiste, Werkzeuge und Laterne -----------------------------------
 
   selectSlot(index, announce = true) {
     const hb = this.state.hotbar;
@@ -190,28 +230,52 @@ export class Game {
   updateHeldItem(announce) {
     const hb = this.state.hotbar;
     const item = hb.slots[hb.selected];
-    const holding = item === 'laterne';
-    this.player.holdingLantern = holding;
-    this.player.lanternLit = holding;
-    this.state.player.lantern = holding;
-    if (!holding) this.previousSlot = hb.selected;
+    this.player.heldTool = item && ITEMS[item]?.tool ? item : null;
     if (announce) this.hud.showItemLabel(item ? T.gegenstaende[item] : T.gegenstaende.leer);
   }
 
-  toggleLantern() {
+  /** Neues Werkzeug in den ersten freien Platz legen und in die Hand nehmen. */
+  addToHotbar(item) {
     const hb = this.state.hotbar;
-    const slot = hb.slots.indexOf('laterne');
-    if (slot < 0) return;
-    if (hb.selected === slot) {
-      hb.selected = this.previousSlot !== slot ? this.previousSlot : (slot + 1) % HOTBAR_SIZE;
-      this.updateHeldItem(false);
-      this.hud.showItemLabel(T.meldungen.laterneAus);
-    } else {
-      this.previousSlot = hb.selected;
-      hb.selected = slot;
-      this.updateHeldItem(false);
-      this.hud.showItemLabel(T.meldungen.laterneAn);
+    let slot = hb.slots.indexOf(item);
+    if (slot < 0) {
+      slot = hb.slots.indexOf(null);
+      if (slot < 0) return;
+      hb.slots[slot] = item;
     }
+    hb.selected = slot;
+    this.updateHeldItem(false);
+  }
+
+  toggleLantern() {
+    const on = !this.player.holdingLantern;
+    this.player.holdingLantern = on;
+    this.player.lanternLit = on;
+    this.state.player.lantern = on;
+    this.hud.showItemLabel(on ? T.meldungen.laterneAn : T.meldungen.laterneAus);
+  }
+
+  // --- Ziele -------------------------------------------------------------------
+
+  /** Erstes offenes Ziel bestimmen; erreichte Ziele melden. */
+  updateGoals(silent = false) {
+    const flags = this.state.flags;
+    let current = null;
+    for (const goal of GOALS) {
+      const key = `ziel_${goal.id}`;
+      if (flags[key]) continue;
+      if (goal.done(this)) {
+        flags[key] = true;
+        if (!silent) {
+          this.hud.toast(T.meldungen.zielErreicht, 'ziel', 2.6);
+          this.hud.goalFlash = 1.2;
+        }
+        continue;
+      }
+      current = goal;
+      break;
+    }
+    if (current?.id !== this.goal?.id) this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
   }
 
   // --- Dialoge, Menü, Schlafen ------------------------------------------------
@@ -221,8 +285,13 @@ export class Game {
     if (!entry) return;
     const lines = typeof entry === 'function' ? entry(this.state) : entry;
     this.mode = 'dialog';
+    this.gathering.repeat = null;
+    const source = this.lastInteraction;
+    this.lastInteraction = null;
     this.dialog.open(lines, (aktion) => {
       this.mode = 'play';
+      // Dasselbe Ding nicht sofort wieder öffnen, wenn man E weiterdrückt
+      if (source) this.suppressed = { id: source, until: this.clock + 1.0 };
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
@@ -230,9 +299,83 @@ export class Game {
     });
   }
 
-  interact(interaction) {
-    if (interaction.action === 'sleep') this.requestSleep();
-    else if (interaction.dialog) this.startDialog(interaction.dialog);
+  interact(it) {
+    this.lastInteraction = it.id;
+    if (it.action === 'sleep') this.requestSleep();
+    else if (it.action === 'takeAxe') this.takeAxe();
+    else if (it.use === 'werkbank') this.openCrafting();
+    else if (it.use === 'bank') this.startDialog('bank');
+    else if (it.use === 'ernten') this.harvest(it.building);
+    else if (it.select) this.builder.select(it.select);
+    else if (this.gathering.interact(it)) return;
+    else if (it.dialog) this.startDialog(it.dialog);
+  }
+
+  takeAxe() {
+    const st = this.state;
+    if (st.tools.axt) return;
+    st.tools.axt = true;
+    const axe = this.world.props.axe;
+    axe.object.visible = false;
+    Object.assign(axe.interaction, { prompt: 'ansehen', action: null, dialog: 'hackklotz' });
+    this.addToHotbar('axt');
+    this.effects.chips(axe.interaction.x, 0.5, axe.interaction.z, 'holz', 6);
+    this.hud.toast(T.meldungen.axtGenommen, 'axt', 2.4);
+    this.startDialog('axtFund');
+  }
+
+  /** Flachsbeet: einmal am Tag ernten. */
+  harvest(buildingId) {
+    const b = this.world.buildings.get(buildingId);
+    if (!b) return;
+    const day = this.state.time.day;
+    if (b.day === day) {
+      this.hud.toast(T.meldungen.geerntet, 'beet', 2.2);
+      return;
+    }
+    const c = this.world.buildings.bounds(b);
+    this.player.startAction('search', {
+      duration: 0.8,
+      face: c,
+      onDone: () => {
+        b.day = day;
+        this.state.world.buildings = this.world.buildings.toState();
+        this.effects.chips(c.x, 0.3, c.z, 'gras', 8);
+        this.gathering.give(BUILDINGS[b.type].harvest, c.x, 0.9, c.z);
+      },
+    });
+  }
+
+  openCrafting() {
+    this.builder.cancel();
+    this.mode = 'craft';
+    this.crafting.open();
+  }
+
+  closeCrafting() {
+    this.crafting.close();
+    this.mode = 'play';
+  }
+
+  craft(recipe) {
+    const st = this.state;
+    if (recipe.owned) {
+      this.hud.toast(T.werkbank.vorhanden, recipe.icon, 1.8);
+      return false;
+    }
+    if (!canAfford(st.inventory, recipe.cost)) {
+      this.hud.toast(T.meldungen.zuTeuer, null, 1.8);
+      return false;
+    }
+    pay(st.inventory, recipe.cost);
+    if (recipe.gives.tool) {
+      st.tools[recipe.gives.tool] = true;
+      this.addToHotbar(recipe.gives.tool);
+    }
+    if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
+    this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
+    this.quietSave();
+    return true;
   }
 
   requestSleep() {
@@ -242,25 +385,39 @@ export class Game {
   }
 
   startSleep() {
+    this.builder.cancel();
     this.mode = 'sleep';
     this.sleep = { t: 0, advanced: false, kind: 'sleep' };
   }
 
   /** Ausruhen: kurze Abblende, dann springt die Uhr zur Zielzeit (gleicher Tag). */
   startRest(targetHour) {
+    this.builder.cancel();
     this.mode = 'sleep';
     this.sleep = { t: 0, advanced: false, kind: 'rest', targetHour };
   }
 
+  /** Werkeln (z. B. Hausausbau): Abblende, Uhr läuft `hours` weiter, dann onBlack/onDone. */
+  startWork(text, hours, onBlack, onDone) {
+    this.builder.cancel();
+    this.mode = 'sleep';
+    this.sleep = { t: 0, advanced: false, kind: 'work', text, hours, onBlack, onDone };
+  }
+
   updateSleep(dt) {
     const s = this.sleep;
-    const timing = s.kind === 'rest' ? REST : SLEEP;
+    const timing = s.kind === 'sleep' ? SLEEP : REST;
     s.t += dt;
+    // Die schwarze Tageskarte lässt sich mit E, Leertaste oder Klick überspringen.
+    if (s.advanced && s.t < timing.fadeOut + timing.black && (this.input.pressed('confirm') || this.input.mouse.clicked)) s.t = timing.fadeOut + timing.black;
     if (!s.advanced && s.t >= timing.fadeOut) {
       s.advanced = true;
       if (s.kind === 'rest') {
         const minute = (s.targetHour - 6) * 60;
         if (minute > this.state.time.minute) this.state.time.minute = minute;
+      } else if (s.kind === 'work') {
+        this.state.time.minute = Math.min(DAY_MINUTES - 1, this.state.time.minute + s.hours * 60);
+        if (s.onBlack) s.onBlack();
       } else {
         this.advanceToMorning();
       }
@@ -269,8 +426,11 @@ export class Game {
       this.sleep = null;
       this.mode = 'play';
       if (s.kind === 'sleep') {
-        this.suppressed = 'bett';
-        this.startDialog('morgen');
+        // Aufwachen: ein Gedanke statt eines Dialogs – man kann sofort loslaufen.
+        this.suppressed = { id: 'bett', until: Infinity };
+        this.hud.say(DIALOGE.morgen(this.state)[0].t, 4.5);
+      } else if (s.kind === 'work' && s.onDone) {
+        s.onDone();
       }
     }
   }
@@ -283,13 +443,19 @@ export class Game {
     st.stats.nightsSlept += 1;
     const w = this.world.shelter.wakeSpot;
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
-    if (st.hotbar.slots[st.hotbar.selected] === 'laterne') st.hotbar.selected = this.previousSlot;
-    this.applyState();
+    this.onNewDay();
+    this.player.place(w.x, w.z, w.facing);
+    this.rig.jumpTo(w.x, w.z);
     this.world.fadeValue = 1; // im Haus aufwachen: Dach bleibt ausgeblendet
     const ok = this.saves.save(st);
     const message = ok ? T.meldungen.gespeichert : this.saves.disabled ? T.meldungen.speichernAus : T.meldungen.speichernFehler;
     this.hud.toast(message, 'haus', 4.5);
-    this.events.emit('newDay', st.time.day);
+  }
+
+  /** Alles, was ein neuer Tag mit sich bringt (Nachwachsen …). */
+  onNewDay() {
+    this.world.resources.apply(this.state.world, this.state.time.day);
+    this.events.emit('newDay', this.state.time.day);
   }
 
   openMenu() {
@@ -311,12 +477,16 @@ export class Game {
 
   update(dt) {
     const input = this.input;
+    this.clock += dt;
     if (input.pressed('debug')) this.showDebug = !this.showDebug;
     if (this.intro.t < this.intro.duration) {
       this.intro.t += dt;
       if (this.pendingIntro && this.intro.t > this.intro.duration * 0.7 && this.mode === 'play') {
         this.pendingIntro = false;
-        this.startDialog('intro', () => this.hud.showHint(T.meldungen.hinweisStart, 14));
+        this.startDialog('intro', () => {
+          this.state.flags.introGesehen = true;
+          this.hud.showHint(T.meldungen.hinweisStart, 14);
+        });
       }
     }
 
@@ -325,11 +495,17 @@ export class Game {
         this.updatePlay(dt);
         break;
       case 'dialog':
-        this.dialog.update(dt, input);
+        // Esc öffnet auch mitten im Dialog das Menü (danach geht der Dialog weiter)
+        if (input.pressed('menu')) this.openMenu();
+        else this.dialog.update(dt, input);
         this.player.idle(dt);
         break;
       case 'menu':
         this.menu.update(input, dt);
+        this.player.idle(dt);
+        break;
+      case 'craft':
+        this.crafting.update(input);
         this.player.idle(dt);
         break;
       case 'sleep':
@@ -344,46 +520,71 @@ export class Game {
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
     this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
+    this.updateGoals();
     this.hud.update(dt);
   }
 
   updatePlay(dt) {
     const input = this.input;
-    if (input.pressed('menu')) {
+    const ui = this.ui;
+    // Bis das Intro spricht, steht Mika still (sonst reißt der Dialog sie aus dem Laufen).
+    if (this.pendingIntro) {
+      this.player.idle(dt);
+      return;
+    }
+
+    // Oberfläche zuerst: Bauleiste, Schnellleiste – dann Abbrechen, dann Menü
+    this.buildbar.update(dt, input);
+    if (input.mouse.clicked) {
+      const i = this.hud.slotAt(ui);
+      if (i === -2) this.toggleLantern();
+      else if (i >= 0) this.selectSlot(i);
+      if (i !== -1) input.consumeClick();
+    }
+    const escUsed = this.builder.handleCancel(input);
+    if (!escUsed && input.pressed('menu')) {
       this.openMenu();
       return;
     }
+    if (this.mode !== 'play') return; // die Bauleiste kann einen Dialog öffnen
+
     const slot = input.slotPressed();
     if (slot >= 0) this.selectSlot(slot);
-    const wheel = input.consumeWheel();
-    if (wheel) this.selectSlot((this.state.hotbar.selected + wheel + HOTBAR_SIZE) % HOTBAR_SIZE);
-    if (input.mouse.clicked) {
-      const i = this.hud.slotAt(this.ui);
-      if (i >= 0) {
-        this.selectSlot(i);
-        input.consumeClick();
-      }
+    if (!this.builder.placement) {
+      const wheel = input.consumeWheel();
+      if (wheel) this.selectSlot((this.state.hotbar.selected + wheel + HOTBAR_SIZE) % HOTBAR_SIZE);
     }
     if (input.pressed('lantern')) this.toggleLantern();
 
-    this.player.update(dt, input.moveVector(), input.isDown('run'));
+    this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
     const p = this.player.position;
     const sp = this.state.player;
     sp.x = p.x;
     sp.z = p.z;
     sp.facing = this.player.facing;
 
-    let it = this.world.findInteraction(p.x, p.z, this.player.facing);
-    // Nach dem Aufwachen bietet das Bett erst wieder Schlaf an, wenn man einmal weggegangen ist.
-    if (this.suppressed) {
-      if (it && it.id === this.suppressed) it = null;
-      else if (!this.world.interactions.some((i) => i.id === this.suppressed && Math.hypot(i.x - p.x, i.z - p.z) <= i.radius)) this.suppressed = null;
+    const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui);
+    this.builder.update(dt, input, pointerFree);
+    if (this.mode !== 'play') return;
+
+    // Beim Platzieren setzt E den Bau – dann keine Interaktion.
+    let it = null;
+    if (!this.builder.placement && !this.player.busy) {
+      it = this.world.findInteraction(p.x, p.z, this.player.facing);
+      // Gesperrt bis zum Weggehen (Bett nach dem Aufwachen) oder kurz nach einem Dialog
+      const sup = this.suppressed;
+      if (sup) {
+        const near = this.world.interactions.some((i) => i.id === sup.id && Math.hypot(i.x - p.x, i.z - p.z) <= i.radius);
+        if (!near || this.clock > sup.until) this.suppressed = null;
+        else if (it && it.id === sup.id) it = null;
+      }
     }
     this.currentInteraction = it;
-    if (this.currentInteraction && input.pressed('use')) {
-      this.interact(this.currentInteraction);
-      return;
+    if (it && input.pressed('use')) {
+      this.interact(it);
+      if (this.mode !== 'play') return;
     }
+    this.gathering.update(input, this.player.busy ? this.gathering.repeat : it);
     this.advanceTime(dt);
   }
 
@@ -395,7 +596,7 @@ export class Game {
       time.minute -= DAY_MINUTES;
       time.day += 1;
       this.hud.toast(T.meldungen.neuerTag(time.day));
-      this.events.emit('newDay', time.day);
+      this.onNewDay();
     }
     const h = hoursOf(time.minute);
     const flags = this.state.flags;
@@ -434,6 +635,13 @@ export class Game {
     return { x: p.x - 1, y: this.pixel.height - p.y };
   }
 
+  /** Boden unter dem Mauszeiger (oder null, wenn die Maus nicht im Fenster ist). */
+  pointerGround(out = new THREE.Vector3()) {
+    const m = this.input.mouse;
+    if (!m.inside) return null;
+    return this.rig.unproject(m.x + 1.5, this.pixel.height - m.y - 0.5, 0, out);
+  }
+
   render() {
     sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
     this.pixel.render(this.scene, this.rig, this.world.dayNight.look);
@@ -448,7 +656,11 @@ export class Game {
       this.hud.prompt = null;
     }
     this.hud.debugLines = this.showDebug ? this.debugLines() : null;
-    this.hud.draw(ui, { hotbar: this.mode !== 'dialog', prompt: this.mode === 'play' });
+    const playing = this.mode === 'play';
+    if (playing) this.builder.drawOverlay(ui);
+    this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
+    if (playing) this.buildbar.draw(ui);
+    this.crafting.draw(ui);
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
@@ -467,15 +679,16 @@ export class Game {
 
   drawSleep(ui) {
     const s = this.sleep;
-    const timing = s.kind === 'rest' ? REST : SLEEP;
+    const timing = s.kind === 'sleep' ? SLEEP : REST;
     const t = s.t;
     let fade;
     if (t < timing.fadeOut) fade = t / timing.fadeOut;
     else if (t < timing.fadeOut + timing.black) fade = 1;
     else fade = 1 - (t - timing.fadeOut - timing.black) / timing.fadeIn;
-    ui.ditherFill(Math.max(0, Math.min(1, fade)), s.kind === 'rest' ? COLORS.inset : COLORS.night);
-    if (s.kind === 'rest') {
-      if (t > timing.fadeOut * 0.5 && t < timing.fadeOut + timing.black) ui.textCentered(T.schlaf.warten, ui.width / 2, ui.height / 2 - 6, COLORS.textWarm, { outline: COLORS.outline });
+    ui.ditherFill(Math.max(0, Math.min(1, fade)), s.kind === 'sleep' ? COLORS.night : COLORS.inset);
+    if (s.kind !== 'sleep') {
+      const text = s.kind === 'work' ? s.text : T.schlaf.warten;
+      if (t > timing.fadeOut * 0.5 && t < timing.fadeOut + timing.black) ui.textCentered(text, ui.width / 2, ui.height / 2 - 6, COLORS.textWarm, { outline: COLORS.outline });
     } else if (t < timing.fadeOut * 0.9) {
       ui.textCentered(T.schlaf.gutenacht, ui.width / 2, ui.height / 2 - 6, COLORS.textWarm, { outline: COLORS.outline });
     } else if (t < timing.fadeOut + timing.black + 0.3) {
@@ -483,7 +696,7 @@ export class Game {
     }
   }
 
-  /** Text in doppelter Pixelgröße (für die Tageskarte). */
+  /** Text in mehrfacher Pixelgröße (Titel, Tageskarte). */
   drawBigText(ui, text, cx, y, factor, color) {
     const w = measure(text);
     const tmp = document.createElement('canvas');
@@ -528,13 +741,38 @@ export class Game {
     const st = this.state;
     const it = this.mode === 'play' ? this.currentInteraction : null;
     const line = this.dialog.active ? this.dialog.line : null;
+    const costText = (cost) =>
+      Object.entries(cost || {})
+        .filter(([, v]) => v > 0)
+        .map(([res, v]) => `${v} ${T.ressourcen[res]}`)
+        .join(', ');
+    const L = this.mode === 'play' ? this.buildbar.layout(this.ui) : null;
     return {
       tag: st.time.day,
       uhrzeit: clockText(st.time.minute),
       modus: this.mode,
-      vorrat: { ...st.inventory },
+      ziel: this.goal ? this.goal.text : null,
+      vorrat: Object.fromEntries(this.hud.visibleResources().map((r) => [r, st.inventory[r]])),
+      laterne: this.player.holdingLantern ? 'an' : 'aus',
       schnellleiste: { gewaehlt: st.hotbar.selected + 1, plaetze: st.hotbar.slots.map((s) => s || '-') },
       hinweis: it ? T.aktionen[it.prompt] : null,
+      bauleiste: L
+        ? {
+            titel: L.title,
+            optionen: L.tiles.map((t) => ({
+              taste: t.key,
+              name: t.option.name,
+              preis: costText(t.option.cost),
+              bezahlbar: Boolean(t.option.affordable && !t.option.disabled),
+              ...(t.option.disabled ? { gesperrt: t.option.disabledText } : {}),
+            })),
+          }
+        : null,
+      platzieren: this.builder.placement ? { bau: this.builder.placement.name, passt: this.builder.placement.ok } : null,
+      werkbank:
+        this.mode === 'craft'
+          ? this.crafting.recipes().map((r, i) => `${i === this.crafting.focus ? '> ' : ''}${T.rezepte[r.id]} (${r.owned ? T.werkbank.vorhanden : costText(r.cost)})`)
+          : null,
       dialog: line
         ? {
             sprecher: line.s,
@@ -569,7 +807,8 @@ export class Game {
       },
       teleport(x, z, facing = 0) {
         Object.assign(game.state.player, { x, z, facing });
-        game.applyState();
+        game.player.place(x, z, facing);
+        game.rig.jumpTo(x, z);
       },
       selectSlot: (i) => game.selectSlot(i),
       setFlag(name, value = true) {
@@ -581,10 +820,63 @@ export class Game {
         if (it) game.interact(it);
         return Boolean(it);
       },
+      give(gains) {
+        gain(game.state.inventory, gains);
+      },
+      /** Bau wie über die Bauleiste setzen (mit Kosten). */
+      build(type, i, j, turns = 0) {
+        game.builder.startPlacement(type);
+        const pl = game.builder.placement;
+        const check = game.world.buildings.check(type, i, j, turns);
+        if (!check.ok || !canAfford(game.state.inventory, pl.cost)) {
+          game.builder.cancel();
+          return check.ok ? 'teuer' : check.reason;
+        }
+        Object.assign(pl, { i, j, turns, ok: true, reason: null });
+        game.builder.tryPlace();
+        game.builder.cancel();
+        return 'ok';
+      },
+      buildings: () => game.world.buildings.toState(),
+      demolish: (id) => game.builder.demolish(id),
+      /** Kacheln der Bauleiste in CSS-Pixeln (Mittelpunkt). */
+      buildbarLayout() {
+        const L = game.buildbar.layout(game.ui);
+        const f = game.pixel.scale / (window.devicePixelRatio || 1);
+        return { tiles: L.tiles.map((t) => ({ id: t.option.id, x: (t.rect.x + t.rect.w / 2) * f, y: (t.rect.y + t.rect.h / 2) * f })) };
+      },
+      /** Bildschirmposition (CSS-Pixel) eines Weltpunkts – für echte Mausklicks im Test. */
+      screenOf(x, y, z) {
+        const p = game.worldToUi(x, y, z);
+        const f = game.pixel.scale / (window.devicePixelRatio || 1);
+        return { x: (p.x + 0.5) * f, y: (p.y + 0.5) * f };
+      },
+      get placement() {
+        return game.builder.placement ? { type: game.builder.placement.type, i: game.builder.placement.i, j: game.builder.placement.j, ok: game.builder.placement.ok } : null;
+      },
+      craft(id) {
+        const recipe = game.crafting.recipes().find((r) => r.id === id);
+        return recipe ? game.craft(recipe) : false;
+      },
+      upgradeHouse: () => game.builder.upgradeHouse(),
+      buildOptions: () => game.builder.options('zuhause').map(({ id, affordable, disabled, progress }) => ({ id, affordable, disabled, progress })),
+      startPlacement: (type) => game.builder.startPlacement(type),
+      cancelBuild: () => game.builder.cancel(),
       sleepNow: () => game.startSleep(),
       finishDialog() {
         let guard = 50;
         while (game.dialog.active && guard-- > 0) game.dialog.advance();
+      },
+      /** Antwort i der aktuellen Frage wählen (Text wird dafür fertig getippt). */
+      answer(i) {
+        const d = game.dialog;
+        let guard = 20;
+        while (d.active && !d.hasAnswers && guard-- > 0) d.advance();
+        if (!d.active) return false;
+        d.shown = d.line.t.length;
+        d.choice = i;
+        d.advance();
+        return true;
       },
       openMenu: () => game.openMenu(),
       closeMenu: () => game.closeMenu(),

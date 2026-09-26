@@ -156,12 +156,12 @@ async function runBrowserChecks() {
     await shot(page, 'nacht', () => {
       window.zomfy.setTime(22, 30);
       window.zomfy.teleport(1.0, 0.0, 0.6);
-      window.zomfy.selectSlot(0);
+      window.zomfy.toggleLantern();
     });
     const nightStats = await page.evaluate(() => window.zomfy.stats());
     await shot(page, 'innen-nacht', () => {
       window.zomfy.setTime(22, 45);
-      window.zomfy.selectSlot(1);
+      window.zomfy.toggleLantern();
       window.zomfy.teleport(-0.5, -3.75, 3.1);
     });
     await shot(page, 'waldrand', () => {
@@ -214,7 +214,7 @@ async function runBrowserChecks() {
       window.zomfy.setTime(10, 0);
       window.zomfy.teleport(4.5, 2.0, 3.14);
       window.zomfy.interact('feuer');
-      window.zomfy.finishDialog();
+      window.zomfy.answer(0); // „Bis zum Abend ausruhen“ (vorgewählt ist „Weitermachen“)
     });
     await page.waitForFunction(() => window.zomfy.mode === 'play', null, { timeout: 60000 });
     const restMinute = await page.evaluate(() => window.zomfy.state().time.minute);
@@ -269,14 +269,14 @@ async function runBrowserChecks() {
       window.zomfy.setTime(15, 30);
       window.zomfy.teleport(-1.375, -4.125, 3.14);
       window.zomfy.interact('bett'); // am Tag: Rückfrage „Jetzt schon schlafen?“
-      window.zomfy.finishDialog(); // erste Antwort: „Ja, bis morgen.“
+      window.zomfy.answer(0); // „Ja, bis morgen.“ (vorgewählt ist „Noch nicht.“)
     });
     const asleep = await first.page.evaluate(() => window.zomfy.mode);
     if (asleep === 'sleep') note('✓ Bett: Rückfrage am Tag, Antwort „Ja“ startet den Schlaf');
     else fail(`Bett: nach der Antwort ist der Modus „${asleep}“ statt „sleep“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 1) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 2) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     await first.page.screenshot({ path: join(SHOTS, 'aufwachen.png') });
     note('  Screenshot: screenshots/aufwachen.png');
@@ -306,13 +306,17 @@ async function runBrowserChecks() {
     checkMessages(broken);
     await broken.context.close();
 
-    // --- 3. Große Auflösung (Full HD) --------------------------------------------------
+
+    // --- 3. Meilenstein 2: Sammeln, Bauen, Werkbank, Hütte ---------------------------
+    await runBuildChecks(browser, url);
+
+    // --- 4. Große Auflösung (Full HD) --------------------------------------------------
     const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
     await shot(hd.page, 'nacht-fullhd', () => {
       window.zomfy.setFlag('abendHinweis');
       window.zomfy.finishDialog();
       window.zomfy.teleport(2.25, -0.75, 0.5);
-      window.zomfy.selectSlot(0);
+      window.zomfy.toggleLantern();
     });
     checkMessages(hd);
     await hd.context.close();
@@ -325,6 +329,242 @@ async function runBrowserChecks() {
     await browser.close();
     server.close();
   }
+}
+
+/** Meilenstein 2: echte Eingaben (Tasten, Mausklicks) und die Spiellogik dahinter. */
+async function runBuildChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave`, 'Sammeln und Bauen');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const state = () => z(() => window.zomfy.state());
+  await z(() => {
+    window.zomfy.setFlag('abendHinweis');
+    window.zomfy.setFlag('spaetHinweis');
+    window.zomfy.setTime(9, 0);
+  });
+
+  // Axt vom Hackklotz – mit der Taste E
+  await z(() => window.zomfy.teleport(-5.25, -0.1, Math.PI));
+  await settle(page, 3);
+  await page.keyboard.press('KeyE');
+  await settle(page, 3);
+  await z(() => window.zomfy.finishDialog());
+  let st = await state();
+  if (st.tools.axt && st.hotbar.slots[0] === 'axt') note('✓ Axt: mit E vom Hackklotz genommen, liegt in der Schnellleiste');
+  else fail(`Axt: nicht genommen (${JSON.stringify(st.tools)}, ${JSON.stringify(st.hotbar)})`);
+
+  // Baum fällen: E gedrückt halten, bis er fällt
+  await z(() => window.zomfy.teleport(-11.3, -2.5, -Math.PI / 2));
+  await settle(page, 3);
+  const holzVorher = st.inventory.holz;
+  await page.keyboard.down('KeyE');
+  await page.waitForFunction(() => window.zomfy.state().world.nodes['jung-1'], null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.up('KeyE');
+  st = await state();
+  if (st.world.nodes['jung-1'] && st.inventory.holz === holzVorher + 6) note(`✓ Sammeln: E halten fällt den Baum (+6 Holz, wächst bis Tag ${st.world.nodes['jung-1'].until} nach)`);
+  else fail(`Sammeln: Baum nicht gefällt oder falscher Ertrag (Holz ${holzVorher} -> ${st.inventory.holz})`);
+
+  // Felsen ohne Spitzhacke: nichts passiert
+  await z(() => window.zomfy.teleport(11.2, 2.25, Math.PI / 2));
+  await settle(page, 3);
+  const steinVorher = st.inventory.stein;
+  await z(() => window.zomfy.interact('felsen-1'));
+  await settle(page, 30);
+  st = await state();
+  if (st.inventory.stein === steinVorher) note('✓ Werkzeug: ohne Spitzhacke gibt der Felsen nichts her');
+  else fail('Werkzeug: Felsen ließ sich ohne Spitzhacke abbauen');
+
+  // Schrott durchsuchen: einmal am Tag
+  await z(() => window.zomfy.teleport(-11.3, 9.0, -Math.PI / 2));
+  await settle(page, 3);
+  const schrottVorher = st.inventory.schrott;
+  await z(() => window.zomfy.interact('schrott-1'));
+  await settle(page, 45);
+  st = await state();
+  const erste = st.inventory.schrott - schrottVorher;
+  await z(() => window.zomfy.interact('schrott-1'));
+  await settle(page, 45);
+  const st2 = await state();
+  if (erste >= 2 && st2.inventory.schrott === st.inventory.schrott) note(`✓ Durchsuchen: +${erste} Schrott, zweites Mal am selben Tag leer`);
+  else fail(`Durchsuchen: Ertrag ${erste}, danach ${st2.inventory.schrott - st.inventory.schrott}`);
+
+  // Werkbank über die Bauleiste: Taste Q, dann E setzt vor der Figur
+  await z(() => {
+    window.zomfy.give({ holz: 20, stein: 10 });
+    window.zomfy.teleport(3.5, 2.5, 0);
+  });
+  await settle(page, 3);
+  await page.keyboard.press('KeyQ');
+  await settle(page, 3);
+  const plan = await z(() => window.zomfy.placement);
+  await page.keyboard.press('KeyE');
+  await settle(page, 3);
+  await z(() => window.zomfy.finishDialog());
+  const bauten = await z(() => window.zomfy.buildings());
+  if (plan && plan.type === 'werkbank' && bauten.some((b) => b.type === 'werkbank')) note('✓ Bauleiste: Q wählt die Werkbank, E setzt sie vor die Figur');
+  else fail(`Bauleiste: Werkbank nicht gebaut (Plan ${JSON.stringify(plan)}, Bauten ${JSON.stringify(bauten)})`);
+  const zweite = await z(() => window.zomfy.build('werkbank', -6, 4));
+  if (zweite === 'max') note('✓ Bauleiste: nur eine Werkbank möglich');
+  else fail(`Bauleiste: zweite Werkbank ergab „${zweite}“`);
+
+  // Esc bricht das Platzieren ab, ohne das Menü zu öffnen
+  await page.keyboard.press('KeyR');
+  await settle(page, 3);
+  await page.keyboard.press('Escape');
+  await settle(page, 3);
+  const nachEsc = await z(() => ({ mode: window.zomfy.mode, placement: window.zomfy.placement }));
+  if (nachEsc.mode === 'play' && !nachEsc.placement) note('✓ Platzieren: Esc bricht ab, Menü bleibt zu');
+  else fail(`Platzieren: nach Esc ${JSON.stringify(nachEsc)}`);
+
+  // Barrikade mit der Maus: Kachel anklicken, dann auf ein Feld klicken
+  await z(() => window.zomfy.teleport(5.5, 0.5, 0));
+  await settle(page, 20);
+  const tile = await z(() => {
+    const L = window.zomfy.buildbarLayout();
+    const t = L.tiles.find((x) => x.id === 'barrikade');
+    return t;
+  });
+  await page.mouse.click(tile.x, tile.y);
+  await settle(page, 3);
+  const target = await z(() => window.zomfy.screenOf(6.5, 0, 3.5));
+  await page.mouse.move(target.x, target.y);
+  await settle(page, 3);
+  await page.mouse.click(target.x, target.y);
+  await settle(page, 3);
+  const perMaus = (await z(() => window.zomfy.buildings())).find((b) => b.type === 'barrikade');
+  if (perMaus && perMaus.i === 6 && perMaus.j === 3) note('✓ Platzieren mit der Maus: Barrikade landet genau auf dem angeklickten Feld');
+  else fail(`Platzieren mit der Maus: ${JSON.stringify(perMaus)} statt Feld (6, 3)`);
+  await page.mouse.click(target.x, target.y, { button: 'right' });
+  await settle(page, 3);
+
+  // Belegte Felder, Abreißen mit voller Rückgabe
+  const aufsHaus = await z(() => window.zomfy.build('barrikade', 0, -4));
+  if (aufsHaus === 'belegt') note('✓ Raster: Haus und Hindernisse sind nicht bebaubar');
+  else fail(`Raster: Bau auf dem Haus ergab „${aufsHaus}“`);
+  const holzVorAbriss = (await state()).inventory.holz;
+  await z((id) => window.zomfy.demolish(id), perMaus?.id);
+  const holzNachAbriss = (await state()).inventory.holz;
+  if (holzNachAbriss === holzVorAbriss + 3) note('✓ Abreißen: gibt das ganze Material zurück');
+  else fail(`Abreißen: Holz ${holzVorAbriss} -> ${holzNachAbriss}`);
+
+  // Spitzhacke an der Werkbank, dann Felsen abbauen
+  await z(() => window.zomfy.give({ schrott: 2 }));
+  const hacke = await z(() => window.zomfy.craft('spitzhacke'));
+  st = await state();
+  if (hacke && st.tools.spitzhacke && st.hotbar.slots.includes('spitzhacke')) note('✓ Werkbank: Spitzhacke hergestellt');
+  else fail('Werkbank: Spitzhacke nicht hergestellt');
+  await z(() => window.zomfy.teleport(11.2, 2.25, Math.PI / 2));
+  await settle(page, 3);
+  const steinVorFelsen = st.inventory.stein;
+  await z(() => window.zomfy.interact('felsen-1'));
+  await settle(page, 25);
+  st = await state();
+  if (st.inventory.stein === steinVorFelsen + 1) note('✓ Werkzeug: mit Spitzhacke gibt der Felsen Stein');
+  else fail(`Werkzeug: Felsen gab ${st.inventory.stein - steinVorFelsen} Stein`);
+
+  // Werkbank-Menü als Bild
+  await z(() => {
+    const bank = window.zomfy.buildings().find((b) => b.type === 'werkbank');
+    window.zomfy.teleport(bank.i + 1, bank.j + 1.8, Math.PI);
+    window.zomfy.interact(`bau-${bank.id}`);
+  });
+  await settle(page, 30);
+  await page.screenshot({ path: join(SHOTS, 'werkbank.png') });
+  note('  Screenshot: screenshots/werkbank.png');
+  await page.keyboard.press('Escape');
+  await settle(page, 3);
+
+  // Bauvorschau als Bild
+  await shot(page, 'bauen', () => {
+    for (const [i, j] of [[7, 2], [8, 2], [9, 2]]) window.zomfy.build('barrikade', i, j);
+    window.zomfy.build('laternenpfahl', 6, 4);
+    window.zomfy.teleport(6.0, 0.6, 0.4);
+    window.zomfy.give({ holz: 3 });
+    window.zomfy.startPlacement('barrikade');
+  });
+  await z(() => window.zomfy.cancelBuild());
+
+  // Hausausbau zur Hütte
+  await z(() => {
+    window.zomfy.give({ holz: 30, stein: 16, stoff: 6, schrott: 8 });
+    window.zomfy.upgradeHouse();
+  });
+  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
+  await z(() => window.zomfy.finishDialog());
+  st = await state();
+  if (st.world.houseLevel === 2 && Object.keys(st.flags).filter((k) => k.startsWith('ziel_')).length === 5) note('✓ Zuhause: zur Hütte ausgebaut, alle fünf Ziele erreicht');
+  else fail(`Zuhause: Stufe ${st.world.houseLevel}, Ziele ${Object.keys(st.flags).filter((k) => k.startsWith('ziel_'))}`);
+  // Laufen gegen die neue Anbau-Wand (von der Veranda aus nach Norden)
+  await z(() => window.zomfy.teleport(4.0, -1.95, Math.PI));
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(900);
+  await page.keyboard.up('KeyW');
+  await settle(page, 3);
+  st = await state();
+  if (st.player.z > -2.45) note('✓ Kollision: Anbau der Hütte ist fest');
+  else fail(`Kollision: Figur ist bei z=${st.player.z.toFixed(2)} in den Anbau gelaufen`);
+  await shot(page, 'huette', () => {
+    window.zomfy.setTime(17, 10);
+    window.zomfy.teleport(2.6, -0.9, 0.3);
+  });
+  await shot(page, 'huette-nacht', () => {
+    window.zomfy.setTime(22, 40);
+    window.zomfy.teleport(4.5, 3.0, 0.8);
+    window.zomfy.toggleLantern();
+  });
+  checkMessages(session);
+  await session.context.close();
+
+  // Speichern und Laden der Bauten, Migration eines alten Spielstands
+  const saveUrl = `${url}index.html?test`;
+  const one = await openGame(browser, saveUrl, 'Bauten speichern', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m2')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m2', '1');
+      }
+    },
+  });
+  await one.page.evaluate(() => {
+    window.zomfy.give({ holz: 20, stein: 5 });
+    window.zomfy.build('werkbank', 3, 5);
+    window.zomfy.build('barrikade', 6, 2);
+    window.zomfy.finishDialog();
+    window.zomfy.teleport(4.5, 2.0, 0);
+  });
+  await one.page.reload();
+  await one.page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  const geladen = await one.page.evaluate(() => window.zomfy.buildings());
+  if (geladen.length === 2 && geladen.some((b) => b.type === 'werkbank' && b.i === 3 && b.j === 5)) note('✓ Laden: Bauten stehen nach dem Neuladen wieder an ihrem Platz');
+  else fail(`Laden: Bauten nach dem Neuladen ${JSON.stringify(geladen)}`);
+  checkMessages(one);
+  await one.context.close();
+
+  const old = await openGame(browser, saveUrl, 'Alter Spielstand (v1)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-v1')) {
+        localStorage.setItem(
+          'zomfy-towers.spielstand',
+          JSON.stringify({
+            version: 1,
+            time: { day: 3, minute: 200 },
+            player: { x: 1, z: 2, facing: 0, lantern: true },
+            inventory: { holz: 7, stein: 2, fasern: 3, schrott: 1, stoff: 1, technik: 2 },
+            hotbar: { slots: ['laterne', null, null, null, null, null, null, null], selected: 0 },
+            flags: { radioGehoert: true },
+            stats: { nightsSlept: 2 },
+          })
+        );
+        sessionStorage.setItem('zomfy-v1', '1');
+      }
+    },
+  });
+  const migriert = await old.page.evaluate(() => window.zomfy.state());
+  if (migriert.version === 2 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1) {
+    note('✓ Migration: Spielstand v1 wird zu v2 (Technik -> Zahnräder, Laterne auf F)');
+  } else fail(`Migration: ${JSON.stringify(migriert)}`);
+  checkMessages(old);
+  await old.context.close();
 }
 
 const syntaxOk = checkSyntax();

@@ -91,6 +91,19 @@ export class CameraRig {
   }
 
   /**
+   * Pixel im Render-Target (Ursprung unten links) -> Punkt auf der waagrechten
+   * Ebene y = planeY (z. B. der Boden unter dem Mauszeiger).
+   */
+  unproject(px, py, planeY = 0, out = new THREE.Vector3()) {
+    out.set((px - this.rtWidth / 2) * this.px, (py - this.rtHeight / 2) * this.px, 0).applyMatrix4(this.camera.matrixWorld);
+    // Entlang der Blickrichtung (0, −sin, −cos) bis zur Ebene
+    const t = (out.y - planeY) / this.sin;
+    out.y = planeY;
+    out.z -= this.cos * t;
+    return out;
+  }
+
+  /**
    * Weltpunkt -> Pixel im Render-Target (Ursprung unten links) und Tiefe.
    * @returns {{x:number, y:number, depth:number}}
    */

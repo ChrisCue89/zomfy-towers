@@ -134,12 +134,15 @@ export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
   const armR = part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
   body.add(torso, head, armL, armR);
 
-  // Hand rechts: Anker für gehaltene Dinge (unteres Ende des Arms)
+  // Hände: Anker am unteren Ende der Arme. Rechts Werkzeuge/Waffen, links die Laterne.
   const hand = new THREE.Group();
   hand.position.set(0, -4 * V, 0);
   armR.add(hand);
+  const handL = new THREE.Group();
+  handL.position.set(0, -4 * V, 0);
+  armL.add(handL);
 
-  // Laterne (zunächst versteckt)
+  // Laterne (zunächst versteckt) in der linken Hand
   const lanternParts = buildLantern();
   const lanternGroup = new THREE.Group();
   const lanternFrame = new THREE.Mesh(lanternParts.frame.toGeometry({ jitter: 0, seed }), material);
@@ -147,17 +150,50 @@ export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
   const lanternGlow = createGlowMaterial(0xffffff);
   const lanternGlass = new THREE.Mesh(lanternParts.glass.toGeometry({ jitter: 0, ao: false }), lanternGlow);
   lanternGroup.add(lanternFrame, lanternGlass);
-  lanternGroup.position.set(-0.5 * V, -5 * V, 0);
+  lanternGroup.position.set(0.5 * V, -5 * V, 0);
   lanternGroup.visible = false;
-  hand.add(lanternGroup);
+  handL.add(lanternGroup);
+
+  // Werkzeuge in der rechten Hand (Stiel entlang des Arms nach unten)
+  const tools = {};
+  for (const [name, model] of Object.entries(TOOL_MODELS)) {
+    const mesh = new THREE.Mesh(model().toGeometry({ jitter: 0.02, seed }), material);
+    mesh.castShadow = true;
+    mesh.position.set(-0.5 * V, 0, -0.5 * V);
+    mesh.visible = false;
+    hand.add(mesh);
+    tools[name] = mesh;
+  }
 
   return {
     root,
     material,
-    parts: { body, torso, head, armL, armR, legL, legR, hand },
+    parts: { body, torso, head, armL, armR, legL, legR, hand, handL },
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
+    tools,
   };
 }
+
+/** Axt: Stiel nach unten (−y), Blatt am Ende. */
+function buildAxeModel() {
+  const m = new VoxelModel();
+  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e5));
+  m.box(0, -8, 1, 0, -6, 2, P.s6);
+  m.set(0, -8, 3, P.s8).set(0, -7, 3, P.s8).set(0, -6, 3, P.s8);
+  m.set(0, -7, -1, P.s5);
+  return m;
+}
+
+/** Spitzhacke: Stiel nach unten, quer liegender Kopf. */
+function buildPickaxeModel() {
+  const m = new VoxelModel();
+  m.box(0, -7, 0, 0, 0, 0, (x, y) => (y === 0 ? P.e3 : P.e5));
+  m.box(0, -8, -3, 0, -8, 3, P.s5);
+  m.set(0, -7, -3, P.s4).set(0, -7, 3, P.s4);
+  return m;
+}
+
+const TOOL_MODELS = { axt: buildAxeModel, spitzhacke: buildPickaxeModel };
 
 /** Oberkörper und Kopf als ein Voxel-Modell – für Porträts. */
 export function buildBustModel(spec) {

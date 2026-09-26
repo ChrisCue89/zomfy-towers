@@ -103,6 +103,42 @@ verzichtet auf Vorbereitung. Während die Horde unterwegs ist, geht es nicht.
 direkt in die Nacht wollen; eine Zusatzkosten-Regel würde nur bestrafen,
 ohne eine Entscheidung interessanter zu machen.
 
+## Sammeln, Bauen, Zuhause (Meilenstein 2)
+
+### 15. Muss man das Werkzeug erst in die Hand nehmen?
+**Entscheidung: Nein.** Wer eine Axt besitzt, fällt Bäume, egal was gerade
+in der Schnellleiste gewählt ist – Mika nimmt das passende Werkzeug beim
+Schwung von selbst. E gedrückt halten sammelt weiter, bis die Quelle leer ist.
+*Warum:* Werkzeugwechsel wäre reine Fummelei ohne Entscheidung. Die
+Schnellleiste bekommt ihren Sinn mit den Waffen in Meilenstein 4.
+
+### 16. Wo trägt Mika die Laterne?
+**Entscheidung: Links, eigene Taste F**, unabhängig von der Schnellleiste
+(ganz links neben ihr angezeigt). Die rechte Hand hält Werkzeug oder Waffe.
+*Warum:* Nachts will man Licht *und* Werkzeug/Waffe – eine Laterne, die einen
+Schnellleisten-Platz belegt, zwingt zu einem sinnlosen Entweder-oder.
+
+### 17. Was passiert mit Bauten, wo die Hütte später hinwächst?
+**Entscheidung:** Die Grundfläche aller Ausbaustufen des Zuhauses ist von
+Anfang an auf dem Raster gesperrt (rot in der Vorschau).
+*Warum:* Kein Abriss-Chaos beim Ausbau, und der Platz ums Haus bleibt als
+Veranda und Eingang frei.
+
+### 18. Kiste, Beet, Bank – was bringt die Zuhause-Leiste?
+**Entscheidung:** Die in DESIGN.md geplante **Kiste entfällt** (es gibt einen
+gemeinsamen Vorrat, eine Lagerkiste hätte keine Aufgabe). Stattdessen:
+**Flachsbeet** (einmal am Tag 3 Fasern ernten – eine kleine, verlässliche
+Quelle für Stoff) und **Sitzbank** (Ausruhen wie am Feuer, bis zu drei).
+*Warum:* Jeder Bau soll etwas tun; Deko ohne Wirkung kommt mit dem
+Einrichten in Meilenstein 6.
+
+### 19. Wie findet man ohne Erklärung in die ersten Schritte?
+**Entscheidung:** Eine kleine **Ziel-Anzeige** unter der Uhr (Axt nehmen →
+Werkbank → Spitzhacke → drei Barrikaden → Hütte). Erreichte Ziele melden sich
+kurz und bleiben erreicht. Kein Tutorial-Text, keine Pfeile.
+*Warum:* Die Testspieler aus Meilenstein 1 fanden alles, aber nichts zu tun.
+Ein einziges Ziel gibt Richtung, ohne die Gemütlichkeit zu stören.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

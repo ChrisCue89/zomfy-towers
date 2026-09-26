@@ -59,6 +59,13 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.
 - Kühle Nacht-Tönung wirkt im Post-Pass nur auf dunkle und mittlere Töne,
   Lichtquellen bleiben warm.
+- **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, später Schlurfer, Turm,
+  Loot) braucht eine eindeutige Silhouette und Farbe. Der jetzige grobe
+  Detailgrad ist ein Zwischenstand: Sobald die Mechaniken sitzen, hebt der
+  Meilenstein »Detailgrad und Animationen« Auflösung, Voxelfeinheit (1/16 m
+  für Figuren, Schlurfer, Türme, kleine Dinge) und Animation an (DESIGN.md
+  3.6). Neue Modelle bis dahin so bauen, dass sie sich leicht verfeinern
+  lassen (Maße in Metern denken, nicht in Voxeln).
 
 ## Architektur
 
@@ -67,18 +74,25 @@ index.html            Einstieg, Importmap, zwei Canvas (Szene + Oberfläche)
 src/main.js           Start, Fehleranzeige
 src/config.js         Alle Stellschrauben + URL-Parameter
 src/core/             game.js (Schleife, Modi), input, events, rng, math,
-                      state.js (Spielzustand), save.js (Speichern, Migration)
+                      state.js (Spielzustand), save.js (Speichern, Migration),
+                      inventory (Kosten/Vorrat), builder (Bauleiste, Platzieren,
+                      Auswahl, Abreißen, Hausausbau), gathering (Sammeln,
+                      Durchsuchen)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
                       staticMesh (sichtbare Flächen + Schatten-Stellvertreter),
                       portrait (Porträts ohne GPU-Auslesen), shaders
-src/world/            world (Zusammenbau + Update), layout (Grundriss),
-                      terrain, nature, shelter, props, colliders, daynight,
-                      lights, particles
+src/world/            world (Zusammenbau + Update), layout (Grundriss +
+                      Ressourcenquellen), terrain, nature, shelter (Stufen),
+                      props, colliders, daynight, lights, particles, effects
+                      (Späne, Staub), grid (Bauraster), resources (Quellen),
+                      buildings + buildingModels (Bauten), buildPreview
+                      (Geistermodell, Felder), lightPools (Lichtinseln)
 src/entities/         player, characters (Figuren-Bauer)
-src/ui/               font, icons, ui (Leinwand + Panels), hud, dialog, menu
-src/data/             texts, dialogs, items
+src/ui/               font, icons, ui (Leinwand + Panels), hud, dialog, menu,
+                      buildbar (Bauleiste), crafting (Werkbank)
+src/data/             texts, dialogs, items, buildings, recipes, goals
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
@@ -90,13 +104,29 @@ Grundprinzipien:
 
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
-- Modi der Spielschleife: `play`, `dialog`, `menu`, `sleep` (auch Ausruhen).
-  Zeit läuft nur in `play`. `Game.step(dt)` ist ein Simulationsschritt
+- Modi der Spielschleife: `play`, `dialog`, `menu`, `craft` (Werkbank),
+  `sleep` (Schlafen, Ausruhen, Werkeln mit Abblende). Zeit läuft nur in
+  `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
 - **Klicks werden in `update()` ausgewertet**, nicht beim Zeichnen (sonst
   gehen sie bei der Schrittsimulation verloren). Layouts, die beides
   brauchen, berechnet eine eigene `layout()`-Methode.
 - Die Oberfläche ist ein 2D-Canvas in Spielauflösung, sofort-modus gezeichnet.
+- **Eingaben im Spielmodus, in dieser Reihenfolge:** Bauleiste (Kacheln,
+  Q R T G C V, Tab) → Schnellleiste → Abbrechen (Esc/Rechtsklick, vor dem
+  Menü) → Bewegung → Builder (Vorschau, Setzen, Auswahl per Klick) →
+  Interaktion (E) → Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel,
+  `confirm` (E/Enter/Leertaste) in Dialogen und Menüs – die Leertaste wird
+  in Meilenstein 4 zum Ausweichen.
+- **Die Maus wählt nur, wenn sie bewegt wird** (`input.mouse.moved`), sonst
+  überschreibt ein ruhender Zeiger die Tastaturwahl. Vorgewählt ist in
+  Rückfragen immer die harmlose Antwort (`standard: true` in dialogs.js).
+- **Bauraster:** 1-m-Zellen (`grid.js`), statisch blockiert ist alles mit
+  Kollision plus die Grundfläche aller Ausbaustufen des Zuhauses. Bauten
+  belegen Zellen, bekommen eine Kollision und eine Interaktion (benutzen
+  oder mit E auswählen). Ab Meilenstein 3 rechnet die Horde darauf.
+- **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
+  eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
 
 ### Leistung – bewährte Kniffe
 
@@ -117,7 +147,12 @@ Grundprinzipien:
    Spielstart mit Intro, Rundgang mit Screenshots (Morgen, Tag, Abend,
    Nacht, innen, Waldrand, Dialog, Menü, Full HD) nach `screenshots/`,
    Laufen/Kollision, Laterne, Ausruhen, Schriftabdeckung, Schlafen mit
-   Rückfrage, Speichern/Laden, kaputter Spielstand. **Jede Konsolenmeldung
+   Rückfrage, Speichern/Laden, kaputter Spielstand; ab Meilenstein 2 mit
+   echten Tasten und Mausklicks: Axt, Baum fällen (E halten), Werkzeugpflicht,
+   Durchsuchen, Bauleiste (Q, E), Esc bricht ab, Platzieren per Mausklick aufs
+   richtige Feld, belegte Felder, Abreißen, Spitzhacke, Hüttenausbau,
+   Kollision des Anbaus, Bauten nach Neuladen, Migration v1 → v2 (Bilder:
+   werkbank, bauen, huette, huette-nacht). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;

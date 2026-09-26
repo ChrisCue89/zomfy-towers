@@ -5,12 +5,28 @@ import { SAVE_VERSION, sanitizeState } from './state.js';
 export const SAVE_KEY = 'zomfy-towers.spielstand';
 const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
-/**
- * Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1.
- * Beispiel für später:
- *   1: (data) => ({ ...data, version: 2, world: { buildings: [] } }),
- */
-const MIGRATIONS = {};
+/** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
+const MIGRATIONS = {
+  // v1 -> v2: Meilenstein 2 (Sammeln, Crafting, Bauen). „Technik“ wird zu
+  // Zahnrädern, die Laterne wandert aus der Schnellleiste in die linke Hand.
+  1: (data) => {
+    const inventory = { ...(data.inventory || {}) };
+    inventory.zahnraeder = (inventory.zahnraeder || 0) + (inventory.technik || 0);
+    delete inventory.technik;
+    inventory.moderkerne = inventory.moderkerne || 0;
+    const slots = Array.isArray(data.hotbar?.slots) ? data.hotbar.slots.map((v) => (v === 'laterne' ? null : v)) : [];
+    return {
+      ...data,
+      version: 2,
+      inventory,
+      hotbar: { slots, selected: 0 },
+      flags: { ...(data.flags || {}), introGesehen: true },
+      tools: { axt: false, spitzhacke: false },
+      world: { houseLevel: 1, buildings: [], nodes: {}, searched: {} },
+      stats: { ...(data.stats || {}), gathered: 0, built: 0 },
+    };
+  },
+};
 
 function storage() {
   try {

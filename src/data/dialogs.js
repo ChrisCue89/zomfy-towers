@@ -1,5 +1,7 @@
 // Dialoge als Daten. Eine Zeile: { s: Sprecher-ID, t: Text, antworten? }.
-// Eine Antwort: { t: Text, aktion?: Name einer Spielaktion }.
+// Eine Antwort: { t: Text, aktion?: Name einer Spielaktion, standard?: true }.
+// `standard` markiert die harmlose Antwort, die vorgewählt ist – schnelles
+// Durchdrücken löst so nie aus Versehen Schlafen, Ausruhen oder Ausbauen aus.
 // Ein Dialog darf eine Funktion sein, die aus dem Spielzustand die Zeilen wählt.
 
 export const SPRECHER = {
@@ -16,8 +18,8 @@ const hourOf = (state) => (6 + (state.time.minute || 0) / 60) % 24;
 /** Antworten zum Ausruhen, passend zur Tageszeit. */
 function restAnswers(state) {
   const h = hourOf(state);
-  if (h >= 6 && h < 17.5) return [{ t: 'Bis zum Abend ausruhen', aktion: 'wartenAbend' }, { t: 'Weitermachen' }];
-  if (h >= 17.5 && h < 21) return [{ t: 'Bis in die Nacht sitzen bleiben', aktion: 'wartenNacht' }, { t: 'Weitermachen' }];
+  if (h >= 6 && h < 17.5) return [{ t: 'Bis zum Abend ausruhen', aktion: 'wartenAbend' }, { t: 'Weitermachen', standard: true }];
+  if (h >= 17.5 && h < 21) return [{ t: 'Bis in die Nacht sitzen bleiben', aktion: 'wartenNacht' }, { t: 'Weitermachen', standard: true }];
   return null;
 }
 
@@ -32,7 +34,7 @@ export const DIALOGE = {
   intro: [
     { s: 'mika', t: 'Eine Lichtung, eine Hütte mit Dach und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
     { s: 'mika', t: 'Die Hütte ist wacklig, aber sie hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
-    { s: 'mika', t: 'Ich sehe mich ein bisschen um. Und heute Abend schlafe ich im eigenen Bett.' },
+    { s: 'mika', t: 'Am Hackklotz steckt sogar noch eine Axt. Damit fange ich an – und heute Abend schlafe ich im eigenen Bett.' },
   ],
 
   bettFrueh: [
@@ -41,7 +43,7 @@ export const DIALOGE = {
       t: 'Jetzt schon schlafen? Draußen ist es noch hell.',
       antworten: [
         { t: 'Ja, bis morgen.', aktion: 'schlafen' },
-        { t: 'Noch nicht.' },
+        { t: 'Noch nicht.', standard: true },
       ],
     },
   ],
@@ -89,11 +91,6 @@ export const DIALOGE = {
       state
     ),
 
-  auto: [
-    { s: 'mika', t: 'Das Auto fährt schon lange nirgendwo mehr hin. Auf dem Dach wächst Moos, aus der Motorhaube ein Busch.' },
-    { s: 'mika', t: 'Bestimmt steckt darin noch brauchbarer Kram. Das schaue ich mir an, wenn ich Werkzeug habe.' },
-  ],
-
   funkturm: [
     { s: 'mika', t: 'Der alte Funkturm. Oder das, was von ihm übrig ist.' },
     { s: 'mika', t: 'Wenn der wieder stünde – mit einem Licht ganz oben – man würde es über den ganzen Wald sehen.' },
@@ -115,7 +112,31 @@ export const DIALOGE = {
 
   regentonne: [{ s: 'mika', t: 'Die Regentonne ist halb voll. Reicht zum Gießen – und für eine Katzenwäsche, wenn es sein muss.' }],
 
-  hackklotz: [{ s: 'mika', t: 'Eine Axt steckt im Hackklotz. Morgen hacke ich Holz. Ganz bestimmt.' }],
+  hackklotz: [{ s: 'mika', t: 'Der Hackklotz. Die Axt habe ich schon eingesteckt.' }],
+
+  axtFund: [
+    { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich die jungen Bäume auf der Lichtung fällen.' },
+    { s: 'mika', t: 'Mit Holz und Stein baue ich mir zuerst eine Werkbank. Die Bauleiste unten rechts zeigt, was geht.' },
+  ],
+
+  autoErstmals: [
+    { s: 'mika', t: 'Das Auto fährt schon lange nirgendwo mehr hin. Auf dem Dach wächst Moos, aus der Motorhaube ein Busch.' },
+    { s: 'mika', t: 'Aber im Kofferraum liegt noch brauchbarer Kram. Einmal am Tag schaue ich hier rein.' },
+  ],
+
+  werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],
+
+  hausAusbau: [
+    {
+      s: 'mika',
+      t: 'Die Notunterkunft zur Hütte ausbauen? Ein zweites Zimmer, ein richtiges Vordach, dickere Wände.',
+      antworten: [{ t: 'Ja, ausbauen!', aktion: 'hausAusbauen' }, { t: 'Noch nicht.', standard: true }],
+    },
+  ],
+
+  hausFertig: [{ s: 'mika', t: 'Geschafft. Das ist keine Notunterkunft mehr. Das ist eine Hütte. Meine Hütte.' }],
+
+  bank: (state) => withRest([{ s: 'mika', t: 'Eine Bank, selbst gebaut. Sitzt sich gleich doppelt so gut.' }], state),
 
   beet: [{ s: 'mika', t: 'Ein verwildertes Beet voller Kürbisse. Jemand hat hier mal gegärtnert – und die Kürbisse haben einfach weitergemacht.' }],
 

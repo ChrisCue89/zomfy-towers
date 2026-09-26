@@ -32,12 +32,12 @@ Meilenstein 2 bringt Sammeln und Bauen.
 | F2 | Handlaterne leuchtet auf Gras grün-gelb statt warm. | Mira, Theo | Behoben: Lichtfarbe orangener und etwas heller; Lichtkreis wirkt jetzt warm (siehe `screenshots/nacht.png`). |
 | F3 | Bett, Radio und Ofen lassen sich durch die Rückwand von draußen benutzen. | Jonas | Behoben: Innen-Dinge nur von drinnen. |
 | F4 | Nach dem Aufwachen öffnet ein E zu viel wieder »Jetzt schon schlafen?«. | Jonas | Behoben: Das Bett bietet erst wieder Schlaf an, wenn man einmal weggegangen ist. |
-| F5 | Regentonne und andere Dinge reagieren nicht auf E. | Mira | Regentonne hat jetzt einen Text. Mehr Kleinkram-Texte kommen mit Meilenstein 5. |
+| F5 | Regentonne und andere Dinge reagieren nicht auf E. | Mira | Regentonne hat jetzt einen Text. Mehr Kleinkram-Texte kommen mit Meilenstein 6 (Geschichte). |
 | F6 | Figur an der Baumgrenze fast ganz verdeckt. | Kira | Durchsicht etwas kräftiger (92 % statt 80 %, weicher Rand). |
 | F7 | Schnellleiste steht beim Start auf einem leeren Platz. | Theo | Mit Meilenstein 2: Die Laterne wandert auf die linke Hand (Taste F), die Leiste hält Werkzeuge. |
 | F8 | Kurzes Festhängen in engen Ecken (Hausecke am Vordach, Möbelecke am Bett). | Mira, Kira | Offen – echte Ecken, kein Durchrutschen; wird beobachtet. |
-| F9 | Morgenlicht wirkt eher neutral-warm als rosa-golden. | Mira | Offen – Look-Feinschliff in Meilenstein 6. |
-| F10 | Funkturm schwer zu finden, keine Karte. | Mira | Offen – wird mit dem roten Faden (Meilenstein 5) wichtig. |
+| F9 | Morgenlicht wirkt eher neutral-warm als rosa-golden. | Mira | Offen – Look-Feinschliff in Meilenstein 5 (Detailgrad) bzw. 7. |
+| F10 | Funkturm schwer zu finden, keine Karte. | Mira | Offen – wird mit dem roten Faden (Meilenstein 6) wichtig. |
 
 ## Designfragen aus der Runde
 

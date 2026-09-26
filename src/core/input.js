@@ -7,10 +7,13 @@ const BINDINGS = {
   left: ['KeyA', 'ArrowLeft'],
   right: ['KeyD', 'ArrowRight'],
   run: ['ShiftLeft', 'ShiftRight'],
-  use: ['KeyE', 'Space', 'Enter', 'NumpadEnter'],
+  use: ['KeyE', 'Enter', 'NumpadEnter'],
+  confirm: ['KeyE', 'Space', 'Enter', 'NumpadEnter'], // Dialoge und Menüs (Leertaste wird später Ausweichen)
   lantern: ['KeyF'],
   menu: ['Escape', 'KeyP'],
   debug: ['F3'],
+  buildTab: ['Tab'],
+  cancel: ['Escape'],
   slot1: ['Digit1'],
   slot2: ['Digit2'],
   slot3: ['Digit3'],
@@ -33,7 +36,7 @@ export class Input {
     this.toGame = toGame;
     this.down = new Set();
     this.pressedCodes = new Set();
-    this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, moved: false, wheel: 0 };
+    this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, rightClicked: false, moved: false, wheel: 0 };
 
     window.addEventListener('keydown', (e) => {
       if (PREVENT.has(e.code)) e.preventDefault();
@@ -49,6 +52,8 @@ export class Input {
       if (e.button === 0) {
         this.mouse.down = true;
         this.mouse.clicked = true;
+      } else if (e.button === 2) {
+        this.mouse.rightClicked = true;
       }
     });
     window.addEventListener('pointerup', () => {
@@ -84,6 +89,10 @@ export class Input {
     return BINDINGS[action].some((code) => this.pressedCodes.has(code));
   }
 
+  pressedCode(code) {
+    return this.pressedCodes.has(code);
+  }
+
   /** Bewegungsrichtung aus den Tasten (x = Osten, z = Süden). */
   moveVector() {
     return {
@@ -114,6 +123,7 @@ export class Input {
   endFrame() {
     this.pressedCodes.clear();
     this.mouse.clicked = false;
+    this.mouse.rightClicked = false;
     this.mouse.moved = false;
     this.mouse.wheel = 0;
   }

@@ -1,5 +1,5 @@
-// Die Welt: setzt Boden, Natur, Notunterkunft und Requisiten zusammen und
-// betreibt alles, was sich in ihr bewegt oder leuchtet.
+// Die Welt: setzt Boden, Natur, Zuhause, Requisiten, Ressourcenquellen und
+// Bauten zusammen und betreibt alles, was sich in ihr bewegt oder leuchtet.
 
 import * as THREE from 'three';
 import { createWorldMaterial, createGlowMaterial } from '../render/materials.js';
@@ -7,8 +7,12 @@ import { damp } from '../core/math.js';
 import { Colliders } from './colliders.js';
 import { createTerrain } from './terrain.js';
 import { createNature } from './nature.js';
-import { createShelter } from './shelter.js';
+import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
 import { createProps } from './props.js';
+import { BuildGrid } from './grid.js';
+import { ResourceNodes } from './resources.js';
+import { Buildings } from './buildings.js';
+import { LightPools } from './lightPools.js';
 import { DayNight } from './daynight.js';
 import { WarmLights } from './lights.js';
 import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js';
@@ -26,6 +30,7 @@ export class World {
    */
   constructor({ scene, seed, renderConfig }) {
     this.scene = scene;
+    this.seed = seed;
     this.colliders = new Colliders();
     const c = LAYOUT.clearing;
     this.colliders.setBounds(c.cx, c.cz, c.rx, c.rz, c.power);
@@ -39,18 +44,37 @@ export class World {
     const terrain = createTerrain(seed);
     scene.add(terrain.group);
 
-    this.shelter = createShelter({ seed, colliders: this.colliders });
+    this.shelterMaterials = createShelterMaterials();
+    this.shelter = createShelter({ seed, colliders: this.colliders, level: 1, materials: this.shelterMaterials });
     scene.add(this.shelter.group);
 
     this.props = createProps({ seed, materials: this.materials, colliders: this.colliders });
     scene.add(this.props.group);
 
+    this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed });
+
     const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers });
     scene.add(nature.group);
     this.stats = nature.stats;
 
+    // Bauraster: alles, was jetzt schon im Weg steht, ist blockiert – dazu
+    // die Grundfläche aller Ausbaustufen des Zuhauses (die Hütte wächst dorthin).
+    this.grid = new BuildGrid({ minX: -16, maxX: 16, minZ: -12, maxZ: 13 });
+    this.grid.markStatic(this.colliders);
+    for (const level of [1, 2]) for (const r of shelterFootprint(level)) this.grid.blockRect(r.minX, r.minZ, r.maxX, r.maxZ);
+
     this.dayNight = new DayNight(scene, renderConfig);
     this.setupLights();
+    this.lightPools = new LightPools(scene);
+    this.buildings = new Buildings({
+      scene,
+      grid: this.grid,
+      colliders: this.colliders,
+      materials: this.materials,
+      lightPools: this.lightPools,
+      lights: this.lights,
+      seed,
+    });
 
     this.particles = new Particles(800, seed);
     scene.add(this.particles.object);
@@ -69,7 +93,8 @@ export class World {
     ]);
     scene.add(this.fireflies.object);
 
-    this.interactions = [...this.shelter.interactions, ...this.props.interactions];
+    this.interactions = [];
+    this.refreshInteractions();
     this.heightZones = this.shelter.heightZones;
 
     this.fadeValue = 0;
@@ -101,6 +126,24 @@ export class World {
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
   }
 
+  /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
+  refreshInteractions() {
+    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions];
+  }
+
+  /** Das Zuhause auf eine Ausbaustufe bringen (neu aufbauen). */
+  setHouseLevel(level) {
+    if (this.shelter.level === level) return;
+    const old = this.shelter;
+    this.scene.remove(old.group);
+    old.group.traverse((o) => o.geometry?.dispose());
+    for (const c of old.colliders) this.colliders.remove(c);
+    this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level, materials: this.shelterMaterials });
+    this.scene.add(this.shelter.group);
+    this.heightZones = this.shelter.heightZones;
+    this.refreshInteractions();
+  }
+
   /** Laterne der Spielfigur anbinden (Glas-Material + Licht). */
   attachPlayerLantern(glowMaterial) {
     this.lights.addGlow(glowMaterial, { dim: 0x70748a, bright: 0xffc060, boost: 1.05, entry: this.lanternLight });
@@ -115,8 +158,24 @@ export class World {
   }
 
   isInside(x, z) {
-    const r = this.shelter.interior;
-    return x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ;
+    for (const r of this.shelter.interiors) if (x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ) return true;
+    return false;
+  }
+
+  /**
+   * Einlaufhilfe an der Haustür: Wer vor oder hinter der Tür auf sie zu läuft,
+   * wird sanft zur Türmitte gelenkt (die Öffnung ist nur knapp breiter als Mika).
+   * @param {{x:number, z:number}} pos
+   * @param {{x:number, z:number}} move Eingaberichtung
+   */
+  doorAssist(pos, move) {
+    const door = this.shelter.door.center;
+    const dx = door.x - pos.x;
+    const dz = pos.z - door.z; // > 0: draußen (südlich der Wand)
+    if (Math.abs(dx) > 0.7 || Math.abs(dz) > 1.3 || move.z === 0) return move;
+    const towardDoor = (dz > 0 && move.z < 0) || (dz < 0 && move.z > 0);
+    if (!towardDoor || Math.abs(move.x) > 0) return move;
+    return { x: Math.max(-0.8, Math.min(0.8, dx * 3)), z: move.z };
   }
 
   /** Nächste benutzbare Stelle in Reichweite, bevorzugt in Blickrichtung. */
@@ -160,6 +219,8 @@ export class World {
       if (player.holdingLantern) this.lanternLight.light.position.copy(player.lanternPosition());
     }
     this.lights.update(dt, dn.lampLevel);
+    this.lightPools.update(dn.lampLevel);
+    this.resources.update(dt);
 
     // Flammen: zufällig zwischen Einzelbildern wechseln
     this.flameTimer -= dt;

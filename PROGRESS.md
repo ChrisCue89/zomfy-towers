@@ -5,6 +5,62 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 2 – Sammeln, Crafting und Bauen ✓
+
+**Fertig**
+
+- Ressourcenquellen auf der Lichtung: 12 Bäume (Axt, 4 Schläge, +6 Holz),
+  3 Felsen (Spitzhacke), Kiesel, hohes Gras, Äste (mit der Hand), drei
+  Schrotthaufen und das Autowrack (einmal am Tag durchsuchen: Schrott, Stoff,
+  selten ein Zahnrad). Erschöpfte Quellen wachsen nach 1–4 Tagen nach
+  (Baumstumpf bleibt stehen). Schwung- und Aufhebe-Animation, Späne,
+  Laub, schwebende »+n« mit Symbol; **E gedrückt halten** sammelt weiter.
+- Axt aus dem Hackklotz, Spitzhacke von der Werkbank; das passende Werkzeug
+  nimmt Mika von selbst. Laterne auf der linken Hand (Taste F), die
+  Schnellleiste hält Werkzeuge.
+- **Bauleiste** unten rechts (Reiter »Zuhause«): Werkbank, Barrikade,
+  Laternenpfahl (mit Lichtinsel), Flachsbeet (jeden Tag Fasern ernten),
+  Sitzbank (ausruhen), Ausbau zur Hütte. Symbol, Preis mit Mini-Symbolen,
+  Füllbalken »wie nah bin ich dran?«, Ausgrauen, Aufleuchten mit Glitzern,
+  Tastenkürzel Q R T G C V, Hinweis-Tafel mit dem, was fehlt.
+- **Platzieren** auf dem 1-m-Raster: Geistermodell (gerastert, grün/rot
+  getönt), belegte Felder, schwaches Raster rundum; Maus oder – ohne Maus –
+  vor der Figur mit E; Mausrad dreht; Esc/Rechtsklick bricht ab. Barrikaden
+  und Lampen bleiben nach dem Setzen gewählt (Wand ziehen).
+- **Auswählen** per Klick oder E vor dem Bau; die Leiste zeigt dann
+  »Abreißen« (zweimal drücken, volle Rückgabe).
+- **Werkbank** mit Rezepten: Spitzhacke, Holz/Stein zu Schrott, Fasern zu
+  Stoff.
+- **Hüttenausbau** mit Abblende (»Hämmern, sägen, schrauben …«, zwei Stunden
+  vergehen): Anbau mit Sessel, Regal und Stehlampe, Veranda mit Geländer
+  und Blumentöpfen. Die Grundfläche ist von Anfang an reserviert.
+- **Ziel-Anzeige** unter der Uhr führt durch die ersten Schritte (Axt →
+  Werkbank → Spitzhacke → drei Barrikaden → Hütte).
+- Spielstand v2 mit Migration (Technik → Zahnräder, Laterne aus der
+  Schnellleiste), Bauten, Ausbaustufe, erschöpfte Quellen und Durchsuchtes
+  werden gespeichert.
+- Prüfskript mit echten Tasten und Mausklicks für alle neuen Abläufe
+  (u. a. Mausklick trifft genau das angeklickte Feld).
+
+**Nachbesserung aus Meilenstein 1, Runde 2** (Auswertung in
+`playtests/m1-r2/ZUSAMMENFASSUNG.md`): harmlose Antwort vorgewählt (kein
+ungewolltes Schlafen/Ausruhen beim Durchdrücken), Morgensatz als Sprechblase
+statt Dialog, Tageskarte kürzer und überspringbar, Einlaufhilfe an der Tür,
+dasselbe Ding öffnet nicht sofort wieder, Esc im Dialog öffnet das Menü,
+Intro nach Neuladen, größerer Steinkreis am Feuer, schmale Fenster.
+
+**Neu im Plan (Wunsch des Auftraggebers):** Der Detailgrad ist zu grob –
+man erkennt nicht, was was ist. Sobald die Mechaniken sitzen, kommt ein
+eigener Meilenstein »Detailgrad und Animationen« (DESIGN.md 3.6 und
+Meilenstein 5; Überlebende werden Meilenstein 6, Feinschliff 7). Testspieler
+prüfen ab jetzt in jeder Runde »Erkennt man, was was ist?«.
+
+**Offen**
+
+- Playtest-Runde für Meilenstein 2.
+
+---
+
 ## Meilenstein 1 – Playtest-Runde 1 und Nachbesserung
 
 **Testspieler:** Jonas 7/10, Mira 8/10, Theo 7/10, Kira 6/10 – Berichte und

@@ -326,7 +326,12 @@ function buildChoppingBlock(seed) {
     if (y === 3) return d < 1.2 ? P.e6 : d < 2.2 ? P.e8 : P.e7;
     return hash3(x, y, z, seed) < 0.4 ? P.e3 : P.e2;
   });
-  // Axt: Stiel schräg, Blatt im Holz
+  return m;
+}
+
+/** Die Axt im Hackklotz – eigenes Modell, damit man sie herausnehmen kann. */
+function buildStuckAxe() {
+  const m = new VoxelModel();
   m.line(1, 4, 0, 4, 9, 0, P.e5);
   m.box(-1, 4, 0, 1, 4, 0, P.s7);
   m.set(0, 5, 0, P.s6).set(-1, 5, 0, P.s6);
@@ -443,7 +448,7 @@ export function createProps({ seed, materials, colliders }) {
   // Lagerfeuer
   const fire = LAYOUT.campfire;
   add(buildCampfire(seed + 1), fire.x, fire.z, { name: 'Lagerfeuer' });
-  colliders.addCircle(fire.x, fire.z, 0.75);
+  colliders.addCircle(fire.x, fire.z, 0.92);
   interactions.push({ id: 'feuer', x: fire.x, z: fire.z, radius: 1.7, prompt: 'feuer', dialog: 'lagerfeuer' });
   const flameFrames = [];
   const flameGroup = new THREE.Group();
@@ -470,7 +475,7 @@ export function createProps({ seed, materials, colliders }) {
   add(buildCar(seed + 5), car.x - 1.625, car.z - 0.75, { occluder: true, name: 'Autowrack' });
   colliders.addBox(car.x - 1.75, car.z - 0.85, car.x + 1.75, car.z + 0.85);
   block(car.x - 1.9, car.z - 1.0, car.x + 1.9, car.z + 1.0);
-  interactions.push({ id: 'auto', x: car.x, z: car.z, radius: 2.3, prompt: 'ansehen', dialog: 'auto' });
+  interactions.push({ id: 'auto', x: car.x, z: car.z, radius: 2.3, prompt: 'durchsuchen', search: 'auto' });
   add(buildCrate(seed + 6), car.x + 2.25, car.z - 1.5, { name: 'Kiste' });
   colliders.addBox(car.x + 2.25, car.z - 1.5, car.x + 2.9, car.z - 0.85);
 
@@ -512,8 +517,10 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addBox(wp.x - 0.15, wp.z - 0.15, wp.x + 1.15, wp.z + 2.5);
   const cb = LAYOUT.choppingBlock;
   add(buildChoppingBlock(seed + 13), cb.x, cb.z, { name: 'Hackklotz' });
+  const stuckAxe = add(buildStuckAxe(), cb.x, cb.z, { name: 'Axt' });
   colliders.addCircle(cb.x, cb.z, 0.4);
-  interactions.push({ id: 'hackklotz', x: cb.x, z: cb.z, radius: 1.2, prompt: 'ansehen', dialog: 'hackklotz' });
+  const axeInteraction = { id: 'hackklotz', x: cb.x, z: cb.z, radius: 1.2, prompt: 'axtNehmen', action: 'takeAxe' };
+  interactions.push(axeInteraction);
   const s = LAYOUT.shelter;
   const barrel = { x: s.x + s.width * V + 0.375, z: s.z + s.depth * V - 0.375 };
   add(buildRainBarrel(seed + 14), barrel.x, barrel.z, { name: 'Regentonne' });
@@ -545,6 +552,7 @@ export function createProps({ seed, materials, colliders }) {
     group,
     interactions,
     blockers,
+    axe: { object: stuckAxe, interaction: axeInteraction },
     fire: {
       frames: flameFrames,
       light: new THREE.Vector3(fire.x, 0.55, fire.z),

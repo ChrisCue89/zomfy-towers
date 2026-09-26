@@ -20,6 +20,10 @@ export const COLORS = {
   goldDark: hexToCss(P.f4),
   shadow: hexToCss(P.n0),
   night: hexToCss(P.n0),
+  red: hexToCss(P.a0),
+  green: hexToCss(P.a6),
+  buildOk: hexToCss(P.g9),
+  buildBad: hexToCss(P.f3),
 };
 
 export class UICanvas {
@@ -129,6 +133,23 @@ export class UICanvas {
     const pattern = this.patternFor(amount, color);
     c.fillStyle = pattern;
     c.fillRect(0, 0, this.width, this.height);
+  }
+
+  /** Gerasterte Abdunklung eines Rechtecks. */
+  ditherRect(x, y, w, h, amount, color = COLORS.night) {
+    if (amount <= 0) return;
+    this.ctx.fillStyle = this.patternFor(amount, color);
+    this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  }
+
+  /** Umriss eines Rechtecks (1 px). */
+  frame(x, y, w, h, color) {
+    const c = this.ctx;
+    c.fillStyle = color;
+    c.fillRect(x, y, w, 1);
+    c.fillRect(x, y + h - 1, w, 1);
+    c.fillRect(x, y, 1, h);
+    c.fillRect(x + w - 1, y, 1, h);
   }
 
   patternFor(amount, color) {

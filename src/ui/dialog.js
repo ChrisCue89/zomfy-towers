@@ -36,7 +36,7 @@ export class DialogBox {
     this.lines = lines;
     this.index = 0;
     this.shown = 0;
-    this.choice = 0;
+    this.choice = this.defaultChoice(lines[0]);
     this.onDone = onDone;
     this.active = lines.length > 0;
     this.time = 0;
@@ -73,11 +73,17 @@ export class DialogBox {
     if (this.index < this.lines.length - 1) {
       this.index++;
       this.shown = 0;
-      this.choice = 0;
+      this.choice = this.defaultChoice(this.line);
       this.answersShownAt = null;
     } else {
       this.finish(null);
     }
+  }
+
+  /** Vorgewählte Antwort: die als `standard` markierte (harmlose), sonst die erste. */
+  defaultChoice(line) {
+    const index = (line?.antworten || []).findIndex((a) => a.standard);
+    return Math.max(0, index);
   }
 
   get hasAnswers() {
@@ -103,12 +109,12 @@ export class DialogBox {
       if (hovered >= 0 && input.mouse.clicked) {
         this.choice = hovered;
         this.advance();
-      } else if (input.pressed('use')) {
+      } else if (input.pressed('confirm')) {
         this.advance();
       }
       return;
     }
-    if (input.pressed('use') || input.mouse.clicked) this.advance();
+    if (input.pressed('confirm') || input.mouse.clicked) this.advance();
   }
 
   /** @param {import('./ui.js').UICanvas} ui */

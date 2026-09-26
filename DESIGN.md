@@ -86,7 +86,8 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
 - Die Kamera rastet auf das Pixelraster ein, der Rest-Versatz wird beim
   Hochskalieren ausgeglichen – stehende Dinge flimmern nicht, Bewegung bleibt
   weich.
-- **Einheitliche Voxelgröße 1/8 m** für alle Modelle.
+- **Einheitliche Voxelgröße 1/8 m** für alle Modelle (bis zum Meilenstein
+  »Detailgrad und Animationen«, siehe 3.6).
 - Nachbearbeitung im Pixelmaßstab: dunkle, farbige Umrisse an Silhouetten,
   helle Kanten an Außenecken, Vignette.
 - **Begrenzte Palette** (rund 80 Farben in farbverschobenen Rampen), auf die
@@ -124,13 +125,37 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
 
 - Gleicher Pixelmaßstab wie die 3D-Szene, eigene Pixelschrift mit Umlauten.
 - Warme, dunkle Pflaumentöne mit Holzrahmen und cremefarbener Schrift.
-- **Oben links:** Tag, Uhrzeit, Tageszeit. **Oben rechts:** Vorrat.
+- **Oben links:** Tag, Uhrzeit, Tageszeit; darunter das **aktuelle Ziel**
+  (führt durch die ersten Schritte, verschwindet, wenn alles erledigt ist).
+  **Oben rechts:** Vorrat (seltene Vorräte erst ab dem ersten Fund).
   **Oben Mitte (nachts):** Welle, Standfestigkeit des Zuhauses.
-- **Unten links:** Schnellleiste (8 Plätze, Tasten 1–8).
+- **Unten links:** Laterne (linke Hand, Taste F) und Schnellleiste
+  (8 Plätze, Tasten 1–8, rechte Hand: Werkzeuge, später Waffen).
   **Unten rechts:** Bauleiste (siehe 6.6). Beide liegen nebeneinander und
   überdecken sich nie. Lebensbalken der Figur über der Schnellleiste.
+- Gedanken der Figur (z. B. beim Aufwachen) erscheinen als Sprechblase über
+  ihr und halten das Spiel nicht an.
 - Dialogfenster mit Porträt und Namen, Schreibmaschinen-Effekt, Antworten.
 - Kontexthinweise (»E Schlafen«), kurze Meldungen, schwebende »+2«-Zahlen.
+
+### 3.6 Lesbarkeit, Detailgrad und Animation
+
+- **Man muss auf einen Blick erkennen, was was ist:** Figur, Schlurfer-Arten,
+  Türme, Loot, Werkzeuge, Rohstoffquellen, Bauten. Lesbarkeit geht vor
+  Stimmung.
+- Der jetzige Stand (Meilenstein 1–2) ist ein erster, **zu grober** Durchgang:
+  große Voxel, wenige Pixel pro Meter, sparsame Animation. Das ist bewusst so,
+  solange die Mechaniken wachsen – aber nicht das Ziel.
+- **Sobald die Mechaniken sitzen** (nach den Meilensteinen Nächte/Türme/Loot
+  und Nahkampf), folgt ein eigener Meilenstein **»Detailgrad und
+  Animationen«**: feinere Voxel (1/16 m für Figuren, Schlurfer, Türme,
+  Werkzeuge und kleine Requisiten), mehr Spielpixel pro Meter (höhere
+  Renderauflösung), klarere Silhouetten und Farbcodes je Art, mehr
+  Animation (Laufzyklen, Schlurfen, Schwünge, Rückstoß der Türme,
+  Leerlauf-Bewegungen, Umgebung wie Wind in Gras und Laub).
+- Der Pixel-Look bleibt dabei verbindlich: scharfe Pixel, begrenzte Palette,
+  keine Glättung, keine Unschärfe.
+- Testspieler prüfen in jeder Runde: »Erkennt man, was was ist?«
 
 ## 4. Welt und Geschichte
 
@@ -402,7 +427,7 @@ Bauleiste, eine leise Melodie am Abend, treibender Rhythmus in der Nacht.
 | Linke Maustaste | Angreifen · auf dem Raster: bauen · Turm anklicken: auswählen |
 | Rechte Maustaste / Esc | Bauen abbrechen, Auswahl aufheben |
 | Leertaste | Ausweichen |
-| E / Enter | Benutzen, Dialog weiter |
+| E / Enter | Benutzen, Dialog weiter; gedrückt halten: weiter sammeln |
 | 1–8 / Mausrad | Schnellleiste |
 | Q R T G C V | Bauleisten-Optionen |
 | Tab | Reiter der Bauleiste wechseln |
@@ -422,15 +447,20 @@ Pixel-Render-Pipeline, Lichtung mit Notunterkunft, Figur, Tag-Nacht-Zyklus
 mit warmen Lichtern, HUD-Grundgerüst, Dialoge mit Porträts, Speichern durch
 Schlafen, Ausruhen am Feuer, Prüfskript mit Screenshots.
 
-### Meilenstein 2 – Sammeln, Crafting und Bauen
+### Meilenstein 2 – Sammeln, Crafting und Bauen ✓
 
-- Ressourcenquellen: Bäume, Felsen, Büsche, Schrotthaufen, Autowrack;
-  Nachwachsen über Tage; Sammel-Animation, schwebende »+2«.
-- Werkzeuge: Axt (vom Hackklotz), Spitzhacke (Werkbank).
-- **Bauleiste** mit dem Reiter **Zuhause**: Werkbank, Kiste, Barrikade,
-  Laternenpfahl, Beet. Raster-Platzierung mit Vorschau, Abreißen.
-- Werkbank mit Rezepten und Verwerten zu Schrott.
-- Erste Zuhause-Stufe: Notunterkunft → Hütte.
+- Ressourcenquellen: Bäume, Felsen, Kiesel, hohes Gras, Äste,
+  Schrotthaufen, Autowrack; Nachwachsen über Tage; Sammel-Animation mit
+  Spänen, schwebende »+2«; **E gedrückt halten** sammelt weiter.
+- Werkzeuge: Axt (vom Hackklotz), Spitzhacke (Werkbank). Das passende
+  Werkzeug nimmt Mika beim Sammeln von selbst in die Hand.
+- **Bauleiste** mit dem Reiter **Zuhause**: Werkbank, Barrikade,
+  Laternenpfahl, Flachsbeet (jeden Tag Fasern ernten), Sitzbank (ausruhen),
+  Ausbau zur Hütte. Raster-Platzierung mit Vorschau, Drehen, Auswählen,
+  Abreißen mit voller Rückgabe.
+- Werkbank mit Rezepten (Spitzhacke) und Verwerten zu Schrott und Stoff.
+- Erste Zuhause-Stufe: Notunterkunft → Hütte (Anbau, Veranda).
+- Ziel-Anzeige für die ersten Schritte, Laterne auf der linken Hand.
 - Spielstand v2 mit Migration.
 
 **Spielbar heißt:** Einen Tag lang sammeln, eine Werkbank bauen, daraus eine
@@ -462,13 +492,31 @@ Schwierigkeit und einer Anführernacht.
 **Spielbar heißt:** Durchbrüche im Nahkampf abwehren und spüren, wie die
 Figur über die Nächte stärker wird.
 
-### Meilenstein 5 – Überlebende, Geschichte und Einrichten
+### Meilenstein 5 – Detailgrad und Animationen
+
+Kommt, sobald die Mechaniken sitzen (siehe 3.6) – und vor den Überlebenden,
+damit neue Figuren und Möbel gleich im neuen Detailgrad entstehen.
+
+- Höhere Renderauflösung und mehr Spielpixel pro Meter; Kamera, Umrisse,
+  Dithering und Palette darauf abgestimmt.
+- Feinere Voxel (1/16 m) für Figur, Schlurfer, Türme, Werkzeuge, Loot und
+  kleine Requisiten; Gebäude und Natur mit mehr Einzelheiten.
+- Klare Silhouetten und Farbcodes je Schlurfer- und Turmart, lesbares Loot.
+- Mehr Animation: Laufzyklen, Schlurfen, Angriffe, Rückstoß und Zielen der
+  Türme, Leerlauf-Bewegungen, Wind in Gras und Laub, Türen, Rauch.
+- Leistung trotz mehr Dreiecken (Instancing, Stellvertreter, Culling).
+
+**Spielbar heißt:** Dasselbe Spiel wie nach Meilenstein 4 – aber jede Art,
+jeder Turm, jedes Loot und jede Quelle ist ohne Erklärung erkennbar, und die
+Welt bewegt sich lebendig.
+
+### Meilenstein 6 – Überlebende, Geschichte und Einrichten
 
 - Überlebende mit Dialogen, Aufträgen, Einzug und Verteidigungsfähigkeit.
 - Geschichte über viele Tage bis zum entzündeten Leuchtfeuer.
 - Einrichten mit Gemütlichkeit und Morgen-Boni; weitere Zuhause-Stufen.
 
-### Meilenstein 6 – Feinschliff
+### Meilenstein 7 – Feinschliff
 
 - Klang und Musik (alles im Browser erzeugt).
 - Balance aller Kosten, Wellen und Belohnungen.

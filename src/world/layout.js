@@ -41,6 +41,43 @@ export const LAYOUT = {
   roadBlockEast: { x: 15.25, z: 10.25 },
 };
 
+/**
+ * Ressourcenquellen (Meilenstein 2). kind: baum, felsen, kiesel, gras, aeste,
+ * schrott. model wählt die Form (bei Bäumen: birke, tanne, eiche, jung).
+ */
+export const NODES = [
+  { id: 'birke-1', kind: 'baum', model: 'birke', x: -13.5, z: -6.5 },
+  { id: 'birke-2', kind: 'baum', model: 'birke', x: 12.75, z: -3.0 },
+  { id: 'birke-3', kind: 'baum', model: 'birke', x: 13.5, z: 5.5 },
+  { id: 'tanne-1', kind: 'baum', model: 'tanne', x: -14.0, z: 7.0 },
+  { id: 'eiche-1', kind: 'baum', model: 'eiche', x: 13.0, z: -9.5 },
+  { id: 'jung-1', kind: 'baum', model: 'jung', x: -12.25, z: -2.5 },
+  { id: 'jung-2', kind: 'baum', model: 'jungtanne', x: -8.0, z: -8.75 },
+  { id: 'jung-3', kind: 'baum', model: 'jung', x: -5.25, z: -9.75 },
+  { id: 'jung-4', kind: 'baum', model: 'jungtanne', x: 5.0, z: -9.75 },
+  { id: 'jung-5', kind: 'baum', model: 'jung', x: 7.25, z: -10.5 },
+  { id: 'jung-6', kind: 'baum', model: 'jungtanne', x: -10.75, z: 7.25 },
+  { id: 'jung-7', kind: 'baum', model: 'jung', x: 10.25, z: 5.0 },
+  { id: 'felsen-1', kind: 'felsen', model: 'gross', x: 12.25, z: 2.25 },
+  { id: 'felsen-2', kind: 'felsen', model: 'mittel', x: -12.5, z: -1.0 },
+  { id: 'felsen-3', kind: 'felsen', model: 'mittel', x: -3.75, z: 10.5 },
+  { id: 'kiesel-1', kind: 'kiesel', x: 6.25, z: -3.25 },
+  { id: 'kiesel-2', kind: 'kiesel', x: 10.5, z: 6.25 },
+  { id: 'kiesel-3', kind: 'kiesel', x: -6.0, z: 5.5 },
+  { id: 'gras-1', kind: 'gras', x: -7.5, z: 1.5 },
+  { id: 'gras-2', kind: 'gras', x: 7.75, z: 3.25 },
+  { id: 'gras-3', kind: 'gras', x: -3.25, z: 6.25 },
+  { id: 'gras-4', kind: 'gras', x: 9.0, z: -1.5 },
+  { id: 'gras-5', kind: 'gras', x: -9.75, z: -6.5 },
+  { id: 'gras-6', kind: 'gras', x: 1.75, z: 5.5 },
+  { id: 'aeste-1', kind: 'aeste', x: -6.5, z: -6.75 },
+  { id: 'aeste-2', kind: 'aeste', x: 6.5, z: -7.75 },
+  { id: 'aeste-3', kind: 'aeste', x: -12.5, z: 5.25 },
+  { id: 'schrott-1', kind: 'schrott', x: -12.25, z: 9.25 },
+  { id: 'schrott-2', kind: 'schrott', x: 11.25, z: 9.5 },
+  { id: 'schrott-3', kind: 'schrott', x: -3.0, z: -10.0 },
+];
+
 /** Abstandsmaß zur Lichtungsgrenze: < 1 innen, 1 = Grenze, > 1 außen. */
 export function clearingDistance(x, z) {
   const { cx, cz, rx, rz, power } = LAYOUT.clearing;
