@@ -518,6 +518,7 @@ export function createProps({ seed, materials, colliders }) {
   const barrel = { x: s.x + s.width * V + 0.375, z: s.z + s.depth * V - 0.375 };
   add(buildRainBarrel(seed + 14), barrel.x, barrel.z, { name: 'Regentonne' });
   colliders.addCircle(barrel.x, barrel.z, 0.4);
+  interactions.push({ id: 'regentonne', x: barrel.x, z: barrel.z, radius: 1.2, prompt: 'ansehen', dialog: 'regentonne', inside: false });
   const garden = LAYOUT.garden;
   add(buildGardenBed(seed + 15), garden.x, garden.z, { name: 'Beet' });
   colliders.addBox(garden.x, garden.z, garden.x + 2.0, garden.z + 1.5);

@@ -45,11 +45,12 @@ export class Game {
     this.frameTimes = [];
     this.showDebug = CONFIG.debug;
     this.currentInteraction = null;
+    this.suppressed = null; // Interaktion, die bis zum Weggehen ruht
     this.previousSlot = 1;
     this.sleep = null;
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
-    this.intro = { t: 0, duration: 1.4 };
+    this.intro = { t: 0, duration: 1.9 };
   }
 
   init() {
@@ -161,7 +162,7 @@ export class Game {
   }
 
   quietSave() {
-    if (!this.ready || this.mode === 'sleep') return;
+    if (!this.ready) return;
     this.saves.save(this.state);
   }
 
@@ -267,7 +268,10 @@ export class Game {
     if (s.t >= timing.fadeOut + timing.black + timing.fadeIn) {
       this.sleep = null;
       this.mode = 'play';
-      if (s.kind === 'sleep') this.startDialog('morgen');
+      if (s.kind === 'sleep') {
+        this.suppressed = 'bett';
+        this.startDialog('morgen');
+      }
     }
   }
 
@@ -325,7 +329,7 @@ export class Game {
         this.player.idle(dt);
         break;
       case 'menu':
-        this.menu.update(input);
+        this.menu.update(input, dt);
         this.player.idle(dt);
         break;
       case 'sleep':
@@ -369,7 +373,13 @@ export class Game {
     sp.z = p.z;
     sp.facing = this.player.facing;
 
-    this.currentInteraction = this.world.findInteraction(p.x, p.z, this.player.facing);
+    let it = this.world.findInteraction(p.x, p.z, this.player.facing);
+    // Nach dem Aufwachen bietet das Bett erst wieder Schlaf an, wenn man einmal weggegangen ist.
+    if (this.suppressed) {
+      if (it && it.id === this.suppressed) it = null;
+      else if (!this.world.interactions.some((i) => i.id === this.suppressed && Math.hypot(i.x - p.x, i.z - p.z) <= i.radius)) this.suppressed = null;
+    }
+    this.currentInteraction = it;
     if (this.currentInteraction && input.pressed('use')) {
       this.interact(this.currentInteraction);
       return;
@@ -442,7 +452,17 @@ export class Game {
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
-    if (this.intro.t < this.intro.duration) ui.ditherFill(1 - this.intro.t / this.intro.duration);
+    if (this.intro.t < this.intro.duration) this.drawIntro(ui);
+  }
+
+  /** Einblenden beim Start: Titelkarte, dann löst sich das Schwarz gerastert auf. */
+  drawIntro(ui) {
+    const t = this.intro.t / this.intro.duration;
+    ui.ditherFill(Math.min(1, (1 - t) * 1.6));
+    if (t < 0.55) {
+      this.drawBigText(ui, T.spielName, ui.width / 2, ui.height / 2 - 26, 3, COLORS.gold);
+      ui.textCentered(`${T.tag} ${this.state.time.day}`, ui.width / 2, ui.height / 2 + 14, COLORS.textWarm, { outline: COLORS.outline });
+    }
   }
 
   drawSleep(ui) {
@@ -515,7 +535,14 @@ export class Game {
       vorrat: { ...st.inventory },
       schnellleiste: { gewaehlt: st.hotbar.selected + 1, plaetze: st.hotbar.slots.map((s) => s || '-') },
       hinweis: it ? T.aktionen[it.prompt] : null,
-      dialog: line ? { sprecher: line.s, text: line.t, antworten: (line.antworten || []).map((a) => a.t) } : null,
+      dialog: line
+        ? {
+            sprecher: line.s,
+            text: line.t.slice(0, Math.floor(this.dialog.shown)),
+            fertigGetippt: this.dialog.complete,
+            antworten: this.dialog.complete ? (line.antworten || []).map((a, i) => (i === this.dialog.choice ? `> ${a.t}` : a.t)) : [],
+          }
+        : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
       meldungen: this.hud.toasts.map((t) => t.text),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },

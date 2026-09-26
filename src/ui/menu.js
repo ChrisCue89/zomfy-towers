@@ -1,5 +1,8 @@
 // Pause-Menü: Weiter, Steuerung, Vollbild, Neues Spiel (mit Rückfrage).
 // Layout wird einmal berechnet und von update() (Klicks) und draw() genutzt.
+// Schutz vor versehentlichem Löschen: Nach jedem Seitenwechsel zählen Klicks
+// kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
+// Rückfrage liegt „Lieber nicht“ dort, wo eben noch „Neues Spiel“ stand.
 
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
@@ -12,12 +15,12 @@ export class Menu {
     this.isOpen = false;
     this.screen = 'main';
     this.focus = 0;
+    this.guard = 0;
   }
 
   open() {
     this.isOpen = true;
-    this.screen = 'main';
-    this.focus = 0;
+    this.go('main');
   }
 
   close() {
@@ -35,8 +38,8 @@ export class Menu {
     }
     if (this.screen === 'confirm') {
       return [
-        { label: T.menue.sicherNein, action: () => this.go('main') },
         { label: T.menue.sicherJa, action: () => this.game.newGame() },
+        { label: T.menue.sicherNein, action: () => this.go('main'), safe: true },
       ];
     }
     return [{ label: T.menue.zurueck, action: () => this.go('main') }];
@@ -44,7 +47,9 @@ export class Menu {
 
   go(screen) {
     this.screen = screen;
-    this.focus = 0;
+    const safe = this.buttons().findIndex((b) => b.safe);
+    this.focus = Math.max(0, safe);
+    this.guard = 0.35;
   }
 
   /** Maße und Knopf-Rechtecke für die aktuelle Seite. */
@@ -67,15 +72,18 @@ export class Menu {
   }
 
   /** @param {import('../core/input.js').Input} input */
-  update(input) {
+  update(input, dt = 0) {
     if (!this.isOpen) return;
+    this.guard = Math.max(0, this.guard - dt);
     const ui = this.game.ui;
     const { buttons } = this.layout(ui);
     const hovered = buttons.findIndex((b) => ui.hover(b.rect.x, b.rect.y, b.rect.w, b.rect.h));
-    if (hovered >= 0) this.focus = hovered;
+    if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
     if (input.pressed('up')) this.focus = (this.focus + buttons.length - 1) % buttons.length;
     if (input.pressed('down')) this.focus = (this.focus + 1) % buttons.length;
-    if (hovered >= 0 && input.mouse.clicked) {
+    if (input.mouse.clicked && this.guard > 0) {
+      input.consumeClick();
+    } else if (hovered >= 0 && input.mouse.clicked) {
       input.consumeClick();
       buttons[hovered].action();
     } else if (input.pressed('use')) {
@@ -105,7 +113,7 @@ export class Menu {
       ui.textCentered(line, L.x + L.w / 2, cy, COLORS.text);
       cy += LINE_HEIGHT;
     }
-    L.buttons.forEach((b, i) => ui.button(b.label, b.rect.x, b.rect.y, b.rect.w, b.rect.h, { focused: i === this.focus }));
+    L.buttons.forEach((b, i) => ui.button(b.label, b.rect.x, b.rect.y, b.rect.w, b.rect.h, { focused: i === this.focus, hoverHighlight: false }));
     ui.textCentered(T.menue.fusszeile, L.x + L.w / 2, L.y + L.h - 15, COLORS.textDim);
   }
 }

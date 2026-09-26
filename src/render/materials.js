@@ -40,7 +40,7 @@ const DISCARD = /* glsl */ `
   vec2 cutDelta = (gl_FragCoord.xy - uCutCenter) / uCutRadius;
   float cutDist = length(cutDelta);
   if (cutDist < 1.0 && vViewPosition.z < uCutDepth - 0.35) {
-    float cutAmount = uCutStrength * smoothstep(1.0, 0.55, cutDist) * 0.8;
+    float cutAmount = uCutStrength * smoothstep(1.0, 0.5, cutDist) * 0.92;
     if (ditherThreshold < cutAmount) discard;
   }
   #endif

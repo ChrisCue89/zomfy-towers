@@ -33,7 +33,7 @@ export class Input {
     this.toGame = toGame;
     this.down = new Set();
     this.pressedCodes = new Set();
-    this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, wheel: 0 };
+    this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, moved: false, wheel: 0 };
 
     window.addEventListener('keydown', (e) => {
       if (PREVENT.has(e.code)) e.preventDefault();
@@ -70,6 +70,7 @@ export class Input {
 
   updatePointer(e) {
     const p = this.toGame(e.clientX, e.clientY);
+    if (p.x !== this.mouse.x || p.y !== this.mouse.y) this.mouse.moved = true;
     this.mouse.x = p.x;
     this.mouse.y = p.y;
     this.mouse.inside = true;
@@ -113,6 +114,7 @@ export class Input {
   endFrame() {
     this.pressedCodes.clear();
     this.mouse.clicked = false;
+    this.mouse.moved = false;
     this.mouse.wheel = 0;
   }
 }

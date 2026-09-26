@@ -104,9 +104,9 @@ export class UICanvas {
    * Knopf zeichnen. Gibt true zurück, wenn er in diesem Bild angeklickt wurde.
    * @param {boolean} focused per Tastatur ausgewählt
    */
-  button(label, x, y, w, h, { focused = false } = {}) {
+  button(label, x, y, w, h, { focused = false, hoverHighlight = true } = {}) {
     const hovered = this.hover(x, y, w, h);
-    const active = hovered || focused;
+    const active = (hoverHighlight && hovered) || focused;
     this.panel(x, y, w, h, {
       fill: active ? COLORS.fillHover : COLORS.fill,
       frame: active ? COLORS.gold : COLORS.frame,

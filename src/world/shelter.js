@@ -419,10 +419,11 @@ export function createShelter({ seed, colliders }) {
       { minX: wx(0), maxX: wx(W), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
       { minX: wx(8), maxX: wx(17), minZ: wz(D), maxZ: wz(31), y: 2 * V },
     ],
+    // inside: nur von drinnen benutzbar (nicht durch die Wand)
     interactions: [
-      { id: 'bett', x: wx(8), z: wz(8), radius: 1.35, prompt: 'schlafen', action: 'sleep' },
-      { id: 'radio', x: wx(20), z: wz(3), radius: 1.3, prompt: 'radio', dialog: 'radio' },
-      { id: 'ofen', x: wx(32), z: wz(6), radius: 1.2, prompt: 'ofen', dialog: 'ofen' },
+      { id: 'bett', x: wx(8), z: wz(8), radius: 1.35, prompt: 'schlafen', action: 'sleep', inside: true },
+      { id: 'radio', x: wx(20), z: wz(3), radius: 1.3, prompt: 'radio', dialog: 'radio', inside: true },
+      { id: 'ofen', x: wx(32), z: wz(6), radius: 1.2, prompt: 'ofen', dialog: 'ofen', inside: true },
     ],
     // Bereich, in dem die Figur nach dem Schlafen steht
     wakeSpot: { x: wx(9), z: wz(13), facing: Math.PI * 0.1 },

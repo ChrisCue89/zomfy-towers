@@ -113,6 +113,8 @@ export const DIALOGE = {
 
   waesche: [{ s: 'mika', t: 'Die Wäsche ist trocken. Und die Socken passen sogar zusammen. Beinahe.' }],
 
+  regentonne: [{ s: 'mika', t: 'Die Regentonne ist halb voll. Reicht zum Gießen – und für eine Katzenwäsche, wenn es sein muss.' }],
+
   hackklotz: [{ s: 'mika', t: 'Eine Axt steckt im Hackklotz. Morgen hacke ich Holz. Ganz bestimmt.' }],
 
   beet: [{ s: 'mika', t: 'Ein verwildertes Beet voller Kürbisse. Jemand hat hier mal gegärtnert – und die Kürbisse haben einfach weitergemacht.' }],

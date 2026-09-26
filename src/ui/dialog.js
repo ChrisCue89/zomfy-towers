@@ -1,11 +1,17 @@
 // Dialogfenster mit Porträt, Namensschild, Schreibmaschinen-Text und Antworten.
+// Ein Druck während des Tippens zeigt die Zeile ganz. Erscheinen Antworten,
+// zählt Bestätigen erst nach einem kurzen Moment – so wählt schnelles
+// Durchdrücken nie aus Versehen eine Antwort, die man nicht gesehen hat.
+// Die Maus wählt eine Antwort nur, wenn sie bewegt wird.
 
 import { SPRECHER } from '../data/dialogs.js';
 import { COLORS } from './ui.js';
 import { wrap, measure, LINE_HEIGHT } from './font.js';
+import { T } from '../data/texts.js';
 import { drawIcon } from './icons.js';
 
-const CHARS_PER_SECOND = 48;
+const CHARS_PER_SECOND = 72;
+const ANSWER_GUARD = 0.3;
 
 export class DialogBox {
   /** @param {import('../core/game.js').Game} game */
@@ -18,6 +24,7 @@ export class DialogBox {
     this.choice = 0;
     this.onDone = null;
     this.time = 0;
+    this.answersShownAt = null;
     this.layout = null;
   }
 
@@ -33,6 +40,7 @@ export class DialogBox {
     this.onDone = onDone;
     this.active = lines.length > 0;
     this.time = 0;
+    this.answersShownAt = null;
     this.answerRects = [];
     if (!this.active && onDone) onDone(null);
   }
@@ -66,9 +74,14 @@ export class DialogBox {
       this.index++;
       this.shown = 0;
       this.choice = 0;
+      this.answersShownAt = null;
     } else {
       this.finish(null);
     }
+  }
+
+  get hasAnswers() {
+    return Boolean(this.line && this.line.antworten && this.line.antworten.length);
   }
 
   /** @param {import('../core/input.js').Input} input */
@@ -76,13 +89,23 @@ export class DialogBox {
     if (!this.active) return;
     this.time += dt;
     if (!this.complete) this.shown = Math.min(this.line.t.length, this.shown + dt * CHARS_PER_SECOND);
+    const nav = input.pressed('up') || input.pressed('left') ? -1 : input.pressed('down') || input.pressed('right') ? 1 : 0;
+    // Pfeil/WASD während des Tippens: Zeile sofort ganz zeigen
+    if (!this.complete && nav && this.hasAnswers) this.shown = this.line.t.length;
     const answers = this.complete ? this.line.antworten : null;
     if (answers && answers.length) {
-      if (input.pressed('up') || input.pressed('left')) this.choice = (this.choice + answers.length - 1) % answers.length;
-      if (input.pressed('down') || input.pressed('right')) this.choice = (this.choice + 1) % answers.length;
+      if (this.answersShownAt === null) this.answersShownAt = this.time;
+      if (nav) this.choice = (this.choice + nav + answers.length) % answers.length;
       const hovered = (this.answerRects || []).findIndex((r) => this.game.ui.hover(r.x, r.y, r.w, r.h));
-      if (hovered >= 0) this.choice = hovered;
-      if (input.pressed('use') || (hovered >= 0 && input.mouse.clicked)) this.advance();
+      if (hovered >= 0 && input.mouse.moved) this.choice = hovered;
+      const ready = this.time - this.answersShownAt >= ANSWER_GUARD;
+      if (!ready) return;
+      if (hovered >= 0 && input.mouse.clicked) {
+        this.choice = hovered;
+        this.advance();
+      } else if (input.pressed('use')) {
+        this.advance();
+      }
       return;
     }
     if (input.pressed('use') || input.mouse.clicked) this.advance();
@@ -145,6 +168,8 @@ export class DialogBox {
           ui.text(a.t, tx + 7, ay, selected ? COLORS.gold : COLORS.textDim);
           ay += LINE_HEIGHT + 1;
         });
+        const hint = T.dialog.auswahlHinweis;
+        ui.text(hint, x + w - 10 - measure(hint), y + h - 14, COLORS.textDim);
       } else if (Math.floor(this.time * 2.5) % 2 === 0) {
         drawIcon(ui.ctx, 'weiter', x + w - 14, y + h - 10);
       }

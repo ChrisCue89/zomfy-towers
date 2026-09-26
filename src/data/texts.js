@@ -49,6 +49,9 @@ export const T = {
     benutzen: 'E',
     weiter: 'E',
   },
+  dialog: {
+    auswahlHinweis: 'W/S wählen · E bestätigen',
+  },
   meldungen: {
     gespeichert: 'Spielstand gespeichert',
     speichernFehler: 'Speichern nicht möglich',

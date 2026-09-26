@@ -92,6 +92,17 @@ eine Antwort, sonst ist die Version nicht in sich spielbar.
 wacht am Morgen im Bett auf. Tagsüber: kurze Ohnmacht, Aufwachen im Bett zwei
 Stunden später, kein Materialverlust.
 
+## Zeit
+
+### 14. Bleibt Ausruhen am Feuer und im Sessel kostenlos?
+**Entscheidung: Ja.** Ausruhen kostet nichts außer der Tageszeit, die man
+überspringt – und genau die ist ab Meilenstein 2 wertvoll (Sammeln, Bauen)
+und ab Meilenstein 3 knapp (die Nacht kommt schneller). Wer ausruht,
+verzichtet auf Vorbereitung. Während die Horde unterwegs ist, geht es nicht.
+*Warum:* Ausruhen ist ein Komfort für Spieler, die den Abend genießen oder
+direkt in die Nacht wollen; eine Zusatzkosten-Regel würde nur bestrafen,
+ohne eine Entscheidung interessanter zu machen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

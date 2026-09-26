@@ -89,7 +89,7 @@ export class World {
     this.porchLight = L.addLight({ position: s.lights.porch, color: 0xffc070, intensity: 3.6, distance: 6.5, mode: 'lamp', flickerSpeed: 3, flickerAmount: 0.05 });
     this.tableLight = L.addLight({ position: s.lights.table, color: 0xffb865, intensity: 5.6, distance: 8, mode: 'lamp', flickerSpeed: 2.5, flickerAmount: 0.04 });
     this.stoveLight = L.addLight({ position: s.lights.stove, color: 0xff7a3a, intensity: 1.8, distance: 3.5, mode: 'always', dayFactor: 0.5, flickerSpeed: 6, flickerAmount: 0.18 });
-    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xffcf80, intensity: 3.4, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
+    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.8, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
     this.lanternLight.on = false;
 
     L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });
@@ -125,8 +125,11 @@ export class World {
     const fz = Math.cos(facing);
     let best = null;
     let bestScore = Infinity;
+    const inside = this.isInside(x, z);
     for (const it of this.interactions) {
       if (it.enabled === false) continue;
+      // Drinnen-Dinge nur von drinnen, nicht durch die Wand
+      if (it.inside !== undefined && it.inside !== inside) continue;
       const dx = it.x - x;
       const dz = it.z - z;
       const d = Math.hypot(dx, dz);

@@ -5,6 +5,47 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 1 – Playtest-Runde 1 und Nachbesserung
+
+**Testspieler:** Jonas 7/10, Mira 8/10, Theo 7/10, Kira 6/10 – Berichte und
+Auswertung in `playtests/m1-r1/` (`ZUSAMMENFASSUNG.md`).
+
+**Gefunden**
+
+- Blocker: Nach »Neues Spiel« lag »Ja, neu beginnen« unter dem Mauszeiger
+  (Doppelklick = Spielstand weg).
+- Spielfluss: Tastendrücke während der Schreibmaschine »verpufften«;
+  schnelles Durchdrücken bestätigte ungesehene Antworten; ein ruhender
+  Mauszeiger überschrieb die Tastaturwahl; Neuladen während des Ausruhens
+  verlor den Weg seit dem letzten Speichern.
+- Feinschliff: Rauschbild beim Start, grünliche Laterne, Bett durch die Wand
+  benutzbar, Schlafschleife nach dem Aufwachen, fehlende Texte.
+
+**Geändert**
+
+- Menü: sichere Rückfrage (»Lieber nicht« unter dem Zeiger und vorgewählt,
+  Klicksperre nach Seitenwechsel), Maus wählt nur bei Bewegung.
+- Dialoge: schneller tippen, Antwort-Sperre 0,3 s, Hinweis »W/S wählen ·
+  E bestätigen«, Pfeiltasten zeigen den Text sofort ganz.
+- Stille Sicherung auch während Ausruhen/Schlafen.
+- Titelkarte beim Start, warme Laterne, Innen-Dinge nur von drinnen, Bett
+  ruht nach dem Aufwachen, Regentonne mit Text, kräftigere Durchsicht.
+- Playtest-Brücke: `look` zeigt nur den schon getippten Dialogtext, ob die
+  Zeile fertig ist und welche Antwort markiert ist (»> …«).
+- OFFENE-FRAGEN.md Nr. 14: Ausruhen bleibt kostenlos.
+
+**Werkzeug-Notizen**
+
+- Die Tester haben die Brücke gut bedient; zwei Befunde entstanden aus dem
+  angehaltenen Spiel zwischen Befehlen (Schreibmaschine). Deshalb zeigt
+  `look` jetzt genau, was auf dem Bildschirm steht.
+
+**Offen**
+
+- Kurzes Festhängen in engen Ecken, Morgenfarbe, Orientierung (Karte).
+
+---
+
 ## Meilenstein 1 – Fundament und Look ✓
 
 **Fertig**
@@ -52,4 +93,4 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 **Offen**
 
-- Playtest-Runde 1 (läuft als Nächstes).
+- Playtest-Runde 1 – erledigt, siehe oben.
