@@ -153,6 +153,7 @@ export const T = {
   werkbank: {
     titel: 'Werkbank',
     hinweis: 'W/S wählen · E herstellen · Esc schließen',
+    nochmal: (info) => `Nochmal E: ${info}`,
     vorhanden: 'schon da',
   },
   aktionen: {
@@ -177,6 +178,7 @@ export const T = {
     ernten: 'Ernten',
     brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
     heuteLeer: 'Heute leer – morgen wieder',
+    waechst: (tage) => (tage <= 1 ? 'Wächst morgen nach' : `Wächst in ${tage} Tagen nach`),
   },
   tasten: {
     benutzen: 'E',
@@ -196,6 +198,9 @@ export const T = {
     neuerTag: (tag) => `Tag ${tag}`,
     brauchtWerkzeug: (werkzeug) => `Dafür brauche ich eine ${werkzeug}.`,
     schonDurchsucht: 'Heute schon durchsucht. Morgen wieder.',
+    abgebrochen: 'Abgebrochen – dabei stehen bleiben.',
+    waldbaum: 'Der ist mir zu mächtig. Fällen kann ich die Bäume mit dem rot-weißen Band.',
+    gestruepp: 'Nur Gestrüpp. Holz gibt es an den Bäumen mit dem rot-weißen Band.',
     verschnauft: 'Kurz verschnauft – wieder bei Kräften',
     ausserPuste: 'Noch außer Puste … gleich wieder.',
     keineZeit: 'Zum Sitzen ist jetzt keine Zeit.',

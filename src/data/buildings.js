@@ -1,6 +1,7 @@
 // Bauten der Bauleiste. Kosten in Vorratseinheiten.
 // w × d = Grundriss in 1-m-Zellen (bei turns = 1 vertauscht).
-// tower: Turm (Stufen, Spezialisierung, siehe towers.js); hp: Haltbarkeit.
+// tower: Turm (Stufen, Spezialisierung, siehe towers.js); hp: Haltbarkeit;
+// defense: Verteidigung (Abreißen gibt wie bei Türmen nur 70 % zurück).
 
 import { TOWERS } from './towers.js';
 
@@ -10,7 +11,7 @@ export const BUILDINGS = {
   sprenger: { w: 1, d: 1, tower: true, cost: TOWERS.sprenger.base[0].cost, icon: 'sprenger', hp: 100, height: 1.4 },
   laternenturm: { w: 1, d: 1, tower: true, cost: TOWERS.laternenturm.base[0].cost, icon: 'laternenturm', hp: 100, height: 2.4 },
   werkbank: { w: 2, d: 1, cost: { holz: 8, stein: 2 }, max: 1, icon: 'werkbank', use: 'werkbank', height: 1.6 },
-  barrikade: { w: 1, d: 1, cost: { holz: 3 }, icon: 'barrikade', repeat: true, hp: 80, height: 1.1 },
+  barrikade: { w: 1, d: 1, cost: { holz: 3 }, icon: 'barrikade', repeat: true, defense: true, hp: 80, height: 1.1 },
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2 },
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1 },

@@ -126,10 +126,15 @@ function buildHead(s, seed) {
   return m;
 }
 
-/** Leuchtende Teile am Kopf: Augen, beim Leuchtpilz der große Hut. */
+/**
+ * Leuchtende Teile am Kopf: Augen vorn, leuchtende Moderpilzchen am
+ * Hinterkopf (so sieht man Schlurfer nachts auch von hinten – die meisten
+ * laufen von der Kamera weg aufs Haus zu), beim Leuchtpilz der große Hut.
+ */
 function buildHeadGlow(s) {
   const m = new VoxelModel();
   m.set(-2, 9, 2, s.eyes).set(1, 9, 2, s.eyes);
+  m.set(-2, 9, -4, 0xb6f07a).set(1, 8, -4, 0xb6f07a).set(0, 10, -4, 0x8ee0a0);
   if (s.extra === 'leuchthut') {
     m.box(-4, 11, -4, 3, 11, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -4 || z === 2) ? null : 0x6cc0ae));
     m.box(-3, 12, -3, 2, 12, 1, (x, y, z) => ((x + z) % 3 === 0 ? 0xf7f3ea : 0x8ee0cc));

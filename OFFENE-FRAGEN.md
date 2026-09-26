@@ -82,13 +82,16 @@ Zahlen 1–8 gehören der Schnellleiste.
 einsammeln – das Risiko-gegen-Belohnung-Moment ginge verloren.
 
 ### 9. Abreißen und Verkaufen
-**Entscheidung:** Zuhause-Bauten geben alles zurück, Türme 70 % aller
-investierten Kosten.
-*Warum (nach Playtest m2-r1 bestätigt):* Umstellen soll im Zuhause nichts
-kosten – das ist gemütlich und lädt zum Ausprobieren ein. Das einzige Loch
-(Flachsbeet abreißen und sofort wieder ernten) ist geschlossen: Ein neues
-Beet ist erst am nächsten Tag reif. Bei Türmen kostet ein Fehlgriff dagegen
-Loot (Säule »Jede Entscheidung kostet«).
+**Entscheidung:** Zuhause-Bauten (Werkbank, Laterne, Beet, Bank) geben alles
+zurück. **Verteidigung** – Türme und seit m2-r2 auch Barrikaden – gibt 70 %
+zurück (bei Türmen 70 % aller investierten Kosten). Die Abriss-Kachel zeigt
+die Rückgabe grün.
+*Warum (nach Playtest m2-r1 bestätigt, m2-r2 nachgeschärft):* Umstellen soll
+im Zuhause nichts kosten – das ist gemütlich und lädt zum Ausprobieren ein.
+Das Loch beim Flachsbeet (abreißen, sofort wieder ernten) ist geschlossen: Ein
+neues Beet ist erst am nächsten Tag reif. In der Verteidigung kostet ein
+Fehlgriff dagegen etwas (Säule »Jede Entscheidung kostet«); Theo fand, dass
+das Barrikaden-Ziel mit voller Rückgabe netto nichts kostete.
 
 ## Figur und Kampf
 

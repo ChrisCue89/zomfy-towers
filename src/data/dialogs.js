@@ -117,12 +117,12 @@ export const DIALOGE = {
 
   axtFund: [
     { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich die jungen Bäume auf der Lichtung fällen.' },
-    { s: 'mika', t: 'Die Bäume mit dem roten Band darf ich fällen. Lose Steine liegen auf der Wiese. Daraus baue ich eine Werkbank – die Leiste unten rechts zeigt, was geht.' },
+    { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Lose Steine liegen auf der Wiese. Daraus baue ich eine Werkbank – die Leiste unten rechts zeigt, was geht.' },
   ],
 
   autoErstmals: [
     { s: 'mika', t: 'Das Auto fährt schon lange nirgendwo mehr hin. Auf dem Dach wächst Moos, aus der Motorhaube ein Busch.' },
-    { s: 'mika', t: 'Aber im Kofferraum liegt noch brauchbarer Kram. Einmal am Tag schaue ich hier rein.' },
+    { s: 'mika', t: 'Aber im Kofferraum liegt noch brauchbarer Kram. Mal nachsehen – und morgen gleich wieder.' },
   ],
 
   werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],

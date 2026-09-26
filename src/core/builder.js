@@ -31,6 +31,7 @@ export class Builder {
     this.selection = null; // Bau-ID
     this.useMouse = false;
     this.hovered = null; // Bau unter dem Mauszeiger
+    this.endedAt = -10; // wann das Platzieren zuletzt von selbst endete (this.game.clock)
     this.announced = new Set();
     this._ground = new THREE.Vector3();
   }
@@ -175,14 +176,13 @@ export class Builder {
       const cost = this.buildingRepairCost(b);
       options.push(this.option({ id: `rep-${b.id}`, icon: 'reparieren', name: T.bauleiste.reparieren, info: T.bautenInfo.reparieren, cost, action: () => this.repairBuilding(b) }, inv));
     }
-    const refund = def.tower ? scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND) : def.cost;
     options.push({
       id: `abriss-${b.id}`,
       icon: 'abriss',
       name: T.bauleiste.abreissen,
-      info: def.tower ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      info: def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
       cost: {},
-      refund,
+      refund: this.refundFor(b),
       affordable: true,
       progress: 1,
       confirm: true,
@@ -311,7 +311,10 @@ export class Builder {
    * verbraucht wurde (dann öffnet es nicht das Menü).
    */
   handleCancel(input) {
-    if (!this.placement && this.selection === null) return false;
+    if (!this.placement && this.selection === null) {
+      // Esc gleich nach dem letzten Setzen heißt »fertig«, nicht »Menü«
+      return input.pressed('cancel') && this.game.clock - this.endedAt < 0.8;
+    }
     if (input.pressed('cancel') || input.mouse.rightClicked) {
       this.cancel();
       return true;
@@ -455,6 +458,7 @@ export class Builder {
     if (!again) {
       this.placement = null;
       this.preview.hide();
+      this.endedAt = this.game.clock;
     }
     if (pl.type === 'werkbank' && !state.flags.werkbankGebaut) {
       state.flags.werkbankGebaut = true;
@@ -472,12 +476,19 @@ export class Builder {
       .join(', ');
   }
 
+  /** Rückgabe beim Abreißen: Zuhause-Bauten alles, Verteidigung (Türme, Barrikaden) 70 %. */
+  refundFor(b) {
+    const def = BUILDINGS[b.type];
+    if (def.tower) return scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND);
+    if (def.defense) return scale(def.cost, TOWER_REFUND);
+    return def.cost;
+  }
+
   demolish(id) {
     const buildings = this.world.buildings;
     const b = buildings.get(id);
     if (!b) return;
-    const def = BUILDINGS[b.type];
-    const refund = def.tower ? scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND) : def.cost;
+    const refund = this.refundFor(b);
     buildings.remove(id);
     this.world.refreshInteractions();
     const state = this.game.state;

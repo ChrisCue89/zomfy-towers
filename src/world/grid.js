@@ -19,6 +19,7 @@ export class BuildGrid {
     const n = this.width * this.height;
     this.inside = new Uint8Array(n); // 1 = auf der Lichtung
     this.blocked = new Uint8Array(n); // 1 = statisch belegt
+    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle: nicht bebaubar, aber begehbar
     this.occupant = new Array(n).fill(null); // Gebäude-ID
     for (let j = 0; j < this.height; j++) {
       for (let i = 0; i < this.width; i++) {
@@ -70,9 +71,16 @@ export class BuildGrid {
     }
   }
 
-  isFree(ci, cj) {
+  /** Zelle einer kleinen Rohstoffquelle (Kiesel, Gras, Äste) freihalten. */
+  reserve(x, z) {
+    const k = this.index(Math.floor(x), Math.floor(z));
+    if (k >= 0) this.reserved[k] = 1;
+  }
+
+  /** @param {boolean} [strict] false = Rohstoff-Zellen zählen als frei (alte Spielstände laden) */
+  isFree(ci, cj, strict = true) {
     const k = this.index(ci, cj);
-    return k >= 0 && this.inside[k] === 1 && this.blocked[k] === 0 && this.occupant[k] === null;
+    return k >= 0 && this.inside[k] === 1 && this.blocked[k] === 0 && this.occupant[k] === null && !(strict && this.reserved[k]);
   }
 
   /** Alle Zellen eines Grundrisses (w × d Zellen ab ci, cj). */
@@ -82,8 +90,8 @@ export class BuildGrid {
     return out;
   }
 
-  canPlace(ci, cj, w, d) {
-    return this.cells(ci, cj, w, d).every(([i, j]) => this.isFree(i, j));
+  canPlace(ci, cj, w, d, strict = true) {
+    return this.cells(ci, cj, w, d).every(([i, j]) => this.isFree(i, j, strict));
   }
 
   occupy(id, ci, cj, w, d) {

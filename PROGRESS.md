@@ -5,6 +5,52 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 2 – Kontrollrunde (m2-r2) und Nachbesserung
+
+**Testspieler:** Jonas 7/10 (vorher 5/10), Theo 8/10 (vorher 7/10) –
+Berichte und Auswertung in `playtests/m2-r2/` (`ZUSAMMENFASSUNG.md`).
+Kein Blocker mehr: Jonas kam ohne Lesen durch den Einstieg, Theo schaffte
+alle Ziele samt Hütte an Tag 1.
+
+**Gefunden (Spielfluss)**
+
+- Durchsuchen ohne sichtbaren Fortschritt, stiller Abbruch beim Loslaufen,
+  Auto-Dialog klang nach »heute schon leer«.
+- Werkbank: Auswahl sprang auf ein Verwerten-Rezept, ein Tastendruck zu viel
+  kostete Stein.
+- Fällbare Bäume schwer erkennbar, unter der Krone keine Reichweite, Tag 2
+  ohne Holz, Stümpfe ohne Hinweis aufs Nachwachsen.
+- Werkbank unter der Wäscheleine nur von hinten benutzbar; Einblendung und
+  Reichweite von E passten nicht zusammen.
+
+**Geändert**
+
+- Fortschrittsbalken über Mika beim Durchsuchen und Ernten, Meldung beim
+  Abbruch, neuer Auto-Text.
+- Werkbank: Verwerten braucht einen zweiten Druck, die Auswahl springt nur
+  auf Werkzeuge.
+- Bäume: rot-weißes Markierband, Reichweite bis unter die Krone, Absage an
+  Waldbäumen und Gestrüpp, Stümpfe sagen, wann sie nachwachsen, und treiben
+  am Tag davor aus; drei zusätzliche Astbündel (täglich), versteckter Felsen
+  versetzt.
+- Bauten und Quellen haben Vorrang vor Nur-Anschauen; Einblendung und E mit
+  gleichem Spielraum; ein Tipp während des Schwungs merkt den nächsten Schlag
+  vor; nach dem Fällen kurze Sperre gegen Sprünge zum Nachbarn.
+- Bauleiste: Preise in zwei Zeilen (Hütte zeigt alle vier), Abriss-Kachel
+  zeigt die Rückgabe, Wirkung auch beim Bauen per Taste, Aufleuchten
+  höchstens alle 45 s je Option, Esc gleich nach dem Setzen öffnet nicht das
+  Menü, nicht bauen auf Rohstoff-Zellen.
+- Barrikaden geben beim Abriss wie Türme 70 % zurück (OFFENE-FRAGEN.md Nr. 9).
+- Schlurfer tragen leuchtende Moderpilzchen am Hinterkopf – nachts sieht man
+  sie auch von hinten.
+
+**Offen**
+
+- Leeres Beet sieht erntereif aus, Faserbüsche ähneln Blumen – kommt mit
+  Meilenstein 5 (Detailgrad).
+
+---
+
 ## Meilenstein 3 – Nächte, Türme und Loot ✓
 
 **Fertig**

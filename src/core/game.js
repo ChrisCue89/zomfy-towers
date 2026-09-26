@@ -70,6 +70,7 @@ export class Game {
     this.goal = null; // { id, text }
     this.hitstop = 0; // Trefferstopp: Simulation hält kurz an
     this.benchReady = 0; // ab wann die Bank wieder heilt (this.clock)
+    this.treeHintUntil = 0; // Absage am Waldbaum nicht bei jedem Tastendruck
     this.homeWarned = -99;
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
@@ -385,7 +386,9 @@ export class Game {
     const c = this.world.buildings.bounds(b);
     this.player.startAction('search', {
       duration: 0.8,
+      progress: true,
       face: c,
+      onCancel: () => this.hud.toast(T.meldungen.abgebrochen, null, 2.2),
       onDone: () => {
         b.day = day;
         this.state.world.buildings = this.world.buildings.toState();
@@ -442,6 +445,24 @@ export class Game {
     this.hud.toast(gives ? T.meldungen.verwertet(gives[1], T.ressourcen[gives[0]]) : T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
     this.quietSave();
     return true;
+  }
+
+  /** E vor einem Waldbaum ohne Band oder vor Gestrüpp: kurze Absage statt Stille. */
+  tellAboutForestTree(p) {
+    if (this.clock < this.treeHintUntil) return;
+    const fx = Math.sin(this.player.facing);
+    const fz = Math.cos(this.player.facing);
+    for (const c of this.world.colliders.near(p.x, p.z, 1.9)) {
+      if (c.tag !== 'waldbaum' && c.tag !== 'busch') continue;
+      const dx = c.x - p.x;
+      const dz = c.z - p.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (d < 1.9 && (dx * fx + dz * fz) / d > 0.4) {
+        this.treeHintUntil = this.clock + 3;
+        this.hud.say(c.tag === 'busch' ? T.meldungen.gestruepp : T.meldungen.waldbaum, 3);
+        return;
+      }
+    }
   }
 
   /** Bank: Hinsetzen heilt Mika (alle 30 s); nachts ohne Dialog, das hält nicht auf. */
@@ -704,7 +725,7 @@ export class Game {
         this.player.idle(dt);
         break;
       case 'craft':
-        this.crafting.update(input);
+        this.crafting.update(input, dt);
         this.player.idle(dt);
         break;
       case 'report':
@@ -794,7 +815,8 @@ export class Game {
     // Beim Platzieren setzt E den Bau – dann keine Interaktion.
     let it = null;
     if (!this.builder.placement && !this.player.busy) {
-      it = this.world.findInteraction(p.x, p.z, this.player.facing);
+      // Etwas Spielraum: Wo die Einblendung steht, wirkt auch E (und umgekehrt)
+      it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.4);
       // Gesperrt bis zum Weggehen (Bett nach dem Aufwachen) oder kurz nach einem Dialog
       const sup = this.suppressed;
       if (sup) {
@@ -805,9 +827,10 @@ export class Game {
     }
     // Kurz über die Reichweite hinausgerutscht? E trifft trotzdem, was eben noch angezeigt war.
     if (!it && input.pressed('use') && !this.builder.placement && !this.player.busy) {
-      it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.45);
+      it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.55);
       if (it && this.suppressed && it.id === this.suppressed.id) it = null;
     }
+    if (!it && input.pressed('use') && !this.builder.placement && !this.player.busy) this.tellAboutForestTree(p);
     this.currentInteraction = it;
     if (it && input.pressed('use')) {
       this.interact(it);
@@ -885,6 +908,7 @@ export class Game {
     if (it.node) {
       const node = this.world.resources.byId.get(it.node);
       if (!node) return null;
+      if (node.depleted) return T.aktionen.waechst(this.world.resources.daysLeft(node));
       if (node.rules.tool && !st.tools[node.rules.tool]) return T.aktionen.brauchtWerkzeug(T.gegenstaende[node.rules.tool]);
       if (node.rules.search && st.world.searched[node.id] === st.time.day) return T.aktionen.heuteLeer;
     }
@@ -921,7 +945,8 @@ export class Game {
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
     this.report.draw(ui);
-    this.hud.drawToasts(ui); // Meldungen liegen über Werkbank und Bericht
+    // Meldungen liegen über dem Bericht; bei offener Werkbank darunter (nicht über dem Titel)
+    this.hud.drawToasts(ui, this.crafting.isOpen ? this.crafting.bottom(ui) : 64);
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
@@ -1020,7 +1045,7 @@ export class Game {
       vorrat: Object.fromEntries(this.hud.visibleResources().map((r) => [r, st.inventory[r]])),
       laterne: this.player.holdingLantern ? 'an' : 'aus',
       schnellleiste: { gewaehlt: st.hotbar.selected + 1, plaetze: st.hotbar.slots.map((s) => s || '-') },
-      hinweis: it ? T.aktionen[it.prompt] : null,
+      hinweis: it ? this.interactionStatus(it) || T.aktionen[it.prompt] : null,
       bauleiste: L
         ? {
             titel: L.title,
@@ -1059,6 +1084,7 @@ export class Game {
       lootAmBoden: this.loot.items.length,
       bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
       meldungen: this.hud.toasts.map((t) => t.text),
+      gedanke: this.hud.speech && this.hud.speech.time < this.hud.speech.duration ? this.hud.speech.text : null,
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
     };
   }
@@ -1155,6 +1181,8 @@ export class Game {
         return true;
       },
       pathBlocked: (cells) => game.world.pathing.wouldBlock(cells),
+      /** Waldbäume am Rand der Lichtung (nicht fällbar) im Umkreis. */
+      forestTrees: (x, z, r) => game.world.colliders.near(x, z, r).filter((c) => c.tag === 'waldbaum').map((c) => ({ x: c.x, z: c.z })),
       debugPath() {
         const pa = game.world.pathing;
         return {

@@ -326,7 +326,7 @@ export function createNature({ seed, materials, colliders, blockers }) {
       else name = `birch${rng.int(0, 1)}`;
       scatter.place(name, x, z, turns);
       trees++;
-      if (e < 1.2) colliders.addCircle(x, z, 0.35);
+      if (e < 1.2) colliders.addCircle(x, z, 0.35, 'waldbaum');
       if (rng.chance(0.25)) scatter.place(`mushroom${rng.int(0, 1)}`, snapV(x + rng.range(-1.2, 1.2)), snapV(z + rng.range(0.6, 1.4)), rng.int(0, 3));
     }
   }
@@ -345,7 +345,7 @@ export function createNature({ seed, materials, colliders, blockers }) {
     if (onRoad(z, 0.6)) continue;
     if (rng.chance(0.25)) continue;
     scatter.place(`bush${rng.int(0, 3)}`, x, z, rng.int(0, 3));
-    colliders.addCircle(x, z, 0.55);
+    colliders.addCircle(x, z, 0.55, 'busch');
     bushesPlaced++;
   }
 

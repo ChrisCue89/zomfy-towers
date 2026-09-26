@@ -215,7 +215,8 @@ export class Buildings {
     for (const e of entries) {
       if (!BUILDINGS[e.type]) continue;
       const { w, d } = footprint(e.type, e.turns);
-      if (!this.grid.canPlace(e.i, e.j, w, d)) continue;
+      // Ältere Stände dürfen auf heutigen Rohstoff-Zellen stehen (nicht strikt)
+      if (!this.grid.canPlace(e.i, e.j, w, d, false)) continue;
       const b = this.place(e.type, e.i, e.j, e.turns, e.id, e);
       if (e.day) b.day = e.day;
     }

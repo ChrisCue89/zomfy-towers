@@ -13,9 +13,10 @@ import { drawTiny, measure, LINE_HEIGHT } from './font.js';
 export const HOTKEYS = ['KeyQ', 'KeyR', 'KeyT', 'KeyG', 'KeyC', 'KeyV'];
 const KEY_LABELS = ['Q', 'R', 'T', 'G', 'C', 'V'];
 const TILE_W = 34;
-const TILE_H = 32;
+const TILE_H = 36; // Platz für zwei Preiszeilen (Hüttenausbau: vier Posten)
 const GAP = 2;
 const FLASH_TIME = 1.4;
+const FLASH_AGAIN = 45; // dieselbe Option leuchtet frühestens nach 45 s wieder auf
 const ARM_TIME = 2.5;
 
 export class BuildBar {
@@ -26,6 +27,7 @@ export class BuildBar {
     this.hover = -1;
     this.flash = new Map(); // Options-ID -> verbleibende Leuchtzeit
     this.affordable = new Map(); // Options-ID -> war bezahlbar?
+    this.lastFlash = new Map(); // Options-ID -> this.time beim letzten Aufleuchten
     this.armed = null; // { id, t } – Abreißen wartet auf Bestätigung
     this.time = 0;
     this.lastLayout = null;
@@ -86,7 +88,11 @@ export class BuildBar {
     for (const { option } of L.tiles) {
       const ready = option.affordable && !option.disabled;
       if (this.affordable.get(option.id) === false && ready) {
-        this.flash.set(option.id, FLASH_TIME);
+        // Billiges (Barrikade, Laterne) wird oft bezahlbar – sonst nutzt sich das Signal ab
+        if (this.time - (this.lastFlash.get(option.id) ?? -FLASH_AGAIN) >= FLASH_AGAIN) {
+          this.flash.set(option.id, FLASH_TIME);
+          this.lastFlash.set(option.id, this.time);
+        }
         this.builder.onOptionAffordable(option);
       }
       this.affordable.set(option.id, ready);
@@ -182,7 +188,7 @@ export class BuildBar {
 
     // Hinweis-Tafel: gewählte Option beim Platzieren, sonst die unter der Maus
     const tip = this.hover >= 0 ? L.tiles[this.hover]?.option : null;
-    if (placing) this.drawTip(ui, L, { name: placing.name, info: T.bauleiste.setzen, cost: placing.cost });
+    if (placing) this.drawTip(ui, L, { name: placing.name, info: T.bautenInfo[placing.type], hint: T.bauleiste.setzen, cost: placing.cost });
     else if (tip) this.drawTip(ui, L, tip);
   }
 
@@ -196,26 +202,35 @@ export class BuildBar {
       return;
     }
     let entries = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
+    // Abreißen: statt eines Preises zeigt die Kachel grün, was zurückkommt
+    const refund = !entries.length && option.refund;
+    if (refund) entries = Object.entries(option.refund).filter(([, v]) => v > 0);
     if (!entries.length) return;
-    // Passt der ganze Preis nicht ins Feld, zeigen wir die ersten Posten und »+«
-    const width = (list) => list.reduce((w, [, v]) => w + String(v).length * 4 + 5, 0) - 1;
-    let more = false;
-    while (entries.length > 1 && width(entries) > rect.w - 6) {
-      entries = entries.slice(0, -1);
-      more = true;
-    }
-    if (more) drawTiny(ctx, '+', rect.x + rect.w - 5, rect.y + 20, COLORS.textDim);
     const inv = this.game.state.inventory;
-    const widths = entries.map(([, v]) => String(v).length * 4 + 5);
-    const total = widths.reduce((a, b) => a + b, 0) - 1;
-    let x = rect.x + Math.round((rect.w - total) / 2);
-    entries.forEach(([res, v], k) => {
-      const enough = (inv[res] || 0) >= v;
-      drawTiny(ctx, v, x, rect.y + 20, enough ? COLORS.text : COLORS.red);
-      x += String(v).length * 4;
-      drawIcon(ctx, `mini_${res}`, x, rect.y + 20);
-      x += widths[k] - String(v).length * 4;
+    const label = (v) => (refund ? `+${v}` : String(v));
+    const itemW = ([, v]) => label(v).length * 4 + 5; // Ziffern + Mini-Symbol
+    const rowW = (row) => row.reduce((w, e) => w + itemW(e) + 1, 0) - 1;
+    // Bis zu zwei Zeilen; passt dann noch etwas nicht, deutet es ein »+« an
+    const rows = [[]];
+    let more = false;
+    for (const e of entries) {
+      const row = rows[rows.length - 1];
+      if (!row.length || rowW([...row, e]) <= rect.w - 4) row.push(e);
+      else if (rows.length < 2) rows.push([e]);
+      else more = true;
+    }
+    rows.forEach((row, r) => {
+      const y = rect.y + 20 + r * 6;
+      let x = rect.x + Math.round((rect.w - rowW(row)) / 2);
+      for (const [res, v] of row) {
+        const text = label(v);
+        drawTiny(ctx, text, x, y, refund ? COLORS.green : (inv[res] || 0) >= v ? COLORS.text : COLORS.red);
+        x += text.length * 4;
+        drawIcon(ctx, `mini_${res}`, x, y);
+        x += 6;
+      }
     });
+    if (more) drawTiny(ctx, '+', rect.x + rect.w - 5, rect.y + 26, COLORS.textDim);
   }
 
   drawSparkles(ui, rect, flash) {
@@ -234,7 +249,7 @@ export class BuildBar {
     const cost = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
     const refund = Object.entries(option.refund || {}).filter(([, v]) => v > 0);
     const row = cost.length ? cost : refund;
-    const lines = [option.info, option.missingText].filter(Boolean);
+    const lines = [option.info, option.hint, option.missingText].filter(Boolean);
     const rowW = row.reduce((sum, [, v]) => sum + 14 + measure(`${refund.length && !cost.length ? '+' : ''}${v}`) + 6, 0);
     const w = Math.max(measure(option.name) + 10, ...lines.map((l) => measure(l) + 10), rowW + 10, 90);
     const h = 8 + LINE_HEIGHT + (row.length ? 14 : 0) + lines.length * LINE_HEIGHT;
@@ -258,6 +273,10 @@ export class BuildBar {
     }
     if (option.info) {
       ui.text(option.info, x + 5, cy, COLORS.textDim);
+      cy += LINE_HEIGHT;
+    }
+    if (option.hint) {
+      ui.text(option.hint, x + 5, cy, COLORS.textWarm);
       cy += LINE_HEIGHT;
     }
     if (option.missingText) ui.text(option.missingText, x + 5, cy, COLORS.red);

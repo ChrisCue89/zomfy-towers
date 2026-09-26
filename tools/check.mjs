@@ -462,14 +462,14 @@ async function runBuildChecks(browser, url) {
   await page.mouse.click(target.x, target.y, { button: 'right' });
   await settle(page, 3);
 
-  // Belegte Felder, Abreißen mit voller Rückgabe
+  // Belegte Felder, Abreißen: Barrikaden sind Verteidigung und geben 70 % zurück
   const aufsHaus = await z(() => window.zomfy.build('barrikade', 0, -4));
   if (aufsHaus === 'belegt') note('✓ Raster: Haus und Hindernisse sind nicht bebaubar');
   else fail(`Raster: Bau auf dem Haus ergab „${aufsHaus}“`);
   const holzVorAbriss = (await state()).inventory.holz;
   await z((id) => window.zomfy.demolish(id), perMaus?.id);
   const holzNachAbriss = (await state()).inventory.holz;
-  if (holzNachAbriss === holzVorAbriss + 3) note('✓ Abreißen: gibt das ganze Material zurück');
+  if (holzNachAbriss === holzVorAbriss + 2) note('✓ Abreißen: Barrikade gibt 70 % zurück (2 von 3 Holz)');
   else fail(`Abreißen: Holz ${holzVorAbriss} -> ${holzNachAbriss}`);
 
   // Spitzhacke an der Werkbank, dann Felsen abbauen
@@ -487,13 +487,26 @@ async function runBuildChecks(browser, url) {
   if (st.inventory.stein === steinVorFelsen + 1) note('✓ Werkzeug: mit Spitzhacke gibt der Felsen Stein');
   else fail(`Werkzeug: Felsen gab ${st.inventory.stein - steinVorFelsen} Stein`);
 
-  // Werkbank-Menü als Bild
+  // Werkbank-Menü: Verwerten braucht einen zweiten Druck (ein Fehlgriff kostet sonst Stein)
   await z(() => {
+    window.zomfy.give({ stein: 3 });
     const bank = window.zomfy.buildings().find((b) => b.type === 'werkbank');
     window.zomfy.teleport(bank.i + 1, bank.j + 1.8, Math.PI);
     window.zomfy.interact(`bau-${bank.id}`);
   });
-  await settle(page, 30);
+  await settle(page, 5);
+  const steinVorVerwerten = (await state()).inventory.stein;
+  for (const key of ['KeyS', 'KeyS', 'KeyE']) {
+    await page.keyboard.press(key); // runter zu »Stein zu Schrott verwerten«, einmal E
+    await settle(page, 3);
+  }
+  const nachEinmal = (await state()).inventory.stein;
+  await page.keyboard.press('KeyE');
+  await settle(page, 3);
+  const nachZweimal = (await state()).inventory.stein;
+  if (nachEinmal === steinVorVerwerten && nachZweimal === steinVorVerwerten - 3) note('✓ Werkbank: Verwerten erst beim zweiten E (Rückfrage)');
+  else fail(`Werkbank: Stein ${steinVorVerwerten} -> nach einem E ${nachEinmal} -> nach zwei E ${nachZweimal}`);
+  await settle(page, 25);
   await page.screenshot({ path: join(SHOTS, 'werkbank.png') });
   note('  Screenshot: screenshots/werkbank.png');
   await page.keyboard.press('Escape');
@@ -720,17 +733,13 @@ async function runNightChecks(browser, url) {
   const n1 = await z(() => window.zomfy.nightState());
   if (n1.night.n === 1 && n1.night.wave >= 1 && n1.alive + n1.queue > 0) note(`✓ Nacht: um 20:30 kommt Welle 1 (${n1.alive + n1.queue} Schlurfer)`);
   else fail(`Nacht: Welle 1 kam nicht (${JSON.stringify(n1)})`);
-  // Welle 1 kommt aus dem Nordwesten: von der Nordseite aus zusehen, wie sie
-  // an den Türmen ankommt (weit genug weg, dass niemand Mika angreift)
-  await z(() => window.zomfy.teleport(1, -11, 0));
-  for (let k = 0; k < 30; k++) {
-    await step(1000);
-    if ((await z(() => window.zomfyView())).schlurferImBild >= 3) break;
-  }
-  await step(1200);
+  // Bild: ein Trupp kommt von Süden aufs Haus zu und läuft den Türmen vor die Bolzen
+  await z(() => {
+    for (let k = 0; k < 5; k++) window.zomfy.spawnZombie(k === 2 ? 'brummer' : 'schlurfer', -5.5 + k * 1.6, 6.2 + (k % 2) * 0.6);
+  });
+  await step(2200);
   await page.screenshot({ path: join(SHOTS, 'horde.png') });
   note('  Screenshot: screenshots/horde.png');
-  await z(() => window.zomfy.teleport(0.5, 1.0, 0));
   let nacht = n1;
   for (let k = 0; k < 60 && !nacht.night.done; k++) {
     await step(5000);

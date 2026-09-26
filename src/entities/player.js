@@ -63,8 +63,10 @@ export class Player {
       hitAt: options.hitAt ?? (kind === 'swing' ? 0.3 : duration * 0.85),
       hit: false,
       tool: options.tool ?? null,
+      progress: options.progress || false, // Balken über dem Kopf (Durchsuchen, Ernten)
       onHit: options.onHit || null,
       onDone: options.onDone || null,
+      onCancel: options.onCancel || null,
     };
     if (options.face) this.facing = Math.atan2(options.face.x - this.position.x, options.face.z - this.position.z);
     return true;
@@ -84,8 +86,11 @@ export class Player {
     if (this.action) {
       // Durchsuchen bricht ab, wenn man losläuft; Schwünge laufen zu Ende.
       const moving = Math.hypot(move.x, move.z) > 0.1;
-      if (this.action.kind === 'search' && moving) this.action = null;
-      else move = { x: 0, z: 0 };
+      if (this.action.kind === 'search' && moving) {
+        const cancelled = this.action;
+        this.action = null;
+        if (cancelled.onCancel) cancelled.onCancel();
+      } else move = { x: 0, z: 0 };
     }
     this.updateAction(dt);
 

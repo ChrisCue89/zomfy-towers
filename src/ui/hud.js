@@ -135,6 +135,7 @@ export class Hud {
     this.drawNightBar(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
+    if (show.prompt) this.drawActionProgress(ui);
     if (show.prompt) this.drawSpeech(ui);
     if (show.hotbar) this.drawHotbar(ui);
     if (show.prompt && this.prompt) this.drawPrompt(ui, this.prompt);
@@ -256,6 +257,20 @@ export class Hud {
   }
 
   /** Mikas Lebensbalken über der Schnellleiste. */
+  /** Balken über Mikas Kopf beim Durchsuchen und Ernten: hier stehen bleiben. */
+  drawActionProgress(ui) {
+    const a = this.game.player.action;
+    if (!a || !a.progress) return;
+    const p = this.game.player.position;
+    const pos = this.game.worldToUi(p.x, p.y + 2.05, p.z);
+    const w = 22;
+    const x = Math.round(pos.x - w / 2);
+    const y = Math.round(pos.y);
+    ui.rect(x - 1, y - 1, w + 2, 5, COLORS.outline);
+    ui.rect(x, y, w, 3, COLORS.inset);
+    ui.rect(x, y, Math.max(1, Math.round(w * Math.min(1, a.t / a.duration))), 3, COLORS.gold);
+  }
+
   drawPlayerHp(ui) {
     const g = this.game;
     const max = g.combat.maxHp;
@@ -424,8 +439,8 @@ export class Hud {
     ui.text(label, x + 19, y + 2, prompt.dim ? COLORS.textDim : COLORS.text);
   }
 
-  drawToasts(ui) {
-    let y = 64;
+  /** Meldungen untereinander, ab Höhe `y` (Standard: unter dem Ziel). */
+  drawToasts(ui, y = 64) {
     for (const t of this.toasts) {
       const w = measure(t.text) + (t.icon ? 26 : 12);
       const slide = Math.min(1, t.time / 0.18);

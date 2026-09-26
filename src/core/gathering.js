@@ -8,7 +8,7 @@ import { gain } from './inventory.js';
 
 const SWING = { duration: 0.55, hitAt: 0.3 };
 const PICK = { duration: 0.6, hitAt: 0.42 };
-const SEARCH = { duration: 1.2 };
+const SEARCH = { duration: 1.0, progress: true };
 const CHIP_KIND = { baum: 'holz', felsen: 'stein', kiesel: 'stein', gras: 'gras', aeste: 'holz', schrott: 'schrott' };
 
 export class Gathering {
@@ -16,6 +16,8 @@ export class Gathering {
   constructor(game) {
     this.game = game;
     this.repeat = null; // Interaktion, die bei gedrücktem E wiederholt wird
+    this.lockUntil = 0; // kurz nach dem Fällen verpuffen weitere E (kein Sprung zum Nachbarn)
+    this.queued = false; // E getippt, während Mika noch ausholt: nächster Schlag folgt
   }
 
   /** Behandelt die Interaktion, wenn sie zum Sammeln gehört. */
@@ -27,8 +29,15 @@ export class Gathering {
 
   gather(it) {
     const g = this.game;
+    this.queued = false;
     const node = g.world.resources.byId.get(it.node);
-    if (!node || node.depleted) return true;
+    if (!node || g.clock < this.lockUntil) return true;
+    if (node.depleted) {
+      // Baumstumpf: sagen, wann hier wieder etwas wächst
+      if (!node.fall) g.hud.toast(T.aktionen.waechst(g.world.resources.daysLeft(node)), 'holz', 2);
+      this.repeat = null;
+      return true;
+    }
     const rules = node.rules;
     if (rules.search) return this.search(node.id, 'schrott', node);
     if (rules.tool && !g.state.tools[rules.tool]) {
@@ -67,9 +76,12 @@ export class Gathering {
 
   deplete(node) {
     const g = this.game;
-    g.world.resources.startFall(node);
-    g.state.world.nodes[node.id] = { until: g.state.time.day + node.rules.regrowDays };
+    const until = g.state.time.day + node.rules.regrowDays;
+    g.world.resources.startFall(node, until);
+    g.state.world.nodes[node.id] = { until };
     this.repeat = null;
+    this.queued = false;
+    this.lockUntil = g.clock + 0.4;
   }
 
   /** Durchsuchen: einmal pro Tag und Stelle. */
@@ -89,6 +101,7 @@ export class Gathering {
     g.player.startAction('search', {
       ...SEARCH,
       face: pos,
+      onCancel: () => g.hud.toast(T.meldungen.abgebrochen, null, 2.2),
       onDone: () => {
         st.world.searched[id] = st.time.day;
         const loot = this.roll(SEARCH_LOOT[lootKey]);
@@ -135,8 +148,13 @@ export class Gathering {
    */
   update(input, current) {
     if (!this.repeat) return;
-    if (!input.isDown('use') || current !== this.repeat) {
-      if (!this.game.player.busy) this.repeat = null;
+    // Getippt, während Mika noch ausholt: nichts verpufft, der nächste Schlag folgt
+    if (input.pressed('use') && this.game.player.busy) this.queued = true;
+    if (!(input.isDown('use') || this.queued) || current !== this.repeat) {
+      if (!this.game.player.busy) {
+        this.repeat = null;
+        this.queued = false;
+      }
       return;
     }
     if (!this.game.player.busy) this.gather(this.repeat);

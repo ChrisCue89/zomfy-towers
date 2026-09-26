@@ -63,6 +63,9 @@ export class World {
     this.grid = new BuildGrid({ minX: -16, maxX: 16, minZ: -12, maxZ: 13 });
     this.grid.markStatic(this.colliders);
     for (const level of [1, 2]) for (const r of shelterFootprint(level)) this.grid.blockRect(r.minX, r.minZ, r.maxX, r.maxZ);
+    // Kleine Quellen (Kiesel, Gras, Äste) sind begehbar, aber nicht bebaubar –
+    // sonst wächst ein Faserbusch mitten in ein Beet hinein.
+    for (const node of this.resources.nodes) this.grid.reserve(node.x, node.z);
 
     this.dayNight = new DayNight(scene, renderConfig);
     this.setupLights();
@@ -194,12 +197,16 @@ export class World {
       if (it.enabled === false) continue;
       // Drinnen-Dinge nur von drinnen, nicht durch die Wand
       if (it.inside !== undefined && it.inside !== inside) continue;
+      // Bäume: Die Krone liegt im Bild nördlich vom Stamm – wer »am Baum« steht,
+      // steht oft unter der Krone. Die Reichweite gilt deshalb bis `north` Meter nördlich.
+      const tz = it.north ? Math.max(it.z - it.north, Math.min(z, it.z)) : it.z;
       const dx = it.x - x;
-      const dz = it.z - z;
+      const dz = tz - z;
       const d = Math.hypot(dx, dz);
       if (d > it.radius + grace) continue;
       const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
-      const score = d - facingDot * 0.5;
+      // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
+      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;
