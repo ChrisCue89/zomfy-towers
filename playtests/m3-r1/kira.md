@@ -52,7 +52,7 @@ keine Warnungen, kein Absturz, kein Hänger.
 
 - **Fällt die Figur, ist die Nacht sofort verloren**, auch wenn das Zuhause
   noch steht. In Nacht 2 war das Zuhause bei 63/300 und blieb dort, mich haben
-  8 Schlurfer in etwa 30 s von 64 auf 0 gebracht. Dann kommt „Die Horde bricht
+  8 Schlurfer in rund 20 s von 64 auf 0 gebracht. Dann kommt „Die Horde bricht
   durch …“, dabei war am Haus gar niemand. Ist das Absicht? Dann sollte das
   Spiel es vorher einmal sagen.
 - Nach einer verlorenen Nacht sind **alle** Bauten „angeschlagen“, auch die
@@ -147,7 +147,7 @@ keine Warnungen, kein Absturz, kein Hänger.
   Figur-Upgrades (6–8 Schrott) konnte ich mir nie leisten, ohne auf einen Turm
   zu verzichten.
 - Schwierigkeit gleichmäßig und fair? – Nein. Nacht 2 war schon vor Beginn
-  verloren, und die Figur fällt gegen 8 Schlurfer in etwa 30 s. Gleichzeitig
+  verloren, und die Figur fällt gegen 8 Schlurfer in rund 20 s. Gleichzeitig
   kostet Verlieren fast nichts und heilt sogar das Haus (F2). Das Spiel ist
   also zu hart und zugleich folgenlos.
 - Look passt zu DESIGN.md? – Ja: scharfe Pixel, warme Lichtinseln gegen die
