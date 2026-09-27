@@ -1,9 +1,10 @@
 # Zomfy Towers – Design-Dokument
 
 > Gemütliche Herbst-Endzeit an einem nordischen See. Tagsüber ein Zuhause am
-> Wasser, nachts Tower Defense an einer klaren Strecke – mit Türmen,
-> Barrikaden und der eigenen Figur als letzter Verteidigung. Ein 3D-Spiel im
-> Browser, alles im Code erzeugt.
+> Wasser, nachts Tower Defense an einem Netz aus Wegen, die vor dem Haus
+> zusammenlaufen – mit Türmen daneben, Barrikaden darauf und der eigenen
+> Figur als letzter Verteidigung. Ein 3D-Spiel im Browser, alles im Code
+> erzeugt.
 
 Dieses Dokument ist der Bauplan für alle Arbeitssitzungen. Es beschreibt,
 **was** das Spiel sein soll und **in welcher Reihenfolge** es entsteht. Wie
@@ -22,27 +23,37 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
 
 1. **Die Karte:** Die Basis liegt an einem großen See, an einer rauen,
    nordischen Küste. Hinter der Basis ist Wasser – von dort kommen keine
-   Zombies. Sie greifen nur von der Landseite an, und zwar entlang **einer
-   klar erkennbaren Strecke** vom Waldrand bis zur Basis. Es gibt keine
-   über die Karte verstreuten Angriffswege. Links und rechts begrenzen Wald,
-   Felsen, Hänge und Gestrüpp die Strecke so natürlich, dass man versteht,
-   warum die Horde genau diesen Weg nimmt.
-2. **Türme stehen nie auf der Strecke,** sondern auf Baupunkten links und
-   rechts davon, und greifen die Vorbeiziehenden von der Seite an: Spawn →
-   Strecke → mehrere Verteidigungsabschnitte → letzte Verteidigung → Basis.
-   Die Strecke darf leicht geschwungen sein (Reichweiten, Kreuzfeuer), aber
-   nie so verwinkelt, dass man nicht sofort sieht, woher die Horde kommt und
-   wohin sie will.
-3. **Barrikaden stehen bewusst auf der Strecke.** Sie halten die Horde auf,
-   haben Lebenspunkte, werden nachts angegriffen und zerstört und tagsüber
-   geflickt oder neu gebaut. Keine festen Mauern, sondern Handgebautes aus
-   Brettern, Stämmen, alten Türen, Zäunen und Blech – in vier Ausbaustufen.
+   Zombies. Sie greifen nur von der Landseite an, **über klar erkennbare
+   Wege**: Mehrere Zuführungen aus dem Wald verzweigen sich und laufen **kurz
+   vor der Basis zu einem gemeinsamen letzten Abschnitt zusammen.** Das
+   Wegenetz wird bei jedem neuen Spiel teilweise neu angelegt (leichter
+   Roguelike-Charakter). Es gibt keine über die Karte verstreuten
+   Angriffswege: Die Horde bleibt auf den Wegen. Wald, Felsen, Hänge und
+   Gestrüpp begrenzen die Wege so natürlich, dass man versteht, warum die
+   Horde genau dort läuft.
+2. **Türme werden frei gebaut** – überall neben den Wegen, wo Platz ist, aber
+   **nie auf einem Weg**. Sie greifen die Vorbeiziehenden von der Seite an:
+   Spawn → Wege → mehrere Verteidigungsabschnitte → gemeinsamer letzter
+   Abschnitt → letzte Verteidigung → Basis. Die Wege dürfen geschwungen sein
+   (Reichweiten, Kreuzfeuer), aber nie so verwinkelt, dass man nicht sofort
+   sieht, woher die Horde kommt und wohin sie will. Anfangs verteidigt man
+   den Engpass vor dem Zuhause, später wächst die Verteidigung weit in die
+   verzweigte Landschaft hinaus – im späten Spiel mit 50–60 Türmen und mehr.
+3. **Barrikaden gehören auf die Wege.** Auf den Wegen stehen nur Hindernisse
+   und Wegobjekte zur Verteidigung: Holzbarrieren (günstig, schnell zerstört),
+   später Metallbarrieren, Metallkreuze und andere robustere Hindernisse. Die
+   Horde bleibt daran hängen, greift an und reißt sie nieder, wenn die Türme
+   nicht genug Schaden machen. Barrikaden haben Lebenspunkte und werden
+   tagsüber geflickt oder neu gebaut. Sie sollen improvisiert wirken (Bretter,
+   Stämme, alte Türen, Zäune, Blech) und die Horde stauen, damit die Türme an
+   den Seiten Zeit bekommen.
 4. **Letzte Verteidigung:** Wer Türme und Barrikaden überwindet, erreicht
    den Platz vor dem Haus. Dort verteidigt die Figur selbst. Die Basis hat
    eigene Lebenspunkte; fällt sie, ist die Nacht verloren. Drei Ebenen:
-   **Türme entlang der Strecke – Barrikaden auf der Strecke – persönliche
+   **Türme neben den Wegen – Barrikaden auf den Wegen – persönliche
    Verteidigung an der Basis.**
-5. **Der Tag ist ruhig** und bildet den starken Kontrast zur Nacht:
+5. **Der Tag ist ruhig** – nur ganz vereinzelt taucht ein Schlurfer auf,
+   nie Gruppen oder Wellen – und bildet den starken Kontrast zur Nacht:
    Barrikaden flicken und bauen, Türme setzen und verbessern, sammeln,
    Basis und Haus ausbauen, einrichten und dekorieren, Nebenaufträge, Leute
    treffen, handeln, die Nacht vorbereiten. Das Spiel ist nicht nur Tower
@@ -56,10 +67,12 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
    sein Boot, bevor er am Steg festmacht; dann kann man mit ihm reden und
    handeln: Baumaterial, seltene Ressourcen, Bauteile für Türme, Upgrades,
    Werkzeuge, manchmal Besonderes oder ein Nebenauftrag.
-8. **Zombie-Überreste** bleiben nach der Nacht liegen. Balduin will sie aus
-   einem nicht erklärten Grund haben und tauscht Material dafür. Warum er sie
-   sammelt, bleibt vorerst offen – ein schwarzhumoriger Running Gag, der
-   später Teil der Geschichte werden kann.
+8. **Zombie-Überreste** bleiben liegen (bis zu drei Tage, dann verrotten sie)
+   und lassen sich einsammeln – am besten schon während oder direkt nach der
+   Nacht, damit man morgens Handelsware hat. Balduin will sie aus einem nicht
+   erklärten Grund haben und tauscht Material dafür. Warum er sie sammelt,
+   bleibt vorerst offen – ein schwarzhumoriger Running Gag, der später Teil
+   der Geschichte werden kann.
 9. **Stimmung:** cozy, herbstlich, Spooky Season, leicht humorvoll,
    charmant, etwas melancholisch, gelegentlich gruselig, grundsätzlich warm
    und einladend. Grobe Richtung: Stardew-Valley-Gemütlichkeit mit etwas
@@ -69,27 +82,28 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
     dunkel – aber dieselbe cozy Herbstwelt. Warme Fenster, Feuer, Laternen
     und Verteidigungsanlagen sind Lichtinseln in der kalten Nacht. Keine
     Horror-Ästhetik.
-11. **Lesbarkeit der Karte – unveränderliche Grundregel.** Im Bild (die
-    Kamera blickt nach Norden) von oben nach unten:
+11. **Lesbarkeit der Karte – unveränderliche Grundregel.** Die Wege laufen im
+    Bild hauptsächlich **von links nach rechts**: links die Landseite mit den
+    Spawns, rechts die Basis an der Küste. Von rechts nach links:
 
     ```
-    WASSER                                 oben im Bild (Norden)
+    WASSER                                        rechter Rand
     BASIS / HAUS / STEG
     LETZTE VERTEIDIGUNG
-    STRECKE MIT BARRIKADEN
-    TÜRME LINKS UND RECHTS DER STRECKE
-    WEITERE BARRIKADEN
-    WALD / LANDSEITE / ZOMBIE-SPAWN         unten im Bild (Süden)
+    GEMEINSAMER LETZTER WEGABSCHNITT MIT BARRIKADEN
+    TÜRME NEBEN DEN WEGEN
+    VERZWEIGTE ZUFÜHRUNGEN MIT WEITEREN BARRIKADEN
+    WALD / LANDSEITE / ZOMBIE-SPAWNS              linker Rand
     ```
 
-    Die Strecke ist immer klar zu erkennen. Türme dürfen sie nie blockieren,
+    Die Wege sind immer klar zu erkennen. Türme dürfen sie nie blockieren,
     Barrikaden stehen bewusst darauf.
 12. **Die Spielschleife:**
     - **Tag:** Schäden begutachten → Ressourcen verwalten → Barrikaden
       reparieren → Türme bauen oder verbessern → Haus und Basis ausbauen →
       Nebenaufträge → Balduin und andere treffen → handeln → die nächste
       Nacht vorbereiten.
-    - **Nacht:** Welle startet → Zombies betreten die Strecke → Türme greifen
+    - **Nacht:** Welle startet → Zombies betreten die Wege → Türme greifen
       an → Barrikaden halten die Horde auf und werden beschädigt oder
       zerstört → Zombies erreichen vielleicht die Basis → die Figur
       verteidigt selbst → die Welle endet.
@@ -107,30 +121,33 @@ Zuhause bauen kann.
 
 **Der Tag** ist die ruhige Phase: Schäden flicken, Barrikaden neu aufbauen,
 Türme verbessern, sammeln, das Haus ausbauen und einrichten, mit Überlebenden
-reden, am Steg mit Balduin handeln. Keine Schlurfer, nur Herbstwind und
-Arbeit.
+reden, am Steg mit Balduin handeln. Höchstens ein einzelner Schlurfer
+verirrt sich her – sonst nur Herbstwind und Arbeit.
 
-**Die Nacht** ist Tower Defense an einer klaren Strecke: Die Horde kommt aus
-dem Stillwald über den alten Holzfällerweg zur Bucht. Türme links und rechts
-schießen, Barrikaden auf dem Weg halten sie auf und gehen zu Bruch. Was
-durchkommt, erreicht den Hof vor dem Haus – dort kämpft die Figur selbst.
-Jede Nacht wird die Horde stärker.
+**Die Nacht** ist Tower Defense an einem Netz aus Wegen: Die Horde kommt aus
+dem Stillwald über alte Holzfäller- und Wildpfade, die sich verzweigen und
+kurz vor der Bucht zusammenlaufen. Türme neben den Wegen schießen,
+Barrikaden auf den Wegen stauen die Horde und gehen zu Bruch. Was durchkommt,
+erreicht den Hof vor dem Haus – dort kämpft die Figur selbst. Jede Nacht wird
+die Horde stärker, und jedes neue Spiel legt die Wege ein Stück anders an.
 
 **Der Kern des Gefühls** ist der Kontrast zwischen dem warmen Zuhause am
-Wasser und der kalten Herbstnacht an der Strecke – und die ständige
+Wasser und der kalten Herbstnacht an den Wegen – und die ständige
 Entscheidung, wohin das Material fließt: in Türme, Barrikaden, die eigene
 Figur oder das Zuhause.
 
 ### Pitch in einem Satz
 
 *Ein altes Fischerhaus am See wird Tag für Tag zum Zuhause – und jede Nacht
-zeigt sich an der Strecke, ob Türme und Barrikaden halten.*
+zeigt sich an den Wegen aus dem Wald, ob Türme und Barrikaden halten.*
 
 ### Mechanische Vorbilder (nur Mechanik, nie Look oder Inhalte)
 
-- **Tower Defense mit fester Strecke und Baupunkten:** Die Horde läuft einen
-  Weg ab, Türme stehen an vorgegebenen Plätzen daneben; Kurven ergeben
-  Kreuzfeuer, die Strecke gliedert sich in Abschnitte.
+- **Tower Defense mit festen Wegen:** Die Horde läuft Wege ab, Türme stehen
+  frei daneben; Kurven ergeben Kreuzfeuer, Verzweigungen und der gemeinsame
+  letzte Abschnitt gliedern die Verteidigung.
+- **Leichter Roguelike-Charakter:** Jedes neue Spiel legt das Wegenetz ein
+  Stück anders an.
 - **Türme hochleveln und spezialisieren** wie in klassischen
   Warcraft-3-Custom-Maps.
 - **Einsammeln wie in Vampire Survivors:** Beute fliegt im Sammelradius von
@@ -149,7 +166,7 @@ zeigt sich an der Strecke, ob Türme und Barrikaden halten.*
    Welt. Wer es betritt, soll aufatmen.
 2. **Ruhige Tage, angespannte Nächte.** Tagsüber hat man Zeit und Ruhe.
    Nachts wird es eng, laut und spannend – aber es bleibt dieselbe Welt.
-3. **Die Strecke ist immer lesbar.** Man sieht jederzeit, woher die Horde
+3. **Die Wege sind immer lesbar.** Man sieht jederzeit, woher die Horde
    kommt, wo sie langläuft und wo sie aufgehalten wird.
 4. **Jede Entscheidung kostet Material.** Turm oder Barrikade, Figur oder
    Zuhause, jetzt ausgeben oder sparen.
@@ -180,8 +197,9 @@ Wort gibt.
   (westlicher Comic).
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
-  **Blick nach Norden**: der See oben im Bild, der Wald mit dem Spawn unten,
-  die Strecke dazwischen von unten nach oben. Die Kamera folgt der Figur.
+  **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
+  Spawns links, die Wege dazwischen hauptsächlich von links nach rechts. Die
+  Kamera folgt der Figur.
 - **Der Pixel-Look ist kein Selbstzweck mehr.** Er bleibt als Stilmittel –
   niedrig gerendert und scharf hochskaliert, dunkle farbige Umrisse,
   begrenzte Palette mit Dithering, Kamera auf dem Pixelraster –, aber
@@ -199,8 +217,8 @@ Wort gibt.
 - **Morgen:** Nebel über dem Wasser, rosa-goldenes Licht. **Tag:** warmes
   Herbstlicht, kühle Schatten. **Abend:** goldenes Licht, lange Schatten,
   Lampen und Fackeln gehen an. **Nacht:** kaltes Blau, Mond über dem See –
-  und warme Lichtinseln: Fenster, Kamin, Feuer, Laternen, Fackeln an der
-  Strecke, Türme.
+  und warme Lichtinseln: Fenster, Kamin, Feuer, Laternen, Fackeln an den
+  Wegen, Türme.
 - **Wetter:** klare Tage, Nieselregen, Wind mit fallendem Laub,
   Nebelmorgen; kalte Nächte mit Atemwölkchen.
 - Kühle Töne wirken nur auf Schatten und Mitten; Lichtquellen bleiben warm.
@@ -236,8 +254,8 @@ Wort gibt.
 - **Unten links:** Laterne (Taste F) und Schnellleiste (8 Plätze).
   **Unten rechts:** Bauleiste. Lebensbalken der Figur über der
   Schnellleiste.
-- Freie **Baupunkte** und **Barrikadenplätze** leuchten auf, sobald man
-  einen Turm oder eine Barrikade in der Bauleiste gewählt hat.
+- Beim Bauen zeigt ein Geistermodell auf dem Raster, ob es passt: Türme
+  grün neben den Wegen, rot auf einem Weg; Barrikaden grün nur auf einem Weg.
 - Gedanken der Figur sind Sprechblasen und halten das Spiel nie an;
   Dialoge mit Porträt, Schreibmaschinen-Effekt und Antworten.
 
@@ -245,14 +263,14 @@ Wort gibt.
 
 - **Man muss auf einen Blick erkennen, was was ist:** Figur, Schlurfer-Arten,
   Türme, Barrikaden und ihre Stufe, Loot, Rohstoffquellen, Bauten.
-- **Die Strecke ist immer eindeutig:** ein heller, festgetretener Weg mit
-  klaren Rändern (Steine, Wurzeln, Grasbüschel), nachts mit Fackeln und
-  einem Hauch Eigenlicht. **Baupunkte** sind sichtbare Holzplattformen
-  neben dem Weg, **Barrikadenplätze** erkennt man an Pfosten am Wegrand.
+- **Die Wege sind immer eindeutig:** helle, festgetretene Pfade mit klaren
+  Rändern (Steine, Wurzeln, Grasbüschel), nachts mit Fackeln und einem Hauch
+  Eigenlicht – man sieht sofort, wo gebaut werden darf und wo die Horde
+  läuft.
 - Nachts bekommt alles, worum es im Kampf geht, einen Hauch Eigenlicht:
   Schlurfer, Türme, Barrikaden, Loot.
 - Verdeckte Figuren scheinen als gerasterter Umriss durch; Randmarken
-  zeigen Schlurfer auf der Strecke außerhalb des Bildes.
+  zeigen Schlurfer auf den Wegen außerhalb des Bildes.
 - Testspieler prüfen in jeder Runde: »Erkennt man, was was ist, und sieht
   man, wo die Horde langläuft?«
 
@@ -270,10 +288,11 @@ Licht macht sie langsamer.
 ### 4.2 Der Ort
 
 Eine kleine **Bucht am Stillsee**: ein altes Fischerhaus mit Steg und
-Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Hinter der Bucht
-steigt der **Stillwald** an – dicht, felsig, voller Hänge. Der einzige gute
-Weg aus dem Wald zum Ufer ist der **alte Holzfällerweg**: Über ihn kommt die
-Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
+Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Landeinwärts
+steigt der **Stillwald** an – dicht, felsig, voller Hänge. Nur ein paar alte
+**Holzfäller- und Wildpfade** führen hindurch; sie verzweigen sich und laufen
+kurz vor der Bucht zusammen. Über sie kommt die Horde. Auf dem See liegen
+Inseln im Nebel; von dort kommt nur Balduins Boot.
 
 ### 4.3 Hauptfigur
 
@@ -301,17 +320,17 @@ als endlose Verteidigung mit immer stärkeren Nächten weiter.
 | **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee |
 | **Balduin** | Händler mit Boot (zieht nie ein) | Kommt übers Wasser, legt am Steg an, tauscht Zombieteile gegen Material – und sagt nicht, wofür |
 
-Überlebende kommen tagsüber an – über den Holzfällerweg, am Ufer entlang
-oder mit Balduins Boot.
+Überlebende kommen tagsüber an – über die Wege, am Ufer entlang oder mit
+Balduins Boot.
 
 ## 5. Tagesablauf
 
 | Uhrzeit | Phase | Was passiert |
 |---|---|---|
-| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht; die Folgen der Nacht sind zu sehen (Trümmer, Überreste auf der Strecke); einsammeln, reparieren; Balduins Boot legt an |
-| 08:00–17:00 | **Tag** | Ruhig: bauen, reparieren, sammeln, Haus ausbauen, einrichten, Nebenaufträge, handeln – **keine Schlurfer** |
-| 17:00–20:30 | **Abend** | Letzte Vorbereitungen; Lampen und Fackeln an der Strecke gehen an |
-| 20:30–05:30 | **Nacht** | Die Horde kommt in Wellen über die Strecke; Anführer in besonderen Nächten |
+| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht; die Folgen der Nacht sind zu sehen (Trümmer, Überreste auf den Wegen); einsammeln, reparieren; Balduins Boot legt an |
+| 08:00–17:00 | **Tag** | Ruhig: bauen, reparieren, sammeln, Haus ausbauen, einrichten, Nebenaufträge, handeln – höchstens **vereinzelte Schlurfer**, nie Gruppen |
+| 17:00–20:30 | **Abend** | Letzte Vorbereitungen; Lampen und Fackeln an den Wegen gehen an |
+| 20:30–05:30 | **Nacht** | Die Horde kommt in Wellen über die Wege; Anführer in besonderen Nächten |
 | danach | **Schlafen** | Im eigenen Bett: Tag endet, Spiel speichert, nächster Morgen |
 
 - Ein voller Tag dauert etwa 9 Minuten Echtzeit (1 Spielminute = 0,4 s).
@@ -321,7 +340,7 @@ oder mit Balduins Boot.
 - Schlafen geht erst, wenn die Nacht des Tages vorbei ist. Ist die letzte
   Welle besiegt – oder bricht um 05:30 der Morgen an und die letzten
   Schlurfer fliehen in den Wald –, ist die Nacht gewonnen.
-- Um 20:00 warnt eine Meldung vor der Horde; steht an der Strecke noch kein
+- Um 20:00 warnt eine Meldung vor der Horde; steht an den Wegen noch kein
   Turm, sagt Mika es vorher.
 - In Dialogen und im Menü steht die Zeit still. Bauen geht jederzeit.
 
@@ -334,48 +353,49 @@ Nebel, Horde-Wellen, Balduins Boot und Tagesereignisse. Lichtwerte kommen aus
 einer Schlüsselbild-Tabelle über 24 Stunden. Das Wetter wechselt von Tag zu
 Tag (klar, Nieselregen, Wind, Nebel) und färbt Licht und Klang.
 
-### 6.2 Karte und Strecke
+### 6.2 Karte und Wege
 
-Die Karte folgt Grundregel 11. Grober Grundriss (x nach Osten, z nach Süden,
-die Kamera blickt nach Norden):
+Die Karte folgt Grundregel 11. Grober Grundriss (x nach Osten = rechts im
+Bild, z nach Süden = unten im Bild; die Kamera blickt nach Norden):
 
 ```
-            ~ ~ ~   S T I L L S E E   ~ ~ ~        Inseln im Nebel
-       ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
-   ~ ~ ~ ~ ~ ~ ~  Steg ═╗ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     Balduin legt hier an
-   ─── Ufer, Felsen, Schilf, Treibholz ────────
-      Garten    HAUS mit Veranda    Holzlager
-            ── Hof: Feuer, Werkbank ──           LETZTE VERTEIDIGUNG
-   Felsen │   ○   ║═══║   ○    │ Tannen          Barrikadenplatz 1
-   Hang   │ ○     ║   ║     ○  │                  Türme links und rechts
-          │    ○   ╲   ╲   ○   │ Laubwald         Abschnitt 1
-          │  ○  ═══║═══║    ○  │                  Barrikadenplatz 2
-   Tannen │     ○  │   │  ○    │ Felsen           Abschnitt 2
-          │   ○   ╱   ╱    ○   │
-          │  ═══║═══║   ○      │ Hang             Barrikadenplatz 3
-   ───────┴──── Waldrand: hier kommt die Horde ──  SPAWN (unten im Bild)
+  WALD / SPAWNS                      WEGE                      BUCHT       SEE
+ ┌──────────────┐                                                        ~ ~ ~
+ │ Spawn Nord ══╪══════╗                                                ~ ~ ~ ~
+ │              │       ╚════╗   Türme frei                  HAUS  Steg═══ ~ ~
+ │ Spawn Mitte ═╪═════╗       ╠══╗  neben den      ┌──── Hof ─┐  ▓▓▓        ~ ~
+ │              │      ╚══╦═══╝  ╚═══════════════════▶ letzte  │  Veranda  ~ ~ ~
+ │ Spawn Süd ═══╪════╗    ║        gemeinsamer      │ Verteid. │           ~ ~ ~
+ │              │     ╚═══╝        letzter Abschnitt└──────────┘  Garten   ~ ~ ~
+ └──────────────┘   (Barrikaden liegen auf den Wegen ══)                  ~ ~ ~
 ```
 
-- **Maße:** rund 40 m breit. Der See nimmt den Norden ein, die Bucht mit Haus,
-  Steg und Hof rund 16 × 12 m. Die **Strecke** führt vom Hof rund 35 m nach
-  Süden bis zum Waldrand, ist etwa 3 m breit und macht zwei, drei sanfte
-  Bögen.
-- **Natürliche Grenzen:** Links und rechts der Strecke stehen dichter Wald,
-  Felsen und Hänge. Die Figur kann am Waldrand sammeln, aber niemand kommt
-  quer durch den Wald – die Strecke ist der einzige Weg zur Bucht.
-- **Die Horde läuft die Strecke entlang** (jeder Schlurfer mit etwas
-  seitlichem Versatz innerhalb der Wegbreite). Sie verlässt sie nur, um die
-  Figur anzugreifen, wenn sie ihr nahe kommt, und kehrt danach zurück. Kein
-  Umlenken durch Gebäude, keine Wegfindung quer über die Karte.
-- **Baupunkte für Türme:** feste Plätze links und rechts der Strecke, je
-  Abschnitt drei bis vier, insgesamt rund zwölf. Sichtbar als runde
-  Holzplattformen; von jedem reicht ein Turm auf die Strecke, in den Bögen
-  überschneiden sich die Reichweiten.
-- **Barrikadenplätze:** feste Plätze quer über der Strecke – einer vor dem
-  Hof (erste Linie), einer oder zwei in der Mitte, einer am Waldrand. Man
-  erkennt sie an Pfosten am Wegrand, auch wenn noch nichts gebaut ist.
-- **Letzte Verteidigung:** der Hof zwischen dem Ende der Strecke und dem
-  Haus. Hier kommen die an, die alles überwunden haben.
+- **Rechts** liegt der Stillsee. Am Ufer steht das Fischerhaus mit Steg, davor
+  der **Hof** – die letzte Verteidigung.
+- **Links** liegt die Landseite mit dem dichten Wald und mehreren **Spawns**
+  am Kartenrand. Von dort führen **Zuführungen** (etwa drei) nach rechts; sie
+  dürfen sich verzweigen und wieder treffen und laufen **kurz vor der Bucht
+  zu einem gemeinsamen letzten Abschnitt** zusammen, der in den Hof mündet.
+- **Prozedural:** Bei jedem neuen Spiel wird das Wegenetz aus einem eigenen
+  Startwert teilweise neu angelegt (Lage der Spawns, Verlauf und
+  Verzweigungen der Zuführungen); die Bucht mit Haus, Steg und Hof bleibt
+  gleich. Der Startwert liegt im Spielstand, damit die Karte nach dem Laden
+  dieselbe ist.
+- **Größe:** Die Wege sind zusammen so lang, dass im späten Spiel 50–60 Türme
+  und mehr sinnvoll daneben Platz finden. Anfangs reicht eine kompakte
+  Verteidigung am gemeinsamen letzten Abschnitt; später wächst sie in die
+  Verzweigungen hinaus.
+- **Natürliche Grenzen:** Zwischen und neben den Wegen stehen Wald, Felsen
+  und Hänge. Neben jedem Weg bleibt ein breiter, bebaubarer Streifen für
+  Türme; dahinter wird der Wald dicht. Die Figur kann überall hin, wo kein
+  Hindernis steht.
+- **Die Horde läuft nur auf den Wegen** vom Spawn zum Hof. Barrikaden auf dem
+  Weg sind Hindernisse, an denen sie hängen bleibt und die sie angreift. Die
+  Figur zieht sie nur aus der Nähe vom Weg; danach kehren die Schlurfer auf
+  den Weg zurück.
+- **Offen (OFFENE-FRAGEN Nr. 66):** ob und wie Barrikaden die Horde auf einen
+  anderen Zweig umlenken und ob die Wegvorschau beim Bauen bleibt. Bis das
+  geklärt ist, wird davon nichts entfernt und nichts Neues entwickelt.
 
 ### 6.3 Sammeln
 
@@ -416,9 +436,9 @@ die Figur oder das Zuhause?
   Überreste genau dort liegen: Zombieteile, manchmal ein Zahnrad, bei
   Anführern ein Moderkern.
 - Man sammelt sie, indem man in die Nähe läuft; im **Sammelradius** fliegen
-  sie von selbst zur Figur. Nachts ist das riskant, am Morgen gemütlich:
-  **Die Überreste bleiben bis zum Mittag des nächsten Tages liegen,** dann
-  zerfallen sie zu Moos.
+  sie von selbst zur Figur. Am besten birgt man sie schon während oder direkt
+  nach der Nacht – dann hat man morgens bei Balduin Handelsware. **Liegen
+  gebliebene Überreste halten bis zu drei Tage,** dann verrotten sie zu Moos.
 - Randmarken zeigen, wo außerhalb des Bildes noch etwas liegt. Der
   Sammelradius ist eine Aufwertung der Figur.
 
@@ -428,14 +448,15 @@ die Figur oder das Zuhause?
   **Figur** · **Zuhause** · **Einrichten**. `Tab` wechselt den Reiter.
   Jede Option zeigt Symbol und Preis, ausgegraut mit Füllbalken bis
   bezahlbar, dann leuchtet sie auf. Tastenkürzel **Q R T G C V**.
-- **Turm bauen:** Turm wählen → freie Baupunkte leuchten auf → Klick (oder
-  `E` davor) setzt ihn. **Barrikade bauen:** wählen → freie
-  Barrikadenplätze leuchten auf → setzen.
+- **Turm bauen:** Turm wählen, auf dem Raster neben einem Weg platzieren
+  (grün = passt, rot = geht nicht, z. B. auf einem Weg), Klick oder `E` setzt
+  ihn. **Barrikade bauen:** wählen und auf ein Wegfeld setzen – nur dort
+  passt sie.
 - **Ausbauen und Reparieren:** Turm oder Barrikade anklicken (oder davor `E`):
   Die Leiste zeigt Stufen, Spezialisierungen, Reparatur und »Abreißen«
   (immer auf `V`, mit Rückfrage).
 - **Zuhause:** Werkbank, Beete, Bänke, Laternen, Zelte und Deko stehen frei
-  auf dem Raster rund um das Haus (nie auf der Strecke); Ausbauten des
+  auf dem Raster (nie auf einem Weg); Ausbauten des
   Hauses und Nebengebäude haben feste Plätze.
 - Bauen geht jederzeit; Reparieren nicht, solange nachts eine Welle läuft.
 
@@ -467,7 +488,8 @@ Werkbank in der Werkstatt.
 
 ### 6.9 Türme
 
-Türme stehen **nur auf Baupunkten** und arbeiten autonom. Vier Rollen, jede
+Türme stehen **frei neben den Wegen** (nie darauf) und arbeiten autonom.
+Vier Rollen, jede
 mit fünf Stufen. Stufe 1–2 sind allgemein, auf **Stufe 3 spezialisiert** man
 in eine von zwei Richtungen; Stufe 4 und 5 bauen sie aus.
 
@@ -483,25 +505,27 @@ in eine von zwei Richtungen; Stufe 4 und 5 bauen sie aus.
 - Am stärksten wirken Türme dort, wo Barrikaden die Horde aufhalten:
   **Barrikade plus Kreuzfeuer** ist das Herz jeder Verteidigung.
 
-### 6.10 Barrikaden
+### 6.10 Barrikaden und Wegobjekte
 
-Barrikaden stehen **auf den Barrikadenplätzen quer über der Strecke.** Die
-Horde bleibt davor stehen und schlägt darauf ein, bis sie bricht; dann zieht
-sie weiter. Sie sind handgebaut und improvisiert:
+Auf den Wegen stehen nur Hindernisse, die die Horde stauen. Sie werden **frei
+auf Wegfeldern** gebaut (je ein Feld von 1 m); wer einen Weg ganz sperren
+will, setzt mehrere nebeneinander. Die Horde bleibt davor hängen, schlägt
+darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 
-| Stufe | Aussehen | Material | Haltbarkeit | Besonderes |
+| Hindernis | Aussehen | Material | Haltbarkeit | Besonderes |
 |---|---|---|---|---|
-| 1 | Einfacher Holzzaun (Latten, Pfosten) | Holz | gering | – |
-| 2 | Verstärkte Bretterwand mit Streben | Holz | mittel | – |
-| 3 | Schwere Holzbarriere aus Stämmen mit Blech und alten Türen | Holz, Schrott | hoch | fängt einen Teil jedes Schlags ab |
-| 4 | Befestigte Barrikade mit angespitzten Pfählen | Holz, Schrott, Zahnrad | sehr hoch | Stacheln verletzen, wer darauf einschlägt |
+| **Holzbarriere** | Lattenzaun, Bretter, alte Türen | Holz | gering | günstig, schnell gebaut, schnell zerstört |
+| **Verstärkte Holzbarriere** | Bretterwand mit Streben, Stämme | Holz | mittel | Ausbau der Holzbarriere |
+| **Metallbarriere** | Blech, Rohre, Gitter | Holz, Schrott | hoch | fängt einen Teil jedes Schlags ab |
+| **Metallkreuz** | geschweißte Stahlkreuze | Schrott | hoch | später; weitere Hindernisse folgen (z. B. Stacheln, die Angreifer verletzen) |
 
 - Brummer und Anführer schlagen besonders hart zu.
-- Schaden ist sichtbar (lockere Bretter, fehlende Latten); eine zerstörte
-  Barrikade hinterlässt **Trümmer** auf dem Platz.
-- **Tagsüber** flickt man beschädigte Barrikaden (anteilig, Holz und
-  Schrott) oder baut zerstörte neu auf – die Stufe bleibt, wenn man den
-  Wiederaufbau bezahlt. Während einer Welle geht beides nicht.
+- Schaden ist sichtbar (lockere Bretter, verbogenes Blech); eine zerstörte
+  Barrikade hinterlässt **Trümmer** auf dem Feld.
+- **Tagsüber** flickt man beschädigte Barrikaden (anteilig) oder baut
+  zerstörte wieder auf. Während einer Welle geht beides nicht.
+- Barrikaden sind günstig und Verschleißteile – ein eigener Kreislauf aus
+  Bauen, Halten, Brechen und Wiederaufbauen.
 
 ### 6.11 Die Horde
 
@@ -514,12 +538,15 @@ sie weiter. Sie sind handgebaut und improvisiert:
 | **Leuchtpilz** | heilt und beschleunigt Nachbarn | Bolzenwerfer (Fokus) |
 | **Anführer** | Boss in besonderen Nächten, ruft Nachschub | alles zusammen, plus Nahkampf |
 
-- Alle kommen **vom Waldrand über die Strecke**, in mehreren Wellen je
-  Nacht; die Nachtleiste zeigt Welle und Anzahl, Knopf bellt vorher.
+- Alle kommen **von den Spawns am linken Kartenrand über die Wege**, in
+  mehreren Wellen je Nacht, oft über verschiedene Zuführungen; die
+  Nachtleiste zeigt Welle und Anzahl, Knopf bellt vorher.
 - **Jede Nacht wird stärker:** mehr Schlurfer, mehr Leben, nach und nach neue
   Arten; jede fünfte Nacht ist eine **Anführernacht**. Ohne Ausbau hält man
   irgendwann nicht mehr mit.
-- **Tagsüber kommen keine Schlurfer** – der Tag gehört der Ruhe.
+- **Tagsüber** verirrt sich nur ganz vereinzelt ein träger Schlurfer auf die
+  Wege – keine Gruppen, keine Wellen. Die Welt ist nie ganz zombiefrei, aber
+  der Tag gehört der Ruhe.
 
 ### 6.12 Letzte Verteidigung, verlorene Nacht, Morgen
 
@@ -533,7 +560,7 @@ sie weiter. Sie sind handgebaut und improvisiert:
   **Nie Spielende, nie Verlust des Spielstands.**
 - **Morgen:** Der Morgenbericht zeigt Abschüsse, Eingesammeltes, zerstörte
   Barrikaden, Schäden und Verluste. Draußen sieht man die Folgen: Trümmer
-  auf den Barrikadenplätzen, Überreste auf der Strecke. Einsammeln,
+  und Überreste auf den Wegen. Einsammeln,
   reparieren, neuer Tag.
 - **Reparieren:** Barrikaden und Türme einzeln über die Auswahl, das Zuhause
   über die Bauleiste (Holz und Schrott, anteilig, wenn der Vorrat nicht
@@ -541,7 +568,7 @@ sie weiter. Sie sind handgebaut und improvisiert:
 
 ### 6.13 Nahkampf und eigene Figur
 
-- Die Figur ist die **letzte Verteidigung** am Hof – und kann an der Strecke
+- Die Figur ist die **letzte Verteidigung** am Hof – und kann an den Wegen
   aushelfen, wo eine Barrikade wankt.
 - **Angriff** mit der linken Maustaste in Richtung des Mauszeigers; gedrückt
   halten schlägt weiter. Mika schlägt mit dem, was sie in der Hand hat
@@ -566,7 +593,7 @@ sie weiter. Sie sind handgebaut und improvisiert:
 ### 6.14 Überlebende und Geschichte
 
 - **Ankunft:** Ab Tag 2 kommt nach und nach jemand an (Knopf, Hilde, Juna,
-  Bert, Dr. Yusuf) – tagsüber, über den Holzfällerweg, am Ufer oder mit
+  Bert, Dr. Yusuf) – tagsüber, über die Wege, am Ufer oder mit
   Balduins Boot. Wer neu ist, winkt.
 - **Kennenlernen → Gast → Einzug:** Ansprechen mit E; ein Schlafplatz (Zelt,
   später ein Zimmer oder Nebengebäude) macht aus dem Gast einen Bewohner.
@@ -575,7 +602,8 @@ sie weiter. Sie sind handgebaut und improvisiert:
   Leuchtfeuer); Balduin bringt gelegentlich eigene.
 - **Fähigkeiten:** Knopf bellt kurz vor jeder Welle und buddelt morgens
   etwas aus; Hilde tauscht und bringt Morgengaben; Juna hört die Horde am
-  Funk (was heute Nacht kommt); Bert flickt billiger und nachts Barrikaden
+  Funk (was heute Nacht kommt: Arten, Anführer – keine feste Richtung); Bert
+  flickt billiger und nachts Barrikaden
   und Türme; Dr. Yusuf kocht Tee und verarztet Mika einmal je Nacht.
 - **Roter Faden – das Leuchtfeuer:** Mit Juna in drei Stufen am Leuchtmast
   auf dem Steg: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
@@ -656,7 +684,7 @@ der Klang startet mit der ersten Eingabe.
 |---|---|
 | W A S D / Pfeiltasten | Laufen |
 | Umschalt | Rennen |
-| Linke Maustaste | Angreifen · Baupunkt/Platz anklicken: bauen · Turm oder Barrikade anklicken: auswählen |
+| Linke Maustaste | Angreifen · auf dem Raster: bauen · Turm oder Barrikade anklicken: auswählen |
 | Rechte Maustaste / Esc | Bauen abbrechen, Auswahl aufheben |
 | Leertaste | Ausweichen |
 | E / Enter | Benutzen, Dialog weiter; gedrückt halten: weiter sammeln |
@@ -687,47 +715,57 @@ Nachbesserung, Prüfablauf, Commit.
 - **M7 Feinschliff ✓:** Klang, Titelbild, Einstellungen.
 - **M8 Nach dem ersten Probespielen ✓:** schnellere Zeit (ein Tag rund
   9 Minuten), fordernde Nächte ab Nacht 1; Zombieteile als Beute und
-  Balduins Handel (noch mit Bollerwagen über Land – das Boot kommt in M10);
+  Balduins Handel (noch mit Bollerwagen über Land – das Boot kommt mit M9);
   Autowrack nur einmal. Die geplanten Punkte »Innenraum als eigenes Bild«
   und »Detailgrad« gehen in M11 und M12 auf.
 
 Bis hierhin spielt das Spiel auf einer Waldlichtung mit vier Waldpfaden und
 freiem Bauraster (die Horde ließ sich mit Bauten umlenken). Das neue
-Grundkonzept ersetzt das.
+Grundkonzept ersetzt die Karte; was aus dem Umlenken und der Wegvorschau
+wird, klärt OFFENE-FRAGEN Nr. 66.
 
-### Meilenstein 9 – Die Bucht und die Strecke (großer Umbau)
+### Meilenstein 9 – Die Bucht und die Wege (großer Umbau)
 
-- **Neue Karte nach Grundregel 11:** Stillsee im Norden mit Inseln und Nebel,
-  Ufer mit Felsen, Schilf und Treibholz; das alte Fischerhaus mit Steg;
-  der Hof als letzte Verteidigung; die Strecke (alter Holzfällerweg) leicht
-  geschwungen bis zum Waldrand im Süden; dichter Wald, Felsen und Hänge als
-  natürliche Grenzen. Gelände und Natur gleich in Herbstfarben.
-- **Horde auf der Strecke:** Schlurfer folgen dem Weg, bleiben an Barrikaden
-  stehen, greifen am Ende das Haus an; die Figur ziehen sie nur aus der
-  Nähe von der Strecke. Kein Mazing, keine Wegfindung über das Raster,
-  keine Wellen aus vier Richtungen, **keine Tagesschlurfer**.
-- **Baupunkte** links und rechts der Strecke; Türme nur dort.
-- **Barrikaden** auf festen Plätzen mit vier Stufen, Lebenspunkten,
-  sichtbarem Schaden, Trümmern, Reparatur und Wiederaufbau am Tag.
+- **Neue Karte nach Grundregel 11:** rechts der Stillsee mit Inseln und
+  Nebel, am Ufer das alte Fischerhaus mit Steg, davor der Hof als letzte
+  Verteidigung; links die Landseite mit Wald, Felsen und Hängen und mehreren
+  Spawns am Rand. Gelände und Natur gleich in Herbstfarben.
+- **Prozedurales Wegenetz:** etwa drei Zuführungen je Spiel aus einem
+  eigenen Startwert, mit Verzweigungen, die kurz vor der Bucht in einen
+  gemeinsamen letzten Abschnitt münden; lang genug für 50–60 Türme und mehr.
+- **Horde nur auf den Wegen:** Sie folgt den Wegfeldern zum Hof, bleibt an
+  Barrikaden hängen und greift sie an, am Ende das Haus; die Figur zieht sie
+  nur aus der Nähe vom Weg. Tagsüber nur ganz vereinzelte Schlurfer.
+- **Türme frei neben den Wegen**, nie auf einem Wegfeld.
+- **Barrikaden frei auf Wegfeldern:** Holzbarriere, Ausbau, Metallbarriere
+  (Metallkreuz und mehr später); Lebenspunkte, sichtbarer Schaden, Trümmer,
+  Flicken und Wiederaufbau am Tag.
 - **Letzte Verteidigung** am Hof, Standfestigkeit der Basis, verlorene Nacht.
-- Überreste bleiben bis zum Mittag liegen; der Morgen zeigt die Folgen.
-- Überlebende, Leuchtmast (am Steg), Werkbank, Beete, Zelte und Möbel auf
-  der neuen Karte; Bauleiste mit dem Reiter »Verteidigung«.
-- Spielstand v8 mit Migration (alte Stände laden, Bauten werden erstattet).
-- Prüfskript: Strecke, Baupunkte, Barrikaden bauen, beschädigen, reparieren,
-  neu bauen, Nacht über die Strecke gewonnen und verloren, Migration.
+- Überreste halten bis zu drei Tage; der Morgen zeigt die Folgen der Nacht.
+- **Balduin kommt schon mit dem Boot zum Steg** (einfache Fassung), damit der
+  Handel auf der neuen Karte gleich funktioniert.
+- Überlebende, Leuchtmast am Steg, Werkbank, Beete, Zelte und Möbel auf der
+  neuen Karte.
+- Spielstand v8 mit Migration (alte Stände laden, Türme und Barrikaden werden
+  erstattet, der Startwert der Karte wird festgelegt).
+- Prüfskript für Karte, Wege, Bauen neben und auf den Wegen, Barrikaden,
+  Nächte und Migration.
+- **Nicht angefasst, bis OFFENE-FRAGEN Nr. 66 geklärt ist:** Umlenken der Horde
+  durch Bauten und die Wegvorschau.
 
 **Spielbar heißt:** Ein ganzer Tag-Nacht-Morgen-Zyklus an der Bucht: tagsüber
-Türme auf Baupunkte und Barrikaden auf die Strecke, nachts halten sie die
+Türme neben die Wege und Barrikaden auf die Wege, nachts stauen sie die
 Horde, morgens Trümmer und Überreste – und man sieht immer, wo die Horde
-langläuft.
+langläuft. Jedes neue Spiel hat ein etwas anderes Wegenetz.
 
 ### Meilenstein 10 – Balduin kommt übers Wasser
 
-- Boot mit Kisten, Fässern und Einmachgläsern; Ankunft als kleines Ereignis
-  (Bootshorn, das Boot taucht zwischen den Inseln auf, tuckert heran, legt
-  am Steg an), Abfahrt gegen Mittag.
-- Balduin im neuen Aussehen (Schiebermütze, Bart, roter Schal, Rucksack).
+- Ausbau der einfachen Fassung aus M9: Boot mit Kisten, Fässern und
+  Einmachgläsern; Ankunft als kleines Ereignis (Bootshorn, das Boot taucht
+  zwischen den Inseln auf, tuckert heran, legt am Steg an), Abfahrt gegen
+  Mittag.
+- Balduin im Aussehen des Konzeptbilds (Seebär mit Schiebermütze, kräftigem
+  Bart, rotem Schal, robuster Kleidung, Rucksack).
 - Handel wie bisher, dazu besondere Turmteile, Upgrades und Werkzeuge,
   gelegentliche Nebenaufträge; Running Gag mit täglichen Sprüchen.
 
@@ -750,7 +788,7 @@ langläuft.
 
 ### Meilenstein 13 – Balance und Testrunden
 
-- Balance über zehn und mehr Nächte an der Strecke, Testrunden mit allen
+- Balance über zehn und mehr Nächte an den Wegen, Testrunden mit allen
   Personas, Feinschliff.
 
 ## 9. Ideen-Parkplatz

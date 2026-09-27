@@ -29,6 +29,15 @@ verbindlich und ersetzen ältere Annahmen.
   markiert.
 - `CLAUDE.md`: Grundregeln des Spiels als eigener Abschnitt.
 
+**Festgelegt vom Auftraggeber (OFFENE-FRAGEN 63–74):** kein einzelner
+Weg, sondern ein bei jedem Spiel teilweise prozedurales Wegenetz mit etwa
+drei Zuführungen, die vor der Basis zusammenlaufen (lang genug für 50–60
+Türme); die Wege laufen von links (Landseite, Spawns) nach rechts (Basis an
+der Küste); Türme frei neben den Wegen, Barrikaden frei auf den Wegen (Holz,
+später Metall, Metallkreuze); tagsüber ganz vereinzelte Schlurfer;
+Überreste halten bis zu drei Tage. Offen bleibt Nr. 66 (Umlenken durch
+Bauten, Wegvorschau): bis zur Klärung wird davon nichts entfernt.
+
 **Folgen für den Code:** Bis Meilenstein 8 spielt alles auf der alten
 Waldlichtung (vier Waldpfade, Mazing auf dem Raster, Tagesschlurfer,
 Balduin mit Bollerwagen über die Straße). Meilenstein 9 baut Karte und

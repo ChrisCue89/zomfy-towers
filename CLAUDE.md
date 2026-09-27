@@ -24,20 +24,26 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 
 Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
 
-- **Aufbau im Bild von oben nach unten:** Wasser → Basis/Haus/Steg → letzte
-  Verteidigung → Strecke mit Barrikaden → Türme links und rechts der
-  Strecke → weitere Barrikaden → Wald/Landseite/Zombie-Spawn. Vom Wasser
-  kommen nie Zombies.
-- **Eine klar erkennbare Strecke:** Die Horde läuft sie entlang, keine
-  verstreuten Angriffswege. Türme nur auf Baupunkten neben der Strecke, nie
-  darauf; Barrikaden (mit Lebenspunkten, vier Stufen, reparier- und neu
-  baubar) bewusst auf der Strecke.
+- **Aufbau im Bild von rechts nach links:** Wasser → Basis/Haus/Steg →
+  letzte Verteidigung (Hof) → gemeinsamer letzter Wegabschnitt mit
+  Barrikaden → Türme neben den Wegen → verzweigte Zuführungen mit weiteren
+  Barrikaden → Wald/Landseite mit den Spawns (linker Rand). Vom Wasser kommen
+  nie Zombies. Die Kamera blickt weiter nach Norden.
+- **Wegenetz statt einzelner Strecke:** mehrere Zuführungen, die sich
+  verzweigen dürfen und kurz vor der Basis zusammenlaufen; bei jedem neuen
+  Spiel teilweise prozedural (Startwert im Spielstand). Lang genug für 50–60
+  Türme und mehr. Die Horde läuft nur auf den Wegen.
+- **Türme frei neben den Wegen, nie darauf. Barrikaden frei auf den Wegen**
+  (Holz, später Metall, Metallkreuze …), mit Lebenspunkten, reparier- und
+  neu baubar.
 - **Drei Verteidigungsebenen:** Türme – Barrikaden – die Figur selbst am Hof.
   Die Basis hat Lebenspunkte; fällt sie, ist die Nacht verloren.
-- **Ruhiger Tag, angespannte Nacht** in derselben cozy, herbstlichen Welt;
-  tagsüber keine Schlurfer.
-- **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste sind
-  seine Handelsware, warum er sie will, bleibt offen.
+- **Ruhiger Tag** (nur ganz vereinzelte Schlurfer), angespannte Nacht, beides
+  in derselben cozy, herbstlichen Welt.
+- **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste (halten
+  bis zu drei Tage) sind seine Handelsware, warum er sie will, bleibt offen.
+- **Noch offen (OFFENE-FRAGEN Nr. 66):** Umlenken der Horde durch Bauten und
+  die Wegvorschau – bis zur Klärung weder entfernen noch neu entwickeln.
 - Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
   bloß Neues daneben gesetzt.
 
@@ -203,9 +209,10 @@ Grundprinzipien:
   (`pathing.js`): `walk` (Bauten sperren) und `brute` (Brummer gehen durch
   Barrikaden). Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der
   einen Waldpfad abschneidet, wird mit Grund `weg` abgelehnt.
-  **Stand der alten Waldlichtung – wird in Meilenstein 9 ersetzt:** feste
-  Strecke statt Flussfeldern, Baupunkte für Türme, Barrikadenplätze auf der
-  Strecke, das Raster nur noch für Bauten rund um das Haus.
+  **Stand der alten Waldlichtung – Meilenstein 9 baut um:** Die Horde läuft
+  nur noch auf den Wegfeldern des prozeduralen Wegenetzes; Türme nur neben,
+  Barrikaden nur auf Wegfeldern. Umlenken und Wegvorschau bleiben, bis
+  OFFENE-FRAGEN Nr. 66 geklärt ist.
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
