@@ -35,6 +35,7 @@ export class Player {
       if (!mesh) continue;
       mesh.renderOrder = 2;
       const outline = new THREE.Mesh(mesh.geometry, silhouette);
+      outline.userData.outline = true;
       outline.renderOrder = 1.75; // nach den Schlurfern: auch hinter einem Brummer bleibt Mika sichtbar
       mesh.add(outline);
     }
@@ -90,6 +91,28 @@ export class Player {
     };
     if (options.face) this.facing = Math.atan2(options.face.x - this.position.x, options.face.z - this.position.z);
     return true;
+  }
+
+  /**
+   * Anderes Aussehen (Titelbild): Die Figur wird mit den neuen Farben noch einmal
+   * gebaut, übernommen werden nur die Formen – Gelenke, Umrisse, Werkzeuge und
+   * Laterne bleiben dieselben.
+   */
+  setLook(spec) {
+    const fresh = buildCharacter(spec, { occluder: false });
+    for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
+      const oldMeshes = [];
+      const newMeshes = [];
+      this.character.parts[name].traverse((o) => o.isMesh && !o.userData.outline && oldMeshes.push(o));
+      fresh.parts[name].traverse((o) => o.isMesh && newMeshes.push(o));
+      oldMeshes.forEach((mesh, k) => {
+        const geo = newMeshes[k]?.geometry;
+        if (!geo || geo === mesh.geometry) return;
+        mesh.geometry.dispose();
+        mesh.geometry = geo;
+        for (const child of mesh.children) if (child.userData.outline) child.geometry = geo;
+      });
+    }
   }
 
   get busy() {

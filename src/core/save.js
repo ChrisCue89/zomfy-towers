@@ -7,6 +7,13 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v5 -> v6: Meilenstein 7 (Name und Aussehen vom Titelbild). Bisherige Stände
+  // behalten Mika, wie sie war.
+  5: (data) => ({
+    ...data,
+    version: 6,
+    player: { ...(data.player || {}), name: 'Mika', look: { hat: 'orange', jacket: 'gruen', hair: 'braun', skin: 'mittel' } },
+  }),
   // v4 -> v5: Meilenstein 6 (Überlebende, Funkturm, Einrichten). Die Überlebenden
   // kommen nach und nach ab dem nächsten Tag – nicht alle auf einmal.
   4: (data) => ({

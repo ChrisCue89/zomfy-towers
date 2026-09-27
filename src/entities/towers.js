@@ -200,7 +200,7 @@ export class TowerSystem {
     for (const z of list) {
       this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0 });
     }
-    this.cb.onShot?.('bolzen');
+    this.cb.onShot?.('bolzen', o.x, o.z);
   }
 
   runCatapult(t, s, mult, dt) {
@@ -231,7 +231,7 @@ export class TowerSystem {
     const tz = best.z + Math.cos(best.facing) * lead;
     const dist = Math.hypot(tx - o.x, tz - o.z);
     this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z });
-    this.cb.onShot?.('katapult');
+    this.cb.onShot?.('katapult', o.x, o.z);
   }
 
   runSprinkler(t, s, mult, dt) {
@@ -250,6 +250,7 @@ export class TowerSystem {
       return;
     }
     t.sprayAcc = (t.sprayAcc || 0) + dt * 36;
+    this.cb.onShot?.('sprenger', o.x, o.z); // der Klang drosselt sich selbst
     while (t.sprayAcc >= 1) {
       t.sprayAcc -= 1;
       this.effects.spray(o.x, o.y, o.z, t.headAngle + (Math.floor(t.sprayAcc * 10) % 2 ? Math.PI : 0), s.range, kind);
@@ -312,6 +313,7 @@ export class TowerSystem {
 
   explode(p) {
     const r = p.splash;
+    this.cb.onImpact?.(p.x, p.z);
     for (const z of this.horde.inRange(p.x, p.z, r)) {
       if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: 'turm' })) continue;
       if (p.burn) this.horde.ignite(z, p.burn, 3);

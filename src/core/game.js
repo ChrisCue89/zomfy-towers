@@ -18,7 +18,10 @@ import { Rng } from './rng.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
-import { renderPortraits } from '../render/portrait.js';
+import { renderPortraits, mikaPortrait } from '../render/portrait.js';
+import { TitleScreen } from '../ui/title.js';
+import { MIKA } from '../entities/characters.js';
+import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
 import { Furnishing } from './furnishing.js';
@@ -39,9 +42,11 @@ import { CraftingMenu } from '../ui/crafting.js';
 import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
 import { perkValue, PERKS, xpForLevel } from '../data/perks.js';
-import { drawText, measure, GLYPH_ROWS } from '../ui/font.js';
+import { drawText, measure, GLYPH_ROWS, setPlayerName } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
+import { Sound } from '../audio/sound.js';
+import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from './settings.js';
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
@@ -60,6 +65,10 @@ const FLAG_AFTER_DIALOG = {
 
 const SLEEP = { fadeOut: 1.0, black: 1.2, fadeIn: 0.9 };
 const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
+const ZERO = new THREE.Vector3();
+const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es im Spielstand ist
+/** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
+const LOOT_PITCH = { schrott: 700, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
 
 export class Game {
   constructor() {
@@ -87,13 +96,17 @@ export class Game {
   init() {
     const sceneCanvas = document.getElementById('scene');
     const uiCanvas = document.getElementById('ui');
+    this.settings = loadSettings();
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
+    this.pixel.scaleShift = PIXEL_SIZES[this.settings.pixel];
+    this.sound = new Sound(volumesOf(this.settings));
     // Alles, was in Szenenpixeln gemessen ist, wächst mit der Pixeldichte mit
     const density = CONFIG.render.pxPerMeter / 40;
     sharedUniforms.uCutRadius.value.multiplyScalar(density);
     sharedUniforms.uPointScale.value = density;
     this.ui = new UICanvas(uiCanvas);
     this.input = new Input(uiCanvas, (x, y) => this.pixel.clientToGame(x, y));
+    this.input.onGesture = () => this.sound.unlock(); // Klang erst nach der ersten echten Eingabe
     this.events = new Events();
 
     this.scene = new THREE.Scene();
@@ -110,6 +123,7 @@ export class Game {
 
     this.hud = new Hud(this);
     this.dialog = new DialogBox(this);
+    this.dialog.speed = TEXT_SPEEDS[this.settings.text];
     this.menu = new Menu(this);
     this.builder = new Builder(this);
     this.gathering = new Gathering(this);
@@ -117,6 +131,7 @@ export class Game {
     this.crafting = new CraftingMenu(this);
     this.report = new ReportPanel(this);
     this.perkChoice = new PerkChoice(this);
+    this.title = new TitleScreen(this);
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
       onKill: (z, source) => this.onZombieKilled(z, source),
@@ -127,7 +142,13 @@ export class Game {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
       },
     });
-    this.towers = new TowerSystem({ scene: this.scene, world: this.world, horde: this.horde, effects: this.effects });
+    this.towers = new TowerSystem(
+      { scene: this.scene, world: this.world, horde: this.horde, effects: this.effects },
+      {
+        onShot: (kind, x, z) => this.sound.play(kind, { x, z, volume: kind === 'sprenger' ? 0.6 : 1 }),
+        onImpact: (x, z) => this.sound.play('platsch', { x, z }),
+      }
+    );
     this.loot = new Loot(this.scene, rng);
     this.nights = new Nights(this);
     this.combat = new Combat(this);
@@ -150,6 +171,7 @@ export class Game {
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.quietSave();
+      this.sound.pause(document.visibilityState === 'hidden');
     });
     window.addEventListener('pagehide', () => this.quietSave());
 
@@ -160,6 +182,13 @@ export class Game {
     if (introOpen && !CONFIG.skipIntro) this.pendingIntro = true;
     else if (introOpen) this.hud.showHint(T.meldungen.hinweisStart, 14);
     if (CONFIG.test) this.intro.t = this.intro.duration;
+    // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
+    if (CONFIG.showTitle) {
+      this.titleIntro = this.pendingIntro;
+      this.pendingIntro = false;
+      this.mode = 'title';
+      this.title.open(loaded.status === 'ok');
+    }
 
     this.setFavicon();
     if (CONFIG.test || CONFIG.debug) this.exposeTestApi();
@@ -245,6 +274,7 @@ export class Game {
     this.nights.load(st.hordeQueue);
     st.player.hp = Math.min(Math.max(1, st.player.hp), this.combat.maxHp);
     this.updateGoals(true);
+    this.applyLook();
     if (st.report) this.showReport();
   }
 
@@ -433,6 +463,7 @@ export class Game {
     // Nach »Nacht geschafft« Aufgesammeltes zählt noch zur Nacht (m3-r1: Bericht zählte zu wenig)
     else if (st.report && st.report.n === st.night.n && st.night.n === st.time.day) st.report.loot[res] = (st.report.loot[res] || 0) + 1;
     this.hud.floater(x, y + 0.6, z, '+1', res, 0, true);
+    this.sound.play('loot', { pitch: LOOT_PITCH[res] || 880 });
     if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
       st.flags.fundZahnrad = true;
       this.hud.toast(T.meldungen.ersterFund(T.ressourcen.zahnraeder), res, 3);
@@ -482,6 +513,7 @@ export class Game {
       st.flags.ersteWaffe = true;
       this.hud.showHint(T.meldungen.ausweichen, 8);
     }
+    this.sound.play(gives ? 'aufheben' : 'aufwertung');
     this.quietSave();
     return true;
   }
@@ -624,6 +656,7 @@ export class Game {
     if (!st.report.fell) st.report.homeNow = Math.round(st.world.homeHp);
     this.report.open(st.report);
     this.mode = 'report';
+    this.sound.play('morgen');
   }
 
   // --- Horde: Treffer, Tod, Loot, verlorene Nacht --------------------------------
@@ -637,12 +670,14 @@ export class Game {
     // Perk »Glückspilz«: manchmal ein Stück Schrott mehr
     if (this.world.particles.rng.next() < perkValue(st, 'glueckspilz')) this.loot.drop(z.x, z.z, { schrott: [1, 1] }, 1);
     this.effects.splat(z.x, 0.6, z.z, 'moos', 12, 0.9);
+    this.sound.play('tod', { x: z.x, z: z.z });
     // Erfahrung: im Nahkampf doppelt, Tagesschlurfer halb
     this.combat.gainXp(z.def.xp * (source === 'spieler' ? 2 : 1) * (z.day ? 0.5 : 1));
   }
 
   onHouseHit(dmg, z) {
     const st = this.state;
+    this.sound.play('zuhause', { x: z.x, z: z.z, volume: 0.7 });
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     // Tagsüber bricht nichts durch: Streuner nagen langsamer und bringen das
     // Zuhause höchstens auf die Hälfte (m3-r1: die Vorhut fraß es sonst am Abend auf)
@@ -774,7 +809,68 @@ export class Game {
 
   closeMenu() {
     this.menu.close();
+    if (this.menu.fromTitle) {
+      this.menu.fromTitle = false;
+      this.mode = 'title';
+      return;
+    }
     this.mode = this.dialog.active ? 'dialog' : 'play';
+  }
+
+  // --- Titelbild (Meilenstein 7) ------------------------------------------------------
+
+  /** Kamera auf dem Titelbild: langsam über die Lichtung; bei der Figur neben Mika. */
+  titleFocus(dt) {
+    const f = this._titleFocus || (this._titleFocus = new THREE.Vector3());
+    this.titleT = (this.titleT || 0) + dt;
+    const p = this.player.position;
+    if (this.title.screen === 'figur') f.set(p.x + 3.2, p.y, p.z - 0.4); // Mika links neben der Tafel
+    else f.set(1.5 + Math.sin(this.titleT * 0.07) * 3, 0, 1.5 + Math.sin(this.titleT * 0.05) * 1.2);
+    return f;
+  }
+
+  /** Aussehen auf dem Titelbild ausprobieren (noch nicht im Spielstand). */
+  previewLook(look) {
+    this.player.setLook(lookSpec(MIKA, look));
+  }
+
+  /** Name und Aussehen aus dem Spielstand anwenden (Figur, Porträt, Texte). */
+  applyLook() {
+    const pl = this.state.player;
+    const key = JSON.stringify(pl.look);
+    setPlayerName(pl.name);
+    if (key === this.appliedLook) return;
+    this.appliedLook = key;
+    const spec = lookSpec(MIKA, pl.look);
+    this.player.setLook(spec);
+    this.portraits.mika = mikaPortrait(spec);
+  }
+
+  openMenuFromTitle(screen) {
+    this.menu.open();
+    this.menu.fromTitle = true;
+    this.menu.go(screen);
+    this.mode = 'menu';
+  }
+
+  /** Weiterspielen: Einblenden, dann (falls noch nicht gesehen) das Intro. */
+  startFromTitle() {
+    this.title.close();
+    this.mode = 'play';
+    this.intro.t = 0;
+    this.pendingIntro = Boolean(this.titleIntro);
+    this.appliedLook = null; // falls auf dem Titelbild herumprobiert wurde
+    this.applyLook();
+  }
+
+  /** Neues Spiel mit Name und Aussehen. */
+  startNewFromTitle(name, look) {
+    this.title.close();
+    this.newGame();
+    Object.assign(this.state.player, { name, look });
+    this.appliedLook = null;
+    this.applyLook();
+    this.quietSave();
   }
 
   toggleFullscreen() {
@@ -820,6 +916,10 @@ export class Game {
         this.menu.update(input, dt);
         this.player.idle(dt);
         break;
+      case 'title':
+        this.title.update(input, dt);
+        this.player.idle(dt);
+        break;
       case 'craft':
         this.crafting.update(input, dt);
         this.player.idle(dt);
@@ -838,6 +938,7 @@ export class Game {
           this.perkChoice.close();
           this.mode = 'play';
           this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
+          this.sound.play('glocke');
           this.quietSave();
         }
         this.player.idle(dt);
@@ -851,12 +952,15 @@ export class Game {
         break;
     }
 
-    const hours = hoursOf(this.state.time.minute);
+    const titled = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+    const hours = titled ? TITLE_HOURS : hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
+    this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z));
-    this.rig.update(dt, this.player.position, this.player.velocity);
+    if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
+    else this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
     this.updateGoals();
     this.hud.update(dt);
@@ -1014,6 +1118,44 @@ export class Game {
     sharedUniforms.uCutStrength.value = 1;
   }
 
+  /** Umgebung, Musik und Schritte (jedes Bild). */
+  updateSound(dt) {
+    const p = this.player.position;
+    const fire = LAYOUT.campfire;
+    let near = 0;
+    for (const z of this.horde.list) if (z.state !== 'dying' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 64) near++;
+    const info = this._soundInfo || (this._soundInfo = {});
+    info.x = p.x;
+    info.z = p.z;
+    info.hours = hoursOf(this.state.time.minute);
+    info.inside = this.world.playerInside;
+    info.fireDist = Math.hypot(fire.x - p.x, fire.z - p.z);
+    info.fight = this.nights.active && (this.horde.alive > 0 || this.nights.queue.length > 0);
+    info.zombiesNear = near;
+    info.quiet = this.mode === 'sleep';
+    this.sound.update(dt, info);
+    // Schritte: bei jedem halben Laufzyklus, drinnen auf Holz
+    const stepIndex = Math.floor(this.player.phase / Math.PI);
+    if (stepIndex !== this.lastStep) {
+      this.lastStep = stepIndex;
+      if (this.mode === 'play' && this.player.moveAmount > 0.25) this.sound.play(this.world.playerInside ? 'schrittHolz' : 'schritt', { volume: 0.55 + 0.3 * Math.min(1, this.player.moveAmount) });
+    }
+  }
+
+  /** Einstellungen übernehmen und merken (Menü). */
+  applySettings(changes) {
+    Object.assign(this.settings, changes);
+    saveSettings(this.settings);
+    this.sound.setVolumes(volumesOf(this.settings));
+    this.dialog.speed = TEXT_SPEEDS[this.settings.text];
+    const shift = PIXEL_SIZES[this.settings.pixel];
+    if (this.pixel.scaleShift !== shift) {
+      this.pixel.scaleShift = shift;
+      this.pixel.width = 0; // neues Maß erzwingen
+      this.resize();
+    }
+  }
+
   resize() {
     const dpr = window.devicePixelRatio || 1;
     if (this.pixel.resize(window.innerWidth, window.innerHeight, dpr)) {
@@ -1086,6 +1228,13 @@ export class Game {
       this.hud.prompt = null;
     }
     this.hud.debugLines = this.showDebug ? this.debugLines() : null;
+    // Titelbild: nur Schriftzug und Knöpfe über der Lichtung (Menü darüber, wenn offen)
+    if (this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle)) {
+      if (this.mode === 'title') this.title.draw(ui);
+      this.menu.draw(ui);
+      if (this.intro.t < this.intro.duration) ui.ditherFill(Math.min(1, (1 - this.intro.t / this.intro.duration) * 1.6));
+      return;
+    }
     const playing = this.mode === 'play';
     if (playing) this.builder.drawOverlay(ui);
     this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
@@ -1236,6 +1385,7 @@ export class Game {
           }
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
+      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`) } : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
       nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}`, richtung: this.nights.directionText() } : null,
@@ -1283,6 +1433,7 @@ export class Game {
         return game.mode;
       },
       state: () => JSON.parse(JSON.stringify(game.state)),
+      sound: () => ({ ready: game.sound.ready, state: game.sound.ctx?.state || null, voices: game.sound.voices, music: game.sound.music.mode }),
       save: () => game.quietSave(),
       setTime(hours, minutes = 0) {
         game.state.time.minute = (((hours - 6) * 60 + minutes) % DAY_MINUTES + DAY_MINUTES) % DAY_MINUTES;

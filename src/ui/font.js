@@ -142,7 +142,16 @@ function glyph(ch) {
   return glyphs.get(ch) || FALLBACK;
 }
 
+// Name der Hauptfigur (Meilenstein 7): Die Texte sagen »Mika«, gezeigt wird der
+// gewählte Name – beim Messen, Umbrechen und Zeichnen gleich.
+let playerName = null;
+export function setPlayerName(name) {
+  playerName = name && name !== 'Mika' ? name : null;
+}
+const named = (text) => (playerName && text.includes('Mika') ? text.replaceAll('Mika', playerName) : text);
+
 export function measure(text) {
+  text = named(text);
   let width = 0;
   let first = true;
   for (const ch of text) {
@@ -155,6 +164,7 @@ export function measure(text) {
 
 /** Zeilenumbruch nach Wörtern. Harte Umbrüche mit \n. */
 export function wrap(text, maxWidth) {
+  text = named(text);
   const lines = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
@@ -200,6 +210,7 @@ function atlasFor(color) {
  * @param {CanvasRenderingContext2D} ctx
  */
 export function drawText(ctx, text, x, y, color, { shadow = null, outline = null } = {}) {
+  text = named(text);
   x = Math.round(x);
   y = Math.round(y);
   if (outline) {

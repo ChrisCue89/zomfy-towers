@@ -84,7 +84,7 @@ export class Combat {
     const duration = 1 / (w.rate * perkValue(g.state, 'flink'));
     const hitAt = duration * 0.38;
     const lunge = len > 0.01 ? this.lunge(dx / len, dz / len, w, hitAt) : null;
-    return p.startAction('swing', {
+    const started = p.startAction('swing', {
       duration,
       hitAt,
       tool: id === 'faeuste' ? null : id,
@@ -93,6 +93,8 @@ export class Combat {
       speed: lunge?.speed,
       onHit: () => this.hit(id, w),
     });
+    if (started) g.sound.play('schwung');
+    return started;
   }
 
   /**
@@ -158,6 +160,7 @@ export class Combat {
     })) factor *= perkValue(st, 'turmfreund');
     const targets = found.slice(0, w.targets);
     for (const { z } of targets) {
+      g.sound.play('treffer', { x: z.x, z: z.z });
       const killed = g.horde.damage(z, w.damage * factor, { push: w.push * (comboHit ? 1.6 : 1), fromX: p.x, fromZ: p.z, source: 'spieler' });
       if (w.stun && !killed) g.horde.stun(z, w.stun);
       g.effects.splat(z.x, 0.8, z.z, 'moos', comboHit ? 12 : 6, comboHit ? 1.1 : 0.7);
@@ -187,6 +190,7 @@ export class Combat {
     }
     p.action = null; // eine Rolle bricht einen Schwung ab
     p.startAction('roll', { duration: ROLL.duration, dir: { x: dx / len, z: dz / len }, speed: ROLL.speed });
+    g.sound.play('rolle');
     this.rollCooldown = ROLL.cooldown;
     this.invulnerable = Math.max(this.invulnerable, ROLL.invulnerable);
     if (perkValue(g.state, 'konter') > 1) this.counterReady = true;
@@ -201,6 +205,7 @@ export class Combat {
     const st = g.state;
     amount *= perkValue(st, 'dickesFell');
     st.player.hp = Math.max(0, st.player.hp - amount);
+    g.sound.play('autsch');
     this.sinceHurt = 0;
     this.invulnerable = 0.35;
     this.hurtFlash = 0.25;
@@ -238,7 +243,10 @@ export class Combat {
       pl.level += 1;
       up = true;
     }
-    if (up) g.hud.toast(T.perks.stufeAuf(pl.level), 'ziel', 2.4);
+    if (up) {
+      g.hud.toast(T.perks.stufeAuf(pl.level), 'ziel', 2.4);
+      g.sound.play('stufe');
+    }
     this.offerPerk();
   }
 

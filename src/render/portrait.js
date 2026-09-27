@@ -112,16 +112,21 @@ function dogPortrait() {
   return renderVoxelPortrait(m, { top: 6, w: 5, t: 2, f: 4 });
 }
 
-/** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */
-export function renderPortraits() {
-  const bust = buildBustModel(MIKA);
+/** Porträt der Hauptfigur (mit dem gewählten Aussehen, Meilenstein 7). */
+export function mikaPortrait(spec = MIKA) {
+  const bust = buildBustModel(spec);
   // Nur Kopf und Schultern
   const head = new VoxelModel();
   bust.forEach((x, y, z, c) => {
     if (y >= 5) head.set(x, y, z, c);
   });
+  return renderVoxelPortrait(head, { top: 2 });
+}
+
+/** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */
+export function renderPortraits() {
   return {
-    mika: renderVoxelPortrait(head, { top: 2 }),
+    mika: mikaPortrait(),
     radio: renderVoxelPortrait(buildRadioModel(), { top: 8 }),
     hilde: survivorPortrait('hilde'),
     juna: survivorPortrait('juna'),

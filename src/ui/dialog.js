@@ -11,6 +11,8 @@ import { T } from '../data/texts.js';
 import { drawIcon } from './icons.js';
 
 const CHARS_PER_SECOND = 72;
+/** Tonhöhe des Tippens je Sprecher (Hz). */
+const VOICE_PITCH = { mika: 540, radio: 300, knopf: 760, hilde: 460, juna: 660, bert: 250, yusuf: 360, schild: 400 };
 const ANSWER_GUARD = 0.3;
 
 export class DialogBox {
@@ -65,6 +67,7 @@ export class DialogBox {
       this.shown = this.line.t.length;
       return;
     }
+    this.game.sound.play('klick');
     const answers = this.line.antworten;
     if (answers && answers.length) {
       this.finish(answers[this.choice].aktion || null);
@@ -94,7 +97,14 @@ export class DialogBox {
   update(dt, input) {
     if (!this.active) return;
     this.time += dt;
-    if (!this.complete) this.shown = Math.min(this.line.t.length, this.shown + dt * CHARS_PER_SECOND);
+    const speed = this.speed ?? CHARS_PER_SECOND; // Einstellung »Textgeschwindigkeit« (0 = sofort)
+    if (!this.complete) {
+      const before = Math.floor(this.shown);
+      this.shown = speed > 0 ? Math.min(this.line.t.length, this.shown + dt * speed) : this.line.t.length;
+      // Leises Tippen beim Erscheinen der Buchstaben, jede Stimme etwas anders
+      const ch = this.line.t[Math.floor(this.shown) - 1];
+      if (speed > 0 && Math.floor(this.shown) > before && ch && ch !== ' ') this.game.sound.play('tipp', { pitch: VOICE_PITCH[this.line.s] || 480 });
+    }
     const nav = input.pressed('up') || input.pressed('left') ? -1 : input.pressed('down') || input.pressed('right') ? 1 : 0;
     // Pfeil/WASD während des Tippens: Zeile sofort ganz zeigen
     if (!this.complete && nav && this.hasAnswers) this.shown = this.line.t.length;

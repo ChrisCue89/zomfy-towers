@@ -175,7 +175,38 @@ async function runTour(browser, url) {
     // --- 0. Erster Eindruck: neues Spiel mit Einblenden und Intro -----------------
     const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart');
     await intro.page.evaluate(() => window.zomfy.setDebug(false));
+    // Titelbild (Meilenstein 7): ohne Spielstand ist »Neues Spiel« vorgewählt
+    await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 60000 });
+    await settle(intro.page, 60);
+    await intro.page.screenshot({ path: join(SHOTS, 'titel.png') });
+    note('  Screenshot: screenshots/titel.png');
+    const titel = await intro.page.evaluate(() => window.zomfyView().titel);
+    await intro.page.keyboard.press('Enter');
+    await settle(intro.page, 20);
+    // Figur: Mütze mit D weiterschalten, Namen tippen (E am Namen, Enter beendet), dann »Los geht’s!«
+    const figurSeite = await intro.page.evaluate(() => window.zomfyView().titel?.seite);
+    // Jeder Druck in einem eigenen Bild (gleiche Tasten im selben Bild zählen einmal)
+    const tap = async (key) => {
+      await intro.page.keyboard.press(key);
+      await settle(intro.page, 2);
+    };
+    for (let k = 0; k < 4; k++) await tap('KeyW');
+    await tap('KeyD');
+    await tap('KeyW');
+    await tap('KeyE');
+    for (let k = 0; k < 4; k++) await tap('Backspace');
+    await intro.page.keyboard.type('Kira');
+    await tap('Enter');
+    await settle(intro.page, 30);
+    await intro.page.screenshot({ path: join(SHOTS, 'figur.png') });
+    note('  Screenshot: screenshots/figur.png');
+    const knoepfe = await intro.page.evaluate(() => window.zomfyView().titel?.knoepfe || []);
+    for (let k = 0; k < 5; k++) await tap('KeyS');
+    await tap('Enter');
     await intro.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 60000 });
+    const neu = await intro.page.evaluate(() => window.zomfy.state().player);
+    if (titel?.knoepfe?.[0]?.includes('Neues Spiel') && figurSeite === 'figur' && knoepfe[0]?.includes('Kira') && neu.name === 'Kira' && neu.look.hat === 'rot') note('✓ Titelbild: Neues Spiel, Name »Kira« getippt, Mütze rot – dann Intro');
+    else fail(`Titelbild: ${JSON.stringify({ titel, figurSeite, knoepfe, name: neu.name, look: neu.look })}`);
     await settle(intro.page, 70);
     await intro.page.screenshot({ path: join(SHOTS, 'start.png') });
     note('  Screenshot: screenshots/start.png');
@@ -348,7 +379,7 @@ async function runSaveChecks(browser, url) {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 5) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 6) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -648,8 +679,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 5 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v5 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 6 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v6 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -676,8 +707,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
-  if (v3.version === 5 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v5 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
+  if (v3.version === 6 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v6 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -1148,7 +1179,7 @@ async function runSurvivorChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await z(() => window.zomfy.state());
-  if (geladen.version === 5 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v5: Überlebende, Möbel und Funkturm bleiben nach dem Neuladen');
+  if (geladen.version === 6 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v5: Überlebende, Möbel und Funkturm bleiben nach dem Neuladen');
   else fail(`Speichern v5: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
   checkMessages(session);
   await session.context.close();
@@ -1167,8 +1198,8 @@ async function runSurvivorChecks(browser, url) {
     },
   });
   const m = await v4.page.evaluate(() => ({ state: window.zomfy.state(), tabs: window.zomfyView().bauleiste }));
-  if (m.state.version === 5 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1) {
-    note('✓ Migration: Spielstand v4 wird zu v5 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
+  if (m.state.version === 6 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1) {
+    note('✓ Migration: Spielstand v4 wird zu v6 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
   } else fail(`Migration v4: ${JSON.stringify(m.state)}`);
   checkMessages(v4);
   await v4.context.close();
@@ -1293,7 +1324,7 @@ async function runCombatChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await state();
-  if (geladen.version === 5 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+  if (geladen.version === 6 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
     note(`✓ Speichern v5: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);

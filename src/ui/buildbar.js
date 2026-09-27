@@ -106,6 +106,7 @@ export class BuildBar {
         if (this.time - (this.lastFlash.get(option.id) ?? -FLASH_AGAIN) >= FLASH_AGAIN) {
           this.flash.set(option.id, FLASH_TIME);
           this.lastFlash.set(option.id, this.time);
+          this.game.sound.play('glocke', { volume: 0.5 });
         }
         this.builder.onOptionAffordable(option);
       }

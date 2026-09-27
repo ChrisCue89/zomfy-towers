@@ -170,7 +170,10 @@ export class Survivors {
       const n = this.npcs.list.get(id);
       if (!n || !n.model.root.visible || Math.hypot(n.x - p.x, n.z - p.z) > 6) continue;
       this.greeted.add(id);
-      if (n.dog) n.bark = 0.8;
+      if (n.dog) {
+        n.bark = 0.8;
+        g.sound.play('bellen', { x: n.x, z: n.z, volume: 0.7 });
+      }
       else n.wave = 1.6;
     }
     this.barkBeforeWave();
@@ -203,7 +206,10 @@ export class Survivors {
     if (ahead <= 0 || ahead > BARK_AHEAD || this.barked === key) return;
     this.barked = key;
     const dog = this.npcs.list.get('knopf');
-    if (dog) dog.bark = 1.2;
+    if (dog) {
+      dog.bark = 1.2;
+      g.sound.play('bellen', { x: dog.x, z: dog.z });
+    }
     const woher = wave.entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
     g.hud.toast(T.ueberlebende.bellt(woher), 'pfote', 3.5);
   }
