@@ -1,0 +1,33 @@
+# Mira – m7-r1
+
+## Was Spaß gemacht hat
+
+(wird während des Spielens ergänzt)
+
+## Wo ich hängen blieb oder mich gelangweilt habe
+
+(wird während des Spielens ergänzt)
+
+## Was unklar war
+
+(wird während des Spielens ergänzt)
+
+## Fehler
+
+(wird während des Spielens ergänzt)
+
+## Checkliste
+- Wie ist der Einstieg vom Titelbild bis zur ersten Nacht? – …
+- Trägt das Spiel über mehrere Tage? – …
+- Sind die Überlebenden sympathisch und nützlich? – …
+- Würdest du weiterspielen? – …
+- Tag ruhig genug zum Bauen? – …
+- Nächte mit Action? – …
+- Aufrüsten lohnend? – …
+- Schwierigkeit gleichmäßig und fair? – …
+- Look passt zu DESIGN.md? – …
+- Erkennt man, was was ist (Figur, Quellen, Bauten, Schlurfer, Türme, Loot)? – …
+
+## Gesamturteil (1–10) und wichtigster Wunsch
+
+(am Ende)
