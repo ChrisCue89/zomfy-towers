@@ -39,7 +39,49 @@ function coreModel() {
   return m;
 }
 
+// --- Feiner Detailgrad (1/16 m, Meilenstein 5) -------------------------------------
+
+const FINE = 1 / 16;
+
+/** Schrottbrocken: verbogenes Blech mit Schrauben und Rost. */
+function scrapFine() {
+  const m = new VoxelModel();
+  m.box(-3, 0, -3, 2, 0, 2, (x, y, z) => ((x + z) % 3 === 0 ? P.s6 : (x * z) % 4 === 1 ? P.s4 : P.s5));
+  m.box(-2, 1, -2, 1, 1, 0, (x, z) => (x === -2 ? P.s7 : P.s6));
+  m.set(-1, 2, -1, P.s8).set(0, 2, -1, P.s7); // aufgebogene Kante
+  m.set(1, 1, 1, P.r3).set(-3, 1, 2, P.r4).set(2, 1, -3, P.r3); // Rost
+  m.set(-2, 1, 1, P.s9).set(1, 2, -2, P.s9); // blanke Schrauben
+  return m;
+}
+
+/** Zahnrad: Kranz mit acht Zähnen, Nabe mit Loch – aufrecht, goldgelb. */
+function gearFine() {
+  const m = new VoxelModel();
+  for (let x = -5; x <= 5; x++) {
+    for (let y = -5; y <= 5; y++) {
+      const r = Math.hypot(x, y);
+      const a = Math.atan2(y, x);
+      const tooth = Math.cos(a * 8) > 0.35;
+      if ((r >= 2.4 && r <= 3.6) || (tooth && r > 3.6 && r <= 5.1)) m.set(x, y + 5, 0, r > 3.6 ? P.f5 : P.f6);
+      else if (r < 1.6 && r >= 0.9) m.set(x, y + 5, 0, P.f4);
+    }
+  }
+  m.set(-1, 6, 0, P.f7).set(1, 8, 0, P.f7); // Glanzlichter
+  return m;
+}
+
+/** Moderkern: leuchtender, facettierter Klumpen. */
+function coreFine() {
+  const m = new VoxelModel();
+  m.ellipsoid(0, 3, 0, 3.2, 3.2, 3.2, (x, y, z) => {
+    if (x === 0 && z === 0) return 0xf2e4ff;
+    return (x + y + z) % 3 === 0 ? 0xd8b8ff : (x + y) % 2 ? 0xa88fd0 : 0x7b5aa6;
+  });
+  return m;
+}
+
 const MODELS = { schrott: scrapModel, zahnraeder: gearModel, moderkerne: coreModel };
+const FINE_MODELS = { schrott: scrapFine, zahnraeder: gearFine, moderkerne: coreFine };
 
 /** Funkeln über liegender Beute: ein kleines helles Kreuz (zum Finden, auch nachts). */
 function glintModel() {
@@ -58,8 +100,8 @@ export class Loot {
     this.glow = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {};
     this.dummy = new THREE.Object3D();
-    for (const [res, build] of Object.entries(MODELS)) {
-      const geo = build().toGeometry({ jitter: 0.02, seed: 3 });
+    for (const [res, build] of Object.entries(FINE_MODELS)) {
+      const geo = build().toGeometry({ jitter: 0.02, seed: 3, size: FINE });
       const mesh = new THREE.InstancedMesh(geo, res === 'moderkerne' ? this.glow : this.material, MAX);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
