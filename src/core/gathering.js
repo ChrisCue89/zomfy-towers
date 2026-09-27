@@ -3,7 +3,7 @@
 // weitergesammelt, bis die Quelle erschöpft ist.
 
 import { T } from '../data/texts.js';
-import { SEARCH_LOOT } from '../world/resources.js';
+import { SEARCH_LOOT, SEARCH_REGROW_DAYS } from '../world/resources.js';
 import { gain } from './inventory.js';
 
 const SWING = { duration: 0.55, hitAt: 0.3 };
@@ -89,12 +89,23 @@ export class Gathering {
     this.lockUntil = g.clock + 0.4;
   }
 
-  /** Durchsuchen: einmal pro Tag und Stelle. */
+  /**
+   * Ist diese Stelle gerade leer? Das Autowrack gibt nur einmal etwas her,
+   * Schrotthaufen füllen sich alle zwei Tage wieder (Meilenstein 8).
+   */
+  searchEmpty(id) {
+    const st = this.game.state;
+    if (id === 'auto') return Boolean(st.flags.autoLeer);
+    const last = st.world.searched[id];
+    return last !== undefined && st.time.day - last < SEARCH_REGROW_DAYS;
+  }
+
+  /** Durchsuchen: der Schrotthaufen alle zwei Tage, das Autowrack nur einmal. */
   search(id, lootKey, pos) {
     const g = this.game;
     const st = g.state;
-    if (st.world.searched[id] === st.time.day) {
-      g.hud.toast(T.meldungen.schonDurchsucht, null, 2.2);
+    if (this.searchEmpty(id)) {
+      g.hud.toast(id === 'auto' ? T.meldungen.autoLeer : T.meldungen.schonDurchsucht, null, 2.4);
       this.repeat = null;
       return true;
     }
@@ -110,6 +121,7 @@ export class Gathering {
       onCancel: () => g.hud.toast(T.meldungen.abgebrochen, null, 2.2),
       onDone: () => {
         st.world.searched[id] = st.time.day;
+        if (id === 'auto') st.flags.autoLeer = true;
         const loot = this.roll(SEARCH_LOOT[lootKey]);
         g.effects.chips(pos.x, 0.4, pos.z, 'schrott', 8);
         if (Object.keys(loot).length) this.give(loot, pos.x, 1.0, pos.z);

@@ -19,7 +19,7 @@ export class BuildGrid {
     const n = this.width * this.height;
     this.inside = new Uint8Array(n); // 1 = auf der Lichtung
     this.blocked = new Uint8Array(n); // 1 = statisch belegt
-    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle: nicht bebaubar, aber begehbar
+    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle, 2 = Balduins Stand (morgens): nicht bebaubar, aber begehbar
     this.house = new Uint8Array(n); // Ausbaustufe, ab der das Zuhause hier steht (0 = nie)
     this.houseLevel = 1; // jetzige Ausbaustufe (world.setHouseLevel)
     this.occupant = new Array(n).fill(null); // Gebäude-ID
@@ -78,7 +78,7 @@ export class BuildGrid {
   /**
    * Warum ist diese Zelle nicht bebaubar? null = frei. (m7-r1: »Kein Platz« ohne
    * sichtbaren Grund – meist ein Grasbüschel oder der künftige Anbau.)
-   * @returns {null|'wald'|'bau'|'zuhause'|'haus'|'hindernis'|'rohstoff'}
+   * @returns {null|'wald'|'bau'|'zuhause'|'haus'|'hindernis'|'rohstoff'|'stand'}
    */
   blockReason(ci, cj, strict = true) {
     const k = this.index(ci, cj);
@@ -86,7 +86,7 @@ export class BuildGrid {
     if (this.occupant[k] !== null) return 'bau';
     if (this.house[k]) return this.house[k] <= this.houseLevel ? 'zuhause' : 'haus';
     if (this.blocked[k]) return 'hindernis';
-    if (strict && this.reserved[k]) return 'rohstoff';
+    if (strict && this.reserved[k]) return this.reserved[k] === 2 ? 'stand' : 'rohstoff';
     return null;
   }
 

@@ -5,6 +5,64 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 8 – Nach dem ersten Probespielen (läuft)
+
+**Anlass:** Nach dem eigenen Probespielen kam vom Auftraggeber: Die Zeit
+vergeht zu langsam, die Schlurfer sind keine Herausforderung (schon gar
+nicht in Nacht 1), drinnen soll es ein eigenes, schöneres Bild geben (wie in
+Stardew Valley), dass das Autowrack jeden Tag Schrott hergibt, ist
+unglaubwürdig – ein Händler, der morgens Rohstoffe gegen Zombieteile
+tauscht, wäre besser –, und die Pixel lassen zu wenig erkennen. Plan in
+DESIGN.md (Meilenstein 8), Entscheidungen in OFFENE-FRAGEN 56–62.
+
+**Fertig – 8.1 Tempo und Herausforderung**
+
+- Eine Spielminute dauert 0,4 s statt 0,6 s (ein Tag rund 9 Minuten).
+- Nachtbudget 26 + 8·(n−1) + (n−1)² (Nacht 1: 26 statt 18 Punkte), ein
+  Viertel Flitzer schon in Nacht 1. Schlurfer 0,8 m/s, Biss 7; jede Art
+  spürt Mika aus eigener Entfernung (Flitzer 6,5 m, Schlurfer 4,5 m,
+  Schwärmer 5 m, Brummer 3,5 m statt 3,2 m für alle). Zuhause-Schaden 80 %.
+- Nachgemessen in festen Schritten, Mika untätig: zwei Bolzenwerfer
+  verlieren Nacht 1–3 (nah am Haus wie weit draußen); die Prüfung mit drei
+  Türmen (einer ausgebaut) hält Nacht 1 mit 30 Abschüssen und vollem
+  Zuhause. Volle Prüfung grün (85 Prüfpunkte).
+
+**Fertig – 8.2 Zombieteile und Balduin**
+
+- Schlurfer lassen **Zombieteile** fallen (eine grünliche Hand mit
+  Ärmelrest), neue Ressource mit eigenem Symbol und Klang; beim ersten Fund
+  »Zombieteile! Igitt. Vielleicht will die jemand haben …«.
+- **Balduin**, der Händler: lila Zylinder mit Feder, Monokel, weißer
+  Schnauzer, Flickenmantel mit Fläschchen am Gurt. Ab Tag 2 zieht er um
+  06:40 seinen Bollerwagen von Osten heran (Räder drehen sich, Rumpeln,
+  Glöckchen beim Anhalten), handelt bis 12:00 und zieht dann weiter (Staub
+  beim Wenden). Der Wagen: lila-gelb gestreiftes Sonnendach mit wehenden
+  Fransen, Kiste, Fass, Sack, Einmachgläser mit trüber grüner Brühe – in
+  einem schwimmt ein Auge.
+- Handeln im Fenster der Werkbank (»Balduins Bollerwagen«, Spruch des Tages
+  oben): 3 Teile → 2 Schrott immer, dazu täglich zwei Sonderangebote
+  (Holz, Stein, Fasern, Stoff, Zahnrad höchstens zweimal, alle sechs Tage ein
+  Moderkern). E tauscht einmal, gehalten weiter.
+- Erstes Treffen als Dialog mit Porträt, danach öffnet E direkt den Wagen.
+  Neues Ziel nach der ersten Nacht, Ziel-Pfeil zu ihm, Zeile im
+  Morgenbericht.
+- Sein Stand ist morgens nicht bebaubar (»Balduins Stand«); steht dort etwas,
+  hält er an einem anderen Platz. Mika stößt sich am Wagen, die Horde läuft
+  hindurch (nicht im Flussfeld).
+- **Autowrack nur einmal**, Schrotthaufen alle zwei Tage.
+- Die Kamera folgt jetzt bis an die Straße (Grenze z 9 statt 7,5).
+- **Spielstand v7** mit Migration (Wrack ausgeräumt, wenn es schon
+  durchsucht war; Zombieteile bei null).
+- Prüfskript: neuer Abschnitt `haendler` (Autowrack, Haufen, Ankunft, Stand,
+  Dialog und Handel mit echten Tasten, Vorrat, Abfahrt, Speichern v7,
+  Migration v6 → v7), Bilder `haendler` und `handel`; Loot-Prüfung zählt
+  Zombieteile.
+
+**Offen:** 8.3 Innenraum als eigenes Bild, 8.4 Detailgrad, danach eine
+Testrunde.
+
+---
+
 ## Abschlussrunde m7-r1 über das ganze Spiel und Nachbesserung
 
 **Testspieler:** Kira 8/10, Jonas 8/10, Mira 7/10, Theo 7/10 – Berichte und

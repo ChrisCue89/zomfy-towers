@@ -47,6 +47,7 @@ export class World {
       beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Funkturm (Meilenstein 6)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
+    this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed);
@@ -155,7 +156,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (neu aufbauen). */

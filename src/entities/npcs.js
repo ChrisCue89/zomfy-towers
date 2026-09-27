@@ -84,6 +84,9 @@ export class Npcs {
       bark: 0, // Bellen (Sekunden)
       sit: 0,
       sitTarget: 0,
+      drive: null, // m/s: Position setzt jemand anderes (Balduin mit dem Bollerwagen)
+      restFacing: null, // Blickrichtung im Stehen, wenn Mika weiter weg ist
+      pull: null, // 'L'/'R': dieser Arm hält die Deichsel
     };
     model.root.visible = false;
     this.group.add(model.root);
@@ -122,7 +125,8 @@ export class Npcs {
       if (!n.model.root.visible) continue;
       // Laufen: gerade Linie mit Kollision, am Ziel stehen bleiben
       let speed = 0;
-      if (n.target) {
+      if (n.drive !== null) speed = n.drive;
+      else if (n.target) {
         const dx = n.target.x - n.x;
         const dz = n.target.z - n.z;
         const d = Math.hypot(dx, dz);
@@ -142,6 +146,7 @@ export class Npcs {
         const px = player.x - n.x;
         const pz = player.z - n.z;
         if (px * px + pz * pz < 9) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
+        else if (n.restFacing !== null) n.facing = dampAngle(n.facing, n.restFacing, 3, dt);
       }
       n.moving = damp(n.moving, clamp(speed / WALK_SPEED, 0, 1), 10, dt);
       n.phase += dt * speed * 4.4;
@@ -163,6 +168,8 @@ export class Npcs {
     p.legR.rotation.x = -s * 0.7 * amt;
     p.armL.rotation.x = -s * 0.55 * amt;
     p.armR.rotation.x = s * 0.55 * amt;
+    // Zieht den Bollerwagen: ein Arm greift nach hinten zur Deichsel
+    if (n.pull) (n.pull === 'R' ? p.armR : p.armL).rotation.x = 0.6;
     p.body.position.y = Math.abs(Math.cos(n.phase)) * 0.03 * amt + Math.sin(this.time * 2 + n.x) * 0.005 * idle;
     p.head.rotation.x = Math.sin(n.phase * 2) * 0.05 * amt;
     p.head.rotation.y = Math.sin(this.time * 0.4 + n.z) * 0.15 * idle;

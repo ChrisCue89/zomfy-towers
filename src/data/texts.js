@@ -28,11 +28,12 @@ export const T = {
     fasern: 'Fasern',
     schrott: 'Schrott',
     stoff: 'Stoff',
+    teile: 'Zombieteile',
     zahnraeder: 'Zahnräder',
     moderkerne: 'Moderkerne',
   },
   /** Einzahl (»1 Zahnrad«), sonst wie oben. */
-  ressourcenEins: { fasern: 'Faser', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' },
+  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' },
   /** Menge mit passendem Namen: »1 Zahnrad«, »3 Zahnräder«. */
   menge: (n, res) => `${n} ${(n === 1 && T.ressourcenEins[res]) || T.ressourcen[res] || res}`,
   gegenstaende: {
@@ -103,7 +104,7 @@ export const T = {
     hoechste: 'Höchste Stufe erreicht.',
     grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer' },
     // Warum »Kein Platz«? (m7-r1)
-    grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg' },
+    grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg', stand: 'Balduins Stand' },
     reparieren: 'Reparieren',
     nichtsKaputt: 'Alles heil.',
     erstWelle: 'Erst die Welle abwehren – dann flicken.',
@@ -223,7 +224,7 @@ export const T = {
           ? 'Türme und Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
           : d.barricades
             ? 'Die Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
-            : 'Ohne Turm kommt die Horde bis ans Haus. Schrott dafür gibt es am Waldrand.',
+            : 'Ohne Turm kommt die Horde bis ans Haus. Schrott dafür gibt es am Waldrand und bei Balduin.',
     weiter: 'E – weiter',
   },
   werkbank: {
@@ -248,6 +249,7 @@ export const T = {
     hinsetzen: 'Hinsetzen',
     ansprechen: 'Ansprechen',
     streicheln: 'Streicheln',
+    handeln: 'Handeln',
     ausruhen: 'Hinsetzen und ausruhen',
     hacken: 'Holz hacken',
     abbauen: 'Stein abbauen',
@@ -261,6 +263,8 @@ export const T = {
     ernten: 'Ernten',
     brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
     heuteLeer: 'Heute leer – morgen wieder',
+    leerBald: 'Leer – in ein, zwei Tagen wieder',
+    ausgeraeumt: 'Ausgeräumt',
     waechst: (tage) => (tage <= 1 ? 'Wächst morgen nach' : `Wächst in ${tage} Tagen nach`),
   },
   tasten: {
@@ -293,6 +297,36 @@ export const T = {
     tee: 'Dr. Yusuf hat Kräutertee gekocht – heute heilt Mika schneller.',
     funk: (woher) => `Juna hat die Horde am Funk belauscht: Heute Nacht kommen sie zuerst ${woher}.`,
     verarztet: 'Dr. Yusuf verarztet Mika – weiter geht’s!',
+  },
+  // Meilenstein 8: Balduin, der Händler
+  haendler: {
+    titel: 'Balduins Bollerwagen',
+    hinweis: 'W/S wählen · E tauschen · Esc fertig',
+    vorrat: (menge, n) => `${menge} (noch ${n})`,
+    ausverkauft: 'ausverkauft',
+    ankunft: 'Da rumpelt ein Bollerwagen die Straße entlang …',
+    bericht: 'Balduin handelt bis 12 Uhr an der Straße: Zombieteile gegen Rohstoffe.',
+    berichtErst: 'Heute Morgen rumpelt ein Bollerwagen die Straße entlang. Mal hingehen!',
+    keineTeile: '„Keine Teile dabei? Nachts liegen genug herum. Ich warte!“',
+    info: {
+      schrott: 'Schrott für Türme und Ausbau.',
+      holz: 'Holz, schon gehackt.',
+      stein: 'Handliche Steine.',
+      fasern: 'Ein Bündel Fasern.',
+      stoff: 'Stoff, kaum getragen.',
+      zahnrad: 'Zahnräder für die Turmstufen.',
+      moderkern: 'Ein Moderkern. Leuchtet komisch.',
+    },
+    sprueche: [
+      '„Frisch reingekommen, heute. Wie immer!“',
+      '„Die Ohren sind diese Woche besonders gefragt. Frag nicht, bei wem.“',
+      '„Ich baue da was. Etwas Großes. Du wirst schon sehen. Oder auch nicht.“',
+      '„Riecht streng? Das ist der Duft des Fortschritts!“',
+      '„Einmal hab ich einen ganzen zusammengesetzt. Er war sehr höflich.“',
+      '„Finger gegen Zahnräder – ehrlicher geht Handel nicht.“',
+      '„Psst. Wenn jemand fragt: Ich war nie hier.“',
+      '„Meine Sammlung ist fast komplett. Fast!“',
+    ],
   },
   auftraege: {
     hilde: {
@@ -347,8 +381,10 @@ export const T = {
     laterneAus: 'Laterne weggesteckt',
     neuerTag: (tag) => `Tag ${tag}`,
     brauchtWerkzeug: (werkzeug) => `Dafür brauche ich eine ${werkzeug}.`,
-    schonDurchsucht: 'Heute schon durchsucht. Morgen wieder.',
+    schonDurchsucht: 'Schon durchsucht. In ein, zwei Tagen liegt hier vielleicht wieder was.',
+    autoLeer: 'Das Wrack ist ausgeräumt. Mehr gibt es hier nicht.',
     abgebrochen: 'Abgebrochen – dabei stehen bleiben.',
+    ersteTeile: 'Zombieteile! Igitt. Vielleicht will die jemand haben …',
     autoErstmals: 'Im Kofferraum liegt noch brauchbarer Kram. Mal nachsehen …',
     // Gedanken am Abend – als Sprechblase, damit sie nie mitten in der Welle anhalten
     abendLaterne: 'Es wird dunkel. Mit der Laterne sehe ich mehr. (Taste F)',
@@ -370,6 +406,7 @@ export const T = {
       haus: 'Hier ist kein Platz – das Zuhause wächst später hierher.',
       hindernis: 'Hier steht etwas im Weg.',
       rohstoff: 'Hier ist kein Platz – da wächst oder liegt etwas zum Sammeln.',
+      stand: 'Hier steht Balduin mit seinem Bollerwagen. Nachmittags ist der Platz frei.',
     },
     figurImWeg: 'Da stehe ich selbst im Weg.',
     zuTeuer: 'Dafür reicht der Vorrat noch nicht.',
@@ -400,6 +437,7 @@ export const T = {
     axt: 'Nimm die Axt vom Hackklotz.',
     turm: 'Durchsuche Schrott, baue einen Bolzenwerfer.',
     nacht: 'Überstehe eine Nacht, ohne dass das Zuhause fällt.',
+    haendler: 'Tausche Zombieteile bei Balduin an der Straße (morgens).',
     werkbank: 'Sammle Holz und Stein, baue eine Werkbank.',
     spitzhacke: 'Stelle an der Werkbank eine Spitzhacke her.',
     waffe: 'Baue an der Werkbank eine Waffe für den Nahkampf.',

@@ -16,11 +16,12 @@ export const SPRECHER = {
   juna: { name: 'Juna', portrait: 'juna' },
   bert: { name: 'Bert', portrait: 'bert' },
   yusuf: { name: 'Dr. Yusuf', portrait: 'yusuf' },
+  balduin: { name: 'Balduin', portrait: 'balduin' },
 };
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
 
-const RES_NAMES = { holz: 'Holz', stein: 'Stein', fasern: 'Fasern', stoff: 'Stoff', schrott: 'Schrott', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' };
+const RES_NAMES = { holz: 'Holz', stein: 'Stein', fasern: 'Fasern', stoff: 'Stoff', schrott: 'Schrott', teile: 'Zombieteile', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' };
 const amount = (res) => Object.entries(res).map(([r, n]) => `${n} ${RES_NAMES[r] || r}`).join(', ');
 
 /** Steht ein Zelt leer? (Zelte in den Bauten, Bewohner in state.survivors) */
@@ -88,6 +89,21 @@ function withRest(lines, state) {
 }
 
 export const DIALOGE = {
+  // --- Balduin, der Händler (Meilenstein 8) ---
+  balduinTreffen: [
+    { s: 'balduin', t: 'Morgen, Morgen! Balduin mein Name. Handel, Wandel, Wagenladung!' },
+    { s: 'balduin', t: 'Ich kaufe Zombieteile. Hände, Füße, Ohren – alles, was nachts so abfällt. Ich zahle in Schrott, Holz, Stoff, manchmal Zahnrädern.' },
+    { s: 'mika', t: 'Zombieteile? Wofür um alles in der Welt …' },
+    { s: 'balduin', t: 'Frag nicht. Wissenschaft! Oder Kunst. Oder Suppe – nein, keine Suppe.' },
+    {
+      s: 'balduin',
+      t: 'Jeden Morgen komm ich vorbei und bleibe bis Mittag. Nachts sammelst du, morgens handeln wir. Abgemacht?',
+      antworten: [
+        { t: 'Zeig mal her!', aktion: 'handeln' },
+        { t: 'Später.', standard: true },
+      ],
+    },
+  ],
   // --- Überlebende ---
   knopfTreffen: [
     { s: 'mika', t: 'Na, wer bist du denn? Ein Hund – ganz allein hier draußen?' },
@@ -314,7 +330,7 @@ export const DIALOGE = {
   ersterTurm: [
     { s: 'mika', t: 'Ein Bolzenwerfer. Der schießt von selbst auf alles, was aus dem Wald geschlurft kommt.' },
     { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft, die Kreuze, wo sie am Haus ankommt – das ist nicht nur vorn an der Tür. Dort gehören Türme hin.' },
-    { s: 'mika', t: 'Heute Nacht kommt die Horde. Was sie liegen lässt, sammle ich ein – dafür gibt es neue Türme.' },
+    { s: 'mika', t: 'Heute Nacht kommt die Horde. Was sie liegen lässt, sammle ich ein – vielleicht kann ich damit ja etwas anfangen.' },
   ],
 
   // Der zweite Satz passt zum Vorrat: Reicht der Schrott schon für einen Turm? (m3-r2)
@@ -322,7 +338,12 @@ export const DIALOGE = {
     { s: 'mika', t: 'Es wird dunkel. Aus dem Wald kommt ein Stöhnen … Heute Nacht kommt die Horde.' },
     (state.inventory?.schrott || 0) >= TOWERS.bolzen.base[0].cost.schrott
       ? { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott habe ich genug – schnell einen bauen, unten in der Bauleiste!' }
-      : { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.' },
+      : {
+          s: 'mika',
+          t: state.flags?.autoLeer
+            ? `Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand${state.flags?.balduinGetroffen ? ' – und morgens bei Balduin.' : '.'}`
+            : 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.',
+        },
   ],
 
   // Tagsüber bietet das Bett wenigstens das Ausruhen an (m3-r1: Leerlauf am Tag)

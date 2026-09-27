@@ -214,6 +214,7 @@ export class Hud {
     const st = this.game.state;
     return RESOURCES.filter((id) => {
       if (id === 'zahnraeder') return st.inventory.zahnraeder > 0 || st.flags.fundZahnrad;
+      if (id === 'teile') return st.inventory.teile > 0 || st.flags.fundTeile;
       if (RARE_RESOURCES.includes(id)) return st.inventory[id] > 0 || st.flags.fundModerkern;
       return true;
     });

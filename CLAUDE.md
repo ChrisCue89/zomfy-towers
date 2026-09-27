@@ -90,7 +90,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
                       Erfahrung, Perk-Vergabe), survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
-                      Funkturm), furnishing (Möbel, Gemütlichkeit),
+                      Funkturm), furnishing (Möbel, Gemütlichkeit), trader
+                      (Balduin: Fahrplan aus der Uhrzeit, Bollerwagen,
+                      Stand, Handel über das Werkbank-Fenster),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
                       eigener Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
@@ -113,10 +115,12 @@ src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
-                      Laufen, Winken, Bellen), survivorModels, dogModel
+                      Laufen, Winken, Bellen), survivorModels (auch
+                      Balduin), dogModel, traderModels (Bollerwagen)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
-                      buildbar (Bauleiste), crafting (Werkbank), report
+                      buildbar (Bauleiste), crafting (Werkbank und
+                      Balduins Bollerwagen), report
                       (Morgenbericht), perkChoice (Perk-Wahl), title
                       (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -125,6 +129,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
+                      trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel, Gemütlichkeit), looks (Aussehen der
                       Hauptfigur, erlaubte Namen)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
@@ -216,7 +221,11 @@ Grundprinzipien:
    Titelbild mit getipptem Namen und anderer Mütze, kein Spielstand vor
    »Los geht’s!«, Speichern v6 mit Migration, Warnung vor einem Weg ohne
    Turm, ein jagender Schlurfer kommt um die Werkbank herum (Bilder: titel,
-   figur). **Jede Konsolenmeldung
+   figur); ab Meilenstein 8: Autowrack nur einmal, Schrotthaufen alle zwei
+   Tage, Beute sind Zombieteile, Balduin kommt an Tag 2 um 06:40 und steht
+   um 07:00, Stand morgens nicht bebaubar, Dialog und Handel mit echten
+   Tasten (E einmal, E gehalten), Vorrat je Tag, Abfahrt um 12:00,
+   Speichern v7 mit Migration v6 → v7 (Bilder: haendler, handel). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -262,7 +271,9 @@ eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`), die Wege
 als Textkarte zeigen (`debugPath`), Erfahrung geben (`giveXp`), Waffen
 geben (`giveWeapon`) und Perks wählen (`choosePerk`); ab Meilenstein 6
 Überlebende setzen und ansprechen (`setSurvivor`, `talkTo`, `moveIn`),
-Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`).
+Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`);
+ab Meilenstein 8 Balduin abfragen (`trader`), bei ihm tauschen (`trade`)
+und prüfen, ob ein Bau passt (`placeCheck`, mit Grund).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |

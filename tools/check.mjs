@@ -4,7 +4,8 @@
 //   node tools/check.mjs --syntax   nur Syntax aller Module
 //   node tools/check.mjs --nur=nahkampf,naechte
 //                                   nur einzelne Abschnitte (rundgang, speichern,
-//                                   bauen, naechte, nahkampf, hd)
+//                                   bauen, naechte, nahkampf, ueberlebende,
+//                                   haendler, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -142,6 +143,9 @@ async function runBrowserChecks() {
 
     // --- 6. Meilenstein 6: Überlebende, Zelte, Einrichten, Funkturm ---------------------
     if (want('ueberlebende')) await runSurvivorChecks(browser, url);
+
+    // --- 6b. Meilenstein 8: Zombieteile, Balduin, Autowrack nur einmal ---------------------
+    if (want('haendler')) await runTraderChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -400,7 +404,7 @@ async function runSaveChecks(browser, url) {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 6) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 7) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -700,8 +704,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 6 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v6 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 7 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v7 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -728,8 +732,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
-  if (v3.version === 6 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v6 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
+  if (v3.version === 7 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v7 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -832,13 +836,14 @@ async function runNightChecks(browser, url) {
     else fail(`Loot: keine Randmarke (${JSON.stringify(marken)})`);
 
     // Einsammeln: hinlaufen reicht, der Magnet zieht es heran
-    const vorher = (await state()).inventory.schrott;
+    // Meilenstein 8: Schlurfer lassen Zombieteile fallen (Schrott gibt es bei Balduin)
+    const vorher = (await state()).inventory.teile || 0;
     if (loot.length) await z((l) => window.zomfy.teleport(l.x + 0.8, l.z, 0), loot[0]);
     await step(2000);
-    const nachher = (await state()).inventory.schrott;
+    const nachher = (await state()).inventory.teile || 0;
     const liegt = (await z(() => window.zomfy.lootItems())).length;
-    if (nachher > vorher && liegt < loot.length) note(`✓ Loot: im Sammelradius eingesammelt (Schrott ${vorher} → ${nachher})`);
-    else fail(`Loot: nicht eingesammelt (Schrott ${vorher} → ${nachher}, liegt noch ${liegt})`);
+    if (nachher > vorher && liegt < loot.length) note(`✓ Loot: Zombieteile im Sammelradius eingesammelt (${vorher} → ${nachher})`);
+    else fail(`Loot: nicht eingesammelt (Zombieteile ${vorher} → ${nachher}, liegt noch ${liegt})`);
 
     // Ausbauen über die Auswahl: Q fragt nach, zweites Q kauft Stufe 2 – dann dasselbe für Spezialisierung A
     await z((id) => window.zomfy.selectBuilding(id), turm.id);
@@ -1209,8 +1214,8 @@ async function runSurvivorChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await z(() => window.zomfy.state());
-  if (geladen.version === 6 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v6: Überlebende, Möbel und Funkturm bleiben nach dem Neuladen');
-  else fail(`Speichern v6: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
+  if (geladen.version === 7 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v7: Überlebende, Möbel und Funkturm bleiben nach dem Neuladen');
+  else fail(`Speichern v7: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
   checkMessages(session);
   await session.context.close();
 
@@ -1228,11 +1233,215 @@ async function runSurvivorChecks(browser, url) {
     },
   });
   const m = await v4.page.evaluate(() => ({ state: window.zomfy.state(), tabs: window.zomfyView().bauleiste }));
-  if (m.state.version === 6 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
-    note('✓ Migration: Spielstand v4 wird zu v6 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
+  if (m.state.version === 7 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
+    note('✓ Migration: Spielstand v4 wird zu v7 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
   } else fail(`Migration v4: ${JSON.stringify(m.state)}`);
   checkMessages(v4);
   await v4.context.close();
+}
+
+/**
+ * Meilenstein 8: Das Autowrack gibt nur einmal etwas her, Schrotthaufen alle zwei
+ * Tage. Balduin kommt ab Tag 2 morgens die Straße entlang, handelt bis Mittag
+ * Zombieteile gegen Rohstoffe (echte Tasten im Handelsfenster), sein Stand ist
+ * morgens nicht bebaubar, Vorrat je Tag, Speichern v7 und Migration v6 → v7.
+ */
+async function runTraderChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Händler', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m8')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m8', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const view = () => z(() => window.zomfyView());
+  const state = () => z(() => window.zomfy.state());
+  const press = async (key, ms = 60) => {
+    await page.keyboard.press(key);
+    await step(ms);
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(9, 0);
+  });
+  await step(100);
+
+  // Autowrack: einmal Schrott, danach für immer ausgeräumt
+  await z(() => window.zomfy.teleport(-8.0, 8.1, 0));
+  let st = await state();
+  await z(() => window.zomfy.interact('auto'));
+  await step(2500);
+  const nachAuto = await state();
+  const ausAuto = nachAuto.inventory.schrott - st.inventory.schrott;
+  await z(() => window.zomfy.setDay(5));
+  await step(100);
+  const hinweisAuto = (await view()).hinweis;
+  await z(() => window.zomfy.interact('auto'));
+  await step(2500);
+  const nochmal = (await state()).inventory.schrott - nachAuto.inventory.schrott;
+  if (ausAuto >= 5 && nochmal === 0 && nachAuto.flags.autoLeer && /Ausgeräumt/.test(hinweisAuto || '')) note(`✓ Autowrack: einmal +${ausAuto} Schrott, Tage später „${hinweisAuto}“`);
+  else fail(`Autowrack: ${JSON.stringify({ ausAuto, nochmal, leer: nachAuto.flags.autoLeer, hinweisAuto })}`);
+
+  // Schrotthaufen: leer bis übermorgen, dann wieder voll
+  await z(() => window.zomfy.teleport(-11.3, 9.0, -Math.PI / 2));
+  st = await state();
+  await z(() => window.zomfy.interact('schrott-1'));
+  await step(2500);
+  const h1 = (await state()).inventory.schrott - st.inventory.schrott;
+  await z(() => window.zomfy.setDay(6));
+  await step(100);
+  const morgen = (await view()).hinweis;
+  await z(() => window.zomfy.setDay(7));
+  await step(100);
+  const uebermorgen = (await view()).hinweis;
+  if (h1 >= 2 && /Leer/.test(morgen || '') && uebermorgen === 'Durchsuchen') note(`✓ Schrotthaufen: +${h1} Schrott, am nächsten Tag „${morgen}“, am übernächsten wieder voll`);
+  else fail(`Schrotthaufen: ${JSON.stringify({ h1, morgen, uebermorgen })}`);
+
+  // Tag 1: kein Balduin. Tag 2: um 06:40 biegt er mit dem Bollerwagen auf die Straße
+  await z(() => {
+    window.zomfy.setDay(1);
+    window.zomfy.setTime(10, 0);
+  });
+  await step(100);
+  const tag1 = await z(() => window.zomfy.trader());
+  await z(() => {
+    window.zomfy.setDay(2);
+    window.zomfy.setTime(6, 38);
+    window.zomfy.teleport(3.0, 9.2, 0);
+  });
+  await step(100);
+  const frueh = await z(() => window.zomfy.trader());
+  await step(3000); // rund 06:46
+  const kommt = await z(() => window.zomfy.trader());
+  await step(6000); // rund 07:01
+  const steht = await z(() => window.zomfy.trader());
+  if (tag1.phase === 'weg' && frueh.phase === 'weg' && kommt.phase === 'kommt' && kommt.x > steht.x && steht.phase === 'steht' && steht.prompt) {
+    note(`✓ Balduin: nicht an Tag 1, an Tag 2 ab 06:40 unterwegs (x ${kommt.x.toFixed(1)}), um 07:00 am Stand`);
+  } else fail(`Balduin kommt: ${JSON.stringify({ tag1: tag1.phase, frueh: frueh.phase, kommt, steht })}`);
+
+  // Sein Stand ist morgens nicht bebaubar
+  const standI = Math.floor(steht.standX + 1.6);
+  const platz = await z((i) => window.zomfy.placeCheck('barrikade', i, 10), standI);
+  if (!platz.ok && platz.why === 'stand') note('✓ Balduin: Sein Stand ist morgens nicht bebaubar („Balduins Stand“)');
+  else fail(`Stand bebaubar: ${JSON.stringify(platz)}`);
+
+  // Ziel nach der ersten Nacht: bei Balduin tauschen
+  await z(() => {
+    for (const f of ['ziel_axt', 'ziel_turm', 'ziel_nacht']) window.zomfy.setFlag(f);
+  });
+  await step(100);
+  const ziel = (await view()).ziel || '';
+
+  // Hingehen, E: erstes Treffen (Dialog), »Zeig mal her!« öffnet den Bollerwagen
+  await z(() => window.zomfy.give({ teile: 20 }));
+  await z((p) => window.zomfy.teleport(p.x, p.z + 0.9, Math.PI), steht);
+  await step(200);
+  const hinweis = (await view()).hinweis;
+  await press('KeyE', 300);
+  let antworten = null;
+  for (let k = 0; k < 12 && !antworten; k++) {
+    const d = (await view()).dialog;
+    if (!d) break;
+    if (d.fertigGetippt && d.antworten.length) antworten = d.antworten;
+    else await press('KeyE', 350);
+  }
+  await press('KeyW', 100);
+  await press('KeyE', 300);
+  const fenster = await view();
+  const offen = await z(() => window.zomfy.mode);
+  if (hinweis === 'Ansprechen' && antworten?.includes('> Später.') && offen === 'craft' && fenster.handelsfenster?.titel === 'Balduins Bollerwagen' && /Tausche Zombieteile/.test(ziel)) {
+    note(`✓ Balduin: Ziel „${ziel}“, E spricht ihn an, harmlose Antwort vorgewählt, »Zeig mal her!« öffnet den Bollerwagen`);
+  } else fail(`Balduin ansprechen: ${JSON.stringify({ hinweis, antworten, offen, fenster: fenster.handelsfenster, ziel })}`);
+
+  // E tauscht einmal, gehaltenes E tauscht weiter
+  await step(700); // gleich nach dem Öffnen nimmt E noch nichts (OPEN_LOCK)
+  st = await state();
+  await press('KeyE', 100);
+  const einmal = await state();
+  await page.keyboard.down('KeyE');
+  await step(2600);
+  await page.keyboard.up('KeyE');
+  await step(100);
+  const gehalten = await state();
+  const zeilen = (await view()).werkbank || [];
+  await page.screenshot({ path: join(SHOTS, 'handel.png'), timeout: 180000 });
+  note('  Screenshot: screenshots/handel.png');
+  if (st.inventory.teile - einmal.inventory.teile === 3 && einmal.inventory.schrott - st.inventory.schrott === 2 && gehalten.inventory.teile < einmal.inventory.teile && gehalten.flags.gehandelt && zeilen[0]?.startsWith('> 2 Schrott')) {
+    note(`✓ Handel: E tauscht 3 Zombieteile gegen 2 Schrott, gehalten weiter (Teile ${st.inventory.teile} → ${gehalten.inventory.teile})`);
+  } else fail(`Handel: ${JSON.stringify({ vorher: st.inventory, einmal: einmal.inventory, gehalten: gehalten.inventory, zeilen })}`);
+  await press('Escape', 200);
+  const zu = await z(() => window.zomfy.mode);
+  const zielDanach = (await view()).ziel || '';
+  if (zu === 'play' && !/Tausche Zombieteile/.test(zielDanach)) note('✓ Handel: Esc schließt den Bollerwagen, das Ziel ist erreicht');
+  else fail(`Handel schließen: ${JSON.stringify({ zu, zielDanach })}`);
+
+  // Nächster Morgen: andere Sonderangebote, Zahnräder nur zweimal am Tag
+  await z(() => {
+    window.zomfy.setDay(3);
+    window.zomfy.setTime(9, 0);
+    window.zomfy.give({ teile: 30 });
+  });
+  await step(100);
+  const angebote = (await z(() => window.zomfy.trader())).offers;
+  const zahn = await z(() => [window.zomfy.trade('zahnrad'), window.zomfy.trade('zahnrad'), window.zomfy.trade('zahnrad')]);
+  if (angebote.join() === 'schrott,stein,zahnrad' && zahn.join() === 'true,true,false') note(`✓ Balduin: Tag 3 bietet ${angebote.join(', ')} – Zahnräder nur zweimal am Tag`);
+  else fail(`Angebote/Vorrat: ${JSON.stringify({ angebote, zahn })}`);
+  const bericht = await z(() => window.zomfy.morning());
+  if (bericht.some((l) => l.startsWith('Balduin handelt bis 12 Uhr'))) note('✓ Morgenbericht: Balduin handelt bis 12 Uhr an der Straße');
+  else fail(`Morgenbericht ohne Balduin: ${JSON.stringify(bericht)}`);
+
+  // Bild vom Stand am Vormittag
+  await z(() => window.zomfy.teleport(2.4, 9.6, 1.2));
+  await step(1500);
+  await page.screenshot({ path: join(SHOTS, 'haendler.png'), timeout: 180000 });
+  note('  Screenshot: screenshots/haendler.png');
+
+  // Um 12 Uhr packt er ein und zieht nach Osten weiter; der Stand ist wieder frei
+  await z(() => window.zomfy.setTime(11, 58));
+  await step(1500);
+  const geht = await z(() => window.zomfy.trader());
+  await step(7000);
+  const weg = await z(() => window.zomfy.trader());
+  const frei = await z((i) => window.zomfy.placeCheck('barrikade', i, 10), standI);
+  if (geht.phase === 'geht' && weg.phase === 'weg' && !weg.visible && frei.ok) note('✓ Balduin: um 12 Uhr zieht er weiter, nachmittags ist der Stand frei');
+  else fail(`Balduin geht: ${JSON.stringify({ geht: geht.phase, weg, frei })}`);
+
+  // Speichern v7: Vorrat des Tages und Flags bleiben
+  await z(() => window.zomfy.save());
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  await z(() => {
+    window.__zomfyHold = true;
+  });
+  const geladen = await state();
+  if (geladen.version === 7 && geladen.world.trader.day === 3 && geladen.world.trader.sold.zahnrad === 2 && geladen.flags.autoLeer && geladen.flags.balduinGetroffen) note('✓ Speichern v7: Balduins Vorrat, Autowrack und Bekanntschaft bleiben nach dem Neuladen');
+  else fail(`Speichern v7: ${JSON.stringify({ v: geladen.version, trader: geladen.world.trader, flags: geladen.flags })}`);
+  checkMessages(session);
+  await session.context.close();
+
+  // Migration v6 -> v7: Wer das Wrack schon durchsucht hat, findet dort nichts mehr
+  const v6 = await openGame(browser, `${url}index.html?test`, 'Alter Spielstand (v6)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-v6')) {
+        localStorage.setItem(
+          'zomfy-towers.spielstand',
+          JSON.stringify({ version: 6, time: { day: 4, minute: 120 }, player: { x: 0.5, z: 2, hp: 90, name: 'Kira' }, inventory: { holz: 5, schrott: 12 }, world: { houseLevel: 1, homeHp: 300, buildings: [], searched: { auto: 2, 'schrott-1': 3 } }, flags: { introGesehen: true } })
+        );
+        sessionStorage.setItem('zomfy-v6', '1');
+      }
+    },
+  });
+  const m = await v6.page.evaluate(() => window.zomfy.state());
+  if (m.version === 7 && m.flags.autoLeer && m.inventory.teile === 0 && m.inventory.schrott === 12 && m.world.trader.day === 0 && m.player.name === 'Kira') note('✓ Migration: Spielstand v6 wird zu v7 (Autowrack schon ausgeräumt, Zombieteile bei null)');
+  else fail(`Migration v6: ${JSON.stringify({ v: m.version, flags: m.flags, inv: m.inventory, trader: m.world.trader })}`);
+  checkMessages(v6);
+  await v6.context.close();
 }
 
 async function runCombatChecks(browser, url) {
@@ -1389,8 +1598,8 @@ async function runCombatChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await state();
-  if (geladen.version === 6 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
-    note(`✓ Speichern v6: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
+  if (geladen.version === 7 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+    note(`✓ Speichern v7: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);
   await session.context.close();

@@ -476,6 +476,8 @@ allem der Platz der Türme, und ein Trupp, der durchkam, brauchte für das
 Zuhause nur Sekunden – zu schnell, um hinzulaufen. Die Balance-Ziele aus
 DESIGN.md 6.17 gelten weiter. (Die erste Messung in m6-r1 hing teils in
 der Perk-Wahl fest; ihre Werte für Nacht 1 und 3 waren nicht belastbar.)
+*Nachtrag M8:* Nach dem ersten eigenen Probespielen war das zu nachsichtig –
+siehe Nr. 57.
 
 ### 53. Wie erfährt man, welche Wege offen sind?
 **Entscheidung:** Eine Stunde vor der Horde prüft das Spiel, ob am Weg der
@@ -503,6 +505,81 @@ Material kosten (DESIGN.md 6.12), aber nie endgültig sein.
 die Testspieler aber genau das Schließen, und Rückfragen haben immer eine
 harmlose Vorwahl – Esc entscheidet nie etwas Folgenreiches. Das Pausenmenü
 bleibt einen Druck entfernt.
+
+## Nach dem ersten Probespielen (Meilenstein 8)
+
+### 56. Wie schnell vergeht die Zeit?
+**Entscheidung:** Eine Spielminute dauert 0,4 s statt 0,6 s, ein ganzer Tag
+also rund 9 statt 14 Minuten (`secondsPerGameMinute` in `config.js`).
+*Warum:* »Die Zeit vergeht zu langsam.« Die Testspieler hatten tagsüber viel
+Leerlauf gemeldet und dafür das Ausruhen genutzt; schneller ist ehrlicher als
+ständiges Überspringen. Die Tagesziele (Sammeln, Bauen, Balduin bis Mittag)
+passen weiter in einen Tag.
+
+### 57. Wie schwer ist Nacht 1?
+**Entscheidung:** Deutlich schwerer. Nacht 1 hat 26 statt 18 Punkte (rund 24
+Schlurfer), ein Viertel davon Flitzer; die Kurve steigt steiler (Nacht 2: 35,
+Nacht 3: 46). Schlurfer laufen 0,8 statt 0,72 m/s, beißen mit 7 statt 5,
+spüren Mika aus 4,5 m (Flitzer 6,5 m) statt 3,2 m, und Schläge aufs Zuhause
+zählen 80 % statt 60 %.
+*Warum:* »Die Zombies sind keine Herausforderung, schon gar nicht in
+Nacht 1.« Nachgemessen in festen Schritten: Zwei Türme und untätig zusehen
+verliert jetzt Nacht 1 (nah am Haus wie weit draußen); drei Türme, einer
+ausgebaut, halten sie mit vollem Zuhause und 30 Abschüssen. Verlieren bleibt
+eine Materialfrage (Nr. 4, 54), nie das Ende.
+
+### 58. Woher kommt Schrott, wenn Schlurfer Zombieteile fallen lassen?
+**Entscheidung:** Vom Händler Balduin: 3 Zombieteile → 2 Schrott, jeden Tag
+und so oft man will. Dazu zwei wechselnde Sonderangebote (5 Holz, 3 Stein,
+4 Fasern oder 2 Stoff für 2–3 Teile; 1 Zahnrad für 7 Teile, höchstens
+zweimal am Tag; alle sechs Tage 1 Moderkern für 18 Teile, einmal).
+Schrotthaufen und das Wrack bleiben die Schrottquelle am Tag, Knopf und
+Hilde bringen weiter etwas mit.
+*Warum:* Der Wunsch war ein Händler, der morgens Rohstoffe gegen die Beute
+der Nacht tauscht. Nacht 1 bringt rund 30–35 Teile, also gut 20 Schrott –
+so viel wie vorher direkt aus der Nacht; die schwerere Nacht (Nr. 57) wird
+dadurch nicht wieder weggezahlt. Der Kurs 3 : 2 wirkt nicht wie ein Verlust,
+weil Teile und Schrott verschiedene Dinge sind. Zahnräder und Moderkern
+sind knapp gehalten, damit Anführer und Turmstufen besonders bleiben.
+
+### 59. Wann kommt Balduin, und wie lange bleibt er?
+**Entscheidung:** Ab Tag 2 (dem ersten Morgen nach einer Nacht) jeden Tag.
+Um 06:40 zieht er den Wagen von Osten heran (Mika ist dann gerade wach),
+bleibt bis 12:00 und zieht dann weiter. Er zieht nie ein. Wo er ist, ergibt
+sich allein aus der Uhrzeit; gespeichert wird nur, was er heute verkauft hat.
+*Warum:* Ein fester Morgentermin macht aus dem Tausch ein Ritual (nachts
+sammeln, morgens tauschen, tagsüber bauen) und gibt dem Vormittag ein Ziel.
+Bis Mittag lässt genug Zeit, auch nach einem Umweg; wer ihn verpasst,
+tauscht am nächsten Morgen – die Teile verfallen nicht.
+
+### 60. Was macht Balduin mit den Zombieteilen?
+**Entscheidung:** Das verrät er nie. Es gibt nur Andeutungen: Einmachgläser
+mit trüber grüner Brühe (in einem schwimmt ein Auge), Fläschchen am Gurt
+und ein wechselnder Spruch des Tages (»Einmal hab ich einen ganzen
+zusammengesetzt. Er war sehr höflich.«).
+*Warum:* So war es gewünscht (»das wird nicht gesagt, er ist vielleicht ein
+wenig verrückt«). Ein Geheimnis passt zum gemütlich-schrägen Ton und lässt
+Raum für eine spätere Geschichte.
+
+### 61. Autowrack und Schrotthaufen
+**Entscheidung:** Das Wrack gibt einmal 5–6 Schrott, 1–2 Stoff und
+vielleicht ein Zahnrad her, danach steht dort »Ausgeräumt«. Schrotthaufen
+füllen sich alle zwei Tage wieder. Alte Spielstände, in denen das Wrack
+schon durchsucht wurde, bekommen es ausgeräumt (Migration v6 → v7).
+*Warum:* »Dass der Schrott jedes Mal im Auto gefunden wird, ist
+unwahrscheinlich.« Einmal reicht zusammen mit den drei Haufen (je 2–3) für
+den ersten Bolzenwerfer an Tag 1; danach übernimmt Balduin.
+
+### 62. Steht Balduins Wagen der Horde im Weg?
+**Entscheidung:** Nein. Mika und die Überlebenden stoßen sich am Wagen,
+Schlurfer laufen hindurch. Solange er steht, ist sein Stand nicht bebaubar;
+steht dort nachmittags etwas, hält er am nächsten Morgen an einem anderen
+Platz an der Straße.
+*Warum:* Der Wagen steht nur vormittags da. Gehörte er ins Flussfeld,
+änderten sich die Wege der Tagesstreuner stündlich und die Wegvorschau
+stimmte nicht mehr. Ein fester, dauerhaft gesperrter Stand hätte dagegen
+ausgerechnet an der Straße, über die zwei Waldpfade laufen, Bauplatz
+gekostet.
 
 ## Technik mit Auswirkung aufs Design
 

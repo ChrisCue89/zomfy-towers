@@ -216,19 +216,21 @@ Verteidigung mit immer stärkeren Nächten weiter.
 | **Juna** | Jugendliche Funkbastlerin | Hauptgeschichte um den Funkturm, Technik |
 | **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee, Ausdauer |
 | **Knopf** | Struppiger Hund | Bellt, wenn die Horde kommt; findet Loot |
+| **Balduin** | Ein wenig verrückter Händler mit Bollerwagen (zieht nicht ein) | Kommt jeden Morgen, tauscht Zombieteile gegen Rohstoffe – wofür er sie braucht, sagt er nie |
 
 ## 5. Tagesablauf
 
 | Uhrzeit | Phase | Was passiert |
 |---|---|---|
-| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht (Beute, Schäden), reparieren |
+| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht (Beute, Schäden), reparieren; ab Tag 2 zieht Balduin seinen Bollerwagen heran und handelt bis 12:00 |
 | 08:00–17:00 | **Tag** | Sammeln, craften, bauen, erkunden; vereinzelte Schlurfer, selten ein kleiner Angriff |
 | 17:00–20:30 | **Abend** | Verteidigung ausbauen, Türme stellen; erste Vorboten |
 | 20:30–05:30 | **Nacht** | Die Horde in mehreren Wellen, Anführer in besonderen Nächten |
 | danach | **Schlafen** | Im eigenen Bett: Tag endet, Spiel speichert, nächster Morgen |
 
-- Ein voller Tag dauert bei normalem Tempo etwa 14 Minuten Echtzeit
-  (1 Spielminute ≈ 0,6 s). Am Lagerfeuer, im Sessel oder auf der Bank kann
+- Ein voller Tag dauert bei normalem Tempo etwa 9 Minuten Echtzeit
+  (1 Spielminute = 0,4 s; bis Meilenstein 7 waren es 0,6 s und rund
+  14 Minuten – das zog sich, M8). Am Lagerfeuer, im Sessel oder auf der Bank kann
   man bis zum Abend bzw. bis kurz vor der Horde ausruhen – in die Nacht
   hinein wird nicht gewartet.
 - Ein Spieltag zählt von 06:00 bis 06:00. Schlafen führt zum Morgen 06:30.
@@ -262,7 +264,9 @@ blenden Dach, Vorderwand und Vordach aus.
 | **Fasern** | Hohes Gras, Büsche | Seile, Stoffe, Verbände |
 | **Stoff** | Wäsche, Planen, Autowracks | Werkbank, Einrichtung |
 
-Quellen wachsen über die Tage nach. Seltene Funde (Baupläne, Samen,
+Quellen wachsen über die Tage nach. Schrotthaufen füllen sich alle zwei Tage
+wieder; das Autowrack an der Straße gibt nur **einmal** etwas her (M8: dass
+dort jeden Tag neuer Schrott lag, war unglaubwürdig). Seltene Funde (Baupläne, Samen,
 Erinnerungsstücke) treiben Geschichte und Rezepte voran.
 
 ### 6.4 Loot und Vorrat – ein Vorrat, klare Rollen
@@ -270,27 +274,35 @@ Erinnerungsstücke) treiben Geschichte und Rezepte voran.
 Alles landet im **selben Vorrat** (oben rechts im HUD). Die Rollen sind klar
 getrennt:
 
-- **Schrott** ist das Loot der Zombies und die Hauptwährung der Bauleiste:
-  Türme, Turm-Ausbau, Aufwertungen der Figur. Tagsüber gibt es etwas Schrott
-  aus Autowracks und Schrotthaufen.
+- **Schrott** ist die Hauptwährung der Bauleiste: Türme, Turm-Ausbau,
+  Aufwertungen der Figur. Tagsüber gibt es etwas Schrott aus Schrotthaufen
+  (und einmal aus dem Autowrack), vor allem aber **bei Balduin**.
+- **Zombieteile** sind das Loot der Schlurfer (M8). Man sammelt sie nachts
+  ein und tauscht sie morgens bei **Balduin**, dem Händler mit dem
+  Bollerwagen: immer Schrott (3 Teile → 2 Schrott), dazu jeden Tag zwei
+  wechselnde Sonderangebote (Holz, Stein, Fasern, Stoff, Zahnräder – an
+  manchen Tagen ein Moderkern), manche nur in kleiner Menge. Was er mit den
+  Teilen macht, verrät er nicht.
 - **Zahnräder** sind seltene Bauteile: von zähen Schlurfern, aus besonderen
   Nächten und selten beim Plündern. Sie schalten die starken Turmstufen und
   die starken Figur-Aufwertungen frei.
-- **Moderkerne** lassen nur Anführer fallen. Sie schalten die höchsten Stufen
-  frei.
+- **Moderkerne** lassen nur Anführer fallen – oder Balduin tauscht an
+  manchen Tagen einen. Sie schalten die höchsten Stufen frei.
 - **Tagesmaterialien** (Holz, Stein, Fasern, Stoff) gehen in die Werkbank und
   ins Zuhause: Werkzeuge, Waffen, Barrikaden, Möbel, Hausausbau.
 - **Brücke:** An der Werkbank lassen sich überzählige Tagesmaterialien zu
   Schrott verwerten. So zahlt Tagesarbeit auf die Nacht ein.
 
 Damit bleibt die Bauleiste mit einer Hauptwährung lesbar, und die zentrale
-Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
+Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?** Der
+Rhythmus ist: nachts Teile sammeln, morgens bei Balduin tauschen, tagsüber
+bauen.
 
 ### 6.5 Loot einsammeln
 
 - Stirbt ein Schlurfer – egal ob durch Turm oder Figur –, fällt sein Loot
-  genau dort zu Boden: Schrottbrocken, manchmal ein Zahnrad, bei Anführern
-  ein Moderkern.
+  genau dort zu Boden: Zombieteile (eine grünliche Hand), manchmal ein
+  Zahnrad, bei Anführern ein Moderkern.
 - Man sammelt es, indem man in die Nähe läuft. Im **Sammelradius** fliegt es
   von selbst zur Figur und wird mit einem »+1« verbucht.
 - Loot zerfällt nach anderthalb Minuten (es blinkt vorher). Es funkelt ab und zu,
@@ -508,6 +520,16 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
   (braucht einen Moderkern von einem Anführer). Das Leuchtfeuer brennt jede
   Nacht und bremst Schlurfer in seinem Schein um 30 %. Danach geht es als
   endlose Verteidigung weiter.
+- **Balduin, der Händler (M8):** Ab Tag 2 zieht er jeden Morgen um 06:40
+  seinen Bollerwagen (lila-gelb gestreiftes Sonnendach, Einmachgläser mit
+  trüber grüner Brühe) von Osten die Straße entlang, bimmelt beim Anhalten
+  und handelt bis 12:00; dann packt er ein und zieht weiter. Beim ersten
+  Treffen stellt er sich vor (»Frag nicht. Wissenschaft! Oder Kunst. Oder
+  Suppe – nein, keine Suppe.«), danach öffnet E direkt seinen Bollerwagen:
+  dasselbe Fenster wie die Werkbank (E tauscht einmal, gehalten weiter), oben
+  sein Spruch des Tages. Sein Stand ist morgens nicht bebaubar; steht dort
+  inzwischen etwas, hält er an einem anderen Platz an der Straße. Die Horde
+  läuft durch seinen Wagen hindurch – er gehört nicht ins Flussfeld.
 
 ### 6.15 Dialoge
 
@@ -524,11 +546,14 @@ können vom Spielzustand abhängen.
 
 ### 6.17 Balance-Ziele
 
-- Nacht 1–2 schafft man mit zwei, drei Türmen und etwas Nahkampf.
+- Nacht 1 fordert schon (M8): Wer nur zwei Türme stellt und zusieht,
+  verliert sie; mit drei Türmen (einer ausgebaut) und Mitkämpfen hält das
+  Zuhause. Nacht 2 schafft man mit drei, vier Türmen und Nahkampf.
 - Ab Nacht 4 braucht man Spezialisierungen, ab Nacht 6 eine gezielte
   Mischung gegen die Schlurfer-Arten.
-- Jede Nacht bringt so viel Loot, dass man sich mindestens eine spürbare
-  Verbesserung leisten kann – aber nie alles.
+- Jede Nacht bringt so viele Zombieteile, dass man sich bei Balduin
+  mindestens eine spürbare Verbesserung ertauschen kann – aber nie alles
+  (Nacht 1: rund 30–35 Teile ≈ 20–23 Schrott).
 - Ohne Ausbau kippt es spätestens um Nacht 5.
 
 ### 6.18 Klang
@@ -542,7 +567,8 @@ sperrt der Browser ihn ohnehin.
   Autsch, Ausweichrolle, Bolzen, Katapult und Aufprall, Wasserstrahl,
   Einsammeln (seltene Beute klingt heller), Bauen, Abreißen, Aufwerten,
   Stufenaufstieg, Wellenhorn, Schlurfer-Brummeln und ihr Ende, Knopfs
-  Bellen, ein leises Glöckchen, wenn in der Bauleiste etwas bezahlbar wird,
+  Bellen, Balduins Wagenglöckchen und das Rumpeln seiner Räder, ein leises
+  Glöckchen, wenn in der Bauleiste etwas bezahlbar wird,
   ein kurzes Tippen je Buchstabe im Dialog (jede Stimme etwas anders).
   Ferne Klänge werden leiser und kommen von der Seite.
 - **Umgebung:** Wind, am Tag Vögel, nachts Grillen, Knistern am Feuer.
@@ -667,6 +693,31 @@ Welt bewegt sich lebendig.
 - Balance aller Kosten, Wellen und Belohnungen.
 - Titelbildschirm, Namens- und Aussehenswahl, sanfter Einstieg.
 - Einstellungen (Lautstärke, Pixelgröße, Textgeschwindigkeit), Leistung.
+
+### Meilenstein 8 – Nach dem ersten Probespielen
+
+Rückmeldung nach dem ersten eigenen Probespielen: Die Zeit vergeht zu
+langsam, die Schlurfer sind keine Herausforderung (schon gar nicht in
+Nacht 1), drinnen soll es ein eigenes, schöneres Bild geben (wie in Stardew
+Valley), dass das Autowrack jeden Tag Schrott hergibt, ist unglaubwürdig,
+und die Pixel lassen zu wenig erkennen – man rät oder liest, was etwas ist.
+
+1. **Tempo und Herausforderung ✓:** Ein Tag dauert rund 9 statt 14 Minuten.
+   Nacht 1 bringt etwa 24 statt 16 Schlurfer, schon mit Flitzern; Schlurfer
+   laufen schneller, beißen fester und gehen früher auf Mika los; das
+   Zuhause nimmt mehr Schaden.
+2. **Zombieteile und Balduin ✓:** Schlurfer lassen Zombieteile statt Schrott
+   fallen. Balduin tauscht sie morgens gegen Rohstoffe (siehe 6.4, 6.14).
+   Das Autowrack gibt nur einmal etwas her, Schrotthaufen alle zwei Tage.
+3. **Innenraum als eigenes Bild:** Wer die Hütte betritt, sieht ein eigenes,
+   liebevoll eingerichtetes Innenbild im feinen Maß (1/16 m) – wie in
+   Stardew Valley. Draußen läuft die Welt weiter.
+4. **Detailgrad:** Alles im feinen Maß (1/16 m) und so umgebaut, dass man
+   jede Sache erkennt, ohne das Schild zu lesen.
+
+**Spielbar heißt:** Das Spiel vom Titelbild bis zur späten Nacht, flotter und
+fordernder, mit Balduins Handel als Morgenritual, einer eigenen Innenszene
+und Modellen, die man auf den ersten Blick erkennt.
 
 ## 9. Ideen-Parkplatz
 

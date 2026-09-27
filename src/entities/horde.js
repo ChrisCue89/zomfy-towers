@@ -28,6 +28,7 @@ const CHASE_PAUSE = 4;
 
 const MAX_PER_TYPE = 110;
 const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
+const HORDE_MOVE = { bounds: true, horde: true }; // durch Balduins Wagen hindurch (steht nicht im Flussfeld)
 const TINT = {
   normal: new THREE.Color(1, 1, 1),
   flash: new THREE.Color(4, 4, 4),
@@ -442,7 +443,7 @@ export class Horde {
           z.z += vz * dt;
         } else {
           this._pos.set(z.x, 0, z.z);
-          world.colliders.move(this._pos, vx * dt, vz * dt, z.def.radius * 0.9);
+          world.colliders.move(this._pos, vx * dt, vz * dt, z.def.radius * 0.9, HORDE_MOVE);
           z.x = this._pos.x;
           z.z = this._pos.z;
         }
