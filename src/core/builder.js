@@ -14,6 +14,7 @@ import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint } from '../data
 import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
+import { ITEMS } from '../data/items.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -233,7 +234,7 @@ export class Builder {
     st.weapons[id] = level + 1;
     const p = this.game.player.position;
     this.game.effects.splat(p.x, 1.2, p.z, 'funken', 12, 0.8);
-    this.game.hud.toast(T.meldungen.waffeAufgewertet(T.gegenstaende[id], level + 1), WEAPONS[id].icon, 2.4);
+    this.game.hud.toast(T.meldungen.waffeAufgewertet(T.gegenstaende[id], level + 1, ITEMS[id]?.plural), WEAPONS[id].icon, 2.4);
     this.game.quietSave();
   }
 
@@ -305,7 +306,7 @@ export class Builder {
     const affordable = canAfford(inv, o.cost);
     const lack = missing(inv, o.cost);
     const lackText = Object.entries(lack)
-      .map(([res, n]) => `${n} ${T.ressourcen[res]}`)
+      .map(([res, n]) => T.menge(n, res))
       .join(', ');
     return {
       ...o,
@@ -632,7 +633,7 @@ export class Builder {
 
   lackText(cost) {
     return Object.entries(missing(this.game.state.inventory, cost))
-      .map(([res, n]) => `${n} ${T.ressourcen[res]}`)
+      .map(([res, n]) => T.menge(n, res))
       .join(', ');
   }
 

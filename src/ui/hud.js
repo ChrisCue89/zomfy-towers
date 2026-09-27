@@ -344,6 +344,14 @@ export class Hud {
     ui.rect(x, y, w, 3, COLORS.outline);
     const q = Math.max(0, Math.min(1, pl.xp / xpForLevel(pl.level)));
     if (q > 0) ui.rect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * q)), 1, COLORS.gold);
+    // Neue Stufe im Getümmel: Die Wahl kommt, sobald es ruhig ist
+    if (this.game.state.perkChoice && !this.game.perkChoice.isOpen) {
+      const text = T.perks.wartet;
+      const tw = measure(text) + 10;
+      const pulse = Math.floor(this.game.clock * 3) % 2 === 0;
+      ui.panel(r.x + 4, y - 31, tw, 15, { frame: pulse ? COLORS.gold : COLORS.frame }); // über dem Lebensbalken
+      ui.text(text, r.x + 9, y - 29, COLORS.gold);
+    }
   }
 
   /** Kleine Lebensbalken über verletzten Schlurfern. */

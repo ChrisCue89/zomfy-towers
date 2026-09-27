@@ -287,8 +287,8 @@ vorn liest sich als gewollter Angriff.
 
 ### 31. Was macht ein kurzer Druck beim Verwerten an der Werkbank?
 **Entscheidung:** Er verwertet genau einmal (3 Stein → 1 Schrott); gehaltenes
-E macht gemächlich weiter (alle 0,6 s), ein Zähler an der Zeile zeigt, was
-herausgekommen ist. Die Auswahl springt beim Öffnen nie auf ein
+E macht gemächlich weiter (erst nach 0,9 s, dann alle 0,6 s – m4-r1), ein
+Zähler an der Zeile zeigt, was herausgekommen ist. Die Auswahl springt beim Öffnen nie auf ein
 Verwerten-Rezept. (m3-r2, ersetzt »nur halten« aus m3-r1)
 *Warum:* »E herstellen« muss etwas tun; wer viel verwerten will, hält, und
 behält trotzdem die Kontrolle.
@@ -297,7 +297,8 @@ behält trotzdem die Kontrolle.
 **Entscheidung:** Esc schließt den Dialog wie die harmlose Antwort
 (»Weitermachen«, »Noch nicht«); das Pausenmenü öffnet sich erst danach.
 Nach einem Dialog ruht dasselbe Ding 0,8 s, damit Durchdrücken ihn nicht
-gleich wieder öffnet. (m3-r2)
+gleich wieder öffnet (m3-r2); die Werkbank stellt in den ersten 0,3 s nach
+dem Öffnen nichts her (m4-r1).
 
 ### 33. Wie steil werden die Nächte – und was kostet Schaden?
 **Entscheidung:** Nacht 1 bleibt sanft (18 Punkte), danach steigt es
@@ -309,6 +310,25 @@ zerfällt nach 90 Sekunden. (m3-r2)
 schwerer«), Schaden war nach dem Frühstück vergessen, und liegendes Loot
 wartete stundenlang. Gemütlich bleibt es trotzdem: Eine verlorene Nacht
 kostet nie den Spielstand, und Nacht 1 schafft man auch ohne Übung.
+
+## Nahkampf und Perks (m4-r1)
+
+### 36. Wann öffnet die Perk-Wahl?
+**Entscheidung:** Nicht sofort beim Stufenaufstieg, sondern im ersten ruhigen
+Augenblick: 0,8 s lang kein Schlurfer näher als 6 m, kein Schwung, keine
+Rolle. Bis dahin pulsiert über der Schnellleiste »Perk-Wahl, sobald es ruhig
+ist«. Offen hält die Wahl weiterhin das Spiel an.
+*Warum:* Mitten im Kampf nahm ein Angriffsklick ungesehen eine Karte (Kira);
+Leertaste und 1–3 sind im Kampf Ausweichen und Waffenwechsel. Eine Pause im
+Getümmel reißt außerdem aus dem Fluss – danach wählt man in Ruhe.
+
+### 37. Darf man nach einem Schlag sofort weiterlaufen?
+**Entscheidung:** Ja, sobald der Schlag gesessen hat: Laufen bricht das
+Ausschwingen ab. Der nächste Schlag kommt aber erst im gewohnten Takt der
+Waffe (kein schnelleres Zuschlagen durch Zappeln).
+*Warum:* Im Getümmel wirkte Mika nach jedem Klick wie festgeklebt (»die
+Figur bewegt sich nicht«), obwohl nur das Ausschwingen lief.
+
 ## Detailgrad (Meilenstein 5)
 
 ### 34. Wie fein wird es – und bleibt es »niedrig gerendert«?

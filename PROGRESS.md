@@ -5,6 +5,42 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 4 – Playtest-Runde 1 (m4-r1, abgebrochen) und Nachbesserung
+
+**Verlauf:** Die vier Testspieler-Agenten wurden nach rund einer Stunde vom
+Nutzungslimit gestoppt (»resets 4am UTC«), bevor Berichte entstanden. Kira
+spielte bis zum Sieg in Nacht 1, Mira bis Tag 2; Jonas und Theo kamen nicht
+ins Spiel. Die Notizen der beiden stehen unverändert in `playtests/m4-r1/`,
+die Auswertung in `ZUSAMMENFASSUNG.md`. **Umweg:** Die nächste Runde prüft
+Meilenstein 4 und 5 gemeinsam, sobald die Agenten wieder laufen.
+
+**Gefunden (Spielfluss):** Ein Angriffsklick wählte ungesehen einen Perk;
+nach dem Neuladen bei offener Perk-Wahl fehlte die Nachtleiste; schnelle
+Enter-Drücke stellten an der Werkbank ungewollt etwas her; im Getümmel
+wirkte Mika nach jedem Schlag festgeklebt.
+
+**Geändert**
+
+- Perk-Wahl erst im ruhigen Augenblick, bis dahin ein pulsierender Hinweis
+  über der Schnellleiste (OFFENE-FRAGEN 36).
+- Laufen bricht das Ausschwingen nach dem Treffer ab, der Takt der Waffe
+  bleibt (OFFENE-FRAGEN 37).
+- Nachtleiste sofort nach dem Laden; die Werkbank stellt in den ersten
+  0,3 s nach dem Öffnen nichts her; zweite Umwandlung erst nach 0,9 s
+  Halten. (Eine E-Sperre nach jedem Dialog fiel in der Prüfung durch – sie
+  verschluckte »E halten« am Baum – und wurde zurückgenommen.)
+- Texte: richtige Einzahl bei Mengen (»1 Zahnrad«), »Fäustlinge … liegen«,
+  »Jeder Schlag macht ×1,5 Schaden«, Morgenbericht über das Zuhause statt
+  über Mika, Pausenmenü mit Ausweichen und ohne veraltete
+  Meilenstein-Fußzeile.
+- Nachts treten Sammel-Einblendungen schon ab 12 m Schlurfer-Nähe zurück.
+- Prüfskript: Perk-Wahl wartet im Getümmel und öffnet danach.
+
+**Offen:** Beute unter dem Funkmast, Hochformat-Fenster, Werkbank merkt
+sich die Zeile.
+
+---
+
 ## Meilenstein 5 – Detailgrad und Animationen ✓
 
 Antwort auf »zu grob gepixelt, man erkennt nicht, was was ist«: Die
