@@ -131,7 +131,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
                       eigener Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
-                      Umgebung, Musik; erst nach der ersten Eingabe)
+                      Umgebung; erst nach der ersten Eingabe), music
+                      (Soundtrack: Stücke als Noten-Daten, Instrumente,
+                      Überblendung, Nachtstufen)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -297,7 +299,8 @@ Grundprinzipien:
    M10: Balduins Boot kommt zwischen den Inseln, die Leine liegt über dem
    Poller, er lüftet die Mütze, winkt nach dem Handel, Turmteile (Glücksmünze
    an Tag 4 kaufen, mit echter Taste einbauen, Teile von jedem Abschuss,
-   Speichern v9, keine Münze im Laternenturm).
+   Speichern v9, keine Münze im Laternenturm); ab M10d: Musik tagsüber
+   »tag«, bei der Welle »nacht«, alle Stücke offline ohne Übersteuerung.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -354,7 +357,9 @@ wieder aufbauen und ausbauen (`hitBarricade`, `rebuildBarricade`,
 ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 (`killZombie(id, 'turm'|'spieler')`) und die Teile-Chance der Türme setzen
 (`setPartsChance`, `null` = Wert aus `zombies.js`); ab M10 zeigt
-`trader()` auch Boot-z, Leine (`rope`, Glieder) und Balduins Gesten.
+`trader()` auch Boot-z, Leine (`rope`, Glieder) und Balduins Gesten;
+ab M10d berechnet `renderMusic(id, s, stufe)` ein Musikstück ohne
+Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

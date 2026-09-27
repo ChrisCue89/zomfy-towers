@@ -6,24 +6,16 @@
 //   Effekte   play('hacken', { x, z }) – kurz, aus Rauschen und Oszillatoren,
 //             leiser mit der Entfernung zu Mika, leicht nach links/rechts
 //   Umgebung  Wind, Vögel am Tag, Grillen in der Nacht, Knistern am Feuer
-//   Musik     leise Melodie am Abend, treibender Rhythmus während der Wellen;
-//             Balduins Fanfare, wenn sein Boot kommt (M9.1)
+//   Musik     der Soundtrack (music.js, M10d): tagsüber gemütlich, abends
+//             leiser, während der Wellen treibend; Balduins Fanfare, wenn sein
+//             Boot kommt (M9.1)
+
+import { Music } from './music.js';
 
 const VOICES = 32; // höchstens so viele Effekte gleichzeitig
 const HEAR = 16; // Meter: weiter weg hört man nichts mehr
 const NEAR = 3; // Meter: bis hierher volle Lautstärke
-const LOOKAHEAD = 0.25; // Sekunden, die der Musik-Takt vorausgeplant wird
-
-// Pentatonik in C (Abendmelodie) und a-Moll (Nacht)
-const MELODY = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];
-const CHORDS = [
-  [261.63, 329.63, 392.0], // C
-  [220.0, 261.63, 329.63], // a
-  [174.61, 220.0, 261.63], // F
-  [196.0, 246.94, 293.66], // G
-];
-const BASS = [55.0, 55.0, 65.41, 49.0]; // A1 A1 C2 G1
-
+const PAN_STEPS = 9; // feste Stereo-Ausgänge je Bus (statt eines neuen Panners pro Klang)
 // Balduins Fanfare (M9.1): D-Dur, 100 Schläge pro Minute. Noten als
 // [Schlag, Länge in Schlägen, Frequenz]. Drei Takte Ruf, dann der Schlussakkord
 // genau aufs Anlegen (die Einfahrt dauert 24 Spielminuten = 9,6 s).
@@ -155,8 +147,7 @@ export class Sound {
     this.nextCricket = 1;
     this.nextPop = 0;
     this.nextGroan = 3;
-    this.music = { mode: null, beat: 0, time: 0, bar: 0 };
-    this.musicLevel = 0; // 0..1, sanft ein- und ausgeblendet
+    this.music = null; // der Soundtrack (M10d), entsteht mit dem AudioContext
   }
 
   get ready() {
@@ -190,9 +181,6 @@ export class Sound {
     this.ambBus.connect(this.master);
     this.musicBus = c.createGain();
     this.musicBus.connect(this.master);
-    this.musicFade = c.createGain();
-    this.musicFade.gain.value = 0;
-    this.musicFade.connect(this.musicBus);
     // Rauschen für Wind, Feuer und Schritte (einmal erzeugt)
     const len = c.sampleRate * 2;
     this.noiseBuffer = c.createBuffer(1, len, c.sampleRate);
@@ -201,6 +189,9 @@ export class Sound {
     // Wind: endloses, weich gefiltertes Rauschen
     this.wind = this.loop({ type: 'lowpass', freq: 380, gain: 0 });
     this.fire = this.loop({ type: 'lowpass', freq: 260, gain: 0 });
+    this.sfxPans = this.panPool(this.sfxBus, 0.7);
+    this.ambPans = this.panPool(this.ambBus, 0.8);
+    this.music = new Music(this, this.musicBus);
     this.applyVolumes();
   }
 
@@ -249,12 +240,18 @@ export class Sound {
     param.exponentialRampToValueAtTime(0.0001, t + Math.max(attack + 0.01, dur));
   }
 
-  track(node, end) {
+  /**
+   * Quelle bis `end` spielen lassen. Danach wird das Ende der Kette (`tail`)
+   * abgehängt – sonst bliebe jeder verklungene Ton bis zur nächsten
+   * Speicherbereinigung im Klang-Graphen und würde weiter mitgerechnet (M10d).
+   */
+  track(node, end, tail = null) {
     // Nur Effekte zählen gegen die Obergrenze – Musik und Umgebung laufen immer
     const sfx = this.counting;
     if (sfx) this.voices++;
     node.onended = () => {
       if (sfx) this.voices--;
+      if (tail) tail.disconnect();
     };
     node.stop(end);
   }
@@ -286,7 +283,7 @@ export class Sound {
     }
     node.connect(g).connect(out);
     osc.start(t);
-    this.track(osc, t + dur + 0.05);
+    this.track(osc, t + dur + 0.05, g);
   }
 
   noise(t, dur, { type = 'lowpass', freq = 1000, freqEnd = null, q = 0.8, peak = 0.2, attack = 0.004, out }) {
@@ -302,7 +299,7 @@ export class Sound {
     this.envelope(g.gain, t, attack, dur, peak);
     src.connect(f).connect(g).connect(out);
     src.start(t, Math.random() * 1.5);
-    this.track(src, t + dur + 0.05);
+    this.track(src, t + dur + 0.05, g);
   }
 
   /**
@@ -330,7 +327,7 @@ export class Sound {
       o.detune.value = detune;
       o.connect(f);
       o.start(t);
-      this.track(o, t + dur + 0.22);
+      this.track(o, t + dur + 0.22, g);
     }
   }
 
@@ -343,6 +340,7 @@ export class Sound {
   fanfare() {
     if (!this.ready) return;
     const c = this.ctx;
+    this.music.duck(14); // der Soundtrack macht Platz
     const t0 = c.currentTime + 0.05;
     const out = c.createGain();
     out.gain.value = 0.85;
@@ -449,12 +447,7 @@ export class Sound {
       if (d > HEAR) return;
       v *= Math.pow(clamp(1 - (d - NEAR) / (HEAR - NEAR), 0, 1), 1.4);
       if (v < 0.02) return;
-      if (c.createStereoPanner) {
-        const pan = c.createStereoPanner();
-        pan.pan.value = clamp(dx / 10, -1, 1) * 0.7;
-        pan.connect(this.sfxBus);
-        out = pan;
-      }
+      out = this.pan(this.sfxPans, this.sfxBus, dx / 10);
     }
     this.counting = true;
     recipe(this, now + 0.005, v, out, opt);
@@ -503,11 +496,11 @@ export class Sound {
       this.nextGroan = 1.2 + Math.random() * 3 / Math.min(4, s.zombiesNear);
       this.play('stoehnen', { volume: 0.7, pitch: 70 + Math.random() * 40 });
     }
-    this.updateMusic(dt, s);
+    this.music.update(dt, s);
   }
 
   bird(t) {
-    const out = this.panned(Math.random() * 2 - 1);
+    const out = this.pan(this.ambPans, this.ambBus, Math.random() * 2 - 1);
     const n = 2 + Math.floor(Math.random() * 4);
     const base = 2400 + Math.random() * 1800;
     for (let k = 0; k < n; k++) {
@@ -517,68 +510,28 @@ export class Sound {
   }
 
   cricket(t) {
-    const out = this.panned(Math.random() * 2 - 1);
+    const out = this.pan(this.ambPans, this.ambBus, Math.random() * 2 - 1);
     const f = 4200 + Math.random() * 700;
     for (let k = 0; k < 3; k++) this.tone('sine', f, t + k * 0.03, 0.014, { peak: 0.018, attack: 0.002, out });
   }
 
-  panned(pan) {
+  /** Feste Stereo-Ausgänge von links nach rechts (einmal angelegt). */
+  panPool(bus, range) {
     const c = this.ctx;
-    if (!c.createStereoPanner) return this.ambBus;
-    const p = c.createStereoPanner();
-    p.pan.value = pan * 0.8;
-    p.connect(this.ambBus);
-    return p;
+    if (!c.createStereoPanner) return null;
+    const pool = [];
+    for (let k = 0; k < PAN_STEPS; k++) {
+      const p = c.createStereoPanner();
+      p.pan.value = range * ((2 * k) / (PAN_STEPS - 1) - 1);
+      p.connect(bus);
+      pool.push(p);
+    }
+    return pool;
   }
 
-  /** Abends eine leise Melodie, während der Wellen ein treibender Rhythmus. */
-  updateMusic(dt, s) {
-    const c = this.ctx;
-    const t = c.currentTime;
-    const want = s.fight ? 'nacht' : s.hours >= 17 && s.hours < 20.5 && !s.quiet ? 'abend' : null;
-    const m = this.music;
-    if (want && want !== m.mode) {
-      m.mode = want;
-      m.time = Math.max(m.time, t + 0.1);
-      m.beat = 0;
-    }
-    // Ein- und Ausblenden
-    this.musicLevel = clamp(this.musicLevel + (want ? dt / 2.5 : -dt / 3), 0, 1);
-    this.musicFade.gain.setTargetAtTime(this.musicLevel * (m.mode === 'nacht' ? 0.9 : 0.7), t, 0.1);
-    if (!m.mode || this.musicLevel <= 0) {
-      if (!want) m.mode = null;
-      return;
-    }
-    const out = this.musicFade;
-    if (m.time < t - 0.1) m.time = t + 0.05; // nach einer Pause nichts nachholen
-    while (m.time < t + LOOKAHEAD) {
-      if (m.mode === 'nacht') {
-        // 104 Schläge pro Minute in Achteln: Pauke auf 1 und 3, Hi-Hat dazwischen, Bass je Schlag
-        const step = 60 / 104 / 2;
-        const k = m.beat % 16;
-        if (k % 4 === 0) this.tone('sine', 110, m.time, 0.22, { freqEnd: 42, peak: 0.5, out });
-        if (k % 2 === 1) this.noise(m.time, 0.03, { type: 'highpass', freq: 7000, peak: 0.06, out });
-        if (k % 2 === 0) this.tone('square', BASS[(k / 4) | 0], m.time, step * 1.6, { peak: 0.09, filter: 380, out });
-        if (k === 14 && m.bar % 2 === 1) this.noise(m.time, 0.12, { type: 'bandpass', freq: 1800, q: 1, peak: 0.08, out });
-        m.time += step;
-        m.beat++;
-        if (m.beat % 16 === 0) m.bar++;
-      } else {
-        // 72 Schläge pro Minute: sanfte Pentatonik-Melodie über wechselnden Akkorden
-        const step = 60 / 72;
-        const k = m.beat % 8;
-        if (k === 0) {
-          const chord = CHORDS[m.bar % CHORDS.length];
-          for (const f of chord) this.tone('sine', f, m.time, step * 7.5, { attack: 0.4, peak: 0.035, out });
-        }
-        if (Math.random() < (k % 2 === 0 ? 0.8 : 0.45)) {
-          const note = MELODY[Math.floor(Math.random() * MELODY.length)];
-          this.tone('triangle', note, m.time, step * 0.9, { attack: 0.02, peak: 0.05, vibrato: 4.5, out });
-        }
-        m.time += step;
-        m.beat++;
-        if (m.beat % 8 === 0) m.bar++;
-      }
-    }
+  /** Ausgang für eine Richtung (-1 links … 1 rechts). */
+  pan(pool, bus, dir) {
+    if (!pool) return bus;
+    return pool[Math.round(((clamp(dir, -1, 1) + 1) / 2) * (PAN_STEPS - 1))];
   }
 }

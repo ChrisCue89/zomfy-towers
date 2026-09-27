@@ -37,13 +37,32 @@ kommen später (seine Vorgabe).
   Werte zentral über `towerStatsOf` (mit Zwischenspeicher am Bau).
 - **Spielstand v9:** Vorrat an Turmteilen und das Teil am Bau; Migration
   v8 → v9 ergänzt einen leeren Vorrat.
+- **Soundtrack (M10d, Wunsch des Auftraggebers: »slow cozy, und nachts beim
+  Angriff rhythmisch treibend«):** neues Modul `audio/music.js` mit drei
+  Stücken als Noten-Daten und eigenen Instrumenten (FM-E-Piano,
+  Karplus-Strong-Gitarre, Flöte, Spieluhr, Streicher, Trommeln, erzeugter
+  Hall). Tagsüber und auf dem Titelbild »Morgen am See« (F-Dur, 76 Schläge
+  pro Minute) mit Ruhe zwischen den Durchgängen, abends »Laternenzeit«
+  (d-Moll, 66), während der Wellen »Die Horde kommt« (d-Moll, 126) in drei
+  Stufen je nach Lage. Die Nacht blendet sofort über, Schlafen blendet aus,
+  Balduins Fanfare duckt. Die alte Zufallsmelodie und der einfache
+  Nachtrhythmus sind ersetzt.
+- **Klang-Technik:** Jeder Ton hängt sich nach dem Verklingen selbst aus dem
+  Klang-Graphen ab (vorher erst bei der nächsten Speicherbereinigung – das
+  kostete mit der Zeit Rechenzeit, auch bei den Effekten), und Effekte mit
+  Richtung, Vögel und Grillen teilen sich feste Stereo-Ausgänge statt je
+  einen neuen. Gemessen im
+  Container: Audio-Thread mit Musik gut 10 %, gleich ob Tag oder Nacht; die
+  Gitarre ist auf 0,01 Hz genau gestimmt, kein Stück übersteuert.
 - **Prüfung:** neue Punkte für Einfahrt zwischen den Inseln, Leine, Gesten
   und Turmteile (Kauf an Tag 4, Einbau mit echter Taste, Teile von jedem
-  Abschuss, nach dem Neuladen noch am Turm, keine Münze im Laternenturm);
-  alle Stände werden jetzt zu v9.
+  Abschuss, nach dem Neuladen noch am Turm, keine Münze im Laternenturm),
+  Musik (tagsüber »tag«, bei der Welle »nacht«, alle Stücke offline
+  berechnet: keine Übersteuerung, nicht stumm); alle Stände werden jetzt zu
+  v9.
 
 **Nicht in M10:** Upgrades und Werkzeuge bei Balduin (Balance, M13),
-Nebenaufträge (Geschichte, später). Entscheidungen: OFFENE-FRAGEN 89–92.
+Nebenaufträge (Geschichte, später). Entscheidungen: OFFENE-FRAGEN 89–93.
 
 ---
 

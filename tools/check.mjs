@@ -1072,6 +1072,7 @@ async function runNightChecks(browser, url) {
   const turm = (await z(() => window.zomfy.buildings())).find((b) => b.type === 'bolzen');
   if (plan?.type === 'bolzen' && turm) note(`✓ Türme: Q wählt den Bolzenwerfer, E setzt ihn (Feld ${turm.i}, ${turm.j})`);
   else fail(`Türme: kein Bolzenwerfer gebaut (Plan ${JSON.stringify(plan)})`);
+  const musikTag = await z(() => window.zomfy.sound()); // M10d: nach der ersten Taste läuft tagsüber das ruhige Stück
 
   // Ein Bau, der der Horde den letzten Weg zum Haus abschneidet, wird abgelehnt
   // (M9: nur noch im Hof möglich – Barrikaden schneiden nie ab, die Horde schlägt sich durch)
@@ -1235,6 +1236,7 @@ async function runNightChecks(browser, url) {
     window.zomfy.teleport(6, 4, 0);
   });
   await step(3000);
+  const musikNacht = await z(() => window.zomfy.sound()); // M10d: während der Welle das treibende Stück
   await z(() => {
     window.zomfy.setHomeHp(3);
     window.zomfy.spawnZombie('brummer', 5.5, -4.3);
@@ -1252,6 +1254,15 @@ async function runNightChecks(browser, url) {
   if (verloren.stats.nightsLost === 1 && verloren.time.day === 3 && /Schrott/.test(verlustZeile) && verloren.world.homeHp > 0) {
     note(`✓ Verlorene Nacht: ${verlustZeile.replace('Verloren: ', '')} weg, Zuhause wieder ${verloren.world.homeHp}, Tag 3 beginnt (${bericht2[0]})`);
   } else fail(`Verlorene Nacht: ${JSON.stringify({ lost: verloren.stats.nightsLost, day: verloren.time.day, home: verloren.world.homeHp, bericht2 })}`);
+
+  // Soundtrack (M10d): tagsüber gemütlich, bei der Welle treibend; jedes Stück ohne
+  // Lautsprecher berechnet – keine Übersteuerung, keine kaputten Samples, nicht stumm
+  const pegel = {};
+  for (const [id, threat] of [['tag', 0], ['abend', 0], ['nacht', 2]]) pegel[id] = await z(([id, threat]) => window.zomfy.renderMusic(id, 8, threat), [id, threat]);
+  const pegelOk = Object.values(pegel).every((p) => p.bad === 0 && p.peak < 0.95 && p.rms > 0.01);
+  if (musikTag.music === 'tag' && musikNacht.music === 'nacht' && pegelOk) {
+    note(`✓ Musik: tagsüber »Morgen am See«, während der Welle »Die Horde kommt«; Spitzen ${Object.entries(pegel).map(([id, p]) => `${id} ${p.peak.toFixed(2)}`).join(', ')}`);
+  } else fail(`Musik: ${JSON.stringify({ tag: musikTag, nacht: musikNacht, pegel })}`);
   checkMessages(session);
   await session.context.close();
 }

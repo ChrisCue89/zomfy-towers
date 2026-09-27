@@ -48,6 +48,7 @@ import { drawText, measure, GLYPH_ROWS, setPlayerName } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
 import { Sound } from '../audio/sound.js';
+import { renderMusic } from '../audio/music.js';
 import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from './settings.js';
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
@@ -1350,7 +1351,14 @@ export class Game {
     const p = this.player.position;
     const fire = LAYOUT.campfire;
     let near = 0;
-    for (const z of this.horde.list) if (z.state !== 'dying' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 64) near++;
+    let atHome = 0;
+    let smash = 0;
+    for (const z of this.horde.list) {
+      if (z.state === 'dying') continue;
+      if ((z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 64) near++;
+      if (z.state === 'approach' || z.state === 'attack' || z.state === 'chase') atHome++;
+      else if (z.state === 'smash') smash++;
+    }
     const info = this._soundInfo || (this._soundInfo = {});
     info.x = p.x;
     info.z = p.z;
@@ -1360,6 +1368,9 @@ export class Game {
     info.fight = this.nights.active && (this.horde.alive > 0 || this.nights.queue.length > 0);
     info.zombiesNear = near;
     info.quiet = this.mode === 'sleep';
+    info.title = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+    // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
+    info.threat = atHome > 0 || near >= 3 ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0;
     this.sound.update(dt, info);
     // Schritte: bei jedem halben Laufzyklus, drinnen auf Holz
     const stepIndex = Math.floor(this.player.phase / Math.PI);
@@ -1694,7 +1705,12 @@ export class Game {
         return game.mode;
       },
       state: () => JSON.parse(JSON.stringify(game.state)),
-      sound: () => ({ ready: game.sound.ready, state: game.sound.ctx?.state || null, voices: game.sound.voices, music: game.sound.music.mode }),
+      sound: () => ({ ready: game.sound.ready, state: game.sound.ctx?.state || null, voices: game.sound.voices, music: game.sound.music?.mode ?? null }),
+      /** Ein Musikstück ohne Lautsprecher berechnen: Spitzen- und Mittelpegel (M10d). */
+      renderMusic: async (id, seconds = 8, threat = 0) => {
+        const r = await renderMusic(Sound, id, seconds, { threat });
+        return { peak: r.peak, rms: r.rms, bad: r.bad };
+      },
       save: () => game.quietSave(),
       wakeSpot: () => ({ ...game.world.shelter.wakeSpot }),
       /** Prüfhilfe: Figur an (x, z) setzen und n Schritte in Richtung (dx, dz) laufen lassen, ohne zu zeichnen. */

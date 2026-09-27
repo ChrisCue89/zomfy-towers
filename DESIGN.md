@@ -693,8 +693,14 @@ der Klang startet mit der ersten Eingabe.
   Bretter), Einsammeln, Bauen, Aufwerten, Wellenhorn, Schlurfer-Brummeln,
   Knopfs Bellen, **Balduins Bootshorn und Motor**, Tippen im Dialog.
 - **Umgebung:** Wind, Wellen am Steg, Krähen, Regen, Knistern am Kamin.
-- **Musik:** am Abend eine leise, etwas melancholische Melodie, während der
-  Wellen ein treibender Rhythmus; Balduins Ankunftsfanfare (M9.1).
+- **Musik (M10d):** ein eigener Soundtrack aus dem Klang-Baukasten, die
+  Stücke als Noten-Daten. Tagsüber »Morgen am See« (F-Dur, langsam: E-Piano,
+  gezupfte Gitarre, Flöte und Spieluhr, Besen), auch auf dem Titelbild;
+  abends »Laternenzeit« (d-Moll, noch ruhiger, mit Streicherfläche); nachts
+  nur während der Wellen »Die Horde kommt« (d-Moll, 126 Schläge pro Minute),
+  das in drei Stufen dichter wird, je näher die Horde dem Haus und Mika
+  kommt. Zwischen den ruhigen Stücken bleibt Stille für Wind, Vögel und
+  Wellen. Balduins Ankunftsfanfare (M9.1) duckt die Musik.
 
 ### 6.20 Titelbild und Einstellungen
 
@@ -816,8 +822,9 @@ etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
   Tagen ab Tag 4 eines im Angebot.
 - **Verschoben:** Upgrades und Werkzeuge bei Balduin wandern in die Balance
   (M13), Nebenaufträge in die Geschichte (später, Wunsch des Auftraggebers).
-  Die täglichen Sprüche gibt es schon seit M8. Dazu: gemütlicher Soundtrack
-  (6.19). Entscheidungen: OFFENE-FRAGEN 89–92.
+  Die täglichen Sprüche gibt es schon seit M8. Dazu, auf Wunsch des
+  Auftraggebers: ein gemütlicher Soundtrack, nachts beim Angriff treibend
+  (6.19). Entscheidungen: OFFENE-FRAGEN 89–93.
 
 ### Meilenstein 11 – Das Zuhause am Wasser
 

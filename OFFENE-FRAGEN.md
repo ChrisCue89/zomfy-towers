@@ -854,6 +854,31 @@ Nebenaufträge gehören zur Geschichte und warten dort; Upgrades und Werkzeuge
 bei Balduin verschieben die Wirtschaft und kommen mit der Balance (M13).
 Die täglichen Sprüche (Running Gag) gibt es schon seit M8.
 
+### 93. Wie klingt der Soundtrack? (M10d, Wunsch des Auftraggebers)
+**Wunsch:** »ein cozy Soundtrack, slow cozy, und nachts beim Angriff dann
+rhythmisch treibend«.
+**Entscheidung:** Drei Stücke als Noten-Daten in `audio/music.js`, gespielt
+mit eigenen Instrumenten aus Oszillatoren und Rauschen (E-Piano per
+FM, gezupfte Gitarre per Karplus-Strong, Flöte, Spieluhr, Streicher,
+Trommeln, ein kleiner Hall aus einer erzeugten Raumantwort) – keine
+Tondateien.
+- **Tag:** »Morgen am See«, F-Dur, 76 Schläge pro Minute, knapp eine Minute
+  lang, danach 20–45 s Ruhe; beim nächsten Durchgang tauschen Flöte und
+  Spieluhr die Melodie. Läuft auch auf dem Titelbild.
+- **Abend** (17 bis 20:30 Uhr): »Laternenzeit«, d-Moll, 66 Schläge pro
+  Minute – etwas wehmütig, aber warm.
+- **Nacht:** nur während einer Welle »Die Horde kommt«, d-Moll, 126 Schläge
+  pro Minute, in drei Stufen: Die Welle läuft (Bass, Kick, Hi-Hat) – viele
+  sind unterwegs oder schlagen auf Barrikaden ein (Snare, Staccato-Streicher)
+  – Schlurfer am Haus oder hinter Mika her (Hörner, Becken, Tom-Wirbel). Die
+  Stufe steigt sofort zum nächsten Takt, sinkt erst nach zwei ruhigeren
+  Takten. Ohne Welle ist die Nacht still (Grillen, Wind).
+- **Übergänge:** Die Nacht blendet sofort über, ein ruhiges Stück spielt
+  seinen Durchgang zu Ende. Schlafen blendet aus, Balduins Fanfare duckt die
+  Musik.
+Pausen, weil Dauermusik im Aufbauspiel ermüdet; Stufen, weil der Angriff
+Druck braucht, der mit der Lage wächst.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
