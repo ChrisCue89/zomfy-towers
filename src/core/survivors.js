@@ -266,6 +266,7 @@ export class Survivors {
     if (r.maxHp) st.player.hp = Math.min(g.combat.maxHp, st.player.hp + r.maxHp);
     if (r.tea) st.player.hp = g.combat.maxHp; // Yusuf verarztet gleich mit
     g.hud.toast(T.auftraege[id].fertig, SURVIVORS[id].dog ? 'pfote' : 'ziel', 4);
+    g.sound.play('stufe');
     g.hud.goalFlash = 1.2;
     g.updateGoals(true);
     g.quietSave();
@@ -340,6 +341,7 @@ export class Survivors {
     }
     s.stage = 3;
     g.hud.toast(T.ueberlebende.eingezogen(SURVIVORS[id].name), SURVIVORS[id].dog ? 'pfote' : 'zelt', 3.5);
+    g.sound.play('glocke');
     this.placeAll(false);
     return true;
   }
@@ -386,6 +388,7 @@ export class Survivors {
     st.world.tradeDay = st.time.day;
     const [res, n] = Object.entries(offer.get)[0];
     g.hud.toast(T.ueberlebende.getauscht(T.menge(n, res)), res, 2.5);
+    g.sound.play('loot', { pitch: 880 });
   }
 
   // --- Morgen und Nacht -----------------------------------------------------------
@@ -487,6 +490,7 @@ export class Survivors {
     g.startWork(T.funkturm.werkeln, next.hours, () => {
       st.world.tower = stage;
       g.world.setTowerStage(stage, BEACON.glow);
+      g.sound.play(stage === 3 ? 'morgen' : 'aufwertung');
       g.quietSave();
     }, () => g.startDialog(`funkturm${stage}`));
   }

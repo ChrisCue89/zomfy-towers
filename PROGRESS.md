@@ -5,6 +5,37 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 7 – Feinschliff ✓
+
+**Fertig**
+
+- **Klang (Web Audio, ohne Dateien):** Effekte aus Rauschen und kleinen
+  Oszillatoren für Schritte (drinnen auf Holz), Sammeln, Kampf, Türme,
+  Einsammeln, Bauen, Aufwerten, Stufenaufstieg, Wellenhorn, Schlurfer, Knopf,
+  Dialog-Tippen je Stimme und das Glöckchen der Bauleiste. Ferne Klänge
+  werden leiser und kommen von der Seite. Umgebung: Wind, Vögel, Grillen,
+  Feuer. Musik: Abendmelodie und Rhythmus in den Wellen, sanft ein- und
+  ausgeblendet. Der Klang startet mit der ersten Eingabe (Konsole bleibt
+  sauber).
+- **Titelbild:** Schriftzug über der Lichtung im Abendlicht, die Kamera
+  zieht langsam darüber. Weiterspielen, Neues Spiel, Einstellungen,
+  Steuerung.
+- **Name und Aussehen:** Name (bis 12 Zeichen) sowie Mütze, Jacke, Haare
+  und Haut, live an der Figur. Texte und Porträt übernehmen beides.
+  Spielstand v6 mit Migration.
+- **Einstellungen:** Lautstärke, Musik, Geräusche, Pixelgröße (ein
+  ganzzahliger Schritt mehr Überblick oder näher dran), Text-
+  geschwindigkeit. Sie liegen neben dem Spielstand, auch im Pausenmenü.
+- Neues Spiel aus dem Pausenmenü führt über die Figur.
+- Prüfskript: Titelbild, Figur mit getipptem Namen und anderer Mütze,
+  Spielstand v6.
+
+**Offen**
+
+- Abschluss-Playtest über das ganze Spiel.
+
+---
+
 ## Meilenstein 4 und 5 – Playtest-Runde m5-r1 und Nachbesserung
 
 **Testspieler:** Kira 8/10, Mira 8/10, Jonas 7/10, Theo 6/10 – Berichte und
