@@ -264,6 +264,52 @@ Bericht und Perk-Wahl bestätigt sie weiterhin. Die Rolle geht auch mitten
 im Schwung (bricht ihn ab), aber nicht beim Durchsuchen oder Werkeln.
 *Warum:* Ausweichen muss sofort gehen, gerade wenn man sich verschätzt hat.
 
+## Bedienung und Balance (Kontrollrunde m3-r2)
+
+### 29. Kauft ein Tastendruck sofort?
+**Entscheidung:** Bauen ja, Kaufen nein. Aufwertungen von Figur und Waffen,
+Turm-Stufen und Spezialisierungen fragen per Taste einmal nach (»Nochmal
+drücken: …«, goldener Rahmen); der zweite Druck kauft, danach ist die Taste
+eine knappe halbe Sekunde gesperrt. Ein Mausklick auf die Kachel kauft
+sofort. (m3-r2)
+*Warum:* Doppeltipper haben 20 Schrott und mehr in einem Rutsch ausgegeben –
+Käufe lassen sich nicht zurücknehmen, Bauten schon (Abreißen).
+
+### 30. Wie schlägt man einen Schlurfer, der knapp zu weit weg steht?
+**Entscheidung:** Mit einem Ausfallschritt: Steht in Schlagrichtung keiner in
+Reichweite, aber einer bis gut einen Meter dahinter, geht Mika beim Ausholen
+auf ihn zu. Auch Schlurfer, die noch aus dem Wald kommen, sind treffbar,
+sobald Mika sie erreicht. Steht ein Schlurfer dicht bei Mika (unter 2,4 m),
+schlägt jeder Klick zu – auch auf einen Turm dahinter; auswählen geht dann
+mit E. (m3-r2)
+*Warum:* Klicks ins Leere fühlen sich wie ein Fehler an; der Schritt nach
+vorn liest sich als gewollter Angriff.
+
+### 31. Was macht ein kurzer Druck beim Verwerten an der Werkbank?
+**Entscheidung:** Er verwertet genau einmal (3 Stein → 1 Schrott); gehaltenes
+E macht gemächlich weiter (alle 0,6 s), ein Zähler an der Zeile zeigt, was
+herausgekommen ist. Die Auswahl springt beim Öffnen nie auf ein
+Verwerten-Rezept. (m3-r2, ersetzt »nur halten« aus m3-r1)
+*Warum:* »E herstellen« muss etwas tun; wer viel verwerten will, hält, und
+behält trotzdem die Kontrolle.
+
+### 32. Was macht Esc in einem Dialog?
+**Entscheidung:** Esc schließt den Dialog wie die harmlose Antwort
+(»Weitermachen«, »Noch nicht«); das Pausenmenü öffnet sich erst danach.
+Nach einem Dialog ruht dasselbe Ding 0,8 s, damit Durchdrücken ihn nicht
+gleich wieder öffnet. (m3-r2)
+
+### 33. Wie steil werden die Nächte – und was kostet Schaden?
+**Entscheidung:** Nacht 1 bleibt sanft (18 Punkte), danach steigt es
+schneller als bisher: 26, 36, 48, 62 … (18 + 7·(n−1) + (n−1)²). Ein
+Gepanzerter kommt schon in der letzten Welle von Nacht 3. Das Zuhause zu
+flicken kostet je 10 Standfestigkeit ein Holz und je 15 einen Schrott; Loot
+zerfällt nach 90 Sekunden. (m3-r2)
+*Warum:* Bei Theo wuchs das Loot schneller als die Bedrohung (»leichter statt
+schwerer«), Schaden war nach dem Frühstück vergessen, und liegendes Loot
+wartete stundenlang. Gemütlich bleibt es trotzdem: Eine verlorene Nacht
+kostet nie den Spielstand, und Nacht 1 schafft man auch ohne Übung.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

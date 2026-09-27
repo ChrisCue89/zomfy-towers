@@ -48,10 +48,10 @@ export class ReportPanel {
     if (r.lootLeft > 0) out.push({ text: T.bericht.beuteDraussen(r.lootLeft), warm: true });
     if (!r.won && r.losses) {
       out.push({ text: T.bericht.verlust, res: r.losses, bad: true, empty: T.bericht.nichts });
-      out.push({ text: T.bericht.trost, dim: true });
+      out.push({ text: T.bericht.trost(r.damaged), dim: true });
     } else if (r.won) {
       // Ein Gedanke von Mika zum Schluss (m3-r1: »sehr nüchtern«)
-      const heil = (r.homeNow !== undefined ? r.homeNow >= r.homeMax : !r.homeLost) && !r.broken;
+      const heil = !r.homeLost && !r.broken && (r.homeNow === undefined || r.homeNow >= r.homeMax);
       out.push({ text: heil ? T.bericht.schlussHeil : T.bericht.schlussKratzer, dim: true });
     }
     return out;

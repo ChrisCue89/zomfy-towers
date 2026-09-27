@@ -125,9 +125,12 @@ export function createGlowMaterial(color = 0xffffff, options = {}) {
 
 /**
  * Umriss hinter Verdeckungen: flache Farbe, gerastert, nur dort, wo etwas
- * davor steht (Tiefentest GREATER, schreibt keine Tiefe). Wird VOR der Figur
- * gezeichnet (renderOrder 1, Figur 2) – so verdeckt sie sich nicht selbst,
- * und wo sie sichtbar ist, übermalt sie den Umriss.
+ * davor steht (Tiefentest GREATER, schreibt keine Tiefe). Wird VOR dem
+ * eigenen Modell gezeichnet – so verdeckt es sich nicht selbst, und wo es
+ * sichtbar ist, übermalt es den Umriss. Reihenfolge (renderOrder): Umrisse
+ * der Schlurfer und Türme 1, Türme 1.2, Schlurfer 1.5, Umriss von Mika 1.75,
+ * Mika 2 – so scheint Mika auch durch einen Schlurfer oder Turm vor ihr
+ * durch (m3-r2).
  */
 export function createSilhouetteMaterial(color, density = 0.5) {
   const material = new THREE.MeshBasicMaterial({ color });

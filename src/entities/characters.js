@@ -106,7 +106,7 @@ function buildLantern() {
  * @returns {{root: THREE.Group, parts: object, lantern: object}}
  */
 export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
-  const material = createWorldMaterial({ occluder });
+  const material = createWorldMaterial({ occluder, selfLight: 0.3 }); // nachts nie ein dunkler Klumpen (m3-r2)
   const geo = (model) => model.toGeometry({ jitter: 0.03, seed });
   const root = new THREE.Group();
   root.name = 'Figur';

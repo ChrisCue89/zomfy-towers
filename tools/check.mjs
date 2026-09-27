@@ -188,6 +188,7 @@ async function runTour(browser, url) {
       window.zomfy.setFlag('abendHinweis');
       window.zomfy.setFlag('spaetHinweis');
       window.zomfy.setFlag('abendHorde');
+      window.zomfy.setFlag('ruheHinweis');
       window.zomfy.setHorde(false);
     });
 
@@ -298,7 +299,9 @@ async function runTour(browser, url) {
         if (typeof d === 'function') {
           for (const flags of [{}, { radioGehoert: true, briefkastenGesehen: true, sesselProbiert: true }]) {
             for (let day = 1; day <= 4; day++) {
-              for (const minute of [60, 720, 900]) collect(d({ flags, time: { day, minute } }));
+              for (const minute of [60, 720, 900]) {
+                for (const schrott of [0, 99]) collect(d({ flags, time: { day, minute }, inventory: { schrott } }));
+              }
             }
           }
         } else collect(d);
@@ -387,6 +390,7 @@ async function runBuildChecks(browser, url) {
     window.zomfy.setFlag('abendHinweis');
     window.zomfy.setFlag('spaetHinweis');
     window.zomfy.setFlag('abendHorde');
+    window.zomfy.setFlag('ruheHinweis');
     window.zomfy.setHorde(false);
     window.zomfy.setTime(9, 0);
   });
@@ -516,9 +520,9 @@ async function runBuildChecks(browser, url) {
   if (st.inventory.stein === steinVorFelsen + 1) note('✓ Werkzeug: mit Spitzhacke gibt der Felsen Stein');
   else fail(`Werkzeug: Felsen gab ${st.inventory.stein - steinVorFelsen} Stein`);
 
-  // Werkbank-Menü: Verwerten nur mit gehaltenem E (ein kurzer Druck kostet nichts)
+  // Werkbank-Menü: ein kurzer Druck verwertet einmal, gehaltenes E macht gemächlich weiter
   await z(() => {
-    window.zomfy.give({ stein: 3 });
+    window.zomfy.give({ stein: 9 });
     const bank = window.zomfy.buildings().find((b) => b.type === 'werkbank');
     window.zomfy.teleport(bank.i + 1, bank.j + 1.8, Math.PI);
     window.zomfy.interact(`bau-${bank.id}`);
@@ -536,12 +540,12 @@ async function runBuildChecks(browser, url) {
   await settle(page, 3);
   const nachTippen = (await state()).inventory.stein;
   await page.keyboard.down('KeyE');
-  await settle(page, 30);
+  await settle(page, 60);
   await page.keyboard.up('KeyE');
   await settle(page, 3);
   const nachHalten = (await state()).inventory.stein;
-  const verwertet = steinVorVerwerten - nachHalten;
-  if (nachTippen === steinVorVerwerten && verwertet >= 3 && verwertet % 3 === 0) note(`✓ Werkbank: kurzer Druck verwertet nichts, gehaltenes E schon (${verwertet} Stein zu Schrott)`);
+  const verwertet = nachTippen - nachHalten;
+  if (steinVorVerwerten - nachTippen === 3 && verwertet >= 3 && verwertet % 3 === 0) note(`✓ Werkbank: kurzer Druck verwertet einmal (3 Stein), gehaltenes E macht weiter (${verwertet} Stein)`);
   else fail(`Werkbank: Stein ${steinVorVerwerten} -> nach kurzem E ${nachTippen} -> nach gehaltenem E ${nachHalten}`);
   await settle(page, 25);
   await page.screenshot({ path: join(SHOTS, 'werkbank.png') });
@@ -697,7 +701,7 @@ async function runNightChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
-    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde']) window.zomfy.setFlag(f);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis']) window.zomfy.setFlag(f);
     window.zomfy.setTime(9, 0);
     window.zomfy.teleport(-3, 1.5, 0);
     window.zomfy.give({ schrott: 60, zahnraeder: 2, holz: 10 });
@@ -772,16 +776,21 @@ async function runNightChecks(browser, url) {
     if (nachher > vorher && liegt < loot.length) note(`✓ Loot: im Sammelradius eingesammelt (Schrott ${vorher} → ${nachher})`);
     else fail(`Loot: nicht eingesammelt (Schrott ${vorher} → ${nachher}, liegt noch ${liegt})`);
 
-    // Ausbauen über die Auswahl: Q = Stufe 2, dann Q = Spezialisierung A
+    // Ausbauen über die Auswahl: Q fragt nach, zweites Q kauft Stufe 2 – dann dasselbe für Spezialisierung A
     await z((id) => window.zomfy.selectBuilding(id), turm.id);
     await step(100);
+    await page.keyboard.press('KeyQ');
+    await step(100);
+    const nachEinemQ = (await z(() => window.zomfy.buildings())).find((b) => b.id === turm.id)?.level;
+    await page.keyboard.press('KeyQ');
+    await step(600);
     await page.keyboard.press('KeyQ');
     await step(100);
     await page.keyboard.press('KeyQ');
     await step(100);
     const aus = (await z(() => window.zomfy.buildings())).find((b) => b.id === turm.id);
-    if (aus?.level === 3 && aus?.spec === 'A') note('✓ Ausbau: Stufe 2, dann Spezialisierung A über die Bauleiste');
-    else fail(`Ausbau: Turm steht auf ${JSON.stringify(aus)}`);
+    if (nachEinemQ === 1 && aus?.level === 3 && aus?.spec === 'A') note('✓ Ausbau: ein Q fragt nach, zweimal Q kauft – Stufe 2, dann Spezialisierung A');
+    else fail(`Ausbau: nach einem Q Stufe ${nachEinemQ}, danach ${JSON.stringify(aus)}`);
 
     // Abreißen liegt auf V: ein gewohntes R (sonst Katapult) reißt nie einen Turm ab
     for (const key of ['KeyR', 'KeyR', 'KeyV']) {
@@ -931,7 +940,7 @@ async function runCombatChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
-    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'introGesehen']) window.zomfy.setFlag(f);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen']) window.zomfy.setFlag(f);
     window.zomfy.setHorde(false);
     window.zomfy.setTime(10, 0);
     window.zomfy.give({ holz: 30, stein: 20, schrott: 60, fasern: 20, stoff: 10, zahnraeder: 2 });
@@ -1012,6 +1021,8 @@ async function runCombatChecks(browser, url) {
   await page.keyboard.press('Tab');
   await step(100);
   await page.keyboard.press('KeyC');
+  await step(100);
+  await page.keyboard.press('KeyC'); // Kaufen per Taste braucht einen zweiten Druck
   await step(100);
   const aufgewertet = (await state()).weapons.pfanne;
   if (aufgewertet === 2) note('✓ Waffen: Bratpfanne über die Bauleiste (Figur, C) auf Stufe 2');

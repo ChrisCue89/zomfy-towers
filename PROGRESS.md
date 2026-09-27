@@ -5,6 +5,64 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 3 – Kontrollrunde (m3-r2) und Nachbesserung
+
+**Testspieler:** Kira 8/10, Mira 8/10, Jonas 7/10, Theo 7/10 (vorher 6, 7, 6,
+7) – Berichte und Auswertung in `playtests/m3-r2/` (`ZUSAMMENFASSUNG.md`).
+Kein Absturz, keine Konsolenmeldung, Neuladen in allen Lagen stabil. Die
+Nacht ist jetzt lesbar; gebremst haben Käufe per Tastendruck, Schläge ins
+Leere, übersehene Wege zur Rückwand, Hängenbleiben und eine zu flache
+Schwierigkeit.
+
+**Gefunden (Spielfluss)**
+
+- Ein Tastendruck kaufte Aufwertungen und Spezialisierungen ohne Rückfrage.
+- Schläge gegen Schlurfer am Waldrand wirkten nicht (sie galten noch als
+  »im Wald«), knapp außer Reichweite ging jeder Klick ins Leere.
+- Mika im Getümmel nicht zu finden – ihr Umriss wurde vor den Schlurfern
+  gezeichnet und schien deshalb nie durch einen Schlurfer durch.
+- Mikas Tipp »Nah am Haus kommen alle vorbei« führte die ersten Türme vor
+  die Tür; die Wege zur Rückwand sah man nicht.
+- Hängenbleiben an Tonne, Beet, Kiste am Auto, Veranda und Sitzstamm.
+- Ausruhen im Sessel verpasst, wer Rückfragen wegdrückt.
+- Nach Nacht 1 leichter statt schwerer; Reparieren fast gratis; Loot ohne
+  Eile; Scharfschütze fast wirkungslos.
+
+**Geändert**
+
+- Kaufen fragt per Taste nach (»Nochmal drücken«), Mausklick kauft sofort.
+- Ausfallschritt beim Schlag (bis 1,1 m), Schlurfer am Waldrand treffbar;
+  dicht am Schlurfer schlägt jeder Klick zu, statt einen Turm auszuwählen.
+- Umriss-Reihenfolge: Mika scheint gold durch Schlurfer und Türme, Türme
+  hell durch das Dach; Mika hat nachts einen Hauch Eigenlicht.
+- Beim Bauen: größere rote Wegpunkte, rote Kreuze an den Ankunftsstellen am
+  Haus, Pfeile für Wege aus dem Bild, ein kräftiger Reichweitenkreis, der
+  Ablehnungsgrund direkt unter dem Geist; die Hinweis-Tafel ist schmaler und
+  weicht dem Geist aus.
+- Um Ecken gleiten (Mika schaut kurz voraus, auf welcher Seite es
+  weitergeht); Kiste am Auto versetzt, Türhilfe breiter, Regentonne weicht
+  dem Hüttenanbau; festgefahrene Schlurfer weichen quer aus.
+- Werkbank: ein Druck verwertet einmal, gehalten geht es weiter, mit Zähler.
+- Esc schließt Dialoge; Wellen-Meldung ohne Doppelung unter dem Banner;
+  Gedanke »Bett« erst später; Einblendungen nachts schon ab 6 m aus.
+- Sessel und Bank: »Hinsetzen und ausruhen«, Antworten mit Zielzeit, ein
+  Gedanke am ersten Nachmittag.
+- Nachts funkelnde Rauten über Beute im Bild; Standfestigkeit als Zahl;
+  Morgenbericht mit Stand beim Aufwachen und passendem Schlusssatz.
+- Balance: Nächte ab Nacht 2 steiler (18, 26, 36, 48, 62 …), ein
+  Gepanzerter schon in der letzten Welle von Nacht 3, Reparieren teurer,
+  Loot zerfällt nach 90 s, Scharfschütze deutlich stärker.
+- Prüfskript: Werkbank (einmal tippen, dann halten), Schriftprüfung mit
+  beiden Abend-Sätzen.
+
+**Offen**
+
+- Tagesinhalt nach 10 Uhr (Meilenstein 6), Stoff/Fasern ohne Zweck.
+- Sehr kleine Fenster (300 × 200), Turm hinter der Nachtleiste, Morgenlicht.
+- Arten nachts im Pulk – Meilenstein 5 (1/16-m-Modelle mit eigenen Merkmalen).
+
+---
+
 ## Meilenstein 4 – Nahkampf, Waffen und Perks ✓
 
 **Fertig**

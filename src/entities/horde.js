@@ -76,7 +76,7 @@ export class Horde {
     this.material = createWorldMaterial({ selfLight: 0.2 }); // nachts erkennbar, nicht nur die Augen
     this.glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
     // Hinter dem Haus (und anderen Verdeckungen) bleiben Schlurfer als Umriss sichtbar
-    this.silhouetteMaterial = createSilhouetteMaterial(0xa88fd0, 0.5);
+    this.silhouetteMaterial = createSilhouetteMaterial(0xa88fd0, 0.38); // zurückhaltender: im Pulk kein Knäuel (m3-r2)
     this.kinds = {};
     this.group = new THREE.Group();
     this.group.name = 'Horde';
@@ -99,7 +99,7 @@ export class Horde {
         mesh.frustumCulled = false;
         mesh.count = 0;
         mesh.visible = false;
-        mesh.renderOrder = 2;
+        mesh.renderOrder = 1.5; // nach dem eigenen Umriss (1), vor Mikas Umriss (1.75) – siehe materials.js
         this.group.add(mesh);
         meshes[p.name] = mesh;
         if (!p.glow) {
@@ -438,16 +438,21 @@ export class Horde {
         z.phase += dt * Math.min(moving, 2.2) * 5.5;
       }
 
-      // Festgefahren (z. B. an einer Ecke)? Kurz seitlich ausweichen.
+      // Festgefahren (z. B. an einem Pfosten oder einer Ecke)? Seitlich
+      // ausweichen – quer zur Laufrichtung, damit er sicher vorbeikommt (m3-r2:
+      // Schlurfer hingen lange an der Wäscheleine).
       if (z.state === 'walk' || z.state === 'approach') {
         const progressed = Math.hypot(z.x - z.lastX, z.z - z.lastZ);
         z.stuck = progressed < speed * dt * 0.2 && speed > 0 ? z.stuck + dt : 0;
-        if (z.stuck > 0.8) {
+        if (z.stuck > 0.5) {
           if (z.state === 'approach' && pathing.distanceToHome(z.x, z.z) < 1.3) z.state = 'attack';
           else {
-            const a = this.rng.next() * Math.PI * 2;
-            z.kx += Math.cos(a) * 1.2;
-            z.kz += Math.sin(a) * 1.2;
+            const wx = vx - z.kx;
+            const wz = vz - z.kz;
+            const side = this.rng.next() < 0.5 ? Math.PI / 2 : -Math.PI / 2;
+            const a = wx || wz ? Math.atan2(wz, wx) + side : this.rng.next() * Math.PI * 2;
+            z.kx += Math.cos(a) * 1.6;
+            z.kz += Math.sin(a) * 1.6;
           }
           z.stuck = 0;
         }

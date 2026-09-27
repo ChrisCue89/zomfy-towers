@@ -1,6 +1,6 @@
 // Loot am Boden (DESIGN.md 6.5): Stirbt ein Schlurfer, fällt sein Loot genau
 // dort hin – Schrottbrocken, manchmal ein Zahnrad, beim Anführer ein
-// Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach zwei Minuten
+// Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach anderthalb Minuten
 // zerfällt es (die letzten 15 Sekunden blinkt es). Liegendes Loot funkelt ab
 // und zu, nachts glimmt es; außerhalb des Bildes zeigen Rauten am Rand hin.
 
@@ -9,7 +9,7 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial } from '../render/materials.js';
 
-export const LOOT_LIFE = 120;
+export const LOOT_LIFE = 90; // m3-r2: lag sonst so lange, dass Einsammeln nie eilte
 const BLINK = 15;
 const MAX = 160;
 

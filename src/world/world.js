@@ -149,6 +149,7 @@ export class World {
     for (const c of old.colliders) this.colliders.remove(c);
     this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
+    this.props.setHouseLevel(level);
     this.heightZones = this.shelter.heightZones;
     this.pathing.setHome(homeRect(level));
     this.refreshInteractions();
@@ -182,7 +183,7 @@ export class World {
     const door = this.shelter.door.center;
     const dx = door.x - pos.x;
     const dz = pos.z - door.z; // > 0: draußen (südlich der Wand)
-    if (Math.abs(dx) > 0.7 || Math.abs(dz) > 1.3 || move.z === 0) return move;
+    if (Math.abs(dx) > 0.95 || Math.abs(dz) > 1.4 || move.z === 0) return move; // m3-r2: etwas breiter
     const towardDoor = (dz > 0 && move.z < 0) || (dz < 0 && move.z > 0);
     if (!towardDoor || Math.abs(move.x) > 0) return move;
     return { x: Math.max(-0.8, Math.min(0.8, dx * 3)), z: move.z };

@@ -5,8 +5,9 @@
 // ihre Wege neu (pathing.rebuild).
 
 import * as THREE from 'three';
-import { createStaticVoxelObject } from '../render/staticMesh.js';
-import { createGlowMaterial } from '../render/materials.js';
+import { createStaticVoxelObject, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
+import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
+import { P } from '../render/palette.js';
 import { BUILDINGS, footprint } from '../data/buildings.js';
 import { towerStats } from '../data/towers.js';
 import { BUILDING_MODELS } from './buildingModels.js';
@@ -31,6 +32,8 @@ export class Buildings {
     this.list = [];
     this.nextId = 1;
     this.glowMaterial = createGlowMaterial(0xffffff);
+    // Türme hinter Dach und Baumkronen: heller Rasterumriss (m3-r2), neben Mika (gold) und Schlurfern (lavendel)
+    this.towerSilhouette = createSilhouetteMaterial(P.s8, 0.4);
     lights.addGlow(this.glowMaterial, { dim: 0x6a6f80, bright: 0xffc86a, boost: 1.1, mode: 'lamp' });
     this.models = new Map();
     this.checkCache = { key: '', result: null };
@@ -162,6 +165,7 @@ export class Buildings {
       b.pool = null;
     }
     b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec });
+    if (BUILDINGS[b.type].tower) this.addOutline(b.object);
     b.object.position.set(cx, 0, cz);
     b.head = b.object.userData.head || null;
     if (b.head && b.headAngle !== undefined) b.head.rotation.y = b.headAngle;
@@ -169,6 +173,24 @@ export class Buildings {
     const spec = BUILDING_MODELS[b.type];
     if (spec?.pool) b.pool = this.lightPools.add(cx, cz + 0.3, spec.pool.radius);
     if (b.type === 'laternenturm') b.pool = this.lightPools.add(cx, cz, towerStats(b.type, b.level, b.spec).range);
+  }
+
+  /**
+   * Umriss hinter Verdeckungen: Jedes sichtbare Teil bekommt eine Kopie mit
+   * dem Umriss-Material, die vorher gezeichnet wird (renderOrder 1 vor 1.2,
+   * siehe materials.js) – der Kopf dreht sich mit, weil die Kopie sein Kind ist.
+   */
+  addOutline(object) {
+    const parts = [];
+    object.traverse((o) => {
+      if (o.isMesh && o.material !== SHADOW_PROXY_MATERIAL && o.material !== this.glowMaterial) parts.push(o);
+    });
+    for (const mesh of parts) {
+      mesh.renderOrder = 1.2;
+      const outline = new THREE.Mesh(mesh.geometry, this.towerSilhouette);
+      outline.renderOrder = 1;
+      mesh.add(outline);
+    }
   }
 
   /** Turm auf eine neue Stufe/Spezialisierung bringen. */

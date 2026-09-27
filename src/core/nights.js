@@ -18,6 +18,7 @@ export class Nights {
     this.queue = []; // noch zu erscheinende Schlurfer { type, entry, delay }
     this.enabled = true; // aus nur für Prüf-Bilder (window.zomfy.setHorde)
     this.lastMinute = null; // für Zeitsprünge (Ausruhen, Werkeln)
+    this.finishedAt = -99; // wann die letzte Nacht endete (game.clock)
   }
 
   get state() {
@@ -84,8 +85,8 @@ export class Nights {
         const wave = plan.waves[night.wave];
         night.wave++;
         for (const s of wave.spawns) this.queue.push({ ...s });
-        const from = wave.entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
-        g.hud.toast(T.horde.welle(night.wave, plan.waves.length, from), 'warnung', 4);
+        // Das Banner sagt es groß (Welle und Richtung), die Nachtleiste behält es –
+        // eine zusätzliche Meldung lag nur darüber (m3-r2)
         g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
       }
       // Morgengrauen: Wer noch da ist, flieht in den Wald
@@ -156,6 +157,7 @@ export class Nights {
     if (night.done) return;
     night.done = true;
     night.won = won;
+    this.finishedAt = g.clock; // Gedanken danach erst mit etwas Abstand (m3-r2: Textstau)
     this.queue.length = 0;
     if (won) {
       st.stats.nightsWon = (st.stats.nightsWon || 0) + 1;
@@ -175,6 +177,7 @@ export class Nights {
       homeMax: HOUSE_LEVELS[st.world.houseLevel].hp,
       preLoss: night.preLoss || 0,
       losses: night.losses || null,
+      damaged: night.damaged || null,
       broken: night.broken || 0,
     };
     g.quietSave();
