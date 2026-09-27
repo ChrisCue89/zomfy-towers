@@ -52,6 +52,15 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
+  /**
+   * Maßstab wechseln (M11: drinnen doppelt so groß). Vielfache von 80 px/m
+   * halten alle Voxelkanten auf dem Pixelraster.
+   */
+  setPxPerMeter(pxPerMeter) {
+    this.px = 1 / pxPerMeter;
+    this.setViewport(this.rtWidth, this.rtHeight);
+  }
+
   /** Sofort auf einen Punkt springen (z. B. nach dem Laden). */
   jumpTo(x, z) {
     this.focus.set(x, 0, z + (this.cfg.focusOffsetZ || 0));

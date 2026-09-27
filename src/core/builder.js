@@ -48,7 +48,9 @@ export class Builder {
   tabs() {
     // »Einrichten« (Zelte, Möbel, Funkturm) kommt mit dem ersten Besuch (Meilenstein 6)
     const guests = Object.values(this.game.state.survivors).some((s) => s.stage > 0);
-    return guests ? ['tuerme', 'figur', 'zuhause', 'einrichten'] : ['tuerme', 'figur', 'zuhause'];
+    // Drinnen (M11) wird nichts aufgestellt: keine Türme, nur Figur, Zuhause und Einrichten
+    const tabs = guests ? ['tuerme', 'figur', 'zuhause', 'einrichten'] : ['tuerme', 'figur', 'zuhause'];
+    return this.game.viewInside ? tabs.slice(1) : tabs;
   }
 
   selectionTitle() {
@@ -103,7 +105,7 @@ export class Builder {
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.buildOptions(['zelt']);
+    const options = this.game.viewInside ? [] : this.buildOptions(['zelt', 'holzlager']);
     for (const o of this.game.furnishing.options()) options.push(this.option({ ...o, buy: true }, inv));
     const tower = this.game.survivors.towerOption();
     if (tower) options.push(this.option(tower, inv));
@@ -112,16 +114,17 @@ export class Builder {
 
   homeOptions() {
     const inv = this.game.state.inventory;
-    const options = this.buildOptions(HOME_TAB);
+    const options = this.game.viewInside ? [] : this.buildOptions(HOME_TAB);
     const level = this.game.state.world.houseLevel;
     const next = HOUSE_LEVELS[level + 1];
+    // Ausbau (M11): jede Stufe ein Raum – Küche, Schlafzimmer, Werkstatt, Lager
     options.push(
       this.option(
         {
           id: 'huette',
           icon: 'huette',
-          name: next ? T.bauten.huette : T.bauten.huetteFertig,
-          info: next ? T.bautenInfo.huette : T.bauleiste.hausMax,
+          name: next ? T.bauten.ausbau[level + 1] : T.bauten.hausStufe[level],
+          info: next ? T.bautenInfo.ausbau[level + 1] : T.bauleiste.hausMax,
           cost: next ? next.cost : {},
           disabled: !next,
           disabledText: T.bauleiste.hausMax,
@@ -996,7 +999,7 @@ export class Builder {
       this.world.setHouseLevel(level);
       this.game.pushPlayerOut();
     }, () => {
-      this.game.hud.toast(T.meldungen.hausFertig, 'huette', 4);
+      this.game.hud.toast(T.meldungen.hausFertigStufe[level], 'huette', 4);
       this.game.sound.play('stufe');
       this.game.startDialog('hausFertig');
       this.game.quietSave();

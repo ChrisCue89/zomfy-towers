@@ -3,6 +3,8 @@
 // world/furnitureModels.js) und bringt Gemütlichkeit. Die Reihenfolge ist die,
 // in der die Bauleiste sie anbietet (immer das nächste noch fehlende Stück).
 
+import { houseCozy, HOUSE_MAX } from './buildings.js';
+
 export const FURNITURE_ORDER = ['bild', 'teekanne', 'wimpel', 'lichterkette', 'stehlampe', 'lesesessel'];
 
 export const FURNITURE = {
@@ -26,5 +28,5 @@ export function coziness(owned) {
   return (owned || []).reduce((sum, id) => sum + (FURNITURE[id]?.cozy || 0), 0);
 }
 
-/** Höchste erreichbare Gemütlichkeit (für die Anzeige »7/10«). */
-export const MAX_COZY = Object.values(FURNITURE).reduce((sum, f) => sum + f.cozy, 0);
+/** Höchste erreichbare Gemütlichkeit (für die Anzeige »7/12«): Möbel plus Schlafzimmer (M11). */
+export const MAX_COZY = Object.values(FURNITURE).reduce((sum, f) => sum + f.cozy, 0) + houseCozy(HOUSE_MAX);

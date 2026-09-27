@@ -15,6 +15,9 @@ export const LAYOUT = {
 
   // Das alte Fischerhaus: Ursprung = Südwest-Ecke unten, 40 × 28 Voxel (5 × 3,5 m).
   shelter: { x: 4.5, z: -9.0, width: 40, depth: 28 },
+  // Der Innenraum (M11) liegt als eigenes Bild weit östlich der Karte:
+  // Nordwest-Ecke seines Grundrisses (siehe interior.js)
+  interior: { x: 300, z: 0 },
 
   // Hof vor dem Haus: letzte Verteidigung (siehe BAY.yard)
   campfire: { x: 0.5, z: -1.75 },

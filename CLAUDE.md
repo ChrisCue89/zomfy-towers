@@ -83,7 +83,8 @@ Lichtinseln in kalten Nächten, keine Horror-Ästhetik. Der Pixel-Look ist
 Stilmittel, kein Selbstzweck: Lesbarkeit und Stimmung gehen vor. Technisch
 gilt bis auf Weiteres:
 
-- Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**,
+- Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**
+  (drinnen 160 px/m, `interiorPxPerMeter`, M11),
   ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
   `antialias: false`, CSS `image-rendering: pixelated`.
 - Oberfläche: eigene Leinwand mit ca. 360 Zeilen (`uiLines`), eigene
@@ -143,7 +144,9 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Wegenetz prozedural aus `mapSeed`, Abstandsfelder,
                       Begrenzung), layout (Grundriss der Bucht + feste
                       Quellen), terrain, water (Wellen auf dem See), nature,
-                      shelter (Stufen), props (Steg, Leuchtmast, Wrack,
+                      shelter (das Haus von außen, Stufen), interior (Innenraum
+                      als eigenes Bild: Räume je Stufe, Licht, Tür, M11),
+                      props (Steg, Leuchtmast, Wrack,
                       Warnpfähle), colliders, daynight, lights, particles,
                       effects (Späne, Staub), grid (Bauraster mit Weg- und
                       Hof-Feldern), resources (Quellen, auch entlang der
@@ -152,7 +155,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Stufe/Spezialisierung), buildPreview (Geistermodell,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
-                      furnitureModels (Möbel im Raster der Hütte)
+                      furnitureModels (Möbel im Wohnraum des Innenraums)
 src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
@@ -243,6 +246,13 @@ Grundprinzipien:
   wird balanciert, nicht im Code.
 - **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
   eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
+- **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
+  derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
+  `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
+  Mika drinnen ist – auch nach Teleport und Laden. Die Haustür löst einen
+  Übergang aus (`world.passageAt`, `game.passage`). Kamin- und Tischlicht
+  stehen fest im Innenraum. Neue Räume: `ROOMS`, `ROOM_BUILDERS`,
+  `ROOM_COLLIDERS`, `ROOM_INTERACTIONS`, `ROOM_POOLS` in `interior.js`.
 
 ### Leistung – bewährte Kniffe
 
@@ -300,7 +310,11 @@ Grundprinzipien:
    Poller, er lüftet die Mütze, winkt nach dem Handel, Turmteile (Glücksmünze
    an Tag 4 kaufen, mit echter Taste einbauen, Teile von jedem Abschuss,
    Speichern v9, keine Münze im Laternenturm); ab M10d: Musik tagsüber
-   »tag«, bei der Welle »nacht«, alle Stücke offline ohne Übersteuerung.
+   »tag«, bei der Welle »nacht«, alle Stücke offline ohne Übersteuerung; ab
+   M11: Haustür mit echten Tasten (hinein mit 160 px/m, hinaus), Schlafen und
+   Laden im Innenraum, Migration v9 → v10, Stufen 3–5 (Suppe, Werkbank
+   drinnen, Bett im Schlafzimmer, Gemütlichkeit +2), Holzlager (Bilder:
+   innen, kueche, schlafzimmer).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -359,11 +373,13 @@ ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 (`setPartsChance`, `null` = Wert aus `zombies.js`); ab M10 zeigt
 `trader()` auch Boot-z, Leine (`rope`, Glieder) und Balduins Gesten;
 ab M10d berechnet `renderMusic(id, s, stufe)` ein Musikstück ohne
-Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende.
+Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende;
+ab M11 zeigt `interior()` Eingang, Ausgang, Grenzen, Räume, Maßstab und ob
+Mika drinnen ist, `wakeSpot()` liegt im Innenraum.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
-| `?spawn=inside` | Spielfigur startet in der Notunterkunft |
+| `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |
 | `?seed=123` | Anderer Welt-Seed (Modelle, Zufall) |
 | `?map=123` | Startwert des Wegenetzes erzwingen (sonst je neuem Spiel zufällig; `?test`/`?playtest` nehmen 3) |
 

@@ -1,5 +1,6 @@
 // Einrichten (Meilenstein 6): Möbel machen das Zuhause gemütlich. Gekaufte
-// Stücke stehen an festen Plätzen (world/furnitureModels.js), die Summe ihrer
+// Stücke stehen an festen Plätzen im Wohnraum des Innenraums
+// (world/furnitureModels.js, seit Meilenstein 11), die Summe ihrer
 // Gemütlichkeit bringt jeden Morgen Erfahrung und – ab 5 – »ausgeschlafen«
 // (schneller unterwegs bis Mittag). Die Bauleiste bietet immer das nächste
 // fehlende Stück an (Reiter »Einrichten«).
@@ -7,19 +8,20 @@
 import { T } from '../data/texts.js';
 import { FURNITURE, FURNITURE_ORDER, COZY, coziness, MAX_COZY } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
-import { SURVIVORS } from '../data/survivors.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { createGlowMaterial, createWorldMaterial } from '../render/materials.js';
-import { LAYOUT, V } from '../world/layout.js';
+import { LAYOUT } from '../world/layout.js';
+import { U, INTERIOR_FLOOR } from '../world/interior.js';
 import { pay } from './inventory.js';
 import { hoursOf } from './state.js';
+import { houseCozy } from '../data/buildings.js';
 
 export class Furnishing {
   /** @param {import('./game.js').Game} game */
   constructor(game) {
     this.game = game;
     this.objects = new Map(); // id -> { object, collider }
-    this.material = createWorldMaterial({ occluder: true });
+    this.material = createWorldMaterial();
     this.glow = createGlowMaterial(0xffffff);
     game.world.lights.addGlow(this.glow, { dim: 0x7a6a58, bright: 0xffc86a, boost: 1.15, mode: 'lamp' });
   }
@@ -29,7 +31,7 @@ export class Furnishing {
   }
 
   get cozy() {
-    return coziness(this.owned);
+    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel); // Schlafzimmer (M11)
   }
 
   /** Nach dem Laden: alles Gekaufte aufstellen. */
@@ -42,19 +44,13 @@ export class Furnishing {
     const g = this.game;
     const spec = FURNITURE_MODELS[id]?.();
     if (!spec || this.objects.has(id)) return;
-    const object = createStaticVoxelObject(spec.model, this.material, { seed: 5, shadow: spec.outside ? 'full' : 'none' });
-    if (spec.glow) object.add(createStaticVoxelObject(spec.glow, this.glow, { shadow: 'none', jitter: 0 }));
-    let collider = null;
-    if (spec.outside) {
-      // Körbchen: draußen am Feuer, dort, wo Knopf tagsüber liegt
-      const at = SURVIVORS.knopf.spot;
-      object.position.set(at.x - 3 * V, 0, at.z - 2.5 * V);
-    } else {
-      const { x: ox, z: oz } = LAYOUT.shelter;
-      object.position.set(ox, 0, oz);
-      const c = spec.collider;
-      if (c) collider = g.world.colliders.addBox(ox + c.x0 * V, oz + c.z0 * V, ox + c.x1 * V, oz + c.z1 * V, 'moebel');
-    }
+    // Im feinen Maß, mit Schatten (die Sonne fällt durch die Fenster herein)
+    const object = createStaticVoxelObject(spec.model, this.material, { seed: 5, size: U, jitter: 0.04 });
+    if (spec.glow) object.add(createStaticVoxelObject(spec.glow, this.glow, { shadow: 'none', jitter: 0, size: U }));
+    const { x: ox, z: oz } = LAYOUT.interior;
+    object.position.set(ox, -INTERIOR_FLOOR * U, oz);
+    const c = spec.collider;
+    const collider = c ? g.world.colliders.addBox(ox + c.x0 * U, oz + c.z0 * U, ox + c.x1 * U, oz + c.z1 * U, 'moebel') : null;
     g.scene.add(object);
     this.objects.set(id, { object, collider });
   }

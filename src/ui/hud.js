@@ -167,7 +167,7 @@ export class Hud {
     this.drawNightBar(ui);
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
-    if (show.prompt) this.drawGoalMarker(ui);
+    if (show.prompt && !this.game.viewInside) this.drawGoalMarker(ui);
     if (show.prompt) this.drawTargetMark(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
@@ -466,6 +466,20 @@ export class Hud {
     const sectors = new Map();
     this.edgeCount = 0;
     this.edgeMarks = [];
+    if (g.viewInside) {
+      // Drinnen (M11): keine Pfeile zu Schlurfern und Beute draußen. Wird das Haus
+      // angegriffen, blinkt unten das Haus – dort geht es durch die Tür hinaus.
+      if (this.homeAlarm > 0) {
+        const blinkIn = Math.floor(g.clock * 3) % 2 === 0;
+        const x = Math.round(cx);
+        const y = safe.y1 - 10;
+        ui.rect(x - 9, y - 9, 18, 18, COLORS.outline);
+        ui.rect(x - 8, y - 8, 16, 16, blinkIn ? COLORS.buildBad : COLORS.fill);
+        drawIcon(ui.ctx, 'haus', x - 6, y - 6);
+        this.edgeMarks.push({ art: 'zuhause', richtung: 'unten', anzahl: 1 });
+      }
+      return;
+    }
     const where = (ux, uy) => {
       const h = ux < -0.38 ? 'links' : ux > 0.38 ? 'rechts' : '';
       const v = uy < -0.38 ? 'oben' : uy > 0.38 ? 'unten' : '';

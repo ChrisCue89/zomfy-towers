@@ -233,7 +233,34 @@ export function buildTentGlow() {
   return m;
 }
 
+/**
+ * Holzlager (M11, DESIGN.md 6.8): Scheite unter einem Pultdach, die hellen
+ * Stirnseiten zeigen zur Kamera. Ab 2 × 1 Feldern, wie das Beet zum Ernten.
+ */
+export function buildWoodpile(seed) {
+  const m = new VoxelModel();
+  for (const [x, z, h] of [[-8, -4, 11], [7, -4, 11], [-8, 3, 9], [7, 3, 9]]) m.box(x, 0, z, x, h, z, P.e3); // Pfosten
+  m.box(-7, 0, -3, 6, 0, 2, P.e3);
+  for (let row = 0; row < 4; row++) {
+    for (let k = 0; k < 6; k++) {
+      const cx = -7 + k * 2 + (row % 2);
+      if (cx > 5) continue;
+      const y = 1 + row * 2;
+      const bark = hash3(cx, row, 0, seed) < 0.5 ? P.e4 : P.e3;
+      m.box(cx, y, -3, cx + 1, y + 1, 2, (x, yy, z) => (z === 2 ? ((x + yy + row) % 2 ? P.e7 : P.e8) : bark));
+    }
+  }
+  // Pultdach, nach Süden geneigt
+  for (let z = -5; z <= 4; z++) {
+    const y = 12 - Math.floor((z + 5) / 3);
+    m.box(-9, y, z, 8, y, z, (x) => (x % 2 ? P.e5 : P.e6));
+  }
+  m.box(-6, 1, 3, -5, 2, 4, P.e6); // Hackklotz daneben
+  return m;
+}
+
 export const BUILDING_MODELS = {
+  holzlager: { model: buildWoodpile },
   zelt: { model: buildTent, glow: buildTentGlow },
   werkbank: { model: buildWorkbench, glow: buildWorkbenchGlow },
   barrikade: { model: (seed) => buildBarricade(seed, 1) }, // Stufen und Trümmer: buildings.js

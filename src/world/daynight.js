@@ -82,6 +82,15 @@ export class DayNight {
       vignetteColor: new THREE.Vector3(0.4, 0.4, 0.5),
       outlineTint: new THREE.Vector3(0.9, 0.82, 1.0),
     };
+    // Drinnen (M11): warm und gemütlich, nachts kaum kühle Tönung – das Licht kommt vom Kamin
+    this.lookInside = {
+      exposure: 1,
+      tint: new THREE.Vector3(1, 1, 1),
+      saturation: 1,
+      vignette: 0.25,
+      vignetteColor: new THREE.Vector3(0.3, 0.2, 0.18),
+      outlineTint: new THREE.Vector3(0.9, 0.8, 0.9),
+    };
     this.lampLevel = 0;
     this.night = 0; // 0 = heller Tag, 1 = tiefe Nacht
     this.isSun = true;
@@ -141,6 +150,12 @@ export class DayNight {
     // Nachtfaktor: weich um Sonnenauf- und -untergang
     const dayness = smoothstep(5.2, 7.0, h) * (1 - smoothstep(19.2, 21.0, h));
     this.night = clamp(1 - dayness, 0, 1);
+    const n = this.night;
+    const inside = this.lookInside;
+    inside.exposure = 1.04 + 0.1 * n;
+    inside.tint.set(1.02 + 0.02 * n, 0.99 - 0.01 * n, 0.95 - 0.03 * n);
+    inside.saturation = 1.02 - 0.08 * n;
+    inside.vignette = 0.22 + 0.18 * n;
 
     const { direction, isSun } = DayNight.celestialDirection(hours, this.direction);
     this.isSun = isSun;

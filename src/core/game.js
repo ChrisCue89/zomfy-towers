@@ -53,7 +53,7 @@ import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from 
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
-import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, barricadeLevel, maxHpOf } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, houseLossFactor, maxHpOf } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
@@ -71,6 +71,7 @@ const FLAG_AFTER_DIALOG = {
 
 const SLEEP = { fadeOut: 1.0, black: 1.2, fadeIn: 0.9 };
 const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
+const PASSAGE_TIME = 0.45; // Sekunden für den Weg durch die Haustür (abblenden, umsetzen, aufblenden)
 const ZERO = new THREE.Vector3();
 const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es im Spielstand ist
 /** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
@@ -161,6 +162,8 @@ export class Game {
     this.rig = new CameraRig(CONFIG.render, CONFIG.camera);
     this.rig.bounds = LAYOUT.cameraBounds;
     this.rig.limits = TERRAIN_AREA;
+    this.viewInside = false; // drinnen: eigenes Bild im doppelten Maßstab (M11)
+    this.passage = null; // gerade durch die Haustür unterwegs
 
     this.hud = new Hud(this);
     this.dialog = new DialogBox(this);
@@ -203,7 +206,7 @@ export class Game {
     this.isNewGame = loaded.status !== 'ok';
     if (CONFIG.startMinute !== null) this.state.time.minute = CONFIG.startMinute;
     if (CONFIG.spawn === 'inside') {
-      const w = this.world.shelter.wakeSpot;
+      const w = this.world.interior.wakeSpot;
       Object.assign(this.state.player, { x: w.x, z: w.z, facing: w.facing });
     }
 
@@ -441,6 +444,73 @@ export class Game {
     return null;
   }
 
+  /** Figur an eine Stelle im Haus (Aufwachen, Rettung, Ohnmacht): gleich mit der Kamera von drinnen. */
+  placeInside(w) {
+    Object.assign(this.state.player, { x: w.x, z: w.z, facing: w.facing });
+    this.player.place(w.x, w.z, w.facing);
+    this.applyView(true);
+  }
+
+  /**
+   * Kamera für drinnen (eigenes Bild im doppelten Maßstab) oder draußen (M11).
+   * Wird jedes Bild geprüft – so passt die Sicht auch nach Laden und Teleport.
+   */
+  applyView(inside) {
+    this.viewInside = inside;
+    const r = CONFIG.render;
+    const ppm = inside ? r.interiorPxPerMeter : r.pxPerMeter;
+    this.rig.setPxPerMeter(ppm);
+    sharedUniforms.uPointScale.value = ppm / 40;
+    this.updateViewBounds();
+    const p = this.player.position;
+    this.rig.jumpTo(p.x, p.z);
+  }
+
+  /** Grenzen der Kamera: draußen die Karte, drinnen der Innenraum (möglichst ganz im Bild). */
+  updateViewBounds() {
+    const rig = this.rig;
+    if (!this.viewInside) {
+      rig.bounds = LAYOUT.cameraBounds;
+      rig.limits = TERRAIN_AREA;
+      return;
+    }
+    const inner = this.world.interior;
+    const b = inner.bounds;
+    const half = (rig.rtHeight * rig.px) / 2;
+    const s = rig.sin;
+    const c = rig.cos;
+    // Blickpunkt am Boden (z): oben die Rückwand samt Oberkante, unten die Vorderkante
+    const zMax = (half - c * inner.wallTop + s * b.minZ) / s;
+    const zMin = (s * b.maxZ - half) / s;
+    const lo = Math.min(zMin, zMax);
+    const hi = Math.max(zMin, zMax);
+    const mid = (zMin + zMax) / 2;
+    rig.bounds = zMin <= zMax ? { minX: b.minX, maxX: b.maxX, minZ: mid, maxZ: mid } : { minX: b.minX, maxX: b.maxX, minZ: lo, maxZ: hi };
+    rig.limits = { x0: b.minX - 0.25, x1: b.maxX + 0.25 };
+  }
+
+  // --- Durch die Haustür (M11) ------------------------------------------------------
+
+  /** Hinein oder hinaus: kurz abblenden, dann auf der anderen Seite weiter. */
+  startPassage(to) {
+    this.builder.cancel();
+    this.passage = { to, t: 0, done: false };
+    this.sound.play('tuer');
+  }
+
+  updatePassage(dt) {
+    const ps = this.passage;
+    ps.t += dt;
+    if (!ps.done && ps.t >= PASSAGE_TIME / 2) {
+      ps.done = true;
+      const spot = ps.to === 'innen' ? this.world.interior.entry : this.world.outsideDoorSpot();
+      this.player.place(spot.x, spot.z, spot.facing);
+      this.pushPlayerOut();
+      this.applyView(ps.to === 'innen');
+    }
+    if (ps.t >= PASSAGE_TIME) this.passage = null;
+  }
+
   /** Figur aus Hindernissen schieben (nach Umbau oder Laden). */
   pushPlayerOut() {
     const p = this.player.position;
@@ -537,6 +607,7 @@ export class Game {
       if (source) this.suppressed = { id: source, until: this.clock + 0.5 }; // Durchdrücken öffnet nicht gleich wieder (m3-r2), ein bewusstes zweites E schon (m6-r1: 0,8 s wirkte wie ein verschluckter Druck)
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
+      else if (aktion === 'suppe') this.cookSoup();
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
       if (onDone) onDone(aktion);
     });
@@ -554,6 +625,24 @@ export class Game {
     else if (it.npc) this.survivors.talk(it.npc);
     else if (this.gathering.interact(it)) return;
     else if (it.dialog) this.startDialog(it.dialog);
+  }
+
+  /** Küche (M11): einmal am Tag Suppe – volle Lebenspunkte und mehr davon bis zum Morgen. */
+  cookSoup() {
+    const st = this.state;
+    if (st.player.soup === st.time.day) {
+      this.hud.toast(T.meldungen.suppeSchon, null, 2.6);
+      return;
+    }
+    if (!pay(st.inventory, SOUP.cost)) {
+      this.hud.toast(T.meldungen.zuTeuer, null, 2.4);
+      return;
+    }
+    st.player.soup = st.time.day;
+    st.player.hp = this.combat.maxHp;
+    this.sound.play('aufwertung');
+    this.hud.toast(T.meldungen.suppe(SOUP.maxHp), 'herz', 3.2);
+    this.quietSave();
   }
 
   takeAxe() {
@@ -575,7 +664,7 @@ export class Game {
     if (!b) return;
     const day = this.state.time.day;
     if (b.day === day) {
-      this.hud.toast(T.meldungen.geerntet, 'beet', 2.2);
+      this.hud.toast(T.meldungen.geerntet, BUILDINGS[b.type].icon, 2.2);
       return;
     }
     const c = this.world.buildings.bounds(b);
@@ -587,7 +676,7 @@ export class Game {
       onDone: () => {
         b.day = day;
         this.state.world.buildings = this.world.buildings.toState();
-        this.effects.chips(c.x, 0.3, c.z, 'gras', 8);
+        this.effects.chips(c.x, 0.3, c.z, b.type === 'holzlager' ? 'holz' : 'gras', 8);
         this.gathering.give(BUILDINGS[b.type].harvest, c.x, 0.9, c.z);
       },
     });
@@ -794,16 +883,14 @@ export class Game {
     st.stats.nightsSlept += 1;
     st.player.hp = this.combat.maxHp; // ausgeschlafen
     this.horde.list = this.horde.list.filter((z) => z.state !== 'dying');
-    const w = this.world.shelter.wakeSpot;
+    const w = this.world.interior.wakeSpot;
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
     this.onNewDay();
     // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
     const extra = [...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
-    this.player.place(w.x, w.z, w.facing);
-    this.rig.jumpTo(w.x, w.z);
-    this.world.fadeValue = 1; // im Haus aufwachen: Dach bleibt ausgeblendet
+    this.placeInside(w);
     const ok = this.saves.save(st);
     const message = ok ? T.meldungen.gespeichert : this.saves.disabled ? T.meldungen.speichernAus : T.meldungen.speichernFehler;
     this.hud.toast(message, 'haus', 4.5);
@@ -917,11 +1004,7 @@ export class Game {
   /** Nachts gerettet: im Haus, angeschlagen, die Schlurfer verlieren sie aus den Augen. */
   applyRescue() {
     const st = this.state;
-    const w = this.world.shelter.wakeSpot;
-    Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
-    this.player.place(w.x, w.z, w.facing);
-    this.rig.jumpTo(w.x, w.z);
-    this.world.fadeValue = 1;
+    this.placeInside(this.world.interior.wakeSpot);
     st.player.hp = Math.round(this.combat.maxHp * 0.4);
     for (const z of this.horde.list) if (z.state === 'chase') z.state = 'walk';
   }
@@ -942,7 +1025,8 @@ export class Game {
     const losses = {};
     for (const res of RESOURCES) {
       if (RARE_RESOURCES.includes(res) || res === 'zahnraeder') continue;
-      const share = res === 'schrott' || res === 'teile' ? 0.25 : 0.1;
+      // Das Lager (M11) schützt die Hälfte
+      const share = (res === 'schrott' || res === 'teile' ? 0.25 : 0.1) * houseLossFactor(st.world.houseLevel);
       const n = Math.floor((st.inventory[res] || 0) * share);
       if (n > 0) {
         st.inventory[res] -= n;
@@ -980,11 +1064,7 @@ export class Game {
   applyFaint() {
     const st = this.state;
     st.time.minute = Math.min(st.time.minute + 120, DAY_MINUTES - 1);
-    const w = this.world.shelter.wakeSpot;
-    Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
-    this.player.place(w.x, w.z, w.facing);
-    this.rig.jumpTo(w.x, w.z);
-    this.world.fadeValue = 1;
+    this.placeInside(this.world.interior.wakeSpot);
     st.player.hp = this.combat.maxHp * 0.5;
     this.horde.list = this.horde.list.filter((z) => !z.day);
   }
@@ -1010,8 +1090,9 @@ export class Game {
   titleFocus(dt) {
     const f = this._titleFocus || (this._titleFocus = new THREE.Vector3());
     this.titleT = (this.titleT || 0) + dt;
-    const p = this.player.position;
-    if (this.title.screen === 'figur') f.set(p.x + 3.2, p.y, p.z - 0.4); // Mika links neben der Tafel
+    // Steht Mika im Spielstand drinnen, zeigt das Titelbild sie vor der Haustür
+    const p = this.world.isInside(this.player.position.x, this.player.position.z) ? this.world.outsideDoorSpot() : this.player.position;
+    if (this.title.screen === 'figur') f.set(p.x + 3.2, 0, p.z - 0.4); // Mika links neben der Tafel
     else f.set(6.5 + Math.sin(this.titleT * 0.07) * 3, 0, -2.5 + Math.sin(this.titleT * 0.05) * 1.0); // Haus, Steg und See
     return f;
   }
@@ -1173,6 +1254,9 @@ export class Game {
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
+    // Drinnen ist ein eigenes Bild (M11): Kamera umstellen, sobald Mika drinnen oder draußen ist
+    const inside = !titled && this.world.isInside(this.player.position.x, this.player.position.z);
+    if (inside !== Boolean(this.viewInside)) this.applyView(inside);
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
@@ -1224,7 +1308,14 @@ export class Game {
       const m = input.moveVector();
       this.combat.roll(m.x, m.z);
     }
-    this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
+    if (this.passage) {
+      this.updatePassage(dt);
+      this.player.idle(dt);
+    } else {
+      this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
+      const through = this.world.passageAt(this.player.position.x, this.player.position.z);
+      if (through) this.startPassage(through);
+    }
     const p = this.player.position;
     const sp = this.state.player;
     sp.x = p.x;
@@ -1280,7 +1371,7 @@ export class Game {
 
     // Beim Platzieren setzt E den Bau – dann keine Interaktion.
     let it = null;
-    if (!this.builder.placement && !this.player.busy) {
+    if (!this.builder.placement && !this.player.busy && !this.passage) {
       // Etwas Spielraum: Wo die Einblendung steht, wirkt auch E (und umgekehrt)
       it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.4);
       // Gesperrt bis zum Weggehen (Bett nach dem Aufwachen) oder kurz nach einem Dialog
@@ -1343,19 +1434,21 @@ export class Game {
     const proj = this.rig.project(this._tmp.set(p.x, p.y + 0.85, p.z));
     sharedUniforms.uCutCenter.value.set(proj.x, proj.y);
     sharedUniforms.uCutDepth.value = proj.depth;
-    sharedUniforms.uCutStrength.value = 1;
+    sharedUniforms.uCutStrength.value = this.viewInside ? 0 : 1; // drinnen verdeckt nichts die Figur
   }
 
   /** Umgebung, Musik und Schritte (jedes Bild). */
   updateSound(dt) {
-    const p = this.player.position;
-    const fire = LAYOUT.campfire;
+    const inside = this.viewInside;
+    const p = inside ? this.world.shelter.door.center : this.player.position;
+    const fire = inside ? this.world.interior.lights.kamin : LAYOUT.campfire;
+    const me = this.player.position;
     let near = 0;
     let atHome = 0;
     let smash = 0;
     for (const z of this.horde.list) {
       if (z.state === 'dying') continue;
-      if ((z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 64) near++;
+      if (!inside && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 64) near++;
       if (z.state === 'approach' || z.state === 'attack' || z.state === 'chase') atHome++;
       else if (z.state === 'smash') smash++;
     }
@@ -1364,7 +1457,7 @@ export class Game {
     info.z = p.z;
     info.hours = hoursOf(this.state.time.minute);
     info.inside = this.world.playerInside;
-    info.fireDist = Math.hypot(fire.x - p.x, fire.z - p.z);
+    info.fireDist = Math.hypot(fire.x - me.x, fire.z - me.z);
     info.fight = this.nights.active && (this.horde.alive > 0 || this.nights.queue.length > 0);
     info.zombiesNear = near;
     info.quiet = this.mode === 'sleep';
@@ -1398,6 +1491,7 @@ export class Game {
     const dpr = window.devicePixelRatio || 1;
     if (this.pixel.resize(window.innerWidth, window.innerHeight, dpr)) {
       this.rig.setViewport(this.pixel.rtWidth, this.pixel.rtHeight);
+      this.updateViewBounds();
       this.rig.place();
       this.ui.resize(this.pixel.uiWidth, this.pixel.uiHeight, this.pixel.uiScale, dpr);
     }
@@ -1452,7 +1546,8 @@ export class Game {
     this.towers.render();
     this.loot.render();
     sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
-    this.pixel.render(this.scene, this.rig, this.world.dayNight.look);
+    const dn = this.world.dayNight;
+    this.pixel.render(this.scene, this.rig, this.viewInside ? dn.lookInside : dn.look);
 
     const ui = this.ui;
     ui.begin(this.input.mouse);
@@ -1487,6 +1582,11 @@ export class Game {
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
+    if (this.passage) {
+      // Durch die Haustür: kurz gerastert ab- und wieder aufblenden
+      const k = this.passage.t / (PASSAGE_TIME / 2);
+      ui.ditherFill(Math.max(0, Math.min(1, k < 1 ? k : 2 - k)), COLORS.night);
+    }
     if (this.intro.t < this.intro.duration) this.drawIntro(ui);
     if (this.input.lostFocus) this.drawFocusHint(ui);
   }
@@ -1712,7 +1812,12 @@ export class Game {
         return { peak: r.peak, rms: r.rms, bad: r.bad };
       },
       save: () => game.quietSave(),
-      wakeSpot: () => ({ ...game.world.shelter.wakeSpot }),
+      wakeSpot: () => ({ ...game.world.interior.wakeSpot }),
+      /** Innenraum (M11): Eingang, Tür nach draußen, Grenzen, Räume; drinnen? */
+      interior: () => {
+        const i = game.world.interior;
+        return { level: i.level, entry: { ...i.entry }, exit: { ...i.exit }, bounds: { ...i.bounds }, rooms: i.rooms.map((r) => ({ ...r })), inside: game.viewInside, zoom: Math.round(1 / game.rig.px), outsideDoor: game.world.outsideDoorSpot() };
+      },
       /** Prüfhilfe: Figur an (x, z) setzen und n Schritte in Richtung (dx, dz) laufen lassen, ohne zu zeichnen. */
       probeMove(x, z, dx, dz, n = 10) {
         if (game.world.colliders.blocks(x, z, CONFIG.player.radius)) return null;

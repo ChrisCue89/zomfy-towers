@@ -10,7 +10,7 @@ import { T } from '../data/texts.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { WEAPONS, weaponStats } from '../data/weapons.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
-import { BUILDINGS, maxHpOf } from '../data/buildings.js';
+import { BUILDINGS, SOUP, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
 
 const REGEN_RATE = 4;
@@ -34,7 +34,9 @@ export class Combat {
   }
 
   get maxHp() {
-    return upgradeValue(this.game.state, 'leben') + (this.game.survivors?.maxHpBonus() || 0); // Hildes Schal
+    const st = this.game.state;
+    const soup = st.player.soup === st.time.day ? SOUP.maxHp : 0; // Suppe aus der Küche (M11)
+    return upgradeValue(st, 'leben') + (this.game.survivors?.maxHpBonus() || 0) + soup; // Hildes Schal
   }
 
   get hp() {

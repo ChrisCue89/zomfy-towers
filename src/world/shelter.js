@@ -1,10 +1,11 @@
-// Die Notunterkunft: eine zusammengezimmerte Bretterhütte mit Blechdach,
-// Vordach, Lichterkette und einem kleinen, warmen Innenraum.
+// Das alte Fischerhaus von außen: eine zusammengezimmerte Bretterhütte mit
+// Blechdach, Vordach und Lichterkette, ab Stufe 2 mit Anbau und Veranda.
+// Seit Meilenstein 11 ist das Innere ein eigenes Bild (world/interior.js): Wer
+// in die Tür geht, ist drinnen; das Haus selbst bleibt von außen geschlossen,
+// nachts leuchten die Fenster.
 //
 // Voxel-Koordinaten: Ursprung Südwest-Ecke am Boden, x nach Osten (0..39),
 // z nach Süden (0..27, Vorderseite bei z = 27), y nach oben.
-// Betritt die Spielfigur das Haus, werden Dach und Vorderwand gerastert
-// ausgeblendet (FADE), damit man hineinsieht.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
@@ -49,15 +50,8 @@ function buildBase(seed, level = 1) {
     if (edge && (z === D - 1 ? x : z) % 8 === 7) return P.e2;
     return y === 1 ? P.e4 : P.e3;
   });
-  // Dielen, darauf ein warmer Flickenteppich
+  // Dielen (in der Türöffnung sichtbar)
   m.box(0, 2, 0, W - 1, 2, D - 1, (x, y, z) => {
-    const rugX = x >= 14 && x <= 26;
-    const rugZ = z >= 11 && z <= 20;
-    if (rugX && rugZ) {
-      const border = x === 14 || x === 26 || z === 11 || z === 20;
-      if (border) return P.r2;
-      return (x + z) % 4 === 0 ? P.f4 : (Math.floor(z / 2) % 2 === 0 ? P.r3 : P.r4);
-    }
     const row = Math.floor(z / 3);
     let c = row % 2 === 0 ? P.e5 : P.e6;
     if (z % 3 === 2) c = P.e4;
@@ -78,60 +72,7 @@ function buildBase(seed, level = 1) {
   m.paint(W - 1, 8, 11, W - 1, 17, 22, (x, y, z) => ((y + z) % 7 === 0 ? P.b1 : z % 3 === 0 ? P.b3 : P.b2));
   m.set(W - 1, 17, 11, P.e7).set(W - 1, 17, 22, P.e7).set(W - 1, 8, 11, P.e7).set(W - 1, 8, 22, P.e7);
 
-  // --- Einrichtung ---
-  // Bett mit Kopfteil, Matratze, Flickendecke und Kissen
-  m.box(1, FLOOR, 2, 1, FLOOR + 5, 9, P.e3);
-  m.box(2, FLOOR, 2, 14, FLOOR, 9, (x) => (x % 4 === 0 ? P.e2 : P.e4));
-  m.box(2, FLOOR + 1, 2, 14, FLOOR + 1, 9, P.s8);
-  m.box(5, FLOOR + 2, 2, 14, FLOOR + 2, 9, (x, y, z) => {
-    const patch = [P.r3, P.b3, P.f5, P.g6, P.a1, P.e7];
-    return patch[(Math.floor(x / 2) * 3 + Math.floor(z / 2)) % patch.length];
-  });
-  m.box(2, FLOOR + 2, 3, 4, FLOOR + 2, 8, P.s9);
-  // Nachttisch (Kiste) mit Kerze
-  m.box(2, FLOOR, 11, 4, FLOOR + 3, 13, (x, y) => (y === FLOOR + 3 ? P.e6 : x === 3 ? P.e4 : P.e5));
-  m.box(3, FLOOR + 4, 12, 3, FLOOR + 4, 12, P.a4);
-  // Ofen mit Rohr
-  m.box(30, FLOOR, 2, 34, FLOOR, 6, (x, y, z) => ((x === 30 || x === 34) && (z === 2 || z === 6) ? P.s1 : null));
-  m.box(30, FLOOR + 1, 2, 34, FLOOR + 6, 6, (x, y, z) => (y === FLOOR + 6 ? P.s3 : z === 6 ? P.s2 : P.s1));
-  m.remove(31, FLOOR + 2, 6, 33, FLOOR + 3, 6); // Sichtfenster (leuchtet separat)
-  m.box(31, FLOOR + 7, 3, 32, roofHeight(32) - 2, 4, (x, y) => (y % 5 === 0 ? P.s3 : P.s2));
-  m.box(29, FLOOR + 7, 4, 29, FLOOR + 8, 5, P.b3); // Kessel
-  m.set(28, FLOOR + 8, 4, P.s6);
-  // Holzkorb
-  m.box(35, FLOOR, 2, 37, FLOOR + 1, 4, P.e3);
-  m.box(35, FLOOR + 2, 2, 37, FLOOR + 2, 4, (x, y, z) => ((x + z) % 2 ? P.e7 : P.e4));
-  // Tisch unter dem Fenster – reicht bis kurz vor die Ostwand, damit dazwischen
-  // keine schmale Sackgasse bleibt, in der man sich festläuft (m6-r1)
-  for (const [lx, lz] of [[23, 22], [35, 22], [23, 25], [35, 25]]) m.box(lx, FLOOR, lz, lx, FLOOR + 5, lz, P.e4);
-  m.box(23, FLOOR + 6, 22, 35, FLOOR + 6, 25, (x, y, z) => (z === 25 ? P.e5 : P.e6));
-  m.box(25, FLOOR + 7, 23, 25, FLOOR + 8, 23, P.b3); // Becher
-  m.box(27, FLOOR + 7, 23, 28, FLOOR + 7, 24, P.r3); // Buch
-  m.box(27, FLOOR + 8, 23, 28, FLOOR + 8, 24, P.a4);
-  m.box(30, FLOOR + 7, 23, 30, FLOOR + 7, 23, P.s6); // Lampenfuß
-  // Stuhl
-  m.box(26, FLOOR, 18, 28, FLOOR + 3, 20, (x, y, z) => (y === FLOOR + 3 ? P.e6 : (x === 26 || x === 28) && (z === 18 || z === 20) ? P.e4 : null));
-  m.box(26, FLOOR + 4, 18, 28, FLOOR + 7, 18, (x, y) => (y === FLOOR + 7 || x !== 27 ? P.e4 : null));
-  // Regal an der Rückwand mit Dosen und Radio
-  m.box(16, 12, 1, 27, 12, 2, P.e5);
-  m.box(16, 17, 1, 27, 17, 2, P.e5);
-  [[17, P.s6], [19, P.r3], [21, P.f5], [23, P.b3], [25, P.s6]].forEach(([x, c]) => {
-    m.box(x, 13, 1, x, 14, 1, c);
-    m.set(x, 15, 1, P.s7);
-  });
-  m.box(18, 18, 1, 21, 20, 2, P.s2); // Radio
-  m.set(19, 19, 2, P.e8).set(20, 19, 2, P.s6).set(21, 20, 2, P.f6);
-  m.line(21, 21, 1, 23, 25, 1, P.s5); // Antenne
-  // Kiste neben der Tür, Pflanze
-  m.box(2, FLOOR, 21, 6, FLOOR + 3, 25, (x, y, z) => (y === FLOOR + 3 ? P.e6 : (x + y) % 3 === 0 ? P.e3 : P.e5));
-  m.box(17, FLOOR, 24, 18, FLOOR + 1, 25, P.r3);
-  m.box(16, FLOOR + 2, 23, 19, FLOOR + 3, 26, (x, y, z) => (hash3(x, y, z, seed) < 0.35 ? null : y === FLOOR + 3 ? P.g6 : P.g5));
-
-  if (level >= 2) {
-    // Durchgang in den Anbau (Ostwand), mit Rahmen
-    m.remove(W - 1, FLOOR, 14, W - 1, 17, 20);
-    m.box(W - 1, 18, 13, W - 1, 18, 21, P.e2);
-  } else {
+  if (level < 2) {
     // Stufe vor der Tür (ab Stufe 2 ersetzt die Veranda sie)
     m.box(8, 0, 28, 16, 1, 30, (x, y, z) => (y === 1 ? (z === 30 ? P.e5 : P.e6) : P.e3));
   }
@@ -314,21 +255,6 @@ function buildLanternGlass() {
   return m;
 }
 
-function buildStoveGlow() {
-  return new VoxelModel().box(31, FLOOR + 2, 6, 33, FLOOR + 3, 6, 0xffffff);
-}
-
-function buildTableLampGlow() {
-  const m = new VoxelModel();
-  m.box(30, FLOOR + 8, 23, 30, FLOOR + 9, 23, 0xffffff);
-  return m;
-}
-
-function buildCandleGlow() {
-  return new VoxelModel().set(3, FLOOR + 5, 12, 0xffffff);
-}
-
-
 // --- Ausbaustufe 2: Hütte ------------------------------------------------------
 // Anbau im Osten (x 40..57, z 6..27) mit Leseecke, Veranda über die ganze Front.
 
@@ -343,36 +269,12 @@ function annexRoofHeight(x) {
 function buildAnnexBase(seed) {
   const m = new VoxelModel();
   m.box(AX0, 0, AZ0, AX1, 1, D - 1, (x, y, z) => ((z === D - 1 || x === AX1) && x % 8 === 7 ? P.e2 : y === 1 ? P.e4 : P.e3));
-  // Dielen mit Flickenteppich
-  m.box(AX0, 2, AZ0, AX1, 2, D - 1, (x, y, z) => {
-    if (x >= 44 && x <= 53 && z >= 14 && z <= 22) {
-      const border = x === 44 || x === 53 || z === 14 || z === 22;
-      return border ? P.d2 : (x + z) % 3 === 0 ? P.d4 : P.d3;
-    }
-    return Math.floor(z / 3) % 2 ? P.e5 : P.e6;
-  });
+  m.box(AX0, 2, AZ0, AX1, 2, D - 1, (x, y, z) => (Math.floor(z / 3) % 2 ? P.e5 : P.e6));
   // Nord- und Ostwand
   for (let y = FLOOR; y <= 19; y++) {
     for (let x = AX0; x <= AX1; x++) m.set(x, y, AZ0, wallColor(x, y, x, AZ0, seed + 7));
     for (let z = AZ0; z < D; z++) m.set(AX1, y, z, wallColor(z, y, AX1, z, seed + 8));
   }
-  // Bücherregal an der Nordwand
-  m.box(42, FLOOR, AZ0 + 1, 51, FLOOR + 10, AZ0 + 2, (x, y, z) => {
-    if (x === 42 || x === 51 || y === FLOOR || y === FLOOR + 5 || y === FLOOR + 10) return P.e3;
-    if (z === AZ0 + 1) return P.e2;
-    const books = [P.r3, P.b3, P.g5, P.f5, P.a2, P.e7];
-    return hash3(x, Math.floor(y / 5), 0, seed) < 0.15 ? null : books[(x * 3 + Math.floor(y / 5)) % books.length];
-  });
-  // Ohrensessel (Blick nach Südwesten) und Stehlampe
-  m.box(52, FLOOR, 10, 55, FLOOR + 2, 13, P.a2);
-  m.box(55, FLOOR + 3, 10, 55, FLOOR + 7, 13, P.a2);
-  m.box(52, FLOOR + 3, 10, 54, FLOOR + 4, 10, P.a2).box(52, FLOOR + 3, 13, 54, FLOOR + 4, 13, P.a2);
-  m.box(53, FLOOR + 3, 11, 54, FLOOR + 3, 12, P.a3);
-  m.box(55, FLOOR, 15, 55, FLOOR + 10, 15, P.s3);
-  m.box(54, FLOOR + 11, 14, 56, FLOOR + 12, 16, P.e7);
-  // Große Zimmerpflanze
-  m.box(41, FLOOR, 23, 42, FLOOR + 1, 24, P.r3);
-  m.ellipsoid(42, FLOOR + 5, 24, 2.5, 3.5, 2.5, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? null : y > FLOOR + 5 ? P.g6 : P.g5));
   return m;
 }
 
@@ -448,9 +350,49 @@ function buildDeck() {
   return m;
 }
 
+// --- Ausbaustufen 3–5 von außen (M11): innen ein neuer Raum, außen ein Zeichen dafür ------
+
+/** Stufe 3 (Schlafzimmer unterm Dach): ein Dachfenster in der Westseite des Dachs. */
+function buildRoofWindow() {
+  const m = new VoxelModel();
+  const glass = new VoxelModel();
+  // Neben der Plane (z 14..24): weiter nördlich, damit sich nichts überlagert
+  for (let x = 5; x <= 11; x++) {
+    for (let z = 3; z <= 10; z++) {
+      const frame = x === 5 || x === 11 || z === 3 || z === 10;
+      if (frame) m.set(x, roofHeight(x) + 1, z, P.e2);
+      else glass.set(x, roofHeight(x) + 1, z, 0xffffff);
+    }
+  }
+  return { model: m, glass };
+}
+
+/** Stufe 4 (Werkstatt): Werkzeugbrett links neben der Tür, darunter ein Sägebock. */
+function buildToolBoard() {
+  const m = new VoxelModel();
+  const z = D;
+  m.box(1, 7, z, 7, 16, z, (x, y) => ((x + y) % 3 === 0 ? P.e5 : P.e6));
+  m.line(2, 15, z + 1, 4, 9, z + 1, P.s6); // Säge
+  m.box(2, 14, z + 1, 3, 15, z + 1, P.e3);
+  m.box(6, 9, z + 1, 6, 14, z + 1, P.e3).box(5, 14, z + 1, 7, 15, z + 1, P.s4); // Axt
+  m.box(1, 0, z + 2, 1, 3, z + 3, P.e3).box(6, 0, z + 2, 6, 3, z + 3, P.e3).box(0, 4, z + 2, 7, 4, z + 3, P.e5);
+  return m;
+}
+
+/** Stufe 5 (Lager): Kisten und ein Fass am Ostende der Veranda. */
+function buildVerandaCrates() {
+  const m = new VoxelModel();
+  const crate = (x0, y0, z0) => m.box(x0, y0, z0, x0 + 3, y0 + 3, z0 + 3, (x, y, z) => (x === x0 || x === x0 + 3 || y === y0 + 3 ? P.e3 : P.e5));
+  crate(50, 2, D);
+  crate(54, 2, D);
+  crate(52, 6, D);
+  m.cylinder(47.5, D + 2.5, 2, 6, 2, (x, y) => (y === 3 || y === 6 ? P.s3 : P.e4));
+  return m;
+}
+
 /**
- * Baut die Notunterkunft.
- * @returns {object} group, fade-Uniform, Lichtpositionen, Interaktionen, Kollision
+ * Baut das Fischerhaus von außen.
+ * @returns {object} group, Tür, Lichtpositionen, Kollision, Grundfläche
  */
 /** Materialien der Unterkunft – einmal anlegen, bei jedem Ausbau wiederverwenden. */
 /**
@@ -474,25 +416,20 @@ export function shelterFootprint(level) {
 
 export function createShelterMaterials() {
   const baseMat = createWorldMaterial({ occluder: true });
-  const fadeMat = createWorldMaterial({ occluder: true, fade: true });
-  const fade = fadeMat.userData.fade;
   const glow = {
-    window: createGlowMaterial(0xffffff, { fade: true, fadeUniform: fade }),
-    fairy: createGlowMaterial(0xffffff, { fade: true, fadeUniform: fade, vertexColors: true }),
-    lantern: createGlowMaterial(0xffffff, { occluder: true, fade: true, fadeUniform: fade }),
-    stove: createGlowMaterial(0xffffff),
-    lamp: createGlowMaterial(0xffffff),
-    candle: createGlowMaterial(0xffffff),
+    window: createGlowMaterial(0xffffff),
+    fairy: createGlowMaterial(0xffffff, { vertexColors: true }),
+    lantern: createGlowMaterial(0xffffff, { occluder: true }),
   };
-  return { baseMat, fadeMat, fade, glow };
+  return { baseMat, glow };
 }
 
-export function createShelter({ seed, colliders, level = 1, materials }) {
+export function createShelter({ seed, colliders, level = 1, stage = level, materials }) {
   const { x: ox, z: oz } = LAYOUT.shelter;
   const group = new THREE.Group();
   group.name = level >= 2 ? 'Hütte' : 'Notunterkunft';
   group.position.set(ox, 0, oz);
-  const { baseMat, fadeMat, fade, glow } = materials;
+  const { baseMat, glow } = materials;
   const ownColliders = [];
 
   // Sichtbare Flächen für die Kamera, Schatten über einen Stellvertreter.
@@ -510,71 +447,64 @@ export function createShelter({ seed, colliders, level = 1, materials }) {
   };
 
   const base = mesh(buildBase(seed, level), baseMat);
-  const front = mesh(buildFront(seed), fadeMat);
+  const front = mesh(buildFront(seed), baseMat);
   const roofParts = buildRoof(seed);
-  const roof = mesh(roofParts.model, fadeMat);
-  const awning = mesh(buildAwning(), fadeMat);
+  const roof = mesh(roofParts.model, baseMat);
+  const awning = mesh(buildAwning(), baseMat);
   const windowGlass = mesh(buildWindowGlass(), glow.window, { shadow: 'none', jitter: 0 });
-  const fairyWire = mesh(buildFairyWire(), fadeMat, { shadow: 'none' });
+  const fairyWire = mesh(buildFairyWire(), baseMat, { shadow: 'none' });
   const fairy = mesh(buildFairyLights(), glow.fairy, { shadow: 'none', jitter: 0 });
   const lanternGlass = mesh(buildLanternGlass(), glow.lantern, { shadow: 'none', jitter: 0 });
-  const stoveGlow = mesh(buildStoveGlow(), glow.stove, { shadow: 'none', jitter: 0 });
-  const lampGlow = mesh(buildTableLampGlow(), glow.lamp, { shadow: 'none', jitter: 0 });
-  const candleGlow = mesh(buildCandleGlow(), glow.candle, { shadow: 'none', jitter: 0 });
 
   // Tür mit Drehpunkt an der Angel
   const doorPivot = new THREE.Group();
   doorPivot.position.set(DOOR.x0 * V, FLOOR * V, (D - 1) * V);
   // Die Tür dreht sich: alle Flächen, wirft selbst Schatten.
-  const door = new THREE.Mesh(buildDoor(seed).toGeometry({ jitter: 0.05, seed }), fadeMat);
+  const door = new THREE.Mesh(buildDoor(seed).toGeometry({ jitter: 0.05, seed }), baseMat);
   door.castShadow = true;
   door.receiveShadow = true;
   doorPivot.add(door);
 
-  group.add(base, front, roof, awning, windowGlass, fairyWire, fairy, lanternGlass, stoveGlow, lampGlow, candleGlow, doorPivot);
+  group.add(base, front, roof, awning, windowGlass, fairyWire, fairy, lanternGlass, doorPivot);
   if (level >= 2) {
     group.add(
       mesh(buildAnnexBase(seed), baseMat),
-      mesh(buildAnnexFront(seed), fadeMat),
-      mesh(buildAnnexRoof(seed), fadeMat),
+      mesh(buildAnnexFront(seed), baseMat),
+      mesh(buildAnnexRoof(seed), baseMat),
       mesh(buildAnnexGlass(), glow.window, { shadow: 'none', jitter: 0 }),
       mesh(buildDeck(), baseMat)
     );
   }
+
+  // Ab Stufe 3 sieht man den Ausbau auch von außen (M11)
+  if (stage >= 3) {
+    const rw = buildRoofWindow();
+    group.add(mesh(rw.model, baseMat, { shadow: 'none' }), mesh(rw.glass, glow.window, { shadow: 'none', jitter: 0 }));
+  }
+  if (stage >= 4) group.add(mesh(buildToolBoard(), baseMat));
+  if (stage >= 5 && level >= 2) group.add(mesh(buildVerandaCrates(), baseMat));
 
   // --- Kollision (Weltkoordinaten) ---
   const wx = (vx) => ox + vx * V;
   const wz = (vz) => oz + vz * V;
   const box = (x0, z0, x1, z1, tag) => ownColliders.push(colliders.addBox(wx(x0), wz(z0), wx(x1), wz(z1), tag));
   box(0, 0, 1, D, 'wand');
+  // Das Innere ist ein eigenes Bild (interior.js): Hinter der Türöffnung ist Schluss
+  box(1, 1, W - 1, D - 1, 'haus');
   if (level >= 2) {
-    box(W - 1, 0, W, 14, 'wand');
-    box(W - 1, 21, W, D, 'wand');
-    box(AX0, AZ0, AX1 + 1, AZ0 + 1, 'wand');
-    box(AX1, AZ0, AX1 + 1, D, 'wand');
-    box(AX0, D - 1, AX1 + 1, D, 'wand');
-    box(W - 1, 0, AX1 + 1, AZ0, 'wand');
-    box(42, AZ0 + 1, 52, AZ0 + 3, 'regal');
-    box(52, 10, 56, 14, 'sessel');
-    box(40, 22, 44, 26, 'pflanze');
+    box(W - 1, 0, AX1 + 1, D, 'haus');
     // Geländer der Veranda (Lücke vor der Treppe)
     box(-2, D + 5, DOOR.x0 - 1, D + 6, 'gelaender');
     box(DOOR.x1 + 2, D + 5, AX1 + 2, D + 6, 'gelaender');
     box(-3, D, -2, D + 6, 'gelaender');
     box(AX1 + 1, D, AX1 + 2, D + 6, 'gelaender');
+    if (stage >= 5) box(45, D, 58, D + 4, 'kisten');
   } else {
     box(W - 1, 0, W, D, 'wand');
   }
   box(0, 0, W, 1, 'wand');
   box(0, D - 1, DOOR.x0, D, 'wand');
   box(DOOR.x1 + 1, D - 1, W, D, 'wand');
-  box(1, 2, 15, 10, 'bett');
-  box(2, 11, 5, 14, 'nachttisch');
-  box(30, 2, 38, 7, 'ofen');
-  box(23, 22, 36, 26, 'tisch');
-  box(26, 18, 29, 21, 'stuhl');
-  box(2, 21, 7, 26, 'kiste');
-  box(16, 23, 20, 26, 'pflanze');
   ownColliders.push(colliders.addCircle(wx(5.5), wz(40.5), 0.12));
   ownColliders.push(colliders.addCircle(wx(20.5), wz(40.5), 0.12));
 
@@ -582,45 +512,28 @@ export function createShelter({ seed, colliders, level = 1, materials }) {
 
   return {
     group,
-    fade,
+    stage,
     door: { pivot: doorPivot, hinge: toWorld(DOOR.x0, 0, D), center: toWorld((DOOR.x0 + DOOR.x1 + 1) / 2, 0, D), angle: 0 },
     glow,
     lights: {
       porch: toWorld(12.5, 11.5, 40.5),
-      table: toWorld(30.5, FLOOR + 10, 23.5),
-      stove: toWorld(32.5, FLOOR + 3, 8),
     },
     chimney: toWorld(roofParts.chimneyTop.x, roofParts.chimneyTop.y, roofParts.chimneyTop.z),
     level,
     colliders: ownColliders,
-    interiors:
-      level >= 2
-        ? [
-            { minX: wx(1), maxX: wx(W - 1), minZ: wz(1), maxZ: wz(D - 1) },
-            { minX: wx(W - 1), maxX: wx(AX1), minZ: wz(AZ0 + 1), maxZ: wz(D - 1) },
-          ]
-        : [{ minX: wx(1), maxX: wx(W - 1), minZ: wz(1), maxZ: wz(D - 1) }],
     footprint: shelterFootprint(level),
-    floorHeight: FLOOR * V,
     heightZones:
       level >= 2
         ? [
-            { minX: wx(0), maxX: wx(AX1 + 1), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
+            { minX: wx(0), maxX: wx(AX1 + 1), minZ: wz(D - 1), maxZ: wz(D), y: FLOOR * V }, // Türschwelle
             { minX: wx(-2), maxX: wx(AX1 + 2), minZ: wz(D), maxZ: wz(D + 6), y: 2 * V },
             { minX: wx(DOOR.x0 - 1), maxX: wx(DOOR.x1 + 2), minZ: wz(D + 6), maxZ: wz(D + 8), y: 1 * V },
           ]
         : [
-            { minX: wx(0), maxX: wx(W), minZ: wz(0), maxZ: wz(D), y: FLOOR * V },
+            { minX: wx(0), maxX: wx(W), minZ: wz(D - 1), maxZ: wz(D), y: FLOOR * V },
             { minX: wx(8), maxX: wx(17), minZ: wz(D), maxZ: wz(31), y: 2 * V },
           ],
-    // inside: nur von drinnen benutzbar (nicht durch die Wand)
-    interactions: [
-      { id: 'bett', x: wx(8), z: wz(8), radius: 1.35, prompt: 'schlafen', action: 'sleep', inside: true },
-      { id: 'radio', x: wx(20), z: wz(3), radius: 1.3, prompt: 'radio', dialog: 'radio', inside: true },
-      { id: 'ofen', x: wx(32), z: wz(6), radius: 1.2, prompt: 'ofen', dialog: 'ofen', inside: true },
-    ],
-    // Bereich, in dem die Figur nach dem Schlafen steht
-    wakeSpot: { x: wx(9), z: wz(13), facing: Math.PI * 0.1 },
+    interactions: [],
   };
 }
 

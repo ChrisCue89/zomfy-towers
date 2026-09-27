@@ -5,6 +5,53 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 11 – Das Zuhause am Wasser ✓
+
+**Auftrag:** Das Fischerhaus wächst in Stufen und Räumen, und drinnen ist ein
+eigenes Bild (DESIGN.md 6.8 und 8, Meilenstein 11).
+
+**Fertig**
+
+- **Innenraum als eigenes Bild (`world/interior.js`):** Der Innenraum liegt
+  weit östlich der Karte in derselben Szene – draußen laufen Horde, Türme und
+  Nächte weiter. In die Haustür drücken: kurz abblenden, drinnen hinter der
+  Tür weiter; drinnen durch die Türöffnung der Vorderwand wieder hinaus (Tür
+  knarzt). Drinnen gilt der doppelte Maßstab (160 px/m), die Kamera zeigt
+  möglichst den ganzen Raum, ringsum ist es dunkel. Puppenstuben-Schnitt:
+  Rückwand in voller Höhe mit Fenstern (Himmel und Wipfel, tags hell, nachts
+  dunkel), Seiten-, Trenn- und Vorderwände niedrig.
+- **Licht drinnen:** Kamin und Pendelleuchte über dem Tisch sind zwei der fünf
+  Punktlichter (fest im Innenraum, die Lichtzahl bleibt gleich); Herd,
+  Nachttischlampe, Werkstattlampe und Laterne im Lager bekommen Lichtinseln.
+  Die Sonne fällt durch die Fenster eines unsichtbaren Stellvertreters –
+  Sonnenflecken wandern über den Boden. Drinnen ein eigener warmer Look.
+- **Räume je Stufe:** Wohnraum mit Kamin, Kommode mit Radio, Tisch,
+  Bettecke (Stufe 1); Küche mit Herd, Anrichte, Spülstein und Pumpe, Tisch
+  mit Kürbissen (2) – einmal am Tag Suppe: volle Lebenspunkte, +25 bis zum
+  Morgen; Schlafzimmer unterm Dach mit Doppelbett und Schrank (3) – das Bett
+  zieht um, Gemütlichkeit +2; Werkstatt mit Werkbank, Werkzeugwand,
+  Bretterstapel (4) – die Werkbank funktioniert auch drinnen; Lager mit
+  Regalen, Fässern, Kisten (5) – eine verlorene Nacht kostet nur die Hälfte.
+  Standfestigkeit 300 → 900.
+- **Außen:** Das Haus ist geschlossen (das alte Innere samt Dach-Ausblenden ist
+  entfernt), nachts leuchten die Fenster; ab Stufe 3 Dachfenster, ab 4
+  Werkzeugbrett, ab 5 Kisten auf der Veranda. Neu: **Holzlager** (2 Holz am
+  Tag, Reiter »Einrichten«).
+- **Möbel** aus M6 im feinen Maß im Wohnraum; Knopfs Körbchen vor dem Kamin.
+- **Drinnen im Spiel:** Klang hört an der Haustür mit, Knistern kommt vom
+  Kamin; keine Randpfeile zu Schlurfern, bei Angriff aufs Haus blinkt unten
+  das Haus; Bauleiste ohne Türme und ohne Aufstellen; Karte zeigt Mika am
+  Haus; Aufwachen, Rettung und Ohnmacht enden drinnen am Bett.
+- **Spielstand v10:** Figur darf im Innenraum stehen, Tag der letzten Suppe;
+  Migration v9 → v10 setzt, wer im alten Haus stand, hinter die Tür.
+- **Prüfung:** Haustür mit echten Tasten (hinein, Maßstab 160, hinaus),
+  Schlafen im Innenraum, Laden drinnen, Migration v9 → v10, Stufen 3–5 mit
+  Suppe, Werkbank drinnen, Bett im Schlafzimmer, Gemütlichkeit, Holzlager.
+
+**Entscheidungen:** OFFENE-FRAGEN 94–98.
+
+---
+
 ## Meilenstein 10 – Balduin kommt übers Wasser ✓
 
 **Auftrag:** den Händler aus M9 zum kleinen Ereignis ausbauen (DESIGN.md 8,

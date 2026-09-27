@@ -312,6 +312,27 @@ const ICONS = {
       '................',
     ],
   },
+  holzlager: {
+    legend: { k: P.e1, R: P.e5, r: P.e4, L: P.e8, l: P.e6 },
+    rows: [
+      '................',
+      '...kkkkkkkkkk...',
+      '..kRRRRRRRRRRk..',
+      '.kRrRRRrRRRrRRk.',
+      '.kkkkkkkkkkkkkk.',
+      '.kkkkkkkkkkkkk..',
+      '.kLlkLlkLlkLlk..',
+      '.kllkllkllkllk..',
+      '.kkkkkkkkkkkkkk.',
+      '..kLlkLlkLlkLlk.',
+      '..kllkllkllkllk.',
+      '.kkkkkkkkkkkkkk.',
+      '.kLlkLlkLlkLlk..',
+      '.kllkllkllkllk..',
+      '.kkkkkkkkkkkkk..',
+      '................',
+    ],
+  },
   bank: {
     legend: { k: P.e1, B: P.e4, S: P.e6, L: P.e3 },
     rows: [

@@ -91,6 +91,11 @@ const SFX = {
       s.tone('sine', 2340, t + dt, 0.14, { peak: 0.025 * v, attack: 0.003, out: o });
     }
   },
+  // Haustür (M11): knarzende Angel, dann fällt die Tür leise zu
+  tuer: (s, t, v, o) => {
+    s.noise(t, 0.2, { type: 'bandpass', freq: 560, freqEnd: 380, q: 4, peak: 0.07 * v, out: o });
+    s.tone('triangle', 150, t + 0.16, 0.12, { freqEnd: 90, peak: 0.1 * v, out: o });
+  },
   rumpeln: (s, t, v, o) => s.noise(t, 0.12, { type: 'lowpass', freq: 380, freqEnd: 160, attack: 0.01, peak: 0.1 * v, out: o }),
   loot: (s, t, v, o, opt) => {
     const base = opt.pitch || 880;

@@ -18,6 +18,8 @@ export const BUILDINGS = {
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1 },
   // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
+  // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
+  holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4 },
   zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
 };
 
@@ -67,12 +69,34 @@ export function maxHpOf(b) {
 export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade'];
 export const HOME_TAB = ['werkbank', 'laternenpfahl', 'beet', 'bank'];
 
-/** Ausbaustufen des Zuhauses. Stufe 1 = Notunterkunft. */
+/**
+ * Ausbaustufen des Zuhauses (DESIGN.md 6.8, Meilenstein 11). Jede Stufe gibt
+ * Standfestigkeit (hp) und einen Raum im Innenraum (world/interior.js):
+ * Wohnraum mit Kamin → Küche → Schlafzimmer unterm Dach → Werkstatt → Lager.
+ * cozy: Gemütlichkeit obendrauf, lossFactor: Anteil, den eine verlorene Nacht noch kostet.
+ */
 export const HOUSE_LEVELS = [
   null,
-  { key: 'notunterkunft', hp: 300 },
-  { key: 'huette', cost: { holz: 30, stein: 12, stoff: 5, schrott: 8 }, hp: 450 },
+  { key: 'notunterkunft', room: 'wohnraum', hp: 300 },
+  { key: 'huette', room: 'kueche', cost: { holz: 30, stein: 12, stoff: 5, schrott: 8 }, hp: 450 },
+  { key: 'schlafzimmer', room: 'schlafzimmer', cost: { holz: 40, stein: 16, stoff: 10, schrott: 12 }, hp: 600, cozy: 2 },
+  { key: 'werkstatt', room: 'werkstatt', cost: { holz: 45, stein: 20, schrott: 20, zahnraeder: 2 }, hp: 750 },
+  { key: 'lager', room: 'lager', cost: { holz: 50, stein: 25, schrott: 25, zahnraeder: 3, stoff: 6 }, hp: 900, lossFactor: 0.5 },
 ];
+export const HOUSE_MAX = HOUSE_LEVELS.length - 1;
+
+/** Gemütlichkeit, die das Haus selbst mitbringt (Schlafzimmer). */
+export function houseCozy(level) {
+  return HOUSE_LEVELS.slice(1, level + 1).reduce((sum, l) => sum + (l.cozy || 0), 0);
+}
+
+/** Anteil der Verluste nach einer verlorenen Nacht (Lager: nur die Hälfte). */
+export function houseLossFactor(level) {
+  return HOUSE_LEVELS.slice(1, level + 1).reduce((f, l) => f * (l.lossFactor || 1), 1);
+}
+
+/** Küche (ab der Hütte): einmal am Tag Suppe – satt und warm bis zum nächsten Morgen. */
+export const SOUP = { cost: { fasern: 3 }, maxHp: 25 };
 
 /** Grundriss unter Berücksichtigung der Drehung. */
 export function footprint(type, turns = 0) {

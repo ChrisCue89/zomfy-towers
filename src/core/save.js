@@ -1,5 +1,6 @@
 // Speichern und Laden im Browser (localStorage), versioniert und mit Migrationen.
 
+import { INTERIOR_ENTRY } from '../world/interior.js';
 import { SAVE_VERSION, sanitizeState } from './state.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { towerInvested, towerBuildCost } from '../data/towers.js';
@@ -68,6 +69,13 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v9 -> v10: Meilenstein 11 (Innenraum als eigenes Bild). Wer im alten Haus stand,
+  // steht jetzt im Innenraum hinter der Tür (das Haus von außen hat kein Inneres mehr).
+  9: (data) => {
+    const p = data.player || {};
+    const inOldHouse = typeof p.x === 'number' && typeof p.z === 'number' && p.x > 4.5 && p.x < 11.75 && p.z > -9.0 && p.z < -5.5;
+    return { ...data, version: 10, player: inOldHouse ? { ...p, x: INTERIOR_ENTRY.x, z: INTERIOR_ENTRY.z, facing: Math.PI } : p };
+  },
   // v8 -> v9: Meilenstein 10 (besondere Turmteile). Noch keiner im Vorrat, kein Turm trägt eins.
   8: (data) => ({ ...data, version: 9, towerParts: {} }),
   7: migrateToBay,

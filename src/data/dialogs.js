@@ -256,7 +256,25 @@ export const DIALOGE = {
           { s: 'mika', t: 'Da war eine Stimme! Da draußen ist noch jemand.' },
         ],
 
-  ofen: [{ s: 'mika', t: 'Der kleine Ofen bullert vor sich hin. Das beste Geräusch der Welt.' }],
+  // Der Kamin im Wohnraum (Meilenstein 11): drinnen ausruhen wie am Lagerfeuer
+  kamin: (state) =>
+    withRest(
+      [
+        {
+          s: 'mika',
+          t: pick(
+            [
+              'Das Feuer knackt, draußen rauscht der See. Hier drin ist die Welt in Ordnung.',
+              'Warme Füße, kalte Nase am Fenster. Genau so soll ein Herbstabend sein.',
+              'Ich lege ein Scheit nach. Funken tanzen den Kamin hinauf.',
+              'Wer hier gewohnt hat, hat den Kamin geliebt. Die Steine sind ganz glatt vom Anlehnen.',
+            ],
+            state.time.day
+          ),
+        },
+      ],
+      state
+    ),
 
   lagerfeuer: (state) =>
     withRest(
@@ -315,15 +333,49 @@ export const DIALOGE = {
 
   werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],
 
-  hausAusbau: [
+  // Ausbau des Zuhauses (M11): je Stufe ein Raum
+  hausAusbau: (state) => [
     {
       s: 'mika',
-      t: 'Die Notunterkunft zur Hütte ausbauen? Ein zweites Zimmer, ein richtiges Vordach, dickere Wände.',
+      t: [
+        null,
+        null,
+        'Die Notunterkunft zur Hütte ausbauen? Ein Anbau mit Küche, ein richtiges Vordach, dickere Wände.',
+        'Den Dachboden zum Schlafzimmer ausbauen? Ein eigenes Bett unterm Dach, weg vom Kamin.',
+        'Eine Werkstatt anbauen? Mit Werkbank, Werkzeugwand und Platz für Bretter.',
+        'Ein Lager anbauen? Trocken, mit Regalen – was dort liegt, geht nicht so schnell verloren.',
+      ][Math.min(5, (state.world?.houseLevel ?? 1) + 1)],
       antworten: [{ t: 'Ja, ausbauen!', aktion: 'hausAusbauen' }, { t: 'Noch nicht.', standard: true }],
     },
   ],
 
-  hausFertig: [{ s: 'mika', t: 'Geschafft. Das ist keine Notunterkunft mehr. Das ist eine Hütte. Meine Hütte.' }],
+  hausFertig: (state) => [
+    {
+      s: 'mika',
+      t: [
+        null,
+        null,
+        'Geschafft. Das ist keine Notunterkunft mehr. Das ist eine Hütte. Meine Hütte. Mit Küche!',
+        'Ein Schlafzimmer unterm Dach. Heute Nacht schlafe ich wie ein Stein.',
+        'Eine eigene Werkstatt! Hier kann ich basteln, auch wenn draußen die Horde klopft.',
+        'Das Lager ist fertig. Was hier liegt, bleibt hier – egal, was die Nacht bringt.',
+      ][Math.min(5, state.world?.houseLevel ?? 2)],
+    },
+  ],
+
+  // Küche (M11): einmal am Tag Suppe kochen
+  herd: (state) =>
+    state.player?.soup === state.time?.day
+      ? [{ s: 'mika', t: 'Der Topf ist leer gegessen. Morgen koche ich wieder.' }]
+      : [
+          {
+            s: 'mika',
+            t: 'Der Herd ist warm. Eine Kürbissuppe mit Kräutern? Das macht satt und hält die ganze Nacht.',
+            antworten: [{ t: 'Suppe kochen (3 Fasern)', aktion: 'suppe' }, { t: 'Später.', standard: true }],
+          },
+        ],
+
+  lager: [{ s: 'mika', t: 'Alles trocken und ordentlich. Was hier liegt, verliere ich nicht so schnell.' }],
 
   ersterTurm: [
     { s: 'mika', t: 'Ein Bolzenwerfer. Der schießt von selbst auf alles, was aus dem Wald geschlurft kommt.' },

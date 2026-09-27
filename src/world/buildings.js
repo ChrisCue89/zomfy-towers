@@ -176,7 +176,7 @@ export class Buildings {
     const radius = 1.1 + Math.max(w, d) * 0.3;
     // Werkbank, Bank, Beet: benutzen. Alles andere (auch Türme): mit E auswählen.
     building.interaction = def.use
-      ? { id: `bau-${building.id}`, x: cx, z: cz, radius, prompt: def.use, use: def.use, building: building.id }
+      ? { id: `bau-${building.id}`, x: cx, z: cz, radius, prompt: def.prompt || def.use, use: def.use, building: building.id }
       : { id: `bau-${building.id}`, x: cx, z: cz, radius: radius - 0.2, prompt: 'auswaehlen', select: building.id };
     this.list.push(building);
     this.pathing?.rebuild();

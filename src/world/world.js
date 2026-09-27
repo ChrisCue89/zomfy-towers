@@ -12,6 +12,7 @@ import { createWater } from './water.js';
 import { GameMap } from './map.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
+import { createInterior } from './interior.js';
 import { createProps } from './props.js';
 import { BuildGrid } from './grid.js';
 import { ResourceNodes } from './resources.js';
@@ -64,6 +65,16 @@ export class World {
     this.shelterMaterials = createShelterMaterials();
     this.shelter = createShelter({ seed, colliders: this.colliders, level: 1, materials: this.shelterMaterials });
     scene.add(this.shelter.group);
+    // Das Innere ist ein eigenes Bild weit östlich der Karte (Meilenstein 11)
+    this.interiorMaterials = {
+      room: createWorldMaterial(),
+      sky: createGlowMaterial(0xffffff), // Himmel in den Fenstern: tagsüber hell, nachts dunkel
+      flame: createGlowMaterial(0xffffff, { vertexColors: true }),
+      candle: createGlowMaterial(0xffffff),
+      lamp: createGlowMaterial(0xffffff), // Pendelleuchte über dem Tisch
+    };
+    this.interior = createInterior({ seed, colliders: this.colliders, level: 1, materials: this.interiorMaterials });
+    scene.add(this.interior.group);
 
     this.props = createProps({ seed, materials: this.materials, colliders: this.colliders, map: this.map });
     scene.add(this.props.group);
@@ -86,6 +97,8 @@ export class World {
     this.dayNight = new DayNight(scene, renderConfig);
     this.setupLights();
     this.lightPools = new LightPools(scene);
+    this.interiorPools = [];
+    this.addInteriorPools();
     this.buildings = new Buildings({
       scene,
       grid: this.grid,
@@ -123,7 +136,6 @@ export class World {
     this.refreshInteractions();
     this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
 
-    this.fadeValue = 0;
     this.flameTimer = 0;
     this.flameIndex = 0;
     this.time = 0;
@@ -138,16 +150,20 @@ export class World {
     this.lights = L;
     this.fireLight = L.addLight({ position: this.props.fire.light, color: 0xff9448, intensity: 11, distance: 10, mode: 'always', dayFactor: 0.35, flickerSpeed: 9, flickerAmount: 0.22 });
     this.porchLight = L.addLight({ position: s.lights.porch, color: 0xffc070, intensity: 3.6, distance: 6.5, mode: 'lamp', flickerSpeed: 3, flickerAmount: 0.05 });
-    this.tableLight = L.addLight({ position: s.lights.table, color: 0xffb865, intensity: 5.6, distance: 8, mode: 'lamp', flickerSpeed: 2.5, flickerAmount: 0.04 });
-    this.stoveLight = L.addLight({ position: s.lights.stove, color: 0xff7a3a, intensity: 1.8, distance: 3.5, mode: 'always', dayFactor: 0.5, flickerSpeed: 6, flickerAmount: 0.18 });
+    // Drinnen (M11): Kamin und Tischlampe – die beiden Lichter stehen fest im Innenraum
+    const inside = this.interior.lights;
+    this.lampLight = L.addLight({ position: inside.lampe, color: 0xffb865, intensity: 2.6, distance: 6, mode: 'lamp', flickerSpeed: 2.5, flickerAmount: 0.04 });
+    this.kaminLight = L.addLight({ position: inside.kamin, color: 0xff8a3a, intensity: 7, distance: 7.5, mode: 'always', dayFactor: 0.55, flickerSpeed: 6, flickerAmount: 0.2 });
     this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.2, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
     this.lanternLight.on = false;
 
     L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });
     L.addGlow(s.glow.lantern, { dim: 0x6a6f80, bright: 0xffc86a, boost: 1.1, entry: this.porchLight });
-    L.addGlow(s.glow.lamp, { dim: 0x8a8070, bright: 0xfff0b0, boost: 1.5, entry: this.tableLight });
-    L.addGlow(s.glow.stove, { dim: 0xb03e25, bright: 0xff9a3a, boost: 1.4, entry: this.stoveLight });
-    L.addGlow(s.glow.candle, { dim: 0x6a5a40, bright: 0xffe8a0, boost: 1.3, mode: 'lamp' });
+    const im = this.interiorMaterials;
+    L.addGlow(im.sky, { dim: 0x2a3560, bright: 0xbfd8f0, boost: 1.15, mode: 'sky' });
+    L.addGlow(im.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.kaminLight });
+    L.addGlow(im.candle, { dim: 0x6a5a40, bright: 0xffe8a0, boost: 1.3, mode: 'lamp' });
+    L.addGlow(im.lamp, { dim: 0x8a8070, bright: 0xfff0b0, boost: 1.5, entry: this.lampLight });
     L.addGlow(s.glow.fairy, { dim: 0x555555, bright: 0xffffff, boost: 1.6, mode: 'lamp', twinkle: true });
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
     L.addGlow(this.materials.beacon, { dim: 0xc8b070, bright: 0xfff2c4, boost: 1.8, mode: 'lamp' });
@@ -168,23 +184,42 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions];
   }
 
-  /** Das Zuhause auf eine Ausbaustufe bringen (neu aufbauen). */
+  /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */
   setHouseLevel(level) {
     this.grid.houseLevel = level; // für »Kein Platz«: steht das Zuhause hier schon?
-    if (this.shelter.level === level) return;
+    if (this.interior.level !== level) {
+      const old = this.interior;
+      this.scene.remove(old.group);
+      old.group.traverse((o) => o.geometry?.dispose());
+      for (const c of old.colliders) this.colliders.remove(c);
+      this.interior = createInterior({ seed: this.seed, colliders: this.colliders, level, materials: this.interiorMaterials });
+      this.scene.add(this.interior.group);
+      this.addInteriorPools();
+      this.refreshInteractions();
+    }
+    // Außen zwei Gestalten – die Notunterkunft und ab Stufe 2 die Hütte mit Anbau –,
+    // dazu ab Stufe 3 Dachfenster, Werkzeugbrett und Kisten auf der Veranda
+    const outer = Math.min(level, 2);
+    if (this.shelter.stage === level) return;
     const old = this.shelter;
     this.scene.remove(old.group);
     old.group.traverse((o) => o.geometry?.dispose());
     for (const c of old.colliders) this.colliders.remove(c);
-    this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level, materials: this.shelterMaterials });
+    this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level: outer, stage: level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
-    this.props.setHouseLevel(level);
+    this.props.setHouseLevel(outer);
     this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
-    this.pathing.setHome(homeRect(level));
+    this.pathing.setHome(homeRect(outer));
     this.refreshInteractions();
+  }
+
+  /** Lichtinseln der Lampen im Innenraum (Herd, Nachttisch, Werkstatt, Lager). */
+  addInteriorPools() {
+    for (const pool of this.interiorPools) this.lightPools.remove(pool);
+    this.interiorPools = this.interior.pools.map((p) => this.lightPools.add(p.x, p.z, p.radius));
   }
 
   /** Laterne der Spielfigur anbinden (Glas-Material + Licht). */
@@ -200,9 +235,29 @@ export class World {
     return 0;
   }
 
+  /** Liegt der Punkt im Innenraum (dem eigenen Bild östlich der Karte)? */
   isInside(x, z) {
-    for (const r of this.shelter.interiors) if (x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ) return true;
-    return false;
+    const a = this.interior.area;
+    return x > a.minX && x < a.maxX && z > a.minZ && z < a.maxZ;
+  }
+
+  /**
+   * Durch die Tür? Draußen: Wer in die Haustür drückt, geht hinein ('innen').
+   * Drinnen: Wer in die Türöffnung der Vorderwand läuft, geht hinaus ('aussen').
+   */
+  passageAt(x, z) {
+    if (this.isInside(x, z)) {
+      const e = this.interior.exit;
+      return x > e.minX && x < e.maxX && z > e.minZ ? 'aussen' : null;
+    }
+    const door = this.shelter.door.center;
+    return Math.abs(x - door.x) < 0.36 && z < door.z + 0.2 && z > door.z - 0.6 ? 'innen' : null;
+  }
+
+  /** Wo man vor der Haustür steht (nach dem Hinausgehen). */
+  outsideDoorSpot() {
+    const door = this.shelter.door.center;
+    return { x: door.x, z: door.z + 0.75, facing: 0 };
   }
 
   /**
@@ -290,6 +345,8 @@ export class World {
       if (next === this.flameIndex) next = (next + 1) % frames.length;
       this.flameIndex = next;
       frames[next].visible = true;
+      const kamin = this.interior.flames;
+      for (let k = 0; k < kamin.length; k++) kamin[k].visible = k === next % kamin.length;
       this.flameTimer = 0.08 + Math.random() * 0.07;
     }
 
@@ -305,11 +362,9 @@ export class World {
     this.particles.update(dt);
     this.fireflies.update(dt, Math.max(0, (night - 0.55) / 0.45));
 
-    // Haus betreten: Dach und Vorderwand gerastert ausblenden
+    // Drinnen oder draußen? (Drinnen ist ein eigenes Bild, siehe interior.js)
     if (player) {
       this.playerInside = this.isInside(player.position.x, player.position.z);
-      this.fadeValue = damp(this.fadeValue, this.playerInside ? 1.05 : 0, 7, dt);
-      this.shelter.fade.value = this.fadeValue < 0.01 ? 0 : this.fadeValue;
 
       // Tür öffnet sich, wenn man davorsteht
       const door = this.shelter.door;

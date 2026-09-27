@@ -1,6 +1,8 @@
 // Der Spielzustand: alles, was gespeichert wird, als reine Daten.
 // Änderungen am Aufbau: SAVE_VERSION erhöhen und Migration in save.js ergänzen.
 
+import { HOUSE_LEVELS, HOUSE_MAX } from '../data/buildings.js';
+import { INTERIOR_ENTRY, INTERIOR_EXTENT } from '../world/interior.js';
 import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPON_ORDER } from '../data/weapons.js';
 import { PERKS, PERK_IDS } from '../data/perks.js';
@@ -11,7 +13,7 @@ import { TRADER_OFFERS } from '../data/trader.js';
 import { TOWER_PARTS, TOWER_PART_IDS } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -33,7 +35,7 @@ export function createNewState(config, mapSeed = 1) {
     time: { day: 1, minute: config.time.newGameMinute },
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
-    player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
+    player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, soup: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
@@ -87,8 +89,10 @@ export function sanitizeState(data, config) {
   if (!data || typeof data !== 'object') return out;
   out.time.day = Math.floor(num(data.time?.day, base.time.day, 1, 1e6));
   out.time.minute = num(data.time?.minute, base.time.minute, 0, DAY_MINUTES - 0.001);
-  out.player.x = num(data.player?.x, base.player.x, -70, 40);
-  out.player.z = num(data.player?.z, base.player.z, -40, 40);
+  // Drinnen (M11) liegt die Figur weit östlich der Karte im Innenraum
+  const indoors = typeof data.player?.x === 'number' && data.player.x > INTERIOR_EXTENT.minX - 5;
+  out.player.x = indoors ? num(data.player.x, INTERIOR_ENTRY.x, INTERIOR_EXTENT.minX, INTERIOR_EXTENT.maxX) : num(data.player?.x, base.player.x, -70, 40);
+  out.player.z = indoors ? num(data.player?.z, INTERIOR_ENTRY.z, INTERIOR_EXTENT.minZ, INTERIOR_EXTENT.maxZ) : num(data.player?.z, base.player.z, -40, 40);
   out.player.facing = num(data.player?.facing, 0, -10, 10);
   out.player.lantern = Boolean(data.player?.lantern);
   out.player.hp = num(data.player?.hp, 100, 1, 1000);
@@ -96,6 +100,7 @@ export function sanitizeState(data, config) {
   out.player.level = Math.floor(num(data.player?.level, 1, 1, 99));
   out.player.rested = Math.floor(num(data.player?.rested, 0, 0, 1e6));
   out.player.tea = Math.floor(num(data.player?.tea, 0, 0, 1e6));
+  out.player.soup = Math.floor(num(data.player?.soup, 0, 0, 1e6)); // Tag der letzten Suppe (M11)
   out.player.name = cleanName(data.player?.name);
   out.player.look = Object.fromEntries(LOOK_KEYS.map((k) => [k, LOOKS[k][data.player?.look?.[k]] ? data.player.look[k] : DEFAULT_LOOK[k]]));
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
@@ -128,8 +133,8 @@ export function sanitizeState(data, config) {
   const w = data.world || {};
   out.world.mapSeed = Math.floor(num(w.mapSeed, 1, 0, 4294967295));
   out.world.relocate = Boolean(w.relocate);
-  out.world.houseLevel = Math.floor(num(w.houseLevel, 1, 1, 2));
-  out.world.homeHp = num(w.homeHp, out.world.houseLevel >= 2 ? 450 : 300, 0, 5000);
+  out.world.houseLevel = Math.floor(num(w.houseLevel, 1, 1, HOUSE_MAX));
+  out.world.homeHp = num(w.homeHp, HOUSE_LEVELS[out.world.houseLevel].hp, 0, 5000);
   if (w.dayEvents && Number.isFinite(w.dayEvents.day)) out.world.dayEvents = { day: Math.floor(w.dayEvents.day), done: Math.floor(num(w.dayEvents.done, 0, 0, 99)), lost: num(w.dayEvents.lost, 0, 0, 5000) };
   const n = data.night || {};
   out.night = {

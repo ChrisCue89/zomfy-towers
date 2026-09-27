@@ -484,6 +484,9 @@ Werkbank in der Werkstatt.
 - **Drinnen ist ein eigenes Bild** (wie in Stardew Valley): Wer durch die
   Tür geht, sieht den Innenraum groß, warm und im feinen Maß – Kamin, Küche,
   Bett, Regale, Pflanzen, Knopfs Körbchen. Draußen läuft die Welt weiter.
+  Umgesetzt in M11: Die Räume liegen nebeneinander, jede Stufe bringt einen
+  (Küche: Suppe für die Nacht; Schlafzimmer: Gemütlichkeit +2; Werkstatt:
+  Werkbank drinnen; Lager: eine verlorene Nacht kostet nur die Hälfte).
 - **Einrichten und Dekorieren:** Möbel drinnen, Deko draußen (Kürbisse,
   Laternen, Blumenkästen, Wimpel). Gemütlichkeit bringt jeden Morgen
   Erfahrung, ab 5 ist Mika »ausgeschlafen« (bis Mittag schneller).
@@ -826,13 +829,19 @@ etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
   Auftraggebers: ein gemütlicher Soundtrack, nachts beim Angriff treibend
   (6.19). Entscheidungen: OFFENE-FRAGEN 89–93.
 
-### Meilenstein 11 – Das Zuhause am Wasser
+### Meilenstein 11 – Das Zuhause am Wasser ✓
 
-- Das Fischerhaus als Zuhause in Stufen und Räumen (Wohnraum mit Kamin,
-  Küche, Schlafzimmer, Werkstatt, Lager) und draußen Veranda, Garten,
-  Gewächshaus, Holzlager, längerer Anleger, Nebengebäude.
-- **Innenraum als eigenes Bild** (wie in Stardew Valley), groß und im feinen
-  Maß; Möbel und Deko drinnen und draußen.
+- **Innenraum als eigenes Bild:** Durch die Haustür geht es nach kurzem
+  Abblenden hinein – im doppelten Maßstab, im feinen Maß (1/16 m), warm
+  beleuchtet, mit Sonnenflecken durch die Fenster; draußen läuft die Welt
+  weiter (OFFENE-FRAGEN 94, 95).
+- **Stufen und Räume:** Wohnraum mit Kamin (1), Küche mit Suppe (2),
+  Schlafzimmer unterm Dach (3), Werkstatt mit Werkbank (4), Lager (5) –
+  je +150 Standfestigkeit bis 900 (Nr. 96); außen zeigt sich der Ausbau an
+  Dachfenster, Werkzeugbrett und Kisten auf der Veranda (Nr. 97).
+- Möbel aus M6 stehen im Wohnraum, Knopfs Körbchen vor dem Kamin; draußen
+  kommt das Holzlager dazu. **Verschoben:** Gewächshaus und längerer Anleger
+  (Nr. 98).
 
 ### Meilenstein 12 – Herbst, Wetter und Lesbarkeit
 

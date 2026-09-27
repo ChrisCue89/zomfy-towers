@@ -219,6 +219,7 @@ export class PixelRenderer {
     r.render(scene, rig.camera);
 
     const pu = this.post.material.uniforms;
+    pu.uPx.value = rig.px; // drinnen gilt ein anderer Maßstab (M11)
     pu.uNear.value = rig.camera.near;
     pu.uFar.value = rig.camera.far;
     pu.uDitherOffset.value.copy(rig.ditherOffset);

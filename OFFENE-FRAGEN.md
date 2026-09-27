@@ -879,6 +879,57 @@ Tondateien.
 Pausen, weil Dauermusik im Aufbauspiel ermüdet; Stufen, weil der Angriff
 Druck braucht, der mit der Lage wächst.
 
+### 94. Wie wird »Drinnen ist ein eigenes Bild« umgesetzt? (M11)
+**Entscheidung:** Der Innenraum liegt in derselben Szene weit östlich der
+Karte (x ≈ 300). So läuft draußen alles weiter – Horde, Türme, Nächte –, ohne
+zweite Szene, zweite Lichtliste oder zweiten Kollisionsraum. Wer in die
+Haustür drückt, geht nach kurzem gerastertem Abblenden drinnen weiter; wer
+drinnen durch die Türöffnung der Vorderwand läuft, steht wieder vor der Tür.
+Drinnen gilt der doppelte Maßstab (160 px/m – das Pixelraster bleibt exakt),
+die Kamera zeigt möglichst den ganzen Raum, ringsum ist es dunkel wie in
+Stardew Valley. Zwei der fünf Punktlichter (Kamin, Tischlampe) stehen fest im
+Innenraum (die Lichtzahl bleibt gleich); die Sonne fällt nur durch die Fenster
+eines unsichtbaren Schatten-Stellvertreters (Decke und Südwand) – so wandern
+Sonnenflecken über den Boden. Drinnen gilt ein eigener warmer Look, der Klang
+hört an der Haustür mit (man hört die Horde am Haus), es gibt keine Randpfeile
+zu Schlurfern, nur einen Haus-Alarm unten (dort geht es hinaus), und die
+Bauleiste stellt drinnen nichts auf (keine Türme; Figur, Zuhause, Einrichten).
+Das Haus von außen ist geschlossen, nachts leuchten die Fenster; das alte
+Innere samt Dach-Ausblenden ist entfernt. Knopfs Körbchen steht jetzt drinnen
+vor dem Kamin (DESIGN 6.8).
+
+### 95. Wie liegen die Räume, wenn die Kamera immer nach Norden blickt? (M11)
+**Entscheidung:** Nebeneinander von West nach Ost, jeder Ausbau fügt links oder
+rechts einen Raum an. Räume hintereinander würden sich gegenseitig verdecken.
+Die Rückwand steht in voller Höhe (Fenster, Regale, Bilder), Seiten-, Trenn-
+und Vorderwände sind wie in einer Puppenstube niedrig abgeschnitten
+(Schnittkante dunkel), Durchgänge sind Lücken mit Türpfosten.
+
+### 96. Was bringt jede Ausbaustufe? (M11, DESIGN 6.8)
+**Entscheidung:** Jede Stufe einen Raum mit einer spürbaren Sache und +150
+Standfestigkeit (300 → 900):
+- Stufe 2 Hütte: **Küche** – einmal am Tag Suppe (3 Fasern): volle Lebenspunkte
+  und +25 höchstens bis zum nächsten Morgen.
+- Stufe 3: **Schlafzimmer unterm Dach** – das Bett zieht um, Gemütlichkeit +2.
+- Stufe 4: **Werkstatt** – eine Werkbank drinnen (auch nachts im Warmen).
+- Stufe 5: **Lager** – eine verlorene Nacht kostet nur halb so viel Vorrat.
+Kosten steigen von 30 auf 50 Holz (dazu Stein, Schrott, Stoff, ab Stufe 4
+Zahnräder) – die Feinabstimmung macht M13.
+
+### 97. Wie wächst das Haus außen, wenn der Grundriss fest ist? (M11, zu Nr. 43)
+**Entscheidung:** Drinnen darf das Haus größer sein als außen (wie in Stardew
+Valley). Außen bleibt der Grundriss der Hütte; die Stufen zeigen sich an
+Zeichen: Dachfenster (Schlafzimmer), Werkzeugbrett neben der Tür (Werkstatt),
+Kisten und Fass auf der Veranda (Lager). So blockiert kein Ausbau je ein
+bebautes Feld.
+
+### 98. Garten, Gewächshaus, Holzlager, längerer Anleger? (M11)
+**Entscheidung:** Das **Holzlager** kommt als Bau (Reiter »Einrichten«, höchstens
+zwei): Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen. **Gewächshaus**
+(Kräuter und Kürbisse als neue Rohstoffe, etwa für die Suppe) und ein **längerer
+Anleger** sind verschoben: Neue Rohstoffe ändern die Wirtschaft (Balance, M13), und
+der Herbst mit Kürbissen kommt ohnehin in M12. Veranda und Beete gibt es schon.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

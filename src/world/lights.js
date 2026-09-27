@@ -52,6 +52,7 @@ export class WarmLights {
    * Leuchtendes Material an einen Helligkeitswert koppeln.
    * @param {THREE.Material} material
    * @param {{dim:number, bright:number, boost?:number, mode?:string, entry?:object, twinkle?:boolean}} options
+   *   mode 'lamp' = hell in der Nacht, 'always' = immer, 'sky' = hell am Tag (Fensterglas von innen, M11)
    */
   addGlow(material, options) {
     this.glows.push({
@@ -89,7 +90,7 @@ export class WarmLights {
       e.light.intensity = e.base * level * this.flicker(e.seed, e.speed, e.amount);
     }
     for (const g of this.glows) {
-      let level = g.entry ? g.entry.level : g.mode === 'always' ? 1 : lampLevel;
+      let level = g.entry ? g.entry.level : g.mode === 'always' ? 1 : g.mode === 'sky' ? 1 - lampLevel * 0.85 : lampLevel;
       if (!g.on) level = 0;
       let f = g.entry ? this.flicker(g.entry.seed, g.entry.speed, g.entry.amount) : 1;
       if (g.twinkle) f *= 0.85 + 0.15 * Math.sin(this.time * 2.3 + g.seed);

@@ -23,6 +23,8 @@ export const CONFIG = {
     uiLines: 360,
     // 10 Spielpixel pro 1/8-m-Voxel und 5 pro 1/16-m-Voxel (Breite) -> 80 px pro Meter.
     pxPerMeter: 80,
+    // Drinnen (M11) doppelt so groß: 10 Spielpixel pro 1/16-m-Voxel
+    interiorPxPerMeter: 160,
     // Kameraneigung mit Steigung 3:4 (sin = 0,6; cos = 0,8): Böden 3 px, Wände 4 px pro 1/16-m-Voxel.
     pitchSin: 0.6,
     pitchCos: 0.8,

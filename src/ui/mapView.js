@@ -157,7 +157,8 @@ export class MapView {
       ui.rect(p.x, p.y, 2, 2, hexToCss(P.a3));
     }
     // Mika (blinkt)
-    const me = at(g.player.position.x, g.player.position.z);
+    const where = g.viewInside ? g.world.outsideDoorSpot() : g.player.position; // drinnen: am Haus
+    const me = at(where.x, where.z);
     ui.rect(me.x - 2, me.y - 2, 5, 5, COLORS.outline);
     ui.rect(me.x - 1, me.y - 1, 3, 3, Math.floor(this.t * 3) % 2 ? COLORS.text : COLORS.gold);
 
