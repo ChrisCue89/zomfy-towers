@@ -158,8 +158,13 @@ export class TowerSystem {
           break;
       }
       if (t.head) {
-        t.head.rotation.y = t.headAngle || 0;
-        t.head.position.z = -t.kick * 0.06;
+        // Rückstoß entgegen der Schussrichtung; beim Katapult schnellt der Wurfarm vor
+        const a = t.headAngle || 0;
+        t.head.rotation.y = a;
+        const back = t.type === 'katapult' ? 0.02 : 0.07;
+        t.head.position.x = -Math.sin(a) * t.kick * back;
+        t.head.position.z = -Math.cos(a) * t.kick * back;
+        t.head.rotation.x = t.type === 'katapult' ? Math.sin(Math.min(1, t.kick) * Math.PI) * 0.55 : 0;
       }
     }
     this.updateProjectiles(dt);

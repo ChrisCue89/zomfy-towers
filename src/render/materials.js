@@ -19,6 +19,7 @@ export const sharedUniforms = {
   uCutDepth: { value: 0 },
   uCutStrength: { value: 0 },
   uNight: { value: 0 }, // 0 = Tag, 1 = tiefe Nacht (world.js)
+  uTime: { value: 0 }, // Sekunden, für Wind in Gras und Blumen
 };
 
 const DECLARATIONS = /* glsl */ `
@@ -62,9 +63,30 @@ const DISCARD = /* glsl */ `
 }
 `;
 
+const WIND_VERTEX = /* glsl */ `
+#include <begin_vertex>
+#ifdef WIND
+{
+  // Wind: oben mehr als unten, Phase nach Ort – Gras und Blumen wiegen sich
+  vec3 base = vec3(0.0);
+  #ifdef USE_INSTANCING
+  base = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+  #endif
+  float h = max(0.0, position.y);
+  float gust = 0.6 + 0.4 * sin(uTime * 0.35 + base.x * 0.07);
+  transformed.x += (sin(uTime * 1.7 + base.x * 0.9 + base.z * 0.6) * 0.1 + sin(uTime * 3.3 + base.z * 1.3) * 0.035) * h * gust;
+}
+#endif
+`;
+
 function patch(material, extraUniforms = {}) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, sharedUniforms, extraUniforms);
+    if (material.defines?.WIND !== undefined) {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nuniform float uTime;')
+        .replace('#include <begin_vertex>', WIND_VERTEX);
+    }
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${DECLARATIONS}`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\n${DISCARD}`)
@@ -75,15 +97,16 @@ function patch(material, extraUniforms = {}) {
 
 /**
  * Beleuchtetes Voxel-Material.
- * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number}} options
+ * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number, wind?: boolean}} options
  */
 export function createWorldMaterial(options = {}) {
-  const { occluder = false, fade = false, map = null, vertexColors = true, selfLight = 0 } = options;
+  const { occluder = false, fade = false, map = null, vertexColors = true, selfLight = 0, wind = false } = options;
   const material = new THREE.MeshLambertMaterial({ vertexColors, map });
   material.defines = {};
   if (occluder) material.defines.OCCLUDER = '';
   if (fade) material.defines.FADE = '';
   if (selfLight > 0) material.defines.SELF_LIGHT = '';
+  if (wind) material.defines.WIND = '';
   const extra = {};
   if (fade) {
     extra.uFade = { value: 0 };

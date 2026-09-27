@@ -277,6 +277,7 @@ export function createNature({ seed, materials, colliders, blockers }) {
   const rng = new Rng(seed ^ 0x5eed);
   const scatter = new InstanceScatter(seed);
   const { occluder, world } = materials;
+  const windy = materials.windy || world;
 
   const firs = [buildFir(seed + 1, 1.0), buildFir(seed + 2, 1.15), buildFir(seed + 3, 0.85)];
   const oaks = [buildDeciduous(seed + 11, 1.0), buildDeciduous(seed + 12, 0.9), buildDeciduous(seed + 13, 1.1)];
@@ -293,8 +294,8 @@ export function createNature({ seed, materials, colliders, blockers }) {
   birches.forEach((m, i) => scatter.addModel(`birch${i}`, m, occluder));
   bushes.forEach((m, i) => scatter.addModel(`bush${i}`, m, occluder));
   rocks.forEach((m, i) => scatter.addModel(`rock${i}`, m, world));
-  tufts.forEach((m, i) => scatter.addModel(`tuft${i}`, m, world, { shadow: 'none', jitter: 0.03 }));
-  flowers.forEach((m, i) => scatter.addModel(`flower${i}`, m, world, { shadow: 'none', jitter: 0 }));
+  tufts.forEach((m, i) => scatter.addModel(`tuft${i}`, m, windy, { shadow: 'none', jitter: 0.03 }));
+  flowers.forEach((m, i) => scatter.addModel(`flower${i}`, m, windy, { shadow: 'none', jitter: 0 }));
   mushrooms.forEach((m, i) => scatter.addModel(`mushroom${i}`, m, world, { shadow: 'none' }));
 
   const { z0: roadZ0, z1: roadZ1 } = LAYOUT.road;

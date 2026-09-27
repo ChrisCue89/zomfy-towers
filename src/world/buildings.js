@@ -104,6 +104,7 @@ export class Buildings {
     const U = m.unit || V;
     const group = createStaticVoxelObject(m.base, material, { seed: this.seed, shadow, size: U });
     const head = new THREE.Group();
+    head.rotation.order = 'YXZ'; // erst zielen (y), dann nicken (Wurfarm)
     head.position.y = m.headY * U;
     const headMesh = new THREE.Mesh(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U }), material);
     headMesh.castShadow = shadow !== 'none';

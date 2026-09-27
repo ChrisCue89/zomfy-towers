@@ -38,6 +38,7 @@ export class World {
 
     this.materials = {
       world: createWorldMaterial(),
+      windy: createWorldMaterial({ wind: true }), // Gras und Blumen im Wind
       occluder: createWorldMaterial({ occluder: true }),
       // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
       building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),
@@ -251,6 +252,7 @@ export class World {
     // Rauch, Funken, Glühwürmchen
     const night = dn.night;
     sharedUniforms.uNight.value = night;
+    sharedUniforms.uTime.value = this.time;
     this._smoke0.copy(SMOKE_DAY[0]).lerp(SMOKE_NIGHT[0], night);
     this._smoke1.copy(SMOKE_DAY[1]).lerp(SMOKE_NIGHT[1], night);
     this.chimneySmoke.update(dt, this._smoke0, this._smoke1);
