@@ -32,10 +32,12 @@ export function isLeaderNight(n) {
 /**
  * Punkte der ganzen Nacht: gleichmäßig steigend, unabhängig davon, auf wie
  * viele Wellen sie sich verteilen (m3-r1: 18 → 21 → 46 war ein Sprung).
- * Nacht 1: 18, 2: 25, 3: 32, 4: 41, 5: 52, 8: 89.
+ * Ab Nacht 2 steiler (m3-r2: »leichter statt schwerer«, das Loot wuchs
+ * schneller als die Bedrohung). Nacht 1 bleibt sanft.
+ * Nacht 1: 18, 2: 26, 3: 36, 4: 48, 5: 62, 8: 116.
  */
 export function nightBudget(n) {
-  return 18 + 6 * (n - 1) + 0.6 * (n - 1) ** 2;
+  return 18 + 7 * (n - 1) + (n - 1) ** 2;
 }
 
 export function planNight(n, seed, entries) {
@@ -63,7 +65,8 @@ export function planNight(n, seed, entries) {
       const fit = Math.floor((left - 2) / COST[type]);
       if (fit > 0) add(type, Math.min(wanted, fit));
     };
-    if (n >= 4 && w >= 1) heavy('brummer', Math.min(3, 1 + Math.floor((n - 4) / 3)));
+    // Gepanzerte: ab Nacht 3 einer in der letzten Welle, ab Nacht 4 in jeder außer der ersten
+    if ((n >= 4 && w >= 1) || (n === 3 && w === count - 1)) heavy('brummer', Math.min(3, 1 + Math.floor((n - 3) / 3)));
     if (n >= 6) heavy('leuchtpilz', Math.min(3, 1 + Math.floor((n - 6) / 3)));
     while (left > 0.4) {
       const r = rng.next();

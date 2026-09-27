@@ -4,6 +4,8 @@
 // Durchdrücken löst so nie aus Versehen Schlafen, Ausruhen oder Ausbauen aus.
 // Ein Dialog darf eine Funktion sein, die aus dem Spielzustand die Zeilen wählt.
 
+import { TOWERS } from './towers.js';
+
 export const SPRECHER = {
   mika: { name: 'Mika', portrait: 'mika' },
   radio: { name: 'Radio', portrait: 'radio' },
@@ -15,14 +17,23 @@ const pick = (list, n) => list[((n % list.length) + list.length) % list.length];
 /** Uhrzeit in Stunden (0..24) aus dem Spielzustand. */
 const hourOf = (state) => (6 + (state.time.minute || 0) / 60) % 24;
 
-/** Antworten zum Ausruhen, passend zur Tageszeit. */
+/** Bis wann Ausruhen die Uhr vorstellt (Stunden). */
+export const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 20.4 };
+
+/** 18.5 → »18:30« */
+const clock = (h) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
+
+/** Antworten zum Ausruhen, passend zur Tageszeit – mit Zielzeit (m3-r2). */
 function restAnswers(state) {
   const h = hourOf(state);
-  if (h >= 6 && h < 17.5) return [{ t: 'Bis zum Abend ausruhen', aktion: 'wartenAbend' }, { t: 'Weitermachen', standard: true }];
+  if (h >= 6 && h < 17.5) return [{ t: `Bis zum Abend ausruhen (${clock(REST_TARGET.wartenAbend)})`, aktion: 'wartenAbend' }, { t: 'Weitermachen', standard: true }];
   // Abends nur bis kurz vor der Horde – in die Nacht hinein wird nicht gewartet
-  if (h >= 17.5 && h < 20.25) return [{ t: 'Warten, bis die Horde kommt', aktion: 'wartenNacht' }, { t: 'Weitermachen', standard: true }];
+  if (h >= 17.5 && h < 20.25) return [{ t: `Warten, bis die Horde kommt (${clock(REST_TARGET.wartenNacht)})`, aktion: 'wartenNacht' }, { t: 'Weitermachen', standard: true }];
   return null;
 }
+
+/** Bietet ein Sitzplatz gerade Ausruhen an? */
+export const canRest = (state) => Boolean(restAnswers(state));
 
 function withRest(lines, state) {
   const answers = restAnswers(state);
@@ -135,13 +146,16 @@ export const DIALOGE = {
 
   ersterTurm: [
     { s: 'mika', t: 'Ein Bolzenwerfer. Der schießt von selbst auf alles, was aus dem Wald geschlurft kommt.' },
-    { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft. Nah am Haus kommen alle vorbei.' },
+    { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft, die Kreuze, wo sie am Haus ankommt – das ist nicht nur vorn an der Tür. Dort gehören Türme hin.' },
     { s: 'mika', t: 'Heute Nacht kommt die Horde. Was sie liegen lässt, sammle ich ein – dafür gibt es neue Türme.' },
   ],
 
-  abendHorde: [
+  // Der zweite Satz passt zum Vorrat: Reicht der Schrott schon für einen Turm? (m3-r2)
+  abendHorde: (state) => [
     { s: 'mika', t: 'Es wird dunkel. Aus dem Wald kommt ein Stöhnen … Heute Nacht kommt die Horde.' },
-    { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.' },
+    (state.inventory?.schrott || 0) >= TOWERS.bolzen.base[0].cost.schrott
+      ? { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott habe ich genug – schnell einen bauen, unten in der Bauleiste!' }
+      : { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.' },
   ],
 
   // Tagsüber bietet das Bett wenigstens das Ausruhen an (m3-r1: Leerlauf am Tag)
@@ -174,7 +188,8 @@ export const DIALOGE = {
           'Guten Morgen, Lichtung.',
           'Ausgeschlafen. Der Tag kann kommen.',
           'Die Vögel sind schon wach. Dann wohl ich auch.',
-          'Ein neuer Tag. Die Hütte steht noch. Das ist ein guter Anfang.',
+          // m3-r2: vor dem Ausbau ist es noch die Notunterkunft
+          `Ein neuer Tag. ${(state.world?.houseLevel || 1) >= 2 ? 'Die Hütte' : 'Mein Unterschlupf'} steht noch. Das ist ein guter Anfang.`,
         ],
         state.time.day
       ),

@@ -38,6 +38,7 @@ export class Hud {
     this.homeAlarm = 0; // Sekunden, die die Haus-Marke am Rand noch steht
     this.speech = null; // { text, time, duration }
     this.banner = null; // { text, time }
+    this.bannerBottom = null; // Unterkante des Banners (für die Meldungen)
     this.numbers = []; // Schadenszahlen
     this.swooshes = []; // Schwung-Bögen im Nahkampf
     this.prompt = null; // { text, x, y }
@@ -281,13 +282,20 @@ export class Hud {
       if (from) ui.textCentered(from, cx, y + 28, COLORS.gold);
       const q = Math.max(0, Math.min(1, st.world.homeHp / max));
       drawIcon(ui.ctx, 'haus', x + 5, y + 15);
-      ui.rect(x + 20, y + 19, w - 26, 5, COLORS.outline);
+      // Standfestigkeit auch als Zahl (m3-r2: »nur ein Balken ohne Zahl«)
+      const hpText = `${Math.round(st.world.homeHp)}/${max}`;
+      const barW = w - 26 - hpText.length * 4 - 3;
+      ui.rect(x + 20, y + 19, barW, 5, COLORS.outline);
       const hit = this.homeFlash > 0 && Math.floor(this.homeFlash * 12) % 2 === 0;
-      ui.rect(x + 21, y + 20, Math.max(0, Math.round((w - 28) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
+      ui.rect(x + 21, y + 20, Math.max(0, Math.round((barW - 2) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
+      drawTiny(ui.ctx, hpText, x + 20 + barW + 3, y + 19, hit ? COLORS.text : COLORS.textWarm);
     }
+    this.bannerBottom = null;
     if (this.banner) {
       const b = this.banner;
-      if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, Math.max(40, bottom + 6), 2, COLORS.gold);
+      const by = Math.max(40, bottom + 6);
+      if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, by, 2, COLORS.gold);
+      this.bannerBottom = by + 20; // Meldungen erscheinen darunter (m3-r2: sie verdeckten das Banner)
     }
   }
 
@@ -388,10 +396,22 @@ export class Hud {
     // Liegengebliebene Beute außerhalb des Bildes: kleine goldene Rauten
     // (m3-r1: »Wo liegt die Beute?«) – unter den Pfeilen der Schlurfer
     const lootSectors = new Map();
+    // Nachts steht über liegender Beute im Bild eine kleine funkelnde Raute
+    // (m3-r2: »im Dunkeln nichts gefunden«)
+    const dark = g.world.dayNight.night > 0.45;
     for (const it of g.loot.items) {
       if (it.flying) continue;
       const p = g.worldToUi(it.x, 0.2, it.z);
-      if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) continue;
+      if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) {
+        if (dark) {
+          const x = Math.round(p.x);
+          const y = Math.round(p.y - 12 + Math.sin(g.clock * 3 + it.x * 1.7) * 1.5);
+          const bright = Math.floor(g.clock * 2 + it.z) % 2 === 0;
+          for (let k = -3; k <= 3; k++) ui.rect(x - (3 - Math.abs(k)), y + k, 2 * (3 - Math.abs(k)) + 1, 1, COLORS.outline);
+          for (let k = -2; k <= 2; k++) ui.rect(x - (2 - Math.abs(k)), y + k, 2 * (2 - Math.abs(k)) + 1, 1, bright ? COLORS.text : COLORS.gold);
+        }
+        continue;
+      }
       const a = Math.atan2(p.y - cy, p.x - cx);
       const key = Math.round(a / (Math.PI / 4)); // gröber als bei Schlurfern: ein Haufen, eine Raute
       const s = lootSectors.get(key) || { dx: 0, dy: 0, n: 0 };
@@ -500,7 +520,7 @@ export class Hud {
     const at = this.game.worldToUi(p.x, p.y + 2.1, p.z);
     const w = measure(s.text) + 12;
     const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
-    const y = Math.round(Math.max(44, at.y - 18));
+    const y = Math.round(Math.max(62, at.y - 18)); // nie über Uhr und Ziel
     ui.panel(x, y, w, 17, { fill: COLORS.fillLight });
     ui.text(s.text, x + 6, y + 2, COLORS.text);
     // Zipfel der Sprechblase

@@ -94,12 +94,13 @@ export const T = {
     reiter: { zuhause: 'Zuhause', tuerme: 'Türme', figur: 'Figur' },
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
+    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer' },
     reparieren: 'Reparieren',
     nichtsKaputt: 'Alles heil.',
     erstWelle: 'Erst die Welle abwehren – dann flicken.',
     staffel: (n) => `Jeder weitere dieser Art kostet ${n} Schrott mehr.`,
-    wegeHinweis: 'Kreis: Reichweite · Pünktchen: Weg der Horde.',
-    wegeHinweisKurz: 'Pünktchen: Weg der Horde.',
+    wegeHinweis: 'Kreis: Reichweite · Pünktchen: Weg der Horde · Kreuz: dort greift sie an.',
+    wegeHinweisKurz: 'Pünktchen: Weg der Horde · Kreuz: dort greift sie an.',
     teilweise: (p) => `Der Vorrat reicht für ${p} %.`,
     weg: 'Die Horde braucht einen Weg zum Haus.',
     kaputt: 'Kaputt – erst reparieren.',
@@ -111,6 +112,7 @@ export const T = {
     hausMax: 'Weiter geht es später.',
     fehlt: (was) => `Fehlt: ${was}`,
     nochmal: 'Nochmal drücken: abreißen',
+    nochmalKaufen: (name) => `Nochmal drücken: ${name}`,
   },
   tuerme: {
     stats: (s) => s,
@@ -187,7 +189,9 @@ export const T = {
     nichts: 'nichts',
     zuhause: (d, jetzt, max) =>
       d > 0
-        ? `In der Nacht hat das Zuhause ${d} Standfestigkeit verloren (jetzt ${jetzt ?? '?'}/${max ?? '?'}).`
+        ? jetzt !== undefined && jetzt >= max
+          ? `In der Nacht hat das Zuhause ${d} Standfestigkeit verloren – schon wieder geflickt (${jetzt}/${max}).`
+          : `In der Nacht hat das Zuhause ${d} Standfestigkeit verloren (jetzt ${jetzt ?? '?'}/${max ?? '?'}).`
         : jetzt !== undefined && jetzt < max
           ? `In der Nacht kein neuer Kratzer (jetzt ${jetzt}/${max}).`
           : 'Das Zuhause ist unversehrt.',
@@ -198,13 +202,23 @@ export const T = {
     gefallen: (jetzt, max) => `Das Zuhause ist gefallen. Notdürftig geflickt: ${jetzt}/${max}.`,
     verlust: 'Verloren:',
     kaputt: (n) => `${n} Barrikade(n) zerschlagen.`,
-    trost: 'Die Türme sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).',
+    // Was eine verlorene Nacht angeschlagen hat (ohne Angabe: alter Bericht aus einem früheren Spielstand)
+    trost: (d) =>
+      !d || (d.towers && !d.barricades)
+        ? 'Die Türme sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+        : d.towers
+          ? 'Türme und Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+          : d.barricades
+            ? 'Die Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+            : 'Ohne Turm kommt die Horde bis ans Haus. Schrott dafür gibt es am Waldrand.',
     weiter: 'E – weiter',
   },
   werkbank: {
     titel: 'Werkbank',
     hinweis: 'W/S wählen · E herstellen · Esc schließen',
-    halten: (info) => `E halten: ${info}`,
+    hinweisVerwerten: 'W/S wählen · E verwerten · Esc schließen',
+    halten: (info) => `${info} E halten: weiter`,
+    zaehler: (n) => `+${n}`,
     vorhanden: 'schon da',
   },
   aktionen: {
@@ -217,6 +231,7 @@ export const T = {
     ansehen: 'Ansehen',
     schaukeln: 'Schaukeln',
     hinsetzen: 'Hinsetzen',
+    ausruhen: 'Hinsetzen und ausruhen',
     hacken: 'Holz hacken',
     abbauen: 'Stein abbauen',
     aufsammeln: 'Aufsammeln',
@@ -236,7 +251,7 @@ export const T = {
     weiter: 'E',
   },
   dialog: {
-    auswahlHinweis: 'W/S wählen · E bestätigen',
+    auswahlHinweis: 'W/S wählen · E bestätigen · Esc zurück',
   },
   meldungen: {
     gespeichert: 'Spielstand gespeichert',
@@ -254,6 +269,7 @@ export const T = {
     // Gedanken am Abend – als Sprechblase, damit sie nie mitten in der Welle anhalten
     abendLaterne: 'Es wird dunkel. Mit der Laterne sehe ich mehr. (Taste F)',
     spaet: 'Geschafft für heute. Ich sollte bald ins Bett.',
+    ruheHinweis: 'Wenn alles erledigt ist: Im Ohrensessel am Feuer kann ich bis zum Abend ausruhen.',
     waldbaum: 'Der ist mir zu mächtig. Fällen kann ich die Bäume mit dem rot-weißen Band.',
     gestruepp: 'Nur Gestrüpp. Holz gibt es an den Bäumen mit dem rot-weißen Band.',
     verschnauft: 'Kurz verschnauft – wieder bei Kräften',

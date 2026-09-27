@@ -9,6 +9,8 @@ import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
 export const FLINCH = 0.28; // Dauer des Zusammenzuckens
+const SLIDE_LOOK = 0.4; // so weit schaut Mika seitlich voraus, wenn sie festhängt
+const SLIDE_TURN = 1.15; // Richtung des Ausweichschritts (Bogenmaß zur Wunschrichtung)
 
 function easeOut(t) {
   return 1 - (1 - t) * (1 - t);
@@ -27,13 +29,13 @@ export class Player {
     this.object = this.character.root;
     this.object.name = 'Mika';
     // Hinter Verdeckungen (Haus, Bäume) bleibt Mika als warmer Umriss sichtbar
-    const silhouette = createSilhouetteMaterial(0xf4a64c, 0.6);
+    const silhouette = createSilhouetteMaterial(0xffc86a, 0.8); // Mika hebt sich deutlich ab
     for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
       const mesh = this.character.parts[name].children.find((c) => c.isMesh);
       if (!mesh) continue;
       mesh.renderOrder = 2;
       const outline = new THREE.Mesh(mesh.geometry, silhouette);
-      outline.renderOrder = 1;
+      outline.renderOrder = 1.75; // nach den Schlurfern: auch hinter einem Brummer bleibt Mika sichtbar
       mesh.add(outline);
     }
 
@@ -51,6 +53,7 @@ export class Player {
     this.action = null;
     this.flinch = 0; // Zusammenzucken nach einem Treffer (Sekunden)
     this.blinkAt = 2 + Math.random() * 3; // nächstes Blinzeln (this.time)
+    this._probe = { x: 0, z: 0 };
     this._lanternWorld = new THREE.Vector3();
   }
 
@@ -78,7 +81,7 @@ export class Player {
       hit: false,
       tool: options.tool ?? null,
       progress: options.progress || false, // Balken über dem Kopf (Durchsuchen, Ernten)
-      dir: options.dir || null, // Ausweichrolle: Richtung und Tempo
+      dir: options.dir || null, // Ausweichrolle, Ausfallschritt: Richtung und Tempo
       speed: options.speed || 0,
       onHit: options.onHit || null,
       onDone: options.onDone || null,
@@ -101,6 +104,8 @@ export class Player {
   update(dt, move, run) {
     this.time += dt;
     const roll = this.action && this.action.kind === 'roll' ? this.action : null;
+    // Ausfallschritt: ein Schwung mit Richtung geht bis zum Treffer ein Stück mit
+    const lunge = this.action && this.action.kind === 'swing' && this.action.dir && this.action.t < this.action.hitAt ? this.action : null;
     if (this.action) {
       // Durchsuchen bricht ab, wenn man losläuft; Schwünge, Rollen und kurzes
       // Aufsammeln laufen zu Ende.
@@ -126,6 +131,11 @@ export class Player {
       this.velocity.x = roll.dir.x * roll.speed * k;
       this.velocity.z = roll.dir.z * roll.speed * k;
       this.facing = Math.atan2(roll.dir.x, roll.dir.z);
+    } else if (lunge) {
+      this.velocity.x = lunge.dir.x * lunge.speed;
+      this.velocity.z = lunge.dir.z * lunge.speed;
+    } else if (this.action && this.action.kind === 'swing' && this.action.dir) {
+      this.velocity.set(0, 0, 0); // nach dem Ausfallschritt fest stehen, nicht nachrutschen
     } else {
       this.velocity.x = damp(this.velocity.x, targetVX, sharp, dt);
       this.velocity.z = damp(this.velocity.z, targetVZ, sharp, dt);
@@ -134,6 +144,7 @@ export class Player {
     const beforeX = this.position.x;
     const beforeZ = this.position.z;
     this.world.colliders.move(this.position, this.velocity.x * dt, this.velocity.z * dt, this.config.radius);
+    if (len > 0.1 && !roll && !lunge) this.slideAround(beforeX, beforeZ, this.velocity.x * dt, this.velocity.z * dt);
     if (dt > 0) {
       this.velocity.x = (this.position.x - beforeX) / dt;
       this.velocity.z = (this.position.z - beforeZ) / dt;
@@ -146,6 +157,42 @@ export class Player {
     this.phase += dt * actual * 4.4;
     this.animate(dt);
     this.syncObject();
+  }
+
+  /**
+   * Um Ecken gleiten: Hängt Mika an einer Kante oder einem runden Ding fest
+   * (Tonne, Kiste, Tischecke), schaut sie kurz voraus, auf welcher Seite es
+   * weitergeht, und macht den Schritt schräg dorthin (m3-r2). Vor einer langen
+   * Wand und in echten Ecken bleibt sie stehen – dort ist keine Seite frei.
+   */
+  slideAround(x0, z0, mx, mz) {
+    const want = Math.hypot(mx, mz);
+    if (want < 1e-4) return;
+    const ux = mx / want;
+    const uz = mz / want;
+    const progress = (this.position.x - x0) * ux + (this.position.z - z0) * uz;
+    if (progress > want * 0.4) return;
+    const r = this.config.radius;
+    const probe = this._probe;
+    let side = 0;
+    let best = SLIDE_LOOK * 0.3;
+    for (const sign of [1, -1]) {
+      probe.x = this.position.x;
+      probe.z = this.position.z;
+      this.world.colliders.move(probe, -uz * sign * SLIDE_LOOK, ux * sign * SLIDE_LOOK, r);
+      const bx = probe.x;
+      const bz = probe.z;
+      this.world.colliders.move(probe, ux * SLIDE_LOOK, uz * SLIDE_LOOK, r);
+      const p = (probe.x - bx) * ux + (probe.z - bz) * uz;
+      if (p > best) {
+        best = p;
+        side = sign;
+      }
+    }
+    if (!side) return;
+    const c = Math.cos(SLIDE_TURN);
+    const s = Math.sin(SLIDE_TURN) * side;
+    this.world.colliders.move(this.position, (ux * c - uz * s) * want, (uz * c + ux * s) * want, r);
   }
 
   updateAction(dt) {

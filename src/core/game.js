@@ -39,7 +39,7 @@ import { perkValue, PERKS, xpForLevel } from '../data/perks.js';
 import { drawText, measure, GLYPH_ROWS } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
-import { DIALOGE } from '../data/dialogs.js';
+import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
@@ -54,7 +54,6 @@ const FLAG_AFTER_DIALOG = {
 };
 
 /** Ausruhen: Zieluhrzeit je Aktion. */
-const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 20.4 };
 
 const SLEEP = { fadeOut: 1.0, black: 1.2, fadeIn: 0.9 };
 const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
@@ -353,7 +352,7 @@ export class Game {
     this.dialog.open(lines, (aktion) => {
       this.mode = 'play';
       // Dasselbe Ding nicht sofort wieder öffnen, wenn man E weiterdrückt
-      if (source) this.suppressed = { id: source, until: this.clock + 0.5 }; // kurz genug für ein bewusstes zweites E (m3-r1)
+      if (source) this.suppressed = { id: source, until: this.clock + 0.8 }; // Durchdrücken öffnet nicht gleich wieder (m3-r2), ein bewusstes zweites E schon
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
@@ -600,6 +599,8 @@ export class Game {
     const st = this.state;
     if (!st.report) return;
     st.report.lootLeft = this.loot.items.filter((it) => !it.flying).length; // liegt noch was draußen?
+    // Nach der Nacht schon geflickt? Dann zeigt der Bericht den Stand jetzt (m3-r2)
+    if (!st.report.fell) st.report.homeNow = Math.round(st.world.homeHp);
     this.report.open(st.report);
     this.mode = 'report';
   }
@@ -709,7 +710,15 @@ export class Game {
         losses[res] = n;
       }
     }
-    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp) b.hp = Math.max(0, b.hp - BUILDINGS[b.type].hp / 3);
+    // Bauten nehmen ein Drittel Schaden; der Bericht sagt, was es getroffen hat (m3-r2)
+    const damaged = { towers: 0, barricades: 0 };
+    for (const b of this.world.buildings.list) {
+      const def = BUILDINGS[b.type];
+      if (!def.hp) continue;
+      b.hp = Math.max(0, b.hp - def.hp / 3);
+      if (def.tower) damaged.towers += 1;
+      else damaged.barricades += 1;
+    }
     // Notdürftig geflickt: ein Viertel – aber nie besser als zu Beginn der Nacht
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     st.world.homeHp = Math.max(1, Math.min(Math.round(max * 0.25), st.night.homeStart));
@@ -718,6 +727,7 @@ export class Game {
     this.loot.clear();
     this.towers.clear();
     st.night.losses = losses;
+    st.night.damaged = damaged;
     this.nights.finishNight(false);
   }
 
@@ -778,8 +788,8 @@ export class Game {
         this.updatePlay(dt);
         break;
       case 'dialog':
-        // Esc öffnet auch mitten im Dialog das Menü (danach geht der Dialog weiter)
-        if (input.pressed('menu')) this.openMenu();
+        // Esc schließt den Dialog wie die harmlose Antwort (m3-r2: nicht das Menü darüber)
+        if (input.pressed('menu')) this.dialog.finish(null);
         else this.dialog.update(dt, input);
         this.player.idle(dt);
         break;
@@ -961,9 +971,13 @@ export class Game {
       // Gedanken statt Dialog: halten das Spiel nie an (m3-r1)
       flags.abendHinweis = true;
       this.hud.say(T.meldungen.abendLaterne, 5);
-    } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4) && !this.nights.active && this.horde.alive === 0) {
+    } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4) && !this.nights.active && this.horde.alive === 0 && this.clock - this.nights.finishedAt > 8) {
       flags.spaetHinweis = true;
       this.hud.say(T.meldungen.spaet, 4);
+    } else if (!flags.ruheHinweis && h >= 12.5 && h < 16.5 && this.horde.alive === 0) {
+      // Langer Nachmittag: einmal daran erinnern, dass man die Zeit vorspulen kann (m3-r2)
+      flags.ruheHinweis = true;
+      this.hud.say(T.meldungen.ruheHinweis, 6);
     }
   }
 
@@ -1023,6 +1037,12 @@ export class Game {
     return null;
   }
 
+  /** Text der Einblendung. Sessel und Bank sagen tagsüber gleich, dass man dort ausruhen kann (m3-r2). */
+  promptText(it) {
+    if ((it.id === 'sessel' || it.use === 'bank') && !this.nights.active && canRest(this.state)) return T.aktionen.ausruhen;
+    return T.aktionen[it.prompt];
+  }
+
   render() {
     this.horde.render();
     this.towers.render();
@@ -1037,7 +1057,7 @@ export class Game {
       const ground = this.world.heightAt(it.x, it.z);
       const pos = this.worldToUi(it.x, ground + 1.3, it.z);
       const status = this.interactionStatus(it);
-      this.hud.prompt = { text: status || T.aktionen[it.prompt], dim: Boolean(status), x: pos.x, y: pos.y, target: this.worldToUi(it.x, ground, it.z) };
+      this.hud.prompt = { text: status || this.promptText(it), dim: Boolean(status), x: pos.x, y: pos.y, target: this.worldToUi(it.x, ground, it.z) };
     } else {
       this.hud.prompt = null;
     }
@@ -1050,7 +1070,7 @@ export class Game {
     this.report.draw(ui);
     this.perkChoice.draw(ui);
     // Meldungen liegen über dem Bericht; bei offener Werkbank darunter (nicht über dem Titel)
-    const toastY = this.crafting.isOpen ? this.crafting.bottom(ui) : this.perkChoice.isOpen ? this.perkChoice.bottom(ui) : 64;
+    const toastY = this.crafting.isOpen ? this.crafting.bottom(ui) : this.perkChoice.isOpen ? this.perkChoice.bottom(ui) : Math.max(64, (this.hud.bannerBottom || 0) + 4);
     this.hud.drawToasts(ui, toastY);
     this.dialog.draw(ui);
     this.menu.draw(ui);
@@ -1130,12 +1150,14 @@ export class Game {
 
   /**
    * Die Einblendung (»E Fasern rupfen«) über dem, was Mika gerade benutzen kann.
-   * Im Getümmel bleibt sie weg – dann zählen die Schlurfer (m3-r1); E wirkt trotzdem.
+   * Im Getümmel bleibt sie weg – dann zählen die Schlurfer (m3-r1), nachts
+   * schon auf größere Entfernung (m3-r2); E wirkt trotzdem.
    */
   shownInteraction() {
     if (this.mode !== 'play' || !this.currentInteraction) return null;
     const p = this.player.position;
-    const close = this.horde.list.some((z) => z.state !== 'dying' && z.state !== 'enter' && Math.hypot(z.x - p.x, z.z - p.z) < 3.5);
+    const near = this.nights.active ? 6 : 3.5;
+    const close = this.horde.list.some((z) => z.state !== 'dying' && Math.hypot(z.x - p.x, z.z - p.z) < near);
     return close ? null : this.currentInteraction;
   }
 
@@ -1161,7 +1183,7 @@ export class Game {
       vorrat: Object.fromEntries(this.hud.visibleResources().map((r) => [r, st.inventory[r]])),
       laterne: this.player.holdingLantern ? 'an' : 'aus',
       schnellleiste: { gewaehlt: st.hotbar.selected + 1, plaetze: st.hotbar.slots.map((s) => s || '-') },
-      hinweis: it ? this.interactionStatus(it) || T.aktionen[it.prompt] : null,
+      hinweis: it ? this.interactionStatus(it) || this.promptText(it) : null,
       bauleiste: L
         ? {
             titel: L.title,
@@ -1174,7 +1196,9 @@ export class Game {
             })),
           }
         : null,
-      platzieren: this.builder.placement ? { bau: this.builder.placement.name, passt: this.builder.placement.ok } : null,
+      platzieren: this.builder.placement
+        ? { bau: this.builder.placement.name, passt: this.builder.placement.ok, grund: this.builder.placement.ok ? null : T.bauleiste.grund[this.builder.placement.reason] || null }
+        : null,
       werkbank:
         this.mode === 'craft'
           ? this.crafting.recipes().map((r, i) => `${i === this.crafting.focus ? '> ' : ''}${T.rezepte[r.id]} (${r.owned ? T.werkbank.vorhanden : costText(r.cost)})`)
@@ -1200,6 +1224,7 @@ export class Game {
       randMarken: (this.hud.edgeMarks || []).map((m) => `${m.art} ${m.richtung}${m.anzahl > 1 ? ` (${m.anzahl})` : ''}`),
       lootAmBoden: this.loot.items.length,
       bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
+      banner: this.hud.banner ? this.hud.banner.text : null,
       meldungen: this.hud.toasts.map((t) => t.text),
       gedanke: this.hud.speech && this.hud.speech.time < this.hud.speech.duration ? this.hud.speech.text : null,
       stufe: st.player.level,

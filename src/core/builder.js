@@ -17,9 +17,11 @@ import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
+import { measure, LINE_HEIGHT } from '../ui/font.js';
 
 /** Bauleisten-Optionen, die beim ersten Bezahlbar-Werden eine Meldung bekommen. */
 const ANNOUNCE = new Set(['werkbank', 'huette', 'bolzen', 'specA', 'specB']);
+const FIGHT_NEAR = 2.4; // so nah an einem Schlurfer schlägt jeder Klick zu
 const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
 
 export class Builder {
@@ -182,6 +184,7 @@ export class Builder {
           disabled: maxed,
           disabledText: T.figur.max,
           badge: String(level),
+          buy: true,
           action: () => this.buyUpgrade(id),
         },
         st.inventory
@@ -216,6 +219,7 @@ export class Builder {
         disabled: maxed,
         disabledText: T.figur.max,
         badge: String(level),
+        buy: true,
         action: () => this.upgradeWeapon(id),
       },
       st.inventory
@@ -240,15 +244,15 @@ export class Builder {
     if (def.tower) {
       const t = TOWERS[b.type];
       if (b.level === 1) {
-        options.push(this.option({ id: 'stufe2', icon: def.icon, badge: '2', name: T.bauleiste.stufe(2), info: this.statLine(b.type, 2, null), cost: t.base[1].cost, action: () => this.upgradeTower(b, 2, null) }, inv));
+        options.push(this.option({ id: 'stufe2', icon: def.icon, badge: '2', name: T.bauleiste.stufe(2), info: this.statLine(b.type, 2, null), cost: t.base[1].cost, buy: true, action: () => this.upgradeTower(b, 2, null) }, inv));
       } else if (b.level === 2) {
         for (const spec of ['A', 'B']) {
           const [name, info] = T.tuerme[spec][b.type];
-          options.push(this.option({ id: `spec${spec}`, icon: def.icon, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, action: () => this.upgradeTower(b, 3, spec) }, inv));
+          options.push(this.option({ id: `spec${spec}`, icon: def.icon, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, buy: true, action: () => this.upgradeTower(b, 3, spec) }, inv));
         }
       } else if (b.level < 5) {
         const [name] = T.tuerme[b.spec][b.type];
-        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
+        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, buy: true, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
       } else {
         options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
       }
@@ -364,7 +368,8 @@ export class Builder {
     };
     const maxHome = HOUSE_LEVELS[st.world.houseLevel].hp;
     const home = maxHome - st.world.homeHp;
-    if (home > 0.5) add({ holz: Math.ceil(home / 16), schrott: Math.ceil(home / 40) });
+    // m3-r2: Flicken war fast umsonst (76 Schaden = 5 Holz + 2 Schrott) – Schaden soll zählen
+    if (home > 0.5) add({ holz: Math.ceil(home / 10), schrott: Math.ceil(home / 15) });
     for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && b.hp < BUILDINGS[b.type].hp) add(this.buildingRepairCost(b));
     return Object.keys(total).length ? total : null;
   }
@@ -477,11 +482,13 @@ export class Builder {
 
     // Kein Platzieren: Klick auf einen Bau wählt ihn aus, sonst ist es ein Schlag.
     // Ein Schlurfer unter dem Zeiger geht vor – sonst wählt man mitten im
-    // Kampf den Turm dahinter aus (m3-r1).
+    // Kampf den Turm dahinter aus (m3-r1). Steht ein Schlurfer dicht bei Mika,
+    // schlägt jeder Klick zu; auswählen geht dann mit E (m3-r2).
     let rest = null;
+    const fight = this.fighting();
     this.pointerZombie = pointerFree ? this.zombieAtPointer() : null;
-    this.hovered = pointerFree && !this.pointerZombie ? this.pick() : null;
-    if (pointerFree && input.mouse.clicked && this.pointerZombie) {
+    this.hovered = pointerFree && !this.pointerZombie && !fight ? this.pick() : null;
+    if (pointerFree && input.mouse.clicked && (this.pointerZombie || fight)) {
       rest = 'click';
     } else if (pointerFree && input.mouse.clicked) {
       const b = this.hovered;
@@ -507,6 +514,24 @@ export class Builder {
       this.preview.hide();
     }
     return rest;
+  }
+
+  /** Bildschirm-Kasten um Geist, Umriss und Grund-Zeile – dort soll keine Tafel liegen. */
+  placementRect() {
+    const pl = this.placement;
+    if (!pl) return null;
+    const g = this.game;
+    const { w, d } = footprint(pl.type, pl.turns);
+    const top = g.worldToUi(pl.i, BUILDINGS[pl.type].height || 1.2, pl.j);
+    const bottom = g.worldToUi(pl.i + w, 0, pl.j + d);
+    const label = pl.ok ? 0 : LINE_HEIGHT + 10;
+    return { x: top.x - 40, y: top.y - 4, w: bottom.x - top.x + 80, h: bottom.y - top.y + 8 + label };
+  }
+
+  /** Steht ein Schlurfer dicht bei Mika? Dann hat Zuschlagen Vorrang vor dem Auswählen. */
+  fighting() {
+    const p = this.game.player.position;
+    return this.game.horde.list.some((z) => z.state !== 'dying' && Math.hypot(z.x - p.x, z.z - p.z) < FIGHT_NEAR);
   }
 
   /**
@@ -542,7 +567,7 @@ export class Builder {
     let best = null;
     let bestD = Infinity;
     for (const z of g.horde.list) {
-      if (z.state === 'dying' || z.state === 'enter') continue;
+      if (z.state === 'dying') continue;
       const d = Math.hypot(z.x - p.x, z.z - p.z);
       if (d > 6 || d >= bestD) continue;
       const r = z.def.radius + 0.15;
@@ -667,11 +692,22 @@ export class Builder {
       ui.frame(r.x + 1, r.y + 1, r.w - 2, r.h - 2, color);
     };
     const ring = (cx, cz, radius, color) => {
-      const steps = Math.max(24, Math.round(radius * 18));
-      for (let k = 0; k < steps; k++) {
-        const a = (k / steps) * Math.PI * 2;
-        const p = g.worldToUi(cx + Math.cos(a) * radius, 0, cz + Math.sin(a) * radius);
-        ui.rect(Math.round(p.x), Math.round(p.y), 2, 1, k % 2 ? color : COLORS.outline);
+      // Die Kamera dreht nie: der Kreis am Boden ist auf dem Bild eine Ellipse.
+      // Ein durchgehender dunkler Rand mit hellen, langsam umlaufenden Strichen
+      // darauf – so hebt er sich von Blumen und Gras ab.
+      const o = g.worldToUi(cx, 0, cz);
+      const rx = g.worldToUi(cx + radius, 0, cz).x - o.x;
+      const ry = g.worldToUi(cx, 0, cz + radius).y - o.y;
+      const steps = Math.max(48, Math.round(Math.PI * (Math.abs(rx) + Math.abs(ry)) * 1.2));
+      const march = Math.floor(g.clock * 6);
+      for (let pass = 0; pass < 2; pass++) {
+        for (let k = 0; k < steps; k++) {
+          const a = (k / steps) * Math.PI * 2;
+          const x = Math.round(o.x + Math.cos(a) * rx);
+          const y = Math.round(o.y + Math.sin(a) * ry);
+          if (pass === 0) ui.rect(x - 1, y - 1, 4, 4, COLORS.outline);
+          else if ((Math.floor(k / 4) + march) % 3 !== 0) ui.rect(x, y, 2, 2, color);
+        }
       }
     };
     if (pl && this.showsHordePaths(pl.type)) this.drawHordePaths(ui);
@@ -693,8 +729,19 @@ export class Builder {
           for (const [x, y] of [[r.x, r.y], [r.x + r.w - 2, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 2, r.y + r.h - 1]]) ui.rect(x, y, 2, 1, COLORS.textWarm);
         }
       }
-      if (BUILDINGS[pl.type].tower) ring(cx, cz, towerStats(pl.type, 1, null).range, COLORS.textWarm);
-      thick(box(pl.i, pl.j, w, d), pl.ok ? COLORS.buildOk : COLORS.buildBad);
+      if (BUILDINGS[pl.type].tower) ring(cx, cz, towerStats(pl.type, 1, null).range, COLORS.gold);
+      const r = box(pl.i, pl.j, w, d);
+      thick(r, pl.ok ? COLORS.buildOk : COLORS.buildBad);
+      // Warum rot? Gleich am Geist sagen, nicht erst nach dem Klick (m3-r2)
+      const why = !pl.ok && T.bauleiste.grund[pl.reason];
+      if (why) {
+        const tw = measure(why) + 8;
+        const tx = Math.round(r.x + r.w / 2 - tw / 2);
+        const ty = r.y + r.h + 5;
+        ui.rect(tx - 1, ty - 1, tw + 2, LINE_HEIGHT + 5, COLORS.outline);
+        ui.rect(tx, ty, tw, LINE_HEIGHT + 3, COLORS.fill);
+        ui.text(why, tx + 4, ty + 1, COLORS.buildBad);
+      }
     }
     if (sel) {
       const b = this.world.buildings.bounds(sel);
@@ -730,10 +777,53 @@ export class Builder {
           const p = g.worldToUi(a.x + ((b.x - a.x) * s) / len, 0, a.z + ((b.z - a.z) * s) / len);
           const x = Math.round(p.x);
           const y = Math.round(p.y);
-          ui.rect(x - 1, y - 1, 4, 4, COLORS.outline);
-          ui.rect(x, y, 2, 2, COLORS.buildBad);
+          ui.rect(x - 2, y - 2, 5, 5, COLORS.outline);
+          ui.rect(x - 1, y - 1, 3, 3, COLORS.hordePath);
         }
         carry = s - len;
+      }
+    }
+    // Wo kommt die Horde am Haus an (Kreuz), wo laufen Wege aus dem Bild
+    // (Pfeil am Rand)? m3-r2: Die Wege zur Rückwand übersah man leicht.
+    const safe = { x0: 14, x1: ui.width - 14, y0: 86, y1: ui.height - 60 };
+    const inView = (p) => p.x >= safe.x0 && p.x < safe.x1 && p.y >= safe.y0 && p.y < safe.y1;
+    const seen = new Set();
+    for (const name of Object.keys(pathing.entries)) {
+      const points = pathing.trace(name);
+      const last = points[points.length - 1];
+      const end = g.worldToUi(last.x, 0, last.z);
+      const key = `${Math.round(end.x / 8)},${Math.round(end.y / 8)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        this.drawCross(ui, Math.round(end.x), Math.round(end.y));
+      }
+      // Vom Haus aus rückwärts: Wo verlässt der Weg das Bild?
+      let prev = inView(end) ? end : null;
+      for (let k = points.length - 2; k >= 0 && prev; k--) {
+        const p = g.worldToUi(points[k].x, 0, points[k].z);
+        if (!inView(p)) {
+          const dx = p.x - prev.x;
+          const dy = p.y - prev.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ax = Math.round(prev.x);
+          const ay = Math.round(prev.y);
+          g.hud.drawArrow(ui, ax, ay, dx / len, dy / len, 7, COLORS.outline);
+          g.hud.drawArrow(ui, ax, ay, dx / len, dy / len, 5, COLORS.hordePath);
+          break;
+        }
+        prev = p;
+      }
+    }
+  }
+
+  /** Rotes Kreuz mit dunklem Rand: Hier greift die Horde das Zuhause an. */
+  drawCross(ui, x, y) {
+    for (const color of [COLORS.outline, COLORS.hordePath]) {
+      const w = color === COLORS.outline ? 4 : 2;
+      const o = color === COLORS.outline ? -1 : 0;
+      for (let d = -3; d <= 3; d++) {
+        ui.rect(x + d + o, y + d + o, w, w, color);
+        ui.rect(x + d + o, y - d + o, w, w, color);
       }
     }
   }

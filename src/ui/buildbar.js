@@ -9,7 +9,7 @@ import { T } from '../data/texts.js';
 import { BUILDINGS, TOWER_TAB } from '../data/buildings.js';
 import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
-import { drawTiny, measure, LINE_HEIGHT } from './font.js';
+import { drawTiny, measure, wrap, LINE_HEIGHT } from './font.js';
 
 export const HOTKEYS = ['KeyQ', 'KeyR', 'KeyT', 'KeyG', 'KeyC', 'KeyV'];
 const KEY_LABELS = ['Q', 'R', 'T', 'G', 'C', 'V'];
@@ -19,6 +19,8 @@ const GAP = 2;
 const FLASH_TIME = 1.4;
 const FLASH_AGAIN = 45; // dieselbe Option leuchtet frühestens nach 45 s wieder auf
 const ARM_TIME = 2.5;
+const TIP_TOP = 40; // letzter Ausweichplatz der Hinweis-Tafel: oben rechts unter dem Vorrat
+const TIP_WRAP = 236; // so breit werden Zeilen der Hinweis-Tafel höchstens
 
 export class BuildBar {
   /** @param {import('../core/game.js').Game} game */
@@ -29,7 +31,8 @@ export class BuildBar {
     this.flash = new Map(); // Options-ID -> verbleibende Leuchtzeit
     this.affordable = new Map(); // Options-ID -> war bezahlbar?
     this.lastFlash = new Map(); // Options-ID -> this.time beim letzten Aufleuchten
-    this.armed = null; // { id, t } – Abreißen wartet auf Bestätigung
+    this.armed = null; // { id, t } – Abreißen/Kaufen per Taste wartet auf Bestätigung
+    this.buyLock = 0; // bis wann nach einem Kauf nichts Weiteres gekauft wird
     this.time = 0;
     this.lastLayout = null;
   }
@@ -126,8 +129,20 @@ export class BuildBar {
       this.game.hud.toast(T.bauleiste.nochmal, 'abriss', 2);
       return;
     }
+    // Kaufen per Taste (Aufwertung, Stufe, Spezialisierung) braucht einen
+    // zweiten Druck – schnelles Tippen gibt sonst Schrott aus (m3-r2). Ein
+    // Mausklick auf die Kachel ist Absicht genug.
+    if (option.buy && !byMouse) {
+      if (this.time < this.buyLock) return;
+      if (!this.armed || this.armed.id !== option.id) {
+        this.armed = { id: option.id, t: ARM_TIME, buy: true };
+        this.game.hud.toast(T.bauleiste.nochmalKaufen(option.name), option.icon, 2);
+        return;
+      }
+    }
     this.armed = null;
     option.action();
+    if (option.buy) this.buyLock = this.time + 0.45; // gleich danach nichts Weiteres kaufen
     if (byMouse && this.builder.placement) this.builder.useMouse = true;
   }
 
@@ -174,7 +189,7 @@ export class BuildBar {
       const readyFrame = option.danger ? COLORS.frameDark : COLORS.gold;
       ui.inset(rect.x, rect.y, rect.w, rect.h, {
         fill: active || armed ? COLORS.fillHover : hovered ? COLORS.fillLight : COLORS.inset,
-        border: armed ? COLORS.red : pulse ? COLORS.textWarm : active ? COLORS.gold : ready ? readyFrame : COLORS.frameDark,
+        border: armed ? (this.armed.buy ? COLORS.gold : COLORS.red) : pulse ? COLORS.textWarm : active ? COLORS.gold : ready ? readyFrame : COLORS.frameDark,
       });
       const size = iconSize(option.icon);
       drawIcon(ctx, option.icon, rect.x + Math.floor((rect.w - size.w) / 2), rect.y + 2 + Math.max(0, Math.floor((16 - size.h) / 2)));
@@ -195,7 +210,7 @@ export class BuildBar {
     if (placing) {
       // Türme: gleich beim ersten Setzen sagen, was die Pünktchen bedeuten (m3-r1)
       const note = BUILDINGS[placing.type].tower ? T.bauleiste.wegeHinweis : TOWER_TAB.includes(placing.type) ? T.bauleiste.wegeHinweisKurz : null;
-      this.drawTip(ui, L, { name: placing.name, info: placing.info || T.bautenInfo[placing.type], hint: T.bauleiste.setzen, note, cost: placing.cost });
+      this.drawTip(ui, L, { name: placing.name, info: placing.info || T.bautenInfo[placing.type], hint: T.bauleiste.setzen, note, cost: placing.cost }, this.builder.placementRect());
     }
     else if (tip) this.drawTip(ui, L, tip);
   }
@@ -252,17 +267,34 @@ export class BuildBar {
     }
   }
 
-  drawTip(ui, L, option) {
+  /**
+   * @param {{x:number, y:number, w:number, h:number}} [avoid] Geist beim Platzieren:
+   *   Liegt er unter der Tafel, rückt sie nach oben rechts (m3-r2).
+   */
+  drawTip(ui, L, option, avoid = null) {
     const inv = this.game.state.inventory;
     const cost = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
     const refund = Object.entries(option.refund || {}).filter(([, v]) => v > 0);
     const row = cost.length ? cost : refund;
-    const lines = [option.info, option.hint, option.note, option.missingText].filter(Boolean);
+    // Lange Zeilen umbrechen: eine schmale Tafel verdeckt weniger Wiese (m3-r2)
+    const lines = [
+      [option.info, COLORS.textDim],
+      [option.hint, COLORS.textWarm],
+      [option.note, COLORS.buildBad],
+      [option.missingText, COLORS.red],
+    ].flatMap(([text, color]) => (text ? wrap(text, TIP_WRAP).map((t) => [t, color]) : []));
     const rowW = row.reduce((sum, [, v]) => sum + 14 + measure(`${refund.length && !cost.length ? '+' : ''}${v}`) + 6, 0);
-    const w = Math.max(measure(option.name) + 10, ...lines.map((l) => measure(l) + 10), rowW + 10, 90);
+    const w = Math.max(measure(option.name) + 10, ...lines.map(([t]) => measure(t) + 10), rowW + 10, 90);
     const h = 8 + LINE_HEIGHT + (row.length ? 14 : 0) + lines.length * LINE_HEIGHT;
-    const x = Math.min(ui.width - w - 4, Math.max(4, L.x + L.w - w));
-    const y = L.y - 18 - h;
+    // Platz: über der Bauleiste; liegt dort der Geist, links über der Schnellleiste, sonst oben rechts
+    const hot = this.game.hud.hotbarRect(ui);
+    const spots = [
+      { x: Math.min(ui.width - w - 4, Math.max(4, L.x + L.w - w)), y: L.y - 18 - h },
+      { x: 4, y: hot.y - 20 - h },
+      { x: ui.width - w - 4, y: TIP_TOP },
+    ];
+    const hits = (p) => avoid && avoid.x < p.x + w && avoid.x + avoid.w > p.x && avoid.y < p.y + h && avoid.y + avoid.h > p.y;
+    const { x, y } = spots.find((p) => !hits(p)) || spots[0];
     ui.panel(x, y, w, h);
     let cy = y + 3;
     ui.text(option.name, x + 5, cy, COLORS.gold);
@@ -279,18 +311,10 @@ export class BuildBar {
       }
       cy += 14;
     }
-    if (option.info) {
-      ui.text(option.info, x + 5, cy, COLORS.textDim);
+    for (const [text, color] of lines) {
+      ui.text(text, x + 5, cy, color);
       cy += LINE_HEIGHT;
     }
-    if (option.hint) {
-      ui.text(option.hint, x + 5, cy, COLORS.textWarm);
-      cy += LINE_HEIGHT;
-    }
-    if (option.note) {
-      ui.text(option.note, x + 5, cy, COLORS.buildBad);
-      cy += LINE_HEIGHT;
-    }
-    if (option.missingText) ui.text(option.missingText, x + 5, cy, COLORS.red);
   }
+
 }

@@ -17,6 +17,7 @@ const REGEN_RATE = 4;
 const ROLL = { duration: 0.3, speed: 7, cooldown: 0.75, invulnerable: 0.34 };
 const COMBO_WINDOW = 0.8;
 const TOWER_NEAR = 3.5;
+const LUNGE = 1.1; // so weit geht Mika beim Ausholen auf einen Schlurfer zu (m3-r2)
 
 export class Combat {
   /** @param {import('./game.js').Game} game */
@@ -81,13 +82,40 @@ export class Combat {
     const len = Math.hypot(dx, dz);
     const face = len > 0.01 ? { x: p.position.x + dx / len, z: p.position.z + dz / len } : null;
     const duration = 1 / (w.rate * perkValue(g.state, 'flink'));
+    const hitAt = duration * 0.38;
+    const lunge = len > 0.01 ? this.lunge(dx / len, dz / len, w, hitAt) : null;
     return p.startAction('swing', {
       duration,
-      hitAt: duration * 0.38,
+      hitAt,
       tool: id === 'faeuste' ? null : id,
       face,
+      dir: lunge?.dir,
+      speed: lunge?.speed,
       onHit: () => this.hit(id, w),
     });
+  }
+
+  /**
+   * Ausfallschritt: Steht in Schlagrichtung kein Schlurfer in Reichweite, aber
+   * einer knapp dahinter, geht Mika beim Ausholen auf ihn zu – so sitzt der
+   * Schlag auch, wenn man ein Stück zu weit weg geklickt hat (m3-r2).
+   */
+  lunge(nx, nz, w, hitAt) {
+    const p = this.game.player.position;
+    const arc = Math.cos((w.arc * Math.PI) / 180);
+    let best = null;
+    for (const z of this.game.horde.list) {
+      if (z.state === 'dying') continue;
+      const dx = z.x - p.x;
+      const dz = z.z - p.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 0.3 && (dx * nx + dz * nz) / d < arc) continue;
+      const reach = w.reach + z.def.radius - 0.2; // etwas Luft, damit der Schlag sicher sitzt
+      if (d <= reach) return null; // es trifft ohnehin
+      if (d > reach + LUNGE) continue;
+      if (!best || d - reach < best.gap) best = { gap: d - reach, x: dx / d, z: dz / d };
+    }
+    return best ? { dir: { x: best.x, z: best.z }, speed: best.gap / hitAt } : null;
   }
 
   hit(id, w) {
@@ -100,7 +128,8 @@ export class Combat {
     g.hud.swoosh(p.x, p.z, g.player.facing, w.reach * 0.8, ((w.arc * Math.PI) / 180) * 0.85);
     const found = [];
     for (const z of g.horde.list) {
-      if (z.state === 'dying' || z.state === 'enter') continue;
+      // Auch Schlurfer, die noch aus dem Wald kommen: was Mika erreicht, trifft sie (m3-r2)
+      if (z.state === 'dying') continue;
       const dx = z.x - p.x;
       const dz = z.z - p.z;
       const d = Math.hypot(dx, dz);
