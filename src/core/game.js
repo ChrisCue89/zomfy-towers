@@ -22,6 +22,7 @@ import { renderPortraits } from '../render/portrait.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
+import { AREA as TERRAIN_AREA } from '../world/terrain.js';
 import { Player } from '../entities/player.js';
 import { Horde } from '../entities/horde.js';
 import { TowerSystem } from '../entities/towers.js';
@@ -85,6 +86,10 @@ export class Game {
     const sceneCanvas = document.getElementById('scene');
     const uiCanvas = document.getElementById('ui');
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
+    // Alles, was in Szenenpixeln gemessen ist, wächst mit der Pixeldichte mit
+    const density = CONFIG.render.pxPerMeter / 40;
+    sharedUniforms.uCutRadius.value.multiplyScalar(density);
+    sharedUniforms.uPointScale.value = density;
     this.ui = new UICanvas(uiCanvas);
     this.input = new Input(uiCanvas, (x, y) => this.pixel.clientToGame(x, y));
     this.events = new Events();
@@ -99,6 +104,7 @@ export class Game {
 
     this.rig = new CameraRig(CONFIG.render, CONFIG.camera);
     this.rig.bounds = LAYOUT.cameraBounds;
+    this.rig.limits = TERRAIN_AREA;
 
     this.hud = new Hud(this);
     this.dialog = new DialogBox(this);
@@ -975,23 +981,25 @@ export class Game {
     if (this.pixel.resize(window.innerWidth, window.innerHeight, dpr)) {
       this.rig.setViewport(this.pixel.rtWidth, this.pixel.rtHeight);
       this.rig.place();
-      this.ui.resize(this.pixel.width, this.pixel.height, this.pixel.scale, dpr);
+      this.ui.resize(this.pixel.uiWidth, this.pixel.uiHeight, this.pixel.uiScale, dpr);
     }
   }
 
   // --- Zeichnen ------------------------------------------------------------------
 
-  /** Weltpunkt -> Oberflächenpixel (Ursprung oben links). */
+  /** Weltpunkt -> Oberflächenpixel (Ursprung oben links; die Oberfläche ist gröber als die Szene). */
   worldToUi(x, y, z) {
     const p = this.rig.project(this._tmp.set(x, y, z));
-    return { x: p.x - 1, y: this.pixel.height - p.y };
+    const k = this.pixel.uiToScene;
+    return { x: (p.x - 1) / k, y: (this.pixel.height - p.y) / k };
   }
 
   /** Boden unter dem Mauszeiger (oder null, wenn die Maus nicht im Fenster ist). */
   pointerGround(out = new THREE.Vector3()) {
     const m = this.input.mouse;
     if (!m.inside) return null;
-    return this.rig.unproject(m.x + 1.5, this.pixel.height - m.y - 0.5, 0, out);
+    const k = this.pixel.uiToScene;
+    return this.rig.unproject((m.x + 0.5) * k + 1, this.pixel.height - (m.y + 0.5) * k, 0, out);
   }
 
   /**
@@ -1344,13 +1352,13 @@ export class Game {
       /** Kacheln der Bauleiste in CSS-Pixeln (Mittelpunkt). */
       buildbarLayout() {
         const L = game.buildbar.layout(game.ui);
-        const f = game.pixel.scale / (window.devicePixelRatio || 1);
+        const f = game.pixel.uiScale / (window.devicePixelRatio || 1);
         return { tiles: L.tiles.map((t) => ({ id: t.option.id, x: (t.rect.x + t.rect.w / 2) * f, y: (t.rect.y + t.rect.h / 2) * f })) };
       },
       /** Bildschirmposition (CSS-Pixel) eines Weltpunkts – für echte Mausklicks im Test. */
       screenOf(x, y, z) {
         const p = game.worldToUi(x, y, z);
-        const f = game.pixel.scale / (window.devicePixelRatio || 1);
+        const f = game.pixel.uiScale / (window.devicePixelRatio || 1);
         return { x: (p.x + 0.5) * f, y: (p.y + 0.5) * f };
       },
       get placement() {

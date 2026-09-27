@@ -12,13 +12,14 @@ attribute vec3 aColor;
 attribute float aSize;
 attribute float aAlpha;
 attribute float aRound;
+uniform float uPointScale;
 varying vec3 vColor;
 varying float vAlpha;
 varying float vRound;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = aSize;
+  gl_PointSize = aSize * uPointScale;
   vColor = aColor;
   vAlpha = aAlpha;
   vRound = aRound;
@@ -46,7 +47,7 @@ function createPointsMaterial() {
   return new THREE.ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: FRAG,
-    uniforms: { uDitherOffset: sharedUniforms.uDitherOffset },
+    uniforms: { uDitherOffset: sharedUniforms.uDitherOffset, uPointScale: sharedUniforms.uPointScale },
     depthWrite: false,
     depthTest: true,
   });

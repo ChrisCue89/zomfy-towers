@@ -14,7 +14,8 @@ import { BAYER_GLSL } from './shaders.js';
 export const sharedUniforms = {
   uDitherOffset: { value: new THREE.Vector2() },
   uCutCenter: { value: new THREE.Vector2(-1e4, -1e4) },
-  uCutRadius: { value: new THREE.Vector2(26, 40) },
+  uCutRadius: { value: new THREE.Vector2(26, 40) }, // bei 40 px/m; das Spiel skaliert mit
+  uPointScale: { value: 1 }, // Punktgröße der Partikel (pxPerMeter / 40)
   uCutDepth: { value: 0 },
   uCutStrength: { value: 0 },
   uNight: { value: 0 }, // 0 = Tag, 1 = tiefe Nacht (world.js)

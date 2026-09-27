@@ -109,9 +109,12 @@ export class PixelRenderer {
 
     this.quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    this.width = 0; // sichtbare Spielpixel
+    this.width = 0; // sichtbare Spielpixel der Szene
     this.height = 0;
     this.scale = 1; // Gerätepixel pro Spielpixel
+    this.uiWidth = 0; // Pixel der Oberfläche (eigene, gröbere Leinwand)
+    this.uiHeight = 0;
+    this.uiScale = 1;
     this.dpr = 1;
     this.rtWidth = 0; // Render-Target inkl. Rand für den Subpixel-Versatz
     this.rtHeight = 0;
@@ -126,6 +129,11 @@ export class PixelRenderer {
     const scale = Math.max(1, Math.round(devH / this.config.targetLines));
     const width = Math.ceil(devW / scale);
     const height = Math.ceil(devH / scale);
+    // Oberfläche: eigene ganzzahlige Skalierung für ca. uiLines Zeilen
+    const uiScale = Math.max(1, Math.round(devH / (this.config.uiLines || this.config.targetLines)));
+    this.uiScale = uiScale;
+    this.uiWidth = Math.ceil(devW / uiScale);
+    this.uiHeight = Math.ceil(devH / uiScale);
     if (width === this.width && height === this.height && scale === this.scale && dpr === this.dpr) return false;
 
     this.width = width;
@@ -174,12 +182,17 @@ export class PixelRenderer {
     return true;
   }
 
-  /** Bildschirmkoordinaten (CSS-Pixel) -> Spielpixel. */
+  /** Bildschirmkoordinaten (CSS-Pixel) -> Pixel der Oberfläche. */
   clientToGame(clientX, clientY) {
     return {
-      x: Math.floor((clientX * this.dpr) / this.scale),
-      y: Math.floor((clientY * this.dpr) / this.scale),
+      x: Math.floor((clientX * this.dpr) / this.uiScale),
+      y: Math.floor((clientY * this.dpr) / this.uiScale),
     };
+  }
+
+  /** Szenenpixel pro Oberflächenpixel (z. B. 1/3 bei Full HD: Szene 1:1, Oberfläche ×3). */
+  get uiToScene() {
+    return this.uiScale / this.scale;
   }
 
   /**

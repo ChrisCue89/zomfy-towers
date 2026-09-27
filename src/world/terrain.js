@@ -8,7 +8,7 @@ import { createWorldMaterial } from '../render/materials.js';
 import { fbm, hash2, valueNoise } from '../core/rng.js';
 import { LAYOUT, V, clearingDistance, distanceToPolyline } from './layout.js';
 
-const AREA = { x0: -26, x1: 26, z0: -22, z1: 26 };
+export const AREA = { x0: -26, x1: 26, z0: -22, z1: 26 };
 
 function pick(h, a, b, threshold) {
   return h < threshold ? a : b;

@@ -28,6 +28,7 @@ export class CameraRig {
 
     this.focus = new THREE.Vector3(); // weich geführter Blickpunkt am Boden
     this.bounds = null; // { minX, maxX, minZ, maxZ }
+    this.limits = null; // { x0, x1 } – so weit reicht das Gelände (breite Bildschirme)
     this.residual = new THREE.Vector2(); // Rest in Spielpixeln nach dem Einrasten
     this.ditherOffset = new THREE.Vector2(); // Weltverankerung des Ditherings
     this.rtWidth = 2;
@@ -63,6 +64,14 @@ export class CameraRig {
     if (!b) return;
     this.focus.x = Math.min(b.maxX, Math.max(b.minX, this.focus.x));
     this.focus.z = Math.min(b.maxZ, Math.max(b.minZ, this.focus.z));
+    // Breite Sicht: nie über den Rand des Geländes hinaus zeigen
+    const L = this.limits;
+    if (L) {
+      const halfW = (this.rtWidth / 2) * this.px + 0.5;
+      const lo = L.x0 + halfW;
+      const hi = L.x1 - halfW;
+      this.focus.x = lo <= hi ? Math.min(hi, Math.max(lo, this.focus.x)) : (L.x0 + L.x1) / 2;
+    }
   }
 
   /**

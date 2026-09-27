@@ -14,11 +14,16 @@ function parseClock(text) {
 
 export const CONFIG = {
   render: {
-    // Angestrebte Zahl an Spielpixel-Zeilen. Der Skalierungsfaktor ist immer ganzzahlig.
-    targetLines: 360,
-    // 5 Spielpixel pro 1/8-m-Voxel (Breite) -> 40 px pro Meter.
-    pxPerMeter: 40,
-    // Kameraneigung mit Steigung 3:4 (sin = 0,6; cos = 0,8): Böden 3 px, Wände 4 px pro Voxel.
+    // Angestrebte Zahl an Spielpixel-Zeilen der Szene. Der Skalierungsfaktor ist
+    // immer ganzzahlig: Full HD zeigt die Szene 1:1 (1920×1080, Sicht 24 m),
+    // 1440p doppelt (1280×720, Sicht 16 m) – Meilenstein 5.
+    targetLines: 900,
+    // Die Oberfläche hat ihre eigene, gröbere Leinwand (Schrift und Tafeln
+    // bleiben so groß wie bisher).
+    uiLines: 360,
+    // 10 Spielpixel pro 1/8-m-Voxel und 5 pro 1/16-m-Voxel (Breite) -> 80 px pro Meter.
+    pxPerMeter: 80,
+    // Kameraneigung mit Steigung 3:4 (sin = 0,6; cos = 0,8): Böden 3 px, Wände 4 px pro 1/16-m-Voxel.
     pitchSin: 0.6,
     pitchCos: 0.8,
     shadowMapSize: 2048,
