@@ -48,30 +48,31 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 
 ## Look-Regeln (siehe DESIGN.md, Abschnitt 3)
 
-- Render-Target mit ca. 360 Zeilen, ganzzahlige Skalierung, `NearestFilter`,
+- Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**,
+  ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
   `antialias: false`, CSS `image-rendering: pixelated`.
+- Oberfläche: eigene Leinwand mit ca. 360 Zeilen (`uiLines`), eigene
+  ganzzahlige Skalierung. Welt → Oberfläche über `game.worldToUi`, Zeiger →
+  Welt über `game.pointerGround` (beide rechnen den Faktor
+  `pixel.uiToScene` um). Pixelgrößen in der Szene (Partikel, Durchsicht-Loch)
+  mit `pxPerMeter / 40` skalieren.
 - Kamera: orthografisch, **Gier immer 0** (Blick nach Norden, −Z), Neigung
-  sin = 0,6 / cos = 0,8, **40 px pro Meter**.
-- **Voxelgröße 1/8 m** für alles. Statische Objekte auf 1/8-m-Positionen und
-  nur in 90°-Drehungen – dann liegen alle Kanten exakt auf dem Pixelraster.
+  sin = 0,6 / cos = 0,8.
+- **Voxelgrößen:** 1/16 m für Figur, Schlurfer, Türme, Werkzeuge, Waffen und
+  Loot (`size: 1/16` bzw. `unit` an den Teilen der Horde), 1/8 m für Gelände,
+  Natur, Gebäude und große Requisiten. Statische Objekte auf 1/8-m-Positionen
+  und nur in 90°-Drehungen – dann liegen alle Kanten exakt auf dem
+  Pixelraster.
 - Farben aus der Palette `src/render/palette.js` (`P.g5`, `P.e3` …).
 - Keine Unschärfe, kein Bloom. Transparenz nur als gerasterte Durchsicht
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.
 - Kühle Nacht-Tönung wirkt im Post-Pass nur auf dunkle und mittlere Töne,
   Lichtquellen bleiben warm.
-- **Nachts lesbar:** Was im Kampf zählt (Schlurfer, Bauten, Loot,
-  Geistermodell), bekommt über `createWorldMaterial({ selfLight })` einen
-  Hauch Eigenlicht in der eigenen Farbe (`uNight` aus `world.js`); die Welt
-  bleibt dunkel. Verdeckte Schlurfer und Mika zeigen einen gerasterten
-  Umriss (`createSilhouetteMaterial`, `GreaterDepth`, ohne Tiefe schreiben,
-  gleiche `instanceMatrix`). Außerhalb des Bildes: Randmarken im HUD.
-- **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, später Schlurfer, Turm,
-  Loot) braucht eine eindeutige Silhouette und Farbe. Der jetzige grobe
-  Detailgrad ist ein Zwischenstand: Sobald die Mechaniken sitzen, hebt der
-  Meilenstein »Detailgrad und Animationen« Auflösung, Voxelfeinheit (1/16 m
-  für Figuren, Schlurfer, Türme, kleine Dinge) und Animation an (DESIGN.md
-  3.6). Neue Modelle bis dahin so bauen, dass sie sich leicht verfeinern
-  lassen (Maße in Metern denken, nicht in Voxeln).
+- **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, Schlurfer, Turm, Loot)
+  braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
+  und im feinen Maß (1/16 m) bauen, wenn sie klein oder lebendig sind.
+- Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
+  `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie.
 
 ## Architektur
 

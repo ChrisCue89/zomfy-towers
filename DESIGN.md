@@ -76,18 +76,28 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
 
 ### 3.1 Pixel-3D
 
-- Echte 3D-Szene (three.js), gerendert in **niedriger Auflösung** (etwa 360
-  Bildzeilen) und **ohne Glättung** ganzzahlig auf Bildschirmgröße
-  hochskaliert. Jeder Spielpixel ist ein scharfes Quadrat.
+- Echte 3D-Szene (three.js), gerendert in einer **festen Pixelauflösung**
+  und **ohne Glättung** ganzzahlig auf Bildschirmgröße hochskaliert. Jeder
+  Spielpixel ist ein scharfes Quadrat. Seit Meilenstein 5: **80 Spielpixel
+  pro Meter**, die Szene hat etwa 900 Bildzeilen – Full HD zeigt sie 1 : 1
+  (Sicht ca. 24 m breit, die ganze Lichtung wie ein Diorama), 1440p mit
+  Skalierung 2, 720p mit Skalierung 1 (Sicht 16 m). Meilenstein 1–4 liefen
+  mit 40 px pro Meter und rund 360 Zeilen.
+- Die **Oberfläche** hat eine eigene, gröbere Pixel-Leinwand (etwa 360
+  Zeilen, eigene ganzzahlige Skalierung): Schrift, Symbole und Leisten
+  bleiben kräftig und gut lesbar, egal wie fein die Szene ist.
 - **Orthografische Kamera** schräg von oben in Dreiviertel-Ansicht, Blick nach
   Norden, folgt der Figur. Neigung mit Steigung 3 : 4 (ca. 36,9°): Ein Voxel
-  ist auf dem Bildschirm genau 5 px breit, 3 px tief (Böden) und 4 px hoch
-  (Wände). Alle Kanten haben saubere, gleichmäßige Pixeltreppen.
+  von 1/16 m ist auf dem Bildschirm genau 5 px breit, 3 px tief (Böden) und
+  4 px hoch (Wände), einer von 1/8 m doppelt so groß. Alle Kanten haben
+  saubere, gleichmäßige Pixeltreppen.
 - Die Kamera rastet auf das Pixelraster ein, der Rest-Versatz wird beim
   Hochskalieren ausgeglichen – stehende Dinge flimmern nicht, Bewegung bleibt
   weich.
-- **Einheitliche Voxelgröße 1/8 m** für alle Modelle (bis zum Meilenstein
-  »Detailgrad und Animationen«, siehe 3.6).
+- **Zwei Voxelgrößen:** 1/16 m für alles Kleine und Lebendige (Figur,
+  Schlurfer, Türme, Werkzeuge und Waffen, Loot), 1/8 m für Gelände, Natur,
+  Gebäude und große Requisiten. Statisches steht auf 1/8-m-Positionen und nur
+  in 90°-Drehungen.
 - Nachbearbeitung im Pixelmaßstab: dunkle, farbige Umrisse an Silhouetten,
   helle Kanten an Außenecken, Vignette.
 - **Begrenzte Palette** (rund 80 Farben in farbverschobenen Rampen), auf die
@@ -152,16 +162,16 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
   außerhalb des Bildes, zeigen Randmarken hin: Pfeile für Schlurfer (mit
   Anzahl), eine Haus-Marke bei Angriffen aufs Zuhause, Rauten für Loot.
 - Im Getümmel treten Einblendungen (»E Fasern rupfen«) zurück.
-- Der jetzige Stand (Meilenstein 1–2) ist ein erster, **zu grober** Durchgang:
-  große Voxel, wenige Pixel pro Meter, sparsame Animation. Das ist bewusst so,
-  solange die Mechaniken wachsen – aber nicht das Ziel.
-- **Sobald die Mechaniken sitzen** (nach den Meilensteinen Nächte/Türme/Loot
-  und Nahkampf), folgt ein eigener Meilenstein **»Detailgrad und
-  Animationen«**: feinere Voxel (1/16 m für Figuren, Schlurfer, Türme,
-  Werkzeuge und kleine Requisiten), mehr Spielpixel pro Meter (höhere
-  Renderauflösung), klarere Silhouetten und Farbcodes je Art, mehr
-  Animation (Laufzyklen, Schlurfen, Schwünge, Rückstoß der Türme,
-  Leerlauf-Bewegungen, Umgebung wie Wind in Gras und Laub).
+- Meilenstein 1–4 waren bewusst ein **grober** Durchgang (große Voxel,
+  wenige Pixel pro Meter, sparsame Animation), solange die Mechaniken
+  wuchsen. **Meilenstein 5 »Detailgrad und Animationen«** hebt das an:
+  80 px pro Meter, 1/16-m-Voxel für Figur, Schlurfer, Türme, Werkzeuge und
+  Loot, eigene Merkmale je Art (Gänseblümchen, rote Kapuze, Fliegenpilz-
+  Kappen, Warnkegel und -weste, Leuchthut, Geweihkrone mit Moosumhang),
+  Stufen-Fahnen an den Türmen und mehr Animation: Laufzyklus mit Kopfnicken
+  und Blinzeln, Zusammenzucken bei Treffern, Schlurfen, Stampfen und
+  Trippeln je Art, Rückstoß der Schlurfer, Rückstoß und Wurfarm der Türme,
+  Wind in Gras und Blumen, flatternde Wäsche.
 - Der Pixel-Look bleibt dabei verbindlich: scharfe Pixel, begrenzte Palette,
   keine Glättung, keine Unschärfe.
 - Testspieler prüfen in jeder Runde: »Erkennt man, was was ist?«

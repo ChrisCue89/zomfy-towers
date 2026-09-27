@@ -180,9 +180,18 @@ export class TowerSystem {
     return diff;
   }
 
+  /** Kein Ziel in Reichweite: der Kopf schaut sich langsam um (M5). */
+  scan(t, dt) {
+    const want = Math.sin(this.time * 0.45 + t.id * 1.7) * 0.8;
+    t.headAngle = dampAngle(t.headAngle || 0, want, 1.5, dt);
+  }
+
   runBolt(t, s, mult, dt) {
     const list = this.targets(t, s.range, s.targets || 1, s.strongest);
-    if (!list.length) return;
+    if (!list.length) {
+      this.scan(t, dt);
+      return;
+    }
     const off = this.aim(t, list[0], dt, 12);
     if (t.cool > 0 || off > 0.45) return;
     t.cool = 1 / s.rate;
@@ -197,7 +206,10 @@ export class TowerSystem {
   runCatapult(t, s, mult, dt) {
     // Ziel mit den meisten Nachbarn im Splash-Radius (gegen Gruppen)
     const candidates = this.targets(t, s.range, 12, false, 1.2);
-    if (!candidates.length) return;
+    if (!candidates.length) {
+      this.scan(t, dt);
+      return;
+    }
     let best = candidates[0];
     let bestN = -1;
     for (const c of candidates) {
