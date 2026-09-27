@@ -20,7 +20,7 @@ export const ZOMBIES = {
     hitRate: 0.6,
     scale: 1,
     radius: 0.28,
-    loot: { schrott: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
+    loot: { teile: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
     xp: 1,
   },
   flitzer: {
@@ -33,7 +33,7 @@ export const ZOMBIES = {
     hitRate: 1,
     scale: 0.95,
     radius: 0.25,
-    loot: { schrott: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
+    loot: { teile: [1, 2], zahnraeder: 0.03 }, // m3-r1: Zahnräder waren zu selten
     xp: 1,
   },
   schwaermer: {
@@ -46,7 +46,7 @@ export const ZOMBIES = {
     hitRate: 0.9,
     scale: 0.62,
     radius: 0.2,
-    loot: { schrott: [0, 1] },
+    loot: { teile: [0, 1] },
     xp: 0.5,
   },
   brummer: {
@@ -60,7 +60,7 @@ export const ZOMBIES = {
     scale: 1.4,
     radius: 0.42,
     breaksBarricades: true,
-    loot: { schrott: [4, 6], zahnraeder: 0.3 },
+    loot: { teile: [4, 6], zahnraeder: 0.3 },
     xp: 4,
   },
   leuchtpilz: {
@@ -76,7 +76,7 @@ export const ZOMBIES = {
     healRange: 2.2,
     haste: 0.15, // Nachbarn werden schneller
     immuneSlow: true,
-    loot: { schrott: [2, 3], zahnraeder: 0.2 },
+    loot: { teile: [2, 3], zahnraeder: 0.2 },
     xp: 3,
   },
   anfuehrer: {
@@ -90,7 +90,7 @@ export const ZOMBIES = {
     radius: 0.5,
     breaksBarricades: true,
     summon: { type: 'schlurfer', count: 3, every: 9 },
-    loot: { schrott: [18, 24], zahnraeder: [2, 3], moderkerne: 1 },
+    loot: { teile: [18, 24], zahnraeder: [2, 3], moderkerne: 1 },
     xp: 20,
   },
 };

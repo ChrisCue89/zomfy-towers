@@ -11,12 +11,41 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 
 ## Projekt in Kürze
 
-- 3D-Pixel-Art-Browserspiel, three.js (WebGL 2), reines JavaScript mit
+- Gemütliches Herbst-Tower-Defense an einem See: tagsüber ein Zuhause am
+  Wasser, nachts Verteidigung an einer klaren Strecke (DESIGN.md).
+- 3D-Voxel-Browserspiel, three.js (WebGL 2), reines JavaScript mit
   ES-Modulen, **kein Build-Schritt**.
 - Wird von GitHub Pages direkt aus dem `main`-Branch ausgeliefert
   (`index.html` im Wurzelverzeichnis).
 - Alle Spieltexte auf Deutsch, Code-Bezeichner auf Englisch, Kommentare auf
   Deutsch.
+
+## Grundregeln des Spiels (verbindlich, DESIGN.md Abschnitt 0)
+
+Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
+
+- **Aufbau im Bild von rechts nach links:** Wasser → Basis/Haus/Steg →
+  letzte Verteidigung (Hof) → gemeinsamer letzter Wegabschnitt mit
+  Barrikaden → Türme neben den Wegen → verzweigte Zuführungen mit weiteren
+  Barrikaden → Wald/Landseite mit den Spawns (linker Rand). Vom Wasser kommen
+  nie Zombies. Die Kamera blickt weiter nach Norden.
+- **Wegenetz statt einzelner Strecke:** mehrere Zuführungen, die sich
+  verzweigen dürfen und kurz vor der Basis zusammenlaufen; bei jedem neuen
+  Spiel teilweise prozedural (Startwert im Spielstand). Lang genug für 50–60
+  Türme und mehr. Die Horde läuft nur auf den Wegen.
+- **Türme frei neben den Wegen, nie darauf. Barrikaden frei auf den Wegen**
+  (Holz, später Metall, Metallkreuze …), mit Lebenspunkten, reparier- und
+  neu baubar.
+- **Drei Verteidigungsebenen:** Türme – Barrikaden – die Figur selbst am Hof.
+  Die Basis hat Lebenspunkte; fällt sie, ist die Nacht verloren.
+- **Ruhiger Tag** (nur ganz vereinzelte Schlurfer), angespannte Nacht, beides
+  in derselben cozy, herbstlichen Welt.
+- **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste (halten
+  bis zu drei Tage) sind seine Handelsware, warum er sie will, bleibt offen.
+- **Noch offen (OFFENE-FRAGEN Nr. 66):** Umlenken der Horde durch Bauten und
+  die Wegvorschau – bis zur Klärung weder entfernen noch neu entwickeln.
+- Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
+  bloß Neues daneben gesetzt.
 
 ## Harte Regeln
 
@@ -48,6 +77,11 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
    der Prüfablauf nach einer Änderung schlechter aus, Änderung zurücknehmen.
 
 ## Look-Regeln (siehe DESIGN.md, Abschnitt 3)
+
+Stimmung: cozy, herbstlich, Spooky Season, warm – Herbstfarben, warme
+Lichtinseln in kalten Nächten, keine Horror-Ästhetik. Der Pixel-Look ist
+Stilmittel, kein Selbstzweck: Lesbarkeit und Stimmung gehen vor. Technisch
+gilt bis auf Weiteres:
 
 - Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**,
   ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
@@ -90,7 +124,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
                       Erfahrung, Perk-Vergabe), survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
-                      Funkturm), furnishing (Möbel, Gemütlichkeit),
+                      Funkturm), furnishing (Möbel, Gemütlichkeit), trader
+                      (Balduin: Fahrplan aus der Uhrzeit, Bollerwagen,
+                      Stand, Handel über das Werkbank-Fenster),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
                       eigener Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
@@ -113,10 +149,12 @@ src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
-                      Laufen, Winken, Bellen), survivorModels, dogModel
+                      Laufen, Winken, Bellen), survivorModels (auch
+                      Balduin), dogModel, traderModels (Bollerwagen)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
-                      buildbar (Bauleiste), crafting (Werkbank), report
+                      buildbar (Bauleiste), crafting (Werkbank und
+                      Balduins Bollerwagen), report
                       (Morgenbericht), perkChoice (Perk-Wahl), title
                       (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -125,6 +163,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
+                      trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel, Gemütlichkeit), looks (Aussehen der
                       Hauptfigur, erlaubte Namen)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
@@ -170,6 +209,10 @@ Grundprinzipien:
   (`pathing.js`): `walk` (Bauten sperren) und `brute` (Brummer gehen durch
   Barrikaden). Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der
   einen Waldpfad abschneidet, wird mit Grund `weg` abgelehnt.
+  **Stand der alten Waldlichtung – Meilenstein 9 baut um:** Die Horde läuft
+  nur noch auf den Wegfeldern des prozeduralen Wegenetzes; Türme nur neben,
+  Barrikaden nur auf Wegfeldern. Umlenken und Wegvorschau bleiben, bis
+  OFFENE-FRAGEN Nr. 66 geklärt ist.
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
@@ -216,7 +259,11 @@ Grundprinzipien:
    Titelbild mit getipptem Namen und anderer Mütze, kein Spielstand vor
    »Los geht’s!«, Speichern v6 mit Migration, Warnung vor einem Weg ohne
    Turm, ein jagender Schlurfer kommt um die Werkbank herum (Bilder: titel,
-   figur). **Jede Konsolenmeldung
+   figur); ab Meilenstein 8: Autowrack nur einmal, Schrotthaufen alle zwei
+   Tage, Beute sind Zombieteile, Balduin kommt an Tag 2 um 06:40 und steht
+   um 07:00, Stand morgens nicht bebaubar, Dialog und Handel mit echten
+   Tasten (E einmal, E gehalten), Vorrat je Tag, Abfahrt um 12:00,
+   Speichern v7 mit Migration v6 → v7 (Bilder: haendler, handel). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -262,7 +309,9 @@ eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`), die Wege
 als Textkarte zeigen (`debugPath`), Erfahrung geben (`giveXp`), Waffen
 geben (`giveWeapon`) und Perks wählen (`choosePerk`); ab Meilenstein 6
 Überlebende setzen und ansprechen (`setSurvivor`, `talkTo`, `moveIn`),
-Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`).
+Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`);
+ab Meilenstein 8 Balduin abfragen (`trader`), bei ihm tauschen (`trade`)
+und prüfen, ob ein Bau passt (`placeCheck`, mit Grund).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |

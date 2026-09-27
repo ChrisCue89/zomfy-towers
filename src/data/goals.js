@@ -6,6 +6,7 @@ export const GOALS = [
   { id: 'axt', done: (g) => g.state.tools.axt },
   { id: 'turm', done: (g) => g.world.buildings.towers.length > 0 },
   { id: 'nacht', done: (g) => (g.state.stats.nightsWon || 0) > 0 },
+  { id: 'haendler', done: (g) => Boolean(g.state.flags.gehandelt) }, // Meilenstein 8: Zombieteile bei Balduin
   { id: 'werkbank', done: (g) => g.world.buildings.count('werkbank') > 0 },
   { id: 'spitzhacke', done: (g) => g.state.tools.spitzhacke },
   { id: 'waffe', done: (g) => Object.keys(g.state.weapons || {}).length > 0 },

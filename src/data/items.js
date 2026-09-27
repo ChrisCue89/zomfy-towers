@@ -1,10 +1,16 @@
 // Ressourcen und Gegenstände. Anzeigenamen stehen in texts.js.
 
 /** Reihenfolge der Ressourcen im HUD. */
-export const RESOURCES = ['holz', 'stein', 'fasern', 'stoff', 'schrott', 'zahnraeder', 'moderkerne'];
+export const RESOURCES = ['holz', 'stein', 'fasern', 'stoff', 'schrott', 'teile', 'zahnraeder', 'moderkerne'];
 
 /** Seltene Vorräte, die erst nach dem ersten Fund im HUD erscheinen. */
 export const RARE_RESOURCES = ['moderkerne'];
+
+/**
+ * Zombieteile (Meilenstein 8): das Loot der Nacht. Man tauscht sie morgens beim
+ * Händler gegen Schrott und anderes – was er damit macht, sagt er nicht.
+ */
+export const NIGHT_LOOT = 'teile';
 
 /** Dinge für die Schnellleiste (rechte Hand). Die Laterne trägt Mika links (Taste F). */
 export const ITEMS = {

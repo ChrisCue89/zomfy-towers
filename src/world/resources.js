@@ -21,14 +21,19 @@ export const NODE_RULES = {
   kiesel: { tool: null, hits: 1, yield: { stein: 2 }, bonus: {}, regrowDays: 1, prompt: 'aufsammeln', sound: 'stein' },
   gras: { tool: null, hits: 2, yield: { fasern: 1 }, bonus: { fasern: 1 }, regrowDays: 1, prompt: 'rupfen', sound: 'gras' },
   aeste: { tool: null, hits: 1, yield: { holz: 2 }, bonus: {}, regrowDays: 1, prompt: 'aufsammeln', sound: 'holz' },
-  schrott: { tool: null, hits: 1, search: true, regrowDays: 1, prompt: 'durchsuchen', sound: 'schrott' },
+  schrott: { tool: null, hits: 1, search: true, regrowDays: 2, prompt: 'durchsuchen', sound: 'schrott' }, // M8: alle zwei Tage
 };
 
 /** Beute beim Durchsuchen: [min, max] oder Wahrscheinlichkeit für 1. */
 export const SEARCH_LOOT = {
-  schrott: { schrott: [2, 4], stoff: [0, 2], zahnraeder: 0.2 },
-  auto: { schrott: [3, 5], stoff: [1, 2], zahnraeder: 0.35 },
+  schrott: { schrott: [2, 3], stoff: [0, 1], zahnraeder: 0.15 },
+  // Das Autowrack gibt nur einmal etwas her (M8: »dass der Schrott jedes Mal im
+  // Auto gefunden wird, ist unwahrscheinlich«) – dafür reichlich für den ersten Turm
+  auto: { schrott: [5, 6], stoff: [1, 2], zahnraeder: 0.35 },
 };
+
+/** So viele Tage braucht ein Schrotthaufen, bis wieder etwas darin liegt. */
+export const SEARCH_REGROW_DAYS = 2;
 
 // --- Modelle ------------------------------------------------------------------
 

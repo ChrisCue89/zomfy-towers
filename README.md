@@ -6,8 +6,11 @@ Nächte, in denen die Horde kommt.
 
 Tagsüber sammelt man Holz, Stein und Schrott, baut Türme, Barrikaden und
 Möbel und nimmt Überlebende auf. Nachts kommt die Horde in Wellen, die Türme
-schießen, Mika kämpft mit selbst gebauten Waffen mit. Beute fliegt von
-selbst heran, die Bauleiste leuchtet auf, sobald etwas bezahlbar wird. Mit
+schießen, Mika kämpft mit selbst gebauten Waffen mit. Die Zombieteile, die
+dabei liegen bleiben, tauscht man morgens beim etwas verrückten Händler
+Balduin gegen Schrott und Rohstoffe – wofür er sie braucht, sagt er nicht.
+Beute fliegt von selbst heran, die Bauleiste leuchtet auf, sobald etwas
+bezahlbar wird. Mit
 Juna wird der alte Funkturm zum Leuchtfeuer über dem Wald. Eine verlorene
 Nacht kostet Material, nie den Spielstand.
 

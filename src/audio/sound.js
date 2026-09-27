@@ -70,6 +70,14 @@ const SFX = {
     s.tone('sine', 880, t, 0.7, { peak: 0.08 * v, attack: 0.005, out: o });
     s.tone('sine', 1320, t, 0.45, { peak: 0.04 * v, attack: 0.005, out: o });
   },
+  // Balduins Wagenglöckchen und das Rumpeln der Räder (Meilenstein 8)
+  bimmel: (s, t, v, o) => {
+    for (const dt of [0, 0.15, 0.3]) {
+      s.tone('sine', 1560, t + dt, 0.24, { peak: 0.05 * v, attack: 0.003, out: o });
+      s.tone('sine', 2340, t + dt, 0.14, { peak: 0.025 * v, attack: 0.003, out: o });
+    }
+  },
+  rumpeln: (s, t, v, o) => s.noise(t, 0.12, { type: 'lowpass', freq: 380, freqEnd: 160, attack: 0.01, peak: 0.1 * v, out: o }),
   loot: (s, t, v, o, opt) => {
     const base = opt.pitch || 880;
     [1, 1.26, 1.5].forEach((m, k) => s.tone('triangle', base * m, t + k * 0.045, 0.09, { peak: 0.08 * v, out: o }));
@@ -109,7 +117,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

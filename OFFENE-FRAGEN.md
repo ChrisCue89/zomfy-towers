@@ -11,6 +11,8 @@ Format: **Frage** – Entscheidung – Begründung.
 ## Verteidigung und Horde
 
 ### 1. Versperren Türme den Weg, oder laufen Zombies feste Wege?
+> *Neues Grundkonzept: Die Horde läuft nur noch auf Wegen (Nr. 63); ob Bauten sie weiter umlenken dürfen, ist offen (Nr. 66).*
+
 **Entscheidung: Türme und Barrikaden versperren den Weg (Mazing).** Die
 Horde betritt die Lichtung über feste Waldpfade und sucht sich dann auf dem
 1-m-Raster den kürzesten Weg zum Zuhause (Flussfeld, bei jeder Bauänderung neu
@@ -22,6 +24,8 @@ und passt zur offenen Lichtung. Die Pflicht-Lücke verhindert Frust durch
 »eingemauerte« Horden; die Brummer halten reines Einmauern trotzdem ehrlich.
 
 ### 2. Wie viele Wellen hat eine Nacht, und wann ist sie gewonnen?
+> *Die vier Waldpfade sind ersetzt durch Spawns am linken Kartenrand und ein verzweigtes Wegenetz (Nr. 63, 70); Wellen, Punkte und Sieg gelten weiter.*
+
 **Entscheidung:** Nacht 1 hat 3 Wellen, jede weitere Nacht eine halbe Welle
 mehr (bis 8). Die Punkte der ganzen Nacht steigen gleichmäßig (18, 25, 32,
 41, 52 … – seit m3-r1 unabhängig von der Zahl der Wellen, vorher sprang
@@ -36,6 +40,8 @@ Nacht vorbei sein«).
 Früh ins Bett zu gehen hätte die Nacht einfach übersprungen.
 
 ### 3. Was passiert tagsüber?
+> *Ersetzt durch Nr. 67 (nur noch ganz vereinzelte Schlurfer, keine Trupps).*
+
 **Entscheidung:** Alle paar Spielstunden taucht ein einzelner träger
 Schlurfer am Waldrand auf (wenig Leben, wenig Loot). Ab Tag 2 kommt ein-,
 ab Tag 4 zweimal am Tag ein kleiner Trupp (3–4). Tagesschlurfer laufen
@@ -91,6 +97,8 @@ Zahlen 1–8 gehören der Schnellleiste.
 *Warum:* Mit der linken Hand auf WASD erreichbar, kein Konflikt.
 
 ### 8. Wie lange bleibt Loot liegen?
+> *Ersetzt durch Nr. 68 (Überreste halten bis zu drei Tage).*
+
 **Entscheidung:** Zwei Minuten, die letzten 15 Sekunden blinkt es. Liegendes
 Loot funkelt ab und zu und glimmt nachts; liegt es außerhalb des Bildes,
 zeigen goldene Rauten am Rand hin. Der Sammelradius beginnt bei 2 m.
@@ -476,8 +484,12 @@ allem der Platz der Türme, und ein Trupp, der durchkam, brauchte für das
 Zuhause nur Sekunden – zu schnell, um hinzulaufen. Die Balance-Ziele aus
 DESIGN.md 6.17 gelten weiter. (Die erste Messung in m6-r1 hing teils in
 der Perk-Wahl fest; ihre Werte für Nacht 1 und 3 waren nicht belastbar.)
+*Nachtrag M8:* Nach dem ersten eigenen Probespielen war das zu nachsichtig –
+siehe Nr. 57.
 
 ### 53. Wie erfährt man, welche Wege offen sind?
+> *Offen mit Nr. 66 (Wegvorschau und Umlenken werden erst nach der Klärung angefasst).*
+
 **Entscheidung:** Eine Stunde vor der Horde prüft das Spiel, ob am Weg der
 ersten Welle ein schießender Turm steht (Reichweite über irgendeinem Punkt
 des Weges vom Waldrand bis zur Hauswand). Wenn nicht, sagt es Mika in einer
@@ -503,6 +515,193 @@ Material kosten (DESIGN.md 6.12), aber nie endgültig sein.
 die Testspieler aber genau das Schließen, und Rückfragen haben immer eine
 harmlose Vorwahl – Esc entscheidet nie etwas Folgenreiches. Das Pausenmenü
 bleibt einen Druck entfernt.
+
+## Nach dem ersten Probespielen (Meilenstein 8)
+
+### 56. Wie schnell vergeht die Zeit?
+**Entscheidung:** Eine Spielminute dauert 0,4 s statt 0,6 s, ein ganzer Tag
+also rund 9 statt 14 Minuten (`secondsPerGameMinute` in `config.js`).
+*Warum:* »Die Zeit vergeht zu langsam.« Die Testspieler hatten tagsüber viel
+Leerlauf gemeldet und dafür das Ausruhen genutzt; schneller ist ehrlicher als
+ständiges Überspringen. Die Tagesziele (Sammeln, Bauen, Balduin bis Mittag)
+passen weiter in einen Tag.
+
+### 57. Wie schwer ist Nacht 1?
+**Entscheidung:** Deutlich schwerer. Nacht 1 hat 26 statt 18 Punkte (rund 24
+Schlurfer), ein Viertel davon Flitzer; die Kurve steigt steiler (Nacht 2: 35,
+Nacht 3: 46). Schlurfer laufen 0,8 statt 0,72 m/s, beißen mit 7 statt 5,
+spüren Mika aus 4,5 m (Flitzer 6,5 m) statt 3,2 m, und Schläge aufs Zuhause
+zählen 80 % statt 60 %.
+*Warum:* »Die Zombies sind keine Herausforderung, schon gar nicht in
+Nacht 1.« Nachgemessen in festen Schritten: Zwei Türme und untätig zusehen
+verliert jetzt Nacht 1 (nah am Haus wie weit draußen); drei Türme, einer
+ausgebaut, halten sie mit vollem Zuhause und 30 Abschüssen. Verlieren bleibt
+eine Materialfrage (Nr. 4, 54), nie das Ende.
+
+### 58. Woher kommt Schrott, wenn Schlurfer Zombieteile fallen lassen?
+**Entscheidung:** Vom Händler Balduin: 3 Zombieteile → 2 Schrott, jeden Tag
+und so oft man will. Dazu zwei wechselnde Sonderangebote (5 Holz, 3 Stein,
+4 Fasern oder 2 Stoff für 2–3 Teile; 1 Zahnrad für 7 Teile, höchstens
+zweimal am Tag; alle sechs Tage 1 Moderkern für 18 Teile, einmal).
+Schrotthaufen und das Wrack bleiben die Schrottquelle am Tag, Knopf und
+Hilde bringen weiter etwas mit.
+*Warum:* Der Wunsch war ein Händler, der morgens Rohstoffe gegen die Beute
+der Nacht tauscht. Nacht 1 bringt rund 30–35 Teile, also gut 20 Schrott –
+so viel wie vorher direkt aus der Nacht; die schwerere Nacht (Nr. 57) wird
+dadurch nicht wieder weggezahlt. Der Kurs 3 : 2 wirkt nicht wie ein Verlust,
+weil Teile und Schrott verschiedene Dinge sind. Zahnräder und Moderkern
+sind knapp gehalten, damit Anführer und Turmstufen besonders bleiben.
+
+### 59. Wann kommt Balduin, und wie lange bleibt er?
+> *Ersetzt durch Nr. 69 (Balduin kommt mit dem Boot zum Steg).*
+
+**Entscheidung:** Ab Tag 2 (dem ersten Morgen nach einer Nacht) jeden Tag.
+Um 06:40 zieht er den Wagen von Osten heran (Mika ist dann gerade wach),
+bleibt bis 12:00 und zieht dann weiter. Er zieht nie ein. Wo er ist, ergibt
+sich allein aus der Uhrzeit; gespeichert wird nur, was er heute verkauft hat.
+*Warum:* Ein fester Morgentermin macht aus dem Tausch ein Ritual (nachts
+sammeln, morgens tauschen, tagsüber bauen) und gibt dem Vormittag ein Ziel.
+Bis Mittag lässt genug Zeit, auch nach einem Umweg; wer ihn verpasst,
+tauscht am nächsten Morgen – die Teile verfallen nicht.
+
+### 60. Was macht Balduin mit den Zombieteilen?
+**Entscheidung:** Das verrät er nie. Es gibt nur Andeutungen: Einmachgläser
+mit trüber grüner Brühe (in einem schwimmt ein Auge), Fläschchen am Gurt
+und ein wechselnder Spruch des Tages (»Einmal hab ich einen ganzen
+zusammengesetzt. Er war sehr höflich.«).
+*Warum:* So war es gewünscht (»das wird nicht gesagt, er ist vielleicht ein
+wenig verrückt«). Ein Geheimnis passt zum gemütlich-schrägen Ton und lässt
+Raum für eine spätere Geschichte.
+
+### 61. Autowrack und Schrotthaufen
+> *Das Autowrack ist ersetzt durch Nr. 72 (Bootswrack am Ufer); Schrotthaufen alle zwei Tage gelten weiter.*
+
+**Entscheidung:** Das Wrack gibt einmal 5–6 Schrott, 1–2 Stoff und
+vielleicht ein Zahnrad her, danach steht dort »Ausgeräumt«. Schrotthaufen
+füllen sich alle zwei Tage wieder. Alte Spielstände, in denen das Wrack
+schon durchsucht wurde, bekommen es ausgeräumt (Migration v6 → v7).
+*Warum:* »Dass der Schrott jedes Mal im Auto gefunden wird, ist
+unwahrscheinlich.« Einmal reicht zusammen mit den drei Haufen (je 2–3) für
+den ersten Bolzenwerfer an Tag 1; danach übernimmt Balduin.
+
+### 62. Steht Balduins Wagen der Horde im Weg?
+> *Ersetzt durch Nr. 69 (kein Wagen mehr).*
+
+**Entscheidung:** Nein. Mika und die Überlebenden stoßen sich am Wagen,
+Schlurfer laufen hindurch. Solange er steht, ist sein Stand nicht bebaubar;
+steht dort nachmittags etwas, hält er am nächsten Morgen an einem anderen
+Platz an der Straße.
+*Warum:* Der Wagen steht nur vormittags da. Gehörte er ins Flussfeld,
+änderten sich die Wege der Tagesstreuner stündlich und die Wegvorschau
+stimmte nicht mehr. Ein fester, dauerhaft gesperrter Stand hätte dagegen
+ausgerechnet an der Straße, über die zwei Waldpfade laufen, Bauplatz
+gekostet.
+
+## Neues Grundkonzept: Bucht und Wege (verbindlich seit M8)
+
+Die Grundregeln stehen in DESIGN.md, Abschnitt 0 – sie ersetzen ältere
+Antworten. Die Fragen 63–74 hat zuerst Claude mit Vorschlägen beantwortet;
+der Auftraggeber hat sie danach **festgelegt**. Wo er anders entschieden hat,
+steht seine Antwort, der verworfene Vorschlag ist kurz vermerkt.
+
+### 63. Eine Strecke oder mehrere?
+**Festgelegt: mehrere Wege.** Sie dürfen sich verzweigen und werden bei jedem
+neuen Spiel teilweise neu, prozedural angelegt – leichter
+Roguelike-Charakter; etwa drei Zuführungen oder Verzweigungen. **Kurz vor
+der Basis laufen alle Wege in einen gemeinsamen letzten Abschnitt
+zusammen.** Anfangs reicht eine kompakte Verteidigung direkt vor der Basis,
+später wächst sie weit nach außen. Die Wege sind insgesamt lang genug, dass
+im späten Spiel 50–60 Türme und mehr sinnvoll Platz finden.
+*Verworfen:* eine einzige Strecke vom Waldrand zur Bucht.
+
+### 64. Türme frei setzen oder auf feste Baupunkte?
+**Festgelegt: frei.** Keine festen Bauplattformen; Türme dürfen überall neben
+den Wegen stehen, wo Platz ist. **Auf den Laufwegen stehen keine Türme** –
+dort nur Hindernisse und Wegobjekte zur Verteidigung (Holzbarrieren,
+Metallbarrieren, Metallkreuze und ähnliche zerstörbare Elemente).
+*Verworfen:* feste Baupunkte (Holzplattformen) links und rechts.
+
+### 65. Wo stehen Barrikaden, und wie funktionieren sie?
+**Festgelegt:** direkt auf den Wegen, vergleichsweise günstig. Die Horde
+bleibt daran hängen, greift sie an und reißt sie nieder, wenn die Türme
+nicht genug Schaden machen. Verschiedene Qualitätsstufen: Holzbarrieren
+günstig, aber schnell zerstört; später Metallbarrieren und andere
+robustere Hindernisse. Zerstörte Barrikaden lassen sich wieder aufbauen.
+Zweck: Horden stauen und den Türmen an der Seite Zeit verschaffen.
+*Umsetzung:* Barrikaden stehen frei auf Wegfeldern (je 1 m); wer einen Weg
+ganz sperren will, setzt mehrere nebeneinander.
+*Verworfen:* vier feste Barrikadenplätze quer über einer Strecke.
+
+### 66. Was wird aus Umlenken der Horde, Waldpfaden und Wegvorschau?
+**Offen – Klärung ausstehend.** Der Auftraggeber möchte erst wissen, was die
+bisherigen Funktionen genau waren. Bis dahin wird **nichts davon entfernt
+und nichts Neues entwickelt.** Die bisherigen Funktionen:
+- **Umlenken (»Mazing«):** Jeder Bau (Turm, Barrikade, Werkbank …) sperrte
+  ein Feld des Bauplatzrasters. Die Horde suchte sich laufend den kürzesten
+  freien Weg zum Haus und lief um Bauten herum – man konnte sie mit Bauten
+  in lange Umwege lenken. Ein Bau, der den letzten Weg abgeschnitten hätte,
+  wurde abgelehnt. Brummer schlugen sich durch Barrikaden.
+- **Waldpfade:** vier feste Eingänge am Rand der Lichtung (Westen, Osten,
+  Nordwesten, Nordosten); jede Welle kam über einen oder zwei davon.
+- **Wegvorschau:** Beim Setzen eines Baus liefen rote Punkte die aktuellen
+  Wege der Horde entlang, vom Waldrand bis ans Haus, und zeigten, wie der Bau
+  sie verändert.
+Im neuen Konzept laufen Zombies nur auf den Wegen und Türme stehen nie
+darauf. Offen ist, ob Barrikaden die Horde auf einen anderen Zweig des
+Wegenetzes umlenken dürfen (statt sie nur zu stauen) und ob die Wegvorschau
+bleibt.
+
+### 67. Gibt es tagsüber noch Schlurfer?
+**Festgelegt: ja, aber nur sehr wenige.** Der Tag ist ruhig und deutlich
+sicherer als die Nacht, aber die Welt ist nicht ganz zombiefrei: vereinzelte
+Schlurfer, keine größeren Gruppen, keine Wellen am Tag.
+*Verworfen:* gar keine Schlurfer am Tag.
+
+### 68. Wie lange bleiben Überreste liegen?
+**Festgelegt: bis zu drei Tage,** dann verrotten sie. Der Spieler soll sie
+möglichst schon während oder direkt nach der Nacht bergen, damit er morgens
+beim Händler Handelsware hat. Sie verschwinden nicht am Mittag.
+*Verworfen:* bis zum Mittag des nächsten Tages.
+
+### 69. Wie kommt Balduin, und wie sieht er aus?
+**Festgelegt:** ausschließlich per Schiff oder Boot über den Seeweg; ein
+reisender Händler, der die Wasserwege nutzt und an unserem Steg anlegt.
+Aussehen nach dem Konzeptbild: älterer, sympathischer Seebär mit
+Schiebermütze, kräftigem Bart, rotem Schal, robuster Kleidung und
+Gepäck/Rucksack. Kurs und Angebote (Nr. 58) und sein Geheimnis (Nr. 60)
+bleiben. Der Bollerwagen aus M8.2 war eine Zwischenlösung.
+
+### 70. Wie ist das Bild bzw. die Karte aufgebaut?
+**Festgelegt: Die Wege laufen hauptsächlich von links nach rechts.** Die
+Zombies kommen aus der linken, landseitigen Kartenhälfte und laufen zur
+rechts gelegenen Basis an der Küste; die verzweigten Wege treffen sich kurz
+vor der Basis zu einem gemeinsamen letzten Abschnitt. Die Kamera blickt
+weiter nach Norden (links = Westen, rechts = Osten).
+*Verworfen:* See oben, Strecke von unten nach oben.
+
+### 71. Pixelgrafik oder nicht?
+**Festgelegt:** Die 3D-Voxel-Technik bleibt, weil die Welt so zuverlässig im
+Code entsteht. Pixel und grobe Rasterelemente sind nur noch Stilmittel;
+Vorrang haben Lesbarkeit, schöne Formen, cozy Herbststimmung und die
+Mischung aus Spooky Season, Anime und westlichem Comic.
+
+### 72. Was wird aus Straße, Autowrack, Funkturm und Ankunftsorten?
+**Festgelegt:** Die Straße fällt weg. Statt des Autowracks liegt ein
+Bootswrack am Ufer, das einmal Schrott liefert. Der Funkturm wird zum
+Leuchtmast am Steg; Junas Geschichte bleibt. Überlebende kommen tagsüber
+über die Wege, am Ufer oder mit Balduins Boot.
+
+### 73. Was passiert mit alten Spielständen?
+**Festgelegt:** Sie funktionieren weiter. Tag, Vorräte, Spielfigur,
+Überlebende und Möbel bleiben. Türme und Barrikaden der alten Lichtung
+werden vollständig erstattet; andere nicht mehr passende Bauten werden
+sinnvoll neu gesetzt oder ebenfalls erstattet.
+
+### 74. Knopf und Juna, wenn es mehrere oder wechselnde Wege gibt?
+**Festgelegt:** Knopf warnt vor einer kommenden Welle, ohne zwingend eine
+feste Richtung zu nennen. Juna meldet morgens, was in der kommenden Nacht zu
+erwarten ist (Arten, besondere Gegner, Anführer). Bei prozedural wechselnden
+Wegen kündigt sie keine dauerhaft festgelegte Angriffsrichtung an.
 
 ## Technik mit Auswirkung aufs Design
 

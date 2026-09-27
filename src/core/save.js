@@ -7,6 +7,15 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v6 -> v7: Meilenstein 8 (Zombieteile, Balduin, Autowrack nur einmal). Wer das
+  // Wrack schon durchsucht hat, findet dort nichts mehr; Zombieteile beginnen bei null.
+  6: (data) => ({
+    ...data,
+    version: 7,
+    inventory: { ...(data.inventory || {}), teile: 0 },
+    world: { ...(data.world || {}), trader: { day: 0, sold: {} } },
+    flags: { ...(data.flags || {}), ...(data.world?.searched?.auto !== undefined ? { autoLeer: true } : {}) },
+  }),
   // v5 -> v6: Meilenstein 7 (Name und Aussehen vom Titelbild). Bisherige Stände
   // behalten Mika, wie sie war.
   5: (data) => ({

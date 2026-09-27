@@ -23,6 +23,7 @@ import { TitleScreen } from '../ui/title.js';
 import { MIKA } from '../entities/characters.js';
 import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
+import { Trader } from './trader.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
 import { Furnishing } from './furnishing.js';
 import { World } from '../world/world.js';
@@ -71,7 +72,7 @@ const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
 const ZERO = new THREE.Vector3();
 const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es im Spielstand ist
 /** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
-const LOOT_PITCH = { schrott: 700, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
+const LOOT_PITCH = { schrott: 700, teile: 560, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
 // Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
 const PERK_NEAR = 6;
 const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
@@ -161,6 +162,7 @@ export class Game {
     this.nights = new Nights(this);
     this.combat = new Combat(this);
     this.survivors = new Survivors(this);
+    this.trader = new Trader(this);
     this.furnishing = new Furnishing(this);
     this.portraits = renderPortraits();
 
@@ -266,6 +268,7 @@ export class Game {
     this.world.setTowerStage(st.world.tower, BEACON.glow);
     this.furnishing.apply();
     this.survivors.apply();
+    this.trader.apply();
     this.world.resources.apply(st.world, st.time.day);
     const axe = this.world.props.axe;
     axe.object.visible = !st.tools.axt;
@@ -331,6 +334,7 @@ export class Game {
   goalTarget() {
     const st = this.state;
     const id = this.goal?.id;
+    if (id === 'haendler') return this.trader.target();
     if (id === 'axt' && !st.tools.axt) {
       const cb = LAYOUT.choppingBlock;
       return { x: cb.x, y: 1.0, z: cb.z };
@@ -341,7 +345,7 @@ export class Game {
       let best = null;
       let bestD = Infinity;
       const consider = (key, x, z) => {
-        if (st.world.searched[key] === st.time.day) return;
+        if (this.gathering.searchEmpty(key)) return;
         const d = Math.hypot(x - p.x, z - p.z);
         if (d < bestD) {
           bestD = d;
@@ -464,6 +468,7 @@ export class Game {
     else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
+    else if (it.trader) this.trader.talk();
     else if (it.npc) this.survivors.talk(it.npc);
     else if (this.gathering.interact(it)) return;
     else if (it.dialog) this.startDialog(it.dialog);
@@ -515,6 +520,10 @@ export class Game {
     else if (st.report && st.report.n === st.night.n && st.night.n === st.time.day) st.report.loot[res] = (st.report.loot[res] || 0) + 1;
     this.hud.floater(x, y + 0.6, z, '+1', res, 0, true);
     this.sound.play('loot', { pitch: LOOT_PITCH[res] || 880 });
+    if (res === 'teile' && !st.flags.fundTeile) {
+      st.flags.fundTeile = true;
+      this.hud.toast(T.meldungen.ersteTeile, res, 4);
+    }
     if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
       st.flags.fundZahnrad = true;
       this.hud.toast(T.meldungen.ersterFund(T.ressourcen.zahnraeder), res, 3);
@@ -525,10 +534,11 @@ export class Game {
     }
   }
 
-  openCrafting() {
+  /** @param {'werkbank'|'haendler'} [source] Werkbank oder Balduins Bollerwagen */
+  openCrafting(source = 'werkbank') {
     this.builder.cancel();
     this.mode = 'craft';
-    this.crafting.open();
+    this.crafting.open(source);
   }
 
   closeCrafting() {
@@ -539,7 +549,7 @@ export class Game {
   craft(recipe) {
     const st = this.state;
     if (recipe.owned) {
-      this.hud.toast(T.werkbank.vorhanden, recipe.icon, 1.8);
+      this.hud.toast(recipe.ownedText || T.werkbank.vorhanden, recipe.icon, 1.8);
       return false;
     }
     if (!canAfford(st.inventory, recipe.cost)) {
@@ -557,6 +567,15 @@ export class Game {
     }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
+    if (recipe.trade) {
+      // Balduins Bollerwagen (Meilenstein 8)
+      this.trader.sold(recipe);
+      this.hud.toast(T.ueberlebende.getauscht(T.menge(gives[1], gives[0])), recipe.icon, 2);
+      this.sound.play('loot', { pitch: LOOT_PITCH[gives[0]] || 880 });
+      this.updateGoals();
+      this.quietSave();
+      return true;
+    }
     if (gives) this.hud.toast(T.meldungen.verwertet(T.menge(gives[1], gives[0])), recipe.icon, 2);
     else if (recipe.gives.weapon) this.hud.toast(T.meldungen.waffeGebaut(T.rezepte[recipe.id], ITEMS[recipe.gives.weapon]?.plural), recipe.icon, 2.6);
     else this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
@@ -681,7 +700,7 @@ export class Game {
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
     this.onNewDay();
     // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
-    const extra = [...this.survivors.morning(), ...this.furnishing.morning()];
+    const extra = [...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.player.place(w.x, w.z, w.facing);
@@ -814,7 +833,7 @@ export class Game {
     const losses = {};
     for (const res of RESOURCES) {
       if (RARE_RESOURCES.includes(res) || res === 'zahnraeder') continue;
-      const share = res === 'schrott' ? 0.25 : 0.1;
+      const share = res === 'schrott' || res === 'teile' ? 0.25 : 0.1;
       const n = Math.floor((st.inventory[res] || 0) * share);
       if (n > 0) {
         st.inventory[res] -= n;
@@ -1024,6 +1043,7 @@ export class Game {
     const titled = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
     const hours = titled ? TITLE_HOURS : hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
+    this.trader.update(this.mode === 'play' ? dt : 0);
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
@@ -1269,9 +1289,9 @@ export class Game {
       if (!node) return null;
       if (node.depleted) return T.aktionen.waechst(this.world.resources.daysLeft(node));
       if (node.rules.tool && !st.tools[node.rules.tool]) return T.aktionen.brauchtWerkzeug(T.gegenstaende[node.rules.tool]);
-      if (node.rules.search && st.world.searched[node.id] === st.time.day) return T.aktionen.heuteLeer;
+      if (node.rules.search && this.gathering.searchEmpty(node.id)) return T.aktionen.leerBald;
     }
-    if (it.search && st.world.searched[it.id] === st.time.day) return T.aktionen.heuteLeer;
+    if (it.search && this.gathering.searchEmpty(it.id)) return it.id === 'auto' ? T.aktionen.ausgeraeumt : T.aktionen.leerBald;
     if (it.use === 'ernten') {
       const b = this.world.buildings.get(it.building);
       if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
@@ -1457,9 +1477,10 @@ export class Game {
           ? this.crafting.recipes().map((r, i) => {
               const w = r.gives.weapon ? WEAPONS[r.gives.weapon] : null;
               const werte = w ? ` – ${T.werkbank.werte(w.damage, String(w.rate).replace('.', ','), String(w.reach).replace('.', ','), w.targets || 1)}` : '';
-              return `${i === this.crafting.focus ? '> ' : ''}${T.rezepte[r.id]} (${r.owned ? T.werkbank.vorhanden : costText(r.cost)})${werte}`;
+              return `${i === this.crafting.focus ? '> ' : ''}${r.name ?? T.rezepte[r.id]} (${r.owned ? r.ownedText ?? T.werkbank.vorhanden : costText(r.cost)})${werte}`;
             })
           : null,
+      handelsfenster: this.mode === 'craft' && this.crafting.shop ? { titel: T.haendler.titel, spruch: this.trader.quote() } : null,
       dialog: line
         ? {
             sprecher: line.s,
@@ -1506,6 +1527,7 @@ export class Game {
         const q = this.worldToUi(n.x, 1, n.z);
         return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
       }).map((id) => SURVIVORS[id].name),
+      haendler: this.trader.phase !== 'weg' ? { da: this.trader.phase, x: Number(this.trader.npc.x.toFixed(1)), z: Number(this.trader.npc.z.toFixed(1)) } : null,
       gemuetlichkeit: `${this.furnishing.cozy}/${MAX_COZY} (nur Möbel aus dem Reiter »Einrichten« zählen)`,
     };
   }
@@ -1583,6 +1605,11 @@ export class Game {
         game.builder.cancel();
         return 'ok';
       },
+      /** Passt ein Bau hierher? (ohne ihn zu setzen) – mit Grund, z. B. »stand« */
+      placeCheck(type, i, j, turns = 0) {
+        const c = game.world.buildings.check(type, i, j, turns);
+        return { ok: c.ok, reason: c.reason || null, why: c.why || null };
+      },
       buildings: () => game.world.buildings.toState(),
       spawnZombie(type, x, z) {
         const zo = game.horde.spawn(type, { x, z });
@@ -1643,7 +1670,17 @@ export class Game {
       },
       beaconSlow: (x, z) => game.survivors.beaconSlow(x, z),
       arrive: () => game.survivors.arrive(true),
-      morning: () => [...game.survivors.morning(), ...game.furnishing.morning()].map((l) => l.text),
+      morning: () => [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning()].map((l) => l.text),
+      // Meilenstein 8: Balduin, der Händler
+      trader: () => {
+        const n = game.trader.npc;
+        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, cart: game.trader.cart.root.position.x, standX: game.trader.standX, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled };
+      },
+      /** Ein Angebot des Tages tauschen (wie ein Druck auf E im Handelsfenster). */
+      trade(key) {
+        const offer = game.trader.offers().find((o) => o.key === key);
+        return offer ? game.craft(offer) : false;
+      },
       buildTowerStage: () => game.survivors.buildTowerStage(),
       combatInfo: () => ({ weapon: game.combat.weaponId, invulnerable: game.combat.invulnerable, rollCooldown: game.combat.rollCooldown, action: game.player.action?.kind || null }),
       /** Nacht des laufenden Tages sofort beenden (gewonnen oder verloren). */

@@ -5,6 +5,104 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Neues Grundkonzept: die Bucht und die Strecke
+
+**Anlass:** Der Auftraggeber hat das Konzept überarbeitet und ein Konzeptbild
+geschickt (Bucht am See mit Fischerhaus und Steg, eine Strecke aus dem Wald
+mit Türmen auf runden Plattformen links und rechts und Holzbarrikaden auf
+dem Weg; nachts dieselbe Szene mit Mond und Feuer; Balduin als bärtiger
+Seebär am Steg; ein gemütlicher Innenraum mit Kamin; Turm- und
+Barrikadenstufen; Schlurfer-Arten). Die zwölf Grundregeln sind jetzt
+verbindlich und ersetzen ältere Annahmen.
+
+**Überarbeitet**
+
+- `DESIGN.md` neu gefasst: Abschnitt 0 mit den Grundregeln, Karte und
+  Strecke (6.2), Barrikaden mit vier Stufen (6.10), letzte Verteidigung
+  (6.12), Zuhause am Wasser (6.8), Balduin mit Boot (6.15), Herbst-Look
+  (3), neuer Meilensteinplan M9–M13.
+- `OFFENE-FRAGEN.md` 63–74: eine Strecke, feste Baupunkte, feste
+  Barrikadenplätze, kein Mazing, keine Tagesschlurfer, Überreste bis
+  Mittag, Balduin per Boot, Kamera nach Norden (See oben), Pixel-Look nur
+  noch als Stilmittel, Bootswrack statt Auto, Leuchtmast am Steg, alte
+  Spielstände. Ersetzte Antworten (1, 2, 3, 8, 53, 59, 61, 62) sind
+  markiert.
+- `CLAUDE.md`: Grundregeln des Spiels als eigener Abschnitt.
+
+**Festgelegt vom Auftraggeber (OFFENE-FRAGEN 63–74):** kein einzelner
+Weg, sondern ein bei jedem Spiel teilweise prozedurales Wegenetz mit etwa
+drei Zuführungen, die vor der Basis zusammenlaufen (lang genug für 50–60
+Türme); die Wege laufen von links (Landseite, Spawns) nach rechts (Basis an
+der Küste); Türme frei neben den Wegen, Barrikaden frei auf den Wegen (Holz,
+später Metall, Metallkreuze); tagsüber ganz vereinzelte Schlurfer;
+Überreste halten bis zu drei Tage. Offen bleibt Nr. 66 (Umlenken durch
+Bauten, Wegvorschau): bis zur Klärung wird davon nichts entfernt.
+
+**Folgen für den Code:** Bis Meilenstein 8 spielt alles auf der alten
+Waldlichtung (vier Waldpfade, Mazing auf dem Raster, Tagesschlurfer,
+Balduin mit Bollerwagen über die Straße). Meilenstein 9 baut Karte und
+Verteidigung nach dem neuen Plan um, Meilenstein 10 bringt Balduins Boot.
+
+---
+
+## Meilenstein 8 – Nach dem ersten Probespielen (läuft)
+
+**Anlass:** Nach dem eigenen Probespielen kam vom Auftraggeber: Die Zeit
+vergeht zu langsam, die Schlurfer sind keine Herausforderung (schon gar
+nicht in Nacht 1), drinnen soll es ein eigenes, schöneres Bild geben (wie in
+Stardew Valley), dass das Autowrack jeden Tag Schrott hergibt, ist
+unglaubwürdig – ein Händler, der morgens Rohstoffe gegen Zombieteile
+tauscht, wäre besser –, und die Pixel lassen zu wenig erkennen. Plan in
+DESIGN.md (Meilenstein 8), Entscheidungen in OFFENE-FRAGEN 56–62.
+
+**Fertig – 8.1 Tempo und Herausforderung**
+
+- Eine Spielminute dauert 0,4 s statt 0,6 s (ein Tag rund 9 Minuten).
+- Nachtbudget 26 + 8·(n−1) + (n−1)² (Nacht 1: 26 statt 18 Punkte), ein
+  Viertel Flitzer schon in Nacht 1. Schlurfer 0,8 m/s, Biss 7; jede Art
+  spürt Mika aus eigener Entfernung (Flitzer 6,5 m, Schlurfer 4,5 m,
+  Schwärmer 5 m, Brummer 3,5 m statt 3,2 m für alle). Zuhause-Schaden 80 %.
+- Nachgemessen in festen Schritten, Mika untätig: zwei Bolzenwerfer
+  verlieren Nacht 1–3 (nah am Haus wie weit draußen); die Prüfung mit drei
+  Türmen (einer ausgebaut) hält Nacht 1 mit 30 Abschüssen und vollem
+  Zuhause. Volle Prüfung grün (85 Prüfpunkte).
+
+**Fertig – 8.2 Zombieteile und Balduin**
+
+- Schlurfer lassen **Zombieteile** fallen (eine grünliche Hand mit
+  Ärmelrest), neue Ressource mit eigenem Symbol und Klang; beim ersten Fund
+  »Zombieteile! Igitt. Vielleicht will die jemand haben …«.
+- **Balduin**, der Händler: lila Zylinder mit Feder, Monokel, weißer
+  Schnauzer, Flickenmantel mit Fläschchen am Gurt. Ab Tag 2 zieht er um
+  06:40 seinen Bollerwagen von Osten heran (Räder drehen sich, Rumpeln,
+  Glöckchen beim Anhalten), handelt bis 12:00 und zieht dann weiter (Staub
+  beim Wenden). Der Wagen: lila-gelb gestreiftes Sonnendach mit wehenden
+  Fransen, Kiste, Fass, Sack, Einmachgläser mit trüber grüner Brühe – in
+  einem schwimmt ein Auge.
+- Handeln im Fenster der Werkbank (»Balduins Bollerwagen«, Spruch des Tages
+  oben): 3 Teile → 2 Schrott immer, dazu täglich zwei Sonderangebote
+  (Holz, Stein, Fasern, Stoff, Zahnrad höchstens zweimal, alle sechs Tage ein
+  Moderkern). E tauscht einmal, gehalten weiter.
+- Erstes Treffen als Dialog mit Porträt, danach öffnet E direkt den Wagen.
+  Neues Ziel nach der ersten Nacht, Ziel-Pfeil zu ihm, Zeile im
+  Morgenbericht.
+- Sein Stand ist morgens nicht bebaubar (»Balduins Stand«); steht dort etwas,
+  hält er an einem anderen Platz. Mika stößt sich am Wagen, die Horde läuft
+  hindurch (nicht im Flussfeld).
+- **Autowrack nur einmal**, Schrotthaufen alle zwei Tage.
+- Die Kamera folgt jetzt bis an die Straße (Grenze z 9 statt 7,5).
+- **Spielstand v7** mit Migration (Wrack ausgeräumt, wenn es schon
+  durchsucht war; Zombieteile bei null).
+- Prüfskript: neuer Abschnitt `haendler` (Autowrack, Haufen, Ankunft, Stand,
+  Dialog und Handel mit echten Tasten, Vorrat, Abfahrt, Speichern v7,
+  Migration v6 → v7), Bilder `haendler` und `handel`; Loot-Prüfung zählt
+  Zombieteile.
+
+**Offen:** 8.3 Innenraum als eigenes Bild, 8.4 Detailgrad, danach eine
+Testrunde.
+
+---
+
 ## Abschlussrunde m7-r1 über das ganze Spiel und Nachbesserung
 
 **Testspieler:** Kira 8/10, Jonas 8/10, Mira 7/10, Theo 7/10 – Berichte und

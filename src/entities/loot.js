@@ -1,6 +1,6 @@
 // Loot am Boden (DESIGN.md 6.5): Stirbt ein Schlurfer, fällt sein Loot genau
-// dort hin – Schrottbrocken, manchmal ein Zahnrad, beim Anführer ein
-// Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach anderthalb Minuten
+// dort hin – Zombieteile (seit Meilenstein 8, vorher Schrott), manchmal ein
+// Zahnrad, beim Anführer ein Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach anderthalb Minuten
 // zerfällt es (die letzten 15 Sekunden blinkt es). Liegendes Loot funkelt ab
 // und zu, nachts glimmt es; außerhalb des Bildes zeigen Rauten am Rand hin.
 
@@ -80,8 +80,37 @@ function coreFine() {
   return m;
 }
 
-const MODELS = { schrott: scrapModel, zahnraeder: gearModel, moderkerne: coreModel };
-const FINE_MODELS = { schrott: scrapFine, zahnraeder: gearFine, moderkerne: coreFine };
+/**
+ * Zombieteil (Meilenstein 8): eine grünlich-graue Hand, flach auf dem Boden,
+ * mit Ärmelrest und Moosfleck – kein Blut, eher traurig als eklig.
+ */
+function partFine() {
+  const m = new VoxelModel();
+  // Handrücken
+  m.box(-3, 0, -2, 2, 1, 2, (x, y, z) => (y === 0 ? P.t2 : (x + z) % 3 === 0 ? P.t3 : P.t4));
+  // Drei Finger nach vorn, etwas gespreizt, Knöchel dunkler
+  for (const [fx, len] of [[-3, 5], [-1, 6], [1, 5]]) {
+    m.box(fx, 0, 3, fx, 1, len, (x, y, z) => (y === 0 ? P.t2 : z === 4 ? P.t3 : P.t4));
+  }
+  // Daumen zur Seite
+  m.box(3, 0, 0, 4, 1, 1, (x, y) => (y === 0 ? P.t2 : P.t4));
+  // Moosfleck auf dem Handrücken
+  m.set(-2, 2, -1, P.g5).set(-1, 2, 0, P.g4).set(-2, 2, 0, P.g6);
+  // Ärmelrest am Handgelenk (ausgefranster Stoff)
+  m.box(-3, 0, -4, 2, 2, -3, (x, y, z) => (y === 2 && (x + z) % 2 ? null : (x + y) % 2 ? P.b2 : P.b1));
+  return m;
+}
+
+/** Grobe Variante (Stand vor Meilenstein 5): nur noch zum Laden alter Stände nötig. */
+function partModel() {
+  const m = new VoxelModel();
+  m.box(-1, 0, -1, 1, 0, 1, P.t4);
+  m.set(0, 0, 2, P.t3).set(-1, 0, 2, P.t3);
+  return m;
+}
+
+const MODELS = { schrott: scrapModel, teile: partModel, zahnraeder: gearModel, moderkerne: coreModel };
+const FINE_MODELS = { schrott: scrapFine, teile: partFine, zahnraeder: gearFine, moderkerne: coreFine };
 
 /** Funkeln über liegender Beute: ein kleines helles Kreuz (zum Finden, auch nachts). */
 function glintModel() {
@@ -193,7 +222,7 @@ export class Loot {
   }
 
   render() {
-    const counts = { schrott: 0, zahnraeder: 0, moderkerne: 0 };
+    const counts = { schrott: 0, teile: 0, zahnraeder: 0, moderkerne: 0 };
     const d = this.dummy;
     let glints = 0;
     for (const it of this.items) {
@@ -206,7 +235,7 @@ export class Loot {
       const bob = it.vy === 0 && !it.flying ? 0.08 + Math.sin(it.spin * 1.6) * 0.05 : 0;
       d.position.set(it.x, it.y + bob, it.z);
       d.rotation.set(0, it.res === 'zahnraeder' ? it.spin : it.spin * 0.3, 0);
-      const scale = it.res === 'schrott' ? 1.25 : 1.1;
+      const scale = it.res === 'schrott' || it.res === 'teile' ? 1.25 : 1.1;
       d.scale.set(scale, scale, scale);
       d.updateMatrix();
       mesh.setMatrixAt(k, d.matrix);

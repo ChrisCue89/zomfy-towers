@@ -7,8 +7,9 @@ import { PERKS, PERK_IDS } from '../data/perks.js';
 import { SURVIVOR_ORDER } from '../data/survivors.js';
 import { FURNITURE } from '../data/furniture.js';
 import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
+import { TRADER_OFFERS } from '../data/trader.js';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -21,7 +22,7 @@ export function createNewState(config) {
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
     player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
-    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, zahnraeder: 0, moderkerne: 0 },
+    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
@@ -31,7 +32,8 @@ export function createNewState(config) {
     // tower: Ausbau des Funkturms (0–3), furniture: gekaufte Möbel, tradeDay: Tag des
     // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
-    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0 },
+    // trader: was Balduin am Tag `day` schon verkauft hat (Vorrat der Sonderangebote, M8)
+    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
     // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
     survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }])), // errand: 0 offen, 1 läuft, 2 erledigt
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
@@ -151,6 +153,10 @@ export function sanitizeState(data, config) {
   out.world.tradeDay = Math.floor(num(w.tradeDay, 0, 0, 1e6));
   out.world.yusufNight = Math.floor(num(w.yusufNight, 0, 0, 1e6));
   out.world.survivorsStart = Math.floor(num(w.survivorsStart, 0, 0, 1e6));
+  out.world.trader.day = Math.floor(num(w.trader?.day, 0, 0, 1e6));
+  if (w.trader?.sold && typeof w.trader.sold === 'object') {
+    for (const [k, v] of Object.entries(w.trader.sold)) if (TRADER_OFFERS[k] && Number.isFinite(v)) out.world.trader.sold[k] = Math.floor(num(v, 0, 0, 99));
+  }
   for (const id of SURVIVOR_ORDER) {
     const s = data.survivors?.[id] || {};
     out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: Number.isFinite(s.tent) ? Math.floor(s.tent) : null, errand: Math.floor(num(s.errand, 0, 0, 2)) };

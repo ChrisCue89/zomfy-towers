@@ -64,6 +64,21 @@ const ICONS = {
       '..........',
     ],
   },
+  teile: {
+    legend: { k: P.t1, T: P.t4, t: P.t3, g: P.g5, s: P.b2 },
+    rows: [
+      '..k.k.k...',
+      '.kTkTkTk..',
+      '.kTkTkTk..',
+      '.kTTTTTkk.',
+      '.kTgTTTTTk',
+      '.kTggTTtk.',
+      '.ktTTTTtk.',
+      '..kssssk..',
+      '..kssssk..',
+      '...kkkk...',
+    ],
+  },
   zahnraeder: {
     legend: { k: P.e2, G: P.f5, g: P.f7 },
     rows: [

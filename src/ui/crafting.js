@@ -3,6 +3,8 @@
 // umwandeln): Ein Druck wandelt einmal um, gehaltenes E bzw. gehaltene
 // Maustaste macht gemächlich weiter – ein Balken füllt die Zeile bis zur
 // nächsten Umwandlung, ein Zähler zeigt, wie viel schon dabei herauskam (m3-r2).
+// Dasselbe Fenster dient als Balduins Bollerwagen (Quelle »haendler«, M8):
+// Seine Angebote sind Umwandlungen wie das Verwerten, oben steht sein Spruch.
 
 import { T } from '../data/texts.js';
 import { RECIPES } from '../data/recipes.js';
@@ -35,17 +37,28 @@ export class CraftingMenu {
     this.openT = 0; // seit wann offen (s)
     this.counter = null; // { id, count, t } – »+n« an der Zeile
     this.flash = null; // { id, t } – Zeile leuchtet nach einer Umwandlung kurz auf
+    this.source = 'werkbank'; // oder 'haendler'
   }
 
-  open() {
+  get shop() {
+    return this.source === 'haendler';
+  }
+
+  open(source = 'werkbank') {
+    this.source = source;
     this.isOpen = true;
     this.openT = 0;
     this.lastPressAt = null;
     this.hold = null;
     this.counter = null;
     this.flash = null;
-    // Zuerst ein Werkzeug, das man sich leisten kann – nie ein Verwerten-Rezept
+    // Zuerst ein Werkzeug, das man sich leisten kann – nie ein Verwerten-Rezept;
+    // beim Händler das erste bezahlbare Angebot
     const list = this.recipes();
+    if (this.shop) {
+      this.focus = Math.max(0, list.findIndex((r) => r.affordable));
+      return;
+    }
     const first = list.findIndex((r) => r.affordable && !isConversion(r));
     const open = list.findIndex((r) => !r.owned && !isConversion(r));
     this.focus = first >= 0 ? first : Math.max(0, open);
@@ -57,6 +70,7 @@ export class CraftingMenu {
 
   recipes() {
     const g = this.game;
+    if (this.shop) return g.trader.offers();
     return RECIPES.map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
@@ -66,10 +80,11 @@ export class CraftingMenu {
   layout(ui) {
     const list = this.recipes();
     const w = 300;
-    const h = 34 + list.length * ROW_H + 18;
+    const head = this.shop ? 28 + LINE_HEIGHT : 28; // beim Händler: Spruch unter dem Titel
+    const h = head + 6 + list.length * ROW_H + 18;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2) - 20;
-    const rows = list.map((r, k) => ({ recipe: r, rect: { x: x + 8, y: y + 28 + k * ROW_H, w: w - 16, h: ROW_H - 2 } }));
+    const rows = list.map((r, k) => ({ recipe: r, rect: { x: x + 8, y: y + head + k * ROW_H, w: w - 16, h: ROW_H - 2 } }));
     return { x, y, w, h, rows };
   }
 
@@ -156,8 +171,9 @@ export class CraftingMenu {
     const inv = this.game.state.inventory;
     ui.ditherFill(0.35);
     ui.panel(L.x, L.y, L.w, L.h);
-    ui.textCentered(T.werkbank.titel, L.x + L.w / 2, L.y + 6, COLORS.gold);
+    ui.textCentered(this.shop ? T.haendler.titel : T.werkbank.titel, L.x + L.w / 2, L.y + 6, COLORS.gold);
     ui.rect(L.x + 10, L.y + 20, L.w - 20, 1, COLORS.frameDark);
+    if (this.shop) ui.textCentered(this.game.trader.quote(), L.x + L.w / 2, L.y + 24, COLORS.textWarm);
     L.rows.forEach((row, k) => {
       const { recipe: r, rect } = row;
       const focused = k === this.focus;
@@ -169,19 +185,20 @@ export class CraftingMenu {
       if (flashing) ui.rect(rect.x + 2, rect.y + rect.h - 3, rect.w - 4, 2, COLORS.text);
       const size = iconSize(r.icon);
       drawIcon(ui.ctx, r.icon, rect.x + 4 + Math.floor((12 - size.w) / 2), rect.y + Math.floor((rect.h - size.h) / 2));
-      ui.text(T.rezepte[r.id], rect.x + 20, rect.y + 3, r.owned ? COLORS.textDim : r.affordable ? COLORS.text : COLORS.textDim);
+      const name = r.name ?? T.rezepte[r.id];
+      ui.text(name, rect.x + 20, rect.y + 3, r.owned ? COLORS.textDim : r.affordable ? COLORS.text : COLORS.textDim);
       // Zähler beim Verwerten: wie viel ist schon dabei herausgekommen?
       if (this.counter?.id === r.id) {
         const [res, n] = Object.entries(r.gives.inventory)[0];
         const text = T.werkbank.zaehler(this.counter.count * n);
-        const tx = rect.x + 24 + measure(T.rezepte[r.id]);
+        const tx = rect.x + 24 + measure(name);
         ui.text(text, tx, rect.y + 3, COLORS.gold);
         drawIcon(ui.ctx, res, tx + measure(text) + 2, rect.y + 5);
       }
       // Kosten rechtsbündig
       let cx = rect.x + rect.w - 6;
       if (r.owned) {
-        const t = T.werkbank.vorhanden;
+        const t = r.ownedText ?? T.werkbank.vorhanden;
         ui.text(t, cx - measure(t), rect.y + 3, COLORS.textDim);
         return;
       }
@@ -197,10 +214,12 @@ export class CraftingMenu {
     // Gewählte Zeile: was kommt dabei heraus? (Verwerten: »… E halten: weiter«)
     const r = L.rows[this.focus]?.recipe;
     const conversion = r && isConversion(r) && !r.owned;
-    ui.textCentered(conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
+    const hint = this.shop ? T.haendler.hinweis : conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis;
+    ui.textCentered(hint, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
     if (r) {
       const loud = conversion && Boolean(this.hold);
-      const info = conversion ? T.werkbank.halten(T.rezeptInfo[r.id]) : T.rezeptInfo[r.id];
+      const text = r.info ?? T.rezeptInfo[r.id];
+      const info = conversion ? T.werkbank.halten(text) : text;
       // Waffen: zweite Zeile mit Schaden, Tempo und Reichweite
       const wpn = r.gives.weapon ? WEAPONS[r.gives.weapon] : null;
       const stats = wpn ? T.werkbank.werte(num(wpn.damage), num(wpn.rate), num(wpn.reach), wpn.targets || 1) : null;

@@ -102,6 +102,16 @@ function survivorPortrait(id) {
   return renderVoxelPortrait(bust, { top: 2, w: 4, t: 1, f: 3 });
 }
 
+/** Balduin: der hohe Zylinder passt nicht ganz ins Fenster – oben angeschnitten. */
+function balduinPortrait() {
+  const parts = survivorParts('balduin');
+  const bust = new VoxelModel();
+  const add = (model) => model.forEach((x, y, z, c) => y >= 12 && y <= 26 && bust.set(x, y, z, c));
+  add(parts.torso);
+  add(parts.head);
+  return renderVoxelPortrait(bust, { top: 1, w: 4, t: 1, f: 3 });
+}
+
 /** Knopf: der ganze Hund, schräg von vorn. */
 function dogPortrait() {
   const m = new VoxelModel();
@@ -132,6 +142,7 @@ export function renderPortraits() {
     juna: survivorPortrait('juna'),
     bert: survivorPortrait('bert'),
     yusuf: survivorPortrait('yusuf'),
+    balduin: balduinPortrait(),
     knopf: dogPortrait(),
   };
 }
