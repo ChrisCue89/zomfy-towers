@@ -23,8 +23,11 @@ und passt zur offenen Lichtung. Die Pflicht-Lücke verhindert Frust durch
 
 ### 2. Wie viele Wellen hat eine Nacht, und wann ist sie gewonnen?
 **Entscheidung:** Nacht 1 hat 3 Wellen, jede weitere Nacht eine halbe Welle
-mehr (bis 8). Die erste Welle kommt um 20:30, danach anfangs alle gut
-70 Spielminuten, in späteren Nächten dichter (mindestens 40). Die Nacht ist
+mehr (bis 8). Die Punkte der ganzen Nacht steigen gleichmäßig (18, 25, 32,
+41, 52 … – seit m3-r1 unabhängig von der Zahl der Wellen, vorher sprang
+Nacht 3 von 21 auf 46 Schlurfer); spätere Wellen einer Nacht sind größer.
+Schwere Arten kommen nur, soweit die Welle sie trägt. Die erste Welle kommt um 20:30, danach anfangs alle gut
+60 Spielminuten, in späteren Nächten dichter (mindestens 36). Die Nacht ist
 gewonnen, wenn die letzte Welle besiegt ist – oder um 05:30, wenn die
 letzten Schlurfer in den Wald fliehen. **Schlafen geht erst, wenn die Nacht
 des Tages vorbei ist** – auch nicht am Nachmittag davor (»Erst muss die
@@ -37,18 +40,29 @@ Früh ins Bett zu gehen hätte die Nacht einfach übersprungen.
 Schlurfer am Waldrand auf (wenig Leben, wenig Loot). Ab Tag 2 kommt ein-,
 ab Tag 4 zweimal am Tag ein kleiner Trupp (3–4). Tagesschlurfer laufen
 langsam zum Zuhause und greifen die Figur nur an, wenn sie sehr nah ist
-(1,4 m statt 3,2 m bei Nacht). Am Zuhause schlagen sie zu, bringen es aber
-höchstens auf ein Viertel – tagsüber bricht nichts durch. Türme schießen
-auch tagsüber.
+(1,4 m statt 3,2 m bei Nacht). Am Zuhause nagen sie langsamer als die Horde
+(40 %) und bringen es **höchstens auf die Hälfte** – tagsüber bricht nichts
+durch. Ein Angriff meldet sich groß und mit der Wand (»… an der Ostwand!«),
+eine Haus-Marke zeigt hin, wenn das Haus außerhalb des Bildes liegt. Wer
+ausruht oder werkelt, verpasst die Streuner dieser Zeit (sie kommen nicht
+alle auf einmal nach). Der Morgenbericht nennt, was vor der Nacht verloren
+ging. Türme schießen auch tagsüber.
 *Warum:* Wachsam bleiben, ohne beim Bauen gestört zu werden. Ein Tag darf
-nie mit einer verlorenen Nacht enden, die man gar nicht gespielt hat.
+nie mit einer verlorenen Nacht enden, die man gar nicht gespielt hat. In
+m3-r1 fraß die Vorhut das Zuhause am Abend bis auf 11 bzw. 32 von 300 auf –
+unbemerkt hinter dem Dach, während man am Feuer wartete (Kira, Mira, Theo).
 
 ### 4. Was kostet eine verlorene Nacht?
 **Entscheidung:** Ein Viertel des Schrotts und ein Zehntel der übrigen
 Materialien gehen verloren, alle Türme und Barrikaden verlieren ein Drittel
-ihrer Haltbarkeit, das Zuhause startet mit halber Standfestigkeit in den Tag.
-Reparieren kostet etwas Holz und Schrott.
-*Warum:* Spürbar, aber nie ein Neustart-Gefühl.
+ihrer Haltbarkeit, das Zuhause wird notdürftig geflickt: auf ein Viertel –
+aber **nie besser, als es zu Beginn der Nacht war**. Reparieren kostet Holz
+und Schrott; reicht der Vorrat nicht, wird anteilig geflickt. **Solange
+nachts eine Welle läuft, geht Reparieren nicht** (»Erst die Welle abwehren –
+dann flicken.«), zwischen den Wellen schon.
+*Warum:* Spürbar, aber nie ein Neustart-Gefühl. In m3-r1 war das Verlieren
+eine kostenlose Reparatur auf 50 % (Kira), und Sofort-Reparieren mitten in
+der Welle machte das Zuhause unverwundbar (Theo).
 
 ### 5. Anführernächte
 **Entscheidung:** Jede fünfte Nacht (5, 10, 15 …) kommt in der letzten Welle
@@ -77,9 +91,13 @@ Zahlen 1–8 gehören der Schnellleiste.
 *Warum:* Mit der linken Hand auf WASD erreichbar, kein Konflikt.
 
 ### 8. Wie lange bleibt Loot liegen?
-**Entscheidung:** 75 Sekunden, die letzten 10 Sekunden blinkt es.
+**Entscheidung:** Zwei Minuten, die letzten 15 Sekunden blinkt es. Liegendes
+Loot funkelt ab und zu und glimmt nachts; liegt es außerhalb des Bildes,
+zeigen goldene Rauten am Rand hin. Der Sammelradius beginnt bei 2 m.
 *Warum:* Sonst würde man einfach bis zum Morgen warten und gefahrlos
-einsammeln – das Risiko-gegen-Belohnung-Moment ginge verloren.
+einsammeln – das Risiko-gegen-Belohnung-Moment ginge verloren. In m3-r1
+war das Suchen im Dunkeln Glückssache (alle vier), 75 Sekunden reichten
+dafür nicht.
 
 ### 9. Abreißen und Verkaufen
 **Entscheidung:** Zuhause-Bauten (Werkbank, Laterne, Beet, Bank) geben alles
@@ -102,9 +120,13 @@ mit der Axt). Meilenstein 4 baut ihn zum richtigen Nahkampf aus.
 eine Antwort, sonst ist die Version nicht in sich spielbar.
 
 ### 11. Was passiert, wenn die Figur zu Boden geht?
-**Entscheidung:** Die Nacht gilt als verloren (Folgen wie Frage 4), Mika
-wacht am Morgen im Bett auf. Tagsüber: kurze Ohnmacht, Aufwachen im Bett zwei
-Stunden später, kein Materialverlust.
+**Entscheidung:** Nachts rettet sich Mika ins Haus (Abblende, danach mit
+40 % Leben am Bett); die Nacht geht weiter, verloren ist sie erst, wenn das
+Zuhause fällt. Tagsüber: kurze Ohnmacht, Aufwachen im Bett zwei Stunden
+später, kein Materialverlust.
+*Warum:* In m3-r1 fiel Mika gegen acht Schlurfer in 20 Sekunden – und damit
+die ganze Nacht (Kira). Der Kern ist die Verteidigung des Zuhauses, nicht
+die Figur.
 
 ## Zeit
 
@@ -173,10 +195,13 @@ erste Bau muss ohne Suche gelingen; Knappheit gehört in die späteren Ziele.
 ### 21. Wo greift die Horde an, und wie erfährt man das?
 **Entscheidung:** Vier Waldpfade (Westen, Osten, Nordwesten, Nordosten).
 Die Schlurfer laufen über das Raster bis an einen Ring rund ums Haus und
-schlagen dann auf die nächste Wand ein. Jede Welle meldet ihre Richtung,
-rote Marken am Bildrand zeigen Schlurfer außerhalb des Bildes, und **beim
-Setzen von Türmen und Barrikaden laufen rote Punkte die Wege entlang**
-(Wegvorschau). Mika sagt beim ersten Turm: »Nah am Haus kommen alle vorbei.«
+schlagen dann auf die nächste Wand ein. Jede Welle meldet ihre Richtung im
+Banner und dauerhaft in der Nachtleiste (»Aus: Westen«, zwischen den Wellen
+schon die nächste: »Gleich: Osten«). Große Pfeile am Bildrand zeigen
+Schlurfer außerhalb des Bildes (mit Anzahl), Schlurfer und Mika bleiben
+hinter Dach und Bäumen als Umriss sichtbar, und **beim Setzen jedes Baus
+laufen Punkte die Wege entlang** (Wegvorschau, die Tafel erklärt sie).
+Mika sagt beim ersten Turm: »Nah am Haus kommen alle vorbei.«
 *Warum:* In der Simulation verloren Türme an »gefühlt guten« Stellen, weil
 die Wege nicht sichtbar waren. Mit Türmen am Haus hält Nacht 1 mit drei
 Türmen sicher, mit zwei Türmen braucht es etwas Nahkampf – genau das
@@ -195,6 +220,18 @@ riskant der Nahkampf ist.
 Stufe 3 bringen → Hütte.
 *Warum:* Der Kern ist die Verteidigung; der erste Turm muss an Tag 1 stehen.
 Werkbank und Spitzhacke folgen, wenn die erste Nacht geschafft ist.
+
+### 28. Lohnt Aufrüsten, oder streut man einfach Türme?
+**Entscheidung (m3-r1):** Jeder weitere Turm derselben Art kostet 2 Schrott
+mehr (höchstens +8; die Kachel sagt es). Stufe 2 kostet so viel wie ein neuer
+Turm (Bolzenwerfer 8) und bringt deutlich mehr (23 Schaden · 1,25/s statt
+14 · 1,1/s). Der Laternenturm stärkt Türme in 3,8 m um 25 % und bremst
+Schlurfer in seinem Licht leicht (10 %). Zahnräder fallen öfter (Schlurfer
+3 %, Schrotthaufen 20 %, Auto 35 %), damit Spezialisierungen erreichbar sind.
+*Warum:* Theo rechnete nach: Ein neuer Bolzenwerfer brachte 1,9 Schaden/s je
+Schrott, Stufe 2 nur 1,0 – Streuen war immer richtig, Aufrüsten nie. In drei
+Tagen gab es genau ein Zahnrad, der Laternenturm lohnte erst ab zehn Türmen
+in seinem Licht.
 
 ## Nahkampf (Meilenstein 4)
 

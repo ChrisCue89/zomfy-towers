@@ -38,6 +38,80 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 3 – Playtest-Runde 1 (m3-r1) und Nachbesserung
+
+**Testspieler:** Kira 6/10, Jonas 6/10, Mira 7/10, Theo 7/10 – Berichte und
+Auswertung in `playtests/m3-r1/` (`ZUSAMMENFASSUNG.md`). Kein Absturz, die
+Konsole blieb in allen vier Sitzungen leer. Der Kreislauf »Schrott holen →
+Leiste leuchtet → Turm → Nacht → Bericht« trägt; gebremst hat vor allem, dass
+man nachts zu wenig sieht.
+
+**Gefunden (Spielfluss)**
+
+- Nachts nur Augenpaare: Schlurfer, Türme und Loot sind im Dunkeln nicht zu
+  erkennen; Angreifer hinter dem Dach und Mika im Getümmel verschwinden.
+- Woher kommt die Welle? Die Richtung stand nur ein paar Sekunden da,
+  Randmarken waren winzig; liegengebliebenes Loot fand man nur zufällig.
+- Vorhut am Abend: Tagesschlurfer fraßen das Zuhause unbemerkt bis auf
+  11–32 von 300 auf; der Wert sprang dabei, und eine verlorene Nacht heilte
+  das Haus sogar.
+- Sofort-Reparieren mitten in der Welle machte das Zuhause unverwundbar,
+  eine Teilreparatur gab es nicht.
+- Werkbank verschluckte Bestätigungen und verwertete dann mehrfach; Dialoge
+  (»Ich sollte bald ins Bett«) hielten mitten in der Welle an; ein
+  Angriffsklick wählte den Turm dahinter aus, ein zweites R riss ihn ab; an
+  der Nordkante rutschte Mika unter die obere Leiste.
+- Balance: Bolzenwerfer streuen war immer richtig (1,9 Schaden/s je Schrott,
+  Stufe 2 nur 1,0), Zahnräder kamen einmal in drei Tagen, Nacht 3 hatte mehr
+  als doppelt so viele Schlurfer wie Nacht 2; tagsüber ab 09:00 Leerlauf.
+
+**Geändert**
+
+- Nachts Eigenlicht (Material-Zusatz `selfLight`) für Schlurfer, Bauten,
+  Loot und Geistermodell; Loot funkelt; Bolzen mit Leuchtspur, heller
+  Wasserfächer (tröpfelt auch ohne Ziel); Reflektorstreifen am Brummer.
+- Umrisse durch Dach und Bäume (Schlurfer lavendel, Mika gold), große
+  Randpfeile mit Anzahl, Haus-Marke bei Angriffen außerhalb des Bildes,
+  Rauten für Loot außerhalb; Nachtleiste mit »Aus: Westen« bzw. »Gleich:
+  Osten«; Einblendungen treten im Getümmel zurück.
+- Tagsüber nagen Streuner mit 40 % und nie unter die Hälfte, Alarm mit Wand
+  und Banner, verpasste Streuner kommen nach dem Ausruhen nicht alle auf
+  einmal; verlorene Nacht flickt auf ein Viertel, nie besser als vorher;
+  nachts rettet sich Mika ins Haus statt die Nacht zu verlieren.
+- Reparieren: in der Welle gesperrt, sonst anteilig, etwas teurer.
+- Morgenbericht: ehrlicher Schaden mit Stand danach, Schaden vor der Nacht
+  extra, Loot nach der letzten Welle zählt mit, Beute draußen, ein Gedanke
+  von Mika zum Schluss; bleibt nach dem Neuladen.
+- Werkbank verwertet mit gehaltenem E (Balken); Abend- und Spät-Hinweis als
+  Gedankenblase; Schlurfer unter dem Zeiger gehen beim Klick vor, Abreißen
+  auf V ohne goldenen Rahmen; Kamera folgt 2 m weiter nach Norden.
+- Balance: Staffelpreis je Turmart (+2 Schrott, höchstens +8), Stufe 2
+  billiger und stärker, Laternenturm +25 % in 3,8 m und bremst im Licht,
+  Zahnräder öfter, Punkte der Nacht gleichmäßig (18/25/32/41/52), schwere
+  Arten nur, soweit die Welle sie trägt; Sammelradius ab 2 m, Loot liegt
+  zwei Minuten.
+- Kleinkram: Bett bietet tagsüber »Bis zum Abend ausruhen«, Intro nennt
+  Nächte und Türme, Tafel beim Setzen erklärt Kreis und Pünktchen (Wege bei
+  jedem Bau), »Nacht« ab 20:30, Mini-Schrift mit allen Buchstaben (»TAB«,
+  Spezialisierung A/B waren unsichtbar), »Bolzenwerfer · Stufe 2«, Werte auf
+  der Tafel beim Setzen per Taste, Esc-Schonfrist 2 s nach dem Setzen,
+  kurzes Aufsammeln läuft zu Ende, Sperre nach Dialogen 0,5 s, runde
+  Türme und schlankere Figur gegen Engstellen, Menü-Fußzeile.
+- Prüfskript: Werkbank (kurz tippen / halten), Tages-Untergrenze,
+  Staffelpreis, Richtung in der Nachtleiste, Reparieren in der Welle und
+  anteilig, Abreißen nur auf V, Randmarke für Loot.
+
+**Offen**
+
+- Schlurfer-Arten und Turmstufen sieht man am Modell kaum – Meilenstein 5.
+- Nahkampf aus 1,5–2 m ohne Wirkung und sichtbaren Schwung – Meilenstein 4
+  (Waffen mit Reichweite, Schwung-Bogen).
+- Ein Turm hinter der Hütte kann nach dem Hüttenausbau den Durchgang
+  sperren; Spezialisierung und Reparatur leuchten nicht auf; Lebenskraft und
+  Tempo lohnen kaum – mit Meilenstein 4 prüfen.
+
+---
+
 ## Meilenstein 2 – Kontrollrunde (m2-r2) und Nachbesserung
 
 **Testspieler:** Jonas 7/10 (vorher 5/10), Theo 8/10 (vorher 7/10) –

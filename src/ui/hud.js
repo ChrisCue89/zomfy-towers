@@ -35,6 +35,7 @@ export class Hud {
     this.hint = { text: '', time: 0 };
     this.goalFlash = 0;
     this.homeFlash = 0;
+    this.homeAlarm = 0; // Sekunden, die die Haus-Marke am Rand noch steht
     this.speech = null; // { text, time, duration }
     this.banner = null; // { text, time }
     this.numbers = []; // Schadenszahlen
@@ -130,6 +131,7 @@ export class Hud {
     this.hint.time = Math.max(0, this.hint.time - dt);
     this.goalFlash = Math.max(0, this.goalFlash - dt);
     this.homeFlash = Math.max(0, this.homeFlash - dt);
+    this.homeAlarm = Math.max(0, this.homeAlarm - dt);
     for (const n of this.numbers) n.t += dt;
     this.numbers = this.numbers.filter((n) => n.t < 0.7);
     for (const w of this.swooshes) w.t += dt;
@@ -153,12 +155,13 @@ export class Hud {
       this.drawZombieBars(ui);
       this.drawSwooshes(ui);
       this.drawNumbers(ui);
-      this.drawEdgeMarkers(ui);
     }
     this.drawClock(ui);
     this.drawGoal(ui);
     this.drawResources(ui);
     this.drawNightBar(ui);
+    // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
+    if (show.prompt) this.drawEdgeMarkers(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
@@ -173,7 +176,7 @@ export class Hud {
   drawClock(ui) {
     const state = this.game.state;
     const hours = hoursOf(state.time.minute);
-    const icon = (hours >= 5 && hours < 7.5) || (hours >= 18.5 && hours < 21) ? 'daemmerung' : hours >= 7.5 && hours < 18.5 ? 'sonne' : 'mond';
+    const icon = (hours >= 5 && hours < 7.5) || (hours >= 18.5 && hours < 20.5) ? 'daemmerung' : hours >= 7.5 && hours < 18.5 ? 'sonne' : 'mond';
     const line1 = `${T.tag} ${state.time.day}`;
     const line2 = `${clockText(state.time.minute)} · ${dayPartLabel(hours)}`;
     const w = Math.max(measure(line1), measure(line2)) + 32;
@@ -263,14 +266,19 @@ export class Hud {
     const damaged = st.world.homeHp < max - 0.5;
     if (!active && !damaged && !this.banner) return;
     const cx = Math.round(ui.width / 2);
+    let bottom = 34;
     if (active || damaged) {
-      const w = 124;
-      const x = cx - w / 2;
-      const y = 4;
-      ui.panel(x, y, w, 30);
       const plan = g.nights.plan;
+      // Woher kommt die Welle – und zwischen den Wellen: woher kommt die nächste? (m3-r1)
+      const from = active && plan ? g.nights.directionText() : null;
+      const w = Math.max(124, from ? measure(from) + 12 : 0);
+      const x = Math.round(cx - w / 2);
+      const y = 4;
+      ui.panel(x, y, w, from ? 42 : 30);
+      bottom = y + (from ? 42 : 30);
       const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}` : T.horde.zuhause;
       ui.textCentered(label, cx, y + 2, active ? COLORS.textWarm : COLORS.text);
+      if (from) ui.textCentered(from, cx, y + 28, COLORS.gold);
       const q = Math.max(0, Math.min(1, st.world.homeHp / max));
       drawIcon(ui.ctx, 'haus', x + 5, y + 15);
       ui.rect(x + 20, y + 19, w - 26, 5, COLORS.outline);
@@ -279,11 +287,10 @@ export class Hud {
     }
     if (this.banner) {
       const b = this.banner;
-      if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, 40, 2, COLORS.gold);
+      if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, Math.max(40, bottom + 6), 2, COLORS.gold);
     }
   }
 
-  /** Mikas Lebensbalken über der Schnellleiste. */
   /** Balken über Mikas Kopf beim Durchsuchen und Ernten: hier stehen bleiben. */
   drawActionProgress(ui) {
     const a = this.game.player.action;
@@ -298,6 +305,7 @@ export class Hud {
     ui.rect(x, y, Math.max(1, Math.round(w * Math.min(1, a.t / a.duration))), 3, COLORS.gold);
   }
 
+  /** Mikas Lebensbalken über der Schnellleiste. */
   drawPlayerHp(ui) {
     const g = this.game;
     const max = g.combat.maxHp;
@@ -353,26 +361,134 @@ export class Hud {
   }
 
   /** Pfeile am Bildrand zu Schlurfern außerhalb des Bildes. */
+  /**
+   * Pfeile am Bildrand zu Schlurfern außerhalb des Bildes: je Richtung einer,
+   * mit Anzahl, blinkend (der Anführer in Gold).
+   */
   drawEdgeMarkers(ui) {
     const g = this.game;
-    let n = 0;
+    const cx = ui.width / 2;
+    const cy = ui.height / 2;
+    // Pfeile liegen in einem Rahmen ohne die HUD-Tafeln (oben Uhr/Ziel/Vorrat, unten Leisten)
+    const safe = { x0: 14, x1: ui.width - 14, y0: 86, y1: ui.height - 60 };
+    const sx = (safe.x0 + safe.x1) / 2;
+    const sy = (safe.y0 + safe.y1) / 2;
+    const edge = (ux, uy) => {
+      const k = Math.min((safe.x1 - sx) / Math.abs(ux || 1e-3), (safe.y1 - sy) / Math.abs(uy || 1e-3));
+      return { x: Math.round(sx + ux * k), y: Math.round(sy + uy * k) };
+    };
+    const sectors = new Map();
     this.edgeCount = 0;
+    this.edgeMarks = [];
+    const where = (ux, uy) => {
+      const h = ux < -0.38 ? 'links' : ux > 0.38 ? 'rechts' : '';
+      const v = uy < -0.38 ? 'oben' : uy > 0.38 ? 'unten' : '';
+      return [h, v].filter(Boolean).join(' ') || 'mitte';
+    };
+    // Liegengebliebene Beute außerhalb des Bildes: kleine goldene Rauten
+    // (m3-r1: »Wo liegt die Beute?«) – unter den Pfeilen der Schlurfer
+    const lootSectors = new Map();
+    for (const it of g.loot.items) {
+      if (it.flying) continue;
+      const p = g.worldToUi(it.x, 0.2, it.z);
+      if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) continue;
+      const a = Math.atan2(p.y - cy, p.x - cx);
+      const key = Math.round(a / (Math.PI / 4)); // gröber als bei Schlurfern: ein Haufen, eine Raute
+      const s = lootSectors.get(key) || { dx: 0, dy: 0, n: 0 };
+      s.dx += p.x - cx;
+      s.dy += p.y - cy;
+      s.n++;
+      lootSectors.set(key, s);
+    }
+    for (const s of lootSectors.values()) {
+      const len = Math.hypot(s.dx, s.dy) || 1;
+      const ux = s.dx / len;
+      const uy = s.dy / len;
+      const at = edge(ux, uy);
+      const x = Math.round(at.x - ux * 16);
+      const y = Math.round(at.y - uy * 16);
+      for (let k = -5; k <= 5; k++) ui.rect(x - (5 - Math.abs(k)), y + k, 2 * (5 - Math.abs(k)) + 1, 1, COLORS.outline);
+      for (let k = -4; k <= 4; k++) ui.rect(x - (4 - Math.abs(k)), y + k, 2 * (4 - Math.abs(k)) + 1, 1, COLORS.gold);
+      for (let k = -1; k <= 1; k++) ui.rect(x - (1 - Math.abs(k)), y + k - 1, 2 * (1 - Math.abs(k)) + 1, 1, COLORS.text);
+      if (s.n > 1) {
+        const label = String(s.n);
+        const tx = Math.round(x - ux * 11 - (label.length * 4) / 2);
+        const ty = Math.round(y - uy * 11 - 2);
+        ui.rect(tx - 1, ty - 1, label.length * 4 + 1, 7, COLORS.outline);
+        drawTiny(ui.ctx, label, tx, ty, COLORS.gold);
+      }
+      this.edgeMarks.push({ art: 'beute', richtung: where(ux, uy), anzahl: s.n });
+    }
     for (const z of g.horde.list) {
-      if (z.state === 'dying' || n >= 10) continue;
+      if (z.state === 'dying') continue;
       const p = g.worldToUi(z.x, 0.8, z.z);
       if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) continue;
-      const cx = ui.width / 2;
-      const cy = ui.height / 2;
-      const dx = p.x - cx;
-      const dy = p.y - cy;
-      const k = Math.min((cx - 10) / Math.abs(dx || 1e-3), (cy - 10) / Math.abs(dy || 1e-3));
-      const x = Math.round(cx + dx * k);
-      const y = Math.round(cy + dy * k);
-      const color = z.type === 'anfuehrer' ? COLORS.gold : COLORS.buildBad;
-      ui.rect(x - 2, y - 2, 5, 5, COLORS.outline);
-      ui.rect(x - 1, y - 1, 3, 3, color);
-      n++;
-      this.edgeCount = n;
+      this.edgeCount++;
+      const a = Math.atan2(p.y - cy, p.x - cx);
+      const key = Math.round(a / (Math.PI / 6));
+      const s = sectors.get(key) || { dx: 0, dy: 0, n: 0, leader: false };
+      s.dx += p.x - cx;
+      s.dy += p.y - cy;
+      s.n++;
+      s.leader = s.leader || z.type === 'anfuehrer';
+      sectors.set(key, s);
+    }
+    const blink = Math.floor(this.game.clock * 3) % 2 === 0;
+    // Wird das Zuhause außerhalb des Bildes angegriffen? Dann zeigt eine Haus-Marke dorthin.
+    if (this.homeAlarm > 0) {
+      const home = g.world.pathing.home;
+      const hp = g.worldToUi((home.minX + home.maxX) / 2, 1, (home.minZ + home.maxZ) / 2);
+      if (hp.x < 0 || hp.x >= ui.width || hp.y < 0 || hp.y >= ui.height) {
+        const len = Math.hypot(hp.x - sx, hp.y - sy) || 1;
+        const at = edge((hp.x - sx) / len, (hp.y - sy) / len);
+        ui.rect(at.x - 9, at.y - 9, 18, 18, COLORS.outline);
+        ui.rect(at.x - 8, at.y - 8, 16, 16, blink ? COLORS.buildBad : COLORS.fill);
+        drawIcon(ui.ctx, 'haus', at.x - 6, at.y - 6);
+        this.edgeMarks.push({ art: 'zuhause', richtung: where((hp.x - sx) / len, (hp.y - sy) / len), anzahl: 1 });
+      }
+    }
+    for (const s of sectors.values()) {
+      const len = Math.hypot(s.dx, s.dy) || 1;
+      const ux = s.dx / len;
+      const uy = s.dy / len;
+      const { x: bx, y: by } = edge(ux, uy);
+      const color = s.leader ? COLORS.gold : blink ? COLORS.buildBad : COLORS.goldDark;
+      this.drawArrow(ui, bx, by, ux, uy, 9, COLORS.outline);
+      this.drawArrow(ui, bx, by, ux, uy, 6.5, color);
+      this.edgeMarks.push({ art: s.leader ? 'anfuehrer' : 'schlurfer', richtung: where(ux, uy), anzahl: s.n });
+      if (s.n > 1) {
+        const label = String(s.n);
+        const tx = Math.round(bx - ux * 12 - (label.length * 4) / 2);
+        const ty = Math.round(by - uy * 12 - 2);
+        ui.rect(tx - 1, ty - 1, label.length * 4 + 1, 7, COLORS.outline);
+        drawTiny(ui.ctx, label, tx, ty, COLORS.text);
+      }
+    }
+  }
+
+  /** Gefülltes Dreieck (Pfeilspitze) in Richtung (ux, uy), Pixel für Pixel. */
+  drawArrow(ui, x, y, ux, uy, size, color) {
+    const px = -uy;
+    const py = ux;
+    // Spitz und schmal, damit die Richtung eindeutig ist (fast gleichseitig liest sich falsch)
+    const tip = [x + ux * size * 1.2, y + uy * size * 1.2];
+    const a = [x - ux * size * 0.5 + px * size * 0.6, y - uy * size * 0.5 + py * size * 0.6];
+    const b = [x - ux * size * 0.5 - px * size * 0.6, y - uy * size * 0.5 - py * size * 0.6];
+    const minX = Math.floor(Math.min(tip[0], a[0], b[0]));
+    const maxX = Math.ceil(Math.max(tip[0], a[0], b[0]));
+    const minY = Math.floor(Math.min(tip[1], a[1], b[1]));
+    const maxY = Math.ceil(Math.max(tip[1], a[1], b[1]));
+    const side = (p, q, rx, ry) => (q[0] - p[0]) * (ry - p[1]) - (q[1] - p[1]) * (rx - p[0]);
+    ui.ctx.fillStyle = color;
+    for (let yy = minY; yy <= maxY; yy++) {
+      for (let xx = minX; xx <= maxX; xx++) {
+        const d1 = side(tip, a, xx + 0.5, yy + 0.5);
+        const d2 = side(a, b, xx + 0.5, yy + 0.5);
+        const d3 = side(b, tip, xx + 0.5, yy + 0.5);
+        const neg = d1 < 0 || d2 < 0 || d3 < 0;
+        const pos = d1 > 0 || d2 > 0 || d3 > 0;
+        if (!(neg && pos)) ui.ctx.fillRect(xx, yy, 1, 1);
+      }
     }
   }
 

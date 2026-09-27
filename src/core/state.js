@@ -96,7 +96,7 @@ export function sanitizeState(data, config) {
   const w = data.world || {};
   out.world.houseLevel = Math.floor(num(w.houseLevel, 1, 1, 2));
   out.world.homeHp = num(w.homeHp, out.world.houseLevel >= 2 ? 450 : 300, 0, 5000);
-  if (w.dayEvents && Number.isFinite(w.dayEvents.day)) out.world.dayEvents = { day: Math.floor(w.dayEvents.day), done: Math.floor(num(w.dayEvents.done, 0, 0, 99)) };
+  if (w.dayEvents && Number.isFinite(w.dayEvents.day)) out.world.dayEvents = { day: Math.floor(w.dayEvents.day), done: Math.floor(num(w.dayEvents.done, 0, 0, 99)), lost: num(w.dayEvents.lost, 0, 0, 5000) };
   const n = data.night || {};
   out.night = {
     n: Math.floor(num(n.n, 0, 0, 1e6)),
@@ -106,6 +106,7 @@ export function sanitizeState(data, config) {
     kills: Math.floor(num(n.kills, 0, 0, 1e6)),
     loot: {},
     homeStart: num(n.homeStart, out.world.homeHp, 0, 5000),
+    preLoss: num(n.preLoss, 0, 0, 5000),
   };
   for (const r of RESOURCES) if (Number.isFinite(n.loot?.[r])) out.night.loot[r] = Math.floor(n.loot[r]);
   const listOf = (v) => (Array.isArray(v) ? v.filter((e) => e && typeof e === 'object') : []);

@@ -59,6 +59,12 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.
 - Kühle Nacht-Tönung wirkt im Post-Pass nur auf dunkle und mittlere Töne,
   Lichtquellen bleiben warm.
+- **Nachts lesbar:** Was im Kampf zählt (Schlurfer, Bauten, Loot,
+  Geistermodell), bekommt über `createWorldMaterial({ selfLight })` einen
+  Hauch Eigenlicht in der eigenen Farbe (`uNight` aus `world.js`); die Welt
+  bleibt dunkel. Verdeckte Schlurfer und Mika zeigen einen gerasterten
+  Umriss (`createSilhouetteMaterial`, `GreaterDepth`, ohne Tiefe schreiben,
+  gleiche `instanceMatrix`). Außerhalb des Bildes: Randmarken im HUD.
 - **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, später Schlurfer, Turm,
   Loot) braucht eine eindeutige Silhouette und Farbe. Der jetzige grobe
   Detailgrad ist ein Zwischenstand: Sobald die Mechaniken sitzen, hebt der
@@ -128,14 +134,21 @@ Grundprinzipien:
   brauchen, berechnet eine eigene `layout()`-Methode.
 - Die Oberfläche ist ein 2D-Canvas in Spielauflösung, sofort-modus gezeichnet.
 - **Eingaben im Spielmodus, in dieser Reihenfolge:** Bauleiste (Kacheln,
-  Q R T G C V, Tab) → Schnellleiste → Abbrechen (Esc/Rechtsklick, vor dem
-  Menü) → Bewegung → Builder (Vorschau, Setzen, Auswahl per Klick) →
-  Interaktion (E) → Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel,
-  `confirm` (E/Enter/Leertaste) in Dialogen und Menüs, `dodge` (Leertaste)
-  im Spiel. Im Trefferstopp bleiben Tastendrücke liegen (`frozenFrame`).
+  Q R T G C V, Tab; Abreißen liegt immer auf V) → Schnellleiste → Abbrechen
+  (Esc/Rechtsklick, vor dem Menü) → Bewegung (Leertaste: Ausweichrolle) →
+  Builder (Vorschau, Setzen, Auswahl per Klick – ein Schlurfer unter dem
+  Zeiger geht vor, dann ist der Klick ein Schlag) → Interaktion (E) →
+  Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel, `confirm`
+  (E/Enter/Leertaste) in Dialogen und Menüs, `dodge` (Leertaste) im Spiel.
+  Im Trefferstopp bleiben Tastendrücke liegen (`frozenFrame`, kein
+  `endFrame`), damit kein Druck verloren geht.
 - **Die Maus wählt nur, wenn sie bewegt wird** (`input.mouse.moved`), sonst
   überschreibt ein ruhender Zeiger die Tastaturwahl. Vorgewählt ist in
   Rückfragen immer die harmlose Antwort (`standard: true` in dialogs.js).
+  Was Vorrat verbraucht, ohne dass man es sofort sieht (Verwerten an der
+  Werkbank), geht nur mit gehaltenem E und Balken – nie mit einem zweiten
+  Druck, der sich wie verschluckt anfühlt. Gedanken am Abend und in der
+  Nacht sind Sprechblasen, nie Dialoge (die halten das Spiel an).
 - **Bauraster:** 1-m-Zellen (`grid.js`), statisch blockiert ist alles mit
   Kollision plus die Grundfläche aller Ausbaustufen des Zuhauses. Bauten
   belegen Zellen, bekommen eine Kollision und eine Interaktion (benutzen

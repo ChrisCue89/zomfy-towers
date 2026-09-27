@@ -43,7 +43,7 @@ export const CONFIG = {
   player: {
     walkSpeed: 3.0,
     runSpeed: 5.0,
-    radius: 0.3,
+    radius: 0.27, // m3-r1: etwas schlanker, damit man zwischen Bauten durchkommt
     interactRange: 1.6,
   },
   camera: {

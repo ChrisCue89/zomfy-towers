@@ -50,6 +50,7 @@ export class Gathering {
       ...timing,
       tool: rules.tool,
       face: node,
+      cancelable: false, // kurzes Aufsammeln läuft zu Ende, auch wenn man gleich weiterläuft (m3-r1)
       onHit: () => this.hit(node),
     });
     if (started) this.repeat = it;
@@ -94,9 +95,9 @@ export class Gathering {
       return true;
     }
     if (id === 'auto' && !st.flags.autoGesehen) {
+      // Beim ersten Mal ein Gedanke statt eines Dialogs – durchsucht wird sofort
       st.flags.autoGesehen = true;
-      g.startDialog('autoErstmals', () => this.search(id, lootKey, pos));
-      return true;
+      g.hud.say(T.meldungen.autoErstmals, 3);
     }
     g.player.startAction('search', {
       ...SEARCH,

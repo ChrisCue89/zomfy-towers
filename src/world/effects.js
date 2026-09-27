@@ -16,7 +16,7 @@ const DUST = [c(P.e8), c(P.e9), c(P.s8)];
 const SPLAT = {
   kuerbis: [c(P.f4), c(P.f5), c(P.f3), c(P.g5)],
   feuer: [c(P.f5), c(P.f6), c(P.f3), c(P.f7)],
-  wasser: [c(P.b5), c(P.b4), c(0xd8f0ff)],
+  wasser: [c(0xd8f0ff), c(0xa8dcff), c(P.b5), c(0xeaf8ff)], // hell – auch nachts zu sehen
   frost: [c(0xe8f8ff), c(P.b5), c(P.a4)],
   schlamm: [c(P.e3), c(P.e4), c(P.e2)],
   moos: [c(P.g5), c(P.g6), c(P.t4), c(P.a1)],
@@ -123,7 +123,7 @@ export class Effects {
       vy: r.range(1.4, 2.2),
       vz: Math.cos(a) * s,
       life: r.range(0.45, 0.6),
-      size0: 2,
+      size0: 3,
       size1: kind === 'frost' ? 4 : 2,
       color0: colors[Math.floor(r.range(0, colors.length))],
       alpha0: 0.95,

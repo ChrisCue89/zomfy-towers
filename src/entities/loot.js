@@ -1,15 +1,16 @@
 // Loot am Boden (DESIGN.md 6.5): Stirbt ein Schlurfer, fällt sein Loot genau
 // dort hin – Schrottbrocken, manchmal ein Zahnrad, beim Anführer ein
-// Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach 75 Sekunden
-// zerfällt es (die letzten 10 Sekunden blinkt es).
+// Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach zwei Minuten
+// zerfällt es (die letzten 15 Sekunden blinkt es). Liegendes Loot funkelt ab
+// und zu, nachts glimmt es; außerhalb des Bildes zeigen Rauten am Rand hin.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial } from '../render/materials.js';
 
-export const LOOT_LIFE = 75;
-const BLINK = 10;
+export const LOOT_LIFE = 120;
+const BLINK = 15;
 const MAX = 160;
 
 function scrapModel() {
@@ -40,11 +41,20 @@ function coreModel() {
 
 const MODELS = { schrott: scrapModel, zahnraeder: gearModel, moderkerne: coreModel };
 
+/** Funkeln über liegender Beute: ein kleines helles Kreuz (zum Finden, auch nachts). */
+function glintModel() {
+  const m = new VoxelModel();
+  m.set(0, 0, 0, 0xfff6d8).set(-1, 0, 0, 0xffd98a).set(1, 0, 0, 0xffd98a).set(0, -1, 0, 0xffd98a).set(0, 1, 0, 0xffd98a);
+  return m;
+}
+const GLINT_EVERY = 1.6; // Sekunden zwischen zwei Funkeln je Stück
+const GLINT_TIME = 0.22;
+
 export class Loot {
   constructor(scene, rng) {
     this.rng = rng;
     this.items = [];
-    this.material = createWorldMaterial();
+    this.material = createWorldMaterial({ selfLight: 0.55 }); // Beute glimmt nachts
     this.glow = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {};
     this.dummy = new THREE.Object3D();
@@ -58,6 +68,12 @@ export class Loot {
       scene.add(mesh);
       this.meshes[res] = mesh;
     }
+    this.glints = new THREE.InstancedMesh(glintModel().toGeometry({ jitter: 0, ao: false }), this.glow, MAX);
+    this.glints.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.glints.frustumCulled = false;
+    this.glints.count = 0;
+    scene.add(this.glints);
+    this.time = 0;
   }
 
   /**
@@ -93,6 +109,7 @@ export class Loot {
    * @param {(res:string, x:number, y:number, z:number) => void} onCollect
    */
   update(dt, player, radius, onCollect) {
+    this.time += dt;
     for (let i = this.items.length - 1; i >= 0; i--) {
       const it = this.items[i];
       it.age += dt;
@@ -136,6 +153,7 @@ export class Loot {
   render() {
     const counts = { schrott: 0, zahnraeder: 0, moderkerne: 0 };
     const d = this.dummy;
+    let glints = 0;
     for (const it of this.items) {
       const mesh = this.meshes[it.res];
       const k = counts[it.res];
@@ -151,12 +169,25 @@ export class Loot {
       d.updateMatrix();
       mesh.setMatrixAt(k, d.matrix);
       counts[it.res]++;
+      // Liegende Beute funkelt ab und zu (jedes Stück zu seiner eigenen Zeit)
+      const phase = (this.time + it.spin * 0.61) % GLINT_EVERY;
+      if (!it.flying && it.vy === 0 && phase < GLINT_TIME && glints < MAX) {
+        const grow = Math.sin((phase / GLINT_TIME) * Math.PI);
+        d.position.set(it.x + 0.08, it.y + 0.42, it.z);
+        d.rotation.set(0, 0, 0);
+        d.scale.set(grow, grow, 1);
+        d.updateMatrix();
+        this.glints.setMatrixAt(glints++, d.matrix);
+      }
     }
     for (const [res, mesh] of Object.entries(this.meshes)) {
       mesh.count = counts[res];
       mesh.visible = counts[res] > 0;
       mesh.instanceMatrix.needsUpdate = true;
     }
+    this.glints.count = glints;
+    this.glints.visible = glints > 0;
+    this.glints.instanceMatrix.needsUpdate = true;
   }
 
   /** Zum Speichern (liegt noch Loot herum?). */

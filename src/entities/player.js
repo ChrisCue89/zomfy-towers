@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { clamp, damp, dampAngle, lerp } from '../core/math.js';
 import { buildCharacter, MIKA } from './characters.js';
+import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
 
@@ -24,6 +25,16 @@ export class Player {
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
+    // Hinter Verdeckungen (Haus, Bäume) bleibt Mika als warmer Umriss sichtbar
+    const silhouette = createSilhouetteMaterial(0xf4a64c, 0.6);
+    for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
+      const mesh = this.character.parts[name].children.find((c) => c.isMesh);
+      if (!mesh) continue;
+      mesh.renderOrder = 2;
+      const outline = new THREE.Mesh(mesh.geometry, silhouette);
+      outline.renderOrder = 1;
+      mesh.add(outline);
+    }
 
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
@@ -51,7 +62,7 @@ export class Player {
   /**
    * Aktion starten.
    * @param {'swing'|'search'} kind
-   * @param {{duration?:number, hitAt?:number, tool?:string|null, face?:{x:number,z:number}, onHit?:Function, onDone?:Function}} options
+   * @param {{duration?:number, hitAt?:number, tool?:string|null, face?:{x:number,z:number}, onHit?:Function, onDone?:Function, onCancel?:Function, progress?:boolean, cancelable?:boolean}} options
    */
   startAction(kind, options = {}) {
     if (this.action) return false;
@@ -69,6 +80,7 @@ export class Player {
       onHit: options.onHit || null,
       onDone: options.onDone || null,
       onCancel: options.onCancel || null,
+      cancelable: options.cancelable ?? kind === 'search', // Loslaufen bricht ab
     };
     if (options.face) this.facing = Math.atan2(options.face.x - this.position.x, options.face.z - this.position.z);
     return true;
@@ -87,9 +99,10 @@ export class Player {
     this.time += dt;
     const roll = this.action && this.action.kind === 'roll' ? this.action : null;
     if (this.action) {
-      // Durchsuchen bricht ab, wenn man losläuft; Schwünge und Rollen laufen zu Ende.
+      // Durchsuchen bricht ab, wenn man losläuft; Schwünge, Rollen und kurzes
+      // Aufsammeln laufen zu Ende.
       const moving = Math.hypot(move.x, move.z) > 0.1;
-      if (this.action.kind === 'search' && moving) {
+      if (this.action.cancelable && moving) {
         const cancelled = this.action;
         this.action = null;
         if (cancelled.onCancel) cancelled.onCancel();

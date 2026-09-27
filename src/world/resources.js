@@ -26,8 +26,8 @@ export const NODE_RULES = {
 
 /** Beute beim Durchsuchen: [min, max] oder Wahrscheinlichkeit für 1. */
 export const SEARCH_LOOT = {
-  schrott: { schrott: [2, 4], stoff: [0, 2], zahnraeder: 0.12 },
-  auto: { schrott: [3, 5], stoff: [1, 2], zahnraeder: 0.25 },
+  schrott: { schrott: [2, 4], stoff: [0, 2], zahnraeder: 0.2 },
+  auto: { schrott: [3, 5], stoff: [1, 2], zahnraeder: 0.35 },
 };
 
 // --- Modelle ------------------------------------------------------------------

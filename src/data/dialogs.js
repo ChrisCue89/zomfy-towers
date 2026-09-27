@@ -35,7 +35,8 @@ export const DIALOGE = {
   intro: [
     { s: 'mika', t: 'Eine Lichtung, ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
     { s: 'mika', t: 'Die Notunterkunft ist wacklig, aber sie hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
-    { s: 'mika', t: 'Am Hackklotz steckt sogar noch eine Axt. Damit fange ich an – und heute Abend schlafe ich im eigenen Bett.' },
+    { s: 'mika', t: 'Nur nachts, heißt es, schlurfen sie aus dem Wald. Bis dahin brauche ich Werkzeug – und einen Turm oder zwei.' },
+    { s: 'mika', t: 'Am Hackklotz steckt sogar noch eine Axt. Damit fange ich an.' },
   ],
 
   bettFrueh: [
@@ -117,12 +118,7 @@ export const DIALOGE = {
 
   axtFund: [
     { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich die jungen Bäume auf der Lichtung fällen.' },
-    { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Lose Steine liegen auf der Wiese. Daraus baue ich eine Werkbank – die Leiste unten rechts zeigt, was geht.' },
-  ],
-
-  autoErstmals: [
-    { s: 'mika', t: 'Das Auto fährt schon lange nirgendwo mehr hin. Auf dem Dach wächst Moos, aus der Motorhaube ein Busch.' },
-    { s: 'mika', t: 'Aber im Kofferraum liegt noch brauchbarer Kram. Mal nachsehen – und morgen gleich wieder.' },
+    { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Und in den Schrotthaufen findet sich Kram für einen Turm – die Leiste unten rechts zeigt, was geht.' },
   ],
 
   werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],
@@ -148,7 +144,11 @@ export const DIALOGE = {
     { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.' },
   ],
 
-  bettHorde: [{ s: 'mika', t: 'Schlafen? Nicht, solange die Horde kommt. Erst muss die Nacht vorbei sein.' }],
+  // Tagsüber bietet das Bett wenigstens das Ausruhen an (m3-r1: Leerlauf am Tag)
+  bettHorde: (state) =>
+    restAnswers(state)
+      ? withRest([{ s: 'mika', t: 'Schlafen? Nicht, solange die Horde noch kommt. Aber die Beine hochlegen geht.' }], state)
+      : [{ s: 'mika', t: 'Schlafen? Nicht, solange die Horde draußen ist. Erst muss die Nacht vorbei sein.' }],
 
   bank: (state) => withRest([{ s: 'mika', t: 'Eine Bank, selbst gebaut. Sitzt sich gleich doppelt so gut.' }], state),
 
@@ -180,8 +180,4 @@ export const DIALOGE = {
       ),
     },
   ],
-
-  abendHinweis: [{ s: 'mika', t: 'Es wird dunkel. Mit der Laterne sehe ich mehr. (Taste F)' }],
-
-  spaetHinweis: [{ s: 'mika', t: 'Ich sollte bald ins Bett. Morgen ist auch noch ein Tag.' }],
 };

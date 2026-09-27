@@ -347,7 +347,7 @@ export class Game {
     this.dialog.open(lines, (aktion) => {
       this.mode = 'play';
       // Dasselbe Ding nicht sofort wieder öffnen, wenn man E weiterdrückt
-      if (source) this.suppressed = { id: source, until: this.clock + 1.0 };
+      if (source) this.suppressed = { id: source, until: this.clock + 0.5 }; // kurz genug für ein bewusstes zweites E (m3-r1)
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
@@ -409,6 +409,8 @@ export class Game {
     const st = this.state;
     st.inventory[res] = (st.inventory[res] || 0) + 1;
     if (this.nights.active || (st.night.n === st.time.day && !st.report)) st.night.loot[res] = (st.night.loot[res] || 0) + 1;
+    // Nach »Nacht geschafft« Aufgesammeltes zählt noch zur Nacht (m3-r1: Bericht zählte zu wenig)
+    else if (st.report && st.report.n === st.night.n && st.night.n === st.time.day) st.report.loot[res] = (st.report.loot[res] || 0) + 1;
     this.hud.floater(x, y + 0.6, z, '+1', res, 0, true);
     if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
       st.flags.fundZahnrad = true;
@@ -541,6 +543,8 @@ export class Game {
         this.advanceToMorning();
       } else if (s.kind === 'faint') {
         this.applyFaint();
+      } else if (s.kind === 'rescue') {
+        this.applyRescue();
       } else {
         this.advanceToMorning();
       }
@@ -555,6 +559,8 @@ export class Game {
         if (this.state.report) this.showReport();
       } else if (s.kind === 'work' && s.onDone) {
         s.onDone();
+      } else if (s.kind === 'rescue') {
+        this.hud.toast(T.horde.gerettet, 'haus', 3.5);
       }
     }
   }
@@ -587,8 +593,8 @@ export class Game {
   showReport() {
     const st = this.state;
     if (!st.report) return;
+    st.report.lootLeft = this.loot.items.filter((it) => !it.flying).length; // liegt noch was draußen?
     this.report.open(st.report);
-    st.report = null;
     this.mode = 'report';
   }
 
@@ -609,18 +615,31 @@ export class Game {
 
   onHouseHit(dmg, z) {
     const st = this.state;
+    const max = HOUSE_LEVELS[st.world.houseLevel].hp;
+    // Tagsüber bricht nichts durch: Streuner nagen langsamer und bringen das
+    // Zuhause höchstens auf die Hälfte (m3-r1: die Vorhut fraß es sonst am Abend auf)
+    const day = !this.nights.active;
+    if (day) {
+      const floor = Math.round(max * 0.5);
+      if (st.world.homeHp <= floor) return;
+      dmg = Math.min(dmg * (z.day ? 0.4 : 1), st.world.homeHp - floor);
+      const de = st.world.dayEvents;
+      if (de && de.day === st.time.day) de.lost = (de.lost || 0) + dmg;
+    }
     st.world.homeHp -= dmg;
     this.hud.homeFlash = 0.3;
+    this.hud.homeAlarm = 4;
     const p = this.world.pathing.attackPoint(z.x, z.z);
     this.effects.chips(p.x, 0.8, p.z, 'holz', 4);
     if (this.clock - this.homeWarned > 25) {
       this.homeWarned = this.clock;
-      this.hud.toast(T.horde.zuhauseTreffer, 'warnung', 2.6);
+      // Welche Seite? Groß und mit Richtung – sonst merkt man es am Feuer nicht
+      const r = this.world.pathing.home;
+      const side = z.z < r.minZ ? 'nord' : z.z > r.maxZ ? 'sued' : z.x > r.maxX ? 'ost' : 'west';
+      this.hud.toast(T.horde.zuhauseTreffer(T.horde.seite[side]), 'warnung', 3);
+      if (day) this.hud.showBanner(T.horde.zuhauseKurz);
     }
-    if (st.world.homeHp <= 0) {
-      if (this.nights.active) this.loseNight();
-      else st.world.homeHp = Math.max(1, HOUSE_LEVELS[st.world.houseLevel].hp * 0.25); // Tagsüber bricht nichts durch
-    }
+    if (st.world.homeHp <= 0 && this.nights.active) this.loseNight();
   }
 
   onBarricadeHit(b, dmg) {
@@ -637,14 +656,28 @@ export class Game {
   }
 
   /** Mika geht zu Boden: nachts verliert man die Nacht, tagsüber nur Zeit. */
+  /**
+   * Mika geht zu Boden. Tagsüber: Ohnmacht, zwei Stunden später im Bett. Nachts:
+   * Sie rettet sich ins Haus – die Nacht geht weiter, verloren ist sie erst,
+   * wenn das Zuhause fällt (OFFENE-FRAGEN.md Nr. 11).
+   */
   knockedOut() {
     if (this.mode === 'sleep') return;
-    if (this.nights.active) this.loseNight();
-    else {
-      this.builder.cancel();
-      this.mode = 'sleep';
-      this.sleep = { t: 0, advanced: false, kind: 'faint' };
-    }
+    this.builder.cancel();
+    this.mode = 'sleep';
+    this.sleep = { t: 0, advanced: false, kind: this.nights.active ? 'rescue' : 'faint' };
+  }
+
+  /** Nachts gerettet: im Haus, angeschlagen, die Schlurfer verlieren sie aus den Augen. */
+  applyRescue() {
+    const st = this.state;
+    const w = this.world.shelter.wakeSpot;
+    Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
+    this.player.place(w.x, w.z, w.facing);
+    this.rig.jumpTo(w.x, w.z);
+    this.world.fadeValue = 1;
+    st.player.hp = Math.round(this.combat.maxHp * 0.4);
+    for (const z of this.horde.list) if (z.state === 'chase') z.state = 'walk';
   }
 
   loseNight() {
@@ -671,7 +704,10 @@ export class Game {
       }
     }
     for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp) b.hp = Math.max(0, b.hp - BUILDINGS[b.type].hp / 3);
-    st.world.homeHp = HOUSE_LEVELS[st.world.houseLevel].hp * 0.5;
+    // Notdürftig geflickt: ein Viertel – aber nie besser als zu Beginn der Nacht
+    const max = HOUSE_LEVELS[st.world.houseLevel].hp;
+    st.world.homeHp = Math.max(1, Math.min(Math.round(max * 0.25), st.night.homeStart));
+    st.night.fell = true;
     this.horde.clear();
     this.loot.clear();
     this.towers.clear();
@@ -750,7 +786,11 @@ export class Game {
         this.player.idle(dt);
         break;
       case 'report':
-        if (this.report.update(dt, input)) this.mode = 'play';
+        if (this.report.update(dt, input)) {
+          // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
+          this.state.report = null;
+          this.mode = 'play';
+        }
         this.player.idle(dt);
         break;
       case 'perk': {
@@ -829,8 +869,9 @@ export class Game {
     const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui);
     const rest = this.builder.update(dt, input, pointerFree);
     if (this.mode !== 'play') return;
-    // Übrig gebliebener Klick in die Welt: zuschlagen (in Richtung Mauszeiger).
-    // Gedrückt halten schlägt weiter; ein Klick mitten im Schwung wird vorgemerkt.
+    // Übrig gebliebener Klick in die Welt: zuschlagen – auf den Schlurfer unter
+    // dem Zeiger, sonst in Richtung Mauszeiger. Gedrückt halten schlägt weiter;
+    // ein Klick mitten im Schwung wird vorgemerkt.
     if (rest === 'click') this.attackHeld = true;
     else if (!input.mouse.down) this.attackHeld = false;
     const wantsAttack = rest === 'click' || (this.attackHeld && input.mouse.down) || this.attackQueued;
@@ -840,7 +881,9 @@ export class Game {
         this.attackQueued = false;
         const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
         const pp = this.player.position;
-        if (ground && this.input.mouse.inside) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
+        const target = this.builder.pointerZombie;
+        if (target) this.combat.attack(target.x - pp.x, target.z - pp.z);
+        else if (ground && this.input.mouse.inside) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
         else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
       } else if (rest === 'click' && act.kind === 'swing') this.attackQueued = true;
     }
@@ -908,12 +951,13 @@ export class Game {
     if (!flags.abendHorde && h >= 19 && h < 20.5 && !this.world.buildings.towers.length) {
       flags.abendHorde = true;
       this.startDialog('abendHorde');
-    } else if (!flags.abendHinweis && h >= 20.25 && h < 23 && !this.player.holdingLantern) {
+    } else if (!flags.abendHinweis && h >= 20.1 && h < 23 && !this.player.holdingLantern) {
+      // Gedanken statt Dialog: halten das Spiel nie an (m3-r1)
       flags.abendHinweis = true;
-      this.startDialog('abendHinweis');
-    } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4)) {
+      this.hud.say(T.meldungen.abendLaterne, 5);
+    } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4) && !this.nights.active && this.horde.alive === 0) {
       flags.spaetHinweis = true;
-      this.startDialog('spaetHinweis');
+      this.hud.say(T.meldungen.spaet, 4);
     }
   }
 
@@ -980,7 +1024,7 @@ export class Game {
 
     const ui = this.ui;
     ui.begin(this.input.mouse);
-    const it = this.mode === 'play' ? this.currentInteraction : null;
+    const it = this.shownInteraction();
     if (it) {
       const ground = this.world.heightAt(it.x, it.z);
       const pos = this.worldToUi(it.x, ground + 1.3, it.z);
@@ -1026,7 +1070,7 @@ export class Game {
     else if (t < timing.fadeOut + timing.black) fade = 1;
     else fade = 1 - (t - timing.fadeOut - timing.black) / timing.fadeIn;
     ui.ditherFill(Math.max(0, Math.min(1, fade)), long ? COLORS.night : COLORS.inset);
-    if (s.kind === 'lost' || s.kind === 'faint') {
+    if (s.kind === 'lost' || s.kind === 'faint' || s.kind === 'rescue') {
       const text = s.kind === 'lost' ? (t < timing.fadeOut ? T.horde.verloren : T.horde.keller) : T.horde.ohnmacht;
       if (t < timing.fadeOut + timing.black) ui.textCentered(text, ui.width / 2, ui.height / 2 - 6, s.kind === 'lost' ? COLORS.buildBad : COLORS.textWarm, { outline: COLORS.outline });
     } else if (s.kind !== 'sleep') {
@@ -1077,12 +1121,23 @@ export class Game {
   }
 
   /**
+   * Die Einblendung (»E Fasern rupfen«) über dem, was Mika gerade benutzen kann.
+   * Im Getümmel bleibt sie weg – dann zählen die Schlurfer (m3-r1); E wirkt trotzdem.
+   */
+  shownInteraction() {
+    if (this.mode !== 'play' || !this.currentInteraction) return null;
+    const p = this.player.position;
+    const close = this.horde.list.some((z) => z.state !== 'dying' && z.state !== 'enter' && Math.hypot(z.x - p.x, z.z - p.z) < 3.5);
+    return close ? null : this.currentInteraction;
+  }
+
+  /**
    * Nur lesen, was auch auf dem Bildschirm steht – für Testspieler, die
    * Screenshots nicht Pixel für Pixel entziffern sollen.
    */
   observe() {
     const st = this.state;
-    const it = this.mode === 'play' ? this.currentInteraction : null;
+    const it = this.shownInteraction();
     const line = this.dialog.active ? this.dialog.line : null;
     const costText = (cost) =>
       Object.entries(cost || {})
@@ -1127,13 +1182,14 @@ export class Game {
       menue: this.menu.isOpen ? this.menu.screen : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
-      nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}` } : null,
+      nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}`, richtung: this.nights.directionText() } : null,
       schlurferImBild: this.horde.list.filter((z) => {
         if (z.state === 'dying') return false;
         const q = this.worldToUi(z.x, 0.8, z.z);
         return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
       }).length,
       schlurferAusserhalb: this.hud.edgeCount || 0,
+      randMarken: (this.hud.edgeMarks || []).map((m) => `${m.art} ${m.richtung}${m.anzahl > 1 ? ` (${m.anzahl})` : ''}`),
       lootAmBoden: this.loot.items.length,
       bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
       meldungen: this.hud.toasts.map((t) => t.text),
@@ -1305,6 +1361,7 @@ export class Game {
         return recipe ? game.craft(recipe) : false;
       },
       upgradeHouse: () => game.builder.upgradeHouse(),
+      repairAll: () => game.builder.repairAll(),
       buildOptions: () => game.builder.options('zuhause').map(({ id, affordable, disabled, progress }) => ({ id, affordable, disabled, progress })),
       startPlacement: (type) => game.builder.startPlacement(type),
       cancelBuild: () => game.builder.cancel(),

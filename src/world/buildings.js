@@ -84,7 +84,7 @@ export class Buildings {
    * @param {{material?: THREE.Material, glowMaterial?: THREE.Material, shadow?: string, level?: number, spec?: string|null}} [options]
    */
   object(type, turns, options = {}) {
-    const { material = this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null } = options;
+    const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null } = options;
     if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow);
     const key = type;
     if (!this.models.has(key)) {
@@ -132,7 +132,11 @@ export class Buildings {
     const cx = i + w / 2;
     const cz = j + d / 2;
     this.attachObject(building);
-    building.collider = this.colliders.addBox(i + 0.08, j + 0.08, i + w - 0.08, j + d - 0.08, `bau-${building.id}`);
+    // Türme sind rund: schräg zwischen zwei Türmen bleibt ein Durchschlupf (m3-r1: Engstellen)
+    building.collider =
+      def.tower && w === 1 && d === 1
+        ? this.colliders.addCircle(cx, cz, 0.36, `bau-${building.id}`)
+        : this.colliders.addBox(i + 0.08, j + 0.08, i + w - 0.08, j + d - 0.08, `bau-${building.id}`);
     this.grid.occupy(building.id, i, j, w, d);
     const radius = 1.1 + Math.max(w, d) * 0.3;
     // Werkbank, Bank, Beet: benutzen. Alles andere (auch Türme): mit E auswählen.

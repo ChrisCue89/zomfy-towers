@@ -6,6 +6,7 @@
 // Was angeboten wird, entscheidet der Builder (core/builder.js).
 
 import { T } from '../data/texts.js';
+import { BUILDINGS, TOWER_TAB } from '../data/buildings.js';
 import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
 import { drawTiny, measure, LINE_HEIGHT } from './font.js';
@@ -58,11 +59,11 @@ export class BuildBar {
     const h = TILE_H + 8;
     const x = ui.width - w - 4;
     const y = ui.height - h - 4;
-    const tiles = options.map((option, k) => ({
-      option,
-      key: KEY_LABELS[k],
-      rect: { x: x + 4 + k * (TILE_W + GAP), y: y + 4, w: TILE_W, h: TILE_H },
-    }));
+    // Abreißen liegt immer auf V – so reißt ein gewohntes Q/R/T nie einen Turm ab (m3-r1)
+    const tiles = options.map((option, k) => {
+      const keyIndex = option.danger ? HOTKEYS.length - 1 : k;
+      return { option, keyIndex, key: KEY_LABELS[keyIndex], rect: { x: x + 4 + k * (TILE_W + GAP), y: y + 4, w: TILE_W, h: TILE_H } };
+    });
     const selected = this.builder.selectionTitle();
     const title = selected || T.bauleiste.reiter[this.tab];
     const tabs = selected ? [] : this.tabs();
@@ -100,7 +101,8 @@ export class BuildBar {
 
     if (input.pressed('buildTab') && L.tabs.length > 1) this.tabIndex = (this.tabIndex + 1) % L.tabs.length;
     HOTKEYS.forEach((code, k) => {
-      if (input.pressedCode(code) && L.tiles[k]) this.activate(L.tiles[k].option, false);
+      const tile = input.pressedCode(code) && L.tiles.find((t) => t.keyIndex === k);
+      if (tile) this.activate(tile.option, false);
     });
 
     this.hover = L.tiles.findIndex((t) => ui.hover(t.rect.x, t.rect.y, t.rect.w, t.rect.h));
@@ -168,9 +170,11 @@ export class BuildBar {
       const armed = this.armed && this.armed.id === option.id;
       const hovered = k === this.hover;
       const pulse = (flash > 0 && Math.floor(flash * 10) % 2 === 0) || (armed && Math.floor(this.time * 6) % 2 === 0);
+      // Abreißen ist nie eine Empfehlung: kein goldener »bezahlbar«-Rahmen
+      const readyFrame = option.danger ? COLORS.frameDark : COLORS.gold;
       ui.inset(rect.x, rect.y, rect.w, rect.h, {
         fill: active || armed ? COLORS.fillHover : hovered ? COLORS.fillLight : COLORS.inset,
-        border: armed ? COLORS.red : pulse ? COLORS.textWarm : active || ready ? COLORS.gold : COLORS.frameDark,
+        border: armed ? COLORS.red : pulse ? COLORS.textWarm : active ? COLORS.gold : ready ? readyFrame : COLORS.frameDark,
       });
       const size = iconSize(option.icon);
       drawIcon(ctx, option.icon, rect.x + Math.floor((rect.w - size.w) / 2), rect.y + 2 + Math.max(0, Math.floor((16 - size.h) / 2)));
@@ -182,13 +186,17 @@ export class BuildBar {
       ui.rect(rect.x + 2, rect.y + rect.h - 4, barW, 2, COLORS.outline);
       const fill = option.disabled ? 0 : Math.max(0, Math.min(1, option.progress));
       if (fill > 0) ui.rect(rect.x + 2, rect.y + rect.h - 4, Math.max(1, Math.round(barW * fill)), 2, ready ? COLORS.gold : COLORS.goldDark);
-      drawTiny(ctx, tile.key, rect.x + 2, rect.y + 2, ready ? COLORS.gold : COLORS.textDim);
+      drawTiny(ctx, tile.key, rect.x + 2, rect.y + 2, ready && !option.danger ? COLORS.gold : COLORS.textDim);
       if (flash > 0) this.drawSparkles(ui, rect, flash);
     });
 
     // Hinweis-Tafel: gewählte Option beim Platzieren, sonst die unter der Maus
     const tip = this.hover >= 0 ? L.tiles[this.hover]?.option : null;
-    if (placing) this.drawTip(ui, L, { name: placing.name, info: T.bautenInfo[placing.type], hint: T.bauleiste.setzen, cost: placing.cost });
+    if (placing) {
+      // Türme: gleich beim ersten Setzen sagen, was die Pünktchen bedeuten (m3-r1)
+      const note = BUILDINGS[placing.type].tower ? T.bauleiste.wegeHinweis : TOWER_TAB.includes(placing.type) ? T.bauleiste.wegeHinweisKurz : null;
+      this.drawTip(ui, L, { name: placing.name, info: placing.info || T.bautenInfo[placing.type], hint: T.bauleiste.setzen, note, cost: placing.cost });
+    }
     else if (tip) this.drawTip(ui, L, tip);
   }
 
@@ -249,7 +257,7 @@ export class BuildBar {
     const cost = Object.entries(option.cost || {}).filter(([, v]) => v > 0);
     const refund = Object.entries(option.refund || {}).filter(([, v]) => v > 0);
     const row = cost.length ? cost : refund;
-    const lines = [option.info, option.hint, option.missingText].filter(Boolean);
+    const lines = [option.info, option.hint, option.note, option.missingText].filter(Boolean);
     const rowW = row.reduce((sum, [, v]) => sum + 14 + measure(`${refund.length && !cost.length ? '+' : ''}${v}`) + 6, 0);
     const w = Math.max(measure(option.name) + 10, ...lines.map((l) => measure(l) + 10), rowW + 10, 90);
     const h = 8 + LINE_HEIGHT + (row.length ? 14 : 0) + lines.length * LINE_HEIGHT;
@@ -277,6 +285,10 @@ export class BuildBar {
     }
     if (option.hint) {
       ui.text(option.hint, x + 5, cy, COLORS.textWarm);
+      cy += LINE_HEIGHT;
+    }
+    if (option.note) {
+      ui.text(option.note, x + 5, cy, COLORS.buildBad);
       cy += LINE_HEIGHT;
     }
     if (option.missingText) ui.text(option.missingText, x + 5, cy, COLORS.red);

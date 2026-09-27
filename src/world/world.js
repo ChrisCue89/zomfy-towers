@@ -2,7 +2,7 @@
 // Bauten zusammen und betreibt alles, was sich in ihr bewegt oder leuchtet.
 
 import * as THREE from 'three';
-import { createWorldMaterial, createGlowMaterial } from '../render/materials.js';
+import { createWorldMaterial, createGlowMaterial, sharedUniforms } from '../render/materials.js';
 import { damp } from '../core/math.js';
 import { Colliders } from './colliders.js';
 import { createTerrain } from './terrain.js';
@@ -39,6 +39,8 @@ export class World {
     this.materials = {
       world: createWorldMaterial(),
       occluder: createWorldMaterial({ occluder: true }),
+      // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
+      building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),
       flame: createGlowMaterial(0xffffff, { vertexColors: true }),
     };
 
@@ -248,6 +250,7 @@ export class World {
 
     // Rauch, Funken, Glühwürmchen
     const night = dn.night;
+    sharedUniforms.uNight.value = night;
     this._smoke0.copy(SMOKE_DAY[0]).lerp(SMOKE_NIGHT[0], night);
     this._smoke1.copy(SMOKE_DAY[1]).lerp(SMOKE_NIGHT[1], night);
     this.chimneySmoke.update(dt, this._smoke0, this._smoke1);

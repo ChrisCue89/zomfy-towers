@@ -22,8 +22,10 @@ const HEAD_Y = { bolzen: 1.2, katapult: 0.9, sprenger: 1.3, laternenturm: 2.2 };
 
 function boltModel() {
   const m = new VoxelModel();
-  m.box(0, 0, -2, 0, 0, 1, P.e6);
-  m.set(0, 0, 2, P.s8).set(-1, 0, -2, P.a4).set(1, 0, -2, P.a4);
+  m.box(0, 0, -2, 0, 0, 1, P.e8);
+  m.set(0, 0, 2, P.s9).set(-1, 0, -2, P.a4).set(1, 0, -2, P.a4);
+  // Leuchtspur dahinter: auch nachts sieht man, wohin der Turm schießt (m3-r1)
+  m.box(0, 0, -6, 0, 0, -3, (x, y, z) => (z >= -4 ? 0xfff0c8 : 0xffd98a));
   return m;
 }
 
@@ -94,8 +96,9 @@ export class TowerSystem {
   lightSlow(x, z) {
     let best = 0;
     for (const L of this.world.buildings.list) {
-      if (L.type !== 'laternenturm' || L.spec !== 'A' || L.hp <= 0) continue;
+      if (L.type !== 'laternenturm' || L.hp <= 0) continue;
       const s = towerStats(L.type, L.level, L.spec);
+      if (!s.lightSlow) continue; // Glückslaterne bremst nicht
       if ((x - L.i - 0.5) ** 2 + (z - L.j - 0.5) ** 2 <= s.range * s.range) best = Math.max(best, s.lightSlow);
     }
     return best;
@@ -181,7 +184,7 @@ export class TowerSystem {
     t.kick = 1;
     const o = this.origin(t);
     for (const z of list) {
-      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 17, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0 });
+      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0 });
     }
     this.cb.onShot?.('bolzen');
   }
@@ -218,10 +221,18 @@ export class TowerSystem {
     const o = this.origin(t);
     const inRange = this.horde.inRange(o.x, o.z, s.range);
     const kind = t.spec === 'A' ? 'frost' : t.spec === 'B' ? 'schlamm' : 'wasser';
-    // Kopf dreht sich immer; Wasser sprüht nur, wenn jemand in der Nähe ist
+    // Kopf dreht sich immer und tröpfelt ein wenig (man sieht, was er ist);
+    // richtig los geht es, wenn jemand in der Nähe ist
     t.headAngle = (t.headAngle || 0) + dt * (inRange.length ? 5 : 1.2);
-    if (!inRange.length) return;
-    t.sprayAcc = (t.sprayAcc || 0) + dt * 30;
+    if (!inRange.length) {
+      t.dripAcc = (t.dripAcc || 0) + dt * 5;
+      while (t.dripAcc >= 1) {
+        t.dripAcc -= 1;
+        this.effects.spray(o.x, o.y, o.z, t.headAngle, s.range * 0.35, kind);
+      }
+      return;
+    }
+    t.sprayAcc = (t.sprayAcc || 0) + dt * 36;
     while (t.sprayAcc >= 1) {
       t.sprayAcc -= 1;
       this.effects.spray(o.x, o.y, o.z, t.headAngle + (Math.floor(t.sprayAcc * 10) % 2 ? Math.PI : 0), s.range, kind);

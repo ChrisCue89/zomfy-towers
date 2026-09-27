@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
 import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint } from '../data/buildings.js';
-import { TOWERS, towerStats, towerInvested, TOWER_REFUND } from '../data/towers.js';
+import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
@@ -32,6 +32,7 @@ export class Builder {
     this.selection = null; // Bau-ID
     this.useMouse = false;
     this.hovered = null; // Bau unter dem Mauszeiger
+    this.pointerZombie = null; // Schlurfer unter dem Mauszeiger (geht beim Klick vor)
     this.endedAt = -10; // wann das Platzieren zuletzt von selbst endete (this.game.clock)
     this.announced = new Set();
     this._ground = new THREE.Vector3();
@@ -49,7 +50,7 @@ export class Builder {
     const name = T.bauten[b.type];
     if (!BUILDINGS[b.type].tower) return name;
     const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
-    return `${name} ${b.level}${spec}`;
+    return `${name} · ${T.bauleiste.stufe(b.level)}${spec}`; // »Bolzenwerfer 2« las sich wie »der zweite«
   }
 
   selected() {
@@ -78,8 +79,9 @@ export class Builder {
           id: type,
           icon: def.icon,
           name: T.bauten[type],
-          info: def.tower ? `${T.bautenInfo[type]} ${this.statLine(type, 1, null)}` : T.bautenInfo[type],
-          cost: def.cost,
+          info: this.infoFor(type),
+          hint: def.tower && buildings.count(type) > 0 ? T.bauleiste.staffel(TOWER_EXTRA) : null,
+          cost: this.costOf(type),
           disabled: full,
           disabledText: def.max === 1 ? T.bauleiste.schonGebaut : T.bauleiste.genug,
           action: () => this.startPlacement(type),
@@ -110,22 +112,56 @@ export class Builder {
       )
     );
     const repair = this.repairCost();
-    options.push(
-      this.option(
-        {
-          id: 'reparieren',
-          icon: 'reparieren',
-          name: T.bauleiste.reparieren,
-          info: T.bautenInfo.reparieren,
-          cost: repair || {},
-          disabled: !repair,
-          disabledText: T.bauleiste.nichtsKaputt,
-          action: () => this.repairAll(),
-        },
-        inv
-      )
-    );
+    options.push(this.repairOption({ id: 'reparieren', cost: repair, action: () => this.repairAll() }, inv));
     return options;
+  }
+
+  /**
+   * Reparieren: Reicht der Vorrat nicht für alles, wird anteilig geflickt
+   * (m3-r1). Solange nachts Schlurfer da sind, geht es gar nicht – erst die
+   * Welle abwehren, dann flicken (sonst ist das Zuhause unverwundbar).
+   */
+  repairOption({ id, cost, action }, inv) {
+    const busy = this.waveRunning();
+    const share = cost ? this.repairShare(cost) : 0;
+    const o = this.option(
+      {
+        id,
+        icon: 'reparieren',
+        name: T.bauleiste.reparieren,
+        info: T.bautenInfo.reparieren,
+        cost: cost || {},
+        disabled: !cost || busy,
+        disabledText: busy ? T.bauleiste.erstWelle : T.bauleiste.nichtsKaputt,
+        action,
+      },
+      inv
+    );
+    if (!o.disabled && !o.affordable && share > 0) {
+      o.affordable = true;
+      o.hint = T.bauleiste.teilweise(Math.round(share * 100));
+    }
+    return o;
+  }
+
+  /** Läuft gerade eine Welle (Nacht aktiv und Schlurfer unterwegs)? */
+  waveRunning() {
+    const g = this.game;
+    return g.nights.active && (g.horde.alive > 0 || g.nights.queue.length > 0);
+  }
+
+  /** Welcher Anteil einer Reparatur ist mit dem Vorrat bezahlbar (0…1)? */
+  repairShare(cost) {
+    const inv = this.game.state.inventory;
+    let share = 1;
+    for (const [res, n] of Object.entries(cost)) if (n > 0) share = Math.min(share, (inv[res] || 0) / n);
+    return Math.max(0, share);
+  }
+
+  /** Anteil `share` einer Reparatur bezahlen (aufgerundet, nie mehr als da ist). */
+  payShare(cost, share) {
+    const inv = this.game.state.inventory;
+    for (const [res, n] of Object.entries(cost)) inv[res] = Math.max(0, (inv[res] || 0) - Math.min(inv[res] || 0, Math.ceil(n * share - 1e-6)));
   }
 
   figureOptions() {
@@ -219,7 +255,7 @@ export class Builder {
     }
     if (def.hp && b.hp < def.hp) {
       const cost = this.buildingRepairCost(b);
-      options.push(this.option({ id: `rep-${b.id}`, icon: 'reparieren', name: T.bauleiste.reparieren, info: T.bautenInfo.reparieren, cost, action: () => this.repairBuilding(b) }, inv));
+      options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
     options.push({
       id: `abriss-${b.id}`,
@@ -231,9 +267,26 @@ export class Builder {
       affordable: true,
       progress: 1,
       confirm: true,
+      danger: true,
       action: () => this.demolish(b.id),
     });
     return options;
+  }
+
+  /** Zeigt das Platzieren dieses Baus die Wege der Horde? Immer – auch eine Bank kann im Weg stehen. */
+  showsHordePaths() {
+    return true;
+  }
+
+  /** Was kostet der nächste Bau dieser Art? (Türme: Staffelpreis) */
+  costOf(type) {
+    const def = BUILDINGS[type];
+    return def.tower ? towerBuildCost(type, this.world.buildings.count(type)) : def.cost;
+  }
+
+  /** Beschreibung samt Werten (Türme) – für Kachel und Platzier-Tafel. */
+  infoFor(type) {
+    return BUILDINGS[type].tower ? `${T.bautenInfo[type]} ${this.statLine(type, 1, null)}` : T.bautenInfo[type];
   }
 
   /** »Schaden 21 · 1,2/s · 5,2 m« */
@@ -311,7 +364,7 @@ export class Builder {
     };
     const maxHome = HOUSE_LEVELS[st.world.houseLevel].hp;
     const home = maxHome - st.world.homeHp;
-    if (home > 0.5) add({ holz: Math.ceil(home / 20), schrott: Math.ceil(home / 50) });
+    if (home > 0.5) add({ holz: Math.ceil(home / 16), schrott: Math.ceil(home / 40) });
     for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && b.hp < BUILDINGS[b.type].hp) add(this.buildingRepairCost(b));
     return Object.keys(total).length ? total : null;
   }
@@ -319,29 +372,39 @@ export class Builder {
   repairAll() {
     const st = this.game.state;
     const cost = this.repairCost();
-    if (!cost || !pay(st.inventory, cost)) return;
-    st.world.homeHp = HOUSE_LEVELS[st.world.houseLevel].hp;
-    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp) b.hp = BUILDINGS[b.type].hp;
+    if (!cost || this.waveRunning()) return;
+    const share = this.repairShare(cost);
+    if (share <= 0) return;
+    this.payShare(cost, share);
+    const max = HOUSE_LEVELS[st.world.houseLevel].hp;
+    st.world.homeHp = Math.min(max, st.world.homeHp + (max - st.world.homeHp) * share);
+    for (const b of this.world.buildings.list) {
+      const full = BUILDINGS[b.type].hp;
+      if (full) b.hp = Math.min(full, b.hp + (full - b.hp) * share);
+    }
     st.world.buildings = this.world.buildings.toState();
-    this.game.hud.toast(T.meldungen.repariert, 'reparieren', 2.4);
+    this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2.4);
     this.game.quietSave();
   }
 
   repairBuilding(b) {
     const cost = this.buildingRepairCost(b);
-    if (!cost || !pay(this.game.state.inventory, cost)) return;
-    b.hp = BUILDINGS[b.type].hp;
+    if (!cost || this.waveRunning()) return;
+    const share = this.repairShare(cost);
+    if (share <= 0) return;
+    this.payShare(cost, share);
+    const full = BUILDINGS[b.type].hp;
+    b.hp = Math.min(full, b.hp + (full - b.hp) * share);
     this.game.state.world.buildings = this.world.buildings.toState();
-    this.game.hud.toast(T.meldungen.repariert, 'reparieren', 2);
+    this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2);
   }
 
   // --- Platzieren ---------------------------------------------------------------------
 
   startPlacement(type, { byMouse = false } = {}) {
     this.selection = null;
-    const def = BUILDINGS[type];
     const turns = this.placement?.type === type ? this.placement.turns : 0;
-    this.placement = { type, optionId: type, name: T.bauten[type], cost: def.cost, turns, i: 0, j: 0, ok: false, reason: null };
+    this.placement = { type, optionId: type, name: T.bauten[type], info: this.infoFor(type), cost: this.costOf(type), turns, i: 0, j: 0, ok: false, reason: null };
     this.useMouse = byMouse;
   }
 
@@ -358,7 +421,7 @@ export class Builder {
   handleCancel(input) {
     if (!this.placement && this.selection === null) {
       // Esc gleich nach dem letzten Setzen heißt »fertig«, nicht »Menü«
-      return input.pressed('cancel') && this.game.clock - this.endedAt < 0.8;
+      return input.pressed('cancel') && this.game.clock - this.endedAt < 2;
     }
     if (input.pressed('cancel') || input.mouse.rightClicked) {
       this.cancel();
@@ -413,9 +476,14 @@ export class Builder {
     }
 
     // Kein Platzieren: Klick auf einen Bau wählt ihn aus, sonst ist es ein Schlag.
+    // Ein Schlurfer unter dem Zeiger geht vor – sonst wählt man mitten im
+    // Kampf den Turm dahinter aus (m3-r1).
     let rest = null;
-    this.hovered = pointerFree ? this.pick() : null;
-    if (pointerFree && input.mouse.clicked) {
+    this.pointerZombie = pointerFree ? this.zombieAtPointer() : null;
+    this.hovered = pointerFree && !this.pointerZombie ? this.pick() : null;
+    if (pointerFree && input.mouse.clicked && this.pointerZombie) {
+      rest = 'click';
+    } else if (pointerFree && input.mouse.clicked) {
       const b = this.hovered;
       if (b) {
         input.consumeClick();
@@ -461,6 +529,28 @@ export class Builder {
         bestZ = b.j + d;
         best = b;
       }
+    }
+    return best;
+  }
+
+  /** Lebender Schlurfer in Schlagweite unter dem Mauszeiger (Bildschirmkasten wie bei Bauten). */
+  zombieAtPointer() {
+    const g = this.game;
+    const m = g.input.mouse;
+    if (!m.inside) return null;
+    const p = g.player.position;
+    let best = null;
+    let bestD = Infinity;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying' || z.state === 'enter') continue;
+      const d = Math.hypot(z.x - p.x, z.z - p.z);
+      if (d > 6 || d >= bestD) continue;
+      const r = z.def.radius + 0.15;
+      const a = g.worldToUi(z.x - r, 1.7 * (z.def.scale || 1), z.z - r);
+      const c = g.worldToUi(z.x + r, 0, z.z + r);
+      if (m.x < a.x - 2 || m.x > c.x + 2 || m.y < a.y - 2 || m.y > c.y + 2) continue;
+      best = z;
+      bestD = d;
     }
     return best;
   }
@@ -524,7 +614,12 @@ export class Builder {
   /** Rückgabe beim Abreißen: Zuhause-Bauten alles, Verteidigung (Türme, Barrikaden) 70 %. */
   refundFor(b) {
     const def = BUILDINGS[b.type];
-    if (def.tower) return scale(towerInvested(b.type, b.level, b.spec), TOWER_REFUND);
+    if (def.tower) {
+      // Der Bau selbst zählt zum Staffelpreis des zuletzt gebauten Turms dieser Art
+      const invested = towerInvested(b.type, b.level, b.spec);
+      const extra = towerBuildCost(b.type, Math.max(0, this.world.buildings.count(b.type) - 1)).schrott - TOWERS[b.type].base[0].cost.schrott;
+      return scale({ ...invested, schrott: (invested.schrott || 0) + extra }, TOWER_REFUND);
+    }
     if (def.defense) return scale(def.cost, TOWER_REFUND);
     return def.cost;
   }
@@ -579,7 +674,7 @@ export class Builder {
         ui.rect(Math.round(p.x), Math.round(p.y), 2, 1, k % 2 ? color : COLORS.outline);
       }
     };
-    if (pl && TOWER_TAB.includes(pl.type)) this.drawHordePaths(ui);
+    if (pl && this.showsHordePaths(pl.type)) this.drawHordePaths(ui);
     if (pl) {
       const { w, d } = footprint(pl.type, pl.turns);
       const grid = this.world.grid;

@@ -36,7 +36,7 @@ export class BuildPreview {
     this.group.add(this.cells);
 
     // Geister: beleuchtet, gerastert zu gut der Hälfte ausgeblendet, eingefärbt
-    this.ghostMaterial = createWorldMaterial({ fade: true });
+    this.ghostMaterial = createWorldMaterial({ fade: true, selfLight: 0.9 }); // nachts nicht nur ein Rahmen
     this.ghostMaterial.userData.fade.value = 0.35;
     this.ghosts = new Map();
     this.ghost = null;
