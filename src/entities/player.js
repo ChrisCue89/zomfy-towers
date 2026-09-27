@@ -214,6 +214,10 @@ export class Player {
       p.armR.rotation.x = (shownTool ? -0.35 : 0) + s * 0.6 * amt;
       p.armR.rotation.z = 0.05 + Math.sin(this.time * 2.1) * 0.03 * idle;
     }
+    // Werkzeug in Ruhe schräg nach vorn getragen (sonst steckt es im Boden);
+    // beim Schwung liegt es in der Verlängerung des Arms
+    const carry = shownTool && !(a && (a.kind === 'swing' || a.kind === 'search')) ? -1.0 : 0;
+    p.hand.rotation.x = damp(p.hand.rotation.x, carry, 14, dt);
 
     // Linker Arm: Laterne oder Schwingen
     const lantern = this.character.lantern;

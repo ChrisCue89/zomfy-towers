@@ -246,7 +246,8 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   // Werkzeuge in der rechten Hand (Stiel entlang des Arms nach unten)
   const tools = {};
   for (const [name, model] of Object.entries(TOOL_MODELS)) {
-    const mesh = new THREE.Mesh(model().toGeometry({ jitter: 0.02, seed }), material);
+    const geometry = fine ? fineTool(name, model()).toGeometry({ jitter: 0.02, seed, size: V / 2 }) : model().toGeometry({ jitter: 0.02, seed });
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
     mesh.position.set(-0.5 * V, 0, -0.5 * V);
     mesh.visible = false;
@@ -313,6 +314,44 @@ function buildMittenModel() {
   const m = new VoxelModel();
   m.box(-1, -2, -1, 1, 0, 1, (x, y, z) => (y === 0 ? P.s9 : (x + y + z) % 2 ? P.f2 : P.f3));
   m.set(0, -1, 2, P.f2);
+  return m;
+}
+
+/**
+ * Werkzeug in 1/16 m: das grobe Modell verdoppelt, dazu blanke Schneiden,
+ * Griffwicklungen und Muster (Meilenstein 5).
+ */
+function fineTool(name, coarse) {
+  const m = coarse.upsampled(2);
+  switch (name) {
+    case 'axt':
+      m.box(0, -18, 7, 1, -9, 7, P.s9); // Schneide blitzt
+      m.box(0, -15, -1, 1, -14, 1, P.r3); // Wicklung am Stiel
+      break;
+    case 'spitzhacke':
+      m.set(0, -15, -9, P.s9).set(1, -15, 9, P.s9).set(0, -14, -8, P.s8).set(1, -14, 8, P.s8);
+      break;
+    case 'schaufel':
+      m.box(0, -24, -3, 1, -24, 3, P.s9); // blanke Kante
+      m.box(0, -2, -1, 1, -1, 1, P.e2); // Griffband
+      break;
+    case 'pfanne':
+      // Glänzender Rand oben, dunkler Boden
+      m.paint(0, -17, -3, 1, -11, 3, P.s1);
+      m.set(0, -10, -4, P.s8).set(1, -10, 3, P.s8);
+      break;
+    case 'rechen':
+      // Zinken schlanker: jede zweite Reihe weg
+      m.remove(1, -24, -7, 1, -23, 7);
+      break;
+    case 'faeustlinge':
+      // Strickmuster: Zopf in Rot und Weiß
+      m.paint(-2, -5, -2, 3, -2, 3, (x, y, z) => ((x + y) % 3 === 0 ? P.f2 : (x + z) % 2 ? P.f3 : P.f2));
+      m.paint(-2, -1, -2, 3, 1, 3, (x, y) => (y % 2 ? P.s9 : P.s8));
+      break;
+    default:
+      break;
+  }
   return m;
 }
 
