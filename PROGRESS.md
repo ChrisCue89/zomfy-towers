@@ -5,6 +5,48 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Abschlussrunde m7-r1 über das ganze Spiel und Nachbesserung
+
+**Testspieler:** Kira 8/10, Jonas 8/10, Mira 7/10, Theo 7/10 – Berichte und
+Auswertung in `playtests/m7-r1/` (`ZUSAMMENFASSUNG.md`). Keine
+Konsolenmeldung in über 1 000 Brücken-Befehlen, kein Absturz, kein kaputter
+Spielstand. Einstieg vom Titelbild, Turmvorschau, Kampf, Knopf und Look
+kamen durchweg gut an.
+
+**Gefunden:** Schlurfer, die Mika jagten, hingen hinter Werkbank oder Beet
+fest – stundenlang, ohne anzugreifen, nicht zu treffen (Mira, Theo). Nach
+drei verlorenen Nächten schwiegen die Türme, eine Spirale ohne Ausweg
+(Theo). Nach Nacht 1 fielen die Nächte oft schon in der ersten Welle:
+Nachgemessen entschied vor allem der Platz der Türme, und ein Trupp, der
+durchkam, brauchte für das Zuhause nur Sekunden. Verdeckte Schlurfer waren
+schwer zu treffen (Jonas). Das Verlassen der Seite in der Figurwahl legte
+einen leeren Spielstand an (Kira). Dazu Tasten, die nicht wirkten (W/S im
+Dialog und in der Perk-Wahl), Hängenbleiben im Haus, »Kein Platz« ohne
+Grund, Hämmern auf E an der Werkbank.
+
+**Geändert**
+
+- Jagende Schlurfer erkennen, wenn sie festhängen, und geben die Jagd
+  kurz auf (neuer Prüfpunkt).
+- Türme fallen nach verlorenen Nächten nie unter ein Drittel (OFFENE-FRAGEN
+  54); Schläge aufs Zuhause zählen 60 % (52); Mika warnt eine Stunde vor
+  der Horde vor einem Weg ohne Turm, zwischen den Wellen eine Meldung (53,
+  neuer Prüfpunkt).
+- Zielmarke um den Schlurfer unter dem Zeiger: golden in Reichweite, sonst
+  blass.
+- Ohne Spielstand wird erst ab »Los geht’s!« gespeichert (neuer Prüfpunkt).
+- Richtungstasten wirken in Dialogen sofort, W/S auch in der Perk-Wahl;
+  Regler klemmen am Anschlag; Mika gleitet weiter um Möbel herum (0,7 m);
+  der rote Geist nennt den Grund für »Kein Platz«; die Schaukel drängt sich
+  nicht mehr vor Bäume; die Werkbank baut beim Hämmern auf E nichts.
+- DESIGN.md: offene Wege (6.11), Türme nach Niederlagen und Tagesgrenze
+  drei Viertel (6.12).
+
+**Offen:** Zielpfeil ohne Entfernung; späte Nächte (ab 5) nicht aktiv
+gespielt.
+
+---
+
 ## Meilenstein 6 – Playtest-Runde m6-r1 und Nachbesserung
 
 **Testspieler:** Mira 8/10, Kira 8/10 – Berichte und Auswertung in

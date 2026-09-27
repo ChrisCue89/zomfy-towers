@@ -496,7 +496,7 @@ export class Builder {
       const p = this.game.player.position;
       const check = this.world.buildings.check(pl.type, i, j, pl.turns, [{ x: p.x, z: p.z, r: 0.32 }]);
       const affordable = canAfford(this.game.state.inventory, pl.cost);
-      Object.assign(pl, { i, j, ok: check.ok && affordable, reason: check.ok ? (affordable ? null : 'teuer') : check.reason });
+      Object.assign(pl, { i, j, ok: check.ok && affordable, reason: check.ok ? (affordable ? null : 'teuer') : check.reason, why: check.why || null });
       this.preview.showPlacement(pl.type, pl.turns, i, j, pl.ok);
       const click = pointerFree && input.mouse.clicked;
       if (click) input.consumeClick();
@@ -633,7 +633,7 @@ export class Builder {
     if (!pl.ok) {
       const text = {
         max: T.bauleiste.schonGebaut,
-        belegt: T.meldungen.keinPlatz,
+        belegt: (pl.why && T.meldungen.keinPlatzWeil[pl.why]) || T.meldungen.keinPlatz,
         figur: T.meldungen.figurImWeg,
         weg: T.bauleiste.weg,
         teuer: T.bauleiste.fehlt(this.lackText(pl.cost)),
@@ -779,7 +779,7 @@ export class Builder {
       const r = box(pl.i, pl.j, w, d);
       thick(r, pl.ok ? COLORS.buildOk : COLORS.buildBad);
       // Warum rot? Gleich am Geist sagen, nicht erst nach dem Klick (m3-r2)
-      const why = !pl.ok && T.bauleiste.grund[pl.reason];
+      const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
       if (why) {
         const tw = measure(why) + 8;
         const tx = Math.round(r.x + r.w / 2 - tw / 2);

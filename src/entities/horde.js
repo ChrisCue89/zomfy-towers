@@ -21,6 +21,11 @@ import { ZOMBIES } from '../data/zombies.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
+/** Jagd hinter einem Hindernis: nach so vielen Sekunden ohne Durchkommen aufgeben … */
+const CHASE_GIVE_UP = 2.5;
+/** … und so lange nicht wieder auf Mika losgehen. */
+const CHASE_PAUSE = 4;
+
 const MAX_PER_TYPE = 110;
 const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
 const TINT = {
@@ -283,6 +288,7 @@ export class Horde {
       if (z.slowT <= 0) z.slow = 0;
       z.freezeT = Math.max(0, z.freezeT - dt);
       z.stunT = Math.max(0, z.stunT - dt);
+      if (z.noChase > 0) z.noChase -= dt;
       if (z.burnT > 0) {
         z.burnT -= dt;
         z.burnAcc = (z.burnAcc || 0) + z.burn * dt;
@@ -317,7 +323,7 @@ export class Horde {
       const pd = Math.hypot(player.x - z.x, player.z - z.z);
 
       // Mika in der Nähe? (Nicht, wenn sie im Haus ist.)
-      if (z.state !== 'enter' && player.alive && !player.inside && pd < z.aggro) z.state = 'chase';
+      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro) z.state = 'chase';
       else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive)) z.state = 'walk';
 
       switch (z.state) {
@@ -447,10 +453,21 @@ export class Horde {
       // Festgefahren (z. B. an einem Pfosten oder einer Ecke)? Seitlich
       // ausweichen – quer zur Laufrichtung, damit er sicher vorbeikommt (m3-r2:
       // Schlurfer hingen lange an der Wäscheleine).
-      if (z.state === 'walk' || z.state === 'approach') {
+      const chasing = z.state === 'chase' && pd > reach;
+      if (z.state === 'walk' || z.state === 'approach' || chasing) {
         const progressed = Math.hypot(z.x - z.lastX, z.z - z.lastZ);
-        z.stuck = progressed < speed * dt * 0.2 && speed > 0 ? z.stuck + dt : 0;
-        if (z.stuck > 0.5) {
+        const blocked = progressed < speed * dt * 0.2 && speed > 0;
+        z.stuck = blocked ? z.stuck + dt : 0;
+        // Mika hinter einem Bau (Werkbank, Turm, Beet): Wer nicht herumkommt, gibt die
+        // Jagd eine Weile auf und läuft auf seinem Weg zum Haus weiter (m7-r1: sonst
+        // standen Schlurfer stundenlang dort, griffen nichts an und waren nicht zu treffen)
+        z.chaseStuck = chasing ? Math.max(0, (z.chaseStuck || 0) + (blocked ? dt : -dt * 0.5)) : 0;
+        if (z.chaseStuck > CHASE_GIVE_UP) {
+          z.state = 'walk';
+          z.noChase = CHASE_PAUSE;
+          z.chaseStuck = 0;
+          z.stuck = 0;
+        } else if (z.stuck > 0.5) {
           if (z.state === 'approach' && pathing.distanceToHome(z.x, z.z) < 1.3) z.state = 'attack';
           else {
             const wx = vx - z.kx;

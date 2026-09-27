@@ -212,7 +212,11 @@ Grundprinzipien:
    Speichern v4 (Bilder: nahkampf, perks); ab Meilenstein 6: Ankunft der
    Überlebenden, Knopf mit echten Tasten, Einzug ins Zelt, Tauschen,
    Aufträge, Einrichten, Morgengaben, Funkturm, Bellen vor Welle 1,
-   Speichern v5 (Bilder: ueberlebende, einrichten). **Jede Konsolenmeldung
+   Speichern v5 (Bilder: ueberlebende, einrichten); ab Meilenstein 7:
+   Titelbild mit getipptem Namen und anderer Mütze, kein Spielstand vor
+   »Los geht’s!«, Speichern v6 mit Migration, Warnung vor einem Weg ohne
+   Turm, ein jagender Schlurfer kommt um die Werkbank herum (Bilder: titel,
+   figur). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -259,6 +263,8 @@ als Textkarte zeigen (`debugPath`), Erfahrung geben (`giveXp`), Waffen
 geben (`giveWeapon`) und Perks wählen (`choosePerk`); ab Meilenstein 6
 Überlebende setzen und ansprechen (`setSurvivor`, `talkTo`, `moveIn`),
 Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`).
+Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
+`probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |
 | `?seed=123` | Anderer Welt-Seed |
 

@@ -9,7 +9,7 @@ import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
 export const FLINCH = 0.28; // Dauer des Zusammenzuckens
-const SLIDE_LOOK = 0.4; // so weit schaut Mika seitlich voraus, wenn sie festhängt
+const SLIDE_LOOK = 0.7; // so weit schaut Mika seitlich voraus, wenn sie festhängt (m7-r1: 0,4 m – im Haus blieb man zu oft an Möbeln hängen)
 const SLIDE_TURN = 1.15; // Richtung des Ausweichschritts (Bogenmaß zur Wunschrichtung)
 
 function easeOut(t) {

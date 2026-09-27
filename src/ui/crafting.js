@@ -19,7 +19,8 @@ const HOLD_FIRST = 0.9; // so lange halten bis zur zweiten Umwandlung (ein lange
 const HOLD_REPEAT = 0.6; // jede weitere, solange gehalten wird
 const FLASH = 0.35;
 const COUNTER = 1.6; // so lange bleibt der Zähler nach dem Loslassen stehen
-const OPEN_LOCK = 0.3; // gleich nach dem Öffnen stellt E nichts her (schnelles Durchdrücken, m4-r1)
+const OPEN_LOCK = 0.6; // gleich nach dem Öffnen stellt E nichts her (schnelles Durchdrücken, m4-r1; m7-r1: 0,3 s reichten Jonas nicht)
+const MASH_GAP = 0.3; // Werkzeug/Waffe: ein Druck zählt nur, wenn davor so lange keiner kam – Hämmern auf E baut nichts (m7-r1)
 
 /** Wandelt das Rezept nur Vorrat um (statt ein Werkzeug zu bauen)? */
 const isConversion = (r) => Boolean(r.gives.inventory);
@@ -39,6 +40,7 @@ export class CraftingMenu {
   open() {
     this.isOpen = true;
     this.openT = 0;
+    this.lastPressAt = null;
     this.hold = null;
     this.counter = null;
     this.flash = null;
@@ -98,10 +100,14 @@ export class CraftingMenu {
     if (this.counter && !this.hold && (this.counter.t -= dt) <= 0) this.counter = null;
     const r = L.rows[this.focus]?.recipe;
     if (!r) return;
-    const started = (input.pressed('confirm') || clicked) && this.openT >= OPEN_LOCK;
+    const pressed = input.pressed('confirm');
+    const calm = this.openT - (this.lastPressAt ?? -Infinity) >= MASH_GAP;
+    if (pressed) this.lastPressAt = this.openT;
+    const started = (pressed || clicked) && this.openT >= OPEN_LOCK;
     if (!isConversion(r)) {
       this.hold = null;
-      if (started) this.game.craft(r);
+      // Werkzeug oder Waffe: nicht mitten im Hämmern auf E (die Maus ist Absicht genug)
+      if (started && (clicked || calm)) this.game.craft(r);
       return;
     }
     // Verwerten: ein Druck wandelt einmal um, gehalten geht es weiter

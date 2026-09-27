@@ -48,7 +48,7 @@ export class Menu {
         ...SETTING_KEYS.map((key) => ({
           label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}`,
           setting: key,
-          action: () => this.change(key, 1),
+          action: () => this.change(key, 1, true),
         })),
         { label: T.menue.zurueck, action: () => this.go('main') },
       ];
@@ -62,14 +62,19 @@ export class Menu {
     return [{ label: T.menue.zurueck, action: () => this.go('main') }];
   }
 
-  /** Einen Wert ändern (Zahlen 0–10 mit Umlauf, Auswahl der Reihe nach). */
-  change(key, dir) {
+  /**
+   * Einen Wert ändern. A/D schieben Zahlen (0–10) bis zum Anschlag – eine
+   * leise gestellte Lautstärke springt so nie auf voll (m7-r1). E/Enter geht
+   * der Reihe nach weiter, auch mit Umlauf, sonst käme man per E nicht zurück.
+   */
+  change(key, dir, cycle = false) {
     const st = this.game.settings;
     let value;
     if (CHOICES[key]) {
       const list = CHOICES[key];
       value = list[(list.indexOf(st[key]) + dir + list.length) % list.length];
-    } else value = (st[key] + dir + 11) % 11;
+    } else value = cycle ? (st[key] + dir + 11) % 11 : Math.max(0, Math.min(10, st[key] + dir));
+    if (value === st[key]) return; // am Anschlag: kein Klick, nichts zu speichern
     this.game.applySettings({ [key]: value });
     this.game.sound.play('klick');
   }

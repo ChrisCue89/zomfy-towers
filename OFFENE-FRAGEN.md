@@ -464,12 +464,45 @@ weil Möbel, Reparatur und Türme am selben Vorrat hängen. Vier Zelte bleiben
 das Höchste, der Stoff für Möbel und Funkturm bleibt knapp.
 
 ### 52. Mehr Nachsicht in den ersten Nächten?
-**Entscheidung:** Nein. Nachgemessen, Mika untätig im Haus: Nacht 1 hält mit
-einem Bolzenwerfer, Nacht 2 braucht zwei, Nacht 3 kippt auch mit zwei.
-*Warum:* Das sind die Ziele aus DESIGN.md 6.17 (»Nacht 1–2 schafft man mit
-zwei, drei Türmen und etwas Nahkampf«). Verlieren kostet nur Material, und
-wer lieber einrichtet als verteidigt, spielt trotzdem weiter. Die
-Abschlussrunde prüft das mit allen vier Testspielern nach.
+**Entscheidung (nach m7-r1):** Nicht über weniger Schlurfer, sondern über
+Zeit und Orientierung: Schläge aufs Zuhause zählen nur noch 60 %
+(`HOUSE_DAMAGE` in `zombies.js`), Mika warnt vor Wegen ohne Turm (Nr. 53),
+und Türme fallen nach verlorenen Nächten nie unter ein Drittel (Nr. 54).
+*Warum:* Nachgemessen in festen Schritten, Mika untätig im Haus, zwei
+Bolzenwerfer: Nah am Haus halten Nacht 1 und 2 ohne einen Kratzer, Nacht 3
+fällt. Weit draußen (an Wegen, über die die Welle nicht kommt) fällt schon
+Nacht 1 – ohne einen Abschuss. Über Sieg oder Niederlage entschied also vor
+allem der Platz der Türme, und ein Trupp, der durchkam, brauchte für das
+Zuhause nur Sekunden – zu schnell, um hinzulaufen. Die Balance-Ziele aus
+DESIGN.md 6.17 gelten weiter. (Die erste Messung in m6-r1 hing teils in
+der Perk-Wahl fest; ihre Werte für Nacht 1 und 3 waren nicht belastbar.)
+
+### 53. Wie erfährt man, welche Wege offen sind?
+**Entscheidung:** Eine Stunde vor der Horde prüft das Spiel, ob am Weg der
+ersten Welle ein schießender Turm steht (Reichweite über irgendeinem Punkt
+des Weges vom Waldrand bis zur Hauswand). Wenn nicht, sagt es Mika in einer
+Sprechblase. Zwischen den Wellen warnt eine Meldung vor der nächsten.
+*Warum:* Mira wünschte sich genau das; die Wegvorschau beim Bauen zeigt
+die Wege, aber nicht, welche davon heute Nacht kommen. Die Richtung der
+Wellen steht ohnehin fest (Seed), das Spiel verrät also nichts, was die
+Nachtleiste nicht auch sagt – nur früher und mit dem Hinweis auf die Lücke.
+
+### 54. Was passiert mit Türmen nach mehreren verlorenen Nächten?
+**Entscheidung:** Sie verlieren je Niederlage ein Drittel ihrer
+Haltbarkeit, aber nie mehr als bis auf ein Drittel. Sie schießen also
+weiter, auch wenn man nicht repariert.
+*Warum:* Theo ließ nach der ersten Nacht die Zeit laufen: Nach drei
+Niederlagen schwiegen seine Türme, jede weitere Nacht ging ohne einen
+Abschuss verloren, der Vorrat stand still, die Reparatur wurde teurer – aus
+dieser Spirale kam man nur mit vollem Einsatz heraus. Verlieren soll
+Material kosten (DESIGN.md 6.12), aber nie endgültig sein.
+
+### 55. Esc im Dialog: schließen oder Pausenmenü?
+**Entscheidung:** Weiter schließen (wie m3-r2), mit der harmlosen Antwort.
+*Warum:* Kira hätte lieber das Pausenmenü über dem Dialog. In m3-r2 wollten
+die Testspieler aber genau das Schließen, und Rückfragen haben immer eine
+harmlose Vorwahl – Esc entscheidet nie etwas Folgenreiches. Das Pausenmenü
+bleibt einen Druck entfernt.
 
 ## Technik mit Auswirkung aufs Design
 

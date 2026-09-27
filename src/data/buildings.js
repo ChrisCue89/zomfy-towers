@@ -19,6 +19,13 @@ export const BUILDINGS = {
   zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
 };
 
+/**
+ * Verlorene Nacht: Türme verlieren ein Drittel ihrer Haltbarkeit, aber nie mehr
+ * als bis auf diesen Anteil (m7-r1: Nach drei Pechnächten schwiegen sie sonst,
+ * und ohne vollen Einsatz kam man aus der Spirale nicht mehr heraus).
+ */
+export const TOWER_LOSS_FLOOR = 1 / 3;
+
 /** Reihenfolge in den Reitern der Bauleiste. */
 export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade'];
 export const HOME_TAB = ['werkbank', 'laternenpfahl', 'beet', 'bank'];

@@ -80,6 +80,11 @@ mit zwei, drei Türmen und etwas Nahkampf.« Verlieren kostet nur Material.
 Deshalb ist nichts geändert. Die Abschlussrunde prüft das mit Jonas
 (Action) und Theo (Strategie) nach.
 
+> **Nachtrag (m7-r1):** Diese Messung hing teils in der Perk-Wahl fest (die
+> Nacht lief dann nicht weiter). Belastbar sind nur »Nacht 2, 1 Turm: fällt«
+> und »Nacht 3, 2 Türme: fällt«. Die neue Messung mit Nah- und Fern-Aufstellung
+> steht in `playtests/m7-r1/ZUSAMMENFASSUNG.md`.
+
 ## Was gut ankam
 
 - **Überlebende:** sympathisch und klar zu unterscheiden, mit Porträt,

@@ -7,7 +7,11 @@
 import { T } from '../data/texts.js';
 import { planNight, planDay, NIGHT_START, NIGHT_END } from '../data/waves.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
-import { HOUSE_LEVELS } from '../data/buildings.js';
+import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
+import { towerStats } from '../data/towers.js';
+
+/** So viele Spielminuten vor der Nacht sagt Mika, wenn am Weg der ersten Welle kein Turm steht. */
+const COVER_WARN_AHEAD = 60;
 
 export class Nights {
   /** @param {import('./game.js').Game} game */
@@ -19,6 +23,36 @@ export class Nights {
     this.enabled = true; // aus nur für Prüf-Bilder (window.zomfy.setHorde)
     this.lastMinute = null; // für Zeitsprünge (Ausruhen, Werkeln)
     this.finishedAt = -99; // wann die letzte Nacht endete (game.clock)
+    this.coverWarned = null; // »Tag|Welle«, für die schon vor ungedeckten Wegen gewarnt wurde
+  }
+
+  /**
+   * Waldpfade (aus `entries`), an deren Weg bis zum Haus kein schießender Turm
+   * steht (m7-r1: Mira wusste nicht, welche Wege offen sind – ein Trupp kam
+   * dann ungehindert ans Haus).
+   */
+  uncovered(entries) {
+    const g = this.game;
+    const towers = g.world.buildings.list
+      .filter((b) => BUILDINGS[b.type].tower && b.hp > 0)
+      .map((b) => ({ x: b.i + 0.5, z: b.j + 0.5, s: towerStats(b.type, b.level, b.spec) }))
+      .filter((t) => t.s.damage > 0);
+    return entries.filter((name) => {
+      const path = g.world.pathing.trace(name);
+      return !towers.some((t) => path.some((p) => (p.x - t.x) ** 2 + (p.z - t.z) ** 2 <= t.s.range * t.s.range));
+    });
+  }
+
+  /** Einmal je Welle: Liegt ihr Weg ohne Turm, sagt es Mika (abends) bzw. eine Meldung (nachts). */
+  warnUncovered(day, waveIndex, entries, evening) {
+    const key = `${day}|${waveIndex}`;
+    if (this.coverWarned === key) return;
+    this.coverWarned = key;
+    const open = this.uncovered(entries);
+    if (!open.length) return;
+    const woher = open.map((e) => T.horde.richtung[e]).join(T.horde.und);
+    if (evening) this.game.hud.say(T.horde.ungedecktAbend(woher), 6);
+    else this.game.hud.toast(T.horde.ungedeckt(woher), 'warnung', 4.5);
   }
 
   get state() {
@@ -75,6 +109,12 @@ export class Nights {
       st.world.dayEvents = { day: st.time.day, done: k, lost: today?.lost || 0 };
     }
 
+    // Eine Stunde vor der Horde: Kommt die erste Welle über einen Weg ohne Turm?
+    if (this.enabled && minute >= NIGHT_START - COVER_WARN_AHEAD && minute < NIGHT_START && this.state.n !== st.time.day && this.coverWarned !== `${st.time.day}|0`) {
+      const first = planNight(st.time.day, this.seed(), ENTRY_NAMES).waves[0];
+      if (first) this.warnUncovered(st.time.day, 0, first.entries, true);
+    }
+
     // Die Nacht beginnt (danach ist st.night ein neues Objekt – erst hier lesen)
     if (minute >= NIGHT_START && this.state.n !== st.time.day) this.beginNight(st.time.day);
     const night = this.state;
@@ -99,6 +139,11 @@ export class Nights {
         g.horde.clear();
         night.wave = plan.waves.length;
       }
+    }
+
+    // Zwischen den Wellen: Die nächste kommt über einen Weg ohne Turm?
+    if (this.active && night.wave > 0 && night.wave < this.plan.waves.length && g.horde.alive === 0 && !this.queue.length) {
+      this.warnUncovered(night.n, night.wave, this.plan.waves[night.wave].entries, false);
     }
 
     // Warteschlange abarbeiten

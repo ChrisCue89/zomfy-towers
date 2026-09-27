@@ -164,6 +164,7 @@ export class Hud {
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
     if (show.prompt) this.drawGoalMarker(ui);
+    if (show.prompt) this.drawTargetMark(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
@@ -419,6 +420,30 @@ export class Hud {
     const len = Math.hypot(dx, dy) || 1;
     const k = Math.min((ui.width / 2 - 22) / Math.abs(dx || 1e-3), (ui.height / 2 - 70) / Math.abs(dy || 1e-3));
     tri(cx + dx * k - (dx / len) * 6, cy + dy * k - (dy / len) * 6, dx / len, dy / len);
+  }
+
+  /**
+   * Schlurfer unter dem Zeiger: kleine Ecken um ihn – golden, wenn ein Klick ihn
+   * erreicht, sonst blass (m7-r1: hinter Dach oder Krone wusste man nicht, wo
+   * man hinklicken muss und ob er nah genug ist).
+   */
+  drawTargetMark(ui) {
+    const g = this.game;
+    const z = g.mode === 'play' && !g.builder.placement ? g.builder.pointerZombie : null;
+    if (!z || z.state === 'dying') return;
+    const r = z.def.radius + 0.15;
+    const a = g.worldToUi(z.x - r, 1.7 * (z.def.scale || 1), z.z - r);
+    const c = g.worldToUi(z.x + r, 0, z.z + r);
+    const x0 = Math.round(Math.min(a.x, c.x)) - 2;
+    const y0 = Math.round(Math.min(a.y, c.y)) - 2;
+    const x1 = Math.round(Math.max(a.x, c.x)) + 2;
+    const y1 = Math.round(Math.max(a.y, c.y)) + 2;
+    const color = g.combat.canReach(z) ? COLORS.gold : COLORS.textDim;
+    const L = 4;
+    for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+      ui.rect(Math.min(x, x + dx * (L - 1)), y, L, 1, color);
+      ui.rect(x, Math.min(y, y + dy * (L - 1)), 1, L, color);
+    }
   }
 
   drawEdgeMarkers(ui) {

@@ -61,8 +61,9 @@ export class PerkChoice {
     const cards = this.layout(ui);
     const hovered = cards.findIndex((c) => ui.hover(c.rect.x, c.rect.y, c.rect.w, c.rect.h));
     if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
-    if (input.pressed('left')) this.focus = (this.focus + cards.length - 1) % cards.length;
-    if (input.pressed('right')) this.focus = (this.focus + 1) % cards.length;
+    // W/S wandern mit (m7-r1: Theo drückte S, S, Enter und bekam die erste Karte)
+    if (input.pressed('left') || input.pressed('up')) this.focus = (this.focus + cards.length - 1) % cards.length;
+    if (input.pressed('right') || input.pressed('down')) this.focus = (this.focus + 1) % cards.length;
     if (this.t < LOCK) {
       if (input.mouse.clicked) input.consumeClick();
       return null;
