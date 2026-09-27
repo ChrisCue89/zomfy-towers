@@ -40,7 +40,7 @@ export const CONFIG = {
     seed: Number(params.get('seed')) || 20260926,
   },
   time: {
-    secondsPerGameMinute: 0.6,
+    secondsPerGameMinute: 0.4, // M8: 0,6 s zogen sich (ein Tag rund 9 statt 14 Minuten)
     newGameMinute: 60, // 07:00
     wakeMinute: 30, // 06:30
     nightStartMinute: 12 * 60, // 18:00 – ab hier darf man ohne Nachfrage schlafen

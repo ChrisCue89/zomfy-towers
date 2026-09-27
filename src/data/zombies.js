@@ -7,14 +7,16 @@
 //   bite      Schaden pro Schlag gegen Mika
 //   hitRate   Schläge pro Sekunde        scale   Größe (1 = wie Mika)
 //   radius    Kollisionsradius
+//   aggro     ab dieser Nähe (m) gehen sie nachts auf Mika los (M8: vorher 3,2 für alle)
 
 export const ZOMBIES = {
   schlurfer: {
     hp: 30,
-    speed: 0.72,
+    speed: 0.8, // M8: 0,72 – keine Herausforderung
     armor: 0,
     hit: 4,
-    bite: 6,
+    bite: 7,
+    aggro: 4.5,
     hitRate: 0.6,
     scale: 1,
     radius: 0.28,
@@ -27,6 +29,7 @@ export const ZOMBIES = {
     armor: 0,
     hit: 3,
     bite: 5,
+    aggro: 6.5, // schnell und neugierig: sucht Mika zuerst
     hitRate: 1,
     scale: 0.95,
     radius: 0.25,
@@ -39,6 +42,7 @@ export const ZOMBIES = {
     armor: 0,
     hit: 2,
     bite: 3,
+    aggro: 5,
     hitRate: 0.9,
     scale: 0.62,
     radius: 0.2,
@@ -51,6 +55,7 @@ export const ZOMBIES = {
     armor: 6,
     hit: 12,
     bite: 12,
+    aggro: 3.5,
     hitRate: 0.5,
     scale: 1.4,
     radius: 0.42,
@@ -95,7 +100,10 @@ export const ZOMBIES = {
  * vorbei, fiel das Zuhause in wenigen Sekunden – zu schnell, um hinzulaufen und
  * mitzukämpfen. Türme, Barrikaden und Mika treffen die Schlurfer wie bisher.
  */
-export const HOUSE_DAMAGE = 0.6;
+export const HOUSE_DAMAGE = 0.8; // M8: 0,6 machte die Nächte zu harmlos
+
+/** Nachts: Spürweite für Arten ohne eigenen Wert (m). */
+export const NIGHT_AGGRO = 4;
 
 /** Tagesschlurfer: träge, wenig Leben, kaum Loot, greifen nur sehr nah an. */
 export const DAY_ZOMBIE = { type: 'schlurfer', hpFactor: 0.7, speedFactor: 0.65, lootFactor: 0.5, aggro: 1.4 };

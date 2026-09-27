@@ -17,7 +17,7 @@
 import * as THREE from 'three';
 import { createWorldMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { V } from '../world/layout.js';
-import { ZOMBIES } from '../data/zombies.js';
+import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
@@ -179,7 +179,7 @@ export class Horde {
       lastZ: start.z,
       target: null,
       deathT: 0,
-      aggro: day ? 1.4 : 3.2,
+      aggro: day ? DAY_ZOMBIE.aggro : def.aggro ?? NIGHT_AGGRO,
       lootFactor: day ? 0.5 : 1,
     };
     if (o.entry) z.facing = Math.atan2(o.entry.x - start.x, o.entry.z - start.z);

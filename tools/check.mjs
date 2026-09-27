@@ -951,7 +951,6 @@ async function runNightChecks(browser, url) {
   else fail('Morgenbericht: E schließt ihn nicht');
 
   // Nacht 2 verloren: kostet Material, nie den Spielstand
-  const vorVerlust = await state();
   await z(() => {
     window.zomfy.setTime(20, 28);
     window.zomfy.teleport(6, 4, 0);
@@ -969,10 +968,11 @@ async function runNightChecks(browser, url) {
   }
   const verloren = await state();
   const bericht2 = (await z(() => window.zomfyView())).bericht || [];
-  const schrottWeg = vorVerlust.inventory.schrott - verloren.inventory.schrott;
-  if (verloren.stats.nightsLost === 1 && verloren.time.day === 3 && schrottWeg > 0 && verloren.world.homeHp > 0 && bericht2.length) {
-    note(`✓ Verlorene Nacht: ${schrottWeg} Schrott weg, Zuhause wieder ${verloren.world.homeHp}, Tag 3 beginnt (${bericht2[0]})`);
-  } else fail(`Verlorene Nacht: ${JSON.stringify({ lost: verloren.stats.nightsLost, day: verloren.time.day, schrottWeg, home: verloren.world.homeHp, bericht2 })}`);
+  // Was die Niederlage kostet, steht im Bericht (der Vorrat selbst kann durch Loot derselben Nacht wachsen)
+  const verlustZeile = bericht2.find((l) => l.startsWith('Verloren:')) || '';
+  if (verloren.stats.nightsLost === 1 && verloren.time.day === 3 && /Schrott/.test(verlustZeile) && verloren.world.homeHp > 0) {
+    note(`✓ Verlorene Nacht: ${verlustZeile.replace('Verloren: ', '')} weg, Zuhause wieder ${verloren.world.homeHp}, Tag 3 beginnt (${bericht2[0]})`);
+  } else fail(`Verlorene Nacht: ${JSON.stringify({ lost: verloren.stats.nightsLost, day: verloren.time.day, home: verloren.world.homeHp, bericht2 })}`);
   checkMessages(session);
   await session.context.close();
 }

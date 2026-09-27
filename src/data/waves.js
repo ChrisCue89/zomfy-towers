@@ -34,10 +34,11 @@ export function isLeaderNight(n) {
  * viele Wellen sie sich verteilen (m3-r1: 18 → 21 → 46 war ein Sprung).
  * Ab Nacht 2 steiler (m3-r2: »leichter statt schwerer«, das Loot wuchs
  * schneller als die Bedrohung). Nacht 1 bleibt sanft.
- * Nacht 1: 18, 2: 26, 3: 36, 4: 48, 5: 62, 8: 116.
+ * M8: »keine Herausforderung, schon gar nicht in Nacht 1« – mehr ab Nacht 1.
+ * Nacht 1: 26, 2: 35, 3: 46, 4: 59, 5: 74, 8: 131 (vorher 18, 26, 36, 48, 62, 116).
  */
 export function nightBudget(n) {
-  return 18 + 7 * (n - 1) + (n - 1) ** 2;
+  return 26 + 8 * (n - 1) + (n - 1) ** 2;
 }
 
 export function planNight(n, seed, entries) {
@@ -71,7 +72,7 @@ export function planNight(n, seed, entries) {
     while (left > 0.4) {
       const r = rng.next();
       if (n >= 3 && r < 0.14) add('schwaermer', rng.int(3, 5));
-      else if (n >= 2 && r < 0.5) add('flitzer');
+      else if (r < (n >= 2 ? 0.5 : 0.25)) add('flitzer'); // M8: ein paar Flitzer schon in Nacht 1
       else add('schlurfer');
     }
     for (let i = groups.length - 1; i > 0; i--) {
