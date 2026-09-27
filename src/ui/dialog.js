@@ -116,9 +116,9 @@ export class DialogBox {
     if (answers && answers.length) {
       if (this.answersShownAt === null) this.answersShownAt = this.time;
       const ready = this.time - this.answersShownAt >= ANSWER_GUARD;
-      // Auch Richtungstasten erst nach der kurzen Sperre: ein Tastendruck, der noch
-      // vom Laufen stammt, verstellt die Vorwahl nicht
-      if (nav && ready) this.choice = (this.choice + nav + answers.length) % answers.length;
+      // Richtungstasten wirken sofort (m7-r1: eine Sperre wirkte wie ein verschluckter
+      // Druck); nur der Druck, der die Zeile fertig zeigt, wählt nichts (siehe oben)
+      if (nav) this.choice = (this.choice + nav + answers.length) % answers.length;
       const hovered = (this.answerRects || []).findIndex((r) => this.game.ui.hover(r.x, r.y, r.w, r.h));
       if (hovered >= 0 && input.mouse.moved) this.choice = hovered;
       if (!ready) return;

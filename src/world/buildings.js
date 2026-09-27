@@ -67,7 +67,10 @@ export class Buildings {
     const def = BUILDINGS[type];
     if (def.max && this.count(type) >= def.max) return { ok: false, reason: 'max' };
     const { w, d } = footprint(type, turns);
-    if (!this.grid.canPlace(i, j, w, d)) return { ok: false, reason: 'belegt' };
+    if (!this.grid.canPlace(i, j, w, d)) {
+      const why = this.grid.cells(i, j, w, d).map(([ci, cj]) => this.grid.blockReason(ci, cj)).find(Boolean) || null;
+      return { ok: false, reason: 'belegt', why };
+    }
     for (const b of blockers) {
       if (b.x + b.r > i && b.x - b.r < i + w && b.z + b.r > j && b.z - b.r < j + d) return { ok: false, reason: 'figur' };
     }

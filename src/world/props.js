@@ -625,7 +625,7 @@ export function createProps({ seed, materials, colliders }) {
   add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche' });
   colliders.addCircle(oak.x, oak.z, 0.45);
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
-  interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', dialog: 'schaukel' });
+  interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', dialog: 'schaukel', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
 
   // Straßensperren an beiden Enden
   const west = LAYOUT.roadBlockWest;

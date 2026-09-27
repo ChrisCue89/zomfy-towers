@@ -73,6 +73,13 @@ export class Combat {
     }
   }
 
+  /** Erreicht ein Klick diesen Schlurfer (Reichweite plus Ausfallschritt)? Für die Zielmarke. */
+  canReach(z) {
+    const w = weaponStats(this.weaponId, this.game.state) || WEAPONS.faeuste;
+    const p = this.game.player.position;
+    return Math.hypot(z.x - p.x, z.z - p.z) <= w.reach + z.def.radius - 0.2 + LUNGE;
+  }
+
   /** Schlag in Richtung (dx, dz) mit dem, was Mika in der Hand hat. */
   attack(dx, dz) {
     const g = this.game;

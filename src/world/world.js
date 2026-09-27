@@ -69,7 +69,7 @@ export class World {
     // die Grundfläche aller Ausbaustufen des Zuhauses (die Hütte wächst dorthin).
     this.grid = new BuildGrid({ minX: -16, maxX: 16, minZ: -12, maxZ: 13 });
     this.grid.markStatic(this.colliders);
-    for (const level of [1, 2]) for (const r of shelterFootprint(level)) this.grid.blockRect(r.minX, r.minZ, r.maxX, r.maxZ);
+    for (const level of [1, 2]) for (const r of shelterFootprint(level)) this.grid.blockRect(r.minX, r.minZ, r.maxX, r.maxZ, level);
     // Kleine Quellen (Kiesel, Gras, Äste) sind begehbar, aber nicht bebaubar –
     // sonst wächst ein Faserbusch mitten in ein Beet hinein.
     for (const node of this.resources.nodes) this.grid.reserve(node.x, node.z);
@@ -160,6 +160,7 @@ export class World {
 
   /** Das Zuhause auf eine Ausbaustufe bringen (neu aufbauen). */
   setHouseLevel(level) {
+    this.grid.houseLevel = level; // für »Kein Platz«: steht das Zuhause hier schon?
     if (this.shelter.level === level) return;
     const old = this.shelter;
     this.scene.remove(old.group);
@@ -231,7 +232,8 @@ export class World {
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
       // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen;
       // ebenso der Hackklotz, solange die Axt dort steckt (m5-r1)
-      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
+      const flavor = it.prompt === 'ansehen' || it.flavor;
+      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;
@@ -242,7 +244,7 @@ export class World {
       }
     }
     // Wer in Reichweite ist, geht stummen Dingen (Laterne, Hackklotz ohne Axt …) immer vor (m6-r1)
-    if (bestNpc && best && best.prompt === 'ansehen') return bestNpc;
+    if (bestNpc && best && (best.prompt === 'ansehen' || best.flavor)) return bestNpc;
     return best;
   }
 

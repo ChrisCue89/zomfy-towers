@@ -354,6 +354,27 @@ async function runTour(browser, url) {
 /** Abschnitt 2: Bett, Schlafen, Speichern und Laden, kaputter Spielstand. */
 async function runSaveChecks(browser, url) {
   {
+    // --- 2a. Titelbild ohne Spielstand: erst »Los geht’s!« legt einen an (m7-r1) ------
+    const t = await openGame(browser, `${url}index.html?debug`, 'Titelbild ohne Stand', { init: () => localStorage.clear() });
+    await t.page.evaluate(() => window.zomfy.setDebug(false));
+    await t.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
+    await settle(t.page, 60); // das Titelbild nimmt erst nach dem Einblenden Tasten an
+    await t.page.keyboard.press('Enter'); // Neues Spiel → Figur
+    await settle(t.page, 20);
+    // Verlassen der Seite in der Figurwahl (wie beim Neuladen): nichts speichern
+    const inFigur = await t.page.evaluate(() => {
+      window.zomfy.save();
+      return { seite: window.zomfyView().titel?.seite, stand: localStorage.getItem('zomfy-towers.spielstand') };
+    });
+    await t.page.keyboard.press('Enter'); // »Los geht’s!« ist vorgewählt
+    await t.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 180000 });
+    const gestartet = await t.page.evaluate(() => Boolean(localStorage.getItem('zomfy-towers.spielstand')));
+    if (inFigur.seite === 'figur' && inFigur.stand === null && gestartet) note('✓ Titelbild: in der Figurwahl entsteht kein Spielstand, erst »Los geht’s!« legt ihn an');
+    else fail(`Titelbild ohne Stand: ${JSON.stringify({ ...inFigur, gestartet })}`);
+    checkMessages(t);
+    await t.context.close();
+  }
+  {
     // --- 2. Speichern und Laden -----------------------------------------------------
     const saveUrl = `${url}index.html?test`;
     const first = await openGame(browser, saveUrl, 'Speichern', { init: () => {
@@ -561,7 +582,7 @@ async function runBuildChecks(browser, url) {
     window.zomfy.teleport(bank.i + 1, bank.j + 1.8, Math.PI);
     window.zomfy.interact(`bau-${bank.id}`);
   });
-  await settle(page, 5);
+  await settle(page, 45); // gleich nach dem Öffnen stellt E nichts her (OPEN_LOCK)
   const steinVorVerwerten = (await state()).inventory.stein;
   // Mit S bis »Stein zu Schrott verwerten« (die Liste wächst mit den Meilensteinen), dann einmal kurz E
   for (let k = 0; k < 12; k++) {
@@ -758,6 +779,15 @@ async function runNightChecks(browser, url) {
   await step(1500);
   if (tagHp >= 225 && tagHp < 235) note(`✓ Tagsüber: Schlurfer nagen das Zuhause höchstens bis auf drei Viertel an (${Math.round(tagHp)}/300)`);
   else fail(`Tagsüber: Zuhause ${tagHp}/300 (erwartet 225 bis 234)`);
+
+  // Eine Stunde vor der Horde: Steht am Weg der ersten Welle kein Turm, sagt es Mika (m7-r1)
+  await z(() => window.zomfy.setTime(19, 45));
+  await step(600);
+  const warnung = (await z(() => window.zomfyView())).gedanke || '';
+  await z(() => window.zomfy.setTime(9, 0));
+  await step(100);
+  if (warnung.includes('kein Turm')) note(`✓ Abends: Warnung vor dem Weg ohne Turm („${warnung}“)`);
+  else fail(`Abends: keine Warnung vor dem Weg ohne Turm (Gedanke: ${warnung || '–'})`);
 
   // Turm mit der Tastatur: Q wählt den Bolzenwerfer, E setzt ihn vor die Figur
   await page.keyboard.press('KeyQ');
@@ -1323,6 +1353,33 @@ async function runCombatChecks(browser, url) {
   const aufgewertet = (await state()).weapons.pfanne;
   if (aufgewertet === 2) note('✓ Waffen: Bratpfanne über die Bauleiste (Figur, C) auf Stufe 2');
   else fail(`Waffen: Bratpfanne auf Stufe ${aufgewertet}`);
+
+  // Ein Schlurfer jagt Mika, eine Werkbank steht dazwischen: Er bleibt nicht ewig
+  // davor stehen, sondern gibt die Jagd auf und kommt außen herum (m7-r1)
+  const bank = await z(() => {
+    window.zomfy.give({ holz: 10, stein: 4 });
+    return window.zomfy.build('werkbank', 6, 2);
+  });
+  await z(() => window.zomfy.finishDialog());
+  const jaeger = await z(() => {
+    window.zomfy.killAllZombies();
+    window.zomfy.teleport(7.0, 3.7, Math.PI);
+    return window.zomfy.spawnZombie('schlurfer', 7.0, 1.3);
+  });
+  let jagdNah = 99;
+  for (let k = 0; k < 8; k++) {
+    await step(2000);
+    const d = await z((id) => {
+      const zo = window.zomfy.zombies().find((q) => q.id === id);
+      const p = window.zomfyView().figur;
+      return zo ? Math.hypot(zo.x - p.x, zo.z - p.z) : 99;
+    }, jaeger);
+    jagdNah = Math.min(jagdNah, d);
+  }
+  await z(() => window.zomfy.killAllZombies());
+  await step(100);
+  if (bank === 'ok' && jagdNah < 1.2) note(`✓ Horde: Ein Schlurfer hinter der Werkbank kommt außen herum zu Mika (${jagdNah.toFixed(2)} m)`);
+  else fail(`Horde: Schlurfer hängt hinter der Werkbank fest (Bau ${bank}, nächster Abstand ${jagdNah.toFixed(2)} m)`);
 
   // Speichern und Laden: Waffen, Stufe und Perks bleiben
   await z(() => window.zomfy.sleepNow());

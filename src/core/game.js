@@ -50,11 +50,12 @@ import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from 
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
-import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 import { MAX_COZY } from '../data/furniture.js';
+import { HOUSE_DAMAGE } from '../data/zombies.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -195,6 +196,10 @@ export class Game {
       this.pendingIntro = false;
       this.mode = 'title';
       this.title.open(loaded.status === 'ok');
+      // Ohne Spielstand wird erst gespeichert, wenn wirklich ein Spiel beginnt:
+      // Sonst legte schon das Verlassen der Seite in der Figurwahl einen leeren
+      // Stand an, und das Titelbild böte »Weiterspielen« als Mika an (m7-r1)
+      this.holdSave = loaded.status !== 'ok';
     }
 
     this.setFavicon();
@@ -306,7 +311,7 @@ export class Game {
   }
 
   quietSave() {
-    if (!this.ready) return;
+    if (!this.ready || this.holdSave) return;
     this.snapshot();
     this.saves.save(this.state);
   }
@@ -723,6 +728,7 @@ export class Game {
 
   onHouseHit(dmg, z) {
     const st = this.state;
+    dmg *= HOUSE_DAMAGE;
     this.sound.play('zuhause', { x: z.x, z: z.z, volume: 0.7 });
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     // Tagsüber bricht nichts durch: Streuner nagen langsam und bringen das
@@ -820,7 +826,9 @@ export class Game {
     for (const b of this.world.buildings.list) {
       const def = BUILDINGS[b.type];
       if (!def.hp) continue;
-      b.hp = Math.max(0, b.hp - def.hp / 3);
+      // Türme nie unter ein Drittel: Sie schießen auch nach einer Pechsträhne weiter
+      const floor = def.tower ? def.hp * TOWER_LOSS_FLOOR : 0;
+      b.hp = Math.max(Math.min(b.hp, floor), b.hp - def.hp / 3);
       if (def.tower) damaged.towers += 1;
       else damaged.barricades += 1;
     }
@@ -926,6 +934,7 @@ export class Game {
   /** Neues Spiel mit Name und Aussehen. */
   startNewFromTitle(name, look) {
     this.title.close();
+    this.holdSave = false;
     this.newGame();
     Object.assign(this.state.player, { name, look });
     this.appliedLook = null;
@@ -1472,7 +1481,14 @@ export class Game {
       schlurferAusserhalb: this.hud.edgeCount || 0,
       randMarken: (this.hud.edgeMarks || []).map((m) => `${m.art} ${m.richtung}${m.anzahl > 1 ? ` (${m.anzahl})` : ''}`),
       lootAmBoden: this.loot.items.length,
-      bericht: this.report.isOpen ? this.report.lines().map((l) => l.text) : null,
+      // Mengen stehen im Bild als Symbole – für die Textansicht als Wörter (m7-r1: »Knopf hat etwas ausgebuddelt:« wirkte leer)
+      bericht: this.report.isOpen
+        ? this.report.lines().map((l) => {
+            if (!l.res) return l.text;
+            const parts = Object.entries(l.res).filter(([, n]) => n > 0).map(([r, n]) => T.menge(n, r));
+            return `${l.text} ${parts.join(', ') || l.empty || ''}`.trim();
+          })
+        : null,
       banner: this.hud.banner ? this.hud.banner.text : null,
       meldungen: this.hud.toasts.map((t) => t.text),
       gedanke: this.hud.speech && this.hud.speech.time < this.hud.speech.duration ? this.hud.speech.text : null,
@@ -1519,6 +1535,14 @@ export class Game {
         for (let k = 0; k < n; k++) game.player.update(1 / 30, { x: dx, z: dz }, false);
         const p = game.player.position;
         return Math.hypot(p.x - x, p.z - z);
+      },
+      /** Wie probeMove, gibt aber die Endstelle zurück (oder null, wenn der Start belegt ist). */
+      probeWalk(x, z, dx, dz, n = 10) {
+        if (game.world.colliders.blocks(x, z, CONFIG.player.radius)) return null;
+        game.player.place(x, z, 0);
+        for (let k = 0; k < n; k++) game.player.update(1 / 30, { x: dx, z: dz }, false);
+        const p = game.player.position;
+        return { x: p.x, z: p.z };
       },
       setHouseLevel(level) {
         game.state.world.houseLevel = level;

@@ -401,6 +401,10 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
   Meldung sagt, woher (»Welle 1 von 3 – aus dem Westen!«), die Nachtleiste
   behält es (»Aus: Westen«) und kündigt zwischen den Wellen die nächste an
   (»Gleich: Osten«). Pfeile am Bildrand zeigen Schlurfer außerhalb des Bildes.
+- **Offene Wege:** Steht am Weg der ersten Welle kein schießender Turm, sagt
+  Mika es eine Stunde vorher (»Heute Nacht kommen sie zuerst aus dem Osten –
+  und an dem Weg steht noch kein Turm.«); zwischen den Wellen warnt eine
+  Meldung vor der nächsten.
 - **Wegvorschau:** Beim Setzen jedes Baus laufen rote Punkte die Wege der
   Horde entlang, vom Waldrand bis an die Hauswand; die Tafel erklärt Kreis
   (Reichweite) und Punkte. Alle Wege treffen sich am Haus – dort lohnen die
@@ -415,12 +419,13 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
   läuft weiter.
 - Folgen: ein Viertel des Schrotts und ein Zehntel der übrigen
   Tagesmaterialien sind weg (Zahnräder und Moderkerne bleiben), Türme und
-  Barrikaden verlieren ein Drittel ihrer Haltbarkeit (ein Turm ohne
-  Haltbarkeit schweigt), das Zuhause wird notdürftig auf ein Viertel geflickt
-  – nie besser, als es zu Beginn der Nacht war. **Nie Spielende, nie Verlust
-  des Spielstands.**
+  Barrikaden verlieren ein Drittel ihrer Haltbarkeit – Türme aber nie mehr
+  als bis auf ein Drittel, damit sie auch nach einer Pechsträhne weiter
+  schießen (ein Turm ohne Haltbarkeit schwiege). Das Zuhause wird notdürftig
+  auf ein Viertel geflickt – nie besser, als es zu Beginn der Nacht war.
+  **Nie Spielende, nie Verlust des Spielstands.**
 - **Tagsüber bricht nichts durch:** Tagesschlurfer bringen das Zuhause
-  höchstens auf die Hälfte. Geht Mika am Tag zu Boden, wacht sie zwei
+  höchstens auf drei Viertel. Geht Mika am Tag zu Boden, wacht sie zwei
   Stunden später im Bett auf, ohne Verluste.
 - **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot (auch das nach
   der letzten Welle), was Streuner schon vor der Nacht abgenagt haben, der

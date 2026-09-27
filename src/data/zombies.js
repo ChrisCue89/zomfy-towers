@@ -90,5 +90,12 @@ export const ZOMBIES = {
   },
 };
 
+/**
+ * Schläge aufs Zuhause zählen nur so viel (m7-r1): Kam ein Trupp an den Türmen
+ * vorbei, fiel das Zuhause in wenigen Sekunden – zu schnell, um hinzulaufen und
+ * mitzukämpfen. Türme, Barrikaden und Mika treffen die Schlurfer wie bisher.
+ */
+export const HOUSE_DAMAGE = 0.6;
+
 /** Tagesschlurfer: träge, wenig Leben, kaum Loot, greifen nur sehr nah an. */
 export const DAY_ZOMBIE = { type: 'schlurfer', hpFactor: 0.7, speedFactor: 0.65, lootFactor: 0.5, aggro: 1.4 };
