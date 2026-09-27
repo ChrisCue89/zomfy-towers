@@ -139,7 +139,7 @@ export class BuildBar {
     }
     if (option.confirm && (!this.armed || this.armed.id !== option.id)) {
       this.armed = { id: option.id, t: ARM_TIME };
-      this.game.hud.toast(T.bauleiste.nochmal, 'abriss', 2);
+      this.game.hud.toast(option.confirmText || T.bauleiste.nochmal, 'abriss', option.confirmText ? 3 : 2);
       return;
     }
     // Kaufen per Taste (Aufwertung, Stufe, Spezialisierung) braucht einen

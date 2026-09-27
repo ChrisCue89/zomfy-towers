@@ -74,6 +74,7 @@ export const T = {
     huette: 'Mehr Platz, mehr Wärme, stabilere Wände.',
     abriss: 'Gibt das ganze Material zurück.',
     abrissTurm: 'Gibt 70 % der Kosten zurück.',
+    abrissBewohnt: (name) => `Hier schläft ${name}. Gibt das ganze Material zurück.`,
     zelt: 'Ein Schlafplatz für eine Überlebende oder einen Überlebenden.',
   },
   rezepte: {
@@ -118,6 +119,7 @@ export const T = {
     hausMax: 'Weiter geht es später.',
     fehlt: (was) => `Fehlt: ${was}`,
     nochmal: 'Nochmal drücken: abreißen',
+    nochmalBewohnt: (name) => `Hier schläft ${name}! Nochmal drücken: abreißen`,
     nochmalKaufen: (name) => `Nochmal drücken: ${name}`,
   },
   tuerme: {
@@ -277,6 +279,7 @@ export const T = {
     zeltBauen: 'Wer bleiben will, braucht einen Schlafplatz. Ein Zelt aus der Bauleiste (Einrichten).',
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
+    knopfHilft: 'Knopf bleibt! Er bellt, bevor die Horde kommt – und morgens buddelt er Sachen aus.',
     bellt: (woher) => `Knopf bellt – gleich kommen sie ${woher}!`,
     getauscht: (menge) => `Getauscht: +${menge}`,
     gabe: {

@@ -101,9 +101,10 @@ function buildBase(seed, level = 1) {
   // Holzkorb
   m.box(35, FLOOR, 2, 37, FLOOR + 1, 4, P.e3);
   m.box(35, FLOOR + 2, 2, 37, FLOOR + 2, 4, (x, y, z) => ((x + z) % 2 ? P.e7 : P.e4));
-  // Tisch unter dem Fenster
-  for (const [lx, lz] of [[23, 22], [32, 22], [23, 25], [32, 25]]) m.box(lx, FLOOR, lz, lx, FLOOR + 5, lz, P.e4);
-  m.box(23, FLOOR + 6, 22, 32, FLOOR + 6, 25, (x, y, z) => (z === 25 ? P.e5 : P.e6));
+  // Tisch unter dem Fenster – reicht bis kurz vor die Ostwand, damit dazwischen
+  // keine schmale Sackgasse bleibt, in der man sich festläuft (m6-r1)
+  for (const [lx, lz] of [[23, 22], [35, 22], [23, 25], [35, 25]]) m.box(lx, FLOOR, lz, lx, FLOOR + 5, lz, P.e4);
+  m.box(23, FLOOR + 6, 22, 35, FLOOR + 6, 25, (x, y, z) => (z === 25 ? P.e5 : P.e6));
   m.box(25, FLOOR + 7, 23, 25, FLOOR + 8, 23, P.b3); // Becher
   m.box(27, FLOOR + 7, 23, 28, FLOOR + 7, 24, P.r3); // Buch
   m.box(27, FLOOR + 8, 23, 28, FLOOR + 8, 24, P.a4);
@@ -570,7 +571,7 @@ export function createShelter({ seed, colliders, level = 1, materials }) {
   box(1, 2, 15, 10, 'bett');
   box(2, 11, 5, 14, 'nachttisch');
   box(30, 2, 38, 7, 'ofen');
-  box(23, 22, 33, 26, 'tisch');
+  box(23, 22, 36, 26, 'tisch');
   box(26, 18, 29, 21, 'stuhl');
   box(2, 21, 7, 26, 'kiste');
   box(16, 23, 20, 26, 'pflanze');

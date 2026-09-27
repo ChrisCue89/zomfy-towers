@@ -388,9 +388,15 @@ export class Hud {
    */
   drawGoalMarker(ui) {
     const g = this.game;
+    this.goalMark = null;
     const t = g.goalTarget();
     if (!t) return;
     const p = g.worldToUi(t.x, t.y, t.z);
+    // Für die Textansicht der Playtest-Brücke: wo der Pfeil steht (m6-r1)
+    const ux = p.x - ui.width / 2;
+    const uy = p.y - ui.height / 2;
+    const ul = Math.hypot(ux, uy) || 1;
+    const side = [ux / ul < -0.38 ? 'links' : ux / ul > 0.38 ? 'rechts' : '', uy / ul < -0.38 ? 'oben' : uy / ul > 0.38 ? 'unten' : ''].filter(Boolean).join(' ') || 'mitte';
     const tri = (x, y, dx, dy) => {
       // Dreieck mit Spitze in Richtung (dx, dy), Umriss dunkel
       const px = -dy;
@@ -402,8 +408,10 @@ export class Hud {
     };
     if (p.x >= 8 && p.x < ui.width - 8 && p.y >= 24 && p.y < ui.height - 40) {
       tri(p.x, p.y - 14 + Math.round(Math.sin(g.clock * 4) * 2), 0, 1);
+      this.goalMark = { imBild: true, richtung: side };
       return;
     }
+    this.goalMark = { imBild: false, richtung: side };
     const cx = ui.width / 2;
     const cy = ui.height / 2;
     const dx = p.x - cx;

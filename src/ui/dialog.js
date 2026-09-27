@@ -105,16 +105,22 @@ export class DialogBox {
       const ch = this.line.t[Math.floor(this.shown) - 1];
       if (speed > 0 && Math.floor(this.shown) > before && ch && ch !== ' ') this.game.sound.play('tipp', { pitch: VOICE_PITCH[this.line.s] || 480 });
     }
-    const nav = input.pressed('up') || input.pressed('left') ? -1 : input.pressed('down') || input.pressed('right') ? 1 : 0;
-    // Pfeil/WASD während des Tippens: Zeile sofort ganz zeigen
-    if (!this.complete && nav && this.hasAnswers) this.shown = this.line.t.length;
+    let nav = input.pressed('up') || input.pressed('left') ? -1 : input.pressed('down') || input.pressed('right') ? 1 : 0;
+    // Pfeil/WASD während des Tippens: Zeile sofort ganz zeigen – der Druck wählt
+    // dann aber noch nichts aus, sonst springt die Wahl von der harmlosen Antwort weg (m6-r1)
+    if (!this.complete && nav && this.hasAnswers) {
+      this.shown = this.line.t.length;
+      nav = 0;
+    }
     const answers = this.complete ? this.line.antworten : null;
     if (answers && answers.length) {
       if (this.answersShownAt === null) this.answersShownAt = this.time;
-      if (nav) this.choice = (this.choice + nav + answers.length) % answers.length;
+      const ready = this.time - this.answersShownAt >= ANSWER_GUARD;
+      // Auch Richtungstasten erst nach der kurzen Sperre: ein Tastendruck, der noch
+      // vom Laufen stammt, verstellt die Vorwahl nicht
+      if (nav && ready) this.choice = (this.choice + nav + answers.length) % answers.length;
       const hovered = (this.answerRects || []).findIndex((r) => this.game.ui.hover(r.x, r.y, r.w, r.h));
       if (hovered >= 0 && input.mouse.moved) this.choice = hovered;
-      const ready = this.time - this.answersShownAt >= ANSWER_GUARD;
       if (!ready) return;
       if (hovered >= 0 && input.mouse.clicked) {
         this.choice = hovered;

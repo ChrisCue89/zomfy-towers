@@ -322,6 +322,11 @@ export class Survivors {
     return this.game.world.buildings.list.filter((b) => b.type === 'zelt');
   }
 
+  /** Wer schläft in diesem Zelt? (id oder null) */
+  occupant(tentId) {
+    return SURVIVOR_ORDER.find((id) => this.st[id].tent === tentId) || null;
+  }
+
   /** Ein Zelt, das noch niemandem gehört (oder null). */
   freeTent() {
     const used = new Set(SURVIVOR_ORDER.map((id) => this.st[id].tent).filter((t) => t !== null && t !== undefined));
@@ -341,6 +346,7 @@ export class Survivors {
     }
     s.stage = 3;
     g.hud.toast(T.ueberlebende.eingezogen(SURVIVORS[id].name), SURVIVORS[id].dog ? 'pfote' : 'zelt', 3.5);
+    if (SURVIVORS[id].dog) g.hud.say(T.ueberlebende.knopfHilft, 5); // wie er hilft, stand nirgends (m6-r1)
     g.sound.play('glocke');
     this.placeAll(false);
     return true;

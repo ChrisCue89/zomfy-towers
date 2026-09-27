@@ -5,6 +5,43 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 6 – Playtest-Runde m6-r1 und Nachbesserung
+
+**Testspieler:** Mira 8/10, Kira 8/10 – Berichte und Auswertung in
+`playtests/m6-r1/` (`ZUSAMMENFASSUNG.md`). Jonas und Theo wurden vom
+Nutzungslimit abgebrochen; sie spielen in der Abschlussrunde mit. Keine
+Blocker, keine Konsolenmeldung. Überlebende, Funkturm-Geschichte und
+Einrichten kamen sehr gut an.
+
+**Gefunden (Spielfluss):** Im Haus lag zwischen Tisch und Ostwand eine
+schmale Sackgasse, die wie ein Durchgang aussah (Kira steckte dort schon in
+m5-r1 fest). Eine Richtungstaste während des Tippens verschob die Vorwahl der
+Ausruhen-Rückfrage auf »Bis zum Abend ausruhen«. E traf oft Laterne oder
+Hackklotz statt der Person daneben. Das Schlafzelt (8 Holz, 3 Stoff) war
+früh kaum zu bezahlen.
+
+**Geändert**
+
+- Tisch bis kurz vor die Ostwand verlängert; die ganze Hütte (beide Stufen,
+  mit und ohne Möbel) in 5-cm-Schritten mit der echten Bewegung abgetastet –
+  keine Falle, kein abgeschnittener Bereich.
+- Richtungstasten verstellen die harmlose Vorwahl nicht mehr (weder beim
+  Fertigzeigen der Zeile noch in der kurzen Sperre danach).
+- Personen in Reichweite gehen Nur-Anschauen-Dingen immer vor.
+- Schlafzelt 6 Holz und 2 Stoff (OFFENE-FRAGEN 51).
+- Zuhause nie unter null; Warnung vor dem Abriss eines bewohnten Zelts;
+  dasselbe Ding ruht nach einem Gespräch nur 0,5 s; Knopf sagt beim Einzug,
+  wie er hilft; die Textansicht der Brücke zeigt Zielpfeil und was für die
+  Gemütlichkeit zählt.
+- Nacht-Balance nachgemessen (eine Nacht mit 1 bzw. 2 Türmen, Mika
+  untätig): liegt in den Zielen von DESIGN.md 6.17 und bleibt, wie sie ist
+  (OFFENE-FRAGEN 52).
+
+**Offen:** Mika hinter hohem Möbelstück unsichtbar (Kira) nicht
+nachgestellt; Jonas und Theo in der Abschlussrunde.
+
+---
+
 ## Meilenstein 7 – Feinschliff ✓
 
 **Fertig**

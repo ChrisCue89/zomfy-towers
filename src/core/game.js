@@ -54,6 +54,7 @@ import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
+import { MAX_COZY } from '../data/furniture.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -442,7 +443,7 @@ export class Game {
     this.dialog.open(lines, (aktion) => {
       this.mode = 'play';
       // Dasselbe Ding nicht sofort wieder öffnen, wenn man E weiterdrückt
-      if (source) this.suppressed = { id: source, until: this.clock + 0.8 }; // Durchdrücken öffnet nicht gleich wieder (m3-r2), ein bewusstes zweites E schon
+      if (source) this.suppressed = { id: source, until: this.clock + 0.5 }; // Durchdrücken öffnet nicht gleich wieder (m3-r2), ein bewusstes zweites E schon (m6-r1: 0,8 s wirkte wie ein verschluckter Druck)
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
@@ -735,7 +736,7 @@ export class Game {
       const de = st.world.dayEvents;
       if (de && de.day === st.time.day) de.lost = (de.lost || 0) + dmg;
     }
-    st.world.homeHp -= dmg;
+    st.world.homeHp = Math.max(0, st.world.homeHp - dmg); // nie unter null (m6-r1: »-3/300«)
     this.hud.homeFlash = 0.3;
     this.hud.homeAlarm = 4;
     const p = this.world.pathing.attackPoint(z.x, z.z);
@@ -1421,6 +1422,7 @@ export class Game {
       uhrzeit: clockText(st.time.minute),
       modus: this.mode,
       ziel: this.goal ? this.goal.text : null,
+      zielPfeil: this.hud.goalMark ? `${this.hud.goalMark.imBild ? 'goldener Pfeil im Bild' : 'goldener Pfeil am Rand'}, ${this.hud.goalMark.richtung}` : null,
       vorrat: Object.fromEntries(this.hud.visibleResources().map((r) => [r, st.inventory[r]])),
       laterne: this.player.holdingLantern ? 'an' : 'aus',
       schnellleiste: { gewaehlt: st.hotbar.selected + 1, plaetze: st.hotbar.slots.map((s) => s || '-') },
@@ -1488,7 +1490,7 @@ export class Game {
         const q = this.worldToUi(n.x, 1, n.z);
         return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
       }).map((id) => SURVIVORS[id].name),
-      gemuetlichkeit: this.furnishing.cozy,
+      gemuetlichkeit: `${this.furnishing.cozy}/${MAX_COZY} (nur Möbel aus dem Reiter »Einrichten« zählen)`,
     };
   }
 

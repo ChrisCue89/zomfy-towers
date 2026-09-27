@@ -15,6 +15,7 @@ import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
+import { SURVIVORS } from '../data/survivors.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -277,11 +278,15 @@ export class Builder {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
+    // Bewohntes Zelt: vor dem Abriss sagen, wer darin schläft (m6-r1)
+    const guest = b.type === 'zelt' ? this.game.survivors.occupant(b.id) : null;
+    const guestName = guest ? SURVIVORS[guest].name : null;
     options.push({
       id: `abriss-${b.id}`,
       icon: 'abriss',
       name: T.bauleiste.abreissen,
-      info: def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      info: guestName ? T.bautenInfo.abrissBewohnt(guestName) : def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      confirmText: guestName ? T.bauleiste.nochmalBewohnt(guestName) : null,
       cost: {},
       refund: this.refundFor(b),
       affordable: true,

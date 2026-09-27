@@ -456,6 +456,21 @@ tippen, Mütze wechseln, Intro).
 *Warum:* Alle übrigen Prüfungen und Werkzeuge bleiben unverändert, und
 Testspieler (`?playtest`) sehen das Spiel so, wie es startet.
 
+### 51. Was kostet ein Schlafzelt?
+**Entscheidung:** 6 Holz und 2 Stoff (vorher 8 und 3).
+*Warum:* Ohne Zelt zieht niemand ein – und das Einziehen ist der Kern von
+Meilenstein 6. In m6-r1 bekam Mira das Zelt in fünf Tagen nicht zusammen,
+weil Möbel, Reparatur und Türme am selben Vorrat hängen. Vier Zelte bleiben
+das Höchste, der Stoff für Möbel und Funkturm bleibt knapp.
+
+### 52. Mehr Nachsicht in den ersten Nächten?
+**Entscheidung:** Nein. Nachgemessen, Mika untätig im Haus: Nacht 1 hält mit
+einem Bolzenwerfer, Nacht 2 braucht zwei, Nacht 3 kippt auch mit zwei.
+*Warum:* Das sind die Ziele aus DESIGN.md 6.17 (»Nacht 1–2 schafft man mit
+zwei, drei Türmen und etwas Nahkampf«). Verlieren kostet nur Material, und
+wer lieber einrichtet als verteidigt, spielt trotzdem weiter. Die
+Abschlussrunde prüft das mit allen vier Testspielern nach.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
