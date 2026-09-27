@@ -125,8 +125,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Erfahrung, Perk-Vergabe), survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
                       Funkturm), furnishing (Möbel, Gemütlichkeit), trader
-                      (Balduin: Fahrplan aus der Uhrzeit, Boot, Stand
-                      am Steg, Handel über das Werkbank-Fenster),
+                      (Balduin: Fahrplan aus der Uhrzeit, Einfahrt mit
+                      Leine, Stand am Steg, Gesten, Handel über das
+                      Werkbank-Fenster),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
                       eigener Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
@@ -163,7 +164,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       (Morgenbericht), perkChoice (Perk-Wahl), title
                       (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
-                      towers (Werte je Stufe/Spezialisierung), zombies,
+                      towers (Werte je Stufe/Spezialisierung, Turmteile,
+                      `towerStatsOf`), zombies,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
@@ -291,7 +293,11 @@ Grundprinzipien:
    v7 → v8 mit Erstattung und Umzug der Bauten (Bilder: wege, barrikaden,
    karte); ab M9.1: Zombieteile von Hand immer, von Türmen etwa jedes zweite
    Mal, der Anführer immer, Balduins Fanfare bei der Ankunft, »Tschüss,
-   Balduin!« schließt den Handel, er verabschiedet sich und legt ab.
+   Balduin!« schließt den Handel, er verabschiedet sich und legt ab; ab
+   M10: Balduins Boot kommt zwischen den Inseln, die Leine liegt über dem
+   Poller, er lüftet die Mütze, winkt nach dem Handel, Turmteile (Glücksmünze
+   an Tag 4 kaufen, mit echter Taste einbauen, Teile von jedem Abschuss,
+   Speichern v9, keine Münze im Laternenturm).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -347,7 +353,8 @@ wieder aufbauen und ausbauen (`hitBarricade`, `rebuildBarricade`,
 `upgradeBarricade`) und Überreste fallen lassen (`dropLoot`, `lootDetails`);
 ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 (`killZombie(id, 'turm'|'spieler')`) und die Teile-Chance der Türme setzen
-(`setPartsChance`, `null` = Wert aus `zombies.js`).
+(`setPartsChance`, `null` = Wert aus `zombies.js`); ab M10 zeigt
+`trader()` auch Boot-z, Leine (`rope`, Glieder) und Balduins Gesten.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
@@ -364,3 +371,10 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 - Offene Designfragen mit der Annahme entscheiden, die am meisten Spielspaß
   verspricht, und in `OFFENE-FRAGEN.md` festhalten.
 - Hakt ein Werkzeug: Umweg finden, im Logbuch notieren, weitermachen.
+- **Weiterarbeiten über das Nutzungslimit hinweg (Wunsch des Auftraggebers):**
+  Zu Beginn jeder neuen Sitzung bzw. jedes neuen 5-Stunden-Fensters eine
+  Weck-Erinnerung (`send_later`) auf den Zeitpunkt stellen, an dem sich das
+  Limit zurücksetzt (Beginn des Fensters + 5 Stunden; frühere Rücksetzungen
+  stehen als »resets …« bzw. `resetsAt` im Verlauf). Weckt sie, und es läuft
+  gerade nichts: den Meilensteinplan fortsetzen – nach jedem Meilenstein
+  Prüfung, Logbuch, Commit, Push und das Artefakt neu veröffentlichen.

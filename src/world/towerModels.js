@@ -269,6 +269,40 @@ function fineLantern(level, spec, seed) {
  * Feine Modelle (1/16 m) eines Turms – gleiche Maße in Metern wie die groben.
  * @returns {{base: VoxelModel, head: VoxelModel, headY: number, glow: VoxelModel|null, glowOnHead: boolean, unit: number}}
  */
+/**
+ * Besondere Turmteile (Meilenstein 10) im feinen Maß, Ursprung jeweils an der
+ * Stelle, an der das Teil am Turm sitzt:
+ * - Fernrohr: Messingrohr auf dem Kopf, zeigt nach vorn (+z) – dreht beim Zielen mit
+ * - Schmierfett: grüne Ölkanne mit langem Ausguss am Fuß
+ * - Glücksmünze: goldene Münze an einer roten Schnur, vorn am Turm
+ */
+export function towerPartModel(id) {
+  const m = new VoxelModel();
+  if (id === 'fernrohr') {
+    m.box(-1, 0, -3, 0, 1, 3, (x, y, z) => (z === -3 || z === 0 ? P.f4 : y === 1 ? P.f6 : P.f5)); // Rohr mit Ringen
+    m.box(-1, 0, 4, 0, 1, 4, P.n2).set(-1, 1, 4, P.b5); // Linse vorn, ein Glanzpunkt
+    m.box(-1, 0, -4, 0, 0, -4, P.s3); // Okular hinten
+    m.box(-1, -1, -1, 0, -1, 1, P.s4); // Halterung
+    return m;
+  }
+  if (id === 'schmierfett') {
+    m.box(0, 0, 0, 3, 4, 2, (x, y) => (y === 4 ? P.g3 : y === 0 ? P.g2 : x === 0 ? P.g4 : P.g5)); // Kanne
+    m.box(1, 5, 1, 2, 5, 1, P.s4); // Deckel
+    for (let k = 0; k < 4; k++) m.set(4 + k, 3 + (k >> 1), 1, P.s5); // langer Ausguss
+    m.set(8, 4, 1, P.e1); // ein Tropfen Öl
+    m.set(1, 2, 3, P.f6).set(2, 2, 3, P.f6); // gelbes Etikett
+    return m;
+  }
+  // Glücksmünze an der Schnur
+  m.box(0, 5, 0, 0, 8, 0, P.r3);
+  m.box(-2, 0, 0, 2, 4, 0, (x, y) => {
+    if ((x === -2 || x === 2) && (y === 0 || y === 4)) return null; // runde Ecken
+    if (x === 0 && y === 2) return P.f4; // Prägung
+    return (x + y) % 3 === 0 ? P.f7 : P.f6;
+  });
+  return m;
+}
+
 export function fineTowerModels(type, level, spec, seed = 5) {
   const m = {
     bolzen: fineBolt,

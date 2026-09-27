@@ -444,7 +444,7 @@ function buildWarnLight(side) {
  * Steg in den See: Bretter quer, Pfähle an beiden Seiten, am Ende ein Poller
  * (dort macht Balduin fest). Länge in Voxeln entlang x, Breite entlang z.
  */
-function buildDock(seed, length, width) {
+function buildDock(seed, length, width, bollards = []) {
   const m = new VoxelModel();
   const deck = 2; // Oberkante der Bretter (y)
   for (let x = 0; x < length; x++) {
@@ -471,6 +471,11 @@ function buildDock(seed, length, width) {
   m.box(px - 1, deck + 3, 1, px + 2, deck + 3, 2, P.s4);
   m.box(px - 4, deck + 1, width - 3, px - 2, deck + 1, width - 2, P.e7);
   m.set(px - 3, deck + 2, width - 3, P.e8);
+  // Weitere Poller an der Kante (M10: dort fliegt Balduins Leine hin)
+  for (const [bx, bz] of bollards) {
+    m.box(bx, deck + 1, bz, bx + 1, deck + 3, bz + 1, (x, y) => (y === deck + 1 ? P.s2 : P.s3));
+    m.box(bx - 1, deck + 3, bz, bx + 2, deck + 3, bz + 1, P.s4);
+  }
   return m;
 }
 
@@ -575,7 +580,10 @@ export function createProps({ seed, materials, colliders, map }) {
   const dock = LAYOUT.dock;
   const dockLen = Math.round((dock.x1 - dock.x0) / V);
   const dockWidth = Math.round((dock.z1 - dock.z0) / V);
-  add(buildDock(seed + 19, dockLen, dockWidth), dock.x0, dock.z0, { name: 'Steg' });
+  const bollard = LAYOUT.bollard;
+  const bollardCell = [Math.round((bollard.x - dock.x0) / V) - 1, Math.round((bollard.z - dock.z0) / V) - 1];
+  add(buildDock(seed + 19, dockLen, dockWidth, [bollardCell]), dock.x0, dock.z0, { name: 'Steg' });
+  colliders.addCircle(bollard.x, bollard.z, 0.16, 'poller');
   const heightZones = [{ minX: dock.x0 + 0.5, maxX: dock.x1, minZ: dock.z0, maxZ: dock.z1, y: 3 * V }];
 
   // Leuchtmast am Steg: der alte Funkturm-Stumpf mit Trümmerteil (Juna baut ihn aus)

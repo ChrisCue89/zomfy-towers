@@ -452,6 +452,16 @@ export const T = {
     hinweisStart: 'WASD laufen · Umschalt rennen · E benutzen · Klick schlagen · M Karte',
   },
   // Barrikaden auf den Wegen (Meilenstein 9): Stufen, Trümmer, Wiederaufbau
+  // Besondere Turmteile von Balduin (Meilenstein 10)
+  turmteile: {
+    fernrohr: ['Fernrohr', 'Messing-Fernrohr: 25 % mehr Reichweite.'],
+    schmierfett: ['Schmierfett', 'Geölte Mechanik: 25 % schneller (Laternenturm: stärkere Aura).'],
+    gluecksmuenze: ['Glücksmünze', 'Wen dieser Turm erwischt, der lässt sicher Teile fallen.'],
+    einbauen: (name) => `${name} einbauen`,
+    eingebaut: (name) => `${name} eingebaut.`,
+    gekauft: (name) => `${name} gekauft!`,
+    hinweis: 'Turmteile baust du ein, indem du einen Turm auswählst (E).',
+  },
   barrikaden: {
     holz: ['Holzbarriere', 'Angespitzte Pfähle über Kreuz – kostet fast nichts, bricht schnell.'],
     verstaerkt: ['Verstärkte Barriere', 'Mehr Pfähle, Eisenbänder und eiserne Spitzen.'],

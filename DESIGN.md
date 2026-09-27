@@ -508,6 +508,12 @@ in eine von zwei Richtungen; Stufe 4 und 5 bauen sie aus.
 
 - Bau und Stufe 2 kosten Schrott, Stufe 3–4 zusätzlich Zahnräder, Stufe 5
   einen Moderkern; Balduin verkauft manchmal besondere Turmteile.
+- **Besondere Turmteile (M10):** ein Teil je Turm, eingebaut über die
+  Turm-Auswahl (eigene Kachel), sichtbar am Modell, beim Abreißen zurück in
+  den Vorrat. **Fernrohr** – Reichweite +25 %; **Schmierfett** – schießt
+  bzw. sprüht 25 % schneller, beim Laternenturm wirkt die Aura 25 % stärker;
+  **Glücksmünze** – jeder Abschuss dieses Turms lässt sicher Zombieteile
+  fallen (statt jedes zweite Mal). Werte in `data/towers.js`.
 - Am stärksten wirken Türme dort, wo Barrikaden die Horde aufhalten:
   **Barrikade plus Kreuzfeuer** ist das Herz jeder Verteidigung.
 
@@ -640,6 +646,11 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
   Stoff, Zahnräder, manchmal ein Moderkern, **besondere Turmteile**,
   **Upgrades und Werkzeuge**, später Saatgut und Möbel. Manches nur in
   kleiner Menge am Tag. Gelegentlich bringt er einen Nebenauftrag mit.
+  Turmteile (6.9) gibt es an geraden Tagen ab Tag 4, eines am Tag, reihum:
+  Glücksmünze (10 Teile), Fernrohr, Schmierfett (je 12 Teile).
+- **Gesten (M10):** Beim Ankommen lüftet er die Mütze, beim Warten reibt er
+  die Hände oder krault den Bart; nach dem Handel Daumen hoch und Winken,
+  ohne Handel ein Schulterzucken.
 - **Running Gag:** Balduin ist erstaunlich scharf auf die Teile und weicht
   jeder Frage aus (»Frag nicht. Wissenschaft! Oder Kunst. Oder Suppe – nein,
   keine Suppe.«). Jeden Tag ein anderer Spruch.
@@ -790,15 +801,23 @@ sicher nur von Hand (Türme: jedes zweite Mal), Balduin mit Ankunftsfanfare und
 Abschied nach dem Handel (»Tschüss, Balduin!«), Esc bleibt im Spiel, Nächte
 etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
 
-### Meilenstein 10 – Balduin kommt übers Wasser
+### Meilenstein 10 – Balduin kommt übers Wasser ✓
 
-- Ausbau der einfachen Fassung aus M9 (Boot mit Kisten, Fass und
-  Einmachgläsern, Seebär-Look, Fanfare und Abschied nach dem Handel sind
-  schon da): Ankunft als kleines Ereignis (das Boot taucht zwischen den
-  Inseln auf, tuckert heran, die Leine fliegt über den Poller).
-- Balduin im feinen Look-Schliff (Gesicht, Porträt, Gesten).
-- Handel wie bisher, dazu besondere Turmteile, Upgrades und Werkzeuge,
-  gelegentliche Nebenaufträge; Running Gag mit täglichen Sprüchen.
+- Ankunft als kleines Ereignis: Das Boot taucht zwischen Nord- und Ostinsel
+  auf, tuckert mit Kielwasser und Motorgeräusch in einer weichen Kurve heran
+  und legt längsseits am Steg an; Balduin wirft die Leine über den Poller.
+  Beim Ablegen holt er sie ein, das Boot dreht und fährt zwischen Ost- und
+  Südinsel davon.
+- Balduin im feinen Look-Schliff: breites Grinsen mit Goldzahn, rote Wangen,
+  hochgezogene Brauen, neues Porträt; Gesten am Steg (Mütze lüften, Hände
+  reiben, Bart kraulen, Daumen hoch und Winken nach dem Handel,
+  Schulterzucken ohne Handel).
+- Besondere Turmteile (6.9): Fernrohr, Schmierfett, Glücksmünze – an geraden
+  Tagen ab Tag 4 eines im Angebot.
+- **Verschoben:** Upgrades und Werkzeuge bei Balduin wandern in die Balance
+  (M13), Nebenaufträge in die Geschichte (später, Wunsch des Auftraggebers).
+  Die täglichen Sprüche gibt es schon seit M8. Dazu: gemütlicher Soundtrack
+  (6.19). Entscheidungen: OFFENE-FRAGEN 89–92.
 
 ### Meilenstein 11 – Das Zuhause am Wasser
 

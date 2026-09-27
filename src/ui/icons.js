@@ -718,6 +718,49 @@ const ICONS = {
       '.kkkkkkkk.',
     ],
   },
+  // Besondere Turmteile (Meilenstein 10)
+  fernrohr: {
+    legend: { k: P.e1, B: P.f6, b: P.f5, d: P.f3, l: P.n2, g: P.b5, s: P.s4 },
+    rows: [
+      '.......kkkk',
+      '......kgllk',
+      '.....kBBBk.',
+      '....kBBbk..',
+      '...kdBbk...',
+      '..kBBbk....',
+      '.kBbbk.....',
+      'kssk.......',
+      'kkk........',
+    ],
+  },
+  schmierfett: {
+    legend: { k: P.e1, G: P.g5, g: P.g3, y: P.f6, s: P.s5, S: P.s6 },
+    rows: [
+      '....kk......',
+      '...kssk.....',
+      '..kkkkkk....',
+      '.kGGGGGGk.kk',
+      '.kGyyGGGkkSk',
+      '.kGyyGGGSSk.',
+      '.kGGGGGGkk..',
+      '.kgGGGGGk...',
+      '..kkkkkk....',
+    ],
+  },
+  gluecksmuenze: {
+    legend: { k: P.e1, r: P.r3, Y: P.f6, y: P.f8, d: P.f4 },
+    rows: [
+      '....r....',
+      '....r....',
+      '..kkkkk..',
+      '.kYYYYYk.',
+      'kYyYYYYYk',
+      'kYYYdYYYk',
+      'kYYYYYyYk',
+      '.kYYYYYk.',
+      '..kkkkk..',
+    ],
+  },
   // Balduins Boot (Zeile »Tschüss, Balduin!« im Handelsfenster)
   boot: {
     legend: { k: P.e1, r: P.r2, e: P.e6, n: P.n3, b: P.b2, s: P.s8 },

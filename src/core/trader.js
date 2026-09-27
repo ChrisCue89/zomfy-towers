@@ -15,11 +15,63 @@
 import { T } from '../data/texts.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
-import { buildBoat, BOAT } from '../entities/traderModels.js';
+import { buildBoat, buildRope, BOAT, CLEAT } from '../entities/traderModels.js';
+import { LAYOUT } from '../world/layout.js';
 
 const U = 1 / 16;
 const DECK_Y = (BOAT.deck + 1) * U; // hier steht Balduin im Boot
 const FAREWELL = 5; // Spielminuten (2 s) zwischen »Tschüss« und Ablegen
+const STERN = BOAT.halfLength * U; // vom Mittelpunkt bis zum Heck (m)
+
+/** Weiche Kurve (Catmull-Rom) durch die Stützpunkte, nach Bogenlänge vermessen. */
+function buildRoute(points, steps = 40) {
+  const pts = [];
+  const at = (i) => points[Math.max(0, Math.min(points.length - 1, i))];
+  for (let i = 0; i < points.length - 1; i++) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    for (let k = 0; k < steps; k++) {
+      const t = k / steps;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      pts.push({ x: f(p0[0], p1[0], p2[0], p3[0]), z: f(p0[1], p1[1], p2[1], p3[1]) });
+    }
+  }
+  const last = points[points.length - 1];
+  pts.push({ x: last[0], z: last[1] });
+  const len = [0];
+  for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+  return { pts, len, total: len[len.length - 1] };
+}
+
+/** Punkt und Fahrtrichtung bei Anteil u (0…1) der Strecke. */
+function routePose(route, u, out) {
+  const target = Math.max(0, Math.min(1, u)) * route.total;
+  let lo = 0;
+  let hi = route.len.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (route.len[mid] < target) lo = mid;
+    else hi = mid;
+  }
+  const a = route.pts[lo];
+  const b = route.pts[hi];
+  const f = (target - route.len[lo]) / (route.len[hi] - route.len[lo] || 1);
+  out.x = a.x + (b.x - a.x) * f;
+  out.z = a.z + (b.z - a.z) * f;
+  const d = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  out.dx = (b.x - a.x) / d;
+  out.dz = (b.z - a.z) / d;
+  return out;
+}
+
+const ARRIVE = buildRoute(TRADER.arriveRoute);
+const LEAVE = buildRoute(TRADER.leaveRoute);
+const smooth = (a, b, x) => {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const turnTo = (from, to, k) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * k;
 
 export class Trader {
   /** @param {import('./game.js').Game} game */
@@ -33,6 +85,13 @@ export class Trader {
     this.boat = buildBoat({ world: world.materials.occluder });
     this.boat.root.visible = false;
     game.scene.add(this.boat.root);
+    // Leine vom Bug zum Poller (M10)
+    this.rope = buildRope(world.materials.occluder);
+    game.scene.add(this.rope.mesh);
+    this.pose = { x: TRADER.moor.x, z: TRADER.moor.z, dx: -1, dz: 0 };
+    this.foamT = 0;
+    this.greetedDay = 0; // an welchem Tag er Mika schon mit der Mütze gegrüßt hat (M10)
+    this.idleT = 6; // Sekunden bis zur nächsten kleinen Geste im Stehen
     this.interaction = { id: 'npc-balduin', x: 0, z: 0, radius: 1.35, prompt: 'handeln', npc: 'balduin', trader: true, enabled: false };
     world.traderInteractions = [this.interaction];
     world.refreshInteractions();
@@ -94,8 +153,14 @@ export class Trader {
     if (this.phase !== 'steht' || this.leaving) return;
     const lines = this.tradedToday() ? T.haendler.tschuess : T.haendler.bisSpaeter;
     g.hud.say(lines[g.state.time.day % lines.length], 3.2, { x: n.x, y: 2.5, z: n.z });
-    if (!this.tradedToday()) return;
-    n.wave = 1.6;
+    n.gestures.length = 0;
+    if (!this.tradedToday()) {
+      g.survivors.npcs.gesture(n, 'schulter', 1.1);
+      return;
+    }
+    // Daumen hoch, dann winkt er zum Abschied
+    g.survivors.npcs.gesture(n, 'daumen', 0.8);
+    g.survivors.npcs.gesture(n, 'winken', 1.5);
     this.left = { day: g.state.time.day, minute: g.state.time.minute + FAREWELL };
   }
 
@@ -103,27 +168,95 @@ export class Trader {
 
   update(dt) {
     this.time += dt;
-    const st = this.game.state;
+    const g = this.game;
+    const st = g.state;
     const now = this.phaseAt(st.time.day, st.time.minute);
     if (now.id !== this.phase) this.enter(now.id, this.phase);
     const n = this.npc;
     const { moor } = TRADER;
-    // Einfahren: langsamer werden bis zum Steg; Ausfahren: erst langsam, dann zügig
-    let x = moor.x;
-    if (now.id === 'kommt') x = TRADER.from + (moor.x - TRADER.from) * (1 - (1 - now.t) ** 2);
-    else if (now.id === 'geht') x = moor.x + (TRADER.from - moor.x) * now.t ** 2;
+    // Einfahren: zwischen den Inseln hindurch, langsamer werden bis zum Steg;
+    // Ausfahren: erst auf der Stelle drehen, dann zügig davon (M10)
+    const pose = this.pose;
+    const lastX = pose.x;
+    const lastZ = pose.z;
+    if (now.id === 'kommt') routePose(ARRIVE, 1 - (1 - now.t) ** 2, pose);
+    else if (now.id === 'geht') routePose(LEAVE, now.t ** 2, pose);
+    else Object.assign(pose, { x: moor.x, z: moor.z, dx: -1, dz: 0 });
+    // Der Bug (im Modell −x) zeigt in Fahrtrichtung
+    let heading = Math.atan2(pose.dz, -pose.dx);
+    if (now.id === 'geht') heading = turnTo(0, heading, smooth(0, 0.3, now.t));
     // Das Boot schaukelt – in ganzen Bildpunkten, damit es scharf bleibt
     const bob = Math.round(Math.sin(this.time * 1.4) * 1.5) / 80;
-    this.boat.root.position.set(x, bob, moor.z);
-    if (now.id === 'kommt' || now.id === 'geht') {
+    this.boat.root.position.set(pose.x, bob, pose.z);
+    this.boat.root.rotation.y = heading;
+    const moving = now.id === 'kommt' || now.id === 'geht';
+    const c = Math.cos(heading);
+    const s = Math.sin(heading);
+    if (moving) {
+      // Balduin steht etwas hinter der Mitte an Deck und schaut nach vorn
       n.y = DECK_Y + bob;
-      this.game.survivors.npcs.place(n, x + 0.5, moor.z, -Math.PI / 2);
+      g.survivors.npcs.place(n, pose.x + 0.5 * c, pose.z - 0.5 * s, Math.atan2(-c, s));
+      // Kielwasser hinter dem Heck, solange das Boot Fahrt macht
+      const speed = dt > 0 ? Math.hypot(pose.x - lastX, pose.z - lastZ) / dt : 0;
+      this.foamT -= dt;
+      if (speed > 0.25 && this.foamT <= 0) {
+        this.foamT = 0.07;
+        g.effects.foam(pose.x + STERN * c, pose.z - STERN * s, speed > 1 ? 2 : 1);
+      }
     }
+    g.sound.motor(moving && dt > 0 ? 1 : 0, pose.x, pose.z);
+    this.updateRope(now, bob, c, s);
+    if (now.id === 'steht' && dt > 0) this.updateGestures(dt);
     const it = this.interaction;
     it.x = n.x;
     it.z = n.z;
     it.enabled = now.id === 'steht' && !n.target && !this.leaving;
     it.prompt = this.game.state.flags.balduinGetroffen ? 'handeln' : 'ansprechen';
+  }
+
+  /**
+   * Balduins Gesten am Steg (M10): Kommt Mika heran, lüftet er einmal am Tag die
+   * Mütze (eine laufende Geste macht er noch zu Ende); sonst reibt er sich ab und
+   * zu die Hände (sie hat Teile dabei) oder krault nachdenklich den Bart.
+   */
+  updateGestures(dt) {
+    const g = this.game;
+    const n = this.npc;
+    if (this.leaving) return;
+    const p = g.player.position;
+    const d = Math.hypot(p.x - n.x, p.z - n.z);
+    const day = g.state.time.day;
+    if (d < 2.6 && this.greetedDay !== day) {
+      this.greetedDay = day;
+      n.gestures.length = Math.min(n.gestures.length, 1);
+      g.survivors.npcs.gesture(n, 'muetze', 1.3);
+      return;
+    }
+    if (n.gestures.length) return;
+    this.idleT -= dt;
+    if (this.idleT > 0 || d > 6) return;
+    this.idleT = 9 + Math.random() * 5;
+    g.survivors.npcs.gesture(n, (g.state.inventory.teile || 0) >= 3 ? 'reiben' : 'bart', 1.6);
+  }
+
+  /**
+   * Die Leine (M10): Kurz vor dem Anlegen wirft Balduin sie im Bogen über den
+   * Poller; solange er handelt, hängt sie zwischen Bugklampe und Poller durch.
+   */
+  updateRope(now, bob, c, s) {
+    const b = LAYOUT.bollard;
+    const post = { x: b.x, y: 0.7, z: b.z };
+    if (now.id === 'kommt' && now.t >= TRADER.throwAt) {
+      const n = this.npc;
+      const hand = { x: n.x, y: DECK_Y + bob + 1.1, z: n.z };
+      this.rope.set(hand, post, -0.45, (now.t - TRADER.throwAt) / (1 - TRADER.throwAt));
+    } else if (now.id === 'steht') {
+      const p = this.pose;
+      const lx = CLEAT.x * U;
+      const lz = CLEAT.z * U;
+      const cleat = { x: p.x + lx * c + lz * s, y: DECK_Y + bob + U * 1.5, z: p.z - lx * s + lz * c };
+      this.rope.set(cleat, post, 0.14, 1);
+    } else this.rope.hide();
   }
 
   /** Phasenwechsel: sichtbar machen, anlegen (Balduin geht auf den Steg), ablegen. */
@@ -141,6 +274,7 @@ export class Trader {
       // Balduins Auftritt: Schiffshorn, Paukenwirbel, Fanfare – der Schlussakkord fällt aufs Anlegen
       this.fanfares += 1;
       g.sound.fanfare();
+      if (!g.state.flags.balduinGetroffen) g.hud.say(T.haendler.ankunft, 5);
     }
     if (id === 'steht') {
       // Festmachen: Balduin springt auf den Steg
@@ -150,7 +284,6 @@ export class Trader {
       if (prev === 'kommt') {
         g.effects.dust(s.x + 0.6, s.z + 0.8, 0.8, 10);
         g.sound.play('bimmel', { x: s.x, z: s.z });
-        if (!g.state.flags.balduinGetroffen) g.hud.say(T.haendler.ankunft, 5);
       }
     } else if (id === 'geht' && prev === 'steht') {
       g.effects.dust(TRADER.stand.x + 0.6, TRADER.stand.z + 0.8, 0.8, 10);
@@ -170,22 +303,16 @@ export class Trader {
     const st = this.game.state;
     return offersOfDay(st.time.day).map((key) => {
       const o = TRADER_OFFERS[key];
-      const [res, n] = Object.entries(o.get)[0];
       const left = o.stock ? Math.max(0, o.stock - this.soldToday(key)) : null;
       const soldOut = left === 0;
-      return {
-        id: `tausch-${key}`,
-        key,
-        icon: res,
-        name: left === null ? T.menge(n, res) : T.haendler.vorrat(T.menge(n, res), left),
-        info: T.haendler.info[key],
-        cost: o.give,
-        gives: { inventory: o.get },
-        trade: true,
-        owned: soldOut,
-        ownedText: T.haendler.ausverkauft,
-        affordable: !soldOut && canAfford(st.inventory, o.give),
-      };
+      const common = { id: `tausch-${key}`, key, cost: o.give, trade: true, owned: soldOut, ownedText: T.haendler.ausverkauft, affordable: !soldOut && canAfford(st.inventory, o.give) };
+      if (o.part) {
+        // Besonderes Turmteil (M10)
+        const [name, info] = T.turmteile[o.part];
+        return { ...common, icon: o.part, name: T.haendler.vorrat(name, left), info, gives: { part: o.part } };
+      }
+      const [res, n] = Object.entries(o.get)[0];
+      return { ...common, icon: res, name: left === null ? T.menge(n, res) : T.haendler.vorrat(T.menge(n, res), left), info: T.haendler.info[key], gives: { inventory: o.get } };
     });
   }
 

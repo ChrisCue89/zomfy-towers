@@ -9,8 +9,9 @@ import { BAY } from './map.js';
 export const V = 1 / 8; // Voxelgröße
 
 export const LAYOUT = {
-  // Blickpunkt der Kamera bleibt in diesem Rechteck (rechts: See, links: Spawns)
-  cameraBounds: { minX: -48, maxX: 16, minZ: -19, maxZ: 19 },
+  // Blickpunkt der Kamera bleibt in diesem Rechteck (rechts: See, links: Spawns).
+  // M10: rechts weiter, damit man vom Stegende Balduins Boot zwischen den Inseln sieht
+  cameraBounds: { minX: -48, maxX: 21, minZ: -19, maxZ: 19 },
 
   // Das alte Fischerhaus: Ursprung = Südwest-Ecke unten, 40 × 28 Voxel (5 × 3,5 m).
   shelter: { x: 4.5, z: -9.0, width: 40, depth: 28 },
@@ -18,6 +19,7 @@ export const LAYOUT = {
   // Hof vor dem Haus: letzte Verteidigung (siehe BAY.yard)
   campfire: { x: 0.5, z: -1.75 },
   dock: BAY.dock, // Steg nach Osten in den See
+  bollard: { x: 16.0, z: -0.5 }, // Poller an der Südkante des Stegs: hier macht Balduin die Leine fest (M10)
   lighthouse: { x: 22.25, z: -1.0 }, // Leuchtmast am Ende des Stegs (früher Funkturm), Mitte zwischen den Beinen
   beacon: { x: 7.5, z: 1.0 }, // hierhin fällt das Leuchtfeuer: auf den Hof (Lichtinsel, bremst die Horde)
   towerDebris: { x: 10.75, z: 2.5 }, // ein abgebrochenes Stück des Masts am Strand

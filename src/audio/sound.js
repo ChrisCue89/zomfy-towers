@@ -382,6 +382,48 @@ export class Sound {
     this.tone('square', N.D2, end, 1.6, { peak: 0.1, attack: 0.02, filter: 320, out });
   }
 
+  /**
+   * Balduins Motor (M10): ein tiefes Tuckern, solange das Boot fährt – leiser
+   * in der Ferne, leicht zur Seite, wo das Boot ist. level 0 = aus.
+   */
+  motor(level, x = 0, z = 0) {
+    if (!this.ready) return;
+    const c = this.ctx;
+    if (!this._motor) {
+      if (level <= 0) return;
+      // Rechteckton, dessen Lautstärke ein zweites Rechteck (7 Hz) an- und ausknipst
+      const osc = c.createOscillator();
+      osc.type = 'square';
+      osc.frequency.value = 56;
+      const filter = c.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 240;
+      const pulse = c.createGain();
+      pulse.gain.value = 0.5;
+      const lfo = c.createOscillator();
+      lfo.type = 'square';
+      lfo.frequency.value = 7;
+      const depth = c.createGain();
+      depth.gain.value = 0.5;
+      lfo.connect(depth).connect(pulse.gain);
+      const out = c.createGain();
+      out.gain.value = 0;
+      const pan = c.createStereoPanner ? c.createStereoPanner() : null;
+      osc.connect(filter).connect(pulse).connect(out);
+      if (pan) out.connect(pan).connect(this.ambBus);
+      else out.connect(this.ambBus);
+      osc.start();
+      lfo.start();
+      this._motor = { out, pan, lfo };
+    }
+    const t = c.currentTime;
+    const d = Math.hypot(x - this.listener.x, z - this.listener.z);
+    const v = Math.max(0, level) * clamp(1 - (d - 5) / 32, 0, 1) * 0.1;
+    this._motor.out.gain.setTargetAtTime(v, t, 0.2);
+    this._motor.lfo.frequency.setTargetAtTime(5 + Math.max(0, level) * 3, t, 0.3);
+    if (this._motor.pan) this._motor.pan.pan.setTargetAtTime(clamp((x - this.listener.x) / 14, -1, 1) * 0.7, t, 0.2);
+  }
+
   // --- Effekte ----------------------------------------------------------------------------
 
   /**

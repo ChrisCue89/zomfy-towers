@@ -83,11 +83,60 @@ function boatModel() {
   // Laterne am Bug
   m.box(-L + 3, d + 1, 0, -L + 3, d + 5, 0, P.e3);
   m.box(-L + 2, d + 6, -1, -L + 4, d + 7, 1, P.f6);
+  // Klampe an der Stegseite (Norden): hier hängt die Leine (M10)
+  m.box(CLEAT.x - 1, d, CLEAT.z, CLEAT.x + 1, d, CLEAT.z, P.s3).set(CLEAT.x, d + 1, CLEAT.z, P.s4);
   return m;
 }
 
+/** Klampe am Bug in Voxeln (Bug zeigt nach −x, der Steg liegt nördlich, also −z). */
+export const CLEAT = { x: -24, z: -8 };
+
 /**
- * Balduins Boot als bewegliche Gruppe (schaukelt nur auf und ab, dreht nicht).
+ * Balduins Leine (M10): kleine Würfel entlang einer Kurve – beim Anlegen
+ * geworfen, dann festgemacht (hängt durch), beim Ablegen gelöst.
+ * @param {THREE.Material} material
+ */
+export function buildRope(material, count = 20) {
+  const cube = new VoxelModel().set(0, 0, 0, P.e7);
+  const mesh = new THREE.InstancedMesh(cube.toGeometry({ jitter: 0, ao: false, size: U }), material, count);
+  mesh.name = 'Leine';
+  mesh.count = 0;
+  mesh.frustumCulled = false;
+  mesh.castShadow = false;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const dummy = new THREE.Object3D();
+  return {
+    mesh,
+    /**
+     * Von a nach b; `sag` > 0 hängt in der Mitte so weit durch, < 0 wölbt sich
+     * nach oben (Wurf). Zu sehen ist das Stück bis `progress` (0…1).
+     */
+    set(a, b, sag, progress = 1) {
+      const n = Math.max(0, Math.min(count, Math.round(count * progress)));
+      const cx = (a.x + b.x) / 2;
+      const cy = (a.y + b.y) / 2 - sag * 2;
+      const cz = (a.z + b.z) / 2;
+      for (let k = 0; k < n; k++) {
+        const s = k / (count - 1);
+        const w0 = (1 - s) * (1 - s);
+        const w1 = 2 * (1 - s) * s;
+        const w2 = s * s;
+        dummy.position.set(w0 * a.x + w1 * cx + w2 * b.x - U / 2, w0 * a.y + w1 * cy + w2 * b.y - U / 2, w0 * a.z + w1 * cz + w2 * b.z - U / 2);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(k, dummy.matrix);
+      }
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+    },
+    hide() {
+      mesh.count = 0;
+    },
+  };
+}
+
+/**
+ * Balduins Boot als bewegliche Gruppe (schaukelt auf und ab, dreht sich in
+ * die Fahrtrichtung).
  * @param {{world: THREE.Material}} materials
  * @returns {{root: THREE.Group}}
  */

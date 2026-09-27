@@ -129,6 +129,46 @@ export function towerStats(type, level, spec) {
   return t.specs[spec || 'A'].levels[level - 3];
 }
 
+/**
+ * Besondere Turmteile (Meilenstein 10, DESIGN.md 6.9: »Balduin verkauft manchmal
+ * besondere Turmteile«): Aufsätze, von denen jeder Turm einen tragen kann.
+ * range/rate/aura sind Faktoren auf die Werte der Stufe; parts: Abschüsse
+ * dieses Turms lassen immer Zombieteile fallen (sonst nur jedes zweite Mal).
+ */
+export const TOWER_PARTS = {
+  fernrohr: { range: 1.25 }, // weiter sehen: Reichweite (beim Laternenturm auch die Aura)
+  schmierfett: { rate: 1.25, aura: 1.25 }, // geölte Mechanik: schneller (Laternenturm: stärkere Aura)
+  gluecksmuenze: { parts: true, not: ['laternenturm'] }, // Glück: jeder Abschuss lässt Teile fallen (die Laterne schießt nicht)
+};
+export const TOWER_PART_IDS = Object.keys(TOWER_PARTS);
+
+/** Passt dieses Teil in diese Turmart? */
+export function partFits(type, id) {
+  return !(TOWER_PARTS[id]?.not || []).includes(type);
+}
+
+/**
+ * Wirksame Werte eines Turms samt Turmteil. Zwischengespeichert am Bau (kein
+ * neues Objekt pro Bild); neu gerechnet, wenn sich Stufe, Richtung oder Teil ändern.
+ */
+export function towerStatsOf(b) {
+  const key = `${b.level}|${b.spec}|${b.part || ''}`;
+  if (b._statsKey === key) return b._stats;
+  const base = towerStats(b.type, b.level, b.spec);
+  const part = b.part ? TOWER_PARTS[b.part] : null;
+  let s = base;
+  if (part && (part.range || part.rate || part.aura)) {
+    s = { ...base };
+    if (part.range && base.range) s.range = base.range * part.range;
+    if (part.range && base.auraRange) s.auraRange = base.auraRange * part.range;
+    if (part.rate && base.rate && b.type !== 'laternenturm') s.rate = base.rate * part.rate;
+    if (part.aura && base.aura) s.aura = base.aura * part.aura;
+  }
+  b._statsKey = key;
+  b._stats = s;
+  return s;
+}
+
 /** Gesamtkosten bis zu einer Stufe (für den Abriss: 70 % davon zurück). */
 export function towerInvested(type, level, spec) {
   const total = {};

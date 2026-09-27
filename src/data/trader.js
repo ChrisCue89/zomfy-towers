@@ -14,6 +14,12 @@ export const TRADER = {
   moor: { x: 18.25, z: 0.95 }, // Mitte des Boots am Steg (südlich längsseits)
   stand: { x: 16.75, z: -1.0 }, // hier steht Balduin auf dem Steg und handelt
   facing: -1.0, // Blick im Stehen: zum Ufer und etwas zur Kamera
+  // M10: Die Einfahrt kommt aus dem Nordosten zwischen der Nord- und der Ostinsel
+  // hindurch und legt längs am Steg an; die Ausfahrt dreht ab und fährt zwischen
+  // Ost- und Südinsel nach Südosten davon. Stützpunkte [x, z], eine weiche Kurve.
+  arriveRoute: [[48, -15], [34, -7.5], [26.5, -1.2], [21.6, 0.95], [18.25, 0.95]],
+  leaveRoute: [[18.25, 0.95], [21, 1.5], [23.6, 3.4], [24.2, 9.2], [31, 15], [46, 20]],
+  throwAt: 0.9, // so weit ist die Einfahrt, wenn die Leine über den Poller fliegt
 };
 
 /**
@@ -30,7 +36,15 @@ export const TRADER_OFFERS = {
   stoff: { give: { teile: 3 }, get: { stoff: 2 } },
   zahnrad: { give: { teile: 7 }, get: { zahnraeder: 1 }, stock: 2 },
   moderkern: { give: { teile: 18 }, get: { moderkerne: 1 }, stock: 1 },
+  // Meilenstein 10: besondere Turmteile (ein Stück am Tag)
+  fernrohr: { give: { teile: 12 }, part: 'fernrohr', stock: 1 },
+  schmierfett: { give: { teile: 12 }, part: 'schmierfett', stock: 1 },
+  gluecksmuenze: { give: { teile: 10 }, part: 'gluecksmuenze', stock: 1 },
 };
+
+/** Turmteile im Angebot: an geraden Tagen ab Tag 4 eines, reihum (M10). */
+export const TRADER_PARTS = ['fernrohr', 'schmierfett', 'gluecksmuenze'];
+export const PARTS_FROM_DAY = 4;
 
 /** Immer im Angebot. */
 export const TRADER_BASE = ['schrott'];
@@ -48,5 +62,6 @@ export const TRADER_DAILY = [
 /** Angebote des Tages (Schlüssel aus TRADER_OFFERS). */
 export function offersOfDay(day) {
   const k = Math.max(0, day - TRADER.fromDay) % TRADER_DAILY.length;
-  return [...TRADER_BASE, ...TRADER_DAILY[k]];
+  const part = day >= PARTS_FROM_DAY && day % 2 === 0 ? [TRADER_PARTS[(day / 2) % TRADER_PARTS.length]] : [];
+  return [...TRADER_BASE, ...TRADER_DAILY[k], ...part];
 }

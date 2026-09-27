@@ -822,6 +822,38 @@ Tastatur-Hören in der Capture-Phase). Außerdem lässt sich der Handel mit
 Fokus doch einmal nimmt: Das Spiel zeigt dann »Zum Weiterspielen ins Bild
 klicken«, und der Klick, der den Fokus zurückholt, ist kein Schlag mehr.
 
+### 89. Welche besonderen Turmteile, und wie kommen sie an den Turm? (M10)
+**Entscheidung:** Drei Teile, die man sofort versteht und am Modell sieht:
+**Fernrohr** (Reichweite +25 %, beim Laternenturm die Reichweite der Aura),
+**Schmierfett** (schießt bzw. sprüht 25 % schneller, beim Laternenturm wirkt
+die Aura 25 % stärker) und **Glücksmünze** (jeder Abschuss dieses Turms lässt
+sicher Zombieteile fallen, statt nur jedes zweite Mal). Ein Teil je Turm,
+eingebaut über die Turm-Auswahl: eine eigene Kachel je Teil im Vorrat, ohne
+Rückfrage – das Teil sitzt sofort sichtbar am Turm, dazu Funken und eine
+Meldung. Beim Abreißen kommt es zurück in den Vorrat; ein Teil umstecken
+heißt abreißen und neu bauen (selten, also kein eigener Knopf). Werte in
+`data/towers.js` (`TOWER_PARTS`), gespeichert am Bau (`part`, Spielstand v9).
+
+### 90. Wann bietet Balduin Turmteile an, und was kosten sie? (M10)
+**Entscheidung:** An geraden Tagen ab Tag 4 eines, reihum: Glücksmünze
+(Tag 4, 10 Zombieteile), Fernrohr (Tag 6), Schmierfett (Tag 8, je 12),
+jeweils ein Stück. Das ist rund ein Drittel der Beute einer frühen Nacht –
+eine spürbare Verbesserung am Morgen, aber nie alles zugleich (DESIGN 6.18).
+Die Münze kommt zuerst, weil sie sich über die Teile selbst bezahlt macht.
+Feinabstimmung mit der Balance (M13).
+
+### 91. Glücksmünze im Laternenturm? (M10)
+**Entscheidung:** Nein. Der Laternenturm erledigt selbst keine Schlurfer,
+die Münze wäre dort wirkungslos – eine Falle. Seine Auswahl zeigt die Kachel
+deshalb gar nicht erst (`not` in `TOWER_PARTS`). Fernrohr und Schmierfett
+wirken bei ihm auf die Aura.
+
+### 92. Upgrades, Werkzeuge und Nebenaufträge bei Balduin? (M10)
+**Entscheidung des Auftraggebers:** Balance und Geschichte kommen später.
+Nebenaufträge gehören zur Geschichte und warten dort; Upgrades und Werkzeuge
+bei Balduin verschieben die Wirtschaft und kommen mit der Balance (M13).
+Die täglichen Sprüche (Running Gag) gibt es schon seit M8.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -30,6 +30,31 @@ export class Effects {
     this.rng = particles.rng;
   }
 
+  /** Schaum im Kielwasser (M10): helle Flocken auf dem Wasser, die langsam zerfließen. */
+  foam(x, z, count = 2) {
+    const r = this.rng;
+    const colors = SPLAT.wasser;
+    for (let i = 0; i < count; i++) {
+      this.particles.spawn({
+        x: x + r.range(-0.22, 0.22),
+        y: 0.03,
+        z: z + r.range(-0.22, 0.22),
+        vx: r.range(-0.35, 0.35),
+        vy: 0,
+        vz: r.range(-0.35, 0.35),
+        life: r.range(0.9, 1.7),
+        size0: 2,
+        size1: 3,
+        color0: colors[i % colors.length],
+        alpha0: 0.9,
+        alpha1: 0,
+        drag: 2.2,
+        lift: 0,
+        windFactor: 0,
+      });
+    }
+  }
+
   /** Späne/Splitter bei einem Treffer. kind: holz, stein, gras, schrott */
   chips(x, y, z, kind = 'holz', count = 7) {
     const colors = CHIPS[kind] || CHIPS.holz;

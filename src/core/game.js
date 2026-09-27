@@ -175,7 +175,7 @@ export class Game {
     this.title = new TitleScreen(this);
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
-      onKill: (z, source) => this.onZombieKilled(z, source),
+      onKill: (z, source, lucky) => this.onZombieKilled(z, source, lucky),
       onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
@@ -650,6 +650,20 @@ export class Game {
     }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
+    if (recipe.gives.part) {
+      // Besonderes Turmteil von Balduin (M10): kommt in den Vorrat, eingebaut wird über die Turm-Auswahl
+      const id = recipe.gives.part;
+      st.towerParts[id] = (st.towerParts[id] || 0) + 1;
+      this.trader.sold(recipe);
+      this.hud.toast(T.turmteile.gekauft(T.turmteile[id][0]), id, 3.2);
+      if (!st.flags.turmteilHinweis) {
+        st.flags.turmteilHinweis = true;
+        this.hud.showHint(T.turmteile.hinweis, 9);
+      }
+      this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
     if (recipe.trade) {
       // Balduins Handel (Meilenstein 8, seit M9 am Boot)
       this.trader.sold(recipe);
@@ -814,7 +828,8 @@ export class Game {
 
   // --- Horde: Treffer, Tod, Loot, verlorene Nacht --------------------------------
 
-  onZombieKilled(z, source) {
+  /** @param {boolean} [lucky] ein Turm mit Glücksmünze hat getroffen (M10: sicher Teile) */
+  onZombieKilled(z, source, lucky = false) {
     const st = this.state;
     st.stats.kills = (st.stats.kills || 0) + 1;
     if (this.nights.active) st.night.kills += 1;
@@ -822,7 +837,7 @@ export class Game {
     // Zombieteile (M9.1): selbst erschlagen – sicher welche; durch Türme nur mit Glück
     const melee = source === 'spieler';
     const table = { ...z.def.loot };
-    if (!melee && !z.def.partsAlways && table.teile && !this.loot.rng.chance(this.partsFromTowers ?? PARTS_FROM_TOWERS)) delete table.teile;
+    if (!melee && !lucky && !z.def.partsAlways && table.teile && !this.loot.rng.chance(this.partsFromTowers ?? PARTS_FROM_TOWERS)) delete table.teile;
     const dropped = this.loot.drop(z.x, z.z, table, factor);
     if (melee && table.teile && !(dropped.teile > 0)) this.loot.spawn('teile', z.x, z.z);
     // Perk »Glückspilz«: manchmal ein Stück Schrott mehr
@@ -1815,7 +1830,8 @@ export class Game {
       // Meilenstein 8: Balduin, der Händler
       trader: () => {
         const n = game.trader.npc;
-        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, boat: game.trader.boat.root.position.x, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled, fanfares: game.trader.fanfares, leaving: game.trader.leaving };
+        const tr = game.trader;
+        return { phase: tr.phase, x: n.x, z: n.z, visible: n.model.root.visible, boat: tr.boat.root.position.x, boatZ: tr.boat.root.position.z, rope: tr.rope.mesh.count, gestures: n.gestures.map((q) => q.kind), offers: tr.offers().map((o) => o.key), prompt: tr.interaction.enabled, fanfares: tr.fanfares, leaving: tr.leaving };
       },
       /** Ein Angebot des Tages tauschen (wie ein Druck auf E im Handelsfenster). */
       trade(key) {

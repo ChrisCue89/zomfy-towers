@@ -102,11 +102,11 @@ function survivorPortrait(id) {
   return renderVoxelPortrait(bust, { top: 2, w: 4, t: 1, f: 3 });
 }
 
-/** Balduin: der hohe Zylinder passt nicht ganz ins Fenster – oben angeschnitten. */
+/** Balduin: Brust mit Schal, Bart, Grinsen mit Goldzahn und Schiebermütze. */
 function balduinPortrait() {
   const parts = survivorParts('balduin');
   const bust = new VoxelModel();
-  const add = (model) => model.forEach((x, y, z, c) => y >= 12 && y <= 26 && bust.set(x, y, z, c));
+  const add = (model) => model.forEach((x, y, z, c) => y >= 10 && y <= 24 && bust.set(x, y, z, c));
   add(parts.torso);
   add(parts.head);
   return renderVoxelPortrait(bust, { top: 1, w: 4, t: 1, f: 3 });

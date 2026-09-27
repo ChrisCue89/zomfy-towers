@@ -11,9 +11,9 @@ import { createStaticVoxelObject, SHADOW_PROXY_MATERIAL } from '../render/static
 import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { P } from '../render/palette.js';
 import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
-import { towerStats } from '../data/towers.js';
+import { towerStatsOf } from '../data/towers.js';
 import { BUILDING_MODELS, buildBarricade, buildRubble, BARRICADE_UNIT } from './buildingModels.js';
-import { fineTowerModels } from './towerModels.js';
+import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { V } from './layout.js';
 
 export class Buildings {
@@ -125,6 +125,15 @@ export class Buildings {
     head.rotation.order = 'YXZ'; // erst zielen (y), dann nicken (Wurfarm)
     head.position.y = m.headY * U;
     const headMesh = new THREE.Mesh(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U }), material);
+    if (m.headTop === undefined) {
+      // Oberkante des Kopfs (für das Fernrohr, M10)
+      let top = 0;
+      m.head.forEach((x, y) => {
+        top = Math.max(top, y + 1);
+      });
+      m.headTop = top * U;
+    }
+    group.userData.headTop = m.headTop;
     headMesh.castShadow = shadow !== 'none';
     headMesh.receiveShadow = true;
     head.add(headMesh);
@@ -147,6 +156,7 @@ export class Buildings {
     if (def.tower) {
       building.level = extra.level || 1;
       building.spec = extra.spec || null;
+      building.part = extra.part || null; // besonderes Turmteil (M10)
     }
     if (type === 'barrikade') {
       building.level = Math.max(1, Math.min(3, extra.level || 1));
@@ -188,6 +198,7 @@ export class Buildings {
     }
     b.look = this.lookOf(b);
     b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec, look: b.look });
+    if (b.part) this.addPart(b);
     if (BUILDINGS[b.type].tower) this.addOutline(b.object);
     b.object.position.set(cx, 0, cz);
     b.head = b.object.userData.head || null;
@@ -195,7 +206,26 @@ export class Buildings {
     this.group.add(b.object);
     const spec = BUILDING_MODELS[b.type];
     if (spec?.pool) b.pool = this.lightPools.add(cx, cz + 0.3, spec.pool.radius);
-    if (b.type === 'laternenturm') b.pool = this.lightPools.add(cx, cz, towerStats(b.type, b.level, b.spec).range);
+    if (b.type === 'laternenturm') b.pool = this.lightPools.add(cx, cz, towerStatsOf(b).range);
+  }
+
+  /** Das Turmteil sichtbar am Turm (M10): Fernrohr auf dem Kopf, Ölkanne am Fuß, Münze vorn. */
+  addPart(b) {
+    const F = 1 / 16; // Turmteile sind im feinen Maß gebaut
+    const model = towerPartModel(b.part);
+    const mesh = new THREE.Mesh(model.toGeometry({ jitter: 0.03, seed: this.seed, size: F }), this.materials.building || this.materials.occluder);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.name = b.part;
+    const head = b.object.userData.head;
+    if (b.part === 'fernrohr' && head) {
+      mesh.position.set(F / 2, b.object.userData.headTop + F, -F / 2);
+      head.add(mesh);
+      return;
+    }
+    if (b.part === 'schmierfett') mesh.position.set(0.18, 0, 0.18);
+    else mesh.position.set(-F / 2, 0.55, 0.44);
+    b.object.add(mesh);
   }
 
   /**
@@ -290,6 +320,7 @@ export class Buildings {
       if (b.day) e.day = b.day;
       if (b.level) e.level = b.level;
       if (b.spec) e.spec = b.spec;
+      if (b.part) e.part = b.part;
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       return e;

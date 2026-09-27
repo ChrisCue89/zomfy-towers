@@ -5,6 +5,48 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 10 – Balduin kommt übers Wasser ✓
+
+**Auftrag:** den Händler aus M9 zum kleinen Ereignis ausbauen (DESIGN.md 8,
+Meilenstein 10). Der Auftraggeber testet selbst; Balance und Geschichte
+kommen später (seine Vorgabe).
+
+**Fertig**
+
+- **Einfahrt:** Das Boot taucht im Nordosten zwischen Nord- und Ostinsel
+  auf und fährt eine weiche Kurve (Stützpunkte in `data/trader.js`) bis
+  längsseits an den Steg. Hinten schäumt Kielwasser (`effects.foam`), dazu
+  tuckert der Motor (Rechteckton mit 7-Hz-Puls, leiser in der Ferne, zur
+  Seite des Boots, über den Umgebungsregler). Kurz vor dem Anlegen wirft
+  Balduin die Leine im Bogen über den neuen Poller an der Stegkante; solange
+  er handelt, hängt sie zwischen Bugklampe und Poller durch. Beim Ablegen ist
+  sie wieder an Bord, das Boot dreht auf der Stelle und fährt zwischen Ost-
+  und Südinsel davon. Die Kamera reicht dafür weiter nach Osten.
+- **Balduin im feinen Look:** breites Grinsen mit Goldzahn, rote Wangen,
+  hochgezogene Brauen, neuer Porträtausschnitt. Gesten am Steg: Er lüftet die
+  Mütze, wenn Mika herankommt, reibt beim Warten die Hände (sie hat Teile
+  dabei) oder krault den Bart, nach dem Handel Daumen hoch und Winken, ohne
+  Handel ein Schulterzucken. Der Hinweis beim ersten Besuch erscheint schon,
+  wenn das Boot auftaucht (zusammen mit der Fanfare), nicht erst am Steg.
+- **Besondere Turmteile:** Fernrohr (+25 % Reichweite), Schmierfett (+25 %
+  Tempo bzw. Aura) und Glücksmünze (jeder Abschuss lässt sicher Zombieteile
+  fallen). Balduin bietet an geraden Tagen ab Tag 4 eines an (10–12 Teile).
+  Eingebaut wird über die Turm-Auswahl (eigene Kachel), das Teil sitzt als
+  kleines Modell am Turm (Fernrohr oben am Kopf, Ölkanne am Fuß, Münze vorn),
+  beim Abreißen kommt es zurück. In den Laternenturm passt keine Münze.
+  Werte zentral über `towerStatsOf` (mit Zwischenspeicher am Bau).
+- **Spielstand v9:** Vorrat an Turmteilen und das Teil am Bau; Migration
+  v8 → v9 ergänzt einen leeren Vorrat.
+- **Prüfung:** neue Punkte für Einfahrt zwischen den Inseln, Leine, Gesten
+  und Turmteile (Kauf an Tag 4, Einbau mit echter Taste, Teile von jedem
+  Abschuss, nach dem Neuladen noch am Turm, keine Münze im Laternenturm);
+  alle Stände werden jetzt zu v9.
+
+**Nicht in M10:** Upgrades und Werkzeuge bei Balduin (Balance, M13),
+Nebenaufträge (Geschichte, später). Entscheidungen: OFFENE-FRAGEN 89–92.
+
+---
+
 ## M9.1 – Nach der Rückmeldung des Auftraggebers ✓
 
 **Rückmeldung (Auftraggeber als Testspieler):** Nacht 1 ist okay, könnte etwas

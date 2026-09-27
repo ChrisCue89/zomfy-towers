@@ -8,9 +8,10 @@ import { SURVIVOR_ORDER } from '../data/survivors.js';
 import { FURNITURE } from '../data/furniture.js';
 import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
 import { TRADER_OFFERS } from '../data/trader.js';
+import { TOWER_PARTS, TOWER_PART_IDS } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -37,6 +38,8 @@ export function createNewState(config, mapSeed = 1) {
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
+    // Besondere Turmteile im Vorrat (Meilenstein 10): noch nicht eingebaut
+    towerParts: Object.fromEntries(TOWER_PART_IDS.map((id) => [id, 0])),
     weapons: {}, // gebaute Waffen: Name -> Stufe (1–3)
     perks: {}, // gewählte Perks: Name -> Stufe
     perkChoice: null, // offene Perk-Wahl (drei Namen), falls beim Speichern noch nicht gewählt
@@ -96,6 +99,7 @@ export function sanitizeState(data, config) {
   out.player.name = cleanName(data.player?.name);
   out.player.look = Object.fromEntries(LOOK_KEYS.map((k) => [k, LOOKS[k][data.player?.look?.[k]] ? data.player.look[k] : DEFAULT_LOOK[k]]));
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
+  for (const id of TOWER_PART_IDS) out.towerParts[id] = Math.floor(num(data.towerParts?.[id], 0, 0, 99));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
       const v = data.hotbar.slots[i];
@@ -157,6 +161,7 @@ export function sanitizeState(data, config) {
         if (b.spec === 'A' || b.spec === 'B') entry.spec = b.spec;
         if (Number.isFinite(b.hp)) entry.hp = num(b.hp, 100, 0, 1000);
         if (b.broken === true) entry.broken = true; // zerstörte Barrikade (Trümmer)
+        if (typeof b.part === 'string' && TOWER_PARTS[b.part]) entry.part = b.part; // Turmteil (M10)
         return entry;
       });
   }

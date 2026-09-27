@@ -8,7 +8,7 @@ import { T } from '../data/texts.js';
 import { planNight, planDay, NIGHT_START, NIGHT_END } from '../data/waves.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
-import { towerStats } from '../data/towers.js';
+import { towerStatsOf } from '../data/towers.js';
 
 /** So viele Spielminuten vor der Nacht sagt Mika, wenn am Weg der ersten Welle kein Turm steht. */
 const COVER_WARN_AHEAD = 60;
@@ -35,7 +35,7 @@ export class Nights {
     const g = this.game;
     const towers = g.world.buildings.list
       .filter((b) => BUILDINGS[b.type].tower && b.hp > 0)
-      .map((b) => ({ x: b.i + 0.5, z: b.j + 0.5, s: towerStats(b.type, b.level, b.spec) }))
+      .map((b) => ({ x: b.i + 0.5, z: b.j + 0.5, s: towerStatsOf(b) }))
       .filter((t) => t.s.damage > 0);
     return entries.filter((name) => {
       const path = g.world.pathing.trace(name);

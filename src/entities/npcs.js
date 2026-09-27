@@ -81,6 +81,7 @@ export class Npcs {
       moving: 0,
       blinkAt: 1 + Math.random() * 3,
       wave: 0, // Winken (Sekunden)
+      gestures: [], // Gesten nacheinander (M10): { kind, dur, t }
       bark: 0, // Bellen (Sekunden)
       sit: 0,
       sitTarget: 0,
@@ -179,8 +180,65 @@ export class Npcs {
     } else {
       p.armR.rotation.z = damp(p.armR.rotation.z, 0, 8, dt);
     }
+    p.armL.rotation.z = damp(p.armL.rotation.z, 0, 8, dt);
+    p.head.rotation.z = damp(p.head.rotation.z, 0, 8, dt);
+    this.poseGesture(n, dt);
     if (this.time > n.blinkAt + 0.13) n.blinkAt = this.time + 2.5 + Math.random() * 3.5;
     p.eyelids.visible = this.time >= n.blinkAt;
+  }
+
+  /** Eine Geste vorspielen (M10); mehrere laufen nacheinander. */
+  gesture(n, kind, dur) {
+    n.gestures.push({ kind, dur, t: 0 });
+  }
+
+  /**
+   * Gesten über der Grundhaltung (M10, Balduin): Mütze lüften, Hände reiben,
+   * Daumen hoch, Winken, Achselzucken, Bart kraulen. Weich ein- und ausgeblendet.
+   */
+  poseGesture(n, dt) {
+    const g = n.gestures[0];
+    if (!g) return;
+    g.t += dt;
+    const p = n.model.parts;
+    const k = clamp(Math.min(g.t / 0.18, (g.dur - g.t) / 0.18), 0, 1);
+    const to = (obj, axis, value) => {
+      obj.rotation[axis] += (value - obj.rotation[axis]) * k;
+    };
+    switch (g.kind) {
+      case 'muetze': // rechte Hand an den Mützenschirm, Kopf nickt
+        to(p.armR, 'x', -2.85);
+        to(p.armR, 'z', -0.45);
+        p.head.rotation.x += Math.sin(g.t * 7) * 0.1 * k;
+        break;
+      case 'reiben': // beide Hände vor dem Bauch, die reiben sich
+        to(p.armL, 'x', -1.05);
+        to(p.armR, 'x', -1.05);
+        to(p.armL, 'z', -0.38 + Math.sin(g.t * 20) * 0.1);
+        to(p.armR, 'z', 0.38 - Math.sin(g.t * 20) * 0.1);
+        break;
+      case 'daumen': // rechter Arm nach vorn oben, kurz gehalten
+        to(p.armR, 'x', -1.75);
+        to(p.armR, 'z', -0.1);
+        break;
+      case 'winken':
+        to(p.armR, 'x', -2.6);
+        to(p.armR, 'z', 0.25 + Math.sin(g.t * 14) * 0.35);
+        break;
+      case 'schulter': // Achseln zucken, Kopf schief
+        to(p.armL, 'z', 0.4);
+        to(p.armR, 'z', -0.4);
+        to(p.head, 'z', 0.16);
+        break;
+      case 'bart': // rechte Hand am Kinn, nachdenklich
+        to(p.armR, 'x', -2.1);
+        to(p.armR, 'z', -0.55);
+        to(p.head, 'x', -0.1);
+        break;
+      default:
+        break;
+    }
+    if (g.t >= g.dur) n.gestures.shift();
   }
 
   setVisible(id, visible) {

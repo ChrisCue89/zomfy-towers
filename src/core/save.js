@@ -68,6 +68,8 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v8 -> v9: Meilenstein 10 (besondere Turmteile). Noch keiner im Vorrat, kein Turm trägt eins.
+  8: (data) => ({ ...data, version: 9, towerParts: {} }),
   7: migrateToBay,
   // v6 -> v7: Meilenstein 8 (Zombieteile, Balduin, Autowrack nur einmal). Wer das
   // Wrack schon durchsucht hat, findet dort nichts mehr; Zombieteile beginnen bei null.

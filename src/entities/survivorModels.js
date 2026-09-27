@@ -263,7 +263,8 @@ function yusufTorso(s) {
 export const BALDUIN = {
   skin: P.h3,
   skinShade: P.h2,
-  cheek: P.a0,
+  cheek: P.a1,
+  goldTooth: P.f6,
   eyes: P.n1,
   brow: P.s7,
   hair: P.s7,
@@ -291,17 +292,24 @@ export const BALDUIN = {
 
 function balduinHead(s) {
   const m = baseHead(s, { beard: true });
-  // Kräftiger Bart: steht vorn ab und reicht bis auf die Brust
+  // Kräftiger Bart: steht vorn ab und reicht bis auf die Brust. Darin ein
+  // breites Grinsen mit einem Goldzahn (M10: Balduin im feinen Look-Schliff)
   m.box(-5, 12, 4, 4, 16, 4, (x, y) => {
     if (y === 16 && (x === -1 || x === 0)) return s.nose;
-    if (y === 15 && (x === -1 || x === 0)) return P.a0; // Mund
+    if (y === 15 && (x === -2 || x === 1)) return P.a0; // Mundwinkel oben
+    if (y === 15 && x === -1) return P.s9; // Zahn
+    if (y === 15 && x === 0) return s.goldTooth; // Goldzahn
+    if (y === 14 && (x === -1 || x === 0)) return P.a0; // Mund
     if (y === 16 && (x < -4 || x > 3)) return null;
     return (x + y) % 3 === 0 ? s.beardLight : s.beard;
   });
   m.box(-4, 11, 4, 3, 11, 4, (x) => (x % 2 ? s.beardLight : s.beard));
   m.set(-1, 17, 4, s.skin).set(0, 17, 4, s.nose); // runde Nase
-  // Buschige Brauen
+  // Rote Wangen neben den Augen – der Wind auf dem See
+  m.set(-5, 17, 3, s.cheek).set(4, 17, 3, s.cheek);
+  // Buschige Brauen, außen hochgezogen
   for (const x of [-5, -4, -3, 2, 3, 4]) m.set(x, 18, 3, s.brow);
+  m.set(-5, 19, 3, s.brow).set(4, 19, 3, s.brow);
   // Schiebermütze: flach, leicht nach vorn gezogen, mit Schirm
   m.box(-7, 21, -7, 6, 21, 4, (x, y, z) => ((x + z) % 4 === 0 ? s.capLight : s.cap));
   m.box(-6, 22, -6, 5, 22, 3, (x, y, z) => ((x + z) % 4 === 0 ? s.capLight : s.cap));

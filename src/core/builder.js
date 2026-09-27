@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
 import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint, maxHpOf, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD } from '../data/buildings.js';
-import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA } from '../data/towers.js';
+import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, partFits } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
@@ -57,7 +57,8 @@ export class Builder {
     const name = T.bauten[b.type];
     if (!BUILDINGS[b.type].tower) return name;
     const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
-    return `${name} · ${T.bauleiste.stufe(b.level)}${spec}`; // »Bolzenwerfer 2« las sich wie »der zweite«
+    const part = b.part ? ` · ${T.turmteile[b.part][0]}` : '';
+    return `${name} · ${T.bauleiste.stufe(b.level)}${spec}${part}`; // »Bolzenwerfer 2« las sich wie »der zweite«
   }
 
   selected() {
@@ -275,6 +276,14 @@ export class Builder {
         options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
       }
     }
+    // Besondere Turmteile einbauen (M10): eins je Turm, solange die Leiste Platz hat
+    if (def.tower && !b.part) {
+      const room = 5 - options.length - (def.hp && b.hp < maxHpOf(b) ? 1 : 0);
+      for (const id of TOWER_PART_IDS.filter((p) => this.game.state.towerParts[p] > 0 && partFits(b.type, p)).slice(0, Math.max(0, room))) {
+        const [name, info] = T.turmteile[id];
+        options.push({ id: `teil-${id}`, icon: id, name: T.turmteile.einbauen(name), info, cost: {}, affordable: true, progress: 1, action: () => this.mountPart(b, id) });
+      }
+    }
     if (b.type === 'barrikade') {
       if (b.broken) {
         // Trümmer: wieder aufbauen (tagsüber) oder abräumen
@@ -379,6 +388,21 @@ export class Builder {
     this.game.effects.dust(c.x, c.z, 1.2);
     this.game.effects.splat(c.x, 1.5, c.z, 'funken', 16, 0.9);
     this.game.hud.toast(T.meldungen.ausgebaut(this.selectionTitle() || T.bauten[b.type]), BUILDINGS[b.type].icon, 2.6);
+    this.game.quietSave();
+  }
+
+  /** Ein besonderes Turmteil aus dem Vorrat an diesen Turm (M10). */
+  mountPart(b, id) {
+    const st = this.game.state;
+    if (b.part || !(st.towerParts[id] > 0) || !partFits(b.type, id)) return;
+    st.towerParts[id] -= 1;
+    b.part = id;
+    this.world.buildings.attachObject(b);
+    st.world.buildings = this.world.buildings.toState();
+    const c = this.world.buildings.bounds(b);
+    this.game.sound.play('aufwertung');
+    this.game.effects.splat(c.x, 1.4, c.z, 'funken', 12, 0.8);
+    this.game.hud.toast(T.turmteile.eingebaut(T.turmteile[id][0]), id, 2.6);
     this.game.quietSave();
   }
 
@@ -773,6 +797,7 @@ export class Builder {
     this.game.sound.play('abriss');
     const state = this.game.state;
     gain(state.inventory, refund);
+    if (b.part) state.towerParts[b.part] = (state.towerParts[b.part] || 0) + 1; // das Turmteil bleibt heil (M10)
     state.world.buildings = buildings.toState();
     this.selection = null;
     this.preview.hide();
@@ -863,7 +888,7 @@ export class Builder {
     }
     if (sel) {
       const b = this.world.buildings.bounds(sel);
-      if (BUILDINGS[sel.type].tower) ring(b.x, b.z, towerStats(sel.type, sel.level, sel.spec).range, COLORS.gold);
+      if (BUILDINGS[sel.type].tower) ring(b.x, b.z, towerStatsOf(sel).range, COLORS.gold);
       thick(box(b.i, b.j, b.w, b.d), COLORS.gold);
     }
     if (hov) {

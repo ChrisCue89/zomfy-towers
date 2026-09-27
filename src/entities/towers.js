@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
-import { towerStats } from '../data/towers.js';
+import { towerStatsOf } from '../data/towers.js';
 import { dampAngle } from '../core/math.js';
 
 const MAX_PROJECTILES = 120;
@@ -84,7 +84,7 @@ export class TowerSystem {
     for (const t of towers) t.aura = 0;
     for (const L of towers) {
       if (L.type !== 'laternenturm' || L.hp <= 0) continue;
-      const s = towerStats(L.type, L.level, L.spec);
+      const s = towerStatsOf(L);
       for (const t of towers) {
         if (t === L || t.type === 'laternenturm') continue;
         if (Math.hypot(t.i - L.i, t.j - L.j) <= s.auraRange) t.aura = Math.max(t.aura, s.aura);
@@ -97,7 +97,7 @@ export class TowerSystem {
     let best = 0;
     for (const L of this.world.buildings.list) {
       if (L.type !== 'laternenturm' || L.hp <= 0) continue;
-      const s = towerStats(L.type, L.level, L.spec);
+      const s = towerStatsOf(L);
       if (!s.lightSlow) continue; // Glückslaterne bremst nicht
       if ((x - L.i - 0.5) ** 2 + (z - L.j - 0.5) ** 2 <= s.range * s.range) best = Math.max(best, s.lightSlow);
     }
@@ -109,7 +109,7 @@ export class TowerSystem {
     let best = 0;
     for (const L of this.world.buildings.list) {
       if (L.type !== 'laternenturm' || L.spec !== 'B' || L.hp <= 0) continue;
-      const s = towerStats(L.type, L.level, L.spec);
+      const s = towerStatsOf(L);
       if ((x - L.i - 0.5) ** 2 + (z - L.j - 0.5) ** 2 <= s.range * s.range) best = Math.max(best, s.luck);
     }
     return best;
@@ -139,7 +139,7 @@ export class TowerSystem {
       t.cool = Math.max(0, (t.cool ?? 0.5) - dt);
       t.kick = Math.max(0, (t.kick || 0) - dt * 4);
       if (t.hp <= 0) continue;
-      const s = towerStats(t.type, t.level, t.spec);
+      const s = towerStatsOf(t);
       const mult = 1 + (t.aura || 0);
       switch (t.type) {
         case 'bolzen':
@@ -198,7 +198,7 @@ export class TowerSystem {
     t.kick = 1;
     const o = this.origin(t);
     for (const z of list) {
-      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0 });
+      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0, lucky: t.part === 'gluecksmuenze' });
     }
     this.cb.onShot?.('bolzen', o.x, o.z);
   }
@@ -230,7 +230,7 @@ export class TowerSystem {
     const tx = best.x + Math.sin(best.facing) * lead;
     const tz = best.z + Math.cos(best.facing) * lead;
     const dist = Math.hypot(tx - o.x, tz - o.z);
-    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z });
+    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z, lucky: t.part === 'gluecksmuenze' });
     this.cb.onShot?.('katapult', o.x, o.z);
   }
 
@@ -261,7 +261,7 @@ export class TowerSystem {
     const freezeNow = s.freeze && t.freezeCd <= 0;
     if (freezeNow) t.freezeCd = 4;
     for (const z of inRange) {
-      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze' })) continue;
       this.horde.slow(z, s.slow, s.slowTime);
       if (freezeNow) {
         this.horde.freeze(z, s.freeze);
@@ -288,7 +288,7 @@ export class TowerSystem {
         p.angle = Math.atan2(dx, dz);
         if (d <= step + 0.05) {
           if (p.target && p.target.state !== 'dying') {
-            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm' });
+            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky });
             this.effects.splat(p.tx, 0.7, p.tz, 'funken', 4, 0.5);
           }
           this.projectiles.splice(i, 1);
@@ -315,7 +315,7 @@ export class TowerSystem {
     const r = p.splash;
     this.cb.onImpact?.(p.x, p.z);
     for (const z of this.horde.inRange(p.x, p.z, r)) {
-      if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: 'turm' })) continue;
+      if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky })) continue;
       if (p.burn) this.horde.ignite(z, p.burn, 3);
     }
     this.effects.splat(p.x, 0.3, p.z, p.burn ? 'feuer' : 'kuerbis', p.kind === 'mini' ? 8 : 16, p.kind === 'mini' ? 0.7 : 1);
@@ -325,7 +325,7 @@ export class TowerSystem {
         const a = (k / p.split) * Math.PI * 2 + this.time;
         const tx = p.x + Math.cos(a) * 1.3;
         const tz = p.z + Math.sin(a) * 1.3;
-        this.projectiles.push({ kind: 'mini', x0: p.x, y0: 0.3, z0: p.z, x1: tx, z1: tz, t: 0, T: 0.45, h: 0.8, damage: p.damage * 0.55, splash: r * 0.7, burn: 0, split: 0, x: p.x, y: 0.3, z: p.z });
+        this.projectiles.push({ kind: 'mini', x0: p.x, y0: 0.3, z0: p.z, x1: tx, z1: tz, t: 0, T: 0.45, h: 0.8, damage: p.damage * 0.55, splash: r * 0.7, burn: 0, split: 0, x: p.x, y: 0.3, z: p.z, lucky: p.lucky });
       }
     }
   }

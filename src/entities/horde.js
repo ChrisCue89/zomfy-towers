@@ -76,7 +76,7 @@ class Rig {
 export class Horde {
   /**
    * @param {object} deps scene, world (colliders, pathing, grid, buildings), rng
-   * @param {object} callbacks onKill(z), onHouseHit(dmg, z), onPlayerHit(dmg, z), onBarricadeHit(b, dmg), onDamage(z, amount, crit)
+   * @param {object} callbacks onKill(z, source, lucky), onHouseHit(dmg, z), onPlayerHit(dmg, z), onBarricadeHit(b, dmg), onDamage(z, amount, crit)
    */
   constructor({ scene, world, rng }, callbacks) {
     this.world = world;
@@ -196,7 +196,7 @@ export class Horde {
   }
 
   /** Schaden austeilen. Gibt true zurück, wenn der Schlurfer daran stirbt. */
-  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null } = {}) {
+  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null, lucky = false } = {}) {
     if (z.state === 'dying') return false;
     const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
     z.hp -= dealt;
@@ -212,18 +212,19 @@ export class Horde {
     }
     this.cb.onDamage?.(z, dealt, source);
     if (z.hp <= 0) {
-      this.kill(z, source);
+      this.kill(z, source, lucky);
       return true;
     }
     return false;
   }
 
-  kill(z, source) {
+  /** @param {boolean} [lucky] ein Turm mit Glücksmünze war es (M10: dann sicher Teile) */
+  kill(z, source, lucky = false) {
     z.hp = 0;
     z.state = 'dying';
     z.deathT = 0;
     z.deathDir = source === 'spieler' ? 1 : -1;
-    this.cb.onKill?.(z, source);
+    this.cb.onKill?.(z, source, lucky);
   }
 
   slow(z, amount, time) {
