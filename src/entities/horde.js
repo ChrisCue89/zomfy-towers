@@ -22,6 +22,7 @@ import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
 const MAX_PER_TYPE = 110;
+const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
 const TINT = {
   normal: new THREE.Color(1, 1, 1),
   flash: new THREE.Color(4, 4, 4),
@@ -165,6 +166,7 @@ export class Horde {
       kx: 0,
       kz: 0,
       flash: 0,
+      recoil: 0,
       hasteT: 0,
       summonT: def.summon ? def.summon.every : 0,
       stuck: 0,
@@ -190,6 +192,7 @@ export class Horde {
     const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
     z.hp -= dealt;
     z.flash = 0.1;
+    z.recoil = RECOIL;
     if (push && fromX !== null) {
       const dx = z.x - fromX;
       const dz = z.z - fromZ;
@@ -275,6 +278,7 @@ export class Horde {
       }
       // Zustände
       z.flash = Math.max(0, z.flash - dt);
+      z.recoil = Math.max(0, z.recoil - dt);
       z.slowT = Math.max(0, z.slowT - dt);
       if (z.slowT <= 0) z.slow = 0;
       z.freezeT = Math.max(0, z.freezeT - dt);
@@ -546,7 +550,11 @@ export class Horde {
     const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || (z.state === 'chase' && z.windup <= 0);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
-    let lean = run ? 0.32 : 0.14;
+    const heavy = z.type === 'brummer' || z.type === 'anfuehrer';
+    let lean = run ? 0.32 : heavy ? 0.06 : 0.14;
+    // Getroffen: kurz nach hinten geworfen
+    const hit = z.recoil > 0 ? Math.sin((z.recoil / RECOIL) * Math.PI) : 0;
+    lean -= hit * 0.38;
     let fall = 0;
     let sink = 0;
     if (z.state === 'dying') {
@@ -557,12 +565,16 @@ export class Horde {
     rig.root.position.set(z.x, z.y - sink, z.z);
     rig.root.rotation.set(0, z.facing, 0);
     rig.root.scale.set(s, s, s);
-    rig.body.position.y = Math.abs(Math.cos(z.phase)) * 0.03 * amt;
-    rig.body.rotation.set(lean + fall * 0.2, 0, Math.sin(z.phase * 0.5) * 0.06 * amt);
+    // Schwere stampfen (tiefer Tritt, breites Wanken), Schwärmer trippeln
+    const bob = heavy ? Math.pow(Math.abs(Math.cos(z.phase)), 3) * 0.06 : Math.abs(Math.cos(z.phase)) * 0.03;
+    const sway = heavy ? 0.12 : z.type === 'schwaermer' ? 0.1 : 0.06;
+    rig.body.position.y = bob * amt;
+    rig.body.rotation.set(lean + fall * 0.2, 0, Math.sin(z.phase * 0.5) * sway * amt + (1 - amt) * Math.sin(t * 0.8 + z.id) * 0.04);
     // Hinken: ein Bein schwingt weniger
     p.legL.rotation.x = walk * 0.62 * amt;
     p.legR.rotation.x = -walk * 0.45 * amt;
-    p.head.rotation.set(0.1 + Math.sin(t * 1.3 + z.id) * 0.06, Math.sin(t * 0.7 + z.id) * 0.2, 0.18 * Math.sin(t * 0.9 + z.id * 2));
+    const jitter = z.type === 'schwaermer' ? Math.sin(t * 17 + z.id) * 0.08 : 0;
+    p.head.rotation.set(0.1 + Math.sin(t * 1.3 + z.id) * 0.06 - hit * 0.4, Math.sin(t * 0.7 + z.id) * 0.2 + jitter, 0.18 * Math.sin(t * 0.9 + z.id * 2));
     // Betäubt: der Kopf kreist benommen
     if (z.stunT > 0) p.head.rotation.set(0.25 + Math.cos(t * 9) * 0.2, 0, Math.sin(t * 9) * 0.45);
     // Arme: klassisch nach vorn gestreckt; beim Schlag hoch und herunter

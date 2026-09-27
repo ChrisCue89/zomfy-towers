@@ -275,6 +275,11 @@ function buildStreetLamp(seed) {
   return m;
 }
 
+/**
+ * Wäscheleine: Pfosten und Leine als ein Modell, jedes Wäschestück als eigenes
+ * (Ursprung oben an der Leine) – die flattern im Wind (M5).
+ * @returns {{line: VoxelModel, cloths: Array<{model: VoxelModel, x: number, y: number}>}}
+ */
 function buildClothesline(seed, spanVoxels) {
   const m = new VoxelModel();
   const pole = (x) => {
@@ -285,18 +290,22 @@ function buildClothesline(seed, spanVoxels) {
   pole(spanVoxels);
   const sag = (x) => 13 - Math.round(Math.sin((x / spanVoxels) * Math.PI) * 1.5);
   for (let x = 1; x < spanVoxels; x++) m.set(x, sag(x), 0, P.s7);
+  const cloths = [];
   const cloth = (x0, w, h, c, c2) => {
+    const piece = new VoxelModel();
+    const anchor = sag(x0);
     for (let x = x0; x < x0 + w; x++) {
       const top = sag(x) - 1;
-      for (let y = top; y > top - h; y--) m.set(x, y, 0, (x + y) % 3 === 0 && c2 ? c2 : c);
+      for (let y = top; y > top - h; y--) piece.set(x - x0, y - anchor, 0, (x + y) % 3 === 0 && c2 ? c2 : c);
     }
+    cloths.push({ model: piece, x: x0, y: anchor });
   };
   cloth(3, 5, 5, P.b3, P.b4); // Hemd
   cloth(10, 2, 3, P.r3); // Socke
   cloth(13, 2, 3, P.f6); // Socke
   cloth(17, 5, 6, P.a1, P.a4); // Handtuch
   cloth(24, 4, 5, P.e7, P.e6); // Hose
-  return m;
+  return { line: m, cloths };
 }
 
 function buildWoodpile(seed) {
@@ -506,7 +515,14 @@ export function createProps({ seed, materials, colliders }) {
   // Wäscheleine
   const cl = LAYOUT.clothesline;
   const span = Math.round((cl.x1 - cl.x0) / V);
-  add(buildClothesline(seed + 11, span), cl.x0, cl.z, { occluder: true, name: 'Wäscheleine' });
+  const laundry = buildClothesline(seed + 11, span);
+  add(laundry.line, cl.x0, cl.z, { occluder: true, name: 'Wäscheleine' });
+  for (const c of laundry.cloths) {
+    const piece = createStaticVoxelObject(c.model, materials.laundry || materials.world, { seed });
+    piece.position.set(cl.x0 + c.x * V, c.y * V, cl.z);
+    piece.name = 'Wäsche';
+    group.add(piece);
+  }
   colliders.addCircle(cl.x0, cl.z, 0.15);
   colliders.addCircle(cl.x1, cl.z, 0.15);
   interactions.push({ id: 'waesche', x: (cl.x0 + cl.x1) / 2, z: cl.z, radius: 1.3, prompt: 'ansehen', dialog: 'waesche' });

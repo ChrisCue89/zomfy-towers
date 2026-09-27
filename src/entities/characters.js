@@ -223,6 +223,21 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   const armR = fine ? part(buildArm16(spec), [7, 14, 0], [6, 6, -2]) : part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
   body.add(torso, head, armL, armR);
 
+  // Lider zum Blinzeln (nur fein): eine Hautreihe über den Augen und darunter
+  // die Wimpernlinie – liegt eine Voxelschicht vor dem Gesicht, meist versteckt
+  let eyelids = null;
+  if (fine) {
+    const lids = new VoxelModel();
+    for (const x of [-4, -3, 2, 3]) {
+      lids.set(x, 18, 4, spec.skin);
+      lids.set(x, 17, 4, spec.eyes);
+    }
+    eyelids = new THREE.Mesh(geo(lids), material);
+    eyelids.position.set(0, -14 * U, 2 * U);
+    eyelids.visible = false;
+    head.add(eyelids);
+  }
+
   // Hände: Anker am unteren Ende der Arme. Rechts Werkzeuge/Waffen, links die Laterne.
   const hand = new THREE.Group();
   hand.position.set(0, -4 * V, 0);
@@ -258,7 +273,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   return {
     root,
     material,
-    parts: { body, torso, head, armL, armR, legL, legR, hand, handL },
+    parts: { body, torso, head, armL, armR, legL, legR, hand, handL, eyelids },
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
     tools,
   };

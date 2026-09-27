@@ -11,6 +11,7 @@ import { upgradeValue } from '../data/upgrades.js';
 import { WEAPONS, weaponStats } from '../data/weapons.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
 import { BUILDINGS } from '../data/buildings.js';
+import { FLINCH } from '../entities/player.js';
 
 const REGEN_RATE = 4;
 const ROLL = { duration: 0.3, speed: 7, cooldown: 0.75, invulnerable: 0.34 };
@@ -174,6 +175,7 @@ export class Combat {
     this.sinceHurt = 0;
     this.invulnerable = 0.35;
     this.hurtFlash = 0.25;
+    g.player.flinch = FLINCH;
     g.rig.shake = 0.15;
     g.hud.damageNumber(g.player.position.x, 1.9, g.player.position.z, Math.round(amount), true);
     // Rückstoß weg vom Angreifer

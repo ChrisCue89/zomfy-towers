@@ -39,6 +39,7 @@ export class World {
     this.materials = {
       world: createWorldMaterial(),
       windy: createWorldMaterial({ wind: true }), // Gras und Blumen im Wind
+      laundry: createWorldMaterial({ wind: 'hang', occluder: true }), // Wäsche flattert an der Leine
       occluder: createWorldMaterial({ occluder: true }),
       // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
       building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),

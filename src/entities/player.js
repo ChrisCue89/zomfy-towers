@@ -8,6 +8,7 @@ import { buildCharacter, MIKA } from './characters.js';
 import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
+export const FLINCH = 0.28; // Dauer des Zusammenzuckens
 
 function easeOut(t) {
   return 1 - (1 - t) * (1 - t);
@@ -48,6 +49,8 @@ export class Player {
     this.heldTool = null; // Werkzeug in der rechten Hand (aus der Schnellleiste)
     this.speedFactor = 1; // Aufwertung »Tempo«
     this.action = null;
+    this.flinch = 0; // Zusammenzucken nach einem Treffer (Sekunden)
+    this.blinkAt = 2 + Math.random() * 3; // nächstes Blinzeln (this.time)
     this._lanternWorld = new THREE.Vector3();
   }
 
@@ -175,12 +178,29 @@ export class Player {
     const idle = 1 - clamp(amt, 0, 1);
     const a = this.action;
 
+    const running = clamp((amt - 1) / 0.4, 0, 1);
+
     p.legL.rotation.x = s * 0.75 * amt;
     p.legR.rotation.x = -s * 0.75 * amt;
     p.body.position.y = Math.abs(Math.cos(this.phase)) * 0.035 * amt + Math.sin(this.time * 2.1) * 0.006 * idle;
+    // Kopf: nickt im Schritt, schaut im Stehen langsam umher
+    p.head.rotation.x = Math.sin(this.phase * 2) * 0.05 * Math.min(1, amt);
     p.head.rotation.y = Math.sin(this.time * 0.35) * 0.18 * idle;
     p.head.rotation.z = Math.sin(this.phase) * 0.04 * amt;
-    p.body.rotation.x = 0;
+    // Beim Rennen etwas vorgebeugt
+    p.body.rotation.x = running * 0.14;
+    // Blinzeln: alle paar Sekunden für einen Augenblick die Lider zu
+    if (p.eyelids) {
+      if (this.time > this.blinkAt + 0.13) this.blinkAt = this.time + 2.2 + Math.random() * 3.5;
+      p.eyelids.visible = this.time >= this.blinkAt;
+    }
+    // Getroffen: kurz zusammenzucken, Kopf nach hinten
+    if (this.flinch > 0) {
+      this.flinch = Math.max(0, this.flinch - dt);
+      const q = Math.sin((this.flinch / FLINCH) * Math.PI);
+      p.body.rotation.x -= q * 0.28;
+      p.head.rotation.x -= q * 0.25;
+    }
     if (a && a.kind === 'roll') {
       // Hechtsprung: tief nach vorn, Beine angezogen
       const q = Math.sin((a.t / a.duration) * Math.PI);

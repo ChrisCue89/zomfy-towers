@@ -77,12 +77,22 @@ const WIND_VERTEX = /* glsl */ `
   transformed.x += (sin(uTime * 1.7 + base.x * 0.9 + base.z * 0.6) * 0.1 + sin(uTime * 3.3 + base.z * 1.3) * 0.035) * h * gust;
 }
 #endif
+#ifdef WIND_HANG
+{
+  // Wäsche: hängt an der Leine (Ursprung oben) – je tiefer, desto mehr weht sie
+  vec3 base = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+  float h = max(0.0, -position.y);
+  float gust = 0.55 + 0.45 * sin(uTime * 0.4 + base.x * 0.3);
+  transformed.z += (sin(uTime * 2.3 + base.x * 1.7) * 0.22 + sin(uTime * 5.1 + base.x * 2.9) * 0.06) * h * gust;
+  transformed.x += sin(uTime * 1.4 + base.x) * 0.05 * h;
+}
+#endif
 `;
 
 function patch(material, extraUniforms = {}) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, sharedUniforms, extraUniforms);
-    if (material.defines?.WIND !== undefined) {
+    if (material.defines?.WIND !== undefined || material.defines?.WIND_HANG !== undefined) {
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nuniform float uTime;')
         .replace('#include <begin_vertex>', WIND_VERTEX);
@@ -97,7 +107,7 @@ function patch(material, extraUniforms = {}) {
 
 /**
  * Beleuchtetes Voxel-Material.
- * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number, wind?: boolean}} options
+ * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number, wind?: boolean|'hang'}} options
  */
 export function createWorldMaterial(options = {}) {
   const { occluder = false, fade = false, map = null, vertexColors = true, selfLight = 0, wind = false } = options;
@@ -106,7 +116,8 @@ export function createWorldMaterial(options = {}) {
   if (occluder) material.defines.OCCLUDER = '';
   if (fade) material.defines.FADE = '';
   if (selfLight > 0) material.defines.SELF_LIGHT = '';
-  if (wind) material.defines.WIND = '';
+  if (wind === 'hang') material.defines.WIND_HANG = '';
+  else if (wind) material.defines.WIND = '';
   const extra = {};
   if (fade) {
     extra.uFade = { value: 0 };
