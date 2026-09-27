@@ -55,7 +55,7 @@ export class Menu {
     }
     if (this.screen === 'confirm') {
       return [
-        { label: T.menue.sicherJa, action: () => this.game.newGame() },
+        { label: T.menue.sicherJa, action: () => this.game.newGameFromMenu() },
         { label: T.menue.sicherNein, action: () => this.go('main'), safe: true },
       ];
     }

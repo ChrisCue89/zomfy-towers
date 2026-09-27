@@ -863,6 +863,19 @@ export class Game {
     this.applyLook();
   }
 
+  /** Pausenmenü »Neues Spiel« (bestätigt): zur Figur auf dem Titelbild, sonst gleich los. */
+  newGameFromMenu() {
+    if (!CONFIG.showTitle) {
+      this.newGame();
+      return;
+    }
+    this.menu.close();
+    this.menu.fromTitle = false;
+    this.mode = 'title';
+    this.title.open(true);
+    this.title.go('figur');
+  }
+
   /** Neues Spiel mit Name und Aussehen. */
   startNewFromTitle(name, look) {
     this.title.close();

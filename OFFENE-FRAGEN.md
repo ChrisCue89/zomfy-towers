@@ -379,6 +379,44 @@ Zelte, Möbel und den Funkturm statt über eine größere Grundfläche.
 *Warum:* Eine neue Grundfläche würde Felder sperren, auf denen in alten
 Spielständen schon Bauten stehen. Die Lichtung wächst trotzdem sichtbar.
 
+## Feinschliff (Meilenstein 7)
+
+### 44. Wann beginnt der Klang?
+**Entscheidung:** Mit der ersten echten Eingabe (Taste oder Klick). Davor ist
+es still, auch auf dem Titelbild.
+*Warum:* Browser sperren Klang bis zur ersten Eingabe und melden sonst eine
+Warnung in der Konsole. Wer das Titelbild bedient, hört ab dem ersten Druck
+Wind, Vögel und die Abendmelodie.
+
+### 45. Wann spielt Musik?
+**Entscheidung:** Nur am Abend (leise Melodie, 17:00–20:30) und während der
+Wellen (Rhythmus). Tagsüber und in ruhigen Nachtstunden gibt es nur Wind,
+Vögel, Grillen und Feuer.
+*Warum:* Gemütlich heißt auch still. Die Musik kündigt den Abend an und
+treibt in der Welle – so wird sie zum Signal statt zum Dauerteppich.
+
+### 46. Was bedeutet »Pixelgröße«?
+**Entscheidung:** Ein Schritt am ganzzahligen Maßstab: klein = ein Schritt
+feiner (mehr Überblick), mittel = wie bisher, groß = ein Schritt gröber
+(näher dran). Nie krumme Maßstäbe.
+*Warum:* Scharfe Pixel sind Pflicht (DESIGN.md 3). Wer mehr Überblick oder
+größere Figuren will, bekommt beides, ohne dass der Look verwischt.
+
+### 47. Wie kommt der gewählte Name in die Texte?
+**Entscheidung:** Die Texte sagen weiter »Mika«. Beim Messen, Umbrechen und
+Zeichnen ersetzt die Schrift »Mika« durch den gewählten Namen. Namen haben
+höchstens 12 Zeichen: Buchstaben, Umlaute, ß, Leerzeichen, Bindestrich.
+*Warum:* Eine Stelle statt hundert, und Tafeln passen sich an, weil auch das
+Messen den neuen Namen sieht. Die Texte sprechen Mika ohne Pronomen an – jeder
+Name passt.
+
+### 48. Titelbild in der Prüfung?
+**Entscheidung:** `?test`, `?nointro` und `?notitle` überspringen das
+Titelbild. Die Prüfung testet es einmal eigens (Schriftzug, Neues Spiel, Name
+tippen, Mütze wechseln, Intro).
+*Warum:* Alle übrigen Prüfungen und Werkzeuge bleiben unverändert, und
+Testspieler (`?playtest`) sehen das Spiel so, wie es startet.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
