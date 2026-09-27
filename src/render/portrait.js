@@ -5,6 +5,8 @@
 import { P, hexToRgb, nearestPaletteHex } from './palette.js';
 import { VoxelModel } from './voxel.js';
 import { buildBustModel, MIKA } from '../entities/characters.js';
+import { survivorParts } from '../entities/survivorModels.js';
+import { dogModels } from '../entities/dogModel.js';
 
 const TOP_SHADE = 1.08;
 const FRONT_SHADE = 0.8;
@@ -21,20 +23,22 @@ function css(hex) {
 
 /**
  * @param {VoxelModel} model
- * @param {{size?: number, top?: number}} options
+ * @param {{size?: number, top?: number, w?: number, t?: number, f?: number}} options
+ *   w/t/f: Pixel je Voxel für Breite, Oberseite und Vorderseite (Welt: 5/3/4;
+ *   feine Modelle der Überlebenden: 4/1/3, damit der Kopf ins Fenster passt)
  * @returns {HTMLCanvasElement}
  */
-export function renderVoxelPortrait(model, { size = 52, top = 3 } = {}) {
+export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f = 4 } = {}) {
   const cells = [];
   model.forEach((x, y, z, c) => cells.push([x, y, z, c]));
-  // Projektion: sx = 5x, sy = -4y + 3z (nach unten wachsend)
+  // Projektion: sx = w·x, sy = -f·y + t·z (nach unten wachsend)
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
   for (const [x, y, z] of cells) {
-    minX = Math.min(minX, x * 5);
-    maxX = Math.max(maxX, x * 5 + 5);
-    minY = Math.min(minY, -4 * (y + 1) + 3 * z);
+    minX = Math.min(minX, x * w);
+    maxX = Math.max(maxX, x * w + w);
+    minY = Math.min(minY, -f * (y + 1) + t * z);
   }
   const offsetX = Math.round((size - (maxX - minX)) / 2) - minX;
   const offsetY = top - minY;
@@ -46,16 +50,16 @@ export function renderVoxelPortrait(model, { size = 52, top = 3 } = {}) {
   // Von hinten nach vorn, von unten nach oben zeichnen.
   cells.sort((a, b) => a[2] - b[2] || a[1] - b[1]);
   for (const [x, y, z, c] of cells) {
-    const sx = x * 5 + offsetX;
-    const topY = -4 * (y + 1) + 3 * z + offsetY;
-    if (!model.has(x, y + 1, z)) {
+    const sx = x * w + offsetX;
+    const topY = -f * (y + 1) + t * z + offsetY;
+    if (!model.has(x, y + 1, z) && t > 0) {
       ctx.fillStyle = css(shadeHex(c, TOP_SHADE));
-      ctx.fillRect(sx, topY, 5, 3);
+      ctx.fillRect(sx, topY, w, t);
     }
     if (!model.has(x, y, z + 1)) {
       const covered = model.has(x, y + 1, z + 1);
       ctx.fillStyle = css(shadeHex(c, covered ? FRONT_SHADE * AO_FRONT : FRONT_SHADE));
-      ctx.fillRect(sx, topY + 3, 5, 4);
+      ctx.fillRect(sx, topY + t, w, f);
     }
   }
 
@@ -88,7 +92,27 @@ function buildRadioModel() {
   return m;
 }
 
-/** Alle Porträts, die Meilenstein 1 braucht. */
+/** Brustbild einer Überlebenden-Figur (feines Modell, flachere Projektion). */
+function survivorPortrait(id) {
+  const parts = survivorParts(id);
+  const bust = new VoxelModel();
+  const add = (model) => model.forEach((x, y, z, c) => y >= 10 && bust.set(x, y, z, c));
+  add(parts.torso);
+  add(parts.head);
+  return renderVoxelPortrait(bust, { top: 2, w: 4, t: 1, f: 3 });
+}
+
+/** Knopf: der ganze Hund, schräg von vorn. */
+function dogPortrait() {
+  const m = new VoxelModel();
+  const { body, head, tail } = dogModels();
+  body.forEach((x, y, z, c) => m.set(x, y, z, c));
+  head.forEach((x, y, z, c) => m.set(x, y + 8, z + 4, c));
+  tail.forEach((x, y, z, c) => m.set(x, y + 8, z - 5, c));
+  return renderVoxelPortrait(m, { top: 6, w: 5, t: 2, f: 4 });
+}
+
+/** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */
 export function renderPortraits() {
   const bust = buildBustModel(MIKA);
   // Nur Kopf und Schultern
@@ -99,5 +123,10 @@ export function renderPortraits() {
   return {
     mika: renderVoxelPortrait(head, { top: 2 }),
     radio: renderVoxelPortrait(buildRadioModel(), { top: 8 }),
+    hilde: survivorPortrait('hilde'),
+    juna: survivorPortrait('juna'),
+    bert: survivorPortrait('bert'),
+    yusuf: survivorPortrait('yusuf'),
+    knopf: dogPortrait(),
   };
 }

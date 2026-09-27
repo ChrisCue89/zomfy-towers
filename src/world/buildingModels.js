@@ -92,7 +92,45 @@ export function buildBench(seed) {
   return m;
 }
 
+/**
+ * Schlafzelt für Überlebende (Meilenstein 6): Giebelzelt aus geflickter Plane,
+ * First von Nord nach Süd, der Eingang zeigt zur Kamera. Nachts leuchtet drin
+ * ein Laternchen durch die offene Klappe.
+ */
+export function buildTent(seed) {
+  const m = new VoxelModel();
+  const canvas = (x, y, z) => {
+    if (hash3(Math.floor(x / 3), y, Math.floor(z / 4), seed) > 0.86) return P.b3; // Flicken
+    if (y === 4 || y === 5) return P.r3; // Streifen
+    return (x + z) % 5 === 0 ? P.e7 : P.e8;
+  };
+  for (let y = 0; y <= 10; y++) {
+    const half = 7 - Math.floor(y * 0.68);
+    m.box(-half - 1, y, -7, half, y, 5, canvas);
+  }
+  // Eingang vorn: eine echte Öffnung, dahinter Dunkel (und nachts das Laternchen)
+  m.box(-8, 0, 6, 7, 0, 6, P.e3);
+  for (let y = 0; y <= 5; y++) {
+    const half = 3 - Math.floor(y / 2);
+    m.remove(-half - 1, y, 4, half, y, 5);
+    for (let x = -half - 1; x <= half; x++) m.set(x, y, 3, y === 0 ? P.e2 : P.e1);
+  }
+  m.box(-6, 1, 6, -4, 5, 6, (x, y) => (y === 4 || y === 5 ? P.r3 : P.e7));
+  m.box(3, 1, 6, 5, 5, 6, (x, y) => (y === 4 || y === 5 ? P.r3 : P.e7));
+  // Firststange, Heringe mit Spannleinen
+  m.box(-1, 11, -8, 0, 11, 6, P.e3);
+  for (const [x, z] of [[-8, -8], [7, -8], [-8, 7], [7, 7]]) m.set(x, 0, z, P.e3);
+  return m;
+}
+
+export function buildTentGlow() {
+  const m = new VoxelModel();
+  m.box(-1, 1, 4, 0, 2, 4, 0xffffff);
+  return m;
+}
+
 export const BUILDING_MODELS = {
+  zelt: { model: buildTent, glow: buildTentGlow },
   werkbank: { model: buildWorkbench, glow: buildWorkbenchGlow },
   barrikade: { model: buildBarricade },
   laternenpfahl: { model: buildLampPost, glow: buildLampPostGlow, pool: { y: 1.3, radius: 3.0 } },

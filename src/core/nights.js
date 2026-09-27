@@ -163,6 +163,7 @@ export class Nights {
       st.stats.nightsWon = (st.stats.nightsWon || 0) + 1;
       g.hud.toast(T.horde.geschafft(night.n), 'haus', 5);
       g.hud.showBanner(T.horde.geschafftKurz);
+      g.survivors?.onNightEnd(); // Bert flickt die Türme
     } else {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;
     }

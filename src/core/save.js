@@ -7,6 +7,14 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v4 -> v5: Meilenstein 6 (Überlebende, Funkturm, Einrichten). Die Überlebenden
+  // kommen nach und nach ab dem nächsten Tag – nicht alle auf einmal.
+  4: (data) => ({
+    ...data,
+    version: 5,
+    world: { ...(data.world || {}), tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: Math.max(0, (data.time?.day || 1) - 1) },
+    survivors: {},
+  }),
   // v3 -> v4: Meilenstein 4 (Waffen, Erfahrung, Perks). Alles beginnt bei null.
   3: (data) => ({
     ...data,

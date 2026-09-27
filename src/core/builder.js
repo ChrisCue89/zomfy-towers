@@ -43,7 +43,9 @@ export class Builder {
   // --- Bauleiste ------------------------------------------------------------------
 
   tabs() {
-    return ['tuerme', 'figur', 'zuhause'];
+    // »Einrichten« (Zelte, Möbel, Funkturm) kommt mit dem ersten Besuch (Meilenstein 6)
+    const guests = Object.values(this.game.state.survivors).some((s) => s.stage > 0);
+    return guests ? ['tuerme', 'figur', 'zuhause', 'einrichten'] : ['tuerme', 'figur', 'zuhause'];
   }
 
   selectionTitle() {
@@ -66,6 +68,7 @@ export class Builder {
     if (tab === 'tuerme') return this.buildOptions(TOWER_TAB);
     if (tab === 'figur') return this.figureOptions();
     if (tab === 'zuhause') return this.homeOptions();
+    if (tab === 'einrichten') return this.furnishOptions();
     return [];
   }
 
@@ -91,6 +94,16 @@ export class Builder {
         inv
       );
     });
+  }
+
+  /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
+  furnishOptions() {
+    const inv = this.game.state.inventory;
+    const options = this.buildOptions(['zelt']);
+    for (const o of this.game.furnishing.options()) options.push(this.option({ ...o, buy: true }, inv));
+    const tower = this.game.survivors.towerOption();
+    if (tower) options.push(this.option(tower, inv));
+    return options;
   }
 
   homeOptions() {
@@ -371,7 +384,11 @@ export class Builder {
     // m3-r2: Flicken war fast umsonst (76 Schaden = 5 Holz + 2 Schrott) – Schaden soll zählen
     if (home > 0.5) add({ holz: Math.ceil(home / 10), schrott: Math.ceil(home / 15) });
     for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && b.hp < BUILDINGS[b.type].hp) add(this.buildingRepairCost(b));
-    return Object.keys(total).length ? total : null;
+    if (!Object.keys(total).length) return null;
+    // Bert flickt mit: nur ein Teil der Kosten (Meilenstein 6)
+    const factor = this.game.survivors.repairFactor();
+    if (factor < 1) for (const r of Object.keys(total)) total[r] = Math.max(1, Math.ceil(total[r] * factor));
+    return total;
   }
 
   repairAll() {
@@ -611,6 +628,7 @@ export class Builder {
     const c = this.world.buildings.bounds(b);
     this.game.effects.dust(c.x, c.z, Math.max(c.w, c.d));
     hud.toast(T.meldungen.gebaut(pl.name), BUILDINGS[pl.type].icon, 2.2);
+    this.game.survivors.onBuilt(pl.type);
     this.game.quietSave();
 
     const def = BUILDINGS[pl.type];
@@ -664,6 +682,7 @@ export class Builder {
     const { w, d } = footprint(b.type, b.turns);
     this.game.effects.dust(b.i + w / 2, b.j + d / 2, 1.5);
     this.game.hud.toast(T.meldungen.abgerissen(T.bauten[b.type]), 'abriss', 2.2);
+    if (b.type === 'zelt') this.game.survivors.checkTents();
     this.game.quietSave();
   }
 

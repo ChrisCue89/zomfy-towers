@@ -46,6 +46,8 @@ export class ReportPanel {
     out.push({ text: r.fell ? T.bericht.gefallen(r.homeNow, r.homeMax) : T.bericht.zuhause(r.homeLost, r.homeNow, r.homeMax) });
     if (r.broken) out.push({ text: T.bericht.kaputt(r.broken) });
     if (r.lootLeft > 0) out.push({ text: T.bericht.beuteDraussen(r.lootLeft), warm: true });
+    // Überlebende und Gemütlichkeit am Morgen (Meilenstein 6)
+    for (const e of r.extra || []) out.push({ text: e.text, res: e.res, warm: !e.res });
     if (!r.won && r.losses) {
       out.push({ text: T.bericht.verlust, res: r.losses, bad: true, empty: T.bericht.nichts });
       out.push({ text: T.bericht.trost(r.damaged), dim: true });

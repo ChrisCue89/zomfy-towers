@@ -15,6 +15,8 @@ export const BUILDINGS = {
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2 },
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1 },
+  // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
+  zelt: { w: 2, d: 2, cost: { holz: 8, stoff: 3 }, icon: 'zelt', max: 4, height: 1.4 },
 };
 
 /** Reihenfolge in den Reitern der Bauleiste. */

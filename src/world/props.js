@@ -210,6 +210,71 @@ function buildTower(seed) {
   return m;
 }
 
+// --- Funkturm-Ausbau (Meilenstein 6, Juna) -------------------------------------------
+// Gleiches Raster wie buildTower (Beine von den Ecken ±12 unten zu ±6 oben).
+
+const towerLeg = (i, y) => {
+  const corners = [[-12, -12], [11, -12], [-12, 11], [11, 11]];
+  const top = [[-6, -6], [5, -6], [-6, 5], [5, 5]];
+  const t = y / 46;
+  return [Math.round(corners[i][0] + (top[i][0] - corners[i][0]) * t), Math.round(corners[i][1] + (top[i][1] - corners[i][1]) * t)];
+};
+
+/** Stufe 1: Beine gerichtet, Leiter an der Südseite, Plattform oben. */
+function buildTowerRepair(seed) {
+  const m = new VoxelModel();
+  const band = (y) => (Math.floor(y / 6) % 2 === 0 ? P.r4 : P.s9);
+  for (let i = 0; i < 4; i++) {
+    for (let y = 36; y <= 46; y++) {
+      const [x, z] = towerLeg(i, y);
+      m.box(x, y, z, x + 1, y, z + 1, band(y));
+    }
+  }
+  // Leiter vor der Südseite
+  for (let y = 1; y <= 46; y++) {
+    const z = Math.round(11 + (5 - 11) * (y / 46)) + 2;
+    m.set(-2, y, z, P.e4).set(1, y, z, P.e4);
+    if (y % 3 === 0) m.set(-1, y, z, P.e6).set(0, y, z, P.e6);
+  }
+  // Plattform mit Geländer
+  m.box(-6, 47, -6, 6, 47, 6, (x, y, z) => ((x + z) % 2 ? P.s5 : P.s4));
+  for (const [x, z] of [[-6, -6], [6, -6], [-6, 6], [6, 6]]) m.box(x, 48, z, x, 50, z, P.s3);
+  m.box(-6, 50, 6, 6, 50, 6, P.s3).box(-6, 50, -6, -6, 50, 6, P.s3).box(6, 50, -6, 6, 50, 6, P.s3);
+  // frische Flicken am Fuß
+  m.box(-2, 0, 12, 1, 0, 13, P.e5);
+  return m;
+}
+
+/** Stufe 2: Antennenmast mit Querstreben, Schüssel und Kabel zum Schaltkasten. */
+function buildTowerAntenna() {
+  const m = new VoxelModel();
+  m.box(-1, 48, -1, 0, 66, 0, (x, y) => (y % 4 === 0 ? P.r3 : P.s7));
+  for (const y of [54, 60]) m.box(-5, y, -1, 4, y, -1, P.s6);
+  m.box(2, 56, 1, 4, 59, 1, P.s8); // Schüssel
+  m.set(3, 57, 2, P.s5);
+  m.line(5, 47, 5, 14, 8, 4, P.s1); // Kabel hinunter zum Schaltkasten
+  m.line(-6, 47, 5, 13, 7, 5, P.s2);
+  m.set(-1, 67, -1, P.r4);
+  return m;
+}
+
+/** Stufe 3: Leuchtfeuer oben auf dem Mast (Gehäuse; das Glas leuchtet separat). */
+function buildTowerBeacon() {
+  const m = new VoxelModel();
+  m.box(-3, 67, -3, 2, 67, 2, P.s3); // Sockel
+  for (const [x, z] of [[-3, -3], [2, -3], [-3, 2], [2, 2]]) m.box(x, 68, z, x, 71, z, P.s2);
+  m.box(-3, 72, -3, 2, 72, 2, P.r3); // Dach
+  m.box(-2, 73, -2, 1, 73, 1, P.r2);
+  m.set(-1, 74, -1, P.f6);
+  return m;
+}
+
+function buildTowerBeaconGlass() {
+  const m = new VoxelModel();
+  m.box(-2, 68, -2, 1, 71, 1, 0xffffff);
+  return m;
+}
+
 function buildTowerDebris(seed) {
   const m = new VoxelModel();
   // liegendes Turmstück: zwei Holme mit Streben
@@ -496,6 +561,12 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addBox(tower.x + 1.625, tower.z + 0.25, tower.x + 2.125, tower.z + 0.875);
   block(tower.x - 2, tower.z - 2, tower.x + 2.2, tower.z + 2);
   interactions.push({ id: 'turm', x: tower.x, z: tower.z + 1.5, radius: 2.0, prompt: 'ansehen', dialog: 'funkturm' });
+  // Ausbaustufen (Juna, Meilenstein 6): anfangs versteckt, siehe setTowerStage
+  const towerStages = [add(buildTowerRepair(seed + 7), tower.x, tower.z, { occluder: true, name: 'Funkturm-Leiter' }), add(buildTowerAntenna(), tower.x, tower.z, { occluder: true, name: 'Funkturm-Antenne' })];
+  const beacon = add(buildTowerBeacon(), tower.x, tower.z, { occluder: true, name: 'Leuchtfeuer' });
+  if (materials.beacon) beacon.add(createStaticVoxelObject(buildTowerBeaconGlass(), materials.beacon, { shadow: 'none', jitter: 0 }));
+  towerStages.push(beacon);
+  for (const o of towerStages) o.visible = false;
   add(buildTowerDebris(seed + 8), tower.x - 2.0, tower.z + 2.75, { name: 'Turmteil' });
   block(tower.x - 2.1, tower.z + 2.65, tower.x + 0.7, tower.z + 3.65);
 
@@ -570,6 +641,13 @@ export function createProps({ seed, materials, colliders }) {
     group,
     interactions,
     blockers,
+    towerPos: { x: tower.x, z: tower.z },
+    /** Funkturm-Ausbau zeigen (0 = Stumpf, 3 = Leuchtfeuer). */
+    setTowerStage(stage) {
+      towerStages.forEach((o, k) => {
+        o.visible = stage >= k + 1;
+      });
+    },
     /**
      * Die Regentonne steht an der Ecke der Notunterkunft – genau dort, wo die
      * Hütte ihren Anbau bekommt. Ab der Hütte verschwindet sie samt Kollision

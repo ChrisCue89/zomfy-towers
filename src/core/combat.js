@@ -58,7 +58,7 @@ export class Combat {
     this.rollCooldown = Math.max(0, this.rollCooldown - dt);
     const max = this.maxHp;
     if (st.player.hp > max) st.player.hp = max;
-    if (this.sinceHurt > perkValue(st, 'zweiterAtem') && st.player.hp < max) st.player.hp = Math.min(max, st.player.hp + REGEN_RATE * dt);
+    if (this.sinceHurt > perkValue(st, 'zweiterAtem') && st.player.hp < max) st.player.hp = Math.min(max, st.player.hp + REGEN_RATE * g.survivors.regenFactor() * dt);
     // Perk »Flickschusterin«: Bauten in der Nähe flicken sich
     const fix = perkValue(st, 'flicker');
     if (fix > 0) {

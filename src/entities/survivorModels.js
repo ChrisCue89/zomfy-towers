@@ -146,12 +146,10 @@ function bertTorso(s) {
   const m = new VoxelModel();
   // Karohemd, der Bauch wölbt sich vor
   m.box(-6, 6, -4, 5, 13, 3, (x, y, z) => ((Math.floor((x + 8) / 2) + Math.floor(y / 2)) % 2 ? s.shirtDark : s.shirt));
-  m.box(-5, 7, 4, 4, 11, 4, s.apron);
-  // Schürze mit Tasche und Bleistift
-  m.box(-5, 6, 4, 4, 12, 5, (x, y, z) => {
-    if (z === 4) return null;
+  // Bauch mit Schürze darüber (zwei Voxel vor dem Hemd), Tasche und Bleistift
+  m.box(-5, 6, 4, 4, 12, 5, (x, y) => {
     if (y === 12) return s.apronDark;
-    if (y >= 8 && y <= 9 && x >= -3 && x <= 2) return y === 9 ? s.apronDark : s.apron;
+    if (y === 9 && x >= -3 && x <= 2) return s.apronDark;
     return s.apron;
   });
   m.set(1, 10, 6, s.pencil).set(1, 11, 6, s.pencil).set(1, 12, 6, P.s7);
@@ -266,6 +264,7 @@ export function survivorParts(id) {
     case 'hilde': {
       const s = HILDE;
       return {
+        skin: s.skin,
         head: hildeHead(s),
         torso: hildeTorso(s),
         arm: baseArm({ sleeve: s.cardigan, sleeveDark: s.cardiganDark, cuff: s.cardiganDark, skin: s.skin, skinShade: s.skinShade }),
@@ -275,6 +274,7 @@ export function survivorParts(id) {
     case 'bert': {
       const s = BERT;
       return {
+        skin: s.skin,
         head: bertHead(s),
         torso: bertTorso(s),
         arm: baseArm({ sleeve: s.shirt, sleeveDark: s.shirtDark, cuff: s.shirtDark, skin: s.skin, skinShade: s.skinShade, forearm: s.skin }),
@@ -284,6 +284,7 @@ export function survivorParts(id) {
     case 'juna': {
       const s = JUNA;
       return {
+        skin: s.skin,
         head: junaHead(s),
         torso: junaTorso(s),
         arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.coatShade, skin: s.skin, skinShade: s.skinShade }),
@@ -293,6 +294,7 @@ export function survivorParts(id) {
     case 'yusuf': {
       const s = YUSUF;
       return {
+        skin: s.skin,
         head: yusufHead(s),
         torso: yusufTorso(s),
         arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.coatDark, skin: s.skin, skinShade: s.skinShade }),

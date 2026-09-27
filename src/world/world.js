@@ -44,7 +44,10 @@ export class World {
       // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
       building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),
       flame: createGlowMaterial(0xffffff, { vertexColors: true }),
+      beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Funkturm (Meilenstein 6)
     };
+    this.npcInteractions = []; // Überlebende (core/survivors.js)
+    this.beaconPool = null;
 
     const terrain = createTerrain(seed);
     scene.add(terrain.group);
@@ -135,11 +138,24 @@ export class World {
     L.addGlow(s.glow.candle, { dim: 0x6a5a40, bright: 0xffe8a0, boost: 1.3, mode: 'lamp' });
     L.addGlow(s.glow.fairy, { dim: 0x555555, bright: 0xffffff, boost: 1.6, mode: 'lamp', twinkle: true });
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
+    L.addGlow(this.materials.beacon, { dim: 0xc8b070, bright: 0xfff2c4, boost: 1.8, mode: 'lamp' });
+  }
+
+  /** Funkturm-Ausbau zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
+  setTowerStage(stage, beaconRange = 9) {
+    this.props.setTowerStage(stage);
+    if (stage >= 3 && !this.beaconPool) {
+      const t = this.props.towerPos;
+      this.beaconPool = this.lightPools.add(t.x, t.z, beaconRange);
+    } else if (stage < 3 && this.beaconPool) {
+      this.lightPools.remove(this.beaconPool);
+      this.beaconPool = null;
+    }
   }
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions];
+    this.interactions = [...this.shelter.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (neu aufbauen). */
@@ -211,7 +227,8 @@ export class World {
       if (d > it.radius + grace) continue;
       const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
-      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0);
+      // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen
+      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 0.8 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

@@ -4,8 +4,10 @@
 import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPON_ORDER } from '../data/weapons.js';
 import { PERKS, PERK_IDS } from '../data/perks.js';
+import { SURVIVOR_ORDER } from '../data/survivors.js';
+import { FURNITURE } from '../data/furniture.js';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -15,7 +17,8 @@ export function createNewState(config) {
   return {
     version: SAVE_VERSION,
     time: { day: 1, minute: config.time.newGameMinute },
-    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1 },
+    // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
+    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0 },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
@@ -23,7 +26,12 @@ export function createNewState(config) {
     weapons: {}, // gebaute Waffen: Name -> Stufe (1–3)
     perks: {}, // gewählte Perks: Name -> Stufe
     perkChoice: null, // offene Perk-Wahl (drei Namen), falls beim Speichern noch nicht gewählt
-    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null },
+    // tower: Ausbau des Funkturms (0–3), furniture: gekaufte Möbel, tradeDay: Tag des
+    // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
+    // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
+    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0 },
+    // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
+    survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null }])),
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
     night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
     horde: [], // lebende Schlurfer (zum Weiterspielen nach dem Neuladen)
@@ -67,6 +75,8 @@ export function sanitizeState(data, config) {
   out.player.hp = num(data.player?.hp, 100, 1, 1000);
   out.player.xp = num(data.player?.xp, 0, 0, 1e7);
   out.player.level = Math.floor(num(data.player?.level, 1, 1, 99));
+  out.player.rested = Math.floor(num(data.player?.rested, 0, 0, 1e6));
+  out.player.tea = Math.floor(num(data.player?.tea, 0, 0, 1e6));
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
@@ -131,6 +141,15 @@ export function sanitizeState(data, config) {
   }
   if (w.searched && typeof w.searched === 'object') {
     for (const [k, v] of Object.entries(w.searched)) if (Number.isFinite(v)) out.world.searched[k] = Math.floor(v);
+  }
+  out.world.tower = Math.floor(num(w.tower, 0, 0, 3));
+  out.world.furniture = Array.isArray(w.furniture) ? [...new Set(w.furniture.filter((id) => typeof id === 'string' && FURNITURE[id]))] : [];
+  out.world.tradeDay = Math.floor(num(w.tradeDay, 0, 0, 1e6));
+  out.world.yusufNight = Math.floor(num(w.yusufNight, 0, 0, 1e6));
+  out.world.survivorsStart = Math.floor(num(w.survivorsStart, 0, 0, 1e6));
+  for (const id of SURVIVOR_ORDER) {
+    const s = data.survivors?.[id] || {};
+    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: Number.isFinite(s.tent) ? Math.floor(s.tent) : null };
   }
   return out;
 }

@@ -49,6 +49,11 @@ function buildLeg() {
   return m;
 }
 
+/** Die Einzelteile als Voxel-Modelle (für das Porträt). */
+export function dogModels() {
+  return { body: buildBody(), head: buildHead(), tail: buildTail() };
+}
+
 /**
  * Baut Knopf als animierbare Gruppe.
  * @returns {{root: THREE.Group, parts: {body, head, tail, legs: THREE.Group[]}}}

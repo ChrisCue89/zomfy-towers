@@ -19,6 +19,9 @@ import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits } from '../render/portrait.js';
+import { Survivors } from './survivors.js';
+import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
+import { Furnishing } from './furnishing.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
@@ -128,6 +131,8 @@ export class Game {
     this.loot = new Loot(this.scene, rng);
     this.nights = new Nights(this);
     this.combat = new Combat(this);
+    this.survivors = new Survivors(this);
+    this.furnishing = new Furnishing(this);
     this.portraits = renderPortraits();
 
     this.saves = new SaveStore({ disabled: CONFIG.noSave, config: CONFIG });
@@ -217,6 +222,9 @@ export class Game {
     this.world.setHouseLevel(st.world.houseLevel);
     this.world.buildings.load(st.world.buildings);
     st.world.buildings = this.world.buildings.toState();
+    this.world.setTowerStage(st.world.tower, BEACON.glow);
+    this.furnishing.apply();
+    this.survivors.apply();
     this.world.resources.apply(st.world, st.time.day);
     const axe = this.world.props.axe;
     axe.object.visible = !st.tools.axt;
@@ -368,6 +376,7 @@ export class Game {
     else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
+    else if (it.npc) this.survivors.talk(it.npc);
     else if (this.gathering.interact(it)) return;
     else if (it.dialog) this.startDialog(it.dialog);
   }
@@ -581,6 +590,10 @@ export class Game {
     const w = this.world.shelter.wakeSpot;
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
     this.onNewDay();
+    // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
+    const extra = [...this.survivors.morning(), ...this.furnishing.morning()];
+    if (st.report) st.report.extra = extra;
+    else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.player.place(w.x, w.z, w.facing);
     this.rig.jumpTo(w.x, w.z);
     this.world.fadeValue = 1; // im Haus aufwachen: Dach bleibt ausgeblendet
@@ -592,6 +605,7 @@ export class Game {
   /** Alles, was ein neuer Tag mit sich bringt (Nachwachsen …). */
   onNewDay() {
     this.world.resources.apply(this.state.world, this.state.time.day);
+    this.survivors.arrive(true);
     this.events.emit('newDay', this.state.time.day);
   }
 
@@ -670,6 +684,8 @@ export class Game {
    */
   knockedOut() {
     if (this.mode === 'sleep') return;
+    // Dr. Yusuf verarztet Mika einmal je Nacht, bevor sie ins Haus flüchten muss
+    if (this.nights.active && this.survivors.rescue()) return;
     this.builder.cancel();
     this.mode = 'sleep';
     this.sleep = { t: 0, advanced: false, kind: this.nights.active ? 'rescue' : 'faint' };
@@ -830,6 +846,7 @@ export class Game {
 
     const hours = hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
+    this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z));
     this.rig.update(dt, this.player.position, this.player.velocity);
@@ -870,7 +887,7 @@ export class Game {
     }
     if (input.pressed('lantern')) this.toggleLantern();
 
-    this.player.speedFactor = upgradeValue(this.state, 'tempo');
+    this.player.speedFactor = upgradeValue(this.state, 'tempo') * this.furnishing.speedFactor();
     if (input.pressed('dodge')) {
       const m = input.moveVector();
       this.combat.roll(m.x, m.z);
@@ -916,7 +933,7 @@ export class Game {
     const inside = this.world.playerInside;
     this.horde.update(dt, {
       player: { x: p.x, z: p.z, inside, alive: this.state.player.hp > 0 },
-      lightSlow: (x, z) => this.towers.lightSlow(x, z),
+      lightSlow: (x, z) => Math.max(this.towers.lightSlow(x, z), this.survivors.beaconSlow(x, z)),
     });
     this.towers.update(dt);
     this.combat.update(dt);
@@ -1233,6 +1250,14 @@ export class Game {
       perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => `${k + 1}: ${T.perks[id][0]} – ${T.perks[id][1]}`) : null,
       perks: Object.entries(st.perks).map(([id, n]) => `${T.perks[id][0]} ${n}`),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
+      // Meilenstein 6: wer ist im Bild, und wie gemütlich ist das Zuhause?
+      ueberlebende: SURVIVOR_ORDER.filter((id) => {
+        const n = this.survivors.npcs.list.get(id);
+        if (!n || !n.model.root.visible) return false;
+        const q = this.worldToUi(n.x, 1, n.z);
+        return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
+      }).map((id) => SURVIVORS[id].name),
+      gemuetlichkeit: this.furnishing.cozy,
     };
   }
 
@@ -1323,6 +1348,25 @@ export class Game {
         game.state.weapons[id] = level;
         game.addToHotbar(id);
       },
+      // Meilenstein 6
+      survivors: () => JSON.parse(JSON.stringify(game.state.survivors)),
+      setSurvivor(id, stage) {
+        game.state.survivors[id].stage = stage;
+        game.survivors.placeAll(true);
+        game.survivors.refreshInteractions();
+      },
+      talkTo: (id) => game.survivors.talk(id),
+      npcPos(id) {
+        const n = game.survivors.npcs.list.get(id);
+        return n ? { x: n.x, z: n.z, visible: n.model.root.visible } : null;
+      },
+      buyFurniture: (id) => game.furnishing.buy(id),
+      cozy: () => game.furnishing.cozy,
+      setTowerStage(n) {
+        game.state.world.tower = n;
+        game.world.setTowerStage(n, BEACON.glow);
+      },
+      beaconSlow: (x, z) => game.survivors.beaconSlow(x, z),
       combatInfo: () => ({ weapon: game.combat.weaponId, invulnerable: game.combat.invulnerable, rollCooldown: game.combat.rollCooldown, action: game.player.action?.kind || null }),
       /** Nacht des laufenden Tages sofort beenden (gewonnen oder verloren). */
       endNight(won = true) {
