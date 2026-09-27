@@ -116,7 +116,7 @@ async function settle(page, frames = 40) {
 async function shot(page, name, setup) {
   await page.evaluate(setup);
   await settle(page, 45);
-  await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+  await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 }); // unter Last braucht der Software-Renderer lange
   note(`  Screenshot: screenshots/${name}.png`);
 }
 
@@ -1142,7 +1142,7 @@ async function runSurvivorChecks(browser, url) {
   const snap = async (name, setup) => {
     await z(setup);
     await step(900);
-    await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 }); // unter Last braucht der Software-Renderer lange
     note(`  Screenshot: screenshots/${name}.png`);
   };
   await snap('ueberlebende', () => {
