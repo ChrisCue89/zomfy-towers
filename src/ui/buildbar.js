@@ -21,6 +21,7 @@ const FLASH_AGAIN = 45; // dieselbe Option leuchtet frühestens nach 45 s wieder
 const ARM_TIME = 2.5;
 const TIP_TOP = 40; // letzter Ausweichplatz der Hinweis-Tafel: oben rechts unter dem Vorrat
 const TIP_WRAP = 236; // so breit werden Zeilen der Hinweis-Tafel höchstens
+const TAB_HINT_W = 18; // »TAB« rechts neben den Reitern
 
 export class BuildBar {
   /** @param {import('../core/game.js').Game} game */
@@ -70,7 +71,16 @@ export class BuildBar {
     const selected = this.builder.selectionTitle();
     const title = selected || T.bauleiste.reiter[this.tab];
     const tabs = selected ? [] : this.tabs();
-    return { x, y, w, h, tiles, title, tabs };
+    // Reiter-Zeile: rückt nach links, wenn sie breiter ist als die Leiste (vier Reiter ab Meilenstein 6)
+    const widths = tabs.map((tab) => measure(T.bauleiste.reiter[tab]) + 10);
+    const total = widths.reduce((sum, tw) => sum + tw + 2, 0) + TAB_HINT_W;
+    let tx = Math.min(x, ui.width - 4 - total);
+    const tabRects = widths.map((tw) => {
+      const r = { x: tx, y: y - 15, w: tw, h: 17 };
+      tx += tw + 2;
+      return r;
+    });
+    return { x, y, w, h, tiles, title, tabs, tabRects };
   }
 
   /** Mausklicks und Tasten (nur im Spielmodus aufrufen). */
@@ -111,7 +121,9 @@ export class BuildBar {
     this.hover = L.tiles.findIndex((t) => ui.hover(t.rect.x, t.rect.y, t.rect.w, t.rect.h));
     if (input.mouse.clicked && this.contains(ui)) {
       input.consumeClick();
-      if (this.hover >= 0) this.activate(L.tiles[this.hover].option, true);
+      const tab = L.tabs.length > 1 ? L.tabRects.findIndex((r) => ui.hover(r.x, r.y, r.w, r.h)) : -1;
+      if (tab >= 0) this.tabIndex = tab; // Reiter auch per Klick
+      else if (this.hover >= 0) this.activate(L.tiles[this.hover].option, true);
     }
   }
 
@@ -149,7 +161,7 @@ export class BuildBar {
   /** Liegt die Maus über der Leiste (dann gehen Klicks nicht in die Welt)? */
   contains(ui) {
     const L = this.lastLayout || this.layout(ui);
-    return ui.hover(L.x, L.y - 15, L.w, L.h + 15);
+    return ui.hover(L.x, L.y - 15, L.w, L.h + 15) || (L.tabs.length > 1 && L.tabRects.some((r) => ui.hover(r.x, r.y, r.w, r.h)));
   }
 
   /** @param {import('./ui.js').UICanvas} ui */
@@ -158,16 +170,14 @@ export class BuildBar {
     const ctx = ui.ctx;
     // Kopfzeile: Titel bzw. Reiter
     if (L.tabs.length > 1) {
-      let tx = L.x;
       L.tabs.forEach((tab, k) => {
-        const label = T.bauleiste.reiter[tab];
-        const tw = measure(label) + 10;
+        const r = L.tabRects[k];
         const active = k === this.tabIndex;
-        ui.panel(tx, L.y - 15, tw, 17, { fill: active ? COLORS.fillLight : COLORS.fill, frame: active ? COLORS.gold : COLORS.frame, highlight: null });
-        ui.text(label, tx + 5, L.y - 14, active ? COLORS.gold : COLORS.textDim);
-        tx += tw + 2;
+        ui.panel(r.x, r.y, r.w, r.h, { fill: active ? COLORS.fillLight : COLORS.fill, frame: active ? COLORS.gold : COLORS.frame, highlight: null });
+        ui.text(T.bauleiste.reiter[tab], r.x + 5, L.y - 14, active ? COLORS.gold : COLORS.textDim);
       });
-      drawTiny(ctx, 'TAB', tx + 2, L.y - 9, COLORS.textDim);
+      const last = L.tabRects[L.tabRects.length - 1];
+      drawTiny(ctx, 'TAB', last.x + last.w + 4, L.y - 9, COLORS.textDim);
     } else {
       const tw = measure(L.title) + 10;
       const tx = Math.min(L.x, ui.width - tw - 4);

@@ -280,6 +280,21 @@ export const T = {
     funk: (woher) => `Juna hat die Horde am Funk belauscht: Heute Nacht kommen sie zuerst ${woher}.`,
     verarztet: 'Dr. Yusuf verarztet Mika – weiter geht’s!',
   },
+  auftraege: {
+    hilde: {
+      ziel: 'Hilde: Bring ihr 8 Fasern für einen Schal.',
+      fertig: 'Hilde hat dir einen Schal gestrickt: +15 Lebenspunkte!',
+    },
+    bert: {
+      ziel: 'Bert: Stell einen Laternenpfahl neben sein Zelt.',
+      fertig: 'Licht an Berts Zelt! Er rückt 2 Zahnräder und 4 Schrott heraus.',
+    },
+    yusuf: {
+      ziel: 'Dr. Yusuf: Bring 6 Fasern und 1 Stoff für Kamillentee.',
+      fertig: 'Kamillentee! Dr. Yusufs Tee heilt jetzt noch schneller.',
+    },
+    funkturm: (stufe) => `Juna: Baut den Funkturm aus (Stufe ${stufe}/3, Reiter „Einrichten“).`,
+  },
   funkturm: {
     stufe: [null, 'Funkturm: Leiter und Plattform', 'Funkturm: Antenne', 'Funkturm: Leuchtfeuer'],
     info: [

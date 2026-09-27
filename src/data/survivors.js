@@ -81,3 +81,14 @@ export const BERT_REPAIR = { costFactor: 0.5, nightlyTower: 0.3 };
 
 /** Dr. Yusuf: Kräutertee am Morgen – schnelleres Heilen bis zum Abend. */
 export const YUSUF_TEA = { regen: 2 };
+
+/**
+ * Aufträge (DESIGN.md 6.14): Wer eingezogen ist, bittet Mika gleich um etwas.
+ * bring: im Gespräch abgeben · licht: eine Laterne nahe beim eigenen Zelt.
+ * Juna braucht keinen eigenen Auftrag – ihr Auftrag ist der Funkturm.
+ */
+export const ERRANDS = {
+  hilde: { kind: 'bring', give: { fasern: 8 }, reward: { maxHp: 15 } }, // Schal
+  bert: { kind: 'licht', radius: 3.2, reward: { zahnraeder: 2, schrott: 4 } },
+  yusuf: { kind: 'bring', give: { fasern: 6, stoff: 1 }, reward: { tea: 3 } }, // stärkerer Tee
+};

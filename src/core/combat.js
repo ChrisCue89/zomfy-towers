@@ -34,7 +34,7 @@ export class Combat {
   }
 
   get maxHp() {
-    return upgradeValue(this.game.state, 'leben');
+    return upgradeValue(this.game.state, 'leben') + (this.game.survivors?.maxHpBonus() || 0); // Hildes Schal
   }
 
   get hp() {

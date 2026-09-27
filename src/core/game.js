@@ -340,6 +340,13 @@ export class Game {
       current = goal;
       break;
     }
+    // Ein laufender Auftrag der Überlebenden geht vor (Meilenstein 6)
+    const errand = this.survivors?.errandGoal();
+    if (errand) {
+      if (this.goal?.id !== errand.id) this.goal = errand;
+      else this.goal.progress = errand.progress;
+      return;
+    }
     if (current?.id !== this.goal?.id) this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
     if (this.goal) {
       const p = current.progress ? current.progress(this) : null;
@@ -1276,6 +1283,7 @@ export class Game {
         return game.mode;
       },
       state: () => JSON.parse(JSON.stringify(game.state)),
+      save: () => game.quietSave(),
       setTime(hours, minutes = 0) {
         game.state.time.minute = (((hours - 6) * 60 + minutes) % DAY_MINUTES + DAY_MINUTES) % DAY_MINUTES;
       },
@@ -1356,6 +1364,9 @@ export class Game {
         game.survivors.refreshInteractions();
       },
       talkTo: (id) => game.survivors.talk(id),
+      /** Wie die Antwort »Das Zelt dort ist für dich« (mit Auftrag). */
+      moveIn: (id) => game.survivors.onAnswer(id, 'einziehen'),
+      maxHp: () => game.combat.maxHp,
       npcPos(id) {
         const n = game.survivors.npcs.list.get(id);
         return n ? { x: n.x, z: n.z, visible: n.model.root.visible } : null;
@@ -1367,6 +1378,9 @@ export class Game {
         game.world.setTowerStage(n, BEACON.glow);
       },
       beaconSlow: (x, z) => game.survivors.beaconSlow(x, z),
+      arrive: () => game.survivors.arrive(true),
+      morning: () => [...game.survivors.morning(), ...game.furnishing.morning()].map((l) => l.text),
+      buildTowerStage: () => game.survivors.buildTowerStage(),
       combatInfo: () => ({ weapon: game.combat.weaponId, invulnerable: game.combat.invulnerable, rollCooldown: game.combat.rollCooldown, action: game.player.action?.kind || null }),
       /** Nacht des laufenden Tages sofort beenden (gewonnen oder verloren). */
       endNight(won = true) {

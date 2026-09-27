@@ -335,8 +335,12 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
 - **Zuhause-Stufen:** Notunterkunft → Hütte → Haus → Hof → Turmhaus mit
   Leuchtfeuer. Jede Stufe hat mehr **Standfestigkeit** (die Lebenspunkte des
   Zuhauses), sieht sichtbar anders aus und schaltet Neues frei.
-- **Einrichten:** Möbel im Inneren geben Gemütlichkeit; hohe Gemütlichkeit
-  bringt Morgen-Boni (»gut ausgeschlafen«) und freut Überlebende.
+- **Einrichten:** Sobald jemand angekommen ist, gibt es in der Bauleiste den
+  Reiter »Einrichten«: Möbel für drinnen (Bild, Teekanne, Wimpelkette,
+  Lichterkette, Leselampe, Lesesessel) an festen Plätzen, für Knopf ein
+  Körbchen am Feuer, dazu Zelte und der Funkturm. Möbel geben
+  Gemütlichkeit (bis 10). Jeden Morgen bringt sie ebenso viel Erfahrung, ab 5
+  ist Mika »ausgeschlafen« (bis Mittag 10 % schneller).
 - **Sitzbank:** Hinsetzen heilt Mika sofort (höchstens alle 30 Sekunden) –
   eine Verschnaufpause mitten in der Nacht, ohne Dialog. Tagsüber kann man
   dort auch ausruhen.
@@ -470,11 +474,35 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
 
 ### 6.14 Überlebende und Geschichte
 
-- Überlebende tauchen nach Tagen oder Ereignissen auf, man lernt sie kennen,
-  sie ziehen ein, wenn es ein Bett gibt.
-- Sie geben Aufträge, handeln, erzählen über viele Tage eine Geschichte
-  (roter Faden: der Funkturm) und helfen bei der Verteidigung (je eine
-  Fähigkeit, z. B. Reparieren, Heilen, Loot finden).
+- **Ankunft:** Ab Tag 2 kommt jeden Morgen jemand an: Knopf (Tag 2, am
+  Briefkasten), Oma Hilde (3, mit dem Lastenrad auf der Straße), Juna (4, am
+  Funkturm), Bert (5, von Westen), Dr. Yusuf (6, am östlichen Waldrand). Mika
+  bemerkt es in einer Sprechblase. Wer neu ist, winkt, sobald Mika in der
+  Nähe ist.
+- **Kennenlernen → Gast → Einzug:** Ansprechen mit E (Dialog mit Porträt).
+  Gäste bleiben tagsüber und schlafen am Feuer. Ein Zelt (Reiter
+  »Einrichten«) wird ihr Schlafplatz, dann ziehen sie ein. Knopf zieht ein,
+  sobald man ihn streichelt. Wird ein Zelt abgerissen, ist sein Bewohner
+  wieder Gast.
+- **Aufträge:** Kaum eingezogen, bittet jeder um etwas. Der Auftrag steht
+  im Ziel-Feld. Hilde will 8 Fasern und strickt dafür einen Schal (+15
+  Lebenspunkte). Bert will einen Laternenpfahl neben seinem Zelt und gibt
+  dafür Zahnräder und Schrott. Dr. Yusuf will Kamille (Fasern und Stoff),
+  danach wirkt sein Tee stärker. Junas Auftrag ist der Funkturm.
+- **Fähigkeiten:** Knopf bellt kurz vor jeder Welle und nennt die Richtung;
+  morgens hat er Schrott ausgebuddelt. Hilde tauscht einmal am Tag (das
+  Angebot wechselt täglich) und bringt Morgengaben. Juna belauscht die Horde
+  am Funk (die Richtung der ersten Welle steht im Morgenbericht). Bei Bert
+  kostet Reparieren die Hälfte, und nachts flickt er die Türme. Dr. Yusuf
+  kocht morgens Tee (schneller heilen) und verarztet Mika einmal je Nacht,
+  bevor sie zu Boden geht.
+- Tagsüber (06:30–20:15) stehen alle an ihren Plätzen um Feuer und Hütte,
+  nachts schlafen sie in den Zelten. Knopf liegt nachts am Feuer.
+- **Roter Faden – der Funkturm:** Mit Juna in drei Stufen, je ein paar
+  Stunden Werkeln: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
+  (braucht einen Moderkern von einem Anführer). Das Leuchtfeuer brennt jede
+  Nacht und bremst Schlurfer in seinem Schein um 30 %. Danach geht es als
+  endlose Verteidigung weiter.
 
 ### 6.15 Dialoge
 

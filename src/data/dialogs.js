@@ -5,7 +5,7 @@
 // Ein Dialog darf eine Funktion sein, die aus dem Spielzustand die Zeilen wählt.
 
 import { TOWERS } from './towers.js';
-import { TRADES } from './survivors.js';
+import { TRADES, ERRANDS } from './survivors.js';
 
 export const SPRECHER = {
   mika: { name: 'Mika', portrait: 'mika' },
@@ -45,6 +45,11 @@ function canTrade(state) {
   if (state.world?.tradeDay === state.time?.day) return false;
   return Object.entries(offer.give).every(([r, n]) => (state.inventory?.[r] || 0) >= n);
 }
+
+/** Läuft der Auftrag (1) und kann Mika ihn gleich abgeben? */
+const errandOf = (state, id) => state.survivors?.[id]?.errand || 0;
+const canHandIn = (state, id) => errandOf(state, id) === 1 && Object.entries(ERRANDS[id].give || {}).every(([r, n]) => (state.inventory?.[r] || 0) >= n);
+const handIn = (id) => ({ t: `Hier, bitte! (${amount(ERRANDS[id].give)})`, aktion: 'auftrag' });
 
 function withAnswers(lines, answers) {
   if (!answers) return lines;
@@ -120,7 +125,9 @@ export const DIALOGE = {
     const offer = todaysTrade(state);
     const traded = state.world?.tradeDay === state.time.day;
     const lines = [{ s: 'hilde', t: traded ? 'Für heute ist der Handel durch. Morgen hab ich wieder was Schönes.' : `Heute im Angebot: ${amount(offer.get)} für ${amount(offer.give)}.` }];
+    if (errandOf(state, 'hilde') === 1 && !canHandIn(state, 'hilde')) lines.push({ s: 'hilde', t: 'Und denk an meine acht Fasern, Kindchen. Die wachsen im hohen Gras.' });
     const extra = !traded && canTrade(state) ? [{ t: 'Tauschen!', aktion: 'tauschen' }] : [];
+    if (canHandIn(state, 'hilde')) extra.unshift(handIn('hilde'));
     return withAnswers(lines, guestAnswers(state, 'hilde', extra));
   },
   junaTreffen: [
@@ -152,7 +159,9 @@ export const DIALOGE = {
           s: 'bert',
           t:
             state.survivors?.bert?.stage === 3
-              ? pick(['Die Türme stehen wieder gerade. Na ja, fast.', 'Wer hat die Werkbank so eingeräumt? Egal. Ich räum um.', 'Hmpf. Gute Arbeit, die Barrikaden. Hab nur zwei Nägel nachgeschlagen.'], state.time.day)
+              ? errandOf(state, 'bert') === 1
+                ? 'Ein Laternenpfahl neben meinem Zelt. Vorher red ich nicht über Zahnräder. Hmpf.'
+                : pick(['Die Türme stehen wieder gerade. Na ja, fast.', 'Wer hat die Werkbank so eingeräumt? Egal. Ich räum um.', 'Hmpf. Gute Arbeit, die Barrikaden. Hab nur zwei Nägel nachgeschlagen.'], state.time.day)
               : 'Schlafplatz gefunden? Nein? Dann schlaf ich eben wieder am Feuer. Hmpf.',
         },
       ],
@@ -169,12 +178,26 @@ export const DIALOGE = {
           s: 'yusuf',
           t:
             state.survivors?.yusuf?.stage === 3
-              ? pick(['Tee? Tee.', 'Kamille, Minze und ein Geheimnis. Mehr verrate ich nicht.', 'Du siehst müde aus. Das ist normal. Alle hier sehen müde aus.'], state.time.day)
+              ? errandOf(state, 'yusuf') === 1
+                ? 'Hast du an die Kamille gedacht? Sechs Fasern aus dem hohen Gras und ein Stück Stoff.'
+                : pick(['Tee? Tee.', 'Kamille, Minze und ein Geheimnis. Mehr verrate ich nicht.', 'Du siehst müde aus. Das ist normal. Alle hier sehen müde aus.'], state.time.day)
               : 'Ein Zelt wäre schön. Mein Rücken ist nicht mehr der jüngste.',
         },
       ],
-      guestAnswers(state, 'yusuf')
+      guestAnswers(state, 'yusuf', canHandIn(state, 'yusuf') ? [handIn('yusuf')] : [])
     ),
+  hildeAuftrag: [
+    { s: 'hilde', t: 'Danke, Kindchen. Und weil du nachts so frierst: Bring mir acht Fasern, dann strick ich dir einen Schal.' },
+    { s: 'mika', t: 'Fasern gibt es im hohen Gras. Mach ich!' },
+  ],
+  bertAuftrag: [
+    { s: 'bert', t: 'Hmpf. Danke. Aber nachts seh ich da drin meine eigenen Schrauben nicht.' },
+    { s: 'bert', t: 'Stell mir einen Laternenpfahl neben das Zelt. Dafür hab ich noch ein paar Zahnräder übrig.' },
+  ],
+  yusufAuftrag: [
+    { s: 'yusuf', t: 'Wunderbar. Eine Bitte hätte ich: Für meinen Tee fehlt Kamille.' },
+    { s: 'yusuf', t: 'Sie wächst im hohen Gras. Sechs Fasern und ein Stück Stoff als Beutel – dann wird der Tee richtig gut.' },
+  ],
   funkturm1: [{ s: 'juna', t: 'Die Beine stehen wieder gerade, die Leiter hält. Von da oben sieht man bis zur Straße!' }],
   funkturm2: [
     { s: 'juna', t: 'Hörst du das? Rauschen … und dazwischen Stimmen. Da draußen sind noch mehr!' },

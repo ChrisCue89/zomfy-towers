@@ -330,6 +330,55 @@ groben Pixelmaß (gleiche Farben und Merkmale wie das feine Modell).
 *Warum:* Ein 1/16-Kopf wäre im Dialogfenster doppelt so groß oder unscharf
 verkleinert; so passen Porträt, Schrift und Rahmen zusammen.
 
+## Überlebende und Einrichten (Meilenstein 6)
+
+### 38. Wann und wie kommen die Überlebenden?
+**Entscheidung:** Fest ab Tag 2, jeden Morgen eine Person, immer in derselben
+Reihenfolge: Knopf, Hilde, Juna, Bert, Dr. Yusuf. Bei alten Spielständen
+zählen die Tage ab dem Umstieg (`survivorsStart`), damit nicht alle auf
+einmal vor der Tür stehen.
+*Warum:* Ein fester Takt gibt jedem Tag etwas Neues (»Tagesinhalt« aus
+m3-r2), und niemand geht in einer Welle unter.
+
+### 39. Was ist ein »Bett« für Überlebende?
+**Entscheidung:** Ein Zelt (2 × 2 m, 8 Holz und 3 Stoff, höchstens vier)
+über den Reiter »Einrichten«. Wem ein Zelt gehört, steht im Spielstand.
+Wird es abgerissen, ist der Bewohner wieder Gast und schläft am Feuer.
+*Warum:* Zelte stehen draußen auf dem Bauraster wie alle Bauten. Stoff hat
+damit endlich einen Zweck, und die Lichtung füllt sich sichtbar.
+
+### 40. Wie funktionieren Aufträge?
+**Entscheidung:** Jede Person bittet einmal um etwas, gleich beim Einzug.
+Der Auftrag steht im Ziel-Feld und geht dort den Einstiegszielen vor.
+Abgabe-Aufträge erledigt man im Gespräch (»Hier, bitte!«), Bau-Aufträge
+erfüllen sich von selbst. Belohnt wird mit etwas Bleibendem: Schal (+15
+Lebenspunkte), Zahnräder, stärkerer Tee.
+*Warum:* Ein Auftrag, der beim Einzug kommt, braucht kein Annehmen oder
+Ablehnen und geht nie verloren. Bleibende Belohnungen fühlen sich nach
+Fortschritt an.
+
+### 41. Wie stark ist das Leuchtfeuer?
+**Entscheidung:** Es bremst Schlurfer in 7,5 m um den Funkturm um 30 %.
+Das ist etwas mehr als das Licht eines voll ausgebauten Laternenturms (bis
+20 %), wirkt aber nur rund um den Funkturm am Rand der Lichtung. Sichtbar
+leuchtet es in 6 m.
+*Warum:* Das Ziel der Geschichte soll spürbar helfen, ohne die Nächte zu
+entschärfen – danach geht es endlos weiter.
+
+### 42. Was bringt Gemütlichkeit?
+**Entscheidung:** Jeder Punkt gibt morgens 1 Erfahrung. Ab 5 Punkten ist
+Mika »ausgeschlafen« und läuft bis Mittag 10 % schneller. Es gibt höchstens
+10 Punkte. Die Möbel kommen immer in derselben Reihenfolge, ihre Plätze
+stehen fest.
+*Warum:* Kleine, sichere Belohnungen passen zur Gemütlichkeit. Feste Plätze
+halten das Innere aufgeräumt und ohne Verschiebe-Oberfläche.
+
+### 43. Weitere Zuhause-Stufen?
+**Entscheidung:** Vorerst nicht. Nach der Hütte wächst das Zuhause über
+Zelte, Möbel und den Funkturm statt über eine größere Grundfläche.
+*Warum:* Eine neue Grundfläche würde Felder sperren, auf denen in alten
+Spielständen schon Bauten stehen. Die Lichtung wächst trotzdem sichtbar.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

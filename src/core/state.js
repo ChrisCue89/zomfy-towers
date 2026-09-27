@@ -31,7 +31,7 @@ export function createNewState(config) {
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
     world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0 },
     // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
-    survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null }])),
+    survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }])), // errand: 0 offen, 1 läuft, 2 erledigt
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
     night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
     horde: [], // lebende Schlurfer (zum Weiterspielen nach dem Neuladen)
@@ -149,7 +149,7 @@ export function sanitizeState(data, config) {
   out.world.survivorsStart = Math.floor(num(w.survivorsStart, 0, 0, 1e6));
   for (const id of SURVIVOR_ORDER) {
     const s = data.survivors?.[id] || {};
-    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: Number.isFinite(s.tent) ? Math.floor(s.tent) : null };
+    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: Number.isFinite(s.tent) ? Math.floor(s.tent) : null, errand: Math.floor(num(s.errand, 0, 0, 2)) };
   }
   return out;
 }

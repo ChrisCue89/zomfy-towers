@@ -140,7 +140,10 @@ async function runBrowserChecks() {
     // --- 5. Meilenstein 4: Nahkampf, Waffen, Ausweichen, Perks -------------------------
     if (want('nahkampf')) await runCombatChecks(browser, url);
 
-    // --- 6. Große Auflösung (Full HD) --------------------------------------------------
+    // --- 6. Meilenstein 6: Überlebende, Zelte, Einrichten, Funkturm ---------------------
+    if (want('ueberlebende')) await runSurvivorChecks(browser, url);
+
+    // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
       const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
       await shot(hd.page, 'nacht-fullhd', () => {
@@ -345,7 +348,7 @@ async function runSaveChecks(browser, url) {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 4) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
+    if (saved && saved.time.day === 2 && saved.version === 5) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -645,8 +648,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 4 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v4 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 5 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v5 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -673,8 +676,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
-  if (v3.version === 4 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v4 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
+  if (v3.version === 5 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 1 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v5 (Leben, Zuhause, Bauten bleiben, Stufe 1)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -917,6 +920,260 @@ async function runNightChecks(browser, url) {
  * Meilenstein 4: Waffen, Treffer, Betäubung, Ausweichrolle, Erfahrung,
  * Perk-Wahl, Waffen-Aufwertung und Speichern (feste Simulationsschritte).
  */
+/**
+ * Meilenstein 6: Ankunft, Kennenlernen mit echten Tasten, Zelt und Einzug,
+ * Tauschen, Morgengaben, Einrichten mit Gemütlichkeit, Funkturm bis zum
+ * Leuchtfeuer, Knopf bellt vor der Welle, Speichern/Laden und Migration v4 → v5.
+ */
+async function runSurvivorChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Überlebende', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m6')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m6', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const view = () => z(() => window.zomfyView());
+  const press = async (key, ms = 60) => {
+    await page.keyboard.press(key);
+    await step(ms);
+  };
+  /** Dialog mit E durchblättern, bis Antworten stehen (oder er zu ist). */
+  const toAnswers = async () => {
+    for (let k = 0; k < 12; k++) {
+      const d = (await view()).dialog;
+      if (!d) return null;
+      if (d.fertigGetippt && d.antworten.length) return d.antworten;
+      await press('KeyE', 350);
+    }
+    return null;
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(10, 0);
+    window.zomfy.give({ holz: 40, stein: 10, schrott: 40, fasern: 20, stoff: 20 });
+  });
+  await step(100);
+
+  // Tag 1: noch niemand da, kein Reiter »Einrichten«
+  const tag1 = await z(() => window.zomfy.survivors());
+  if (Object.values(tag1).every((s) => s.stage === 0)) note('✓ Überlebende: an Tag 1 ist noch niemand da');
+  else fail(`Überlebende an Tag 1: ${JSON.stringify(tag1)}`);
+
+  // Tag 2: Knopf sitzt am Briefkasten
+  await z(() => {
+    window.zomfy.setDay(2);
+    window.zomfy.arrive();
+  });
+  await step(200);
+  const knopf = await z(() => window.zomfy.npcPos('knopf'));
+  if (knopf && knopf.visible && Math.hypot(knopf.x + 1.2, knopf.z - 8.2) < 1) note('✓ Ankunft: an Tag 2 sitzt Knopf am Briefkasten');
+  else fail(`Ankunft Knopf: ${JSON.stringify(knopf)}`);
+
+  // Kennenlernen mit echten Tasten: hingehen, E, Antwort »Komm her, Knopf!«
+  await z(([x, zz]) => window.zomfy.teleport(x, zz + 1.1, Math.PI), [knopf.x, knopf.z]);
+  await step(200);
+  const hinweis = (await view()).hinweis;
+  await press('KeyE', 300);
+  const antworten = await toAnswers();
+  await press('KeyW', 100);
+  await press('KeyE', 300);
+  const knopfStufe = (await z(() => window.zomfy.survivors())).knopf.stage;
+  if (hinweis === 'Streicheln' && antworten && antworten[0].includes('Komm her') && knopfStufe === 3) note('✓ Knopf: »E Streicheln«, Antwort »Komm her, Knopf!« – er bleibt');
+  else fail(`Knopf: Hinweis ${hinweis}, Antworten ${JSON.stringify(antworten)}, Stufe ${knopfStufe}`);
+
+  // Tag 3: Oma Hilde – ansprechen (Gast), Zelt bauen, einziehen, tauschen
+  await z(() => {
+    window.zomfy.setDay(3);
+    window.zomfy.arrive();
+    window.zomfy.talkTo('hilde');
+    window.zomfy.finishDialog();
+  });
+  await step(900);
+  const gast = (await z(() => window.zomfy.survivors())).hilde.stage;
+  const zelt = await z(() => window.zomfy.build('zelt', -7, 3));
+  await z(() => window.zomfy.talkTo('hilde'));
+  await step(300);
+  const hildeAntworten = await toAnswers();
+  const einziehen = (hildeAntworten || []).findIndex((a) => a.includes('Zelt'));
+  await z((i) => window.zomfy.answer(i), einziehen);
+  await step(200);
+  // Kaum eingezogen, bittet Hilde um etwas: Der Auftrag steht im Ziel-Feld
+  const bitte = (await view()).dialog?.sprecher || null;
+  await z(() => window.zomfy.finishDialog());
+  await step(100);
+  const hildeZiel = (await view()).ziel || '';
+  const hilde = (await z(() => window.zomfy.survivors())).hilde;
+  const zeltId = (await z(() => window.zomfy.buildings())).find((b) => b.type === 'zelt')?.id;
+  if (gast === 2 && zelt === 'ok' && hilde.stage === 3 && hilde.tent === zeltId) note('✓ Einzug: Hilde ist Gast, nach dem Zeltbau zieht sie ein (Zelt gehört ihr)');
+  else fail(`Einzug Hilde: Gast ${gast}, Zelt ${zelt}, jetzt ${JSON.stringify(hilde)} (Zelt ${zeltId})`);
+  const vorher = (await z(() => window.zomfy.state())).inventory;
+  await z(() => window.zomfy.talkTo('hilde'));
+  await step(300);
+  const tausch = await toAnswers();
+  const tauschIndex = (tausch || []).findIndex((a) => a.includes('Tauschen'));
+  await z((i) => window.zomfy.answer(i), tauschIndex);
+  await step(200);
+  const nachher = (await z(() => window.zomfy.state())).inventory;
+  // Tag 3: drittes Angebot der Liste (5 Fasern gegen 1 Stoff)
+  if (tauschIndex >= 0 && nachher.fasern === vorher.fasern - 5 && nachher.stoff === vorher.stoff + 1) note('✓ Tauschen: Hildes Angebot des Tages (5 Fasern gegen 1 Stoff)');
+  else fail(`Tauschen: Antworten ${JSON.stringify(tausch)}, Fasern ${vorher.fasern} -> ${nachher.fasern}, Stoff ${vorher.stoff} -> ${nachher.stoff}`);
+
+  // Aufträge: Hilde will 8 Fasern für einen Schal (+15 Lebenspunkte)
+  const lebenVorher = await z(() => window.zomfy.maxHp());
+  await z(() => window.zomfy.give({ fasern: 10 }));
+  await z(() => window.zomfy.talkTo('hilde'));
+  await step(300);
+  const abgabe = await toAnswers();
+  const abgabeIndex = (abgabe || []).findIndex((a) => a.includes('Hier, bitte'));
+  await z((i) => window.zomfy.answer(i), abgabeIndex);
+  await step(200);
+  const schal = { auftrag: (await z(() => window.zomfy.survivors())).hilde.errand, leben: await z(() => window.zomfy.maxHp()), ziel: (await view()).ziel || '' };
+  if (bitte === 'hilde' && hildeZiel.startsWith('Hilde:') && abgabeIndex >= 0 && schal.auftrag === 2 && schal.leben === lebenVorher + 15 && !schal.ziel.startsWith('Hilde:')) note(`✓ Auftrag: Hilde bittet beim Einzug um 8 Fasern (Ziel-Feld), Abgeben im Gespräch – Schal, ${schal.leben} Lebenspunkte`);
+  else fail(`Auftrag Hilde: Sprecher ${bitte}, Ziel „${hildeZiel}“, Antworten ${JSON.stringify(abgabe)}, danach ${JSON.stringify(schal)} (vorher ${lebenVorher})`);
+
+  // Bert: eine Laterne neben seinem Zelt
+  await z(() => {
+    window.zomfy.setSurvivor('bert', 2);
+    window.zomfy.give({ holz: 20, stoff: 6, schrott: 10 });
+  });
+  let bertZelt = 'kein Platz';
+  for (const [i, j] of [[-10, 3], [-7, 6], [-10, 6], [4, 6]]) {
+    bertZelt = await z(([a, b]) => window.zomfy.build('zelt', a, b), [i, j]);
+    if (bertZelt === 'ok') break;
+  }
+  await z(() => window.zomfy.moveIn('bert'));
+  await step(200);
+  await z(() => window.zomfy.finishDialog());
+  const bertVorher = await z(() => ({ e: window.zomfy.survivors().bert.errand, zr: window.zomfy.state().inventory.zahnraeder || 0 }));
+  const tent = await z(() => {
+    const id = window.zomfy.survivors().bert.tent;
+    return window.zomfy.buildings().find((b) => b.id === id) || null;
+  });
+  let laterne = 'kein Zelt';
+  if (tent) {
+    for (const [di, dj] of [[2, 0], [-1, 0], [0, 2], [0, -1], [2, 1], [-1, 1]]) {
+      laterne = await z(([a, b]) => window.zomfy.build('laternenpfahl', a, b), [tent.i + di, tent.j + dj]);
+      if (laterne === 'ok') break;
+    }
+  }
+  await step(1500);
+  const bertNachher = await z(() => ({ e: window.zomfy.survivors().bert.errand, zr: window.zomfy.state().inventory.zahnraeder || 0 }));
+  if (bertZelt === 'ok' && bertVorher.e === 1 && laterne === 'ok' && bertNachher.e === 2 && bertNachher.zr === bertVorher.zr + 2) note('✓ Auftrag: Bert will Licht am Zelt – Laterne daneben, 2 Zahnräder');
+  else fail(`Auftrag Bert: Zelt ${bertZelt}, Laterne ${laterne}, vorher ${JSON.stringify(bertVorher)}, nachher ${JSON.stringify(bertNachher)}`);
+
+  // Einrichten: Reiter mit Tab, Möbel kaufen, Gemütlichkeit
+  let titel = null;
+  for (let k = 0; k < 4; k++) {
+    titel = (await view()).bauleiste?.titel;
+    if (titel === 'Einrichten') break;
+    await press('Tab', 60);
+  }
+  const optionen = ((await view()).bauleiste?.optionen || []).map((o) => o.name);
+  for (const id of ['bild', 'teekanne', 'wimpel', 'lichterkette', 'stehlampe', 'koerbchen']) await z((i) => window.zomfy.buyFurniture(i), id);
+  const cozy = await z(() => window.zomfy.cozy());
+  if (titel === 'Einrichten' && optionen.includes('Schlafzelt') && cozy === 8) note(`✓ Einrichten: Reiter mit ${optionen.join(', ')} – Gemütlichkeit ${cozy}`);
+  else fail(`Einrichten: Titel ${titel}, Optionen ${JSON.stringify(optionen)}, Gemütlichkeit ${cozy}`);
+
+  // Morgen: Gaben der Eingezogenen und Bonus für Gemütlichkeit
+  const xpVorher = (await z(() => window.zomfy.state())).player.xp;
+  const morgen = await z(() => window.zomfy.morning());
+  const nachMorgen = await z(() => window.zomfy.state());
+  const gaben = morgen.some((t) => t.startsWith('Knopf')) && morgen.some((t) => t.startsWith('Oma Hilde')) && morgen.some((t) => t.includes('Ausgeschlafen'));
+  if (gaben && nachMorgen.player.xp >= xpVorher + 8 && nachMorgen.player.rested === nachMorgen.time.day) note('✓ Morgen: Knopf und Hilde bringen etwas, Gemütlichkeit gibt Erfahrung und »ausgeschlafen«');
+  else fail(`Morgen: ${JSON.stringify(morgen)}, Erfahrung ${xpVorher} -> ${nachMorgen.player.xp}`);
+
+  // Funkturm: Juna, erste Stufe mit Abblende, dann das Leuchtfeuer bremst
+  await z(() => {
+    window.zomfy.setSurvivor('juna', 2);
+    window.zomfy.give({ schrott: 30, holz: 20 });
+    window.zomfy.buildTowerStage();
+  });
+  for (let k = 0; k < 40 && (await z(() => window.zomfy.mode)) === 'sleep'; k++) await step(250);
+  await step(300);
+  const turm = (await z(() => window.zomfy.state())).world.tower;
+  const turmDialog = (await view()).dialog?.sprecher;
+  await z(() => {
+    window.zomfy.finishDialog();
+    window.zomfy.setTowerStage(3);
+  });
+  const bremse = await z(() => window.zomfy.beaconSlow(9.5, -5));
+  if (turm === 1 && turmDialog === 'juna' && bremse > 0) note(`✓ Funkturm: Stufe 1 gebaut (Juna freut sich), Leuchtfeuer bremst Schlurfer um ${Math.round(bremse * 100)} %`);
+  else fail(`Funkturm: Stufe ${turm}, Dialog ${turmDialog}, Bremse ${bremse}`);
+
+  // Bilder (das Spiel läuft hier nur in festen Schritten – shot() würde auf Bilder warten)
+  const snap = async (name, setup) => {
+    await z(setup);
+    await step(900);
+    await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+    note(`  Screenshot: screenshots/${name}.png`);
+  };
+  await snap('ueberlebende', () => {
+    window.zomfy.setSurvivor('bert', 2);
+    window.zomfy.setSurvivor('yusuf', 2);
+    window.zomfy.setTime(11, 0);
+    window.zomfy.teleport(2.4, 4.4, 0);
+  });
+  await snap('einrichten', () => {
+    window.zomfy.setTime(21, 30);
+    window.zomfy.teleport(-0.2, -3.2, 0);
+  });
+
+  // Knopf bellt vor der Welle
+  await z(() => {
+    window.zomfy.setHorde(true);
+    window.zomfy.setTime(20, 10);
+    window.zomfy.teleport(0.5, 2.5, 0);
+  });
+  let bellt = false;
+  for (let k = 0; k < 30 && !bellt; k++) {
+    await step(500);
+    bellt = ((await view()).meldungen || []).some((m) => m.startsWith('Knopf bellt'));
+  }
+  if (bellt) note('✓ Knopf bellt kurz vor der ersten Welle und nennt die Richtung');
+  else fail('Knopf hat vor der Welle nicht gebellt');
+  await z(() => window.zomfy.setHorde(false));
+
+  // Speichern und Laden
+  await z(() => window.zomfy.save());
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  await z(() => {
+    window.__zomfyHold = true;
+  });
+  const geladen = await z(() => window.zomfy.state());
+  if (geladen.version === 5 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v5: Überlebende, Möbel und Funkturm bleiben nach dem Neuladen');
+  else fail(`Speichern v5: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
+  checkMessages(session);
+  await session.context.close();
+
+  // Migration v4 -> v5: Überlebende kommen erst ab dem nächsten Tag
+  const saveUrl = `${url}index.html?test`;
+  const v4 = await openGame(browser, saveUrl, 'Alter Spielstand (v4)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-v4')) {
+        localStorage.setItem(
+          'zomfy-towers.spielstand',
+          JSON.stringify({ version: 4, time: { day: 7, minute: 60 }, player: { x: 0.5, z: 2, hp: 80, xp: 3, level: 2 }, inventory: { holz: 5, schrott: 12 }, world: { houseLevel: 2, homeHp: 400, buildings: [] }, weapons: { pfanne: 1 }, perks: {} })
+        );
+        sessionStorage.setItem('zomfy-v4', '1');
+      }
+    },
+  });
+  const m = await v4.page.evaluate(() => ({ state: window.zomfy.state(), tabs: window.zomfyView().bauleiste }));
+  if (m.state.version === 5 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1) {
+    note('✓ Migration: Spielstand v4 wird zu v5 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
+  } else fail(`Migration v4: ${JSON.stringify(m.state)}`);
+  checkMessages(v4);
+  await v4.context.close();
+}
+
 async function runCombatChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Nahkampf und Perks', {
     init: () => {
@@ -1036,8 +1293,8 @@ async function runCombatChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await state();
-  if (geladen.version === 4 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
-    note(`✓ Speichern v4: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
+  if (geladen.version === 5 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+    note(`✓ Speichern v5: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);
   await session.context.close();
