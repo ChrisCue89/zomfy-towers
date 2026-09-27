@@ -7,6 +7,11 @@
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
+import { PIXEL_SIZES, TEXT_SPEEDS } from '../core/settings.js';
+
+/** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
+const SETTING_KEYS = ['master', 'music', 'sfx', 'pixel', 'text'];
+const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS) };
 
 export class Menu {
   /** @param {import('../core/game.js').Game} game */
@@ -32,20 +37,49 @@ export class Menu {
       return [
         { label: T.menue.weiter, action: () => this.game.closeMenu() },
         { label: T.menue.steuerung, action: () => this.go('controls') },
+        { label: T.menue.einstellungen, action: () => this.go('settings') },
         { label: T.menue.vollbild, action: () => this.game.toggleFullscreen() },
         { label: T.menue.neuesSpiel, action: () => this.go('confirm') },
       ];
     }
+    if (this.screen === 'settings') {
+      const st = this.game.settings;
+      return [
+        ...SETTING_KEYS.map((key) => ({
+          label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}`,
+          setting: key,
+          action: () => this.change(key, 1),
+        })),
+        { label: T.menue.zurueck, action: () => this.go('main') },
+      ];
+    }
     if (this.screen === 'confirm') {
       return [
-        { label: T.menue.sicherJa, action: () => this.game.newGame() },
+        { label: T.menue.sicherJa, action: () => this.game.newGameFromMenu() },
         { label: T.menue.sicherNein, action: () => this.go('main'), safe: true },
       ];
     }
     return [{ label: T.menue.zurueck, action: () => this.go('main') }];
   }
 
+  /** Einen Wert ändern (Zahlen 0–10 mit Umlauf, Auswahl der Reihe nach). */
+  change(key, dir) {
+    const st = this.game.settings;
+    let value;
+    if (CHOICES[key]) {
+      const list = CHOICES[key];
+      value = list[(list.indexOf(st[key]) + dir + list.length) % list.length];
+    } else value = (st[key] + dir + 11) % 11;
+    this.game.applySettings({ [key]: value });
+    this.game.sound.play('klick');
+  }
+
   go(screen) {
+    // Vom Titelbild aus: »Zurück« führt wieder dorthin, nicht ins Pausenmenü
+    if (screen === 'main' && this.fromTitle) {
+      this.game.closeMenu();
+      return;
+    }
     this.screen = screen;
     const safe = this.buttons().findIndex((b) => b.safe);
     this.focus = Math.max(0, safe);
@@ -56,7 +90,7 @@ export class Menu {
   layout(ui) {
     const buttons = this.buttons();
     const controls = this.screen === 'controls' ? T.steuerung : [];
-    const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : [];
+    const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : this.screen === 'settings' ? [T.menue.einstellungenHinweis] : [];
     const w = this.screen === 'controls' ? 250 : 220;
     const bodyH = controls.length ? controls.length * LINE_HEIGHT + 8 : confirmText.length ? confirmText.length * LINE_HEIGHT + 8 : 0;
     const h = 30 + bodyH + buttons.length * 22 + 20;
@@ -81,6 +115,9 @@ export class Menu {
     if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
     if (input.pressed('up')) this.focus = (this.focus + buttons.length - 1) % buttons.length;
     if (input.pressed('down')) this.focus = (this.focus + 1) % buttons.length;
+    // Einstellungen: A/D bzw. Pfeile ändern den Wert der gewählten Zeile
+    const focused = buttons[Math.min(this.focus, buttons.length - 1)];
+    if (focused?.setting && (input.pressed('left') || input.pressed('right'))) this.change(focused.setting, input.pressed('left') ? -1 : 1);
     if (input.mouse.clicked && this.guard > 0) {
       input.consumeClick();
     } else if (hovered >= 0 && input.mouse.clicked) {
@@ -100,7 +137,7 @@ export class Menu {
     ui.ditherFill(0.5);
     const L = this.layout(ui);
     ui.panel(L.x, L.y, L.w, L.h);
-    const title = this.screen === 'controls' ? T.menue.steuerung : this.screen === 'confirm' ? T.menue.neuesSpiel : T.menue.titel;
+    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen }[this.screen] || T.menue.titel;
     ui.textCentered(title, L.x + L.w / 2, L.y + 7, COLORS.gold);
     ui.rect(L.x + 10, L.y + 21, L.w - 20, 1, COLORS.frameDark);
     let cy = L.y + 28;

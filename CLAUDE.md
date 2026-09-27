@@ -36,7 +36,8 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
    existieren – das Prüfskript kontrolliert das.
 5. **Konsole sauber halten.** Keine Fehler, keine Warnungen. In r186 veraltet
    bzw. entfernt: `THREE.Clock`, `PCFSoftShadowMap`. Kein synchrones Auslesen
-   der GPU (`readPixels`) – das erzeugt »GPU stall«-Warnungen.
+   der GPU (`readPixels`) – das erzeugt »GPU stall«-Warnungen. Den
+   AudioContext erst bei einer echten Eingabe anlegen (sonst Warnung).
 6. **Spielstand nie kaputt machen.** Änderungen am Speicherformat erhöhen
    `SAVE_VERSION` in `src/core/state.js` und bekommen eine Migration in
    `src/core/save.js`; `sanitizeState` ergänzen. Alte Stände müssen laden.
@@ -89,7 +90,11 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
                       Erfahrung, Perk-Vergabe), survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
-                      Funkturm), furnishing (Möbel, Gemütlichkeit)
+                      Funkturm), furnishing (Möbel, Gemütlichkeit),
+                      settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
+                      eigener Speicherplatz, nicht im Spielstand)
+src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
+                      Umgebung, Musik; erst nach der ersten Eingabe)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -112,14 +117,16 @@ src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank), report
-                      (Morgenbericht), perkChoice (Perk-Wahl)
+                      (Morgenbericht), perkChoice (Perk-Wahl), title
+                      (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung), zombies,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
-                      furniture (Möbel, Gemütlichkeit)
+                      furniture (Möbel, Gemütlichkeit), looks (Aussehen der
+                      Hauptfigur, erlaubte Namen)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
@@ -131,7 +138,7 @@ Grundprinzipien:
 
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
-- Modi der Spielschleife: `play`, `dialog`, `menu`, `craft` (Werkbank),
+- Modi der Spielschleife: `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
@@ -239,9 +246,10 @@ DESIGN.md bleiben verbindlich.
 |---|---|
 | `?time=21:30` | Startuhrzeit setzen |
 | `?nosave` | Weder laden noch speichern |
-| `?nointro` | Einführungsdialog überspringen |
+| `?nointro` | Titelbild und Einführungsdialog überspringen |
+| `?notitle` | Nur das Titelbild überspringen |
 | `?debug` | Entwickler-Anzeige an (sonst F3), `window.zomfy` |
-| `?test` | Test-Modus: kein Intro, `window.zomfy` (Uhr stellen, versetzen, …) |
+| `?test` | Test-Modus: kein Titelbild, kein Intro, `window.zomfy` (Uhr stellen, versetzen, …) |
 | `?playtest` | Playtest-Brücke: `window.__zomfyStep(ms)`, `window.zomfyView()` (nur lesen) |
 
 Im Test-Modus kann `window.zomfy` außerdem Schlurfer erzeugen

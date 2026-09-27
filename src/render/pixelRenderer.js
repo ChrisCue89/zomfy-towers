@@ -129,7 +129,7 @@ export class PixelRenderer {
   resize(cssWidth, cssHeight, dpr) {
     const devW = Math.max(1, Math.round(cssWidth * dpr));
     const devH = Math.max(1, Math.round(cssHeight * dpr));
-    const scale = Math.max(1, Math.round(devH / this.config.targetLines));
+    const scale = Math.max(1, Math.round(devH / this.config.targetLines) + (this.scaleShift || 0)); // Einstellung »Pixelgröße«
     const width = Math.ceil(devW / scale);
     const height = Math.ceil(devH / scale);
     // Oberfläche: eigene ganzzahlige Skalierung für ca. uiLines Zeilen

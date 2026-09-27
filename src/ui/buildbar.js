@@ -106,6 +106,7 @@ export class BuildBar {
         if (this.time - (this.lastFlash.get(option.id) ?? -FLASH_AGAIN) >= FLASH_AGAIN) {
           this.flash.set(option.id, FLASH_TIME);
           this.lastFlash.set(option.id, this.time);
+          this.game.sound.play('glocke', { volume: 0.5 });
         }
         this.builder.onOptionAffordable(option);
       }
@@ -138,7 +139,7 @@ export class BuildBar {
     }
     if (option.confirm && (!this.armed || this.armed.id !== option.id)) {
       this.armed = { id: option.id, t: ARM_TIME };
-      this.game.hud.toast(T.bauleiste.nochmal, 'abriss', 2);
+      this.game.hud.toast(option.confirmText || T.bauleiste.nochmal, 'abriss', option.confirmText ? 3 : 2);
       return;
     }
     // Kaufen per Taste (Aufwertung, Stufe, Spezialisierung) braucht einen

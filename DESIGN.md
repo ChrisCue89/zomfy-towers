@@ -528,9 +528,35 @@ können vom Spielzustand abhängen.
 
 ### 6.18 Klang
 
-Alle Klänge werden im Browser erzeugt (Web Audio): Grillen, Wind,
-knisterndes Feuer, Schritte, Turmschüsse, Treffer, Aufleuchten der
-Bauleiste, eine leise Melodie am Abend, treibender Rhythmus in der Nacht.
+Alle Klänge werden im Browser erzeugt (Web Audio), es gibt keine Tondateien.
+Der Klang startet mit der ersten Taste oder dem ersten Klick – vorher
+sperrt der Browser ihn ohnehin.
+
+- **Effekte** aus gefiltertem Rauschen und kleinen Oszillatoren: Schritte
+  (drinnen auf Holz), Hacken, Stein, Rupfen, Durchsuchen, Schwung, Treffer,
+  Autsch, Ausweichrolle, Bolzen, Katapult und Aufprall, Wasserstrahl,
+  Einsammeln (seltene Beute klingt heller), Bauen, Abreißen, Aufwerten,
+  Stufenaufstieg, Wellenhorn, Schlurfer-Brummeln und ihr Ende, Knopfs
+  Bellen, ein leises Glöckchen, wenn in der Bauleiste etwas bezahlbar wird,
+  ein kurzes Tippen je Buchstabe im Dialog (jede Stimme etwas anders).
+  Ferne Klänge werden leiser und kommen von der Seite.
+- **Umgebung:** Wind, am Tag Vögel, nachts Grillen, Knistern am Feuer.
+- **Musik:** am Abend eine leise Pentatonik-Melodie über warmen Akkorden,
+  während der Wellen ein treibender Rhythmus (Pauke, Hi-Hat, Bass). Beides
+  blendet sanft ein und aus.
+
+### 6.19 Titelbild und Einstellungen
+
+- **Titelbild:** großer Schriftzug über der Lichtung im Abendlicht, die
+  Kamera zieht langsam darüber. Weiterspielen (mit Spielstand), Neues Spiel,
+  Einstellungen, Steuerung.
+- **Neues Spiel:** Name (bis 12 Zeichen) und Aussehen (Mütze, Jacke, Haare,
+  Haut), live an der Figur in der Szene. Texte, die »Mika« sagen, zeigen den
+  gewählten Namen.
+- **Einstellungen:** Lautstärke, Musik, Geräusche (0–10), Pixelgröße (klein
+  = mehr Überblick, groß = näher dran – immer ganzzahlig skaliert),
+  Textgeschwindigkeit. Sie liegen neben dem Spielstand und bleiben bei einem
+  neuen Spiel erhalten.
 
 ## 7. Steuerung
 

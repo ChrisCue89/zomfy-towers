@@ -38,17 +38,22 @@ export class Input {
     this.down = new Set();
     this.pressedCodes = new Set();
     this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, rightClicked: false, moved: false, wheel: 0 };
+    this.onGesture = null; // erste echte Eingabe (für den Klang)
+    this.typed = []; // getippte Zeichen dieses Bildes (Namensfeld); 'Backspace' zum Löschen
 
     window.addEventListener('keydown', (e) => {
+      if (this.onGesture) this.onGesture();
       if (PREVENT.has(e.code)) e.preventDefault();
       if (!e.repeat) this.pressedCodes.add(e.code);
       this.down.add(e.code);
+      if (e.key.length === 1 || e.key === 'Backspace') this.typed.push(e.key);
     });
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
     window.addEventListener('blur', () => this.down.clear());
 
     element.addEventListener('pointermove', (e) => this.updatePointer(e));
     element.addEventListener('pointerdown', (e) => {
+      if (this.onGesture) this.onGesture();
       this.updatePointer(e);
       if (e.button === 0) {
         this.mouse.down = true;
@@ -128,6 +133,7 @@ export class Input {
 
   endFrame() {
     this.pressedCodes.clear();
+    this.typed.length = 0;
     this.mouse.clicked = false;
     this.mouse.rightClicked = false;
     this.mouse.moved = false;

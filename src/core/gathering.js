@@ -11,6 +11,9 @@ const PICK = { duration: 0.6, hitAt: 0.42 };
 const SEARCH = { duration: 1.0, progress: true };
 const CHIP_KIND = { baum: 'holz', felsen: 'stein', kiesel: 'stein', gras: 'gras', aeste: 'holz', schrott: 'schrott' };
 
+
+/** Klang je Quelle beim Sammeln. */
+const GATHER_SOUND = { baum: 'hacken', felsen: 'stein', gras: 'rupfen', kiesel: 'aufheben', aeste: 'aufheben' };
 export class Gathering {
   /** @param {import('./game.js').Game} game */
   constructor(game) {
@@ -66,6 +69,7 @@ export class Gathering {
     const gains = { ...rules.yield };
     if (last) for (const [res, n] of Object.entries(rules.bonus || {})) gains[res] = (gains[res] || 0) + n;
     const y = node.kind === 'baum' ? 0.9 : 0.25;
+    g.sound.play(GATHER_SOUND[node.kind] || 'aufheben', { x: node.x, z: node.z });
     g.effects.chips(node.x, y, node.z, CHIP_KIND[node.kind], last ? 12 : 7);
     this.give(gains, node.x, y + 0.6, node.z);
     if (last) {
@@ -99,6 +103,7 @@ export class Gathering {
       st.flags.autoGesehen = true;
       g.hud.say(T.meldungen.autoErstmals, 3);
     }
+    g.sound.play('suchen');
     g.player.startAction('search', {
       ...SEARCH,
       face: pos,

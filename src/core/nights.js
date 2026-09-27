@@ -88,6 +88,7 @@ export class Nights {
         // Das Banner sagt es groß (Welle und Richtung), die Nachtleiste behält es –
         // eine zusätzliche Meldung lag nur darüber (m3-r2)
         g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
+        g.sound.play('welle');
       }
       // Morgengrauen: Wer noch da ist, flieht in den Wald
       if (minute >= NIGHT_END) {
@@ -163,6 +164,7 @@ export class Nights {
       st.stats.nightsWon = (st.stats.nightsWon || 0) + 1;
       g.hud.toast(T.horde.geschafft(night.n), 'haus', 5);
       g.hud.showBanner(T.horde.geschafftKurz);
+      g.sound.play('morgen');
       g.survivors?.onNightEnd(); // Bert flickt die Türme
     } else {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;

@@ -213,6 +213,8 @@ export class World {
     const fz = Math.cos(facing);
     let best = null;
     let bestScore = Infinity;
+    let bestNpc = null;
+    let bestNpcScore = Infinity;
     const inside = this.isInside(x, z);
     for (const it of this.interactions) {
       if (it.enabled === false) continue;
@@ -229,12 +231,18 @@ export class World {
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
       // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen;
       // ebenso der Hackklotz, solange die Axt dort steckt (m5-r1)
-      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 0.8 : 0) - (it.priority ? 0.6 : 0);
+      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;
       }
+      if (it.npc && score < bestNpcScore) {
+        bestNpcScore = score;
+        bestNpc = it;
+      }
     }
+    // Wer in Reichweite ist, geht stummen Dingen (Laterne, Hackklotz ohne Axt …) immer vor (m6-r1)
+    if (bestNpc && best && best.prompt === 'ansehen') return bestNpc;
     return best;
   }
 

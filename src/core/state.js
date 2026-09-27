@@ -6,8 +6,9 @@ import { WEAPON_ORDER } from '../data/weapons.js';
 import { PERKS, PERK_IDS } from '../data/perks.js';
 import { SURVIVOR_ORDER } from '../data/survivors.js';
 import { FURNITURE } from '../data/furniture.js';
+import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -18,7 +19,8 @@ export function createNewState(config) {
     version: SAVE_VERSION,
     time: { day: 1, minute: config.time.newGameMinute },
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
-    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0 },
+    // name/look: gewählt auf dem Titelbild (Meilenstein 7)
+    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
@@ -77,6 +79,8 @@ export function sanitizeState(data, config) {
   out.player.level = Math.floor(num(data.player?.level, 1, 1, 99));
   out.player.rested = Math.floor(num(data.player?.rested, 0, 0, 1e6));
   out.player.tea = Math.floor(num(data.player?.tea, 0, 0, 1e6));
+  out.player.name = cleanName(data.player?.name);
+  out.player.look = Object.fromEntries(LOOK_KEYS.map((k) => [k, LOOKS[k][data.player?.look?.[k]] ? data.player.look[k] : DEFAULT_LOOK[k]]));
   for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {

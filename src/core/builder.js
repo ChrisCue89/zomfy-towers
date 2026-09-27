@@ -15,6 +15,7 @@ import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
+import { SURVIVORS } from '../data/survivors.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -249,6 +250,7 @@ export class Builder {
     const p = this.game.player.position;
     this.game.effects.splat(p.x, 1.2, p.z, 'funken', 12, 0.8);
     this.game.hud.toast(T.meldungen.waffeAufgewertet(T.gegenstaende[id], level + 1, ITEMS[id]?.plural), WEAPONS[id].icon, 2.4);
+    this.game.sound.play('aufwertung');
     this.game.quietSave();
   }
 
@@ -276,11 +278,15 @@ export class Builder {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
+    // Bewohntes Zelt: vor dem Abriss sagen, wer darin schläft (m6-r1)
+    const guest = b.type === 'zelt' ? this.game.survivors.occupant(b.id) : null;
+    const guestName = guest ? SURVIVORS[guest].name : null;
     options.push({
       id: `abriss-${b.id}`,
       icon: 'abriss',
       name: T.bauleiste.abreissen,
-      info: def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      info: guestName ? T.bautenInfo.abrissBewohnt(guestName) : def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      confirmText: guestName ? T.bauleiste.nochmalBewohnt(guestName) : null,
       cost: {},
       refund: this.refundFor(b),
       affordable: true,
@@ -355,6 +361,7 @@ export class Builder {
     const t = TOWERS[b.type];
     const cost = level <= 2 ? t.base[level - 1].cost : t.specs[spec].levels[level - 3].cost;
     if (!pay(this.game.state.inventory, cost)) return;
+    this.game.sound.play('aufwertung');
     this.world.buildings.upgrade(b, level, spec);
     this.game.state.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
@@ -408,6 +415,7 @@ export class Builder {
     }
     st.world.buildings = this.world.buildings.toState();
     this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2.4);
+    this.game.sound.play('bau');
     this.game.quietSave();
   }
 
@@ -636,6 +644,7 @@ export class Builder {
     const state = this.game.state;
     if (!pay(state.inventory, pl.cost)) return;
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
+    this.game.sound.play('bau');
     if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
     b.headAngle = Math.PI; // Türme schauen anfangs nach Norden (zum Wald)
     if (b.head) b.head.rotation.y = b.headAngle;
@@ -691,6 +700,7 @@ export class Builder {
     const refund = this.refundFor(b);
     buildings.remove(id);
     this.world.refreshInteractions();
+    this.game.sound.play('abriss');
     const state = this.game.state;
     gain(state.inventory, refund);
     state.world.buildings = buildings.toState();
@@ -890,6 +900,7 @@ export class Builder {
       this.game.pushPlayerOut();
     }, () => {
       this.game.hud.toast(T.meldungen.hausFertig, 'huette', 4);
+      this.game.sound.play('stufe');
       this.game.startDialog('hausFertig');
       this.game.quietSave();
     });

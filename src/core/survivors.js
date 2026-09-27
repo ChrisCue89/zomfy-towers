@@ -170,7 +170,10 @@ export class Survivors {
       const n = this.npcs.list.get(id);
       if (!n || !n.model.root.visible || Math.hypot(n.x - p.x, n.z - p.z) > 6) continue;
       this.greeted.add(id);
-      if (n.dog) n.bark = 0.8;
+      if (n.dog) {
+        n.bark = 0.8;
+        g.sound.play('bellen', { x: n.x, z: n.z, volume: 0.7 });
+      }
       else n.wave = 1.6;
     }
     this.barkBeforeWave();
@@ -203,7 +206,10 @@ export class Survivors {
     if (ahead <= 0 || ahead > BARK_AHEAD || this.barked === key) return;
     this.barked = key;
     const dog = this.npcs.list.get('knopf');
-    if (dog) dog.bark = 1.2;
+    if (dog) {
+      dog.bark = 1.2;
+      g.sound.play('bellen', { x: dog.x, z: dog.z });
+    }
     const woher = wave.entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
     g.hud.toast(T.ueberlebende.bellt(woher), 'pfote', 3.5);
   }
@@ -260,6 +266,7 @@ export class Survivors {
     if (r.maxHp) st.player.hp = Math.min(g.combat.maxHp, st.player.hp + r.maxHp);
     if (r.tea) st.player.hp = g.combat.maxHp; // Yusuf verarztet gleich mit
     g.hud.toast(T.auftraege[id].fertig, SURVIVORS[id].dog ? 'pfote' : 'ziel', 4);
+    g.sound.play('stufe');
     g.hud.goalFlash = 1.2;
     g.updateGoals(true);
     g.quietSave();
@@ -315,6 +322,11 @@ export class Survivors {
     return this.game.world.buildings.list.filter((b) => b.type === 'zelt');
   }
 
+  /** Wer schläft in diesem Zelt? (id oder null) */
+  occupant(tentId) {
+    return SURVIVOR_ORDER.find((id) => this.st[id].tent === tentId) || null;
+  }
+
   /** Ein Zelt, das noch niemandem gehört (oder null). */
   freeTent() {
     const used = new Set(SURVIVOR_ORDER.map((id) => this.st[id].tent).filter((t) => t !== null && t !== undefined));
@@ -334,6 +346,8 @@ export class Survivors {
     }
     s.stage = 3;
     g.hud.toast(T.ueberlebende.eingezogen(SURVIVORS[id].name), SURVIVORS[id].dog ? 'pfote' : 'zelt', 3.5);
+    if (SURVIVORS[id].dog) g.hud.say(T.ueberlebende.knopfHilft, 5); // wie er hilft, stand nirgends (m6-r1)
+    g.sound.play('glocke');
     this.placeAll(false);
     return true;
   }
@@ -380,6 +394,7 @@ export class Survivors {
     st.world.tradeDay = st.time.day;
     const [res, n] = Object.entries(offer.get)[0];
     g.hud.toast(T.ueberlebende.getauscht(T.menge(n, res)), res, 2.5);
+    g.sound.play('loot', { pitch: 880 });
   }
 
   // --- Morgen und Nacht -----------------------------------------------------------
@@ -481,6 +496,7 @@ export class Survivors {
     g.startWork(T.funkturm.werkeln, next.hours, () => {
       st.world.tower = stage;
       g.world.setTowerStage(stage, BEACON.glow);
+      g.sound.play(stage === 3 ? 'morgen' : 'aufwertung');
       g.quietSave();
     }, () => g.startDialog(`funkturm${stage}`));
   }

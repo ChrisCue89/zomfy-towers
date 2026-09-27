@@ -64,6 +64,8 @@ export const CONFIG = {
   startMinute: parseClock(params.get('time')),
   spawn: params.get('spawn'),
   skipIntro: params.has('nointro') || params.has('test'),
+  // Titelbild beim Start (Meilenstein 7); Prüfung und ?nointro/?notitle springen direkt ins Spiel
+  showTitle: !(params.has('test') || params.has('nointro') || params.has('notitle')),
 };
 
 export { parseClock };

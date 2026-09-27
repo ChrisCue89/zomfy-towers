@@ -96,6 +96,7 @@ export class Furnishing {
     this.owned.push(id);
     this.attach(id);
     g.hud.toast(T.moebel.aufgestellt(T.moebel[id][0], this.cozy, MAX_COZY), id === 'koerbchen' ? 'koerbchen' : 'moebel', 3);
+    g.sound.play('bau');
     g.quietSave();
   }
 
