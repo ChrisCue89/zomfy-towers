@@ -43,8 +43,9 @@ function forestFloor(h, h2, patch, clump) {
   return color;
 }
 
-/** Farbe eines Bodentexels an der Weltposition (x, z). */
-function groundColor(map, x, z, i, j, seed) {
+/** Farbe eines Bodentexels an der Weltposition (x, z); `out.path` sagt, ob er zum Weg gehört. */
+function groundColor(map, x, z, i, j, seed, out) {
+  out.path = false;
   const h = hash2(i, j, seed);
   const h2 = hash2(i, j, seed + 17);
   const patch = fbm(x * 0.16, z * 0.16, 3, seed);
@@ -83,6 +84,7 @@ function groundColor(map, x, z, i, j, seed) {
   // --- Wege der Horde ------------------------------------------------------
   const dPath = map.sampleLinear(map.pathField, x, z) + (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.45;
   if (dPath < -0.1) {
+    out.path = true;
     const rut = valueNoise(x * 0.7, z * 0.7, seed + 21);
     color = rut > 0.62 ? pick(h, P.e4, P.e3, 0.7) : pick(h, P.e5, P.e6, 0.58);
     if (dPath > -0.35 && h < 0.5) color = P.e4; // Rand: festgetreten, dunkler
@@ -131,24 +133,36 @@ export function createTerrain(seed, map) {
   const width = Math.round((AREA.x1 - AREA.x0) / V);
   const height = Math.round((AREA.z1 - AREA.z0) / V);
   const data = new Uint8Array(width * height * 4);
+  const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6)
+  const out = { path: false };
   for (let j = 0; j < height; j++) {
     const z = AREA.z0 + (j + 0.5) * V;
     for (let i = 0; i < width; i++) {
       const x = AREA.x0 + (i + 0.5) * V;
-      const c = groundColor(map, x, z, i, j, seed);
+      const c = groundColor(map, x, z, i, j, seed, out);
       const k = (j * width + i) * 4;
       data[k] = (c >> 16) & 255;
       data[k + 1] = (c >> 8) & 255;
       data[k + 2] = c & 255;
       data[k + 3] = 255;
+      if (out.path) {
+        glowData[k] = data[k];
+        glowData[k + 1] = data[k + 1];
+        glowData[k + 2] = data[k + 2];
+      }
+      glowData[k + 3] = 255;
     }
   }
-  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
-  texture.generateMipmaps = false;
-  texture.needsUpdate = true;
+  const makeTexture = (pixels) => {
+    const t = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
+    t.generateMipmaps = false;
+    t.needsUpdate = true;
+    return t;
+  };
+  const texture = makeTexture(data);
 
   const { x0, x1, z0, z1 } = AREA;
   const geometry = new THREE.BufferGeometry();
@@ -157,7 +171,12 @@ export function createTerrain(seed, map) {
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 0, 1, 1, 1, 1, 0], 2));
   geometry.setIndex([0, 1, 2, 0, 2, 3]);
 
-  const ground = new THREE.Mesh(geometry, createWorldMaterial({ map: texture, vertexColors: false }));
+  const material = createWorldMaterial({ map: texture, vertexColors: false });
+  // Nachts leuchten die Wege ein wenig aus sich heraus (Stärke setzt world.js nach der Nacht)
+  material.emissiveMap = makeTexture(glowData);
+  material.emissive.set(0xffffff);
+  material.emissiveIntensity = 0;
+  const ground = new THREE.Mesh(geometry, material);
   ground.receiveShadow = true;
   ground.name = 'Boden';
 
@@ -171,5 +190,5 @@ export function createTerrain(seed, map) {
 
   const group = new THREE.Group();
   group.add(ground, outer, lake);
-  return { group, texture };
+  return { group, texture, material };
 }

@@ -10,7 +10,11 @@ const VERT = /* glsl */ `
 varying vec2 vUv;
 void main() {
   vUv = uv;
+  #ifdef USE_INSTANCING
+  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+  #else
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  #endif
 }
 `;
 
@@ -68,6 +72,23 @@ export class LightPools {
     const glow = new THREE.Mesh(this.geometry, this.addMaterial);
     glow.renderOrder = 3;
     mesh.add(glow);
+    this.group.add(mesh);
+    return mesh;
+  }
+
+  /** Viele gleiche Lichtinseln auf einmal (Fackeln an den Wegen): zwei Zeichenaufrufe für alle. */
+  addMany(points, radius) {
+    const make = (material, order) => {
+      const mesh = new THREE.InstancedMesh(this.geometry, material, points.length);
+      const m = new THREE.Matrix4();
+      points.forEach((p, i) => mesh.setMatrixAt(i, m.makeScale(radius * 2, 1, radius * 2).setPosition(p.x, 0.02, p.z)));
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.renderOrder = order;
+      mesh.frustumCulled = false;
+      return mesh;
+    };
+    const mesh = make(this.material, 2);
+    mesh.add(make(this.addMaterial, 3));
     this.group.add(mesh);
     return mesh;
   }

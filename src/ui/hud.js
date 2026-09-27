@@ -10,8 +10,11 @@ import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, drawTiny } from './font.js';
 import { drawIcon, iconSize } from './icons.js';
 import { xpForLevel } from '../data/perks.js';
+import { P, hexToCss } from '../render/palette.js';
 
 const SWOOSH_TIME = 0.16;
+export const LOW_HP = 0.35; // darunter pulsiert der Bildrand und das Herz schlägt (m12-r1)
+const LOW_HP_RED = hexToCss(P.f1);
 
 const SLOT = 20;
 const SLOT_GAP = 2;
@@ -34,11 +37,13 @@ export class Hud {
     this.itemLabel = { text: '', time: 0 };
     this.hint = { text: '', time: 0 };
     this.goalFlash = 0;
+    this.time = 0;
     this.homeFlash = 0;
     this.homeAlarm = 0; // Sekunden, die die Haus-Marke am Rand noch steht
     this.speech = null; // { text, time, duration }
     this.banner = null; // { text, time }
     this.bannerBottom = null; // Unterkante des Banners (für die Meldungen)
+    this.goalBox = { on: false, x: 0, y: 0, w: 0, h: 17 }; // Rahmen der Zielzeile (dieses Bild)
     this.numbers = []; // Schadenszahlen
     this.swooshes = []; // Schwung-Bögen im Nahkampf
     this.prompt = null; // { text, x, y }
@@ -128,6 +133,7 @@ export class Hud {
   }
 
   update(dt) {
+    this.time += dt;
     for (const t of this.toasts) t.time += dt;
     this.toasts = this.toasts.filter((t) => t.time < t.duration);
     for (const f of this.floaters) f.t += dt;
@@ -156,6 +162,7 @@ export class Hud {
    * @param {{hotbar: boolean, prompt: boolean}} show
    */
   draw(ui, show) {
+    if (show.prompt) this.drawLowHealth(ui);
     if (show.prompt) {
       this.drawZombieBars(ui);
       this.drawSwooshes(ui);
@@ -205,12 +212,19 @@ export class Hud {
 
   /** Aktuelles Ziel unter der Uhr (Einstieg in die ersten Schritte). */
   drawGoal(ui) {
+    const box = this.goalBox;
+    box.on = false;
     const goal = this.game.goal;
     if (!goal) return;
     const x = 4;
     const y = 41;
     const text = goal.progress ? `${goal.text} ${goal.progress}` : goal.text;
     const w = measure(text) + 24;
+    // Das Banner weicht ihr aus (m12-r1)
+    box.on = true;
+    box.x = x;
+    box.y = y;
+    box.w = w;
     const flash = this.goalFlash > 0 && Math.floor(this.goalFlash * 8) % 2 === 0;
     ui.panel(x, y, w, 17, { frame: flash ? COLORS.gold : COLORS.frame });
     drawIcon(ui.ctx, 'ziel', x + 5, y + 3);
@@ -303,7 +317,10 @@ export class Hud {
     this.bannerBottom = null;
     if (this.banner) {
       const b = this.banner;
-      const by = Math.max(40, bottom + 6);
+      let by = Math.max(40, bottom + 6);
+      // m12-r1: Ein langes Ziel lag unter »Nacht geschafft!« – dann rückt das Banner darunter
+      const gb = this.goalBox;
+      if (gb.on && cx - measure(b.text) - 2 < gb.x + gb.w + 4 && by < gb.y + gb.h + 2) by = gb.y + gb.h + 4;
       if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, by, 2, COLORS.gold);
       this.bannerBottom = by + 20; // Meldungen erscheinen darunter (m3-r2: sie verdeckten das Banner)
     }
@@ -321,6 +338,25 @@ export class Hud {
     ui.rect(x - 1, y - 1, w + 2, 5, COLORS.outline);
     ui.rect(x, y, w, 3, COLORS.inset);
     ui.rect(x, y, Math.max(1, Math.round(w * Math.min(1, a.t / a.duration))), 3, COLORS.gold);
+  }
+
+  /** Wenig Leben (m12-r1: die Ohnmacht kam ohne Vorwarnung): Der Bildrand pulsiert rot. */
+  drawLowHealth(ui) {
+    const g = this.game;
+    const q = g.state.player.hp / g.combat.maxHp;
+    if (q >= LOW_HP || q <= 0) return;
+    const pulse = 0.5 + 0.5 * Math.sin(this.time * 5.5);
+    const a = (0.35 + 0.4 * (1 - q / LOW_HP)) * (0.5 + 0.5 * pulse);
+    const w = ui.width;
+    const h = ui.height;
+    // Tiefes Rot, innen lockerer: hebt sich vom herbstlich-orangen Laub ab
+    for (const [t, k] of [[22, 0.45], [12, 0.8], [5, 1.2]]) {
+      const amount = Math.min(0.95, a * k);
+      ui.ditherRect(0, 0, w, t, amount, LOW_HP_RED);
+      ui.ditherRect(0, h - t, w, t, amount, LOW_HP_RED);
+      ui.ditherRect(0, t, t, h - 2 * t, amount, LOW_HP_RED);
+      ui.ditherRect(w - t, t, t, h - 2 * t, amount, LOW_HP_RED);
+    }
   }
 
   /** Mikas Lebensbalken über der Schnellleiste. */
@@ -426,7 +462,9 @@ export class Hud {
     const dx = p.x - cx;
     const dy = p.y - cy;
     const len = Math.hypot(dx, dy) || 1;
-    const k = Math.min((ui.width / 2 - 22) / Math.abs(dx || 1e-3), (ui.height / 2 - 70) / Math.abs(dy || 1e-3));
+    // Unten über der Hinweiszeile (m12-r1: der Pfeil steckte mitten im Text)
+    const limitY = dy > 0 ? ui.height / 2 - 96 : ui.height / 2 - 70;
+    const k = Math.min((ui.width / 2 - 22) / Math.abs(dx || 1e-3), limitY / Math.abs(dy || 1e-3));
     tri(cx + dx * k - (dx / len) * 6, cy + dy * k - (dy / len) * 6, dx / len, dy / len);
   }
 

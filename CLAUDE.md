@@ -249,7 +249,9 @@ Grundprinzipien:
   Die Wegvorschau beim Bauen bleibt; Umlenken über andere Zweige gibt es im
   Baum-Netz nicht (OFFENE-FRAGEN Nr. 66 ist noch offen). Wer Mika jagt und
   einen Bau vor sich hat, kommt über eine kleine Breitensuche um Mika
-  (`chaseDirection`) außen herum.
+  (`chaseDirection`) außen herum. Endet die Jagd, geht er zur letzten Stelle
+  auf Weg oder Hof zurück (Zustand `rejoin`, `towardDirection`) – sonst stünde
+  er hinter einer Barrikadenreihe, um die er Mika nachgelaufen ist (m12-r1).
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
@@ -331,7 +333,13 @@ Grundprinzipien:
    Kürbislaternen nachts hell, Laub stiebt auf (echte Taste), Krähen fliegen
    vor Mika und Schlurfern auf, kommen wieder und ziehen abends weg, Mikas
    Gesicht (Aua, froh, müde), Bert lächelt nur, wenn Mika dabeisteht (Bilder:
-   wetter-regen, wetter-nebel, laternen, herbst).
+   wetter-regen, wetter-nebel, laternen, herbst); ab m12-r1 (Abschnitt
+   `nachbesserung`): Morgenbericht nach dem Neuladen wieder offen, Haustür mit
+   Hinweis und E, Kiesel-Ziel ohne Stein, Turm-Ziel nur mit Horde in
+   Reichweite, Herzschlag bei wenig Leben, Banner, wenn das Zuhause nachts
+   wankt, Fackeln und Eigenlicht der Wege, Jäger kehren vor die
+   Barrikadenreihe zurück (Gegenprobe: ohne Rückkehr zogen sie vorbei),
+   schnelles E nach einem Dialog öffnet nichts, ein bewusstes schon.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

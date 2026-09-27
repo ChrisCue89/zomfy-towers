@@ -977,6 +977,32 @@ Waffen, Loot, Türme, Geschosse, Laterne, Pilze, Kürbisse, Schilf, Krähen.
 Gelände, Bäume, Felsen und Gebäude bleiben bei 1/8 m – dort sieht man keinen
 Unterschied, zahlt aber mit Leistung.
 
+### 105. Wohin geht ein Schlurfer nach der Jagd? (m12-r1, zu Nr. 66)
+**Entscheidung:** Genau dorthin zurück, wo er Weg oder Hof verlassen hat –
+um Bauten herum –, und erst dann auf dem Weg weiter. Vorher suchte er den
+nächsten Weg; stand Mika neben dem Ende einer Barrikadenreihe, lag der hinter
+der Reihe, und die Jäger zogen an der heilen Reihe vorbei zum Haus. Jagen
+dürfen sie weiterhin überallhin: Wer sich neben die Reihe stellt, wird
+angegriffen – die Reihe hält aber die Horde. Nach 15 s ohne Ankommen geht es
+wie früher zum nächsten Weg (damit niemand ewig hängt).
+
+### 106. Legt Balduin nach dem Handel sofort ab? (m12-r1, zu M9.1)
+**Entscheidung:** Ja, wie vom Auftraggeber gewünscht – aber man soll es
+vorher wissen. Er sagt beim ersten Treffen »bis Mittag, oder bis wir fertig
+sind«, der Morgenbericht »Nach dem Handel legt er ab.«, und nach dem ersten
+Tausch steht im Fenster »Esc Tschüss sagen«. Ohne Tausch wartet er bis
+12 Uhr.
+
+### 107. Wann zählt »Baue einen Bolzenwerfer neben den Weg«? (m12-r1)
+**Entscheidung:** Erst, wenn der Kreis des Turms eine Stelle des Hordenwegs
+erreicht. Ein Turm fern der Horde bleibt erlaubt (man darf planen), die
+Vorschau sagt aber in Gold »Hier kommt keine Horde vorbei«.
+
+### 108. Wann geht die Perk-Wahl auf? (m12-r1, zu m3-r1)
+**Entscheidung:** Nur, wenn kein Kampf läuft und nachts keine Schlurfer mehr
+leben – sonst wartet sie. Ein Klick wählt erst, wenn die Maus seit dem
+Öffnen bewegt wurde; Tasten wählen wie bisher.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

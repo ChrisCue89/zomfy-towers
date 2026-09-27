@@ -224,7 +224,7 @@ export class CraftingMenu {
     // Gewählte Zeile: was kommt dabei heraus? (Verwerten: »… E halten: weiter«)
     const r = L.rows[this.focus]?.recipe;
     const conversion = r && !r.close && isConversion(r) && !r.owned;
-    const hint = this.shop ? T.haendler.hinweis : conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis;
+    const hint = this.shop ? (this.game.trader.tradedToday() ? T.haendler.hinweisTschuess : T.haendler.hinweis) : conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis;
     ui.textCentered(hint, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
     if (r) {
       const loud = conversion && Boolean(this.hold);

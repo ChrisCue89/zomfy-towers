@@ -18,6 +18,7 @@ export const ENTRY_NAMES = SPAWN_NAMES;
 const BARRICADE_COST = 8;
 const INF = 1e9;
 const CHASE_R = 12; // Umkreis (Zellen) um Mika, in dem Jäger einen Weg um Bauten suchen
+const TOWARD_CACHE = 16; // so viele Rückweg-Felder bleiben gemerkt (m12-r1)
 const N4 = [
   [1, 0],
   [-1, 0],
@@ -295,6 +296,15 @@ export class Pathing {
     return points;
   }
 
+  /** Liegt ein Stück eines Horde-Wegs (von einem Spawn bis ans Haus) in diesem Kreis? (m12-r1) */
+  covers(x, z, range) {
+    const r2 = range * range;
+    for (const name in this.entries) {
+      for (const p of this.trace(name)) if ((p.x - x) ** 2 + (p.z - z) ** 2 <= r2) return true;
+    }
+    return false;
+  }
+
   /**
    * Kommt ein Jäger über dieses Feld? Freies Land und Trümmer; die künftigen
    * Anbauten des Zuhauses sind bis dahin noch Wiese.
@@ -327,15 +337,26 @@ export class Pathing {
     return true;
   }
 
+  /** Liegt der Punkt auf einem Weg- oder Hoffeld (dort läuft die Horde)? */
+  onPathOrYard(x, z) {
+    const g = this.grid;
+    const k = g.index(Math.floor(x), Math.floor(z));
+    return k >= 0 && (g.path[k] === 1 || g.yard[k] === 1);
+  }
+
   /** Breitensuche von Mikas Feld aus über das Fenster um sie. */
   fillChase(ci, cj) {
-    const size = CHASE_R * 2 + 1;
-    const f = this.chase;
-    f.fill(INF);
     this._chaseI = ci;
     this._chaseJ = cj;
     this._chaseVersion = this.version;
     this._chaseLevel = this.grid.houseLevel;
+    this.fillField(this.chase, ci, cj);
+  }
+
+  /** Breitensuche von einem Zielfeld aus über das Fenster darum (Jagd, Rückweg). */
+  fillField(f, ci, cj) {
+    const size = CHASE_R * 2 + 1;
+    f.fill(INF);
     const queue = this._chaseQueue || (this._chaseQueue = new Int32Array(size * size));
     let head = 0;
     let tail = 0;
@@ -367,11 +388,41 @@ export class Pathing {
     const ci = Math.floor(px);
     const cj = Math.floor(pz);
     if (ci !== this._chaseI || cj !== this._chaseJ || this._chaseVersion !== this.version || this._chaseLevel !== this.grid.houseLevel) this.fillChase(ci, cj);
+    return this.fieldStep(this.chase, ci, cj, x, z, out);
+  }
+
+  /**
+   * Rückweg nach der Jagd (m12-r1): Richtung zu einem festen Punkt, um Bauten
+   * herum – dorthin, wo ein Jäger den Weg verlassen hat. Die Felder werden je
+   * Zielfeld gemerkt; ist der Vorrat voll, fällt das älteste heraus.
+   */
+  towardDirection(x, z, tx, tz, out = { x: 0, z: 0 }) {
+    const ci = Math.floor(tx);
+    const cj = Math.floor(tz);
+    const cache = this._toward || (this._toward = []);
+    let entry = null;
+    for (let k = 0; k < cache.length && !entry; k++) if (cache[k].i === ci && cache[k].j === cj) entry = cache[k];
+    if (!entry) {
+      entry = cache.length < TOWARD_CACHE ? { i: 0, j: 0, version: -1, level: -1, f: new Float32Array((CHASE_R * 2 + 1) ** 2) } : cache.shift();
+      entry.i = ci;
+      entry.j = cj;
+      entry.version = -1;
+      cache.push(entry);
+    }
+    if (entry.version !== this.version || entry.level !== this.grid.houseLevel) {
+      entry.version = this.version;
+      entry.level = this.grid.houseLevel;
+      this.fillField(entry.f, ci, cj);
+    }
+    return this.fieldStep(entry.f, ci, cj, x, z, out);
+  }
+
+  /** Nächster Schritt in einem Feld um (ci, cj): Einheitsvektor oder null (am Ziel, außerhalb, kein Weg). */
+  fieldStep(f, ci, cj, x, z, out) {
     const size = CHASE_R * 2 + 1;
     const li = Math.floor(x) - ci + CHASE_R;
     const lj = Math.floor(z) - cj + CHASE_R;
     if (li < 0 || lj < 0 || li >= size || lj >= size) return null;
-    const f = this.chase;
     let best = f[lj * size + li];
     if (best === 0) return null;
     let bi = 0;

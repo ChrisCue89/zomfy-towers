@@ -399,8 +399,9 @@ Bild, z nach Süden = unten im Bild; die Kamera blickt nach Norden):
   Hindernis steht.
 - **Die Horde läuft nur auf den Wegen** vom Spawn zum Hof. Barrikaden auf dem
   Weg sind Hindernisse, an denen sie hängen bleibt und die sie angreift. Die
-  Figur zieht sie nur aus der Nähe vom Weg; danach kehren die Schlurfer auf
-  den Weg zurück.
+  Figur zieht sie nur aus der Nähe vom Weg; danach kehren die Schlurfer genau
+  dorthin zurück, wo sie ihn verlassen haben – nie hinter eine
+  Barrikadenreihe (m12-r1).
 - **Übersicht:** An jedem Spawn stehen Warnpfähle (nachts mit fahlgrüner
   Laterne); die Übersichtskarte (Taste M) zeigt das ganze Wegenetz mit
   Türmen, Barrikaden, Schlurfern, liegenden Überresten und Mika.

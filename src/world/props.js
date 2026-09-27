@@ -8,6 +8,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { hash3, Rng } from '../core/rng.js';
 import { LAYOUT, V } from './layout.js';
 import { buildDeciduous } from './nature.js';
+import { BAY } from './map.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 
 // --- Bausteine ----------------------------------------------------------------
@@ -470,6 +471,23 @@ function buildDriftwood(seed, length = 22) {
   return m;
 }
 
+/** Fackel am Wegrand (m12-r1, DESIGN 3.6): Pfahl mit umwickeltem Kopf; die Flamme ist ein eigenes Modell. */
+function buildTorch(seed) {
+  const m = new VoxelModel();
+  m.box(-1, 0, -1, 0, 16, 0, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? P.e2 : P.e3));
+  m.box(-2, 17, -2, 1, 19, 1, (x, y) => (y === 18 ? P.e5 : P.e2)); // umwickelter Kopf mit Band
+  m.box(-1, 20, -1, 0, 20, 0, P.e1); // verkohlte Mitte
+  return m;
+}
+
+function buildTorchFlame() {
+  const m = new VoxelModel();
+  m.box(-2, 21, -2, 1, 22, 1, (x, y, z) => ((x === -2 || x === 1) && (z === -2 || z === 1) ? null : 0xffffff));
+  m.box(-1, 23, -1, 0, 24, 0, 0xffffff);
+  m.set(-1, 25, 0, 0xffffff);
+  return m;
+}
+
 function buildOakWithSwing(seed) {
   const m = buildDeciduous(seed, 1.3);
   // Starker Ast nach Osten
@@ -705,6 +723,45 @@ export function createProps({ seed, materials, colliders, map }) {
     }
   }
 
+  // Fackeln an den Wegen (m12-r1, DESIGN 3.6): nachts zeigen warme Lichtinseln den Weg.
+  // Etwa alle 13 m, abwechselnd links und rechts, knapp neben dem Weg – nicht in der Bucht
+  const torches = [];
+  let torchFlames = null; // brennen nur nachts (world.js)
+  for (const path of map.paths) {
+    let run = path.feeder ? 9 : 4;
+    for (let k = 1; k < path.points.length; k++) {
+      const a = path.points[k - 1];
+      const b = path.points[k];
+      const seg = Math.hypot(b.x - a.x, b.z - a.z);
+      run += seg;
+      if (run < 13 || seg < 1e-3) continue;
+      if (b.x > BAY.x0 - 1.5 || b.x < -54) continue;
+      const side = torches.length % 2 ? 1 : -1;
+      const off = path.width / 2 + 0.95;
+      const x = Math.round((b.x - ((b.z - a.z) / seg) * off * side) * 8) / 8;
+      const z = Math.round((b.z + ((b.x - a.x) / seg) * off * side) * 8) / 8;
+      if (map.pathDistance(x, z) < 0.7 || torches.some((t) => Math.hypot(t.x - x, t.z - z) < 7)) continue;
+      torches.push({ x, z });
+      colliders.addCircle(x, z, 0.14, 'fackel');
+      run = 0;
+    }
+  }
+  if (torches.length) {
+    const place = (geometry, material) => {
+      const mesh = new THREE.InstancedMesh(geometry, material, torches.length);
+      const m = new THREE.Matrix4();
+      torches.forEach((t, i) => mesh.setMatrixAt(i, m.makeTranslation(t.x, 0, t.z)));
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+      mesh.receiveShadow = true;
+      mesh.name = 'Fackeln';
+      group.add(mesh);
+      return mesh;
+    };
+    place(buildTorch(seed + 80).toGeometry({ jitter: 0.03, seed, size: FINE, visibleOnly: true }), materials.world);
+    if (materials.torchGlow) torchFlames = place(buildTorchFlame().toGeometry({ jitter: 0, ao: false, size: FINE, visibleOnly: true }), materials.torchGlow);
+  }
+
   // Wegweiser am Hofeingang, Briefkasten
   const sign = LAYOUT.sign;
   add(buildSign(seed + 9), sign.x, sign.z, { name: 'Wegweiser' });
@@ -810,6 +867,8 @@ export function createProps({ seed, materials, colliders, map }) {
     leafPiles,
     reserved,
     perches,
+    torches,
+    torchFlames,
     group,
     interactions,
     blockers,

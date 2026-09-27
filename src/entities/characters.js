@@ -461,10 +461,11 @@ const TOOL_MODELS = {
   faeustlinge: buildMittenModel,
 };
 
-/** Oberkörper und Kopf als ein Voxel-Modell – für Porträts. */
-export function buildBustModel(spec) {
+/** Oberkörper und Kopf als ein Voxel-Modell für Porträts – im feinen Maß (m12-r1: das grobe hatte kein Gesicht). */
+export function buildFineBustModel(spec, expr = 'normal') {
   const m = new VoxelModel();
-  m.merge(buildTorso(spec));
-  m.merge(buildHead(spec));
+  m.merge(buildTorso16(spec));
+  m.merge(buildHead16(spec));
+  m.merge(buildFacePlate16(spec, expr));
   return m;
 }

@@ -5,6 +5,54 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Testrunde m12-r1 und Nachbesserung
+
+**Runde:** vier Testspieler über M8–M12, je ein neues Spiel bis Tag 3
+(Urteile: Mira 7, Kira 7, Jonas 6, Theo 6; Konsole überall leer). Berichte
+und Auswertung in `playtests/m12-r1/` (ZUSAMMENFASSUNG.md).
+
+**Behoben**
+
+- **Blocker:** Der Morgenbericht klebte nach dem Neuladen im Bild (Kira) –
+  jetzt geht er wieder richtig auf. Stein fand keiner (Jonas, Theo), obwohl
+  Kiesel in der Bucht und an den Wegen liegen: Fehlt Stein, zeigen Ziel und
+  Pfeil zum nächsten Kiesel.
+- **Wege nachts:** Fackeln an den Wegen (Flamme und Lichtinsel, instanziert,
+  keine neuen Lichter) und ein leichtes Eigenlicht der Wegfelder.
+- **Warnungen:** Banner und Ton, wenn das Zuhause nachts unter die Hälfte bzw.
+  ein Viertel fällt, Mikas Gedanke drinnen; unter 35 % Leben ein pulsierender
+  roter Rand, Herzschlag und »Mir wird schwindelig …«.
+- **Jäger umgingen Barrikaden (Kira):** Endete die Jagd, suchten sie den
+  nächsten Weg – oft hinter der Reihe. Jetzt kehren sie an die Stelle zurück,
+  an der sie den Weg verlassen haben (`rejoin`, OFFENE-FRAGEN 105).
+- **Ziele und Auswahl:** Das Turm-Ziel zählt nur mit Horde in Reichweite
+  (Hinweis in der Vorschau); die Perk-Wahl wartet, bis es ruhig ist, und nimmt
+  keine Kampf-Klicks; die Bauleiste behält ihren Reiter drinnen und draußen.
+- **Kleinigkeiten:** Hinweis an der Haustür, Morgenbericht auch nach einer
+  durchwachten Nacht, kurze E-Sperre nach Dialogen (gehaltenes E zählt danach
+  als Druck), Meldungen und Banner
+  verdecken nichts mehr, Zielpfeil über der Steuerungszeile, Mikas Porträt aus
+  dem feinen Modell, »Esc Tschüss sagen« bei Balduin nach einem Tausch, Texte
+  (Kamin, Wetter, Flickschusterei), Mika freut sich nach Bauten und Funden.
+- **Prüfung:** neuer Abschnitt `nachbesserung` (Bericht nach dem Neuladen,
+  Haustür, Kiesel-Ziel, Turm-Ziel, wenig Leben, Zuhause-Banner, Fackeln, Jäger
+  vor der Reihe, E nach einem Dialog).
+- **Unterwegs behoben:** Die E-Sperre schluckte ein gehaltenes E – der Baum
+  fiel nicht, wenn man gleich nach dem Axt-Dialog E hielt (volle Prüfung).
+  Die Musikprüfung stolperte über die Perk-Wahl, die jetzt erst in Ruhe
+  aufgeht und den großen 3-s-Schritt anhielt – sie geht in 500-ms-Schritten.
+
+**Für M13 gesammelt (Balance, mit dem Auftraggeber)**
+
+- Nahkampf ohne Risiko: Treffer stoßen zurück und brechen das Ausholen der
+  Schlurfer ab – wer im Takt klickt, wird nie getroffen (Theo, Jonas).
+- Nächte für Erkunder zu hart, Reparieren teuer (Mira); leere Tage, volle
+  Nächte (Jonas, Theo); Balduin ohne Mengengrenze; tote Optionen (Holzlager,
+  Sitzbank); nur ein Weg je Nacht; Wetter mit festem Startwert (Tag 3 immer
+  klar).
+
+---
+
 ## Meilenstein 12 – Herbst, Wetter und Lesbarkeit ✓
 
 **Auftrag:** Herbst überall, Wetter, alle Modelle im feinen Maß und

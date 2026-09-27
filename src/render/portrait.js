@@ -4,7 +4,7 @@
 
 import { P, hexToRgb, nearestPaletteHex } from './palette.js';
 import { VoxelModel } from './voxel.js';
-import { buildBustModel, MIKA } from '../entities/characters.js';
+import { buildFineBustModel, MIKA } from '../entities/characters.js';
 import { survivorParts } from '../entities/survivorModels.js';
 import { dogModels } from '../entities/dogModel.js';
 
@@ -122,15 +122,17 @@ function dogPortrait() {
   return renderVoxelPortrait(m, { top: 6, w: 5, t: 2, f: 4 });
 }
 
-/** Porträt der Hauptfigur (mit dem gewählten Aussehen, Meilenstein 7). */
+/**
+ * Porträt der Hauptfigur (mit dem gewählten Aussehen, Meilenstein 7) – seit
+ * m12-r1 im feinen Maß wie die Überlebenden: Schultern, Gesicht und der
+ * Umschlag der Mütze (der Rest passt nicht ins Fenster).
+ */
 export function mikaPortrait(spec = MIKA) {
-  const bust = buildBustModel(spec);
-  // Nur Kopf und Schultern
-  const head = new VoxelModel();
-  bust.forEach((x, y, z, c) => {
-    if (y >= 5) head.set(x, y, z, c);
+  const bust = new VoxelModel();
+  buildFineBustModel(spec).forEach((x, y, z, c) => {
+    if (y >= 12 && y <= 24) bust.set(x, y, z, c);
   });
-  return renderVoxelPortrait(head, { top: 2 });
+  return renderVoxelPortrait(bust, { size: 54, top: 1, w: 4, t: 1, f: 3 });
 }
 
 /** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */

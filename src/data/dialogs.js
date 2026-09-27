@@ -97,7 +97,7 @@ export const DIALOGE = {
     { s: 'balduin', t: 'Frag nicht. Wissenschaft! Oder Kunst. Oder Suppe – nein, keine Suppe.' },
     {
       s: 'balduin',
-      t: 'Jeden Morgen leg ich hier am Steg an und bleibe bis Mittag. Nachts sammelst du, morgens handeln wir. Abgemacht?',
+      t: 'Jeden Morgen leg ich hier am Steg an – bis Mittag, oder bis wir fertig sind. Nachts sammelst du, morgens handeln wir. Abgemacht?',
       antworten: [
         { t: 'Zeig mal her!', aktion: 'handeln' },
         { t: 'Später.', standard: true },
@@ -227,7 +227,7 @@ export const DIALOGE = {
   ],
 
   intro: [
-    { s: 'mika', t: 'Ein altes Fischerhaus am See, ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
+    { s: 'mika', t: 'Ein altes Fischerhaus am See – kaum mehr als eine Notunterkunft, aber ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
     { s: 'mika', t: 'Wacklig, aber es hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
     { s: 'mika', t: 'Hinter mir nur Wasser. Nachts schlurfen sie aus dem Wald – über die alten Wege von links bis hierher an den Hof.' },
     { s: 'mika', t: 'Neben die Wege gehören Türme, auf die Wege Barrikaden. Aber erst brauche ich Werkzeug: Am Hackklotz steckt noch eine Axt.' },
@@ -265,7 +265,7 @@ export const DIALOGE = {
           t: pick(
             [
               'Das Feuer knackt, draußen rauscht der See. Hier drin ist die Welt in Ordnung.',
-              'Warme Füße, kalte Nase am Fenster. Genau so soll ein Herbstabend sein.',
+              'Warme Füße, kalte Nase am Fenster. So mag ich den Herbst.',
               'Ich lege ein Scheit nach. Funken tanzen den Kamin hinauf.',
               'Wer hier gewohnt hat, hat den Kamin geliebt. Die Steine sind ganz glatt vom Anlehnen.',
             ],

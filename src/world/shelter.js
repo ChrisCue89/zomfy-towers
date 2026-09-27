@@ -533,7 +533,8 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
             { minX: wx(0), maxX: wx(W), minZ: wz(D - 1), maxZ: wz(D), y: FLOOR * V },
             { minX: wx(8), maxX: wx(17), minZ: wz(D), maxZ: wz(31), y: 2 * V },
           ],
-    interactions: [],
+    // Haustür mit Hinweis (m12-r1: hinein kam man nur, wer zufällig in die Wand lief)
+    interactions: [{ id: 'haustuer', x: wx((DOOR.x0 + DOOR.x1 + 1) / 2), z: wz(D) + 0.75, radius: 0.95, prompt: 'hineingehen', action: 'enterHouse', inside: false }],
   };
 }
 

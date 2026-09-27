@@ -5,7 +5,7 @@
 //   node tools/check.mjs --nur=nahkampf,naechte
 //                                   nur einzelne Abschnitte (rundgang, speichern,
 //                                   bauen, wege, naechte, nahkampf, ueberlebende,
-//                                   haendler, herbst, hd)
+//                                   haendler, herbst, nachbesserung, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -153,6 +153,9 @@ async function runBrowserChecks() {
 
     // --- 6c. Meilenstein 12: Wetter, Herbstschmuck, Krähen, Gesichter -------------------
     if (want('herbst')) await runAutumnChecks(browser, url);
+
+    // --- 6d. Nachbesserung nach der Testrunde m12-r1 ------------------------------------
+    if (want('nachbesserung')) await runFixChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -1368,7 +1371,8 @@ async function runNightChecks(browser, url) {
     window.zomfy.setTime(20, 28);
     window.zomfy.teleport(6, 4, 0);
   });
-  await step(3000);
+  // In kleinen Schritten: Eine offene Perk-Wahl geht erst in Ruhe auf (m12-r1) und hält das Spiel an
+  for (let k = 0; k < 6; k++) await step(500);
   const musikNacht = await z(() => window.zomfy.sound()); // M10d: während der Welle das treibende Stück
   await z(() => {
     window.zomfy.setHomeHp(3);
@@ -1835,7 +1839,7 @@ async function runTraderChecks(browser, url) {
   if (angebote.join() === 'schrott,stein,zahnrad' && zahn.join() === 'true,true,false') note(`✓ Balduin: Tag 3 bietet ${angebote.join(', ')} – Zahnräder nur zweimal am Tag`);
   else fail(`Angebote/Vorrat: ${JSON.stringify({ angebote, zahn })}`);
   const bericht = await z(() => window.zomfy.morning());
-  if (bericht.some((l) => l.startsWith('Balduin wartet bis 12 Uhr am Steg'))) note('✓ Morgenbericht: Balduin wartet bis 12 Uhr am Steg');
+  if (bericht.some((l) => l.startsWith('Balduin liegt bis 12 Uhr am Steg'))) note('✓ Morgenbericht: Balduin liegt bis 12 Uhr am Steg');
   else fail(`Morgenbericht ohne Balduin: ${JSON.stringify(bericht)}`);
 
   // Bild vom Boot am Steg am Vormittag
@@ -2203,9 +2207,10 @@ async function runAutumnChecks(browser, url) {
   });
   await step(100);
   const morgen = (await view()).meldungen || [];
+  const satz = await z(() => window.zomfy.game.weatherLine(window.zomfy.state().time.day));
   await z(() => window.zomfy.setWeather(null));
-  if (morgen.some((t) => /nieselt/.test(t))) note(`✓ Wetter am Morgen: „${morgen.find((t) => /nieselt/.test(t))}“`);
-  else fail(`Wetter am Morgen fehlt: ${JSON.stringify(morgen)}`);
+  if (morgen.includes(satz) && /Regen|nieselt|nass/.test(satz)) note(`✓ Wetter am Morgen: „${satz}“`);
+  else fail(`Wetter am Morgen fehlt: ${JSON.stringify({ morgen, satz })}`);
 
   // Herbstschmuck: Schilf am Ufer, Kürbislaternen leuchten nachts, Laub stiebt auf
   const schilf = await z(() => window.zomfy.game.world.stats.reeds);
@@ -2325,6 +2330,201 @@ async function runAutumnChecks(browser, url) {
   const weit = await lacht(6.0);
   if (nah && !weit) note('✓ Überlebende: Bert lächelt, wenn Mika bei ihm steht, sonst nicht');
   else fail(`Überlebende lächeln nicht richtig: nah ${nah}, weit ${weit}`);
+
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * Nachbesserung nach der Testrunde m12-r1: Ein ungelesener Morgenbericht kommt
+ * nach dem Neuladen wieder (und klebt nicht), die Haustür zeigt »Hineingehen«
+ * und E geht hinein, fehlt Stein, zeigt das Ziel zu den Kieseln, der erste
+ * Turm zählt nur am Weg der Horde, wenig Leben warnt (Herzschlag, Gedanke),
+ * das Zuhause warnt nachts groß, die Perk-Wahl wartet auf das Ende der Welle
+ * und nimmt keinen Kampf-Klick, die Wege haben Fackeln und leuchten nachts.
+ */
+async function runFixChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Nachbesserung m12-r1');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const view = () => z(() => window.zomfyView());
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(10, 0);
+  });
+  await step(100);
+
+  // Morgenbericht: nach dem Neuladen und »Weiterspielen« wieder offen, nicht nur gezeichnet
+  const bericht = await z(() => {
+    const g = window.zomfy.game;
+    g.state.report = { n: 1, won: true, kills: 3, loot: {}, homeLost: 0, fell: false, homeNow: 300, homeMax: 300, preLoss: 0, losses: null, damaged: null, broken: 0 };
+    g.mode = 'title';
+    g.title.open(true);
+    g.startFromTitle();
+    return { mode: g.mode, offen: g.report.isOpen };
+  });
+  await page.keyboard.press('Enter');
+  await step(600);
+  await page.keyboard.press('Enter');
+  await step(100);
+  const nachBericht = await z(() => ({ mode: window.zomfy.mode, offen: window.zomfy.game.report.isOpen, bericht: window.zomfy.state().report }));
+  if (bericht.mode === 'report' && bericht.offen && nachBericht.mode === 'play' && !nachBericht.offen && !nachBericht.bericht) note('✓ Morgenbericht: nach dem Neuladen wieder offen, Enter schließt ihn');
+  else fail(`Morgenbericht nach dem Neuladen: ${JSON.stringify({ bericht, nachBericht })}`);
+
+  // Haustür: Hinweis und E geht hinein
+  await z(() => {
+    const d = window.zomfy.interior().outsideDoor;
+    window.zomfy.teleport(d.x, d.z + 0.1, Math.PI);
+  });
+  await step(200);
+  const tuer = (await view()).hinweis;
+  await page.keyboard.press('KeyE');
+  await step(800);
+  const drin = await z(() => window.zomfy.interior().inside);
+  if (tuer === 'Hineingehen' && drin) note('✓ Haustür: „Hineingehen“ steht dran, E geht hinein');
+  else fail(`Haustür: Hinweis „${tuer}“, drinnen ${drin}`);
+
+  // Kein Stein für die Werkbank: Das Ziel zeigt zu den Kieseln
+  await z(() => {
+    const d = window.zomfy.interior().outsideDoor;
+    window.zomfy.teleport(d.x, d.z + 1.5, 0);
+    for (const f of ['ziel_axt', 'ziel_turm', 'ziel_nacht', 'ziel_haendler']) window.zomfy.setFlag(f);
+    window.zomfy.game.state.inventory.stein = 0;
+  });
+  await step(300);
+  const zielKiesel = await z(() => ({ text: window.zomfy.game.goal?.text, hin: window.zomfy.game.goalTarget(), kiesel: window.zomfy.game.world.resources.nodes.filter((n) => n.kind === 'kiesel').map((n) => [n.x, n.z]) }));
+  const zeigtAufKiesel = zielKiesel.hin && zielKiesel.kiesel.some(([x, zz]) => x === zielKiesel.hin.x && zz === zielKiesel.hin.z);
+  if (/Kiesel/.test(zielKiesel.text || '') && zeigtAufKiesel) note(`✓ Ziel: ohne Stein „${zielKiesel.text}“, der Pfeil zeigt auf Kiesel`);
+  else fail(`Kiesel-Ziel: ${JSON.stringify(zielKiesel)}`);
+
+  // Erster Turm: zählt nur, wenn sein Kreis den Weg der Horde erreicht
+  const turmZiel = await z(() => {
+    const g = window.zomfy.game;
+    delete g.state.flags.ziel_turm;
+    window.zomfy.give({ schrott: 40 });
+    const weit = window.zomfy.build('bolzen', 11, -2);
+    g.updateGoals(true);
+    const nachWeit = Boolean(g.state.flags.ziel_turm);
+    // Ein freies Feld neben dem letzten Wegstück, von dem aus der Turm die Horde erreicht
+    let nah = 'kein Feld';
+    for (let i = -12; i <= -2 && nah !== 'ok'; i++) {
+      for (let j = -4; j <= 6 && nah !== 'ok'; j++) {
+        if (window.zomfy.placeCheck('bolzen', i, j).ok && g.world.pathing.covers(i + 0.5, j + 0.5, 5.5)) nah = window.zomfy.build('bolzen', i, j);
+      }
+    }
+    g.updateGoals(true);
+    return { weit, nachWeit, nah, nachNah: Boolean(g.state.flags.ziel_turm) };
+  });
+  if (turmZiel.weit === 'ok' && !turmZiel.nachWeit && turmZiel.nah === 'ok' && turmZiel.nachNah) note('✓ Turm-Ziel: ein Turm fern der Horde zählt nicht, einer am Weg schon');
+  else fail(`Turm-Ziel: ${JSON.stringify(turmZiel)}`);
+
+  // Wenig Leben: Herzschlag und ein Gedanke
+  await z(() => {
+    window.zomfy.game.state.player.hp = Math.round(window.zomfy.maxHp() * 0.2);
+    window.zomfy.game.dizzy = false;
+  });
+  await step(500);
+  const schwach = await z(() => ({ gedanke: window.zomfyView().gedanke, herz: window.zomfy.game.heartT }));
+  await z(() => {
+    window.zomfy.game.state.player.hp = window.zomfy.maxHp();
+  });
+  if (/schwindelig/.test(schwach.gedanke || '') && schwach.herz > 0) note('✓ Wenig Leben: Herzschlag und „Mir wird schwindelig …“');
+  else fail(`Wenig Leben: ${JSON.stringify(schwach)}`);
+
+  // Zuhause nachts unter der Hälfte: großes Banner
+  await z(() => window.zomfy.setTime(21, 0));
+  await step(200);
+  const banner = await z(() => {
+    const g = window.zomfy.game;
+    // Die Nacht als laufend markieren (die Horde bleibt aus)
+    Object.assign(g.state.night, { n: g.state.time.day, done: false });
+    const max = g.state.world.homeHp;
+    g.state.world.homeHp = max * 0.45;
+    g.onHouseHit(1, { x: -2, z: -4, day: false });
+    return { banner: window.zomfyView().banner, aktiv: g.nights.active };
+  });
+  await z(() => {
+    window.zomfy.game.state.night.done = true;
+    window.zomfy.setHomeHp(300);
+  });
+  if (banner.aktiv && /wankt/.test(banner.banner || '')) note(`✓ Zuhause: nachts unter der Hälfte das Banner „${banner.banner}“`);
+  else fail(`Zuhause-Warnung: ${JSON.stringify(banner)}`);
+
+  // Fackeln an den Wegen, nachts mit Eigenlicht
+  const wege = await z(() => ({ fackeln: window.zomfy.game.world.props.torches.length, glut: window.zomfy.game.world.groundMaterial.emissiveIntensity }));
+  if (wege.fackeln >= 4 && wege.glut > 0.1) note(`✓ Wege: ${wege.fackeln} Fackeln, nachts leuchtet der Weg (${wege.glut.toFixed(2)})`);
+  else fail(`Wege nachts: ${JSON.stringify(wege)}`);
+
+  // Jäger um eine Barrikadenreihe (Kira): Wer Mika um das Ende der Reihe gejagt hat,
+  // kehrt danach vor die Reihe zurück – vorher stand er dahinter auf dem Weg zum Haus
+  const umweg = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    for (const t of [...g.world.buildings.towers]) g.builder.demolish(t.id); // Türme schössen die Jäger ab
+    Z.setTime(12, 0);
+    Z.give({ holz: 30 });
+    const col = Z.pathColumn(-14);
+    let reihe = 0;
+    for (const j of col) if (Z.build('barrikade', -14, j, 1) === 'ok') reihe++;
+    // Die Reihe hält während der Prüfung (sonst zählt ein Durchbruch als Umweg)
+    for (const b of g.world.buildings.list) if (b.type === 'barrikade') b.hp = 5000;
+    const mid = Z.pathColumn(-19);
+    return { col, reihe, start: mid[Math.floor(mid.length / 2)] };
+  });
+  const amEnde = { x: -12.5, z: Math.min(...umweg.col) - 1.2 }; // neben dem Ende der Reihe, auf der Hausseite
+  await z((a) => {
+    window.zomfy.teleport(a.m.x, a.m.z, -Math.PI / 2);
+    for (let k = 0; k < 3; k++) window.zomfy.spawnZombie('schlurfer', -19 - k * 0.6, a.j + 0.5 + (k % 2) * 0.6);
+  }, { m: amEnde, j: umweg.start });
+  let herum = 0;
+  for (let t = 0; t < 10; t++) {
+    await z((m) => {
+      window.zomfy.setPlayerHp(window.zomfy.maxHp());
+      window.zomfy.teleport(m.x, m.z, -Math.PI / 2);
+    }, amEnde);
+    await step(1000);
+    herum = Math.max(herum, await z(() => window.zomfy.zombies().filter((q) => q.x > -13.5).length));
+  }
+  await z(() => window.zomfy.teleport(5.5, -3, 0)); // Mika geht weg: Die Jagd endet
+  let zurueck = 0;
+  let weiter = 0; // Richtung Haus an der Reihe vorbei
+  let r = null;
+  for (let t = 0; t < 16; t++) {
+    await step(500);
+    r = await z(() => ({ zs: window.zomfy.zombies(), broken: window.zomfy.buildings().filter((b) => b.type === 'barrikade' && b.broken).length }));
+    zurueck += r.zs.filter((q) => q.state === 'rejoin').length;
+    weiter = Math.max(weiter, r.zs.filter((q) => q.x > -11.5).length);
+  }
+  const vorn = r.zs.length > 0 && r.zs.every((q) => q.x < -13.2);
+  await z(() => window.zomfy.killAllZombies());
+  if (umweg.reihe === umweg.col.length && herum > 0 && zurueck > 0 && weiter === 0 && vorn && r.broken === 0) note(`✓ Horde: Jäger laufen um die Barrikadenreihe zu Mika, danach zurück vor die Reihe – keiner zieht dahinter zum Haus weiter`);
+  else fail(`Jäger um die Reihe: ${JSON.stringify({ umweg, herum, zurueck, weiter, vorn, danach: r })}`);
+
+  // E-Durchdrücken (Jonas, Kira): Direkt nach einem Dialog öffnet ein schneller Druck
+  // nichts Neues – ein bewusster Druck etwas später schon
+  await z(() => window.zomfy.teleport(1.75, -5.2, Math.PI)); // am Hackklotz
+  await step(300);
+  await page.keyboard.press('KeyE');
+  await step(100);
+  const dialogAuf = await z(() => window.zomfy.mode);
+  for (let k = 0; k < 20 && (await z(() => window.zomfy.mode)) === 'dialog'; k++) {
+    await page.keyboard.press('KeyE');
+    await step(60);
+  }
+  await page.keyboard.press('KeyE'); // gleich hinterher gehämmert
+  await step(60);
+  const gehaemmert = await z(() => window.zomfy.mode);
+  await step(800);
+  await page.keyboard.press('KeyE');
+  await step(100);
+  const bewusst = await z(() => window.zomfy.mode);
+  await z(() => window.zomfy.finishDialog());
+  await step(100);
+  if (dialogAuf === 'dialog' && gehaemmert === 'play' && bewusst === 'dialog') note('✓ E: nach einem Dialog öffnet schnelles Weiterdrücken nichts, ein bewusster Druck schon');
+  else fail(`E nach dem Dialog: ${JSON.stringify({ dialogAuf, gehaemmert, bewusst })}`);
 
   checkMessages(session);
   await session.context.close();

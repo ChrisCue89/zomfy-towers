@@ -31,6 +31,7 @@ export class PerkChoice {
     this.level = level;
     this.focus = 0;
     this.t = 0;
+    this.aimed = false; // Maus seit dem Öffnen bewegt? Erst dann zählt ein Klick (m12-r1)
   }
 
   close() {
@@ -60,6 +61,7 @@ export class PerkChoice {
     const ui = this.game.ui;
     const cards = this.layout(ui);
     const hovered = cards.findIndex((c) => ui.hover(c.rect.x, c.rect.y, c.rect.w, c.rect.h));
+    if (input.mouse.moved) this.aimed = true;
     if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
     // W/S wandern mit (m7-r1: Theo drückte S, S, Enter und bekam die erste Karte)
     if (input.pressed('left') || input.pressed('up')) this.focus = (this.focus + cards.length - 1) % cards.length;
@@ -69,7 +71,10 @@ export class PerkChoice {
       return null;
     }
     for (let k = 0; k < cards.length; k++) if (input.pressed(`slot${k + 1}`)) return cards[k].id;
-    if (hovered >= 0 && input.mouse.clicked) {
+    // Ein Klick wählt nur, wenn die Maus bewusst auf eine Karte gezielt hat –
+    // ein Schlag-Klick aus dem Kampf wählt sonst ungesehen (m12-r1)
+    if (input.mouse.clicked && (hovered < 0 || !this.aimed)) input.consumeClick();
+    if (hovered >= 0 && this.aimed && input.mouse.clicked) {
       input.consumeClick();
       return cards[hovered].id;
     }

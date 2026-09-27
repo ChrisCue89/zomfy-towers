@@ -27,7 +27,7 @@ export class BuildBar {
   /** @param {import('../core/game.js').Game} game */
   constructor(game) {
     this.game = game;
-    this.tabIndex = 0;
+    this.tabId = 'tuerme'; // Reiter nach Namen: drinnen fehlt »Türme«, draußen ist er wieder da (m12-r1)
     this.hover = -1;
     this.flash = new Map(); // Options-ID -> verbleibende Leuchtzeit
     this.affordable = new Map(); // Options-ID -> war bezahlbar?
@@ -53,7 +53,7 @@ export class BuildBar {
 
   get tab() {
     const tabs = this.tabs();
-    return tabs[Math.min(this.tabIndex, tabs.length - 1)];
+    return tabs.includes(this.tabId) ? this.tabId : tabs[0];
   }
 
   layout(ui) {
@@ -113,7 +113,7 @@ export class BuildBar {
       this.affordable.set(option.id, ready);
     }
 
-    if (input.pressed('buildTab') && L.tabs.length > 1) this.tabIndex = (this.tabIndex + 1) % L.tabs.length;
+    if (input.pressed('buildTab') && L.tabs.length > 1) this.tabId = L.tabs[(L.tabs.indexOf(this.tab) + 1) % L.tabs.length];
     HOTKEYS.forEach((code, k) => {
       const tile = input.pressedCode(code) && L.tiles.find((t) => t.keyIndex === k);
       if (tile) this.activate(tile.option, false);
@@ -123,7 +123,7 @@ export class BuildBar {
     if (input.mouse.clicked && this.contains(ui)) {
       input.consumeClick();
       const tab = L.tabs.length > 1 ? L.tabRects.findIndex((r) => ui.hover(r.x, r.y, r.w, r.h)) : -1;
-      if (tab >= 0) this.tabIndex = tab; // Reiter auch per Klick
+      if (tab >= 0) this.tabId = L.tabs[tab]; // Reiter auch per Klick
       else if (this.hover >= 0) this.activate(L.tiles[this.hover].option, true);
     }
   }
@@ -173,12 +173,14 @@ export class BuildBar {
     if (L.tabs.length > 1) {
       L.tabs.forEach((tab, k) => {
         const r = L.tabRects[k];
-        const active = k === this.tabIndex;
+        const active = tab === this.tab;
         ui.panel(r.x, r.y, r.w, r.h, { fill: active ? COLORS.fillLight : COLORS.fill, frame: active ? COLORS.gold : COLORS.frame, highlight: null });
         ui.text(T.bauleiste.reiter[tab], r.x + 5, L.y - 14, active ? COLORS.gold : COLORS.textDim);
       });
+      // Taste zum Wechseln als kleine Kappe (m12-r1: »TAB« stand winzig ohne Grund)
       const last = L.tabRects[L.tabRects.length - 1];
-      drawTiny(ctx, 'TAB', last.x + last.w + 4, L.y - 9, COLORS.textDim);
+      ui.panel(last.x + last.w + 2, last.y + 2, 17, last.h - 2, { fill: COLORS.fill, frame: COLORS.frame, highlight: null });
+      drawTiny(ctx, 'TAB', last.x + last.w + 5, L.y - 9, COLORS.textWarm);
     } else {
       const tw = measure(L.title) + 10;
       const tx = Math.min(L.x, ui.width - tw - 4);

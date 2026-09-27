@@ -61,16 +61,26 @@ export class ReportPanel {
     return out;
   }
 
+  /** Lage des Kastens (auch für die Meldungen darunter, m12-r1). */
+  layout(ui, lines = this.lines()) {
+    const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
+    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => measure(l.text) + (l.res ? resW(l.res) + 8 : 0) + 24)));
+    const h = 34 + lines.length * (LINE_HEIGHT + 3) + 16;
+    return { x: Math.round((ui.width - w) / 2), y: Math.round((ui.height - h) / 2) - 16, w, h };
+  }
+
+  /** Unterkante des Kastens: Meldungen erscheinen darunter statt über der Überschrift. */
+  bottom(ui) {
+    const { y, h } = this.layout(ui);
+    return y + h + 4;
+  }
+
   /** @param {import('./ui.js').UICanvas} ui */
   draw(ui) {
     const r = this.report;
     if (!r) return;
     const lines = this.lines();
-    const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
-    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => measure(l.text) + (l.res ? resW(l.res) + 8 : 0) + 24)));
-    const h = 34 + lines.length * (LINE_HEIGHT + 3) + 16;
-    const x = Math.round((ui.width - w) / 2);
-    const y = Math.round((ui.height - h) / 2) - 16;
+    const { x, y, w, h } = this.layout(ui, lines);
     ui.ditherFill(0.4);
     ui.panel(x, y, w, h);
     const title = r.won ? T.bericht.gewonnen(r.n) : T.bericht.verloren(r.n);

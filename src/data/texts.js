@@ -116,6 +116,8 @@ export const T = {
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
     grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden', nurWeg: 'Barrikaden nur auf den Weg' },
+    keineHorde: 'Hier kommt keine Horde vorbei', // m12-r1: der Turm stand mitten in der Bucht
+    nurDraussen: 'Nur draußen',
     // Warum »Kein Platz«? (m7-r1)
     grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg', stand: 'Balduins Stand' },
     reparieren: 'Reparieren',
@@ -171,7 +173,7 @@ export const T = {
     stufe: (n) => `Stufe ${n}`,
     sammler: ['Sammlerherz', 'Loot fliegt aus größerer Entfernung zu dir (+30 %).'],
     konter: ['Konter', 'Nach dem Ausweichen trifft der nächste Schlag doppelt so hart.'],
-    flicker: ['Flickschusterin', 'Wo du stehst, reparieren sich Bauten nach und nach.'],
+    flicker: ['Flickschusterei', 'Wo du stehst, reparieren sich Bauten nach und nach.'],
     turmfreund: ['Rückendeckung', 'Nahe eines Turms schlägst du 25 % härter.'],
     lebensraub: ['Zähe Natur', 'Jeder Treffer heilt dich ein wenig.'],
     flink: ['Flinke Hände', 'Du schlägst 12 % schneller.'],
@@ -208,6 +210,11 @@ export const T = {
     bald: 'Bald kommt die Horde – um 20:30!',
     zuhauseTreffer: (seite) => `Das Zuhause wird angegriffen – ${seite}!`,
     zuhauseKurz: 'Schlurfer am Zuhause!',
+    // m12-r1: Das Zuhause fiel, ohne dass man es merkte (vor allem drinnen)
+    zuhauseHalb: 'Das Zuhause wankt!',
+    zuhauseKnapp: 'Das Zuhause hält nicht mehr lange!',
+    drinnenHaemmern: 'Da hämmert etwas gegen die Wand! Ich muss raus.',
+    schwindelig: 'Mir wird schwindelig … ich muss weg von der Horde!',
     seite: { nord: 'an der Nordwand', sued: 'an der Südwand', ost: 'an der Ostwand', west: 'an der Westwand' },
     zuhause: 'Zuhause',
     nacht: (n) => `Nacht ${n}`,
@@ -215,7 +222,7 @@ export const T = {
     verloren: 'Die Horde bricht durch …',
     keller: 'Mika verschanzt sich im Keller.',
     ohnmacht: 'Mika wird schwarz vor Augen …',
-    gerettet: 'Gerade noch ins Haus geschafft. Durchatmen – die Türme halten.',
+    gerettet: 'Gerade noch ins Haus geschafft. Kurz durchatmen – draußen tobt die Nacht weiter.',
     barrikadeWeg: 'Eine Barrikade ist zerschlagen!',
   },
   bericht: {
@@ -263,11 +270,12 @@ export const T = {
   // Wetter (M12): Name in der Uhr, Satz im Morgenbericht
   wetter: {
     name: { klar: 'klar', wind: 'Wind', regen: 'Nieselregen', nebel: 'Nebel' },
+    // Je Wetter ein paar Sätze, nach dem Tag gewählt (m12-r1: zwei klare Tage klangen gleich)
     bericht: {
-      klar: 'Heute bleibt es klar und kühl.',
-      wind: 'Heute weht ein kräftiger Wind – das Laub fliegt.',
-      regen: 'Heute nieselt es. Gut für die Beete, schlecht für die Frisur.',
-      nebel: 'Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.',
+      klar: ['Heute bleibt es klar und kühl.', 'Blauer Himmel über dem See. Ein guter Tag zum Bauen.', 'Klar und frisch – man sieht bis zu den Inseln.'],
+      wind: ['Heute weht ein kräftiger Wind – das Laub fliegt.', 'Der Wind rüttelt an den Fensterläden. Die Bäume werden kahl.', 'Stürmisch heute. Festhalten, was nicht festgenagelt ist!'],
+      regen: ['Heute nieselt es. Gut für die Beete, schlecht für die Frisur.', 'Leiser Regen trommelt aufs Dach. Ein Tag für Tee.', 'Grau und nass heute. Die Wege werden matschig.'],
+      nebel: ['Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.', 'Man sieht kaum den Steg. Der Nebel schluckt jedes Geräusch.', 'Nebel wie Watte – die Inseln sind verschwunden.'],
     },
   },
   aktionen: {
@@ -294,6 +302,7 @@ export const T = {
     werkbank: 'Werkbank benutzen',
     bank: 'Hinsetzen',
     axtNehmen: 'Axt nehmen',
+    hineingehen: 'Hineingehen',
     auswaehlen: 'Auswählen',
     ernten: 'Ernten',
     holzNehmen: 'Holz nehmen',
@@ -338,6 +347,8 @@ export const T = {
   haendler: {
     titel: 'Balduins Boot',
     hinweis: 'W/S wählen · E tauschen · Esc fertig',
+    // m12-r1: Nach einem Tausch legt er beim Schließen ab – das soll man vorher lesen können
+    hinweisTschuess: 'W/S wählen · E tauschen · Esc Tschüss sagen',
     // M9.1: Nach dem Handel verabschiedet er sich und legt ab
     fertig: 'Tschüss, Balduin!',
     fertigInfo: 'Er verabschiedet sich und legt ab.',
@@ -352,7 +363,7 @@ export const T = {
     vorrat: (menge, n) => `${menge} (noch ${n})`,
     ausverkauft: 'ausverkauft',
     ankunft: 'Da tuckert ein Boot über den See …',
-    bericht: 'Balduin wartet bis 12 Uhr am Steg: Zombieteile gegen Rohstoffe.',
+    bericht: 'Balduin liegt bis 12 Uhr am Steg: Zombieteile gegen Rohstoffe. Nach dem Handel legt er ab.',
     berichtErst: 'Heute Morgen legt ein Boot am Steg an. Mal hingehen!',
     keineTeile: '„Keine Teile dabei? Nachts liegen genug herum. Ich warte!“',
     info: {
@@ -527,6 +538,7 @@ export const T = {
     barrikaden: 'Stelle drei Barrikaden quer über den Weg.',
     ausbau: 'Baue einen Turm auf Stufe 3 aus.',
     huette: 'Baue die Notunterkunft zur Hütte aus.',
+    kiesel: 'Sammle Kiesel am Ufer und an den Wegen – das ist Stein.', // m12-r1: Stein fand keiner
   },
   titel: {
     untertitel: 'Ein gemütliches Zuhause am See',

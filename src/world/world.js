@@ -28,6 +28,7 @@ import { Crows } from '../entities/crows.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
 const KICK_COLORS = [P.f3, P.f4, P.f5, P.r3, P.e5].map((c) => new THREE.Color(c)); // aufstiebendes Laub (M12)
+const PATH_GLOW = 0.32; // Eigenlicht der Wege in tiefer Nacht (DESIGN 3.6)
 const SMOKE_NIGHT = [new THREE.Color(0x58719e), new THREE.Color(0x353f69)];
 
 export class World {
@@ -57,6 +58,7 @@ export class World {
       beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Leuchtmast (Meilenstein 6)
       spawnGlow: createGlowMaterial(0xffffff), // fahle Laternen an den Spawns (Meilenstein 9)
       pumpkinGlow: createGlowMaterial(0xffffff), // Gesichter der Kürbislaternen (M12)
+      torchGlow: createGlowMaterial(0xffffff), // Fackeln an den Wegen (m12-r1)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
@@ -64,6 +66,7 @@ export class World {
 
     const terrain = createTerrain(seed, this.map);
     scene.add(terrain.group);
+    this.groundMaterial = terrain.material;
     this.water = createWater(this.map, seed);
     scene.add(this.water.group);
 
@@ -106,6 +109,7 @@ export class World {
     this.interiorPools = [];
     this.addInteriorPools();
     for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2); // Kürbislaternen (M12)
+    if (this.props.torches.length) this.lightPools.addMany(this.props.torches, 2.4); // Fackeln an den Wegen
     this.buildings = new Buildings({
       scene,
       grid: this.grid,
@@ -190,6 +194,8 @@ export class World {
     L.addGlow(this.materials.spawnGlow, { dim: 0x3b4a44, bright: 0x6cc0ae, boost: 1.05, mode: 'lamp' });
     // Kürbislaternen: tagsüber dunkle Löcher, nachts ein flackerndes Kerzenlicht (M12)
     L.addGlow(this.materials.pumpkinGlow, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.45, mode: 'lamp', twinkle: true });
+    // Fackeln: tagsüber aus (dunkler Kopf), nachts helles Feuer
+    L.addGlow(this.materials.torchGlow, { dim: 0x2e1f17, bright: 0xffb347, boost: 1.6, mode: 'lamp', twinkle: true });
   }
 
   /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
@@ -377,6 +383,9 @@ export class World {
 
     // Rauch, Funken, Glühwürmchen
     const night = dn.night;
+    // Wege nachts mit einem Hauch Eigenlicht, Fackeln brennen nur im Dunkeln (m12-r1)
+    this.groundMaterial.emissiveIntensity = PATH_GLOW * night;
+    if (this.props.torchFlames) this.props.torchFlames.visible = dn.lampLevel > 0.05;
     sharedUniforms.uNight.value = night;
     sharedUniforms.uTime.value = this.time;
     this._smoke0.copy(SMOKE_DAY[0]).lerp(SMOKE_NIGHT[0], night);

@@ -102,10 +102,22 @@ export class Builder {
     });
   }
 
+  /** Bau-Optionen, die drinnen nur zu sehen sind: gleiche Tasten wie draußen (m12-r1). */
+  placeOptions(types) {
+    const options = this.buildOptions(types);
+    if (this.game.viewInside) {
+      for (const o of options) {
+        o.disabled = true;
+        o.disabledText = T.bauleiste.nurDraussen;
+      }
+    }
+    return options;
+  }
+
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.game.viewInside ? [] : this.buildOptions(['zelt', 'holzlager']);
+    const options = this.placeOptions(['zelt', 'holzlager']);
     for (const o of this.game.furnishing.options()) options.push(this.option({ ...o, buy: true }, inv));
     const tower = this.game.survivors.towerOption();
     if (tower) options.push(this.option(tower, inv));
@@ -114,7 +126,7 @@ export class Builder {
 
   homeOptions() {
     const inv = this.game.state.inventory;
-    const options = this.game.viewInside ? [] : this.buildOptions(HOME_TAB);
+    const options = this.placeOptions(HOME_TAB);
     const level = this.game.state.world.houseLevel;
     const next = HOUSE_LEVELS[level + 1];
     // Ausbau (M11): jede Stufe ein Raum – Küche, Schlafzimmer, Werkstatt, Lager
@@ -881,13 +893,16 @@ export class Builder {
       thick(r, pl.ok ? COLORS.buildOk : COLORS.buildBad);
       // Warum rot? Gleich am Geist sagen, nicht erst nach dem Klick (m3-r2)
       const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
-      if (why) {
-        const tw = measure(why) + 8;
+      // Passt, aber nutzlos: Ein Turm, dessen Kreis weder Weg noch Hof erreicht (m12-r1)
+      const idle = !why && pl.ok && BUILDINGS[pl.type].tower && !this.world.pathing.covers(cx, cz, towerStats(pl.type, 1, null).range);
+      if (why || idle) {
+        const text = why || T.bauleiste.keineHorde;
+        const tw = measure(text) + 8;
         const tx = Math.round(r.x + r.w / 2 - tw / 2);
         const ty = r.y + r.h + 5;
         ui.rect(tx - 1, ty - 1, tw + 2, LINE_HEIGHT + 5, COLORS.outline);
         ui.rect(tx, ty, tw, LINE_HEIGHT + 3, COLORS.fill);
-        ui.text(why, tx + 4, ty + 1, COLORS.buildBad);
+        ui.text(text, tx + 4, ty + 1, why ? COLORS.buildBad : COLORS.gold);
       }
     }
     if (sel) {

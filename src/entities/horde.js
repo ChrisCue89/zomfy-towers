@@ -28,6 +28,13 @@ import { damp, dampAngle } from '../core/math.js';
 const CHASE_GIVE_UP = 2.5;
 /** … und so lange nicht wieder auf Mika losgehen. */
 const CHASE_PAUSE = 4;
+/**
+ * Nach der Jagd zurück an die Stelle, an der er den Weg verlassen hat (m12-r1:
+ * sonst lief er um eine Barrikadenreihe herum und stand dahinter). So nah heran …
+ */
+const REJOIN_NEAR = 0.4;
+/** … oder nach so vielen Sekunden geht es wieder auf dem Weg weiter. */
+const REJOIN_MAX = 15;
 
 const MAX_PER_TYPE = 110;
 const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
@@ -181,6 +188,10 @@ export class Horde {
       stuck: 0,
       lastX: start.x,
       lastZ: start.z,
+      ax: start.x, // letzte Stelle auf Weg oder Hof (m12-r1)
+      az: start.z,
+      anchored: false,
+      rejoinT: 0,
       target: null,
       deathT: 0,
       aggro: day ? DAY_ZOMBIE.aggro : def.aggro ?? NIGHT_AGGRO,
@@ -327,9 +338,16 @@ export class Horde {
       const reach = z.def.radius + 0.5;
       const pd = Math.hypot(player.x - z.x, player.z - z.z);
 
+      // Letzte Stelle auf Weg oder Hof merken: Dorthin kehrt ein Jäger zurück (m12-r1)
+      if (z.state !== 'chase' && z.state !== 'rejoin' && z.state !== 'enter' && pathing.onPathOrYard(z.x, z.z)) {
+        z.ax = z.x;
+        z.az = z.z;
+        z.anchored = true;
+      }
+
       // Mika in der Nähe? (Nicht, wenn sie im Haus ist.)
       if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro) z.state = 'chase';
-      else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive)) z.state = 'walk';
+      else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive)) this.endChase(z);
 
       switch (z.state) {
         case 'enter': {
@@ -409,6 +427,29 @@ export class Horde {
           }
           break;
         }
+        case 'rejoin': {
+          // Zurück an die Absprungstelle, um Bauten herum – erst dort geht es auf dem Weg weiter
+          z.rejoinT += dt;
+          const dx = z.ax - z.x;
+          const dz = z.az - z.z;
+          const d = Math.hypot(dx, dz);
+          if (d < REJOIN_NEAR || z.rejoinT > REJOIN_MAX) {
+            z.state = 'walk';
+            break;
+          }
+          let nx = dx / d;
+          let nz = dz / d;
+          if (!pathing.clearLine(z.x, z.z, z.ax, z.az)) {
+            const dir = pathing.towardDirection(z.x, z.z, z.ax, z.az, this._dir);
+            if (dir) {
+              nx = dir.x;
+              nz = dir.z;
+            }
+          }
+          vx = nx * speed;
+          vz = nz * speed;
+          break;
+        }
         case 'chase': {
           if (pd > reach) {
             // Steht ein Bau dazwischen, kommt er außen herum; sonst geradewegs auf Mika zu
@@ -468,7 +509,7 @@ export class Horde {
       // ausweichen – quer zur Laufrichtung, damit er sicher vorbeikommt (m3-r2:
       // Schlurfer hingen lange an der Wäscheleine).
       const chasing = z.state === 'chase' && pd > reach;
-      if (z.state === 'walk' || z.state === 'approach' || chasing) {
+      if (z.state === 'walk' || z.state === 'approach' || z.state === 'rejoin' || chasing) {
         const progressed = Math.hypot(z.x - z.lastX, z.z - z.lastZ);
         const blocked = progressed < speed * dt * 0.2 && speed > 0;
         z.stuck = blocked ? z.stuck + dt : 0;
@@ -477,7 +518,7 @@ export class Horde {
         // standen Schlurfer stundenlang dort, griffen nichts an und waren nicht zu treffen)
         z.chaseStuck = chasing ? Math.max(0, (z.chaseStuck || 0) + (blocked ? dt : -dt * 0.5)) : 0;
         if (z.chaseStuck > CHASE_GIVE_UP) {
-          z.state = 'walk';
+          this.endChase(z);
           z.noChase = CHASE_PAUSE;
           z.chaseStuck = 0;
           z.stuck = 0;
@@ -499,6 +540,13 @@ export class Horde {
     }
 
     this.separate(dt);
+  }
+
+  /** Jagd vorbei: zurück zur letzten Stelle auf dem Weg – ohne eine zum nächsten Weg. */
+  endChase(z) {
+    z.state = z.anchored ? 'rejoin' : 'walk';
+    z.rejoinT = 0;
+    z.windup = 0;
   }
 
   /** Richtung zur nächsten Hauswand als [dx, dz] (für atan2). */
@@ -583,7 +631,7 @@ export class Horde {
     const t = this.time;
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
-    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || (z.state === 'chase' && z.windup <= 0);
+    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
     const heavy = z.type === 'brummer' || z.type === 'anfuehrer';

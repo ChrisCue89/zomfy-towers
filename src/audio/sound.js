@@ -91,6 +91,11 @@ const SFX = {
       s.tone('sine', 2340, t + dt, 0.14, { peak: 0.025 * v, attack: 0.003, out: o });
     }
   },
+  // Herzschlag bei wenig Leben (m12-r1): zwei dumpfe Schläge
+  herzschlag: (s, t, v, o) => {
+    s.tone('sine', 64, t, 0.14, { freqEnd: 44, peak: 0.24 * v, attack: 0.006, out: o });
+    s.tone('sine', 58, t + 0.2, 0.12, { freqEnd: 40, peak: 0.17 * v, attack: 0.006, out: o });
+  },
   // Krähe fliegt auf (M12)
   kraehe: (s, t, v, o) => s.caw(t, 0, 1.3 * v, o),
   // Haustür (M11): knarzende Angel, dann fällt die Tür leise zu

@@ -35,7 +35,7 @@ import { Horde } from '../entities/horde.js';
 import { TowerSystem } from '../entities/towers.js';
 import { Loot } from '../entities/loot.js';
 import { UICanvas, COLORS } from '../ui/ui.js';
-import { Hud } from '../ui/hud.js';
+import { Hud, LOW_HP } from '../ui/hud.js';
 import { DialogBox } from '../ui/dialog.js';
 import { Menu } from '../ui/menu.js';
 import { BuildBar } from '../ui/buildbar.js';
@@ -55,6 +55,7 @@ import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, houseLossFactor, maxHpOf } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
+import { RECIPES } from '../data/recipes.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 import { MAX_COZY } from '../data/furniture.js';
@@ -124,6 +125,11 @@ export class Game {
     this.attackQueued = false; // Klick mitten im Schwung: gleich noch einmal
     this.perkCalm = 0; // wie lange es schon ruhig ist (für die Perk-Wahl)
     this.homeWarned = -99;
+    this.useLockUntil = 0; // kurz nach einem Dialog öffnet E nichts Neues (m12-r1)
+    this.useHeldInLock = false; // E in der Sperre gedrückt – noch gehalten, gilt es danach als Druck
+    this.homeMark = { night: 0, level: 0 }; // welche Warnschwelle des Zuhauses schon kam (m12-r1)
+    this.heartT = 0; // Herzschlag bei wenig Leben
+    this.dizzy = false; // Gedanke »mir wird schwindelig« schon gekommen?
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
     this.intro = { t: 0, duration: 1.9 };
@@ -427,6 +433,21 @@ export class Game {
       const cb = LAYOUT.choppingBlock;
       return { x: cb.x, y: 1.0, z: cb.z };
     }
+    // Werkbank oder Spitzhacke, aber zu wenig Stein: zu den nächsten Kieseln (m12-r1)
+    if (this.stoneNeeded() > (st.inventory.stein || 0)) {
+      const p = this.player.position;
+      let best = null;
+      let bestD = Infinity;
+      for (const node of this.world.resources.nodes) {
+        if (node.kind !== 'kiesel' || node.depleted) continue;
+        const d = Math.hypot(node.x - p.x, node.z - p.z);
+        if (d < bestD) {
+          bestD = d;
+          best = { x: node.x, y: 0.6, z: node.z };
+        }
+      }
+      if (best) return best;
+    }
     // Erster Turm, aber zu wenig Schrott: zur nächsten Schrottstelle, die heute noch nicht durchsucht ist
     if (id === 'turm' && (st.inventory.schrott || 0) < BUILDINGS.bolzen.cost.schrott) {
       const p = this.player.position;
@@ -591,7 +612,26 @@ export class Game {
     if (this.goal) {
       const p = current.progress ? current.progress(this) : null;
       this.goal.progress = p ? `(${Math.min(p[0], p[1])}/${p[1]})` : null;
+      // Fehlt Stein für Werkbank oder Spitzhacke, zeigt das Ziel zu den Kieseln (m12-r1)
+      const need = this.stoneNeeded();
+      const stone = this.state.inventory.stein || 0;
+      this.goal.text = need > stone ? T.ziele.kiesel : T.ziele[current.id];
+      if (need > stone) this.goal.progress = `(${stone}/${need})`;
     }
+  }
+
+  /** Der Satz zum Wetter eines Tages (M12). */
+  weatherLine(day) {
+    const lines = T.wetter.bericht[this.world.weather.forecast(day)];
+    return lines[day % lines.length];
+  }
+
+  /** Wie viel Stein braucht das aktuelle Ziel (Werkbank, Spitzhacke)? */
+  stoneNeeded() {
+    const id = this.goal?.id;
+    if (id === 'werkbank') return BUILDINGS.werkbank.cost.stein || 0;
+    if (id === 'spitzhacke') return RECIPES.find((r) => r.id === 'spitzhacke').cost.stein || 0;
+    return 0;
   }
 
   // --- Dialoge, Menü, Schlafen ------------------------------------------------
@@ -608,6 +648,8 @@ export class Game {
       this.mode = 'play';
       // Dasselbe Ding nicht sofort wieder öffnen, wenn man E weiterdrückt
       if (source) this.suppressed = { id: source, until: this.clock + 0.5 }; // Durchdrücken öffnet nicht gleich wieder (m3-r2), ein bewusstes zweites E schon (m6-r1: 0,8 s wirkte wie ein verschluckter Druck)
+      this.useLockUntil = this.clock + 0.3; // und auch nichts anderes daneben (m12-r1: E-Durchdrücken öffnete den Hackklotz)
+      this.useHeldInLock = false;
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (aktion === 'suppe') this.cookSoup();
@@ -620,6 +662,7 @@ export class Game {
     this.lastInteraction = it.id;
     if (it.action === 'sleep') this.requestSleep();
     else if (it.action === 'takeAxe') this.takeAxe();
+    else if (it.action === 'enterHouse') this.startPassage('innen');
     else if (it.use === 'werkbank') this.openCrafting();
     else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ernten') this.harvest(it.building);
@@ -893,7 +936,7 @@ export class Game {
     // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
-    const extra = [{ text: T.wetter.bericht[this.world.weather.kind] }, ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.placeInside(w);
@@ -963,13 +1006,26 @@ export class Game {
     this.hud.homeAlarm = 4;
     const p = this.world.pathing.attackPoint(z.x, z.z);
     this.effects.chips(p.x, 0.8, p.z, 'holz', 4);
-    if (this.clock - this.homeWarned > 25) {
+    // Nachts öfter warnen, drinnen auch als Gedanke (m12-r1: das Zuhause fiel unbemerkt)
+    if (this.clock - this.homeWarned > (day ? 25 : 12)) {
       this.homeWarned = this.clock;
       // Welche Seite? Groß und mit Richtung – sonst merkt man es am Feuer nicht
       const r = this.world.pathing.home;
       const side = z.z < r.minZ ? 'nord' : z.z > r.maxZ ? 'sued' : z.x > r.maxX ? 'ost' : 'west';
       this.hud.toast(T.horde.zuhauseTreffer(T.horde.seite[side]), 'warnung', 3);
       if (day) this.hud.showBanner(T.horde.zuhauseKurz);
+      if (this.viewInside) this.hud.say(T.horde.drinnenHaemmern, 3);
+    }
+    // Die Hälfte, ein Viertel: groß im Bild, einmal je Nacht und Schwelle
+    if (!day) {
+      const q = st.world.homeHp / max;
+      const mark = q < 0.25 ? 2 : q < 0.5 ? 1 : 0;
+      if (this.homeMark.night !== st.night.n) Object.assign(this.homeMark, { night: st.night.n, level: 0 });
+      if (mark > this.homeMark.level) {
+        this.homeMark.level = mark;
+        this.hud.showBanner(mark === 2 ? T.horde.zuhauseKnapp : T.horde.zuhauseHalb);
+        this.sound.play('zuhause', { volume: 1 });
+      }
     }
     if (st.world.homeHp <= 0 && this.nights.active) this.loseNight();
   }
@@ -1012,7 +1068,7 @@ export class Game {
     const st = this.state;
     this.placeInside(this.world.interior.wakeSpot);
     st.player.hp = Math.round(this.combat.maxHp * 0.4);
-    for (const z of this.horde.list) if (z.state === 'chase') z.state = 'walk';
+    for (const z of this.horde.list) if (z.state === 'chase') this.horde.endChase(z);
   }
 
   loseNight() {
@@ -1131,6 +1187,8 @@ export class Game {
   startFromTitle() {
     this.title.close();
     this.mode = 'play';
+    // Ungelesener Morgenbericht (Neuladen bei offenem Bericht): jetzt wieder zeigen (m12-r1: er klebte im Bild)
+    if (this.state.report) this.showReport();
     this.intro.t = 0;
     this.pendingIntro = Boolean(this.titleIntro);
     this.appliedLook = null; // falls auf dem Titelbild herumprobiert wurde
@@ -1257,6 +1315,7 @@ export class Game {
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player, day: this.state.time.day });
     this.world.crows.update(this.mode === 'play' ? dt : 0, { hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) });
     this.updateMood();
+    this.updateHeartbeat(this.mode === 'play' ? dt : 0);
     this.trader.update(this.mode === 'play' ? dt : 0);
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.updateSound(dt);
@@ -1355,8 +1414,10 @@ export class Game {
     }
     // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an) – nicht mitten im
     // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
+    // Nachts erst, wenn keine Welle mehr unterwegs ist (m12-r1: die Wahl ging mitten in Welle 3 auf)
     if (this.state.perkChoice && !this.perkChoice.isOpen) {
-      this.perkCalm = this.inFight() ? 0 : this.perkCalm + dt;
+      const busy = this.inFight() || (this.nights.active && this.horde.alive > 0);
+      this.perkCalm = busy ? 0 : this.perkCalm + dt;
       if (this.perkCalm >= PERK_CALM) {
         this.perkCalm = 0;
         this.perkChoice.open(this.state.perkChoice, this.state.player.level);
@@ -1377,6 +1438,17 @@ export class Game {
     this.combat.update(dt);
     if (this.mode !== 'play') return;
 
+    // Kurz nach einem Dialog nimmt E nichts Neues an (Durchdrücken). Wer E über die
+    // Sperre hinaus gedrückt hält, meint es: Dann zählt es als Druck (Baum fällen).
+    let usePress = input.pressed('use');
+    if (this.clock < this.useLockUntil) {
+      if (usePress) this.useHeldInLock = true;
+      usePress = false;
+    } else if (this.useHeldInLock) {
+      this.useHeldInLock = false;
+      if (input.isDown('use')) usePress = true;
+    }
+
     // Beim Platzieren setzt E den Bau – dann keine Interaktion.
     let it = null;
     if (!this.builder.placement && !this.player.busy && !this.passage) {
@@ -1391,13 +1463,13 @@ export class Game {
       }
     }
     // Kurz über die Reichweite hinausgerutscht? E trifft trotzdem, was eben noch angezeigt war.
-    if (!it && input.pressed('use') && !this.builder.placement && !this.player.busy) {
+    if (!it && usePress && !this.builder.placement && !this.player.busy) {
       it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.55);
       if (it && this.suppressed && it.id === this.suppressed.id) it = null;
     }
-    if (!it && input.pressed('use') && !this.builder.placement && !this.player.busy) this.tellAboutForestTree(p);
+    if (!it && usePress && !this.builder.placement && !this.player.busy) this.tellAboutForestTree(p);
     this.currentInteraction = it;
-    if (it && input.pressed('use')) {
+    if (it && usePress) {
       this.interact(it);
       if (this.mode !== 'play') return;
     }
@@ -1413,8 +1485,10 @@ export class Game {
       time.minute -= DAY_MINUTES;
       time.day += 1;
       this.hud.toast(T.meldungen.neuerTag(time.day));
-      this.hud.toast(T.wetter.bericht[this.world.weather.forecast(time.day)], null, 4); // M12
+      this.hud.toast(this.weatherLine(time.day), null, 4); // M12
       this.onNewDay();
+      // Wach geblieben: Der Morgenbericht kommt trotzdem (m12-r1: er kam nur nach dem Schlafen)
+      if (this.state.report && this.mode === 'play') this.showReport();
     }
     const h = hoursOf(time.minute);
     const flags = this.state.flags;
@@ -1469,6 +1543,25 @@ export class Game {
     else if (this.mode === 'dialog' || this.mode === 'craft') mood = 'froh';
     else if (h >= 23 || h < 5) mood = 'muede';
     this.player.mood = mood;
+  }
+
+  /** Wenig Leben (m12-r1): das Herz schlägt hörbar, schneller, je knapper es wird; einmal ein Gedanke. */
+  updateHeartbeat(dt) {
+    const st = this.state;
+    const q = st.player.hp / this.combat.maxHp;
+    if (q >= LOW_HP || q <= 0) {
+      if (q > 0.5) this.dizzy = false;
+      return;
+    }
+    this.heartT -= dt;
+    if (this.heartT <= 0) {
+      this.heartT = 0.55 + 1.6 * (q / LOW_HP);
+      this.sound.play('herzschlag');
+    }
+    if (!this.dizzy && dt > 0) {
+      this.dizzy = true;
+      this.hud.say(T.horde.schwindelig, 3.5);
+    }
   }
 
   /** Umgebung, Musik und Schritte (jedes Bild). */
@@ -1614,11 +1707,17 @@ export class Game {
     this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
-    this.report.draw(ui);
+    if (this.mode === 'report') this.report.draw(ui);
     this.perkChoice.draw(ui);
     this.mapView.draw(ui);
-    // Meldungen liegen über dem Bericht; bei offener Werkbank darunter (nicht über dem Titel)
-    const toastY = this.crafting.isOpen ? this.crafting.bottom(ui) : this.perkChoice.isOpen ? this.perkChoice.bottom(ui) : Math.max(64, (this.hud.bannerBottom || 0) + 4);
+    // Meldungen unter Werkbank, Perk-Wahl und Morgenbericht (m12-r1: »gespeichert« lag auf der Überschrift)
+    const toastY = this.crafting.isOpen
+      ? this.crafting.bottom(ui)
+      : this.perkChoice.isOpen
+        ? this.perkChoice.bottom(ui)
+        : this.mode === 'report' && this.report.isOpen
+          ? this.report.bottom(ui)
+          : Math.max(64, (this.hud.bannerBottom || 0) + 4);
     this.hud.drawToasts(ui, toastY);
     this.dialog.draw(ui);
     this.menu.draw(ui);
@@ -2048,11 +2147,7 @@ export class Game {
         return { name, n: pts.length, x: last.x, z: last.z, reach: game.world.pathing.brute[game.world.pathing.entries[name].k] };
       }),
       spawnAtEntry: (type, entry, count = 1) => game.nights.spawnGroup(type, entry, count, {}),
-      onPathOrYard: (x, z) => {
-        const g = game.world.grid;
-        const k = g.index(Math.floor(x), Math.floor(z));
-        return k >= 0 && (g.path[k] === 1 || g.yard[k] === 1);
-      },
+      onPathOrYard: (x, z) => game.world.pathing.onPathOrYard(x, z),
       lootDetails: () => game.loot.items.map((l) => ({ res: l.res, x: l.x, z: l.z, until: l.until })),
       dropLoot: (x, z, n = 3) => {
         for (let k = 0; k < n; k++) game.loot.spawn('teile', x, z);
