@@ -8,11 +8,13 @@
 //   hitRate   Schläge pro Sekunde        scale   Größe (1 = wie Mika)
 //   radius    Kollisionsradius
 //   aggro     ab dieser Nähe (m) gehen sie nachts auf Mika los (M8: vorher 3,2 für alle)
+//   smash     Faktor auf `hit` gegen Barrikaden (M9: alle schlagen Barrikaden ein,
+//             Brummer und Anführer besonders hart)
 
 export const ZOMBIES = {
   schlurfer: {
     hp: 30,
-    speed: 0.8, // M8: 0,72 – keine Herausforderung
+    speed: 1.0, // M8: 0,72 – keine Herausforderung; M9: 0,8 – die Wege sind jetzt 50 m und mehr lang
     armor: 0,
     hit: 4,
     bite: 7,
@@ -25,7 +27,7 @@ export const ZOMBIES = {
   },
   flitzer: {
     hp: 20,
-    speed: 1.55,
+    speed: 1.8,
     armor: 0,
     hit: 3,
     bite: 5,
@@ -38,7 +40,7 @@ export const ZOMBIES = {
   },
   schwaermer: {
     hp: 12,
-    speed: 1.05,
+    speed: 1.25,
     armor: 0,
     hit: 2,
     bite: 3,
@@ -51,7 +53,7 @@ export const ZOMBIES = {
   },
   brummer: {
     hp: 150,
-    speed: 0.5,
+    speed: 0.62,
     armor: 6,
     hit: 12,
     bite: 12,
@@ -59,13 +61,13 @@ export const ZOMBIES = {
     hitRate: 0.5,
     scale: 1.4,
     radius: 0.42,
-    breaksBarricades: true,
+    smash: 2,
     loot: { teile: [4, 6], zahnraeder: 0.3 },
     xp: 4,
   },
   leuchtpilz: {
     hp: 48,
-    speed: 0.8,
+    speed: 1.0,
     armor: 0,
     hit: 4,
     bite: 5,
@@ -81,14 +83,14 @@ export const ZOMBIES = {
   },
   anfuehrer: {
     hp: 700,
-    speed: 0.55,
+    speed: 0.68,
     armor: 4,
     hit: 18,
     bite: 16,
     hitRate: 0.6,
     scale: 1.65,
     radius: 0.5,
-    breaksBarricades: true,
+    smash: 2,
     summon: { type: 'schlurfer', count: 3, every: 9 },
     loot: { teile: [18, 24], zahnraeder: [2, 3], moderkerne: 1 },
     xp: 20,

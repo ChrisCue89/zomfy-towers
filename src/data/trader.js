@@ -1,19 +1,19 @@
-// Balduin, der Händler (Meilenstein 8): Er zieht jeden Morgen seinen
-// Bollerwagen die Straße entlang und tauscht Zombieteile – die Beute der
-// Nacht – gegen Rohstoffe. Was er mit den Teilen macht, sagt er nicht.
-// Hier wird balanciert: Fahrplan, Standplatz, Angebote, Vorrat je Tag.
+// Balduin, der Händler (Meilenstein 8): Er kommt jeden Morgen und tauscht
+// Zombieteile – die Beute der Nacht – gegen Rohstoffe. Was er mit den Teilen
+// macht, sagt er nicht. Seit Meilenstein 9 kommt er nur über das Wasser: mit
+// seinem Boot an den Steg (DESIGN.md 0 Nr. 7).
+// Hier wird balanciert: Fahrplan, Liegeplatz, Angebote, Vorrat je Tag.
 
 /** Fahrplan (Minuten seit 06:00) und Wege, alles in Metern. */
 export const TRADER = {
   fromDay: 2, // erster Besuch am Morgen nach der ersten Nacht
-  arrive: 40, // 06:40: Er biegt von Osten auf die Straße (Mika ist dann gerade wach)
-  leave: 6 * 60, // 12:00: Er packt ein und zieht weiter
-  walk: 16, // so viele Spielminuten braucht er vom Waldrand bis zum Stand
-  lane: 10.8, // auf dieser Linie (z) läuft er die Straße entlang (südlich am Schrotthaufen vorbei)
-  edge: 13.6, // hier (x) taucht er am Ostrand auf bzw. verschwindet wieder
-  standX: 4.2, // hier (x) hält er an; der Wagen steht östlich davon
-  front: { x: 4.85, z: 11.45 }, // vor dem Wagen, etwas seitlich (die Gläser bleiben zu sehen), Blick zur Kamera
-  pull: 1.6, // Abstand Balduin – Wagenmitte beim Ziehen (Deichsel)
+  arrive: 40, // 06:40: Das Boot taucht im Osten auf (Mika ist dann gerade wach)
+  leave: 6 * 60, // 12:00: Er legt wieder ab
+  sail: 24, // so viele Spielminuten braucht das Boot vom Horizont bis zum Steg
+  from: 44, // hier (x) taucht das Boot auf bzw. verschwindet wieder
+  moor: { x: 18.25, z: 0.95 }, // Mitte des Boots am Steg (südlich längsseits)
+  stand: { x: 16.75, z: -1.0 }, // hier steht Balduin auf dem Steg und handelt
+  facing: -1.0, // Blick im Stehen: zum Ufer und etwas zur Kamera
 };
 
 /**

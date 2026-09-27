@@ -11,6 +11,7 @@ const BINDINGS = {
   confirm: ['KeyE', 'Space', 'Enter', 'NumpadEnter'], // Dialoge und Menüs
   dodge: ['Space'], // im Spiel: Ausweichrolle
   lantern: ['KeyF'],
+  map: ['KeyM'], // Übersichtskarte (Meilenstein 9)
   menu: ['Escape', 'KeyP'],
   debug: ['F3'],
   buildTab: ['Tab'],

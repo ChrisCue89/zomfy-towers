@@ -12,7 +12,7 @@ import { drawIcon } from './icons.js';
 
 const CHARS_PER_SECOND = 72;
 /** Tonhöhe des Tippens je Sprecher (Hz). */
-const VOICE_PITCH = { mika: 540, radio: 300, knopf: 760, hilde: 460, juna: 660, bert: 250, yusuf: 360, schild: 400, balduin: 610 };
+const VOICE_PITCH = { mika: 540, radio: 300, knopf: 760, hilde: 460, juna: 660, bert: 250, yusuf: 360, schild: 400, balduin: 300 };
 const ANSWER_GUARD = 0.3;
 
 export class DialogBox {

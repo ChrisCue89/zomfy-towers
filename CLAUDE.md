@@ -125,8 +125,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Erfahrung, Perk-Vergabe), survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
                       Funkturm), furnishing (Möbel, Gemütlichkeit), trader
-                      (Balduin: Fahrplan aus der Uhrzeit, Bollerwagen,
-                      Stand, Handel über das Werkbank-Fenster),
+                      (Balduin: Fahrplan aus der Uhrzeit, Boot, Stand
+                      am Steg, Handel über das Werkbank-Fenster),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
                       eigener Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
@@ -136,25 +136,30 @@ src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
                       staticMesh (sichtbare Flächen + Schatten-Stellvertreter),
                       portrait (Porträts ohne GPU-Auslesen), shaders
-src/world/            world (Zusammenbau + Update), layout (Grundriss +
-                      Ressourcenquellen), terrain, nature, shelter (Stufen),
-                      props, colliders, daynight, lights, particles, effects
-                      (Späne, Staub), grid (Bauraster), resources (Quellen),
-                      buildings + buildingModels (Bauten), towerModels
-                      (Türme je Stufe/Spezialisierung), buildPreview
-                      (Geistermodell, Felder), lightPools (Lichtinseln),
-                      pathing (Waldpfade, Flussfelder, Mazing, Wegvorschau),
+src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
+                      Wegenetz prozedural aus `mapSeed`, Abstandsfelder,
+                      Begrenzung), layout (Grundriss der Bucht + feste
+                      Quellen), terrain, water (Wellen auf dem See), nature,
+                      shelter (Stufen), props (Steg, Leuchtmast, Wrack,
+                      Warnpfähle), colliders, daynight, lights, particles,
+                      effects (Späne, Staub), grid (Bauraster mit Weg- und
+                      Hof-Feldern), resources (Quellen, auch entlang der
+                      Wege), buildings + buildingModels (Bauten, Barrikaden
+                      mit Stufen und Trümmern), towerModels (Türme je
+                      Stufe/Spezialisierung), buildPreview (Geistermodell,
+                      Felder), lightPools (Lichtinseln), pathing
+                      (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Raster der Hütte)
 src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
                       Laufen, Winken, Bellen), survivorModels (auch
-                      Balduin), dogModel, traderModels (Bollerwagen)
+                      Balduin), dogModel, traderModels (Balduins Boot)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank und
-                      Balduins Bollerwagen), report
+                      Handel mit Balduin), mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), title
                       (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -202,17 +207,27 @@ Grundprinzipien:
   Werkbank), geht nur mit gehaltenem E und Balken – nie mit einem zweiten
   Druck, der sich wie verschluckt anfühlt. Gedanken am Abend und in der
   Nacht sind Sprechblasen, nie Dialoge (die halten das Spiel an).
-- **Bauraster:** 1-m-Zellen (`grid.js`), statisch blockiert ist alles mit
-  Kollision plus die Grundfläche aller Ausbaustufen des Zuhauses. Bauten
-  belegen Zellen, bekommen eine Kollision und eine Interaktion (benutzen
-  oder mit E auswählen). Die Horde rechnet darauf zwei Flussfelder
-  (`pathing.js`): `walk` (Bauten sperren) und `brute` (Brummer gehen durch
-  Barrikaden). Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der
-  einen Waldpfad abschneidet, wird mit Grund `weg` abgelehnt.
-  **Stand der alten Waldlichtung – Meilenstein 9 baut um:** Die Horde läuft
-  nur noch auf den Wegfeldern des prozeduralen Wegenetzes; Türme nur neben,
-  Barrikaden nur auf Wegfeldern. Umlenken und Wegvorschau bleiben, bis
-  OFFENE-FRAGEN Nr. 66 geklärt ist.
+- **Karte (Meilenstein 9, `map.js`):** Die Bucht (Haus, Hof, Steg, See) ist
+  fest, das Wegenetz links davon entsteht aus `state.world.mapSeed` (drei
+  Spawns am linken Rand, Zuführungen, gemeinsamer letzter Abschnitt in den
+  Hof). Die Welt wird erst gebaut, wenn der Spielstand gelesen ist; ein neues
+  Spiel über einem alten Stand lädt die Seite neu (frische Karte). Begehbar
+  ist, was `map.walkableRaw` sagt (Bucht, Steg, Streifen neben den Wegen);
+  die Kollision schiebt über das Abstandsfeld zurück (`pushInside`).
+- **Bauraster:** 1-m-Zellen über der ganzen Karte (`grid.js`) mit
+  `path` (Wegfeld: Mitte der Zelle höchstens 0,2 m vom Wegrand) und `yard`
+  (Hof). Statisch blockiert ist alles mit Kollision plus die Grundfläche
+  aller Ausbaustufen des Zuhauses. **Barrikaden nur auf Wegfeldern, alles
+  andere nie darauf** (Gründe `nurWeg`/`aufWeg`). Die Horde rechnet zwei
+  Flussfelder nur über Weg und Hof (`pathing.js`): `walk` (jeder Bau sperrt)
+  und `brute` (Barrikaden kosten viel, Trümmer nichts) – alle Schlurfer
+  laufen nach `brute`, wer abseits steht, findet über `back` zurück auf den
+  Weg. Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der den Hof vom
+  Weg abschneiden würde, wird mit Grund `weg` abgelehnt (Barrikaden nie).
+  Die Wegvorschau beim Bauen bleibt; Umlenken über andere Zweige gibt es im
+  Baum-Netz nicht (OFFENE-FRAGEN Nr. 66 ist noch offen). Wer Mika jagt und
+  einen Bau vor sich hat, kommt über eine kleine Breitensuche um Mika
+  (`chaseDirection`) außen herum.
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
@@ -259,11 +274,18 @@ Grundprinzipien:
    Titelbild mit getipptem Namen und anderer Mütze, kein Spielstand vor
    »Los geht’s!«, Speichern v6 mit Migration, Warnung vor einem Weg ohne
    Turm, ein jagender Schlurfer kommt um die Werkbank herum (Bilder: titel,
-   figur); ab Meilenstein 8: Autowrack nur einmal, Schrotthaufen alle zwei
-   Tage, Beute sind Zombieteile, Balduin kommt an Tag 2 um 06:40 und steht
-   um 07:00, Stand morgens nicht bebaubar, Dialog und Handel mit echten
-   Tasten (E einmal, E gehalten), Vorrat je Tag, Abfahrt um 12:00,
-   Speichern v7 mit Migration v6 → v7 (Bilder: haendler, handel). **Jede Konsolenmeldung
+   figur); ab Meilenstein 8: Wrack nur einmal, Schrotthaufen alle zwei
+   Tage, Beute sind Zombieteile, Balduin kommt an Tag 2 ab 06:40 mit dem
+   Boot und legt am Steg an, Dialog und Handel mit echten Tasten (E einmal,
+   E gehalten), Vorrat je Tag, Abfahrt um 12:00 (Bilder: haendler, handel);
+   ab Meilenstein 9 (Abschnitt `wege`): drei Spawns links, alle Wege enden
+   am Haus, die Horde bleibt auf den Wegen, Türme nie auf Wegfeldern,
+   Barrikaden nur dort, eine Barrikadenreihe hält die Horde auf, zerbricht
+   zu Trümmern, wird tagsüber wieder aufgebaut und bis Metall ausgebaut,
+   Überreste halten drei Tage, tagsüber nur einzelne Schlurfer,
+   Übersichtskarte mit M, Speichern v8 mit Startwert der Karte, Migration
+   v7 → v8 mit Erstattung und Umzug der Bauten (Bilder: wege, barrikaden,
+   karte). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -311,11 +333,17 @@ geben (`giveWeapon`) und Perks wählen (`choosePerk`); ab Meilenstein 6
 Überlebende setzen und ansprechen (`setSurvivor`, `talkTo`, `moveIn`),
 Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`);
 ab Meilenstein 8 Balduin abfragen (`trader`), bei ihm tauschen (`trade`)
-und prüfen, ob ein Bau passt (`placeCheck`, mit Grund).
+und prüfen, ob ein Bau passt (`placeCheck`, mit Grund); ab Meilenstein 9
+die Karte abfragen (`mapInfo`, `traces`, `pathColumn`, `onPathOrYard`),
+Schlurfer an einem Spawn starten (`spawnAtEntry`), Barrikaden treffen,
+wieder aufbauen und ausbauen (`hitBarricade`, `rebuildBarricade`,
+`upgradeBarricade`) und Überreste fallen lassen (`dropLoot`, `lootDetails`).
+`window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |
-| `?seed=123` | Anderer Welt-Seed |
+| `?seed=123` | Anderer Welt-Seed (Modelle, Zufall) |
+| `?map=123` | Startwert des Wegenetzes erzwingen (sonst je neuem Spiel zufällig; `?test`/`?playtest` nehmen 3) |
 
 ## Arbeitsweise
 

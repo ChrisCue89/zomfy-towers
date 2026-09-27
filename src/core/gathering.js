@@ -90,29 +90,29 @@ export class Gathering {
   }
 
   /**
-   * Ist diese Stelle gerade leer? Das Autowrack gibt nur einmal etwas her,
+   * Ist diese Stelle gerade leer? Das Bootswrack gibt nur einmal etwas her,
    * Schrotthaufen füllen sich alle zwei Tage wieder (Meilenstein 8).
    */
   searchEmpty(id) {
     const st = this.game.state;
-    if (id === 'auto') return Boolean(st.flags.autoLeer);
+    if (id === 'wrack') return Boolean(st.flags.wrackLeer);
     const last = st.world.searched[id];
     return last !== undefined && st.time.day - last < SEARCH_REGROW_DAYS;
   }
 
-  /** Durchsuchen: der Schrotthaufen alle zwei Tage, das Autowrack nur einmal. */
+  /** Durchsuchen: der Schrotthaufen alle zwei Tage, das Bootswrack nur einmal. */
   search(id, lootKey, pos) {
     const g = this.game;
     const st = g.state;
     if (this.searchEmpty(id)) {
-      g.hud.toast(id === 'auto' ? T.meldungen.autoLeer : T.meldungen.schonDurchsucht, null, 2.4);
+      g.hud.toast(id === 'wrack' ? T.meldungen.wrackLeer : T.meldungen.schonDurchsucht, null, 2.4);
       this.repeat = null;
       return true;
     }
-    if (id === 'auto' && !st.flags.autoGesehen) {
+    if (id === 'wrack' && !st.flags.wrackGesehen) {
       // Beim ersten Mal ein Gedanke statt eines Dialogs – durchsucht wird sofort
-      st.flags.autoGesehen = true;
-      g.hud.say(T.meldungen.autoErstmals, 3);
+      st.flags.wrackGesehen = true;
+      g.hud.say(T.meldungen.wrackErstmals, 3);
     }
     g.sound.play('suchen');
     g.player.startAction('search', {
@@ -121,7 +121,7 @@ export class Gathering {
       onCancel: () => g.hud.toast(T.meldungen.abgebrochen, null, 2.2),
       onDone: () => {
         st.world.searched[id] = st.time.day;
-        if (id === 'auto') st.flags.autoLeer = true;
+        if (id === 'wrack') st.flags.wrackLeer = true;
         const loot = this.roll(SEARCH_LOOT[lootKey]);
         g.effects.chips(pos.x, 0.4, pos.z, 'schrott', 8);
         if (Object.keys(loot).length) this.give(loot, pos.x, 1.0, pos.z);

@@ -35,10 +35,11 @@ export function isLeaderNight(n) {
  * Ab Nacht 2 steiler (m3-r2: »leichter statt schwerer«, das Loot wuchs
  * schneller als die Bedrohung). Nacht 1 bleibt sanft.
  * M8: »keine Herausforderung, schon gar nicht in Nacht 1« – mehr ab Nacht 1.
- * Nacht 1: 26, 2: 35, 3: 46, 4: 59, 5: 74, 8: 131 (vorher 18, 26, 36, 48, 62, 116).
+ * M9: Auf den langen Wegen haben die Türme mehr Zeit – noch etwas mehr.
+ * Nacht 1: 30, 2: 40, 3: 52, 4: 66, 5: 82, 8: 142 (M8: 26, 35, 46, 59, 74, 131).
  */
 export function nightBudget(n) {
-  return 26 + 8 * (n - 1) + (n - 1) ** 2;
+  return 30 + 9 * (n - 1) + (n - 1) ** 2;
 }
 
 export function planNight(n, seed, entries) {
@@ -79,8 +80,9 @@ export function planNight(n, seed, entries) {
       const j = Math.floor(rng.next() * (i + 1));
       [groups[i], groups[j]] = [groups[j], groups[i]];
     }
-    // Gestaffelt über bis zu 30 Sekunden
-    const span = Math.min(30, 8 + groups.length * 1.6);
+    // Gestaffelt über bis zu 20 Sekunden (M9: vorher 30 – auf den langen Wegen
+    // zogen sich die Wellen sonst so auseinander, dass jeder Turm sie einzeln abräumte)
+    const span = Math.min(20, 6 + groups.length * 1.1);
     const spawns = [];
     groups.forEach((g, i) => {
       const t = (i / Math.max(1, groups.length - 1)) * span + rng.range(0, 1.2);
@@ -97,15 +99,14 @@ export function planNight(n, seed, entries) {
 }
 
 /**
- * Tagesplan: einzelne träge Schlurfer und ab Tag 2 ein, zwei kleine Trupps.
+ * Tagesplan (DESIGN.md 0 Nr. 5): Der Tag ist ruhig – nur ganz vereinzelt ein
+ * träger Schlurfer, nie Gruppen oder Wellen (M9: vorher auch kleine Trupps).
  * @returns {Array<{at:number, entry:string, count:number}>}
  */
 export function planDay(day, seed, entries) {
   const rng = new Rng(seed * 17 + day * 613);
   const events = [];
-  const singles = 2 + Math.min(3, Math.floor(day / 2));
+  const singles = day <= 1 ? 1 : 2 + (day >= 6 && rng.chance(0.5) ? 1 : 0);
   for (let i = 0; i < singles; i++) events.push({ at: rng.int(DAY_START, DAY_END), entry: rng.pick(entries), count: 1 });
-  const groups = day >= 4 ? 2 : day >= 2 ? 1 : 0;
-  for (let i = 0; i < groups; i++) events.push({ at: rng.int(DAY_START + 120, DAY_END - 60), entry: rng.pick(entries), count: rng.int(3, 4) });
   return events.sort((a, b) => a.at - b.at);
 }

@@ -1,33 +1,47 @@
-// Das Bauraster: 1-m-Felder über der Lichtung. Zelle (i, j) deckt
+// Das Bauraster: 1-m-Felder über der ganzen Karte. Zelle (i, j) deckt
 // x ∈ [i, i+1), z ∈ [j, j+1) ab. Hier wird festgehalten, welche Felder frei,
-// statisch blockiert (Haus, Bäume, Requisiten) oder bebaut sind.
-// Ab Meilenstein 3 rechnet die Horde auf diesem Raster ihre Wege.
+// statisch blockiert (Haus, Bäume, Requisiten) oder bebaut sind – und seit
+// Meilenstein 9, welche auf einem Weg der Horde liegen (dort nur Barrikaden)
+// und welche zum Hof gehören (letzte Verteidigung, die Horde darf hinein).
 
-import { clearingDistance } from './layout.js';
+import { MAP } from './map.js';
 
 export const CELL = 1;
 
+/** Bis zu diesem Abstand vom Wegrand (m) zählt ein Feld noch zum Weg. */
+const PATH_MARGIN = 0.2;
+
 export class BuildGrid {
-  /**
-   * @param {{minX:number, maxX:number, minZ:number, maxZ:number}} bounds in Metern (ganzzahlig)
-   */
-  constructor(bounds) {
-    this.minX = bounds.minX;
-    this.minZ = bounds.minZ;
-    this.width = bounds.maxX - bounds.minX;
-    this.height = bounds.maxZ - bounds.minZ;
+  /** @param {import('./map.js').GameMap} map */
+  constructor(map) {
+    this.map = map;
+    this.minX = MAP.x0;
+    this.minZ = MAP.z0;
+    this.width = MAP.x1 - MAP.x0;
+    this.height = MAP.z1 - MAP.z0;
     const n = this.width * this.height;
-    this.inside = new Uint8Array(n); // 1 = auf der Lichtung
+    this.inside = new Uint8Array(n); // 1 = begehbares Land (bebaubar, wenn sonst frei)
+    this.path = new Uint8Array(n); // 1 = Weg der Horde (nur Barrikaden)
+    this.yard = new Uint8Array(n); // 1 = Hof vor dem Haus (Horde darf hinein)
+    this.pathCost = new Float32Array(n).fill(1); // Wegmitte 1, Rand teurer: die Horde läuft in der Mitte
     this.blocked = new Uint8Array(n); // 1 = statisch belegt
-    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle, 2 = Balduins Stand (morgens): nicht bebaubar, aber begehbar
+    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle, 2 = Balduins Platz (morgens): nicht bebaubar, aber begehbar
     this.house = new Uint8Array(n); // Ausbaustufe, ab der das Zuhause hier steht (0 = nie)
     this.houseLevel = 1; // jetzige Ausbaustufe (world.setHouseLevel)
     this.occupant = new Array(n).fill(null); // Gebäude-ID
     for (let j = 0; j < this.height; j++) {
       for (let i = 0; i < this.width; i++) {
+        const k = j * this.width + i;
         const x = this.minX + i + 0.5;
         const z = this.minZ + j + 0.5;
-        this.inside[j * this.width + i] = clearingDistance(x, z) < 0.94 ? 1 : 0;
+        const d = map.pathDistance(x, z);
+        const land = map.edgeDistance(x, z) < -0.3 && !map.onDock(x, z, -0.5);
+        this.inside[k] = land ? 1 : 0;
+        if (d <= PATH_MARGIN) {
+          this.path[k] = 1;
+          this.pathCost[k] = 1 + 1.5 * Math.min(1, Math.max(0, (d + 1) / 1.2));
+        }
+        if (land && map.inYard(x, z)) this.yard[k] = 1;
       }
     }
   }
@@ -49,12 +63,18 @@ export class BuildGrid {
     return { x: ci + 0.5, z: cj + 0.5 };
   }
 
+  /** Liegt die Zelle auf einem Weg der Horde? */
+  isPath(ci, cj) {
+    const k = this.index(ci, cj);
+    return k >= 0 && this.path[k] === 1;
+  }
+
   /** Statische Hindernisse aus der Kollision übernehmen (einmal beim Start). */
   markStatic(colliders, margin = 0.05) {
     for (let j = 0; j < this.height; j++) {
       for (let i = 0; i < this.width; i++) {
         const k = j * this.width + i;
-        if (!this.inside[k]) continue;
+        if (!this.inside[k] && !this.path[k]) continue;
         const x = this.minX + i + 0.5;
         const z = this.minZ + j + 0.5;
         // Zelle gilt als blockiert, wenn ihr Mittelbereich ein Hindernis berührt.

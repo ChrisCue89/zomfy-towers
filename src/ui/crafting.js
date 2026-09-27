@@ -3,7 +3,7 @@
 // umwandeln): Ein Druck wandelt einmal um, gehaltenes E bzw. gehaltene
 // Maustaste macht gemächlich weiter – ein Balken füllt die Zeile bis zur
 // nächsten Umwandlung, ein Zähler zeigt, wie viel schon dabei herauskam (m3-r2).
-// Dasselbe Fenster dient als Balduins Bollerwagen (Quelle »haendler«, M8):
+// Dasselbe Fenster dient als Balduins Handel am Boot (Quelle »haendler«, M8/M9):
 // Seine Angebote sind Umwandlungen wie das Verwerten, oben steht sein Spruch.
 
 import { T } from '../data/texts.js';

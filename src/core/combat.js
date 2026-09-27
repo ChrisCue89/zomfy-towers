@@ -10,7 +10,7 @@ import { T } from '../data/texts.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { WEAPONS, weaponStats } from '../data/weapons.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
 
 const REGEN_RATE = 4;
@@ -64,11 +64,14 @@ export class Combat {
     if (fix > 0) {
       const p = g.player.position;
       for (const b of g.world.buildings.list) {
-        if (b.hp === undefined) continue;
-        const max = BUILDINGS[b.type].hp;
+        if (b.hp === undefined || b.broken) continue; // Trümmer flickt man nicht, man baut sie neu
+        const max = maxHpOf(b);
         if (b.hp >= max) continue;
         const c = g.world.buildings.bounds(b);
-        if (Math.hypot(c.x - p.x, c.z - p.z) < 2.5) b.hp = Math.min(max, b.hp + fix * dt);
+        if (Math.hypot(c.x - p.x, c.z - p.z) < 2.5) {
+          b.hp = Math.min(max, b.hp + fix * dt);
+          g.world.buildings.refreshLook(b);
+        }
       }
     }
   }

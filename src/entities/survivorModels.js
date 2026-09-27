@@ -6,8 +6,9 @@
 //   Bert        – rote Kappe, Rauschebart, Karohemd mit oranger Schürze
 //   Juna        – dicke Kopfhörer, gelbe Regenjacke, Antenne am Rucksack
 //   Dr. Yusuf   – weißer Kittel, Brille, Stethoskop
-//   Balduin     – lila Zylinder mit Feder, Monokel, weißer Schnauzer,
-//                 Flickenmantel mit Fläschchen am Gurt (der Händler, M8)
+//   Balduin     – der Händler (M8), seit M9 ein Seebär: Schiebermütze,
+//                 kräftiger grauer Bart, roter Schal, dunkler Mantel und ein
+//                 riesiger Rucksack mit Deckenrolle und Pfanne
 // Der Hund Knopf ist ein eigenes Modell (vierbeinig, siehe dogModel.js).
 
 import { VoxelModel } from '../render/voxel.js';
@@ -262,84 +263,83 @@ function yusufTorso(s) {
 export const BALDUIN = {
   skin: P.h3,
   skinShade: P.h2,
-  cheek: P.a1,
+  cheek: P.a0,
   eyes: P.n1,
-  brow: P.s8,
-  hair: P.s8,
-  hairLight: P.s9,
+  brow: P.s7,
+  hair: P.s7,
+  beard: P.s7,
+  beardLight: P.s8,
   nose: P.r4,
-  hat: P.d2,
-  hatDark: P.d1,
-  band: P.f5,
-  feather: P.a6,
-  featherDark: P.a5,
-  monocle: P.f6,
-  coat: P.a5,
-  coatDark: P.t2,
-  vest: P.d3,
-  buttons: P.f6,
+  cap: P.e3,
+  capLight: P.e4,
+  capDark: P.e2,
+  scarf: P.r3,
+  scarfDark: P.r2,
+  coat: P.b1,
+  coatDark: P.n3,
+  buttons: P.f5,
   strap: P.e2,
-  glass: P.a6,
-  goo: P.g7,
-  gloves: P.e2,
-  glovesDark: P.e1,
-  pants: P.d3,
-  pantsDark: P.d1,
+  pack: P.e6,
+  packDark: P.e5,
+  roll: P.a5,
+  rollLight: P.a6,
+  pan: P.s3,
+  pants: P.e3,
+  pantsDark: P.e2,
   boots: P.e1,
 };
 
 function balduinHead(s) {
-  const m = baseHead(s);
-  // Wirres weißes Haar, das seitlich unter dem Hut hervorsteht
-  m.box(-7, 17, -4, -7, 21, 1, (x, y, z) => ((y + z) % 3 === 0 ? s.hairLight : s.hair));
-  m.box(6, 17, -4, 6, 21, 1, (x, y, z) => ((y + z) % 3 === 0 ? s.hairLight : s.hair));
-  m.set(-8, 19, -1, s.hairLight).set(-8, 20, -2, s.hair).set(7, 18, -1, s.hairLight).set(7, 20, 0, s.hair);
-  // Buschige weiße Brauen – die rechte hochgezogen über dem Monokel
-  for (const x of [-5, -4, -3]) m.set(x, 18, 3, s.brow);
-  for (const x of [2, 3, 4]) m.set(x, 19, 3, s.brow);
-  m.set(2, 18, 3, s.skin).set(3, 18, 3, s.skin);
-  // Große rote Nase, gezwirbelter Schnauzer (ragen vor das Gesicht)
-  m.set(-1, 17, 4, s.skin).set(0, 17, 4, s.skin).set(-1, 16, 4, s.nose).set(0, 16, 4, s.nose);
-  m.box(-5, 15, 4, 4, 15, 4, (x) => (x === -1 || x === 0 ? s.hair : s.hairLight));
-  for (const x of [-4, -3, -2, 1, 4]) m.set(x, 16, 4, s.hair);
-  m.set(-6, 16, 4, s.hairLight).set(-6, 17, 4, s.hair).set(5, 16, 4, s.hairLight).set(5, 17, 4, s.hair); // Zwirbel
-  // Messing-Monokel vor dem rechten Auge, mit Kettchen
-  for (const [x, y] of [[2, 18], [3, 18], [1, 17], [4, 17], [2, 16], [3, 16]]) m.set(x, y, 4, s.monocle);
-  m.set(4, 14, 4, P.s6).set(5, 13, 4, P.s6);
-  // Hoher, leicht schiefer Zylinder mit breiter Krempe, Hutband und Feder
-  m.box(-8, 22, -8, 7, 22, 5, (x, y, z) => (x === -8 || x === 7 || z === -8 || z === 5 ? s.hatDark : s.hat));
-  m.box(-5, 23, -5, 4, 26, 2, (x, y) => (y <= 24 ? s.band : s.hat));
-  m.box(-4, 27, -5, 5, 29, 2, (x, y, z) => (y === 29 || z === -5 ? s.hatDark : s.hat));
-  m.set(5, 25, 1, s.featherDark).set(6, 26, 1, s.feather).set(6, 27, 0, s.feather).set(7, 28, 0, s.feather).set(7, 29, -1, s.featherDark).set(8, 30, -1, s.feather);
+  const m = baseHead(s, { beard: true });
+  // Kräftiger Bart: steht vorn ab und reicht bis auf die Brust
+  m.box(-5, 12, 4, 4, 16, 4, (x, y) => {
+    if (y === 16 && (x === -1 || x === 0)) return s.nose;
+    if (y === 15 && (x === -1 || x === 0)) return P.a0; // Mund
+    if (y === 16 && (x < -4 || x > 3)) return null;
+    return (x + y) % 3 === 0 ? s.beardLight : s.beard;
+  });
+  m.box(-4, 11, 4, 3, 11, 4, (x) => (x % 2 ? s.beardLight : s.beard));
+  m.set(-1, 17, 4, s.skin).set(0, 17, 4, s.nose); // runde Nase
+  // Buschige Brauen
+  for (const x of [-5, -4, -3, 2, 3, 4]) m.set(x, 18, 3, s.brow);
+  // Schiebermütze: flach, leicht nach vorn gezogen, mit Schirm
+  m.box(-7, 21, -7, 6, 21, 4, (x, y, z) => ((x + z) % 4 === 0 ? s.capLight : s.cap));
+  m.box(-6, 22, -6, 5, 22, 3, (x, y, z) => ((x + z) % 4 === 0 ? s.capLight : s.cap));
+  m.box(-6, 20, 4, 5, 20, 5, s.capDark); // Schirm
+  m.set(-1, 23, -1, s.capDark).set(0, 23, -1, s.capDark); // Knopf oben
   return m;
 }
 
 function balduinTorso(s) {
   const m = new VoxelModel();
+  // Dunkler Seemannsmantel mit Messingknöpfen
   m.box(-6, 6, -4, 5, 13, 3, (x, y, z) => {
-    if (z === 3 && x >= -2 && x <= 1 && y >= 8) return x === 0 && y % 2 === 0 ? s.buttons : s.vest; // Weste unter dem offenen Mantel
-    if (z === 3 && ((x >= -5 && x <= -4 && y >= 7 && y <= 8) || (x === -5 && y === 11))) return P.r3; // Flicken
-    if (z === 3 && x >= 3 && x <= 4 && y >= 11 && y <= 12) return P.f4;
-    if (z === -4 && x >= -2 && x <= 0 && y >= 8 && y <= 10) return P.b3; // Flicken hinten
+    if (z === 3 && (x === -1 || x === 0)) return y % 2 === 1 && x === 0 ? s.buttons : s.coatDark;
     if (y === 6 || x === -6 || x === 5) return s.coatDark;
     return s.coat;
   });
-  // Gürtel mit Messingschnalle
-  m.box(-6, 7, 4, 5, 7, 4, (x) => (x === -1 || x === 0 ? s.buttons : s.strap));
-  // Gurt quer über die Brust mit Fläschchen voll grüner Brühe
-  for (let i = 0; i <= 5; i++) m.set(-5 + i * 2, 13 - i, 4, s.strap).set(-4 + i * 2, 13 - i, 4, s.strap);
-  for (const [x, y] of [[-3, 11], [1, 9], [4, 8]]) m.set(x, y, 5, s.goo).set(x, y + 1, 5, s.glass);
-  // Hochgeschlagener Kragen
-  m.box(-6, 13, 3, -3, 14, 3, s.coatDark).box(2, 13, 3, 5, 14, 3, s.coatDark);
+  // Roter Schal um den Hals, ein Ende hängt vorn herunter
+  m.box(-6, 13, -5, 5, 14, 4, (x, y, z) => (z === 4 || z === -5 || x === -6 || x === 5 ? ((x + y + z) % 3 ? s.scarf : s.scarfDark) : null));
+  m.box(-4, 8, 4, -3, 12, 4, (x, y) => (y === 8 ? s.scarfDark : s.scarf));
+  // Tragegurte über die Schultern
+  m.box(-5, 9, 4, -5, 12, 4, s.strap).box(4, 9, 4, 4, 12, 4, s.strap);
+  // Riesiger Rucksack hinten, mit Deckenrolle obenauf und einer Pfanne an der Seite
+  m.box(-6, 7, -10, 5, 19, -6, (x, y, z) => {
+    if (y === 7 || x === -6 || x === 5 || z === -10) return s.packDark;
+    if (y === 12 && z === -6) return s.strap; // Riemen
+    return (x + y) % 5 === 0 ? s.packDark : s.pack;
+  });
+  m.box(-7, 20, -9, 6, 21, -7, (x) => (x % 3 === 0 ? s.rollLight : s.roll));
+  m.box(6, 10, -9, 6, 13, -7, s.pan).box(6, 14, -8, 6, 16, -8, s.strap);
   return m;
 }
 
 function balduinLeg(s) {
   const m = new VoxelModel();
-  // Hohe Stiefel, darüber gestreifte Hose
-  m.box(0, 0, 0, 3, 0, 4, (x, y, z) => (z === 4 ? P.e3 : s.boots));
-  m.box(0, 1, 0, 3, 2, 3, (x, y) => (y === 2 ? P.e2 : s.boots));
-  m.box(0, 3, 0, 3, 5, 3, (x) => (x % 2 === 0 ? s.pantsDark : s.pants));
+  // Feste Stiefel, dunkle Arbeitshose
+  m.box(0, 0, 0, 3, 0, 4, (x, y, z) => (z === 4 ? P.e2 : s.boots));
+  m.box(0, 1, 0, 3, 2, 3, (x, y) => (y === 2 ? s.pantsDark : s.boots));
+  m.box(0, 3, 0, 3, 5, 3, (x, y, z) => (x === 0 || z === 0 ? s.pantsDark : s.pants));
   return m;
 }
 
@@ -395,7 +395,7 @@ export function survivorParts(id) {
         skin: s.skin,
         head: balduinHead(s),
         torso: balduinTorso(s),
-        arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: P.r3, skin: s.gloves, skinShade: s.glovesDark }),
+        arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.coatDark, skin: s.skin, skinShade: s.skinShade }),
         leg: balduinLeg(s),
       };
     }

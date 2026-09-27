@@ -6,12 +6,15 @@
 // kopiert werden.
 //
 // Verhalten je Zustand:
-//   enter    vom Waldrand zum ersten Feld der Lichtung (ohne Kollision)
-//   walk     dem Flussfeld nach Hause folgen (Brummer: durch Barrikaden)
+//   enter    aus dem Wald am Spawn auf den Weg (ohne Kollision)
+//   walk     dem Flussfeld auf den Wegen nach Hause folgen; wer abseits steht
+//            (hinter Mika her), findet erst auf den nächsten Weg zurück
 //   approach vom Zielfeld an die Hauswand
 //   attack   aufs Zuhause einschlagen
-//   smash    Barrikade einschlagen (Brummer, Anführer)
-//   chase    Mika verfolgen und schlagen, wenn sie nah ist
+//   smash    Barrikade einschlagen (seit Meilenstein 9 alle Arten; Brummer und
+//            Anführer schlagen besonders hart zu)
+//   chase    Mika verfolgen und schlagen, wenn sie nah ist; steht ein Bau
+//            dazwischen, außen herum (Breitensuche um Mika, pathing.js)
 //   dying    umfallen und im Boden versinken
 
 import * as THREE from 'three';
@@ -341,10 +344,10 @@ export class Horde {
           break;
         }
         case 'walk': {
-          const brute = Boolean(z.def.breaksBarricades);
-          const dir = pathing.direction(z.x, z.z, brute, this._dir);
+          const dir = pathing.direction(z.x, z.z, true, this._dir);
           if (!dir) {
-            if (pathing.atHome(z.x, z.z)) z.state = 'approach';
+            // Am Haus (auch auf der Fläche künftiger Anbauten, die das Raster sperrt): angreifen
+            if (pathing.atHome(z.x, z.z) || pathing.distanceToHome(z.x, z.z) < 2.6) z.state = 'approach';
             else {
               // Außerhalb des Rasters oder eingeschlossen: direkt aufs Haus zu
               const p = pathing.attackPoint(z.x, z.z, this._pt);
@@ -358,14 +361,13 @@ export class Horde {
           }
           vx = dir.x * speed;
           vz = dir.z * speed;
-          if (brute) {
-            const ahead = world.buildings.atCell(Math.floor(z.x + dir.x * 0.55), Math.floor(z.z + dir.z * 0.55));
-            if (ahead && ahead.type === 'barrikade') {
-              z.state = 'smash';
-              z.target = ahead.id;
-              vx = 0;
-              vz = 0;
-            }
+          // Barrikade voraus: stehen bleiben und einschlagen (Trümmer sind kein Hindernis)
+          const ahead = world.buildings.atCell(Math.floor(z.x + dir.x * 0.55), Math.floor(z.z + dir.z * 0.55));
+          if (ahead && ahead.type === 'barrikade' && !ahead.broken) {
+            z.state = 'smash';
+            z.target = ahead.id;
+            vx = 0;
+            vz = 0;
           }
           break;
         }
@@ -393,7 +395,7 @@ export class Horde {
         }
         case 'smash': {
           const b = world.buildings.get(z.target);
-          if (!b) {
+          if (!b || b.broken) {
             z.state = 'walk';
             break;
           }
@@ -408,8 +410,18 @@ export class Horde {
         }
         case 'chase': {
           if (pd > reach) {
-            vx = ((player.x - z.x) / pd) * speed * 1.1;
-            vz = ((player.z - z.z) / pd) * speed * 1.1;
+            // Steht ein Bau dazwischen, kommt er außen herum; sonst geradewegs auf Mika zu
+            let dx = (player.x - z.x) / pd;
+            let dz = (player.z - z.z) / pd;
+            if (!pathing.clearLine(z.x, z.z, player.x, player.z)) {
+              const dir = pathing.chaseDirection(z.x, z.z, player.x, player.z, this._dir);
+              if (dir) {
+                dx = dir.x;
+                dz = dir.z;
+              }
+            }
+            vx = dx * speed * 1.1;
+            vz = dz * speed * 1.1;
             z.windup = 0;
           } else if (!frozen) {
             z.facing = dampAngle(z.facing, Math.atan2(player.x - z.x, player.z - z.z), 10, dt);
