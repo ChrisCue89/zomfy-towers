@@ -385,7 +385,7 @@ export class Survivors {
     gain(st.inventory, offer.get);
     st.world.tradeDay = st.time.day;
     const [res, n] = Object.entries(offer.get)[0];
-    g.hud.toast(T.ueberlebende.getauscht(n, T.ressourcen[res] || res), res, 2.5);
+    g.hud.toast(T.ueberlebende.getauscht(T.menge(n, res)), res, 2.5);
   }
 
   // --- Morgen und Nacht -----------------------------------------------------------

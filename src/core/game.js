@@ -69,6 +69,9 @@ const ZERO = new THREE.Vector3();
 const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es im Spielstand ist
 /** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
 const LOOT_PITCH = { schrott: 700, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
+// Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
+const PERK_NEAR = 6;
+const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
 
 export class Game {
   constructor() {
@@ -87,6 +90,7 @@ export class Game {
     this.treeHintUntil = 0; // Absage am Waldbaum nicht bei jedem Tastendruck
     this.attackHeld = false; // Maustaste nach einem Schlag in die Welt gehalten
     this.attackQueued = false; // Klick mitten im Schwung: gleich noch einmal
+    this.perkCalm = 0; // wie lange es schon ruhig ist (für die Perk-Wahl)
     this.homeWarned = -99;
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
@@ -272,6 +276,8 @@ export class Game {
     this.towers.clear();
     this.nights.reset();
     this.nights.load(st.hordeQueue);
+    this.nights.ensurePlans(); // Nachtleiste sofort, auch wenn gleich die Perk-Wahl offen ist
+    this.perkCalm = 0;
     st.player.hp = Math.min(Math.max(1, st.player.hp), this.combat.maxHp);
     this.updateGoals(true);
     this.applyLook();
@@ -285,6 +291,13 @@ export class Game {
     st.hordeQueue = this.nights.toState();
     st.loot = this.loot.toState();
     st.world.buildings = this.world.buildings.toState();
+  }
+
+  /** Kampf in der Nähe: ein Schlurfer bis PERK_NEAR, ein Schwung oder eine Rolle. */
+  inFight() {
+    if (this.player.action) return true;
+    const p = this.player.position;
+    return this.horde.list.some((z) => z.state !== 'dying' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < PERK_NEAR * PERK_NEAR);
   }
 
   quietSave() {
@@ -506,8 +519,8 @@ export class Game {
     }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
-    if (gives) this.hud.toast(T.meldungen.verwertet(gives[1], T.ressourcen[gives[0]]), recipe.icon, 2);
-    else if (recipe.gives.weapon) this.hud.toast(T.meldungen.waffeGebaut(T.rezepte[recipe.id]), recipe.icon, 2.6);
+    if (gives) this.hud.toast(T.meldungen.verwertet(T.menge(gives[1], gives[0])), recipe.icon, 2);
+    else if (recipe.gives.weapon) this.hud.toast(T.meldungen.waffeGebaut(T.rezepte[recipe.id], ITEMS[recipe.gives.weapon]?.plural), recipe.icon, 2.6);
     else this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
     if (recipe.gives.weapon && !st.flags.ersteWaffe) {
       st.flags.ersteWaffe = true;
@@ -1034,7 +1047,9 @@ export class Game {
     const wantsAttack = rest === 'click' || (this.attackHeld && input.mouse.down) || this.attackQueued;
     if (wantsAttack && !this.builder.placement) {
       const act = this.player.action;
-      if (!act) {
+      if (!act && !this.player.swingReady) {
+        if (rest === 'click') this.attackQueued = true; // Takt der Waffe: gleich danach
+      } else if (!act) {
         this.attackQueued = false;
         const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
         const pp = this.player.position;
@@ -1044,11 +1059,16 @@ export class Game {
         else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
       } else if (rest === 'click' && act.kind === 'swing') this.attackQueued = true;
     }
-    // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an)
+    // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an) – nicht mitten im
+    // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
     if (this.state.perkChoice && !this.perkChoice.isOpen) {
-      this.perkChoice.open(this.state.perkChoice, this.state.player.level);
-      this.mode = 'perk';
-      return;
+      this.perkCalm = this.inFight() ? 0 : this.perkCalm + dt;
+      if (this.perkCalm >= PERK_CALM) {
+        this.perkCalm = 0;
+        this.perkChoice.open(this.state.perkChoice, this.state.player.level);
+        this.mode = 'perk';
+        return;
+      }
     }
 
     // Die Welt lebt: Horde, Türme, Nacht
@@ -1340,11 +1360,13 @@ export class Game {
    * schon auf größere Entfernung (m3-r2); E wirkt trotzdem.
    */
   shownInteraction() {
-    if (this.mode !== 'play' || !this.currentInteraction) return null;
+    const it = this.currentInteraction;
+    if (this.mode !== 'play' || !it) return null;
     const p = this.player.position;
-    const near = this.nights.active ? 6 : 3.5;
+    // Sammeln (»E Holz hacken«) tritt nachts schon weiter weg zurück (m4-r1)
+    const near = this.nights.active ? (it.node ? 12 : 6) : 3.5;
     const close = this.horde.list.some((z) => z.state !== 'dying' && Math.hypot(z.x - p.x, z.z - p.z) < near);
-    return close ? null : this.currentInteraction;
+    return close ? null : it;
   }
 
   /**
@@ -1358,7 +1380,7 @@ export class Game {
     const costText = (cost) =>
       Object.entries(cost || {})
         .filter(([, v]) => v > 0)
-        .map(([res, v]) => `${v} ${T.ressourcen[res]}`)
+        .map(([res, v]) => T.menge(v, res))
         .join(', ');
     const L = this.mode === 'play' ? this.buildbar.layout(this.ui) : null;
     return {
@@ -1417,6 +1439,7 @@ export class Game {
       stufe: st.player.level,
       erfahrung: `${Math.floor(st.player.xp)}/${xpForLevel(st.player.level)}`,
       inDerHand: T.gegenstaende[this.player.heldTool] || T.gegenstaende.leer,
+      perkWartet: st.perkChoice && !this.perkChoice.isOpen ? T.perks.wartet : null,
       perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => `${k + 1}: ${T.perks[id][0]} – ${T.perks[id][1]}`) : null,
       perks: Object.entries(st.perks).map(([id, n]) => `${T.perks[id][0]} ${n}`),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },

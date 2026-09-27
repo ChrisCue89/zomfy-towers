@@ -31,6 +31,10 @@ export const T = {
     zahnraeder: 'Zahnräder',
     moderkerne: 'Moderkerne',
   },
+  /** Einzahl (»1 Zahnrad«), sonst wie oben. */
+  ressourcenEins: { fasern: 'Faser', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' },
+  /** Menge mit passendem Namen: »1 Zahnrad«, »3 Zahnräder«. */
+  menge: (n, res) => `${n} ${(n === 1 && T.ressourcenEins[res]) || T.ressourcen[res] || res}`,
   gegenstaende: {
     laterne: 'Laterne',
     axt: 'Axt',
@@ -134,7 +138,7 @@ export const T = {
   figur: {
     radius: ['Sammelradius', (v) => `Loot fliegt aus ${v} m zu dir.`],
     leben: ['Lebenskraft', (v) => `${v} Lebenspunkte.`],
-    schlag: ['Schlagkraft', (v) => `Schläge ×${v}.`],
+    schlag: ['Schlagkraft', (v) => `Jeder Schlag macht ×${v} Schaden.`],
     tempo: ['Tempo', (v) => `Lauftempo ×${v}.`],
     max: 'Voll ausgebaut.',
     waffe: (name, stufe) => `${name} ${stufe}`,
@@ -144,6 +148,7 @@ export const T = {
     titel: (stufe) => `Stufe ${stufe}! Wähle einen Vorteil.`,
     hinweis: '1 · 2 · 3 oder A/D und E',
     stufeAuf: (stufe) => `Stufe ${stufe} erreicht!`,
+    wartet: 'Perk-Wahl, sobald es ruhig ist',
     gewaehlt: (name) => `Neu: ${name}`,
     stufe: (n) => `Stufe ${n}`,
     sammler: ['Sammlerherz', 'Loot fliegt aus größerer Entfernung zu dir (+30 %).'],
@@ -199,11 +204,11 @@ export const T = {
           : 'Das Zuhause ist unversehrt.',
     vorher: (d) => `Schon am Abend haben Streuner ${d} Standfestigkeit abgenagt.`,
     beuteDraussen: (n) => (n === 1 ? 'Draußen liegt noch ein Beutestück – bald zerfällt es!' : `Draußen liegen noch ${n} Beutestücke – bald zerfallen sie!`),
-    schlussHeil: 'Keinen Kratzer abbekommen. Das Frühstück schmeckt heute doppelt gut.',
+    schlussHeil: 'Kein Brett locker, kein Nagel krumm. Das Frühstück schmeckt heute doppelt gut.',
     schlussKratzer: 'Ein paar Bretter, ein paar Nägel – dann ist das wieder gut.',
     gefallen: (jetzt, max) => `Das Zuhause ist gefallen. Notdürftig geflickt: ${jetzt}/${max}.`,
     verlust: 'Verloren:',
-    kaputt: (n) => `${n} Barrikade(n) zerschlagen.`,
+    kaputt: (n) => (n === 1 ? 'Eine Barrikade zerschlagen.' : `${n} Barrikaden zerschlagen.`),
     // Was eine verlorene Nacht angeschlagen hat (ohne Angabe: alter Bericht aus einem früheren Spielstand)
     trost: (d) =>
       !d || (d.towers && !d.barricades)
@@ -271,7 +276,7 @@ export const T = {
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
     bellt: (woher) => `Knopf bellt – gleich kommen sie ${woher}!`,
-    getauscht: (n, was) => `Getauscht: +${n} ${was}`,
+    getauscht: (menge) => `Getauscht: +${menge}`,
     gabe: {
       knopf: 'Knopf hat etwas ausgebuddelt:',
       hilde: 'Oma Hilde bringt von ihrer Runde:',
@@ -343,8 +348,8 @@ export const T = {
     waldbaum: 'Der ist mir zu mächtig. Fällen kann ich die Bäume mit dem rot-weißen Band.',
     gestruepp: 'Nur Gestrüpp. Holz gibt es an den Bäumen mit dem rot-weißen Band.',
     verschnauft: 'Kurz verschnauft – wieder bei Kräften',
-    waffeGebaut: (name) => `${name} gebaut – liegt in der Schnellleiste`,
-    waffeAufgewertet: (name, stufe) => `${name} ist jetzt Stufe ${stufe}`,
+    waffeGebaut: (name, plural) => `${name} gebaut – ${plural ? 'liegen' : 'liegt'} in der Schnellleiste`,
+    waffeAufgewertet: (name, stufe, plural) => `${name} ${plural ? 'sind' : 'ist'} jetzt Stufe ${stufe}`,
     ausweichen: 'Leertaste: ausweichen',
     ausserPuste: 'Noch außer Puste … gleich wieder.',
     keineZeit: 'Zum Sitzen ist jetzt keine Zeit.',
@@ -359,7 +364,7 @@ export const T = {
     bereit: (name) => `${name} ist jetzt bezahlbar`,
     nichtsGefunden: 'Nur Staub und rostige Schrauben.',
     ersterFund: (name) => `Erster Fund: ${name}!`,
-    verwertet: (n, name) => `${n} ${name} gewonnen`,
+    verwertet: (menge) => `${menge} gewonnen`,
     geerntet: 'Heute gibt es hier nichts zu ernten. Morgen wieder.',
     zielErreicht: 'Ziel erreicht!',
     aufgewertet: (name, stufe) => `${name} auf Stufe ${stufe}`,
@@ -423,13 +428,13 @@ export const T = {
     sicherFrage: 'Wirklich neu beginnen? Der Spielstand wird gelöscht.',
     sicherJa: 'Ja, neu beginnen',
     sicherNein: 'Lieber nicht',
-    fusszeile: 'Meilenstein 3 – Nächte, Türme und Loot',
+    fusszeile: 'Das Spiel speichert von selbst.',
   },
   steuerung: [
     ['W A S D / Pfeile', 'Laufen'],
     ['Umschalt', 'Rennen'],
     ['E / Enter', 'Benutzen, sammeln (halten)'],
-    ['Leertaste', 'Dialog weiter'],
+    ['Leertaste', 'Ausweichen, Dialog weiter'],
     ['1–8 / Mausrad', 'Schnellleiste'],
     ['F', 'Laterne an/aus'],
     ['Q R T G C V', 'Bauleiste'],

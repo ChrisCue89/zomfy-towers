@@ -52,6 +52,7 @@ export class Player {
     this.heldTool = null; // Werkzeug in der rechten Hand (aus der Schnellleiste)
     this.speedFactor = 1; // Aufwertung »Tempo«
     this.action = null;
+    this.swingReadyAt = 0; // abgebrochenes Ausschwingen: nächster Schlag erst ab hier (this.time)
     this.flinch = 0; // Zusammenzucken nach einem Treffer (Sekunden)
     this.blinkAt = 2 + Math.random() * 3; // nächstes Blinzeln (this.time)
     this._probe = { x: 0, z: 0 };
@@ -88,6 +89,7 @@ export class Player {
       onDone: options.onDone || null,
       onCancel: options.onCancel || null,
       cancelable: options.cancelable ?? kind === 'search', // Loslaufen bricht ab
+      freeAfterHit: options.freeAfterHit || false, // nach dem Treffer bricht Loslaufen den Rest ab
     };
     if (options.face) this.facing = Math.atan2(options.face.x - this.position.x, options.face.z - this.position.z);
     return true;
@@ -119,6 +121,11 @@ export class Player {
     return Boolean(this.action);
   }
 
+  /** Darf der nächste Schlag beginnen (auch nach abgebrochenem Ausschwingen)? */
+  get swingReady() {
+    return !this.action && this.time >= this.swingReadyAt;
+  }
+
   /**
    * @param {number} dt
    * @param {{x:number, z:number}} move Eingaberichtung (Länge 0..1)
@@ -137,6 +144,12 @@ export class Player {
         const cancelled = this.action;
         this.action = null;
         if (cancelled.onCancel) cancelled.onCancel();
+      } else if (this.action.freeAfterHit && this.action.hit && moving) {
+        // Schlag sitzt: Wer jetzt losläuft, muss das Ausschwingen nicht abwarten
+        // (m4-r1: im Getümmel »klebte« Mika nach jedem Schlag am Boden). Der
+        // nächste Schlag kommt trotzdem erst im gewohnten Takt.
+        this.swingReadyAt = this.time + (this.action.duration - this.action.t);
+        this.action = null;
       } else move = { x: 0, z: 0 };
     }
     this.updateAction(dt);

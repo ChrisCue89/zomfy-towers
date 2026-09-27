@@ -12,10 +12,11 @@ import { measure, LINE_HEIGHT } from './font.js';
 import { canAfford } from '../core/inventory.js';
 
 const ROW_H = 22;
-const HOLD_FIRST = 0.6; // so lange halten bis zur zweiten Umwandlung
+const HOLD_FIRST = 0.9; // so lange halten bis zur zweiten Umwandlung (ein langer Druck ist noch keiner)
 const HOLD_REPEAT = 0.6; // jede weitere, solange gehalten wird
 const FLASH = 0.35;
 const COUNTER = 1.6; // so lange bleibt der Zähler nach dem Loslassen stehen
+const OPEN_LOCK = 0.3; // gleich nach dem Öffnen stellt E nichts her (schnelles Durchdrücken, m4-r1)
 
 /** Wandelt das Rezept nur Vorrat um (statt ein Werkzeug zu bauen)? */
 const isConversion = (r) => Boolean(r.gives.inventory);
@@ -27,12 +28,14 @@ export class CraftingMenu {
     this.isOpen = false;
     this.focus = 0;
     this.hold = null; // { id, t, count } – Verwerten läuft, solange gehalten wird
+    this.openT = 0; // seit wann offen (s)
     this.counter = null; // { id, count, t } – »+n« an der Zeile
     this.flash = null; // { id, t } – Zeile leuchtet nach einer Umwandlung kurz auf
   }
 
   open() {
     this.isOpen = true;
+    this.openT = 0;
     this.hold = null;
     this.counter = null;
     this.flash = null;
@@ -71,6 +74,7 @@ export class CraftingMenu {
    */
   update(input, dt = 0) {
     if (!this.isOpen) return;
+    this.openT += dt;
     const ui = this.game.ui;
     const L = this.layout(ui);
     const before = this.focus;
@@ -91,7 +95,7 @@ export class CraftingMenu {
     if (this.counter && !this.hold && (this.counter.t -= dt) <= 0) this.counter = null;
     const r = L.rows[this.focus]?.recipe;
     if (!r) return;
-    const started = input.pressed('confirm') || clicked;
+    const started = (input.pressed('confirm') || clicked) && this.openT >= OPEN_LOCK;
     if (!isConversion(r)) {
       this.hold = null;
       if (started) this.game.craft(r);

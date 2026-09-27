@@ -14,7 +14,7 @@ export const ITEMS = {
   schaufel: { icon: 'schaufel', tool: true, weapon: true },
   pfanne: { icon: 'pfanne', tool: true, weapon: true },
   rechen: { icon: 'rechen', tool: true, weapon: true },
-  faeustlinge: { icon: 'faeustlinge', tool: true, weapon: true },
+  faeustlinge: { icon: 'faeustlinge', tool: true, weapon: true, plural: true },
 };
 
 export const HOTBAR_SIZE = 8;
