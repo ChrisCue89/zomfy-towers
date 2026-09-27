@@ -264,6 +264,27 @@ Bericht und Perk-Wahl bestätigt sie weiterhin. Die Rolle geht auch mitten
 im Schwung (bricht ihn ab), aber nicht beim Durchsuchen oder Werkeln.
 *Warum:* Ausweichen muss sofort gehen, gerade wenn man sich verschätzt hat.
 
+## Detailgrad (Meilenstein 5)
+
+### 34. Wie fein wird es – und bleibt es »niedrig gerendert«?
+**Entscheidung:** 80 Spielpixel pro Meter, die Szene hat etwa 900 Zeilen und
+wird weiter ganzzahlig und ohne Glättung hochskaliert (Full HD 1 : 1, 1440p
+doppelt, 720p 1 : 1 mit 16 m Sicht). Kleine und lebendige Dinge (Figur,
+Schlurfer, Türme, Werkzeuge, Waffen, Loot) sind aus 1/16-m-Voxeln, Gelände,
+Natur und Gebäude bleiben bei 1/8 m. Die Oberfläche bekommt eine eigene,
+gröbere Leinwand (etwa 360 Zeilen).
+*Warum:* Nur mit mehr Pixeln pro Meter werden die feineren Voxel überhaupt
+sichtbar (1/16 m = 5 px, dieselbe 3-4-5-Treppe wie vorher bei 1/8 m). Bei
+Full HD zeigt 1 : 1 die ganze Lichtung wie ein Diorama; eine größere
+Skalierung hätte die Sicht auf 12 m verengt. Die grobe Oberfläche bleibt
+kräftig lesbar.
+
+### 35. Werden die Porträts auch fein?
+**Entscheidung:** Nein. Porträts gehören zur Oberfläche und bleiben in ihrem
+groben Pixelmaß (gleiche Farben und Merkmale wie das feine Modell).
+*Warum:* Ein 1/16-Kopf wäre im Dialogfenster doppelt so groß oder unscharf
+verkleinert; so passen Porträt, Schrift und Rahmen zusammen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
