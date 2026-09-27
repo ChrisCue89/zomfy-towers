@@ -209,7 +209,10 @@ Grundprinzipien:
    Morgenbericht, verlorene Nacht mit Folgen (Bilder: turm-bauen, horde,
    bericht); ab Meilenstein 4: Waffe bauen, Treffer in Mausrichtung,
    Betäubung, Ausweichrolle, Erfahrung, Perk-Wahl, Waffen-Aufwertung,
-   Speichern v4 (Bilder: nahkampf, perks). **Jede Konsolenmeldung
+   Speichern v4 (Bilder: nahkampf, perks); ab Meilenstein 6: Ankunft der
+   Überlebenden, Knopf mit echten Tasten, Einzug ins Zelt, Tauschen,
+   Aufträge, Einrichten, Morgengaben, Funkturm, Bellen vor Welle 1,
+   Speichern v5 (Bilder: ueberlebende, einrichten). **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -253,7 +256,9 @@ Im Test-Modus kann `window.zomfy` außerdem Schlurfer erzeugen
 (`spawnZombie`), die Horde abschalten (`setHorde(false)` für ruhige Bilder),
 eine Nacht beenden (`endNight`), Türme ausbauen (`upgradeTower`), die Wege
 als Textkarte zeigen (`debugPath`), Erfahrung geben (`giveXp`), Waffen
-geben (`giveWeapon`) und Perks wählen (`choosePerk`).
+geben (`giveWeapon`) und Perks wählen (`choosePerk`); ab Meilenstein 6
+Überlebende setzen und ansprechen (`setSurvivor`, `talkTo`, `moveIn`),
+Möbel kaufen (`buyFurniture`) und den Funkturm stellen (`setTowerStage`).
 | `?spawn=inside` | Spielfigur startet in der Notunterkunft |
 | `?seed=123` | Anderer Welt-Seed |
 

@@ -36,6 +36,44 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 6 – Überlebende, Geschichte und Einrichten ✓
+
+**Fertig**
+
+- **Fünf Überlebende**, alle im feinen Maß (1/16 m) mit eigenem Porträt:
+  Knopf (struppiger Hund, Tag 2), Oma Hilde (Postbotin mit Lastenrad, Tag
+  3), Juna (Funkbastlerin, Tag 4), Bert (Baumarkt-Veteran, Tag 5), Dr. Yusuf
+  (Tierarzt, Tag 6). Sie kommen an erkennbaren Orten an, winken, laufen zu
+  ihren Plätzen um Feuer und Hütte und schlafen nachts im Zelt; Knopf
+  wedelt, bellt, sitzt und liegt nachts am Feuer.
+- **Kennenlernen → Gast → Einzug:** Dialoge mit Antworten, Zelte über den
+  neuen Reiter »Einrichten«, Bewohner werden wieder Gäste, wenn ihr Zelt
+  verschwindet.
+- **Aufträge:** Beim Einzug bittet jeder um etwas (Ziel-Feld): Hildes Schal
+  (+15 Lebenspunkte), Licht an Berts Zelt (Zahnräder), Kamille für Dr.
+  Yusuf (stärkerer Tee); Junas Auftrag ist der Funkturm.
+- **Fähigkeiten:** Knopf bellt vor jeder Welle mit Richtung und buddelt
+  Schrott aus; Hilde tauscht täglich und bringt Morgengaben; Juna belauscht
+  die Horde am Funk; Bert halbiert Reparaturkosten und flickt nachts Türme;
+  Dr. Yusuf kocht Tee und verarztet Mika einmal je Nacht.
+- **Roter Faden:** Funkturm in drei Stufen mit Juna bis zum Leuchtfeuer,
+  das jede Nacht brennt und Schlurfer in seinem Schein bremst.
+- **Einrichten:** Sechs Möbel an festen Plätzen in der Hütte und ein
+  Körbchen für Knopf; Gemütlichkeit bringt morgens Erfahrung, ab 5 ist Mika
+  »ausgeschlafen«. Morgengaben, Tee, Funk und Gemütlichkeit stehen im
+  Morgenbericht.
+- Spielstand v5 mit Migration (alte Stände: Überlebende zählen ab dem
+  Umstieg), Prüfskript mit eigenem Abschnitt »ueberlebende« (Ankunft,
+  Knopf mit echten Tasten, Einzug, Tauschen, Aufträge, Einrichten,
+  Morgen, Funkturm, Bellen vor Welle 1, Speichern v5, Migration v4 → v5).
+
+**Offen**
+
+- Weitere Zuhause-Stufen nach der Hütte (OFFENE-FRAGEN 43).
+- Playtest-Runde für Meilenstein 6.
+
+---
+
 ## Meilenstein 4 und 5 – Playtest-Runde m5-r1 und Nachbesserung
 
 **Testspieler:** Kira 8/10, Mira 8/10, Jonas 7/10, Theo 6/10 – Berichte und
