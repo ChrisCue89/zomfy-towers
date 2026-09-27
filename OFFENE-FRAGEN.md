@@ -286,7 +286,7 @@ mit E. (m3-r2)
 vorn liest sich als gewollter Angriff.
 
 ### 31. Was macht ein kurzer Druck beim Verwerten an der Werkbank?
-**Entscheidung:** Er verwertet genau einmal (3 Stein → 1 Schrott); gehaltenes
+**Entscheidung:** Er verwertet genau einmal (2 Stein → 1 Schrott, seit m5-r1; vorher 3); gehaltenes
 E macht gemächlich weiter (erst nach 0,9 s, dann alle 0,6 s – m4-r1), ein
 Zähler an der Zeile zeigt, was herausgekommen ist. Die Auswahl springt beim Öffnen nie auf ein
 Verwerten-Rezept. (m3-r2, ersetzt »nur halten« aus m3-r1)
@@ -328,6 +328,25 @@ Ausschwingen ab. Der nächste Schlag kommt aber erst im gewohnten Takt der
 Waffe (kein schnelleres Zuschlagen durch Zappeln).
 *Warum:* Im Getümmel wirkte Mika nach jedem Klick wie festgeklebt (»die
 Figur bewegt sich nicht«), obwohl nur das Ausschwingen lief.
+
+## Orientierung und Tag (m5-r1)
+
+### 49. Zeigt das Spiel, wo ein Ziel liegt?
+**Entscheidung:** Ja, wenn das Ziel einen festen Ort hat: ein kleiner
+goldener Pfeil wippt darüber, außerhalb des Bildes zeigt er vom Rand hin.
+Bisher für die Axt am Hackklotz und – solange Schrott für den ersten Turm
+fehlt – für die nächste Schrottstelle, die heute noch nicht durchsucht ist.
+Keine Karte, kein Kompass.
+*Warum:* Wer nicht liest (Jonas) oder wenig sieht, lief minutenlang in die
+falsche Richtung. Ein Pfeil nur für den Einstieg hält die Welt frei von
+Markierungen.
+
+### 50. Wie viel dürfen Streuner tagsüber anrichten?
+**Entscheidung:** Sie nagen langsam (30 % ihres Schadens) und höchstens bis
+auf drei Viertel der Standfestigkeit (vorher bis zur Hälfte).
+*Warum:* Theo verbrachte die Tage mit Sammeln und begann jede Nacht mit dem
+halben Zuhause – er verlor alle vier. Der Tag soll ruhig sein; wer ihn nutzt,
+darf nicht bestraft werden.
 
 ## Detailgrad (Meilenstein 5)
 

@@ -91,7 +91,7 @@ export const T = {
     rechen: 'Waffe: große Reichweite, trifft viele.',
     faeustlinge: 'Waffe: schnelle Schläge, jeder dritte doppelt.',
     schrottAusHolz: '3 Holz werden zu 1 Schrott.',
-    schrottAusStein: '3 Stein werden zu 1 Schrott.',
+    schrottAusStein: '2 Stein werden zu 1 Schrott.',
     stoffAusFasern: '4 Fasern werden zu 1 Stoff.',
   },
   bauleiste: {
@@ -225,6 +225,8 @@ export const T = {
     halten: (info) => `${info} E halten: weiter`,
     zaehler: (n) => `+${n}`,
     vorhanden: 'schon da',
+    // Waffen mit Zahlen wie die Türme (m5-r1)
+    werte: (schaden, tempo, reichweite, ziele) => `Schaden ${schaden} · ${tempo} Schläge/s · ${reichweite} m${ziele > 1 ? ` · bis zu ${ziele} auf einmal` : ''}`,
   },
   aktionen: {
     schlafen: 'Schlafen',

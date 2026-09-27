@@ -41,6 +41,7 @@ import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
+import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
@@ -60,6 +61,7 @@ const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
 // Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
 const PERK_NEAR = 6;
 const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
+const DAY_FLOOR = 0.75; // so weit nagen Streuner das Zuhause tagsüber höchstens herunter
 
 export class Game {
   constructor() {
@@ -224,7 +226,9 @@ export class Game {
     this.world.resources.apply(st.world, st.time.day);
     const axe = this.world.props.axe;
     axe.object.visible = !st.tools.axt;
-    Object.assign(axe.interaction, st.tools.axt ? { prompt: 'ansehen', action: null, dialog: 'hackklotz' } : { prompt: 'axtNehmen', action: 'takeAxe', dialog: null });
+    // Solange die Axt dort steckt, geht der Hackklotz anderen Einblendungen vor; danach
+    // ist er nur noch zum Anschauen und drängt sich nicht vor die Werkbank (m5-r1)
+    Object.assign(axe.interaction, st.tools.axt ? { prompt: 'ansehen', action: null, dialog: 'hackklotz', priority: false, radius: 0.9 } : { prompt: 'axtNehmen', action: 'takeAxe', dialog: null, priority: true, radius: 1.5 });
     this.world.refreshInteractions();
 
     const p = st.player;
@@ -277,6 +281,34 @@ export class Game {
     this.mode = 'play';
     this.intro.t = 0;
     this.pendingIntro = true;
+  }
+
+  /** Wohin das aktuelle Ziel zeigt, wenn es einen festen Ort hat (m5-r1: die Axt fand keiner). */
+  goalTarget() {
+    const st = this.state;
+    const id = this.goal?.id;
+    if (id === 'axt' && !st.tools.axt) {
+      const cb = LAYOUT.choppingBlock;
+      return { x: cb.x, y: 1.0, z: cb.z };
+    }
+    // Erster Turm, aber zu wenig Schrott: zur nächsten Schrottstelle, die heute noch nicht durchsucht ist
+    if (id === 'turm' && (st.inventory.schrott || 0) < BUILDINGS.bolzen.cost.schrott) {
+      const p = this.player.position;
+      let best = null;
+      let bestD = Infinity;
+      const consider = (key, x, z) => {
+        if (st.world.searched[key] === st.time.day) return;
+        const d = Math.hypot(x - p.x, z - p.z);
+        if (d < bestD) {
+          bestD = d;
+          best = { x, y: 1.0, z };
+        }
+      };
+      consider('auto', LAYOUT.car.x, LAYOUT.car.z);
+      for (const node of this.world.resources.byId.values()) if (node.rules.search && !node.depleted) consider(node.id, node.x, node.z);
+      return best;
+    }
+    return null;
   }
 
   /** Figur aus Hindernissen schieben (nach Umbau oder Laden). */
@@ -391,7 +423,7 @@ export class Game {
     st.tools.axt = true;
     const axe = this.world.props.axe;
     axe.object.visible = false;
-    Object.assign(axe.interaction, { prompt: 'ansehen', action: null, dialog: 'hackklotz' });
+    Object.assign(axe.interaction, { prompt: 'ansehen', action: null, dialog: 'hackklotz', priority: false, radius: 0.9 });
     this.addToHotbar('axt');
     this.effects.chips(axe.interaction.x, 0.5, axe.interaction.z, 'holz', 6);
     this.hud.toast(T.meldungen.axtGenommen, 'axt', 2.4);
@@ -636,13 +668,14 @@ export class Game {
   onHouseHit(dmg, z) {
     const st = this.state;
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
-    // Tagsüber bricht nichts durch: Streuner nagen langsamer und bringen das
-    // Zuhause höchstens auf die Hälfte (m3-r1: die Vorhut fraß es sonst am Abend auf)
+    // Tagsüber bricht nichts durch: Streuner nagen langsam und bringen das
+    // Zuhause höchstens auf drei Viertel (m3-r1: die Vorhut fraß es sonst am
+    // Abend auf; m5-r1: bis zur Hälfte war zu viel – Theo verlor so jede Nacht)
     const day = !this.nights.active;
     if (day) {
-      const floor = Math.round(max * 0.5);
+      const floor = Math.round(max * DAY_FLOOR);
       if (st.world.homeHp <= floor) return;
-      dmg = Math.min(dmg * (z.day ? 0.4 : 1), st.world.homeHp - floor);
+      dmg = Math.min(dmg * (z.day ? 0.3 : 1), st.world.homeHp - floor);
       const de = st.world.dayEvents;
       if (de && de.day === st.time.day) de.lost = (de.lost || 0) + dmg;
     }
@@ -1215,6 +1248,7 @@ export class Game {
               preis: costText(t.option.cost),
               bezahlbar: Boolean(t.option.affordable && !t.option.disabled),
               ...(t.option.disabled ? { gesperrt: t.option.disabledText } : {}),
+              ...(t.option.hint ? { hinweis: t.option.hint } : {}),
             })),
           }
         : null,
@@ -1223,7 +1257,11 @@ export class Game {
         : null,
       werkbank:
         this.mode === 'craft'
-          ? this.crafting.recipes().map((r, i) => `${i === this.crafting.focus ? '> ' : ''}${T.rezepte[r.id]} (${r.owned ? T.werkbank.vorhanden : costText(r.cost)})`)
+          ? this.crafting.recipes().map((r, i) => {
+              const w = r.gives.weapon ? WEAPONS[r.gives.weapon] : null;
+              const werte = w ? ` – ${T.werkbank.werte(w.damage, String(w.rate).replace('.', ','), String(w.reach).replace('.', ','), w.targets || 1)}` : '';
+              return `${i === this.crafting.focus ? '> ' : ''}${T.rezepte[r.id]} (${r.owned ? T.werkbank.vorhanden : costText(r.cost)})${werte}`;
+            })
           : null,
       dialog: line
         ? {
@@ -1274,6 +1312,19 @@ export class Game {
         return game.mode;
       },
       state: () => JSON.parse(JSON.stringify(game.state)),
+      wakeSpot: () => ({ ...game.world.shelter.wakeSpot }),
+      /** Prüfhilfe: Figur an (x, z) setzen und n Schritte in Richtung (dx, dz) laufen lassen, ohne zu zeichnen. */
+      probeMove(x, z, dx, dz, n = 10) {
+        if (game.world.colliders.blocks(x, z, CONFIG.player.radius)) return null;
+        game.player.place(x, z, 0);
+        for (let k = 0; k < n; k++) game.player.update(1 / 30, { x: dx, z: dz }, false);
+        const p = game.player.position;
+        return Math.hypot(p.x - x, p.z - z);
+      },
+      setHouseLevel(level) {
+        game.state.world.houseLevel = level;
+        game.world.setHouseLevel(level);
+      },
       setTime(hours, minutes = 0) {
         game.state.time.minute = (((hours - 6) * 60 + minutes) % DAY_MINUTES + DAY_MINUTES) % DAY_MINUTES;
       },

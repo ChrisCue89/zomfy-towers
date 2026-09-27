@@ -211,7 +211,7 @@ export class World {
       if (d > it.radius + grace) continue;
       const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
-      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0);
+      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

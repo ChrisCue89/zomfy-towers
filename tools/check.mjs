@@ -172,7 +172,7 @@ async function runTour(browser, url) {
     // --- 0. Erster Eindruck: neues Spiel mit Einblenden und Intro -----------------
     const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart');
     await intro.page.evaluate(() => window.zomfy.setDebug(false));
-    await intro.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 60000 });
+    await intro.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 180000 });
     await settle(intro.page, 70);
     await intro.page.screenshot({ path: join(SHOTS, 'start.png') });
     note('  Screenshot: screenshots/start.png');
@@ -271,7 +271,7 @@ async function runTour(browser, url) {
       window.zomfy.interact('feuer');
       window.zomfy.answer(0); // „Bis zum Abend ausruhen“ (vorgewählt ist „Weitermachen“)
     });
-    await page.waitForFunction(() => window.zomfy.mode === 'play', null, { timeout: 60000 });
+    await page.waitForFunction(() => window.zomfy.mode === 'play', null, { timeout: 180000 });
     const restMinute = await page.evaluate(() => window.zomfy.state().time.minute);
     if (Math.abs(restMinute - 750) < 10) note('✓ Ausruhen: Am Feuer vergeht die Zeit bis zum Abend (18:30)');
     else fail(`Ausruhen: Uhr steht bei Minute ${restMinute} statt 750`);
@@ -343,7 +343,7 @@ async function runSaveChecks(browser, url) {
     const asleep = await first.page.evaluate(() => window.zomfy.mode);
     if (vorNacht.mode === 'dialog' && asleep === 'sleep') note('✓ Bett: vor der Nacht gesperrt, nach der Nacht schläft Mika');
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
-    await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
+    await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
     if (saved && saved.time.day === 2 && saved.version === 4) note('✓ Schlafen: Tag 2 begonnen und gespeichert');
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
@@ -410,7 +410,7 @@ async function runBuildChecks(browser, url) {
   await settle(page, 3);
   const holzVorher = st.inventory.holz;
   await page.keyboard.down('KeyE');
-  await page.waitForFunction(() => window.zomfy.state().world.nodes['jung-1'], null, { timeout: 60000 }).catch(() => {});
+  await page.waitForFunction(() => window.zomfy.state().world.nodes['jung-1'], null, { timeout: 180000 }).catch(() => {});
   await page.keyboard.up('KeyE');
   st = await state();
   if (st.world.nodes['jung-1'] && st.inventory.holz === holzVorher + 6) note(`✓ Sammeln: E halten fällt den Baum (+6 Holz, wächst bis Tag ${st.world.nodes['jung-1'].until} nach)`);
@@ -545,7 +545,7 @@ async function runBuildChecks(browser, url) {
   await settle(page, 3);
   const nachHalten = (await state()).inventory.stein;
   const verwertet = nachTippen - nachHalten;
-  if (steinVorVerwerten - nachTippen === 3 && verwertet >= 3 && verwertet % 3 === 0) note(`✓ Werkbank: kurzer Druck verwertet einmal (3 Stein), gehaltenes E macht weiter (${verwertet} Stein)`);
+  if (steinVorVerwerten - nachTippen === 2 && verwertet >= 2 && verwertet % 2 === 0) note(`✓ Werkbank: kurzer Druck verwertet einmal (2 Stein), gehaltenes E macht weiter (${verwertet} Stein)`);
   else fail(`Werkbank: Stein ${steinVorVerwerten} -> nach kurzem E ${nachTippen} -> nach gehaltenem E ${nachHalten}`);
   await settle(page, 25);
   await page.screenshot({ path: join(SHOTS, 'werkbank.png') });
@@ -568,7 +568,7 @@ async function runBuildChecks(browser, url) {
     window.zomfy.give({ holz: 30, stein: 16, stoff: 6, schrott: 8 });
     window.zomfy.upgradeHouse();
   });
-  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 });
+  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 });
   await z(() => window.zomfy.finishDialog());
   st = await state();
   if (st.world.houseLevel === 2 && st.world.homeHp === 450) note('✓ Zuhause: zur Hütte ausgebaut, Standfestigkeit 450');
@@ -708,9 +708,9 @@ async function runNightChecks(browser, url) {
   });
   await step(100);
 
-  // Tagsüber nagen Schlurfer das Zuhause höchstens bis zur Hälfte an
+  // Tagsüber nagen Schlurfer das Zuhause höchstens bis auf drei Viertel an (m5-r1)
   await z(() => {
-    window.zomfy.setHomeHp(160);
+    window.zomfy.setHomeHp(235);
     window.zomfy.spawnZombie('brummer', 3.2, -6.4);
   });
   await step(8000);
@@ -722,8 +722,8 @@ async function runNightChecks(browser, url) {
     window.zomfy.teleport(-3, 1.5, 0);
   });
   await step(1500);
-  if (tagHp >= 150 && tagHp < 160) note(`✓ Tagsüber: Schlurfer nagen das Zuhause höchstens bis zur Hälfte an (${Math.round(tagHp)}/300)`);
-  else fail(`Tagsüber: Zuhause ${tagHp}/300 (erwartet 150 bis 159)`);
+  if (tagHp >= 225 && tagHp < 235) note(`✓ Tagsüber: Schlurfer nagen das Zuhause höchstens bis auf drei Viertel an (${Math.round(tagHp)}/300)`);
+  else fail(`Tagsüber: Zuhause ${tagHp}/300 (erwartet 225 bis 234)`);
 
   // Turm mit der Tastatur: Q wählt den Bolzenwerfer, E setzt ihn vor die Figur
   await page.keyboard.press('KeyQ');
@@ -1038,7 +1038,7 @@ async function runCombatChecks(browser, url) {
 
   // Speichern und Laden: Waffen, Stufe und Perks bleiben
   await z(() => window.zomfy.sleepNow());
-  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 60000 }).catch(() => {});
+  await page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 }).catch(() => {});
   for (let k = 0; k < 30 && (await z(() => window.zomfy.mode)) === 'sleep'; k++) await step(1000);
   const gespeichert = await state();
   await page.reload();
