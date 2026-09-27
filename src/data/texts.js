@@ -276,7 +276,7 @@ export const T = {
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
     bellt: (woher) => `Knopf bellt – gleich kommen sie ${woher}!`,
-    getauscht: (n, was) => `Getauscht: +${n} ${was}`,
+    getauscht: (menge) => `Getauscht: +${menge}`,
     gabe: {
       knopf: 'Knopf hat etwas ausgebuddelt:',
       hilde: 'Oma Hilde bringt von ihrer Runde:',
