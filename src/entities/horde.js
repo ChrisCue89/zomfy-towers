@@ -43,9 +43,10 @@ class Rig {
     for (const p of parts) {
       if (p.parent === 'head') continue;
       const pivot = new THREE.Object3D();
-      pivot.position.set(p.joint[0] * V, p.joint[1] * V, p.joint[2] * V);
+      const U = p.unit || V;
+      pivot.position.set(p.joint[0] * U, p.joint[1] * U, p.joint[2] * U);
       const anchor = new THREE.Object3D();
-      anchor.position.set((p.offset[0] - p.joint[0]) * V, (p.offset[1] - p.joint[1]) * V, (p.offset[2] - p.joint[2]) * V);
+      anchor.position.set((p.offset[0] - p.joint[0]) * U, (p.offset[1] - p.joint[1]) * U, (p.offset[2] - p.joint[2]) * U);
       pivot.add(anchor);
       (p.parent === 'root' ? this.root : this.body).add(pivot);
       this.pivots[p.name] = pivot;
@@ -54,7 +55,8 @@ class Rig {
     for (const p of parts) {
       if (p.parent !== 'head') continue;
       const anchor = new THREE.Object3D();
-      anchor.position.set((p.offset[0] - headJoint[0]) * V, (p.offset[1] - headJoint[1]) * V, (p.offset[2] - headJoint[2]) * V);
+      const U = p.unit || V;
+      anchor.position.set((p.offset[0] - headJoint[0]) * U, (p.offset[1] - headJoint[1]) * U, (p.offset[2] - headJoint[2]) * U);
       this.pivots.head.add(anchor);
       this.anchors[p.name] = anchor;
     }
@@ -87,7 +89,7 @@ export class Horde {
       const parts = zombieParts(type, 11 + type.length);
       const meshes = {};
       for (const p of parts) {
-        const geo = p.model.toGeometry({ jitter: p.glow ? 0 : 0.03, seed: 7, ao: !p.glow });
+        const geo = p.model.toGeometry({ jitter: p.glow ? 0 : 0.03, seed: 7, ao: !p.glow, size: p.unit || V });
         const mesh = new THREE.InstancedMesh(geo, p.glow ? this.glowMaterial : this.material, MAX_PER_TYPE);
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         if (!p.glow) {

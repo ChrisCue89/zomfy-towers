@@ -156,6 +156,129 @@ function lanternGlow(spec) {
   return m;
 }
 
+// --- Feiner Detailgrad (1/16 m, Meilenstein 5) -------------------------------------
+// Die groben Modelle werden verdoppelt und bekommen feine Einzelheiten. Vor
+// allem zeigt eine Fahne an der hinteren Ecke die Stufe: Stufe 2 ein weißer
+// Wimpel, ab Stufe 3 ein Banner in der Farbe der Spezialisierung, Stufe 4 mit
+// Streifen, Stufe 5 mit goldener Spitze.
+
+export const TOWER_UNIT = 1 / 16;
+
+const SPEC_COLORS = {
+  bolzen: { A: [P.a0, P.a4], B: [P.b4, P.b6] },
+  katapult: { A: [P.f3, P.f5], B: [P.g5, P.g7] },
+  sprenger: { A: [0x8ecff0, 0xe8f8ff], B: [P.e4, P.e6] },
+  laternenturm: { A: [P.f5, P.f7], B: [P.g6, P.g8] },
+};
+
+/** Stufen-Fahne an der hinteren linken Ecke (fein) – groß genug, um sie im Getümmel zu lesen. */
+function levelFlag(m, type, level, spec, top) {
+  if (level < 2) return;
+  const x = -8;
+  const z = -8;
+  m.box(x, 4, z, x, top + 11, z, P.e3); // Stange
+  if (level >= 5) m.set(x, top + 12, z, P.f7).set(x, top + 13, z, P.f6); // goldene Spitze
+  if (level === 2) {
+    // Weißer Wimpel (Dreieck)
+    for (let k = 0; k < 6; k++) m.box(x + 1, top + 5 + Math.floor(k / 2), z, x + 7 - k, top + 10 - Math.floor(k / 2), z, P.s9);
+    return;
+  }
+  const [cloth, light] = SPEC_COLORS[type][spec || 'A'];
+  m.box(x + 1, top + 4, z, x + 9, top + 10, z, (xx, yy) => {
+    if (level >= 4 && (yy === top + 7 || (level >= 5 && yy === top + 5))) return light; // Streifen
+    if (xx === x + 9 && (yy === top + 4 || yy === top + 10)) return null; // Schwalbenschwanz
+    return cloth;
+  });
+}
+
+/** Feine Nieten (Stufenmarken) vorn am Sockel: kleine goldene Punkte. */
+function finePips(m, level) {
+  for (let k = 0; k < level; k++) m.set(-5 + k * 2, 2, 8, k < 2 ? P.f5 : k < 4 ? P.s8 : P.f7);
+}
+
+function fineBolt(level, spec, seed) {
+  const base = boltBase(level, seed).upsampled(2);
+  base.remove(-8, 2, 8, 7, 3, 9); // grobe Stufenmarken ersetzen
+  finePips(base, level);
+  // Beschläge an den Pfosten
+  for (const [x, z] of [[-6, 5], [5, 5]]) base.set(x, 10, z, P.s7).set(x, 14, z, P.s7);
+  levelFlag(base, 'bolzen', level, spec, 17);
+  const head = boltHead(level, spec).upsampled(2);
+  // Sehne hell, Bolzen mit blanker Spitze und rotem Federkiel
+  head.box(-6, 5, 2, 5, 5, 2, P.e9);
+  head.set(0, 5, 11, P.s9).set(1, 5, 11, P.s9).set(0, 5, -2, P.a4).set(1, 5, -2, P.a4);
+  if (spec === 'A') head.set(-2, 7, 7, P.b6).set(-1, 7, 7, P.b5); // Linse des Fernrohrs
+  if (spec === 'B') head.box(-2, 11, -4, 3, 11, -1, (x, z) => ((x + z) % 2 ? P.f5 : P.s6)); // Trommeldeckel
+  return { base, head, headY: 18, glow: null, glowOnHead: false };
+}
+
+function fineCatapult(level, spec, seed) {
+  const base = catapultBase(level, seed).upsampled(2);
+  base.remove(-8, 2, 8, 7, 3, 9);
+  finePips(base, level);
+  // Kürbisse mit Rippen und Stielen
+  for (const [x, z] of [[-6, -6], [2, -6]]) {
+    base.paint(x, 8, z, x + 3, 11, z + 3, (xx, yy, zz) => ((xx + zz) % 2 ? P.f4 : P.f5));
+    base.set(x + 1, 12, z + 1, P.g5).set(x + 2, 13, z + 1, P.g6);
+  }
+  levelFlag(base, 'katapult', level, spec, 13);
+  const head = catapultHead(level, spec).upsampled(2);
+  // Seile am Korb
+  head.set(-3, 15, -12, P.e8).set(3, 15, -12, P.e8);
+  const glow = catapultGlow(spec)?.upsampled(2) || null;
+  if (spec === 'A' && glow) {
+    // Geschnitztes Gesicht im Feuerkürbis
+    glow.set(-2, 17, -15, 0xffffff).set(2, 17, -15, 0xffffff).set(-1, 16, -15, 0xffffff).set(1, 16, -15, 0xffffff);
+  }
+  return { base, head, headY: 8, glow, glowOnHead: true };
+}
+
+function fineSprinkler(level, spec, seed) {
+  const base = sprinklerBase(level, spec, seed).upsampled(2);
+  base.remove(-8, 2, 8, 7, 3, 9);
+  finePips(base, level);
+  // Spannbänder um den Tank
+  base.paint(-7, 6, -7, 6, 6, 6, P.s6);
+  base.paint(-7, 10, -7, 6, 10, 6, P.s6);
+  if (spec === 'A') for (const [x, z] of [[-6, 2], [4, -4], [2, 5]]) base.set(x, 14, z, 0xe8f8ff); // Frostkristalle
+  if (spec === 'B') for (const [x, z] of [[-5, 3], [3, 4], [5, -2]]) base.set(x, 9, z, P.e2); // Schlammspritzer
+  levelFlag(base, 'sprenger', level, spec, 13);
+  const head = sprinklerHead(level, spec).upsampled(2);
+  // Düsen an den Enden
+  head.set(-7, 6, 0, P.s9).set(6, 6, 0, P.s9).set(-7, 6, 1, P.s9).set(6, 6, 1, P.s9);
+  return { base, head, headY: 20, glow: null, glowOnHead: false };
+}
+
+function fineLantern(level, spec, seed) {
+  const base = lanternBase(level, spec, seed).upsampled(2);
+  base.remove(-8, 2, 8, 7, 3, 9);
+  finePips(base, level);
+  // Holzmaserung am Pfosten
+  for (let y = 6; y < 27; y += 4) base.set(-2, y, 1, P.e3);
+  if (spec === 'B') base.set(2, 21, 2, P.g8).set(-4, 21, -4, P.g8); // Kleeblätter hell
+  levelFlag(base, 'laternenturm', level, spec, 12);
+  const head = lanternHead(level, spec).upsampled(2);
+  // Spitzes Dach mit Knauf
+  head.box(-3, 12, -3, 2, 12, 2, spec === 'B' ? P.f5 : P.s3);
+  head.set(0, 13, 0, P.f6).set(-1, 13, -1, P.f6);
+  const glow = lanternGlow(spec).upsampled(2);
+  return { base, head, headY: 28, glow, glowOnHead: true };
+}
+
+/**
+ * Feine Modelle (1/16 m) eines Turms – gleiche Maße in Metern wie die groben.
+ * @returns {{base: VoxelModel, head: VoxelModel, headY: number, glow: VoxelModel|null, glowOnHead: boolean, unit: number}}
+ */
+export function fineTowerModels(type, level, spec, seed = 5) {
+  const m = {
+    bolzen: fineBolt,
+    katapult: fineCatapult,
+    sprenger: fineSprinkler,
+    laternenturm: fineLantern,
+  }[type](level, spec, seed);
+  return { ...m, unit: TOWER_UNIT };
+}
+
 /**
  * Modelle eines Turms für Stufe und Spezialisierung.
  * @returns {{base: VoxelModel, head: VoxelModel, headY: number, glow: VoxelModel|null, glowOnHead: boolean}}

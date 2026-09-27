@@ -91,6 +91,94 @@ function buildHead(spec) {
   return m;
 }
 
+
+// --- Feiner Detailgrad (1/16 m, Meilenstein 5) -------------------------------------
+// Gleiche Maße in Metern wie oben, doppelt so viele Voxel je Richtung.
+
+function buildLeg16(spec) {
+  const m = new VoxelModel();
+  // Stiefel: Sohle mit Kappe vorn, Schaft, heller Kragen
+  m.box(0, 0, 0, 3, 0, 4, (x, y, z) => (z === 4 ? spec.bootsLight : P.e1));
+  m.box(0, 1, 0, 3, 1, 3, (x, y, z) => (z === 3 && (x === 1 || x === 2) ? spec.bootsLight : spec.boots));
+  m.box(0, 2, 0, 3, 2, 3, spec.bootsLight);
+  // Hose mit Flicken am Knie
+  m.box(0, 3, 0, 3, 5, 3, (x, y, z) => {
+    if (z === 3 && y === 4 && (x === 1 || x === 2)) return P.b3;
+    if (y === 5) return spec.pantsDark;
+    return x === 0 || z === 0 ? spec.pantsDark : spec.pants;
+  });
+  return m;
+}
+
+function buildArm16(spec) {
+  const m = new VoxelModel();
+  m.box(0, 0, 0, 1, 1, 3, (x, y, z) => (y === 0 && z === 3 ? spec.skinShade : spec.skin)); // Hand
+  m.box(0, 2, 0, 1, 2, 3, spec.jacketDark); // Bündchen
+  m.box(0, 3, 0, 1, 7, 3, (x, y, z) => (y === 7 ? spec.jacketLight : x === 1 && z === 0 ? spec.jacketDark : spec.jacket));
+  return m;
+}
+
+function buildTorso16(spec) {
+  const m = new VoxelModel();
+  // Jacke: Saum, Reißverschluss, Taschen, Kragen
+  m.box(-6, 6, -4, 5, 13, 3, (x, y, z) => {
+    if (y === 6) return spec.jacketDark;
+    if (z === 3 && x === 0) return y === 12 ? spec.zipper : P.s6; // Reißverschluss mit Zipper oben
+    if (z === 3 && x === -1) return spec.jacketDark;
+    if (z === 3 && (y === 8 || y === 9) && (x === -5 || x === -4 || x === 3 || x === 4)) return y === 9 ? spec.jacketDark : spec.jacketLight;
+    if (y === 13) return spec.jacketDark;
+    if (x === -6 || x === 5) return spec.jacketDark;
+    return spec.jacket;
+  });
+  // Riemen vorn mit Schnalle
+  for (const sx of [-4, 3]) {
+    m.box(sx, 8, 4, sx, 13, 4, spec.strap);
+    m.set(sx, 10, 4, P.s7);
+  }
+  // Rucksack mit Klappe, Tasche und Isomatte
+  m.box(-4, 7, -7, 3, 13, -5, (x, y, z) => {
+    if (y >= 12) return spec.backpackDark;
+    if (z === -7 && y >= 8 && y <= 9 && x >= -2 && x <= 1) return spec.backpackDark;
+    return spec.backpack;
+  });
+  m.set(-1, 11, -8, P.s7).set(0, 11, -8, P.s7);
+  m.box(-6, 14, -9, 5, 15, -7, (x, y) => ((x + y) % 3 === 0 ? P.b2 : spec.bedroll));
+  return m;
+}
+
+function buildHead16(spec) {
+  const m = new VoxelModel();
+  // Kopf 12 × 8 × 10
+  m.box(-6, 14, -6, 5, 21, 3, (x, y, z) => {
+    const front = z === 3;
+    if (front) {
+      if (y >= 20) return spec.hair; // Pony
+      if (y === 19 && (x === -6 || x === -5 || x === 4 || x === 5)) return spec.hair; // Strähnen
+      if (y === 19 && (x === -4 || x === -3 || x === 2 || x === 3)) return spec.skinShade; // Brauen
+      if ((y === 17 || y === 18) && (x === -4 || x === -3 || x === 2 || x === 3)) {
+        if (y === 18 && (x === -4 || x === 2)) return P.s9; // Lichtpunkt
+        return spec.eyes;
+      }
+      if (y === 16 && (x === -5 || x === -4 || x === 3 || x === 4)) return spec.cheek;
+      if (y === 16 && x === -1) return spec.skinShade; // Nase, nur angedeutet
+      if (y === 15 && (x === -1 || x === 0)) return P.a0; // Mund
+      return y === 14 ? spec.skinShade : spec.skin;
+    }
+    if (z <= -2 || y >= 19) return spec.hair;
+    if ((x === -6 || x === 5) && y >= 16) return spec.hair; // Haare über den Ohren
+    return y === 14 ? spec.skinShade : spec.skin;
+  });
+  // Mütze: gerippter Umschlag, gestreifte Kappe, Bommel
+  m.box(-7, 22, -7, 6, 23, 4, (x, y, z) => ((x === -7 || x === 6) && (z === -7 || z === 4) ? null : (x + z) % 2 ? spec.hatDark : spec.hat));
+  m.box(-6, 24, -6, 5, 26, 3, (x, y, z) => {
+    if ((x === -6 || x === 5) && (z === -6 || z === 3)) return null;
+    return y === 25 ? spec.hatLight : spec.hat;
+  });
+  m.box(-4, 27, -4, 3, 28, 1, (x, y) => (y === 28 ? spec.hatDark : spec.hat));
+  m.box(-2, 29, -3, 1, 31, 0, (x, y, z) => ((x === -2 || x === 1) && (y === 29 || y === 31) && (z === -3 || z === 0) ? null : spec.pompom));
+  return m;
+}
+
 function buildLantern() {
   const frame = new VoxelModel();
   frame.box(-1, 0, -1, 1, 0, 1, P.s2);
@@ -105,18 +193,19 @@ function buildLantern() {
  * Baut eine animierbare Figur.
  * @returns {{root: THREE.Group, parts: object, lantern: object}}
  */
-export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
+export function buildCharacter(spec, { seed = 3, occluder = false, fine = true } = {}) {
   const material = createWorldMaterial({ occluder });
-  const geo = (model) => model.toGeometry({ jitter: 0.03, seed });
+  const U = fine ? V / 2 : V;
+  const geo = (model) => model.toGeometry({ jitter: 0.03, seed, size: U });
   const root = new THREE.Group();
   root.name = 'Figur';
 
   // Teil an einem Gelenk: Mesh wird so versetzt, dass das Gelenk der Drehpunkt ist.
   const part = (model, joint, offset = [0, 0, 0]) => {
     const pivot = new THREE.Group();
-    pivot.position.set(joint[0] * V, joint[1] * V, joint[2] * V);
+    pivot.position.set(joint[0] * U, joint[1] * U, joint[2] * U);
     const mesh = new THREE.Mesh(geo(model), material);
-    mesh.position.set((offset[0] - joint[0]) * V, (offset[1] - joint[1]) * V, (offset[2] - joint[2]) * V);
+    mesh.position.set((offset[0] - joint[0]) * U, (offset[1] - joint[1]) * U, (offset[2] - joint[2]) * U);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     pivot.add(mesh);
@@ -125,13 +214,13 @@ export function buildCharacter(spec, { seed = 3, occluder = false } = {}) {
 
   const body = new THREE.Group(); // alles oberhalb der Hüfte
   root.add(body);
-  const legL = part(buildLeg(spec), [-1, 3, 0], [-2, 0, -1]);
-  const legR = part(buildLeg(spec), [1, 3, 0], [0, 0, -1]);
+  const legL = fine ? part(buildLeg16(spec), [-2, 6, 0], [-4, 0, -2]) : part(buildLeg(spec), [-1, 3, 0], [-2, 0, -1]);
+  const legR = fine ? part(buildLeg16(spec), [2, 6, 0], [0, 0, -2]) : part(buildLeg(spec), [1, 3, 0], [0, 0, -1]);
   root.add(legL, legR);
-  const torso = part(buildTorso(spec), [0, 3, 0]);
-  const head = part(buildHead(spec), [0, 7, -1]);
-  const armL = part(buildArm(spec), [-3.5, 7, 0], [-4, 3, -1]);
-  const armR = part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
+  const torso = fine ? part(buildTorso16(spec), [0, 6, 0]) : part(buildTorso(spec), [0, 3, 0]);
+  const head = fine ? part(buildHead16(spec), [0, 14, -2]) : part(buildHead(spec), [0, 7, -1]);
+  const armL = fine ? part(buildArm16(spec), [-7, 14, 0], [-8, 6, -2]) : part(buildArm(spec), [-3.5, 7, 0], [-4, 3, -1]);
+  const armR = fine ? part(buildArm16(spec), [7, 14, 0], [6, 6, -2]) : part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
   body.add(torso, head, armL, armR);
 
   // Hände: Anker am unteren Ende der Arme. Rechts Werkzeuge/Waffen, links die Laterne.

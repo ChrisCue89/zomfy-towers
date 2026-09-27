@@ -23,17 +23,18 @@ const V = 1 / 8;
  * @param {number} [options.jitter]
  * @param {number} [options.seed]
  * @param {boolean} [options.skipBottom]
+ * @param {number} [options.size] Kantenlänge eines Voxels (1/8 m, fein 1/16 m)
  */
 export function createStaticVoxelObject(model, material, options = {}) {
-  const { turns = 0, shadow = 'full', jitter = 0.05, seed = 7 } = options;
+  const { turns = 0, shadow = 'full', jitter = 0.05, seed = 7, size = V } = options;
   const rotated = turns ? model.rotated(turns) : model;
   const group = new THREE.Group();
-  const visual = new THREE.Mesh(rotated.toGeometry({ jitter, seed, visibleOnly: true }), material);
+  const visual = new THREE.Mesh(rotated.toGeometry({ jitter, seed, visibleOnly: true, size }), material);
   visual.castShadow = false;
   visual.receiveShadow = true;
   group.add(visual);
   if (shadow !== 'none') {
-    const proxy = new THREE.Mesh(shadowGeometry(rotated, shadow), SHADOW_PROXY_MATERIAL);
+    const proxy = new THREE.Mesh(shadowGeometry(rotated, shadow, size), SHADOW_PROXY_MATERIAL);
     proxy.castShadow = true;
     proxy.receiveShadow = false;
     proxy.layers.set(SHADOW_LAYER);
@@ -44,7 +45,7 @@ export function createStaticVoxelObject(model, material, options = {}) {
 }
 
 /** Geometrie für einen Schatten-Stellvertreter. */
-export function shadowGeometry(model, mode = 'full') {
-  if (mode === 'coarse') return model.downsampled(2, 2).toGeometry({ size: V * 2, jitter: 0, ao: false });
-  return model.toGeometry({ jitter: 0, ao: false });
+export function shadowGeometry(model, mode = 'full', size = V) {
+  if (mode === 'coarse') return model.downsampled(2, 2).toGeometry({ size: size * 2, jitter: 0, ao: false });
+  return model.toGeometry({ jitter: 0, ao: false, size });
 }

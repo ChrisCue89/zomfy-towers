@@ -160,6 +160,22 @@ export class VoxelModel {
   }
 
   /**
+   * Feinere Kopie: jedes Voxel wird zu factor³ Voxeln gleicher Farbe (für
+   * Modelle, die auf 1/16 m verfeinert werden – Einzelheiten kommen danach dazu).
+   */
+  upsampled(factor = 2) {
+    const out = new VoxelModel();
+    for (const [x, y, z, c] of this.cells.values()) {
+      for (let dx = 0; dx < factor; dx++) {
+        for (let dy = 0; dy < factor; dy++) {
+          for (let dz = 0; dz < factor; dz++) out.set(x * factor + dx, y * factor + dy, z * factor + dz, c);
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
    * Grobe Kopie für Schatten: je factor³ Voxel werden zu einem, wenn
    * mindestens `threshold` davon gefüllt sind. Geometrie mit size·factor bauen.
    */

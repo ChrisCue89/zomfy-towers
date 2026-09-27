@@ -10,7 +10,7 @@ import { createGlowMaterial } from '../render/materials.js';
 import { BUILDINGS, footprint } from '../data/buildings.js';
 import { towerStats } from '../data/towers.js';
 import { BUILDING_MODELS } from './buildingModels.js';
-import { towerModels } from './towerModels.js';
+import { fineTowerModels } from './towerModels.js';
 import { V } from './layout.js';
 
 export class Buildings {
@@ -99,18 +99,19 @@ export class Buildings {
 
   towerObject(type, level, spec, material, glowMaterial, shadow) {
     const key = `${type}|${level}|${spec}`;
-    if (!this.models.has(key)) this.models.set(key, towerModels(type, level, spec, this.seed));
+    if (!this.models.has(key)) this.models.set(key, fineTowerModels(type, level, spec, this.seed));
     const m = this.models.get(key);
-    const group = createStaticVoxelObject(m.base, material, { seed: this.seed, shadow });
+    const U = m.unit || V;
+    const group = createStaticVoxelObject(m.base, material, { seed: this.seed, shadow, size: U });
     const head = new THREE.Group();
-    head.position.y = m.headY * V;
-    const headMesh = new THREE.Mesh(m.head.toGeometry({ jitter: 0.03, seed: this.seed }), material);
+    head.position.y = m.headY * U;
+    const headMesh = new THREE.Mesh(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U }), material);
     headMesh.castShadow = shadow !== 'none';
     headMesh.receiveShadow = true;
     head.add(headMesh);
     group.add(head);
     if (m.glow) {
-      const glow = new THREE.Mesh(m.glow.toGeometry({ jitter: 0, ao: false }), glowMaterial);
+      const glow = new THREE.Mesh(m.glow.toGeometry({ jitter: 0, ao: false, size: U }), glowMaterial);
       if (m.glowOnHead) head.add(glow);
       else group.add(glow);
     }
