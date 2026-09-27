@@ -5,6 +5,42 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 4 und 5 – Playtest-Runde m5-r1 und Nachbesserung
+
+**Testspieler:** Kira 8/10, Mira 8/10, Jonas 7/10, Theo 6/10 – Berichte und
+Auswertung in `playtests/m5-r1/` (`ZUSAMMENFASSUNG.md`). Keine Blocker, keine
+Konsolenmeldung, auch nicht bei Kiras Belastungstest mit Fenstergrößen von
+320 × 900 bis 2560 × 1440. Detailgrad, Nachtoptik, Nahkampf und die
+aufgeschobene Perk-Wahl kamen gut an.
+
+**Gefunden (Spielfluss):** Das erste Ziel (Axt am Hackklotz) und der Schrott
+für den ersten Turm waren schwer zu finden. Streuner nagten das Zuhause
+tagsüber unbemerkt bis zur Hälfte herunter (Theo verlor so alle vier
+Nächte). Knapp neben einem Schlurfer wählte ein Klick den Bau dahinter aus.
+Bei sehr schmalen Fenstern rutschte die Oberfläche aus dem Bild. Die Brücke
+lief noch mit 640 × 360 – seit Meilenstein 5 sind das nur 8 m Sicht.
+
+**Geändert**
+
+- Ziel-Pfeil: ein kleiner goldener Pfeil über dem Ort des Ziels bzw. am
+  Bildrand – Axt am Hackklotz, nächste Schrottstelle für den ersten Turm
+  (OFFENE-FRAGEN 49).
+- Streuner nagen tagsüber höchstens bis drei Viertel und langsamer
+  (OFFENE-FRAGEN 50).
+- Klick nah am Schlurfer ist ein Schlag; Oberflächen-Maßstab auch nach
+  der Fensterbreite; Loslaufen schließt den Morgenbericht.
+- Reparieren mit % in der Kachel, wenn der Vorrat nur für einen Teil
+  reicht; Waffen an der Werkbank mit Zahlen; Stein 2 : 1 zu Schrott;
+  Perk-Hinweis erst, wenn die Wahl Tasten annimmt; der Hackklotz drängt sich
+  nach der Axt nicht mehr vor die Werkbank.
+- Playtest-Brücke mit 1280 × 720; Prüfskript mit längeren Wartezeiten für
+  Echtzeit-Abläufe (unter Last lief sonst der Schlaf-Test in 60 s ab).
+
+**Offen:** Klick setzt Turm nicht (Theo) nicht nachgestellt; Lesbarkeit der
+Arten im Getümmel; Waffen kaum ausprobiert (Schrott knapp).
+
+---
+
 ## Meilenstein 4 – Playtest-Runde 1 (m4-r1, abgebrochen) und Nachbesserung
 
 **Verlauf:** Die vier Testspieler-Agenten wurden nach rund einer Stunde vom

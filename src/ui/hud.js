@@ -163,6 +163,7 @@ export class Hud {
     this.drawNightBar(ui);
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
+    if (show.prompt) this.drawGoalMarker(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
@@ -381,6 +382,37 @@ export class Hud {
    * Pfeile am Bildrand zu Schlurfern außerhalb des Bildes: je Richtung einer,
    * mit Anzahl, blinkend (der Anführer in Gold).
    */
+  /**
+   * Hat das Ziel einen festen Ort (die Axt am Hackklotz), zeigt ein kleiner
+   * goldener Pfeil dorthin: über dem Ort wippend, außerhalb des Bildes am Rand.
+   */
+  drawGoalMarker(ui) {
+    const g = this.game;
+    const t = g.goalTarget();
+    if (!t) return;
+    const p = g.worldToUi(t.x, t.y, t.z);
+    const tri = (x, y, dx, dy) => {
+      // Dreieck mit Spitze in Richtung (dx, dy), Umriss dunkel
+      const px = -dy;
+      const py = dx;
+      for (let k = 0; k <= 6; k++) {
+        const w = 6 - k;
+        for (let s = -w; s <= w; s++) ui.rect(Math.round(x + dx * k + px * s), Math.round(y + dy * k + py * s), 1, 1, s === -w || s === w || k === 0 ? COLORS.outline : COLORS.gold);
+      }
+    };
+    if (p.x >= 8 && p.x < ui.width - 8 && p.y >= 24 && p.y < ui.height - 40) {
+      tri(p.x, p.y - 14 + Math.round(Math.sin(g.clock * 4) * 2), 0, 1);
+      return;
+    }
+    const cx = ui.width / 2;
+    const cy = ui.height / 2;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const k = Math.min((ui.width / 2 - 22) / Math.abs(dx || 1e-3), (ui.height / 2 - 70) / Math.abs(dy || 1e-3));
+    tri(cx + dx * k - (dx / len) * 6, cy + dy * k - (dy / len) * 6, dx / len, dy / len);
+  }
+
   drawEdgeMarkers(ui) {
     const g = this.game;
     const cx = ui.width / 2;

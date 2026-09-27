@@ -212,6 +212,8 @@ export class BuildBar {
       const fill = option.disabled ? 0 : Math.max(0, Math.min(1, option.progress));
       if (fill > 0) ui.rect(rect.x + 2, rect.y + rect.h - 4, Math.max(1, Math.round(barW * fill)), 2, ready ? COLORS.gold : COLORS.goldDark);
       drawTiny(ctx, tile.key, rect.x + 2, rect.y + 2, ready && !option.danger ? COLORS.gold : COLORS.textDim);
+      // Nur zum Teil bezahlbar (Reparieren): kleines % oben rechts (m5-r1)
+      if (option.hint && ready) drawTiny(ctx, '%', rect.x + rect.w - 5, rect.y + 2, COLORS.textWarm);
       if (flash > 0) this.drawSparkles(ui, rect, flash);
     });
 

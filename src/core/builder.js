@@ -23,6 +23,7 @@ import { measure, LINE_HEIGHT } from '../ui/font.js';
 /** Bauleisten-Optionen, die beim ersten Bezahlbar-Werden eine Meldung bekommen. */
 const ANNOUNCE = new Set(['werkbank', 'huette', 'bolzen', 'specA', 'specB']);
 const FIGHT_NEAR = 2.4; // so nah an einem Schlurfer schlägt jeder Klick zu
+const POINTER_NEAR = 1.1; // so nah am Bodenpunkt unter dem Zeiger zählt ein Schlurfer als »angeklickt«
 const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
 
 export class Builder {
@@ -594,6 +595,21 @@ export class Builder {
       if (m.x < a.x - 2 || m.x > c.x + 2 || m.y < a.y - 2 || m.y > c.y + 2) continue;
       best = z;
       bestD = d;
+    }
+    if (best) return best;
+    // Knapp daneben (Schatten, Füße, gerade weitergeschlurft): Ein Schlurfer nahe dem
+    // Bodenpunkt unter dem Zeiger geht trotzdem vor – sonst wählt der Klick den Bau
+    // dahinter aus (m5-r1)
+    const ground = g.pointerGround(this._aim || (this._aim = new THREE.Vector3()));
+    if (!ground) return null;
+    let near = POINTER_NEAR;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying' || Math.hypot(z.x - p.x, z.z - p.z) > 6) continue;
+      const d = Math.hypot(z.x - ground.x, z.z - ground.z);
+      if (d < near) {
+        near = d;
+        best = z;
+      }
     }
     return best;
   }

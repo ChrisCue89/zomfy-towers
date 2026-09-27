@@ -227,8 +227,9 @@ export class World {
       if (d > it.radius + grace) continue;
       const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
-      // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen
-      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 0.8 : 0);
+      // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen;
+      // ebenso der Hackklotz, solange die Axt dort steckt (m5-r1)
+      const score = d - facingDot * 0.5 + (it.prompt === 'ansehen' ? 0.6 : 0) - (it.npc ? 0.8 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

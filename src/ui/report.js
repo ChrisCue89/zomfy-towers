@@ -29,7 +29,9 @@ export class ReportPanel {
   update(dt, input) {
     if (!this.report) return false;
     this.time += dt;
-    if (this.time > 0.4 && (input.pressed('confirm') || input.mouse.clicked || input.pressed('menu'))) {
+    // Auch Loslaufen schließt ihn (m5-r1: WASD bei offenem Bericht fühlte sich wie Festhängen an)
+    const move = this.time > 0.8 && (input.pressed('up') || input.pressed('down') || input.pressed('left') || input.pressed('right'));
+    if (move || (this.time > 0.4 && (input.pressed('confirm') || input.mouse.clicked || input.pressed('menu')))) {
       input.consumeClick();
       this.report = null;
       return true;

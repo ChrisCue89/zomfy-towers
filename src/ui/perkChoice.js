@@ -107,6 +107,7 @@ export class PerkChoice {
         ui.rect(px + 1, rect.y + rect.h - 8, 2, 2, n < have ? COLORS.gold : n === have ? (focused ? COLORS.textWarm : COLORS.frame) : COLORS.inset);
       }
     });
-    ui.textCentered(T.perks.hinweis, ui.width / 2, cards[0].rect.y + CARD_H + 8, COLORS.textDim, { outline: COLORS.outline });
+    // Der Tasten-Hinweis erscheint erst, wenn die Wahl Eingaben annimmt (m5-r1: 1/2/3 »ohne Wirkung«)
+    if (this.t >= LOCK) ui.textCentered(T.perks.hinweis, ui.width / 2, cards[0].rect.y + CARD_H + 8, COLORS.textDim, { outline: COLORS.outline });
   }
 }
