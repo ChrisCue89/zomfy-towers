@@ -20,6 +20,9 @@ function makePass(material) {
   return { scene, material };
 }
 
+
+/** So breit (Oberflächenpixel) soll die Oberfläche mindestens sein, wenn das Fenster es erlaubt. */
+const MIN_UI_WIDTH = 480;
 export class PixelRenderer {
   /**
    * @param {HTMLCanvasElement} canvas
@@ -130,7 +133,9 @@ export class PixelRenderer {
     const width = Math.ceil(devW / scale);
     const height = Math.ceil(devH / scale);
     // Oberfläche: eigene ganzzahlige Skalierung für ca. uiLines Zeilen
-    const uiScale = Math.max(1, Math.round(devH / (this.config.uiLines || this.config.targetLines)));
+    // – bei sehr schmalen Fenstern auch nach der Breite, damit Leisten und Tafeln
+    // nicht aus dem Bild rutschen (m5-r1: 320 × 900)
+    const uiScale = Math.max(1, Math.min(Math.round(devH / (this.config.uiLines || this.config.targetLines)), Math.floor(devW / MIN_UI_WIDTH)));
     this.uiScale = uiScale;
     this.uiWidth = Math.ceil(devW / uiScale);
     this.uiHeight = Math.ceil(devH / uiScale);

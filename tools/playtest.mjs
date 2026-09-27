@@ -10,7 +10,7 @@
 //   hold <Taste> <ms>       Taste gedrückt halten (z. B. hold KeyW 800)
 //   press <Taste> [n]       Taste n-mal tippen (z. B. press KeyE, press Digit1)
 //   down <Taste> / up <Taste>
-//   move <x> <y>            Maus bewegen (Bildschirm 640×360 = Spielpixel)
+//   move <x> <y>            Maus bewegen (Bildschirmpixel, 1280×720)
 //   click <x> <y> [right]   Klicken
 //   wheel <dy>              Mausrad (positiv = nach unten)
 //   wait <ms>               Spiel laufen lassen, ohne etwas zu drücken
@@ -79,7 +79,9 @@ async function runSession(name, root, params) {
   process.env.ZOMFY_ROOT = root;
   const { server, url } = await start(0, root);
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  const context = await browser.newContext({ viewport: { width: 640, height: 360 }, deviceScaleFactor: 1 });
+  // 1280 × 720 wie ein kleines Desktop-Fenster: seit Meilenstein 5 (80 px pro Meter) zeigt
+  // 640 × 360 nur noch 8 m der Lichtung (m5-r1)
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   const consoleLog = [];
   page.on('console', (msg) => {

@@ -10,6 +10,9 @@ import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
 import { measure, LINE_HEIGHT } from './font.js';
 import { canAfford } from '../core/inventory.js';
+import { WEAPONS } from '../data/weapons.js';
+
+const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
 
 const ROW_H = 22;
 const HOLD_FIRST = 0.9; // so lange halten bis zur zweiten Umwandlung (ein langer Druck ist noch keiner)
@@ -137,7 +140,7 @@ export class CraftingMenu {
   /** Unterkante des Fensters samt Info-Zeile (Meldungen erscheinen darunter). */
   bottom(ui) {
     const L = this.layout(ui);
-    return L.y + L.h + LINE_HEIGHT + 14;
+    return L.y + L.h + LINE_HEIGHT * 2 + 14; // Platz für die Waffen-Zeile
   }
 
   /** @param {import('./ui.js').UICanvas} ui */
@@ -192,9 +195,14 @@ export class CraftingMenu {
     if (r) {
       const loud = conversion && Boolean(this.hold);
       const info = conversion ? T.werkbank.halten(T.rezeptInfo[r.id]) : T.rezeptInfo[r.id];
-      const w = measure(info) + 12;
-      ui.panel(Math.round(L.x + (L.w - w) / 2), L.y + L.h + 4, w, LINE_HEIGHT + 6, loud ? { frame: COLORS.gold } : undefined);
-      ui.text(info, Math.round(L.x + (L.w - w) / 2) + 6, L.y + L.h + 6, loud ? COLORS.gold : COLORS.textWarm);
+      // Waffen: zweite Zeile mit Schaden, Tempo und Reichweite
+      const wpn = r.gives.weapon ? WEAPONS[r.gives.weapon] : null;
+      const stats = wpn ? T.werkbank.werte(num(wpn.damage), num(wpn.rate), num(wpn.reach), wpn.targets || 1) : null;
+      const w = Math.max(measure(info), stats ? measure(stats) : 0) + 12;
+      const px = Math.round(L.x + (L.w - w) / 2);
+      ui.panel(px, L.y + L.h + 4, w, LINE_HEIGHT * (stats ? 2 : 1) + 6, loud ? { frame: COLORS.gold } : undefined);
+      ui.text(info, px + 6, L.y + L.h + 6, loud ? COLORS.gold : COLORS.textWarm);
+      if (stats) ui.text(stats, px + 6, L.y + L.h + 6 + LINE_HEIGHT, COLORS.text);
     }
   }
 }

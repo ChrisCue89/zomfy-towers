@@ -30,8 +30,8 @@ playtests/
 
 ## Die Playtest-Brücke
 
-`tools/playtest.mjs` hält eine Browser-Sitzung (640 × 360, ein Spielpixel =
-ein Bildschirmpixel) offen. Zwischen zwei Befehlen steht das Spiel still;
+`tools/playtest.mjs` hält eine Browser-Sitzung (1280 × 720, wie ein kleines
+Desktop-Fenster) offen. Zwischen zwei Befehlen steht das Spiel still;
 jeder Befehl lässt genau die angegebene Spielzeit vergehen (feste
 1/30-s-Schritte), egal wie langsam der Software-Renderer ist.
 
@@ -44,7 +44,7 @@ node tools/playtest.mjs do <name> "hold KeyW 800; press KeyE; wait 1000; shot vo
 | `hold <Taste> <ms>` | Taste gedrückt halten |
 | `press <Taste> [n]` | Taste n-mal tippen |
 | `down <Taste>` / `up <Taste>` | Taste drücken / loslassen |
-| `move <x> <y>` | Maus bewegen (0–639, 0–359) |
+| `move <x> <y>` | Maus bewegen (0–1279, 0–719) |
 | `click <x> <y> [right]` | Klicken |
 | `wheel <dy>` | Mausrad |
 | `wait <ms>` | Spiel laufen lassen |
