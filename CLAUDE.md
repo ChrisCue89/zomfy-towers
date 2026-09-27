@@ -87,7 +87,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Wegvorschau), gathering (Sammeln, Durchsuchen), nights
                       (Tagesschlurfer, Wellen, Sieg/Niederlage, Bericht),
                       combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
-                      Erfahrung, Perk-Vergabe)
+                      Erfahrung, Perk-Vergabe), survivors (Überlebende:
+                      Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
+                      Funkturm), furnishing (Möbel, Gemütlichkeit)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -100,11 +102,13 @@ src/world/            world (Zusammenbau + Update), layout (Grundriss +
                       buildings + buildingModels (Bauten), towerModels
                       (Türme je Stufe/Spezialisierung), buildPreview
                       (Geistermodell, Felder), lightPools (Lichtinseln),
-                      pathing (Waldpfade, Flussfelder, Mazing, Wegvorschau)
+                      pathing (Waldpfade, Flussfelder, Mazing, Wegvorschau),
+                      furnitureModels (Möbel im Raster der Hütte)
 src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
-                      Magnet, Zerfall)
+                      Magnet, Zerfall), npcs (Überlebende in der Welt:
+                      Laufen, Winken, Bellen), survivorModels, dogModel
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank), report
@@ -113,7 +117,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung), zombies,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
-                      perks (Erfahrungskurve, Perks und ihre Wirkung)
+                      perks (Erfahrungskurve, Perks und ihre Wirkung),
+                      survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
+                      furniture (Möbel, Gemütlichkeit)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
