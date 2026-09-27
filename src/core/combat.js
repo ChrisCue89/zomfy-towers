@@ -259,6 +259,7 @@ export class Combat {
     if (up) {
       g.hud.toast(T.perks.stufeAuf(pl.level), 'ziel', 2.4);
       g.sound.play('stufe');
+      g.player.express('froh', 2);
     }
     this.offerPerk();
   }

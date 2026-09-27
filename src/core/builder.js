@@ -739,6 +739,7 @@ export class Builder {
     if (!pay(state.inventory, pl.cost)) return;
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
     this.game.sound.play('bau');
+    this.game.player.express('froh', 1.2); // geschafft (M12)
     if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
     b.headAngle = -Math.PI / 2; // Türme schauen anfangs nach Westen (von dort kommt die Horde)
     if (b.head) b.head.rotation.y = b.headAngle;
@@ -1001,6 +1002,7 @@ export class Builder {
     }, () => {
       this.game.hud.toast(T.meldungen.hausFertigStufe[level], 'huette', 4);
       this.game.sound.play('stufe');
+      this.game.player.express('froh', 2.5);
       this.game.startDialog('hausFertig');
       this.game.quietSave();
     });

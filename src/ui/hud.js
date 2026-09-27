@@ -183,8 +183,11 @@ export class Hud {
   drawClock(ui) {
     const state = this.game.state;
     const hours = hoursOf(state.time.minute);
-    const icon = (hours >= 5 && hours < 7.5) || (hours >= 18.5 && hours < 20.5) ? 'daemmerung' : hours >= 7.5 && hours < 18.5 ? 'sonne' : 'mond';
-    const line1 = `${T.tag} ${state.time.day}`;
+    const weather = this.game.world.weather.kind; // M12: Wetter des Tages neben dem Tag
+    const day = hours >= 7.5 && hours < 18.5;
+    let icon = (hours >= 5 && hours < 7.5) || (hours >= 18.5 && hours < 20.5) ? 'daemmerung' : day ? 'sonne' : 'mond';
+    if (weather === 'regen' || (day && weather !== 'klar')) icon = weather;
+    const line1 = weather === 'klar' ? `${T.tag} ${state.time.day}` : `${T.tag} ${state.time.day} · ${T.wetter.name[weather]}`;
     const line2 = `${clockText(state.time.minute)} · ${dayPartLabel(hours)}`;
     const w = Math.max(measure(line1), measure(line2)) + 32;
     const x = 4;

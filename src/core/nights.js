@@ -129,6 +129,7 @@ export class Nights {
         // eine zusätzliche Meldung lag nur darüber (m3-r2)
         g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
         g.sound.play('welle');
+        g.player.express('staunen', 1.4); // da kommen sie (M12)
       }
       // Morgengrauen: Wer noch da ist, flieht in den Wald
       if (minute >= NIGHT_END) {

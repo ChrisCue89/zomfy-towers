@@ -220,7 +220,12 @@ Wort gibt.
   und warme Lichtinseln: Fenster, Kamin, Feuer, Laternen, Fackeln an den
   Wegen, Türme.
 - **Wetter:** klare Tage, Nieselregen, Wind mit fallendem Laub,
-  Nebelmorgen; kalte Nächte mit Atemwölkchen.
+  Nebelmorgen; kalte Nächte mit Atemwölkchen. Seit M12: Regen fällt als
+  pixelige Striche über das Bild (drinnen hört man ihn nur aufs Dach
+  trommeln), Nebelbänke ziehen gerastert über den See, Laub trudelt und
+  bleibt kurz liegen, Wind biegt Gras und Schilf stärker. Das Wetter dämpft
+  Sonne und Farben (Regen: grau-blau, Nebel: milchig) – Lichtinseln bleiben
+  warm.
 - Kühle Töne wirken nur auf Schatten und Mitten; Lichtquellen bleiben warm.
   Schatten sind farbig, nie schwarz.
 - Lebenszeichen: Rauch aus dem Schornstein, Funken, Krähen, Wellen am Steg,
@@ -351,7 +356,10 @@ Balduins Boot.
 Eine zentrale Uhr (Tag + Minuten seit 06:00) treibt Licht, Lampen, Fackeln,
 Nebel, Horde-Wellen, Balduins Boot und Tagesereignisse. Lichtwerte kommen aus
 einer Schlüsselbild-Tabelle über 24 Stunden. Das Wetter wechselt von Tag zu
-Tag (klar, Nieselregen, Wind, Nebel) und färbt Licht und Klang.
+Tag (klar, Nieselregen, Wind, Nebel) und färbt Licht und Klang. Es folgt aus
+dem Welt-Startwert und dem Tag (kein Platz im Spielstand); die ersten beiden
+Tage sind klar. Die Uhr zeigt es neben dem Tag, der Morgen sagt es an. Auf
+Werte wirkt es nicht (OFFENE-FRAGEN 99).
 
 ### 6.2 Karte und Wege
 
@@ -695,7 +703,9 @@ der Klang startet mit der ersten Eingabe.
   Treffer, Ausweichrolle, Türme, Barrikaden (Holz splittert, Schläge auf
   Bretter), Einsammeln, Bauen, Aufwerten, Wellenhorn, Schlurfer-Brummeln,
   Knopfs Bellen, **Balduins Bootshorn und Motor**, Tippen im Dialog.
-- **Umgebung:** Wind, Wellen am Steg, Krähen, Regen, Knistern am Kamin.
+- **Umgebung:** Wind (an windigen Tagen stärker), Wellen am Steg, Krähen
+  (krächzen, wenn sie auffliegen), Regen (drinnen dumpf aufs Dach), Knistern
+  am Kamin.
 - **Musik (M10d):** ein eigener Soundtrack aus dem Klang-Baukasten, die
   Stücke als Noten-Daten. Tagsüber »Morgen am See« (F-Dur, langsam: E-Piano,
   gezupfte Gitarre, Flöte und Spieluhr, Besen), auch auf dem Titelbild;
@@ -843,14 +853,19 @@ etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
   kommt das Holzlager dazu. **Verschoben:** Gewächshaus und längerer Anleger
   (Nr. 98).
 
-### Meilenstein 12 – Herbst, Wetter und Lesbarkeit
+### Meilenstein 12 – Herbst, Wetter und Lesbarkeit ✓
 
-- Herbst überall: Laub in Orange und Rot, Kürbisse, Pilze, Krähen,
-  Holzstapel, Nebel über dem Wasser, fallendes Laub, Regen und Wind, kalte
-  Nächte mit warmen Lichtinseln.
-- Alle Modelle im feinen Maß (1/16 m) und auf den ersten Blick erkennbar;
-  Figuren mit ausdrucksstärkeren Gesichtern; Look-Feinschliff (Pixel-Look
-  nur, wo er hilft).
+- **Wetter je Tag:** klar, Wind, Nieselregen, Nebel – mit Licht, Farbe,
+  Regen im Bild, Nebelbänken, fallendem Laub, Atemwölkchen in kalten Nächten
+  und eigenem Klang; in der Uhr und im Morgenbericht (OFFENE-FRAGEN 99, 100).
+- **Herbst überall:** Schilf mit Rohrkolben am Ufer, Pilzgruppen
+  (Fliegenpilz, Steinpilz, Pfifferling), Kürbisse am Beet, Kürbislaternen
+  vor der Tür (nachts mit Lichtinsel), Laubhaufen zum Durchlaufen, Treibholz
+  (Nr. 102). **Krähen** sitzen auf Pfosten und im Gras und fliegen krächzend
+  auf, wenn man ihnen nahe kommt (Nr. 101).
+- **Gesichter:** Mika zeigt sieben Ausdrücke (froh, Aua, staunend, müde,
+  besorgt, entschlossen, normal), die Überlebenden lächeln, wenn Mika bei
+  ihnen steht (Nr. 103). Laterne und Turmgeschosse im feinen Maß (Nr. 104).
 
 ### Meilenstein 13 – Balance und Testrunden
 

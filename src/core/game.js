@@ -154,6 +154,7 @@ export class Game {
     const mapSeed = loaded.state?.world.mapSeed ?? CONFIG.world.mapSeed ?? randomMapSeed();
     this.worldFromSave = loaded.status === 'ok'; // gehört die Karte zu einem Spielstand?
     this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, mapSeed, renderConfig: CONFIG.render });
+    this.world.crows.onCaw = (x, z) => this.sound.play('kraehe', { x, z }); // Krähen fliegen krächzend auf (M12)
     this.effects = new Effects(this.world.particles);
     this.player = new Player({ world: this.world, config: CONFIG.player });
     this.scene.add(this.player.object);
@@ -310,6 +311,8 @@ export class Game {
     else this.world.buildings.load(st.world.buildings);
     st.world.buildings = this.world.buildings.toState();
     this.world.setTowerStage(st.world.tower, BEACON.glow);
+    this.world.weather.snap(st.time.day);
+    this.world.crows.settle(hoursOf(st.time.minute), this.player.position); // Krähen sitzen schon (M12)
     this.furnishing.apply();
     this.survivors.apply();
     this.trader.apply();
@@ -690,6 +693,7 @@ export class Game {
     // Nach »Nacht geschafft« Aufgesammeltes zählt noch zur Nacht (m3-r1: Bericht zählte zu wenig)
     else if (st.report && st.report.n === st.night.n && st.night.n === st.time.day) st.report.loot[res] = (st.report.loot[res] || 0) + 1;
     this.hud.floater(x, y + 0.6, z, '+1', res, 0, true);
+    this.player.express('froh', 0.6);
     this.sound.play('loot', { pitch: LOOT_PITCH[res] || 880 });
     if (res === 'teile' && !st.flags.fundTeile) {
       st.flags.fundTeile = true;
@@ -887,7 +891,9 @@ export class Game {
     Object.assign(st.player, { x: w.x, z: w.z, facing: w.facing });
     this.onNewDay();
     // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
-    const extra = [...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
+    this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
+    const extra = [{ text: T.wetter.bericht[this.world.weather.kind] }, ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.placeInside(w);
@@ -1248,7 +1254,9 @@ export class Game {
 
     const titled = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
     const hours = titled ? TITLE_HOURS : hoursOf(this.state.time.minute);
-    this.world.update(dt, { hours, focus: this.rig.focus, player: this.player });
+    this.world.update(dt, { hours, focus: this.rig.focus, player: this.player, day: this.state.time.day });
+    this.world.crows.update(this.mode === 'play' ? dt : 0, { hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) });
+    this.updateMood();
     this.trader.update(this.mode === 'play' ? dt : 0);
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.updateSound(dt);
@@ -1405,6 +1413,7 @@ export class Game {
       time.minute -= DAY_MINUTES;
       time.day += 1;
       this.hud.toast(T.meldungen.neuerTag(time.day));
+      this.hud.toast(T.wetter.bericht[this.world.weather.forecast(time.day)], null, 4); // M12
       this.onNewDay();
     }
     const h = hoursOf(time.minute);
@@ -1437,6 +1446,31 @@ export class Game {
     sharedUniforms.uCutStrength.value = this.viewInside ? 0 : 1; // drinnen verdeckt nichts die Figur
   }
 
+  /**
+   * Grundstimmung in Mikas Gesicht (M12): müde beim Schlafen und spät in der
+   * Nacht, besorgt mit wenig Leben, entschlossen mit Schlurfern in der Nähe,
+   * froh im Gespräch und am Werkbank- oder Handelsfenster.
+   */
+  updateMood() {
+    const st = this.state;
+    const h = hoursOf(st.time.minute);
+    const p = this.player.position;
+    let near = false;
+    for (const z of this.horde.list) {
+      if (z.state !== 'dying' && z.state !== 'enter' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < 25) {
+        near = true;
+        break;
+      }
+    }
+    let mood = 'normal';
+    if (this.mode === 'sleep') mood = 'muede';
+    else if (st.player.hp < this.combat.maxHp * 0.35) mood = 'besorgt';
+    else if (near && !this.viewInside) mood = 'entschlossen';
+    else if (this.mode === 'dialog' || this.mode === 'craft') mood = 'froh';
+    else if (h >= 23 || h < 5) mood = 'muede';
+    this.player.mood = mood;
+  }
+
   /** Umgebung, Musik und Schritte (jedes Bild). */
   updateSound(dt) {
     const inside = this.viewInside;
@@ -1462,6 +1496,8 @@ export class Game {
     info.zombiesNear = near;
     info.quiet = this.mode === 'sleep';
     info.title = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+    info.rain = this.world.weather.rain; // Wetter (M12): Regen trommelt, Wind weht stärker
+    info.wind = this.world.weather.mix.wind;
     // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
     info.threat = atHome > 0 || near >= 3 ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0;
     this.sound.update(dt, info);
@@ -1569,6 +1605,11 @@ export class Game {
       return;
     }
     const playing = this.mode === 'play';
+    // Nieselregen (M12): pixelige Striche über dem Bild, unter den Tafeln
+    const now = performance.now();
+    const frame = Math.min(0.1, (now - (this._lastRain || now)) / 1000);
+    this._lastRain = now;
+    this.world.weather.drawRain(ui, frame, dn.night, this.viewInside);
     if (playing) this.builder.drawOverlay(ui);
     this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
@@ -1774,6 +1815,7 @@ export class Game {
       perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => `${k + 1}: ${T.perks[id][0]} – ${T.perks[id][1]}`) : null,
       perks: Object.entries(st.perks).map(([id, n]) => `${T.perks[id][0]} ${n}`),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
+      wetter: T.wetter.name[this.world.weather.kind], // M12
       // Meilenstein 6: wer ist im Bild, und wie gemütlich ist das Zuhause?
       ueberlebende: SURVIVOR_ORDER.filter((id) => {
         const n = this.survivors.npcs.list.get(id);
@@ -1813,6 +1855,15 @@ export class Game {
       },
       save: () => game.quietSave(),
       wakeSpot: () => ({ ...game.world.interior.wakeSpot }),
+      /** Krähen (M12): Zustand, Sitzplatz; wie oft sie krächzend aufgeflogen sind. */
+      crows: () => ({ list: game.world.crows.info(), caws: game.world.crows.caws, perches: game.world.crows.perches.map((p) => ({ x: p.x, y: p.y, z: p.z, ground: Boolean(p.ground) })) }),
+      settleCrows: () => game.world.crows.settle(hoursOf(game.state.time.minute), game.player.position),
+      /** Wetter (M12): Art, Regenstärke, Windstärke; setWeather erzwingt eines (null = wie der Tag). */
+      weather: () => ({ kind: game.world.weather.kind, rain: game.world.weather.rain, wind: game.world.weather.mix.wind, drops: game.world.weather.drops.length, fog: game.world.weather.fog.group.visible }),
+      setWeather(kind, instant = true) {
+        game.world.weather.forced = kind;
+        if (instant) game.world.weather.snap(game.state.time.day);
+      },
       /** Innenraum (M11): Eingang, Tür nach draußen, Grenzen, Räume; drinnen? */
       interior: () => {
         const i = game.world.interior;

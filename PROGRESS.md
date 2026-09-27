@@ -5,6 +5,64 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 12 – Herbst, Wetter und Lesbarkeit ✓
+
+**Auftrag:** Herbst überall, Wetter, alle Modelle im feinen Maß und
+ausdrucksstärkere Gesichter (DESIGN.md 3.2, 6.1 und 8, Meilenstein 12).
+
+**Fertig**
+
+- **Wetter je Tag (`data/weather.js`, `world/weather.js`):** klar, Wind,
+  Nieselregen oder Nebel – fest aus Welt-Startwert und Tag, die ersten beiden
+  Tage klar. Das Wetter dämpft Sonne, Schatten und Farben (Post-Pass),
+  blendet über ein paar Sekunden über, biegt Gras, Blumen und Schilf stärker
+  (`uWind` im Wind-Shader, nur die Stärke, nie die Phase) und treibt Rauch und
+  Laub. Nieselregen fällt in Schauern als pixelige Striche mit Spritzern über
+  das Bild, drinnen nicht. Nebelbänke ziehen jeden Morgen über den See, an
+  Nebeltagen dichter, länger und auch über die Bucht. Fallendes Laub trudelt
+  (schmal, breit, dunkler, pendelnd) und bleibt kurz liegen; in kalten
+  Nächten Atemwölkchen vor Mikas Mund. Die Uhr zeigt das Wetter mit eigenem
+  Symbol (Regenwolke, Nebel, Wind), der Morgen und ein neuer Tag sagen es an.
+- **Klang:** Regenrauschen und einzelne Tropfen (drinnen dumpf aufs Dach),
+  Wind je nach Wetter, Krähenrufe am Tag.
+- **Herbstschmuck:** Schilf mit Rohrkolben im flachen Wasser am Ufer und an
+  den Inseln, Pilzgruppen am Waldrand und unter den Bäumen der Bucht,
+  Kürbisse am Beet und am Strand, zwei Kürbislaternen vor der Tür – tagsüber
+  dunkle Löcher, nachts flackernd mit Lichtinsel –, zwei Laubhaufen (Laub
+  stiebt auf, wenn man hindurchläuft) und Treibholz. Alles im feinen Maß,
+  mit eigenem Zufall (der Wald bleibt, wie er war).
+- **Krähen (`entities/crows.js`):** fünf Krähen auf Pfosten, Briefkasten,
+  Hackklotz, Beetrand, Steg und im Gras; sie picken und drehen sich, fliegen
+  krächzend auf, wenn Mika oder ein Schlurfer zu nahe kommt (die Nachbarn
+  gleich mit), kommen nach einer Weile zurück und ziehen abends in den Wald.
+- **Gesichter:** Mikas Gesicht ist je Ausdruck eine eigene Platte – normal,
+  froh, Aua, staunend, müde, besorgt, entschlossen; Treffer, Schläge, Funde,
+  Bauten, Stufen, Welle, Balduins Fanfare, wenig Leben, späte Nacht und
+  Gespräche setzen sie. Die Überlebenden lächeln, wenn Mika bei ihnen steht
+  oder sie winken.
+- **Feines Maß:** Mikas Laterne, Turmbolzen und Kürbisgeschosse (gerippt, mit
+  leuchtendem Gesicht) sind jetzt 1/16 m.
+- **Prüfung:** neuer Abschnitt `herbst` – Wetter je Tag, Regen im Bild und
+  nicht drinnen, Nebel, Wetter in Uhr und Morgenbericht, Schilf,
+  Kürbislaternen, Laub, Krähen (auffliegen, zurückkommen, vor Schlurfern,
+  abends weg), Gesichter, Lächeln (Bilder: wetter-regen, wetter-nebel,
+  laternen, herbst).
+
+**Behoben unterwegs**
+
+- Mikas Umriss (renderOrder 1.75) schimmerte über Teilen, die vor dem Körper
+  liegen: Gesichtsplatten, Lider, Laterne und Werkzeug zeichnen jetzt danach
+  (renderOrder 2).
+- Die Schriftprüfung rief neue Dialoge (M11) ohne `world` und `player` auf –
+  die Dialoge sind jetzt nachsichtig, die Prüfung deckt alle Ausbaustufen ab.
+
+**Offen**
+
+- Porträts im Dialog mit Ausdruck (OFFENE-FRAGEN 103), Krähen, die etwas
+  bringen (Ideen-Parkplatz), Wetter mit Wirkung auf Werte (Nr. 99, M13).
+
+---
+
 ## Meilenstein 11 – Das Zuhause am Wasser ✓
 
 **Auftrag:** Das Fischerhaus wächst in Stufen und Räumen, und drinnen ist ein

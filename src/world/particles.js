@@ -96,7 +96,8 @@ export class Particles {
   }
 
   /**
-   * @param {object} p x,y,z, vx,vy,vz, life, size0, size1, color0, color1 (THREE.Color), alpha0, alpha1, drag, lift, round
+   * @param {object} p x,y,z, vx,vy,vz, life, size0, size1, color0, color1 (THREE.Color), alpha0, alpha1, drag, lift, round;
+   *   für Laub außerdem flutter (Drehtempo), phase, sway (Pendeln), floor (Bodenhöhe), rest (Liegezeit)
    */
   spawn(p) {
     if (this.items.length >= this.max) return;
@@ -117,24 +118,42 @@ export class Particles {
     }
     for (const p of items) {
       const t = p.age / p.life;
-      const drag = Math.exp(-(p.drag ?? 0.6) * dt);
-      p.vx = p.vx * drag + this.wind.x * (p.windFactor ?? 1) * dt;
-      p.vz = p.vz * drag + this.wind.z * (p.windFactor ?? 1) * dt;
-      p.vy = p.vy * drag + (p.lift ?? 0) * dt;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.z += p.vz * dt;
+      if (!p.landed) {
+        const drag = Math.exp(-(p.drag ?? 0.6) * dt);
+        p.vx = p.vx * drag + this.wind.x * (p.windFactor ?? 1) * dt;
+        p.vz = p.vz * drag + this.wind.z * (p.windFactor ?? 1) * dt;
+        p.vy = p.vy * drag + (p.lift ?? 0) * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.z += p.vz * dt;
+        // Mit Boden (Laub): liegen bleiben und nach einer Weile verblassen
+        if (p.floor !== undefined && p.y <= p.floor) {
+          p.y = p.floor;
+          p.landed = true;
+          p.life = Math.min(p.life, p.age + (p.rest ?? 2));
+        }
+      }
+      let size = p.size0 + (p.size1 - p.size0) * t;
+      let shade = 1;
+      if (p.flutter && !p.landed) {
+        // Ein Blatt dreht sich im Fallen: mal breit, mal schmal und dunkler, dazu ein Pendeln
+        const s = Math.abs(Math.sin(p.age * p.flutter + (p.phase ?? 0)));
+        size *= 0.4 + 0.6 * s;
+        shade = 0.72 + 0.28 * s;
+        p.x += Math.cos(p.age * p.flutter * 0.5 + (p.phase ?? 0)) * (p.sway ?? 0) * dt;
+      }
       b.position.array[n * 3] = p.x;
       b.position.array[n * 3 + 1] = p.y;
       b.position.array[n * 3 + 2] = p.z;
       const c0 = p.color0;
       const c1 = p.color1 || c0;
-      b.color.array[n * 3] = c0.r + (c1.r - c0.r) * t;
-      b.color.array[n * 3 + 1] = c0.g + (c1.g - c0.g) * t;
-      b.color.array[n * 3 + 2] = c0.b + (c1.b - c0.b) * t;
-      b.size.array[n] = Math.max(1, Math.round(p.size0 + (p.size1 - p.size0) * t));
+      b.color.array[n * 3] = (c0.r + (c1.r - c0.r) * t) * shade;
+      b.color.array[n * 3 + 1] = (c0.g + (c1.g - c0.g) * t) * shade;
+      b.color.array[n * 3 + 2] = (c0.b + (c1.b - c0.b) * t) * shade;
+      b.size.array[n] = Math.max(1, Math.round(size));
       const fadeIn = Math.min(1, p.age / 0.25);
-      b.alpha.array[n] = (p.alpha0 + (p.alpha1 - p.alpha0) * t) * fadeIn;
+      const fadeOut = p.floor !== undefined ? Math.min(1, (p.life - p.age) / 0.8) : 1;
+      b.alpha.array[n] = (p.alpha0 + (p.alpha1 - p.alpha0) * t) * fadeIn * fadeOut;
       b.round.array[n] = p.round ? 1 : 0;
       n++;
     }

@@ -32,6 +32,27 @@ function face(spec, x, y, { glasses = false, beard = false } = {}) {
   return y === 14 ? spec.skinShade : spec.skin;
 }
 
+/**
+ * Gesicht als Platten (M12): Die Vorderseite des Kopfes (z = 3, Reihen 14–19)
+ * wird herausgelöst – einmal wie gebaut, einmal lächelnd. Das Lächeln zeigt
+ * sich, wenn jemand Mika begrüßt oder sie dabeisteht. Ohne Brille lachen auch
+ * die Augen (Bögen statt Punkte); im Bart wird nur der Mund breiter.
+ */
+function faceSet(head, spec, { glasses = false, beard = false } = {}) {
+  const bare = new VoxelModel();
+  const normal = new VoxelModel();
+  head.forEach((x, y, z, c) => (z === 3 && y >= 14 && y <= 19 && x >= -6 && x <= 5 ? normal : bare).set(x, y, z, c));
+  const froh = new VoxelModel();
+  normal.forEach((x, y, z, c) => froh.set(x, y, z, c));
+  for (let x = -2; x <= 1; x++) froh.set(x, 15, 3, beard ? P.a0 : P.r1);
+  if (!beard) froh.set(-3, 16, 3, P.r1).set(2, 16, 3, P.r1); // Mundwinkel oben
+  if (!glasses) {
+    for (const x of [-4, -3, 2, 3]) froh.set(x, 17, 3, spec.skin).set(x, 18, 3, spec.eyes);
+    for (const x of [-5, -2, 1, 4]) froh.set(x, 17, 3, spec.eyes);
+  }
+  return { bare, normal, froh, eyesClose: !glasses };
+}
+
 /** Kopfform wie bei Mika: 12 × 8 × 10, Haare hinten und oben. */
 function baseHead(spec, faceOptions = {}) {
   const m = new VoxelModel();
@@ -362,6 +383,7 @@ export function survivorParts(id) {
       return {
         skin: s.skin,
         head: hildeHead(s),
+        faces: faceSet(hildeHead(s), s, { glasses: true }),
         torso: hildeTorso(s),
         arm: baseArm({ sleeve: s.cardigan, sleeveDark: s.cardiganDark, cuff: s.cardiganDark, skin: s.skin, skinShade: s.skinShade }),
         leg: baseLeg({ shoe: s.shoes, shoeLight: P.e3, low: s.stockings, high: { light: s.skirt, dark: P.r1 }, top: s.skirt }),
@@ -372,6 +394,7 @@ export function survivorParts(id) {
       return {
         skin: s.skin,
         head: bertHead(s),
+        faces: faceSet(bertHead(s), s, { beard: true }),
         torso: bertTorso(s),
         arm: baseArm({ sleeve: s.shirt, sleeveDark: s.shirtDark, cuff: s.shirtDark, skin: s.skin, skinShade: s.skinShade, forearm: s.skin }),
         leg: baseLeg({ shoe: s.boots, shoeLight: P.e3, low: s.pantsDark, high: { light: s.pants, dark: s.pantsDark } }),
@@ -382,6 +405,7 @@ export function survivorParts(id) {
       return {
         skin: s.skin,
         head: junaHead(s),
+        faces: faceSet(junaHead(s), s),
         torso: junaTorso(s),
         arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.coatShade, skin: s.skin, skinShade: s.skinShade }),
         leg: baseLeg({ shoe: s.shoes, shoeLight: s.shoesLight, low: s.jeansDark, high: { light: s.jeans, dark: s.jeansDark } }),
@@ -392,6 +416,7 @@ export function survivorParts(id) {
       return {
         skin: s.skin,
         head: yusufHead(s),
+        faces: faceSet(yusufHead(s), s, { glasses: true, beard: true }),
         torso: yusufTorso(s),
         arm: baseArm({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.coatDark, skin: s.skin, skinShade: s.skinShade }),
         leg: baseLeg({ shoe: s.shoes, shoeLight: P.e4, low: s.pantsDark, high: { light: s.pants, dark: s.pantsDark } }),

@@ -108,7 +108,12 @@ gilt bis auf Weiteres:
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
   und im feinen Maß (1/16 m) bauen, wenn sie klein oder lebendig sind.
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
-  `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie.
+  `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
+  Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
+  flackert das Gras beim Überblenden).
+- Gesichter sind Platten je Ausdruck (M12), nie Überlagerungen vor dem Kopf.
+  Alles, was vor Mikas Körper liegt (Gesicht, Lider, Laterne, Werkzeug),
+  braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
 
 ## Architektur
 
@@ -147,7 +152,11 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       shelter (das Haus von außen, Stufen), interior (Innenraum
                       als eigenes Bild: Räume je Stufe, Licht, Tür, M11),
                       props (Steg, Leuchtmast, Wrack,
-                      Warnpfähle), colliders, daynight, lights, particles,
+                      Warnpfähle, Herbstschmuck: Kürbisse, Kürbislaternen,
+                      Laubhaufen, Treibholz, Sitzplätze der Krähen), weather
+                      (Wetter in der Welt: Licht, Wind, Nebelbänke, Laub,
+                      Atem, Regen im Bild, M12), colliders, daynight, lights,
+                      particles (auch trudelndes Laub mit Boden),
                       effects (Späne, Staub), grid (Bauraster mit Weg- und
                       Hof-Feldern), resources (Quellen, auch entlang der
                       Wege), buildings + buildingModels (Bauten, Barrikaden
@@ -160,8 +169,9 @@ src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
-                      Laufen, Winken, Bellen), survivorModels (auch
-                      Balduin), dogModel, traderModels (Balduins Boot)
+                      Laufen, Winken, Bellen, Lächeln), survivorModels (auch
+                      Balduin), dogModel, traderModels (Balduins Boot),
+                      crows (Krähen: sitzen, picken, fliegen auf, M12)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank und
@@ -177,7 +187,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel, Gemütlichkeit), looks (Aussehen der
-                      Hauptfigur, erlaubte Namen)
+                      Hauptfigur, erlaubte Namen), weather (Wetter je Tag aus
+                      Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
 tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
@@ -314,7 +325,13 @@ Grundprinzipien:
    M11: Haustür mit echten Tasten (hinein mit 160 px/m, hinaus), Schlafen und
    Laden im Innenraum, Migration v9 → v10, Stufen 3–5 (Suppe, Werkbank
    drinnen, Bett im Schlafzimmer, Gemütlichkeit +2), Holzlager (Bilder:
-   innen, kueche, schlafzimmer).
+   innen, kueche, schlafzimmer); ab M12 (Abschnitt `herbst`): Wetter je Tag
+   (fest, die ersten beiden klar, alle Arten), Regen im Bild und nicht
+   drinnen, Nebel am Morgen, Wetter in Uhr und Morgenbericht, Schilf,
+   Kürbislaternen nachts hell, Laub stiebt auf (echte Taste), Krähen fliegen
+   vor Mika und Schlurfern auf, kommen wieder und ziehen abends weg, Mikas
+   Gesicht (Aua, froh, müde), Bert lächelt nur, wenn Mika dabeisteht (Bilder:
+   wetter-regen, wetter-nebel, laternen, herbst).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -375,7 +392,11 @@ ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 ab M10d berechnet `renderMusic(id, s, stufe)` ein Musikstück ohne
 Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende;
 ab M11 zeigt `interior()` Eingang, Ausgang, Grenzen, Räume, Maßstab und ob
-Mika drinnen ist, `wakeSpot()` liegt im Innenraum.
+Mika drinnen ist, `wakeSpot()` liegt im Innenraum; ab M12 zeigt `weather()`
+Art, Regen, Wind, Tropfen und Nebel, `setWeather(art, sofort)` erzwingt ein
+Wetter (`null` = wie der Tag), `crows()` nennt Zustand und Sitzplatz der
+Krähen und wie oft sie krächzend aufgeflogen sind, `settleCrows()` setzt sie
+auf ihre Plätze.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

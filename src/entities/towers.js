@@ -20,24 +20,33 @@ import { dampAngle } from '../core/math.js';
 const MAX_PROJECTILES = 120;
 const HEAD_Y = { bolzen: 1.2, katapult: 0.9, sprenger: 1.3, laternenturm: 2.2 };
 
+const FINE = 1 / 16; // Geschosse im feinen Maß (M12)
+
 function boltModel() {
   const m = new VoxelModel();
-  m.box(0, 0, -2, 0, 0, 1, P.e8);
-  m.set(0, 0, 2, P.s9).set(-1, 0, -2, P.a4).set(1, 0, -2, P.a4);
-  // Leuchtspur dahinter: auch nachts sieht man, wohin der Turm schießt (m3-r1)
-  m.box(0, 0, -6, 0, 0, -3, (x, y, z) => (z >= -4 ? 0xfff0c8 : 0xffd98a));
+  m.box(0, 0, -4, 0, 0, 3, P.e8); // Schaft
+  m.set(0, 0, 4, P.s8).set(0, 0, 5, P.s9); // Spitze
+  for (const z of [-4, -3]) m.set(-1, 0, z, P.a4).set(1, 0, z, P.a4); // Federn
+  // Leuchtspur dahinter, zwei Voxel breit: auch nachts sieht man, wohin der Turm schießt (m3-r1)
+  m.box(0, 0, -12, 1, 0, -5, (x, y, z) => (z >= -8 ? 0xfff0c8 : 0xffd98a));
   return m;
 }
 
-/** Kürbislaterne: leuchtet auch nachts, damit man die Schüsse sieht. */
+/** Kürbislaterne: gerippt, mit Stiel und leuchtendem Gesicht – auch nachts gut zu sehen. */
 function pumpkinModel(size) {
   const m = new VoxelModel();
-  const r = size;
-  m.box(-r, 0, -r, r - 1, 2 * r - 1, r - 1, (x, y, z) => {
-    if (z === r - 1 && y === r && (x === -1 || x === 0 + (r > 1 ? 0 : -1))) return 0xfff2a0;
-    return (x + z) % 2 ? 0xe8833a : 0xf4a64c;
-  });
-  m.set(-1, 2 * r, -1, 0x69963d);
+  const r = size * 2;
+  m.ellipsoid(0, r, 0, r + 0.4, r * 0.85 + 0.3, r + 0.4, (x) => (((x % 2) + 2) % 2 ? P.f4 : P.f5));
+  // Gesicht nach vorn: Augen und Mund leuchten
+  const face = size > 1 ? [[-2, r + 1], [1, r + 1], [-2, r - 1], [-1, r - 1], [0, r - 1], [1, r - 1]] : [[-1, r], [0, r]];
+  for (const [x, y] of face) {
+    let z = r + 2;
+    while (z > -r - 2 && !m.has(x, y, z)) z--;
+    m.set(x, y, z, 0xfff2a0);
+  }
+  let top = r;
+  while (m.has(0, top + 1, 0)) top++;
+  m.set(0, top + 1, 0, P.g6).set(0, top + 2, 0, P.g5); // Stiel
   return m;
 }
 
@@ -56,9 +65,9 @@ export class TowerSystem {
     this.time = 0;
     const basic = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {
-      bolt: new THREE.InstancedMesh(boltModel().toGeometry({ jitter: 0, ao: false }), basic, MAX_PROJECTILES),
-      pumpkin: new THREE.InstancedMesh(pumpkinModel(2).toGeometry({ jitter: 0, ao: false }), basic, MAX_PROJECTILES),
-      mini: new THREE.InstancedMesh(pumpkinModel(1).toGeometry({ jitter: 0, ao: false }), basic, MAX_PROJECTILES),
+      bolt: new THREE.InstancedMesh(boltModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      pumpkin: new THREE.InstancedMesh(pumpkinModel(2).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      mini: new THREE.InstancedMesh(pumpkinModel(1).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
     };
     for (const mesh of Object.values(this.meshes)) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

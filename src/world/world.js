@@ -22,8 +22,12 @@ import { Pathing, homeRect } from './pathing.js';
 import { DayNight } from './daynight.js';
 import { WarmLights } from './lights.js';
 import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js';
+import { Weather } from './weather.js';
+import { P } from '../render/palette.js';
+import { Crows } from '../entities/crows.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
+const KICK_COLORS = [P.f3, P.f4, P.f5, P.r3, P.e5].map((c) => new THREE.Color(c)); // aufstiebendes Laub (M12)
 const SMOKE_NIGHT = [new THREE.Color(0x58719e), new THREE.Color(0x353f69)];
 
 export class World {
@@ -52,6 +56,7 @@ export class World {
       flame: createGlowMaterial(0xffffff, { vertexColors: true }),
       beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Leuchtmast (Meilenstein 6)
       spawnGlow: createGlowMaterial(0xffffff), // fahle Laternen an den Spawns (Meilenstein 9)
+      pumpkinGlow: createGlowMaterial(0xffffff), // Gesichter der Kürbislaternen (M12)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
@@ -93,12 +98,14 @@ export class World {
     // Kleine Quellen (Kiesel, Gras, Äste) sind begehbar, aber nicht bebaubar –
     // sonst wächst ein Faserbusch mitten in ein Beet hinein.
     for (const node of this.resources.nodes) this.grid.reserve(node.x, node.z);
+    for (const spot of this.props.reserved) this.grid.reserve(spot.x, spot.z); // Laubhaufen, Treibholz (M12)
 
     this.dayNight = new DayNight(scene, renderConfig);
     this.setupLights();
     this.lightPools = new LightPools(scene);
     this.interiorPools = [];
     this.addInteriorPools();
+    for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2); // Kürbislaternen (M12)
     this.buildings = new Buildings({
       scene,
       grid: this.grid,
@@ -111,9 +118,22 @@ export class World {
     this.pathing = new Pathing(this.grid, (id) => this.buildings.get(id), this.map);
     this.pathing.setHome(homeRect(1));
     this.buildings.pathing = this.pathing;
+    // Krähen (M12): auf Pfosten und im Gras; ein Platz im Gras ist frei, solange dort nichts gebaut ist
+    this.crows = new Crows({
+      scene,
+      perches: this.props.perches,
+      seed,
+      isFree: (p) => {
+        if (!p.ground) return true;
+        const c = this.grid.cellAt(p.x, p.z);
+        return !this.grid.occupantAt(c.i, c.j);
+      },
+    });
 
     this.particles = new Particles(800, seed);
     scene.add(this.particles.object);
+    this.weather = new Weather({ scene, particles: this.particles, seed }); // M12: Tageswetter
+    this.leafKicks = 0; // wie oft Laub aus einem Haufen aufgestoben ist (Prüfung)
     this.chimneySmoke = new SmokeEmitter(this.particles, this.shelter.chimney, { rate: 1.3, size: [3, 8], life: [4.5, 6.5], rise: 0.4 });
     this.fireSmoke = new SmokeEmitter(this.particles, this.props.fire.smoke, { rate: 0.9, size: [2, 5], life: [2.5, 4], rise: 0.45 });
     this.embers = new EmberEmitter(this.particles, this.props.fire.embers, 5);
@@ -168,6 +188,8 @@ export class World {
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
     L.addGlow(this.materials.beacon, { dim: 0xc8b070, bright: 0xfff2c4, boost: 1.8, mode: 'lamp' });
     L.addGlow(this.materials.spawnGlow, { dim: 0x3b4a44, bright: 0x6cc0ae, boost: 1.05, mode: 'lamp' });
+    // Kürbislaternen: tagsüber dunkle Löcher, nachts ein flackerndes Kerzenlicht (M12)
+    L.addGlow(this.materials.pumpkinGlow, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.45, mode: 'lamp', twinkle: true });
   }
 
   /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
@@ -320,10 +342,13 @@ export class World {
    * @param {number} dt
    * @param {object} ctx { hours, focus (Vector3), player }
    */
-  update(dt, { hours, focus, player }) {
+  update(dt, { hours, focus, player, day = 1 }) {
     this.time += dt;
     const dn = this.dayNight;
     dn.update(hours, focus);
+    // Wetter färbt Licht und Wind (M12)
+    const inside = player ? this.isInside(player.position.x, player.position.z) : false;
+    this.weather.update(dt, { day, hours, focus, inside, player, dayNight: dn });
 
     // Laterne der Spielfigur
     if (player) {
@@ -372,6 +397,49 @@ export class World {
       const target = dd < 1.35 ? -1.45 : 0;
       door.angle = damp(door.angle, target, 8, dt);
       door.pivot.rotation.y = door.angle;
+
+      // Laubhaufen (M12): Wer hindurchläuft, lässt das Laub aufstieben
+      this.kickLeaves(dt, player);
+    }
+  }
+
+  kickLeaves(dt, player) {
+    const p = player.position;
+    const speed = Math.hypot(player.velocity.x, player.velocity.z);
+    for (const pile of this.props.leafPiles) {
+      pile.cooldown -= dt;
+      if (speed < 0.5 || pile.cooldown > 0) continue;
+      if (Math.hypot(p.x - pile.x, p.z - pile.z) > pile.radius + 0.25) continue;
+      pile.cooldown = 0.1;
+      this.leafKicks++;
+      const r = this.particles.rng;
+      for (let i = 0; i < 3; i++) {
+        const c = KICK_COLORS[r.int(0, KICK_COLORS.length - 1)];
+        this.particles.spawn({
+          x: p.x + r.range(-0.3, 0.3),
+          y: 0.15,
+          z: p.z + r.range(-0.2, 0.3),
+          vx: player.velocity.x * 0.4 + r.range(-0.6, 0.6),
+          vy: r.range(1.2, 2.2),
+          vz: player.velocity.z * 0.4 + r.range(-0.5, 0.5),
+          life: 6,
+          size0: 4,
+          size1: 4,
+          color0: c,
+          color1: c,
+          alpha0: 1,
+          alpha1: 1,
+          drag: 1.6,
+          lift: -1.2,
+          round: 0,
+          windFactor: 1.5,
+          flutter: r.range(4, 7),
+          phase: r.range(0, 6.28),
+          sway: 0.3,
+          floor: 0.03,
+          rest: r.range(0.8, 1.6),
+        });
+      }
     }
   }
 }

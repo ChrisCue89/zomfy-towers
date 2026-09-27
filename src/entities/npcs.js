@@ -35,7 +35,7 @@ function buildSurvivor(id, seed) {
   const legR = part(parts.leg, [2, 6, 0], [0, 0, -2]);
   root.add(legL, legR);
   const torso = part(parts.torso, [0, 6, 0]);
-  const head = part(parts.head, [0, 14, -2]);
+  const head = part(parts.faces ? parts.faces.bare : parts.head, [0, 14, -2]);
   const armL = part(parts.arm, [-7, 14, 0], [-8, 6, -2]);
   const armR = part(parts.arm, [7, 14, 0], [6, 6, -2]);
   body.add(torso, head, armL, armR);
@@ -46,7 +46,21 @@ function buildSurvivor(id, seed) {
   eyelids.position.set(0, -14 * U, 2 * U);
   eyelids.visible = false;
   head.add(eyelids);
-  return { root, material, parts: { body, torso, head, armL, armR, legL, legR, eyelids } };
+  // Gesichtsplatten (M12): normal und lächelnd – Balduin grinst ohnehin immer
+  let faces = null;
+  if (parts.faces) {
+    faces = {};
+    for (const expr of ['normal', 'froh']) {
+      const plate = new THREE.Mesh(geo(parts.faces[expr]), material);
+      plate.position.set(0, -14 * U, 2 * U);
+      plate.castShadow = true;
+      plate.receiveShadow = true;
+      plate.visible = expr === 'normal';
+      head.add(plate);
+      faces[expr] = plate;
+    }
+  }
+  return { root, material, parts: { body, torso, head, armL, armR, legL, legR, eyelids, faces }, smileEyes: Boolean(parts.faces?.eyesClose) };
 }
 
 export class Npcs {
@@ -89,6 +103,7 @@ export class Npcs {
       y: null, // Höhe, wenn sie nicht vom Boden kommt (Balduin im Boot)
       restFacing: null, // Blickrichtung im Stehen, wenn Mika weiter weg ist
       pull: null,
+      near: false, // Mika steht nah dabei (dann lächeln sie, M12)
     };
     model.root.visible = false;
     this.group.add(model.root);
@@ -127,6 +142,7 @@ export class Npcs {
       if (!n.model.root.visible) continue;
       // Laufen: gerade Linie mit Kollision, am Ziel stehen bleiben
       let speed = 0;
+      n.near = false;
       if (n.drive !== null) speed = n.drive;
       else if (n.target) {
         const dx = n.target.x - n.x;
@@ -147,7 +163,8 @@ export class Npcs {
         // Stehend: Mika in der Nähe anschauen
         const px = player.x - n.x;
         const pz = player.z - n.z;
-        if (px * px + pz * pz < 9) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
+        n.near = px * px + pz * pz < 9;
+        if (n.near) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
         else if (n.restFacing !== null) n.facing = dampAngle(n.facing, n.restFacing, 3, dt);
       }
       n.moving = damp(n.moving, clamp(speed / WALK_SPEED, 0, 1), 10, dt);
@@ -183,8 +200,14 @@ export class Npcs {
     p.armL.rotation.z = damp(p.armL.rotation.z, 0, 8, dt);
     p.head.rotation.z = damp(p.head.rotation.z, 0, 8, dt);
     this.poseGesture(n, dt);
+    // Lächeln beim Winken, bei Gesten und wenn Mika dabeisteht (M12)
+    const happy = n.wave > 0 || n.near || n.gestures.length > 0;
+    if (p.faces) {
+      p.faces.froh.visible = happy;
+      p.faces.normal.visible = !happy;
+    }
     if (this.time > n.blinkAt + 0.13) n.blinkAt = this.time + 2.5 + Math.random() * 3.5;
-    p.eyelids.visible = this.time >= n.blinkAt;
+    p.eyelids.visible = this.time >= n.blinkAt && !(happy && n.model.smileEyes);
   }
 
   /** Eine Geste vorspielen (M10); mehrere laufen nacheinander. */

@@ -274,6 +274,7 @@ export class Trader {
       // Balduins Auftritt: Schiffshorn, Paukenwirbel, Fanfare – der Schlussakkord fällt aufs Anlegen
       this.fanfares += 1;
       g.sound.fanfare();
+      g.player.express('staunen', 2); // Was ist denn das? (M12)
       if (!g.state.flags.balduinGetroffen) g.hud.say(T.haendler.ankunft, 5);
     }
     if (id === 'steht') {

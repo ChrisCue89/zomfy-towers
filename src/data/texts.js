@@ -260,6 +260,16 @@ export const T = {
     // Waffen mit Zahlen wie die Türme (m5-r1)
     werte: (schaden, tempo, reichweite, ziele) => `Schaden ${schaden} · ${tempo} Schläge/s · ${reichweite} m${ziele > 1 ? ` · bis zu ${ziele} auf einmal` : ''}`,
   },
+  // Wetter (M12): Name in der Uhr, Satz im Morgenbericht
+  wetter: {
+    name: { klar: 'klar', wind: 'Wind', regen: 'Nieselregen', nebel: 'Nebel' },
+    bericht: {
+      klar: 'Heute bleibt es klar und kühl.',
+      wind: 'Heute weht ein kräftiger Wind – das Laub fliegt.',
+      regen: 'Heute nieselt es. Gut für die Beete, schlecht für die Frisur.',
+      nebel: 'Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.',
+    },
+  },
   aktionen: {
     schlafen: 'Schlafen',
     radio: 'Radio hören',

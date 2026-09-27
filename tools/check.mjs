@@ -5,7 +5,7 @@
 //   node tools/check.mjs --nur=nahkampf,naechte
 //                                   nur einzelne Abschnitte (rundgang, speichern,
 //                                   bauen, wege, naechte, nahkampf, ueberlebende,
-//                                   haendler, hd)
+//                                   haendler, herbst, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -150,6 +150,9 @@ async function runBrowserChecks() {
 
     // --- 6b. Meilenstein 8: Zombieteile, Balduin (seit M9 mit dem Boot), Wrack nur einmal ------
     if (want('haendler')) await runTraderChecks(browser, url);
+
+    // --- 6c. Meilenstein 12: Wetter, Herbstschmuck, Krähen, Gesichter -------------------
+    if (want('herbst')) await runAutumnChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -2110,6 +2113,219 @@ async function runCombatChecks(browser, url) {
   if (geladen.version === 10 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
     note(`✓ Speichern v10: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * Meilenstein 12: Wetter je Tag (die ersten beiden Tage klar, alle vier Arten
+ * kommen vor, fest aus Startwert und Tag), Nieselregen im Bild (drinnen nicht),
+ * Nebel am Morgen, das Wetter in Uhr und Morgenbericht; Herbstschmuck (Schilf,
+ * Kürbislaternen leuchten nachts, Laub stiebt auf, wenn man hindurchläuft);
+ * Krähen fliegen vor Mika und vor Schlurfern auf, kommen wieder und ziehen
+ * abends in den Wald; Mikas Gesicht (Aua, froh, müde) und das Lächeln der
+ * Überlebenden (Bilder: wetter-regen, wetter-nebel, herbst, laternen).
+ */
+async function runAutumnChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Herbst');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const view = () => z(() => window.zomfyView());
+  const picture = async (name) => {
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
+    note(`  Screenshot: screenshots/${name}.png`);
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(10, 0);
+  });
+  await step(100);
+
+  // Wetter je Tag: fest aus Startwert und Tag, die ersten beiden Tage klar, alle Arten kommen vor
+  const plan = await z(() => {
+    const w = window.zomfy.game.world.weather;
+    const a = [];
+    const b = [];
+    for (let d = 1; d <= 40; d++) a.push(w.forecast(d));
+    for (let d = 1; d <= 40; d++) b.push(w.forecast(d));
+    return { a, same: a.join() === b.join() };
+  });
+  const zaehl = {};
+  for (const k of plan.a) zaehl[k] = (zaehl[k] || 0) + 1;
+  if (plan.a[0] === 'klar' && plan.a[1] === 'klar' && ['klar', 'wind', 'regen', 'nebel'].every((k) => zaehl[k] > 0) && plan.same) {
+    note(`✓ Wetter: Tag 1 und 2 klar, in 40 Tagen ${Object.entries(zaehl).map(([k, n]) => `${n}× ${k}`).join(', ')} – fest je Tag`);
+  } else fail(`Wetter: ${JSON.stringify({ tage: plan.a.slice(0, 8), zaehl, gleich: plan.same })}`);
+
+  // Nieselregen: Striche im Bild und das Wetter in der Uhr; drinnen regnet es nicht
+  await z(() => {
+    window.zomfy.setWeather('regen');
+    window.zomfy.setTime(14, 0);
+    window.zomfy.teleport(2.5, 3.0, 0);
+  });
+  await step(600);
+  const regen = await z(() => window.zomfy.weather());
+  const uhr = (await view()).wetter;
+  await picture('wetter-regen');
+  await z(() => {
+    const e = window.zomfy.interior().entry;
+    window.zomfy.teleport(e.x, e.z - 1.5, Math.PI);
+  });
+  await step(600);
+  const drinnen = await z(() => window.zomfy.weather());
+  if (regen.kind === 'regen' && regen.drops > 40 && drinnen.drops === 0 && uhr === 'Nieselregen') note(`✓ Regen: ${regen.drops} Tropfen im Bild, drinnen keine, die Uhr sagt „${uhr}“`);
+  else fail(`Regen: ${JSON.stringify({ regen, drinnen, uhr })}`);
+
+  // Nebel: an Nebeltagen morgens über See und Bucht, an klaren Nachmittagen nicht
+  await z(() => {
+    window.zomfy.setWeather('nebel');
+    window.zomfy.setTime(7, 0);
+    window.zomfy.teleport(10.5, 0.5, 0);
+  });
+  await step(800);
+  const nebel = await z(() => window.zomfy.weather());
+  await picture('wetter-nebel');
+  await z(() => {
+    window.zomfy.setWeather('klar');
+    window.zomfy.setTime(14, 0);
+  });
+  await step(800);
+  const klar = await z(() => window.zomfy.weather());
+  if (nebel.fog && !klar.fog) note('✓ Nebel: am Nebelmorgen über dem Wasser, am klaren Nachmittag weg');
+  else fail(`Nebel: morgens ${nebel.fog}, nachmittags ${klar.fog}`);
+
+  // Morgenbericht: das Wetter des neuen Tages steht darin (ohne Nacht als Meldung)
+  await z(() => {
+    window.zomfy.setWeather('regen', false);
+    window.zomfy.game.advanceToMorning();
+  });
+  await step(100);
+  const morgen = (await view()).meldungen || [];
+  await z(() => window.zomfy.setWeather(null));
+  if (morgen.some((t) => /nieselt/.test(t))) note(`✓ Wetter am Morgen: „${morgen.find((t) => /nieselt/.test(t))}“`);
+  else fail(`Wetter am Morgen fehlt: ${JSON.stringify(morgen)}`);
+
+  // Herbstschmuck: Schilf am Ufer, Kürbislaternen leuchten nachts, Laub stiebt auf
+  const schilf = await z(() => window.zomfy.game.world.stats.reeds);
+  const glut = async (h) => {
+    await z((hh) => window.zomfy.setTime(hh, 0), h);
+    await step(300);
+    return z(() => {
+      const c = window.zomfy.game.world.materials.pumpkinGlow.color;
+      return c.r + c.g + c.b;
+    });
+  };
+  const glutTag = await glut(12);
+  const glutNacht = await glut(22);
+  await z(() => window.zomfy.teleport(6.0, -2.25, 0));
+  await step(400);
+  await picture('laternen');
+  await z(() => {
+    window.zomfy.setTime(10, 0);
+    window.zomfy.teleport(-5.25, -12.0, Math.PI / 2);
+  });
+  await step(200);
+  const vorher = await z(() => window.zomfy.game.world.leafKicks);
+  await page.keyboard.down('KeyD');
+  await step(900);
+  await page.keyboard.up('KeyD');
+  await step(100);
+  const kicks = (await z(() => window.zomfy.game.world.leafKicks)) - vorher;
+  if (schilf >= 20 && glutNacht > glutTag * 1.5 && kicks > 0) note(`✓ Herbst: ${schilf} Schilfbüschel am Ufer, Kürbislaternen nachts hell (${glutTag.toFixed(2)} → ${glutNacht.toFixed(2)}), Laub stiebt ${kicks}× auf`);
+  else fail(`Herbst: ${JSON.stringify({ schilf, glutTag, glutNacht, kicks })}`);
+
+  // Krähen: sitzen tagsüber, fliegen vor Mika krächzend auf und kommen wieder
+  await z(() => {
+    window.zomfy.teleport(12.0, 6.5, 0);
+    window.zomfy.settleCrows();
+  });
+  await step(300);
+  const k0 = await z(() => window.zomfy.crows());
+  const sitzend = k0.list.filter((c) => c.state === 'sitzt');
+  const ziel = sitzend.find((c) => c.x > -8 && c.x < 12) || sitzend[0];
+  await z(([x, zz]) => window.zomfy.teleport(x + 1.0, zz + 1.0, 0), [ziel.x, ziel.z]);
+  await step(300);
+  const k1 = await z(() => window.zomfy.crows());
+  const aufgeflogen = k1.list.find((c) => c.id === ziel.id).state;
+  await z(() => window.zomfy.teleport(12.0, 6.5, 0));
+  for (let k = 0; k < 12; k++) await step(10000);
+  const k2 = await z(() => window.zomfy.crows());
+  const wieder = k2.list.filter((c) => c.state === 'sitzt').length;
+  if (sitzend.length >= 3 && aufgeflogen === 'fliegt' && k1.caws > k0.caws && wieder >= 3) note(`✓ Krähen: ${sitzend.length} sitzen, eine fliegt vor Mika krächzend auf, zwei Minuten später sitzen wieder ${wieder}`);
+  else fail(`Krähen: ${JSON.stringify({ sitzend: sitzend.length, aufgeflogen, caws: [k0.caws, k1.caws], wieder })}`);
+
+  // … auch vor einem Schlurfer; abends ziehen alle in den Wald
+  const k3 = await z(() => window.zomfy.crows());
+  const opfer = k3.list.find((c) => c.state === 'sitzt' && Math.hypot(c.x - 12.0, c.z - 6.5) > 4);
+  let vorSchlurfer = 'keine Krähe';
+  if (opfer) {
+    await z(([x, zz]) => {
+      window.zomfy.setHorde(true);
+      window.zomfy.spawnZombie('schlurfer', x + 1.2, zz + 0.4);
+    }, [opfer.x, opfer.z]);
+    await step(300);
+    vorSchlurfer = (await z(() => window.zomfy.crows())).list.find((c) => c.id === opfer.id).state;
+  }
+  await z(() => {
+    window.zomfy.killAllZombies();
+    window.zomfy.setHorde(false);
+    window.zomfy.setTime(19, 0);
+  });
+  await step(8000);
+  const abends = (await z(() => window.zomfy.crows())).list.map((c) => c.state);
+  if (vorSchlurfer === 'fliegt' && abends.every((s) => s === 'weg')) note('✓ Krähen: fliegen auch vor Schlurfern auf, abends sind alle im Wald');
+  else fail(`Krähen: vor dem Schlurfer ${vorSchlurfer}, abends ${abends.join(', ')}`);
+
+  // Bild: Bucht am Vormittag mit Krähen, Pilzen, Kürbissen und Schilf
+  await z(() => {
+    window.zomfy.setTime(10, 30);
+    window.zomfy.teleport(-3.5, 6.5, Math.PI);
+    const cr = window.zomfy.game.world.crows;
+    for (const c of cr.list) cr.leave(c, true);
+    const at = (x, zz) => cr.perches.find((p) => Math.abs(p.x - x) < 0.3 && Math.abs(p.z - zz) < 0.3);
+    cr.sit(cr.list[0], at(-6.19, 5.25));
+    cr.sit(cr.list[1], at(-2.5, 3.5));
+    cr.sit(cr.list[2], at(-0.75, 6.5));
+  });
+  await step(300);
+  await picture('herbst');
+
+  // Gesichter: Aua bei einem Treffer, froh nach einem Fund, müde spät in der Nacht
+  const gesicht = () => z(() => window.zomfy.game.player.faceShown);
+  await z(() => window.zomfy.game.combat.hurt(1));
+  await step(60);
+  const aua = await gesicht();
+  await step(3000);
+  await z(() => {
+    const p = window.zomfy.game.player.position;
+    window.zomfy.game.collectLoot('holz', p.x, 0.2, p.z);
+  });
+  await step(60);
+  const froh = await gesicht();
+  await z(() => window.zomfy.setTime(23, 30));
+  await step(2500);
+  const muede = await gesicht();
+  await z(() => window.zomfy.setTime(10, 0));
+  await step(200);
+  if (aua === 'aua' && froh === 'froh' && muede === 'muede') note('✓ Gesicht: Aua bei einem Treffer, froh nach einem Fund, müde spät in der Nacht');
+  else fail(`Gesicht: ${JSON.stringify({ aua, froh, muede })}`);
+
+  // Überlebende lächeln, wenn Mika bei ihnen steht
+  await z(() => window.zomfy.setSurvivor('bert', 2));
+  await step(300);
+  const bert = await z(() => window.zomfy.npcPos('bert'));
+  const lacht = async (dz) => {
+    await z(([x, zz]) => window.zomfy.teleport(x + 0.3, zz, Math.PI), [bert.x, bert.z + dz]);
+    await step(800);
+    return z(() => window.zomfy.game.survivors.npcs.list.get('bert').model.parts.faces.froh.visible);
+  };
+  const nah = await lacht(2.0);
+  const weit = await lacht(6.0);
+  if (nah && !weit) note('✓ Überlebende: Bert lächelt, wenn Mika bei ihm steht, sonst nicht');
+  else fail(`Überlebende lächeln nicht richtig: nah ${nah}, weit ${weit}`);
+
   checkMessages(session);
   await session.context.close();
 }

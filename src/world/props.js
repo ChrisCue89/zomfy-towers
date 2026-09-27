@@ -381,6 +381,95 @@ function buildGardenBed(seed) {
   return m;
 }
 
+// --- Herbst (Meilenstein 12): im feinen Maß (1/16 m) --------------------------
+
+const FINE = 1 / 16;
+
+/** Gerippter Kürbis mit Stiel und Ranke. size ~ 0.7 (klein) … 1.2 (groß). */
+function buildPumpkin(seed, size = 1) {
+  const m = new VoxelModel();
+  const rng = new Rng(seed);
+  const rx = 3.4 * size + 0.6;
+  const ry = 2.6 * size + 0.5;
+  const rz = rx * 0.92;
+  m.ellipsoid(0, ry, 0, rx, ry, rz, (x, y, z, dx, dy) => {
+    // Rippen: zehn Keile um die Mitte – oben Strahlen, vorn senkrechte Furchen
+    const a = Math.atan2(z + 0.5, x + 0.5);
+    const rib = Math.floor(((a / (Math.PI * 2)) * 10 + 10.5) % 10);
+    const groove = rib % 2 === 0;
+    if (dy > 0.75) return groove ? P.f4 : P.f5;
+    if (dy < -0.6) return P.f2;
+    return groove ? P.f3 : hash3(x, y, z, seed) < 0.12 ? P.f5 : P.f4;
+  });
+  // Stiel, leicht gebogen, dazu ein Blatt und eine Ranke
+  const top = Math.ceil(ry * 2);
+  m.box(0, top - 1, 0, 0, top + 1, 0, P.e3).set(1, top + 1, 0, P.e2);
+  if (rng.chance(0.7)) m.box(-2, top - 1, 1, -1, top - 1, 2, P.g4).set(-2, top - 1, 2, P.g5);
+  m.set(1, top - 1, -1, P.g3).set(2, top - 1, -1, P.g3).set(2, top - 2, -2, P.g3);
+  return m;
+}
+
+/**
+ * Kürbislaterne: großer Kürbis mit geschnitztem Gesicht nach Süden. Das Gesicht
+ * ist ein eigenes Modell (Glüh-Material): tagsüber dunkle Löcher, nachts warm.
+ */
+function buildJackOLantern(seed) {
+  const m = buildPumpkin(seed, 1.25);
+  const glow = new VoxelModel();
+  const ry = 2.6 * 1.25 + 0.5;
+  const cy = Math.floor(ry);
+  const face = [
+    '..#...#..', // Augen: Dreiecke
+    '.###.###.',
+    '....#....', // Nase
+    '#.......#', // Grinsen mit Zähnen
+    '.##.#.##.',
+    '..#####..',
+  ];
+  face.forEach((row, r) => {
+    const y = cy + 2 - r;
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] !== '#') continue;
+      const x = i - 4;
+      // vorderste Voxel dieser Spalte aushöhlen und leuchten lassen
+      let z = 12;
+      while (z > -12 && !m.has(x, y, z)) z--;
+      if (z <= -12) continue;
+      m.set(x, y, z, null);
+      glow.set(x, y, z, 0xffffff);
+      m.set(x, y, z - 1, P.f1); // dahinter das dunkle Innere
+    }
+  });
+  return { model: m, glow };
+}
+
+/** Laubhaufen: ein flacher Hügel aus buntem Herbstlaub (man kann hindurchlaufen). */
+function buildLeafPile(seed) {
+  const m = new VoxelModel();
+  const colors = [P.f3, P.f4, P.f5, P.r3, P.e5, P.f6, P.r2, P.e6];
+  m.ellipsoid(0, 0, 0, 10, 6, 8, (x, y, z, dx, dy) => {
+    if (dy < 0) return null;
+    const h = hash3(x, y, z, seed);
+    if (dy > 0.55 && h < 0.25) return null; // lockere Kuppe
+    return colors[Math.floor(h * colors.length)];
+  });
+  return m;
+}
+
+/** Treibholz: ein ausgebleichter Ast mit Seitenzweig, halb im Sand. */
+function buildDriftwood(seed, length = 22) {
+  const m = new VoxelModel();
+  const bleach = (x, y, z) => {
+    const h = hash3(x, y, z, seed);
+    return h < 0.3 ? P.s6 : h < 0.75 ? P.s7 : P.e7;
+  };
+  m.box(0, 0, 0, length, 1, 1, bleach);
+  m.box(length + 1, 0, 0, length + 3, 0, 1, bleach);
+  m.line(Math.round(length * 0.6), 1, 1, Math.round(length * 0.6) + 5, 1, 5, P.s7);
+  m.box(-2, 0, -1, 0, 2, 2, bleach); // Wurzelende
+  return m;
+}
+
 function buildOakWithSwing(seed) {
   const m = buildDeciduous(seed, 1.3);
   // Starker Ast nach Osten
@@ -669,7 +758,58 @@ export function createProps({ seed, materials, colliders, map }) {
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
   interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', dialog: 'schaukel', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
 
+  // --- Herbst (M12): Kürbisse, Kürbislaternen, Laubhaufen, Treibholz ---
+  const fine = (model, x, z, name, material = materials.world, shadow = 'full') => {
+    const object = createStaticVoxelObject(model, material, { seed, size: FINE, shadow });
+    object.position.set(x, 0, z);
+    object.name = name;
+    group.add(object);
+    return object;
+  };
+  // Kürbislaternen links und rechts vor der Tür (nachts mit Lichtinsel, siehe world.js)
+  const lanterns = [];
+  for (const [x, z, k] of [[4.75, -3.75, 0], [7.5, -3.75, 1]]) {
+    const jack = buildJackOLantern(seed + 40 + k);
+    const object = fine(jack.model, x, z, 'Kürbislaterne');
+    if (materials.pumpkinGlow) object.add(createStaticVoxelObject(jack.glow, materials.pumpkinGlow, { size: FINE, shadow: 'none', jitter: 0 }));
+    colliders.addCircle(x, z, 0.26, 'kuerbis');
+    lanterns.push({ x, z });
+  }
+  // Kürbisse am Beet und am Strand
+  for (const [x, z, size, k] of [[0.5, -8.875, 1.0, 0], [1.0, -8.125, 0.7, 1], [0.375, -7.625, 0.8, 2], [6.375, 9.875, 0.9, 3]]) {
+    fine(buildPumpkin(seed + 50 + k, size), x, z, 'Kürbis');
+    colliders.addCircle(x, z, 0.12 + 0.13 * size, 'kuerbis');
+  }
+  // Laubhaufen unter der Eiche und hinter dem Holzstapel: zum Durchlaufen (Laub stiebt auf)
+  const leafPiles = [];
+  for (const [x, z, k] of [[-3.875, -12.0, 0], [2.25, -10.25, 1]]) {
+    fine(buildLeafPile(seed + 60 + k), x, z, 'Laubhaufen', materials.world, 'none');
+    leafPiles.push({ x, z, radius: 0.65, cooldown: 0 });
+  }
+  // Treibholz am Ufer
+  fine(buildDriftwood(seed + 70), 12.5, 5.5, 'Treibholz', materials.world, 'none');
+  fine(buildDriftwood(seed + 71, 16), 11.75, -11.0, 'Treibholz', materials.world, 'none');
+  // Begehbar, aber nicht bebaubar (wie kleine Quellen): Laubhaufen und Treibholz
+  const reserved = [...leafPiles.map((p) => ({ x: p.x, z: p.z })), { x: 13.0, z: 5.5 }, { x: 12.25, z: -11.0 }];
+
+  // Sitzplätze der Krähen (M12): Pfosten, Briefkasten, Hackklotz, Beetrand, Steg und ein paar Stellen im Gras
+  const perches = [
+    { x: sign.x + 0.125, y: 2.5, z: sign.z + 0.125 },
+    { x: mail.x + 0.0625, y: 1.5, z: mail.z },
+    { x: cl.x0 + 0.0625, y: 1.875, z: cl.z + 0.0625 },
+    { x: cl.x1 + 0.0625, y: 1.875, z: cl.z + 0.0625 },
+    { x: cb.x - 0.19, y: 0.5, z: cb.z + 0.12 },
+    { x: garden.x + 0.0625, y: 0.375, z: garden.z + 0.75 },
+    { x: dock.x0 + 3.0, y: 0.375, z: dock.z0 + 0.2 },
+    { x: dock.x0 + 6.25, y: 0.375, z: dock.z0 + 0.2 },
+    ...[[-2.5, 3.5], [2.5, 5.75], [-4.25, -3.25], [9.25, 4.75], [-0.75, 6.5], [4.5, 1.5], [11.0, -3.0]].map(([x, z]) => ({ x, y: 0, z, ground: true })),
+  ];
+
   return {
+    lanterns,
+    leafPiles,
+    reserved,
+    perches,
     group,
     interactions,
     blockers,

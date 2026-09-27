@@ -930,6 +930,53 @@ zwei): Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen. **Gewächsh
 Anleger** sind verschoben: Neue Rohstoffe ändern die Wirtschaft (Balance, M13), und
 der Herbst mit Kürbissen kommt ohnehin in M12. Veranda und Beete gibt es schon.
 
+### 99. Wirkt das Wetter aufs Spiel? (M12)
+**Entscheidung:** Nein, nur auf Stimmung – Licht, Farbe, Partikel, Klang.
+Regen, der Türme schwächt oder Feuer löscht, wäre Balance (M13) und würde
+die ersten Nächte unberechenbar machen. Das Wetter folgt aus Welt-Startwert
+und Tag, braucht keinen Platz im Spielstand; die ersten beiden Tage sind
+klar (Einstieg), danach etwa 45 % klar, je 20 % Wind und Regen, 15 % Nebel
+(`data/weather.js`).
+
+### 100. Wie regnet es im Pixel-Look? (M12)
+**Entscheidung:** Als kurze, schräge Striche auf der Oberflächen-Leinwand
+(mit kleinen Spritzern) statt als 3D-Partikel – billig, scharf, im Maß der
+Oberfläche. Drinnen regnet es nicht, man hört ihn dumpf aufs Dach. Nebel sind
+flache Bänke über dem Wasser (an Nebeltagen auch über der Bucht), gerastert
+wie alle Durchsicht (Bayer), im Licht des Himmels gefärbt.
+
+### 101. Was tun die Krähen? (M12)
+**Entscheidung:** Sie sind Lebenszeichen, keine Mechanik: tagsüber auf
+Pfosten, Briefkasten, Hackklotz, Beetrand, Steg und im Gras; wer ihnen zu
+nahe kommt (Mika oder ein Schlurfer), scheucht sie krächzend auf, die
+Nachbarn fliegen mit. Nach einer halben bis ganzen Minute kommt eine zurück,
+abends ziehen alle in den Wald. Krähen, die etwas bringen oder stehlen,
+bleiben im Ideen-Parkplatz.
+
+### 102. Stört der Herbstschmuck beim Bauen? (M12)
+**Entscheidung:** Nein. Laubhaufen und Treibholz sind begehbar, aber nicht
+bebaubar (wie kleine Quellen); Pilzgruppen und Schilf haben keine Kollision
+und stehen am Waldrand bzw. im Wasser; die beiden Kürbislaternen belegen je
+ein Feld neben den Pfosten vor der Tür. Der Schmuck hat einen eigenen Zufall – der Wald und
+alle Stellen aus früheren Prüfungen bleiben, wie sie waren.
+
+### 103. Wie werden Gesichter ausdrucksstärker? (M12)
+**Entscheidung:** Die Vorderseite des Kopfes ist je Ausdruck eine eigene
+Platte, von der immer nur eine sichtbar ist (kein Überlagern, keine Kanten).
+Mika: *Aua* bei Treffern, *entschlossen* beim Schlagen und mit Schlurfern in
+der Nähe, *froh* nach Funden, Bauten, Stufen, im Gespräch und am
+Werkbank-Fenster, *staunend* bei Welle und Balduins Fanfare, *besorgt* mit
+wenig Leben, *müde* spät in der Nacht und beim Schlafen. Die Überlebenden
+lächeln, wenn Mika bei ihnen steht oder sie winken (ohne Brille auch mit den
+Augen); Balduin grinst ohnehin. Die Porträts im Dialog bleiben vorerst, wie
+sie sind.
+
+### 104. »Alle Modelle im feinen Maß« – wirklich alle? (M12)
+**Entscheidung:** Alles Kleine und Lebendige: Figuren, Tiere, Werkzeug,
+Waffen, Loot, Türme, Geschosse, Laterne, Pilze, Kürbisse, Schilf, Krähen.
+Gelände, Bäume, Felsen und Gebäude bleiben bei 1/8 m – dort sieht man keinen
+Unterschied, zahlt aber mit Leistung.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

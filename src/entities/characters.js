@@ -146,24 +146,82 @@ function buildTorso16(spec) {
   return m;
 }
 
+/**
+ * Gesichtsausdrücke (M12): Die Vorderseite des Kopfes (z = 3, Reihen 14–19) ist
+ * je Ausdruck eine eigene Platte – immer nur eine ist sichtbar.
+ */
+export const EXPRESSIONS = ['normal', 'froh', 'aua', 'staunen', 'muede', 'besorgt', 'entschlossen'];
+/** Bei diesen Ausdrücken sind die Augen offen (dann wird geblinzelt). */
+export const OPEN_EYES = new Set(['normal', 'staunen', 'besorgt']);
+
+/** Farbe der Gesichtsplatte an (x, y) für einen Ausdruck. */
+function faceColor16(spec, x, y, expr) {
+  const eye = x === -4 || x === -3 || x === 2 || x === 3;
+  const mid = x === -1 || x === 0;
+  const line = P.r1; // Mundlinie, offener Mund
+  if (y === 19) {
+    if (x === -6 || x === -5 || x === 4 || x === 5) return spec.hair; // Strähnen
+    if (expr === 'entschlossen') return x === -3 || x === -2 || x === 1 || x === 2 ? spec.skinShade : spec.skin; // Brauen zusammengezogen
+    if (expr === 'besorgt' || expr === 'aua') return x === -3 || x === 2 ? spec.skinShade : spec.skin; // nur innen: hochgezogen
+    return eye ? spec.skinShade : spec.skin;
+  }
+  if (y === 18 || y === 17) {
+    switch (expr) {
+      case 'froh': // lachende Bögen
+        if (y === 18) return eye ? spec.eyes : spec.skin;
+        return x === -5 || x === -2 || x === 1 || x === 4 ? spec.eyes : spec.skin;
+      case 'aua': // zusammengekniffen
+        if (y === 18) return x === -5 || x === 4 ? spec.eyes : spec.skin;
+        return (x >= -4 && x <= -2) || (x >= 1 && x <= 3) ? spec.eyes : spec.skin;
+      case 'muede':
+      case 'entschlossen': // Lider halb zu
+        if (y === 18) return spec.skin;
+        return eye ? spec.eyes : spec.skin;
+      default:
+        if (!eye) return spec.skin;
+        return y === 18 && (x === -4 || x === 2) ? P.s9 : spec.eyes; // Lichtpunkt
+    }
+  }
+  if (y === 16) {
+    if (expr === 'froh' && (x === -3 || x === 2)) return line; // Mundwinkel oben
+    if (x === -5 || x === -4 || x === 3 || x === 4) return spec.cheek;
+    return x === -1 ? spec.skinShade : spec.skin; // Nase, nur angedeutet
+  }
+  if (y === 15) {
+    switch (expr) {
+      case 'froh':
+        return x >= -2 && x <= 1 ? line : spec.skin; // breites Lächeln
+      case 'aua':
+      case 'staunen':
+      case 'besorgt':
+        return mid ? line : spec.skin;
+      case 'muede':
+        return x === 0 ? P.a0 : spec.skin;
+      case 'entschlossen':
+        if (x === -2 || x === 1) return line;
+        return mid ? P.s9 : spec.skin; // zusammengebissene Zähne
+      default:
+        return mid ? P.a0 : spec.skin;
+    }
+  }
+  // Kinn (y 14): offener Mund, hängende Mundwinkel
+  if ((expr === 'aua' || expr === 'staunen') && mid) return line;
+  if (expr === 'besorgt' && (x === -2 || x === 1)) return line;
+  return spec.skinShade;
+}
+
+/** Gesichtsplatte eines Ausdrucks (nur die Voxel der Vorderseite). */
+export function buildFacePlate16(spec, expr) {
+  const m = new VoxelModel();
+  for (let y = 14; y <= 19; y++) for (let x = -6; x <= 5; x++) m.set(x, y, 3, faceColor16(spec, x, y, expr));
+  return m;
+}
+
 function buildHead16(spec) {
   const m = new VoxelModel();
-  // Kopf 12 × 8 × 10
+  // Kopf 12 × 8 × 10; die Vorderseite unter dem Pony kommt als Gesichtsplatte dazu
   m.box(-6, 14, -6, 5, 21, 3, (x, y, z) => {
-    const front = z === 3;
-    if (front) {
-      if (y >= 20) return spec.hair; // Pony
-      if (y === 19 && (x === -6 || x === -5 || x === 4 || x === 5)) return spec.hair; // Strähnen
-      if (y === 19 && (x === -4 || x === -3 || x === 2 || x === 3)) return spec.skinShade; // Brauen
-      if ((y === 17 || y === 18) && (x === -4 || x === -3 || x === 2 || x === 3)) {
-        if (y === 18 && (x === -4 || x === 2)) return P.s9; // Lichtpunkt
-        return spec.eyes;
-      }
-      if (y === 16 && (x === -5 || x === -4 || x === 3 || x === 4)) return spec.cheek;
-      if (y === 16 && x === -1) return spec.skinShade; // Nase, nur angedeutet
-      if (y === 15 && (x === -1 || x === 0)) return P.a0; // Mund
-      return y === 14 ? spec.skinShade : spec.skin;
-    }
+    if (z === 3) return y >= 20 ? spec.hair : null; // Pony; darunter die Gesichtsplatte
     if (z <= -2 || y >= 19) return spec.hair;
     if ((x === -6 || x === 5) && y >= 16) return spec.hair; // Haare über den Ohren
     return y === 14 ? spec.skinShade : spec.skin;
@@ -179,13 +237,17 @@ function buildHead16(spec) {
   return m;
 }
 
+/** Laterne im feinen Maß (M12): Boden, vier Streben, Dach mit Bügel; dazwischen das Glas. */
 function buildLantern() {
   const frame = new VoxelModel();
-  frame.box(-1, 0, -1, 1, 0, 1, P.s2);
-  frame.box(-1, 3, -1, 1, 3, 1, P.e5);
-  frame.set(0, 4, 0, P.s3);
+  frame.box(-3, 0, -3, 2, 0, 2, P.s2);
+  for (const [x, z] of [[-3, -3], [2, -3], [-3, 2], [2, 2]]) frame.box(x, 1, z, x, 5, z, P.s3);
+  frame.box(-3, 6, -3, 2, 6, 2, P.e5);
+  frame.box(-2, 7, -2, 1, 7, 1, P.e4);
+  frame.box(-1, 8, -1, 0, 8, 0, P.s3);
+  frame.set(-1, 9, 0, P.s4).set(0, 9, 0, P.s4); // Bügel
   const glass = new VoxelModel();
-  glass.box(-1, 1, -1, 1, 2, 1, 0xffffff);
+  glass.box(-3, 1, -3, 2, 5, 2, (x, y, z) => ((x === -3 || x === 2) && (z === -3 || z === 2) ? null : 0xffffff));
   return { frame, glass };
 }
 
@@ -223,6 +285,22 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   const armR = fine ? part(buildArm16(spec), [7, 14, 0], [6, 6, -2]) : part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
   body.add(torso, head, armL, armR);
 
+  // Gesichter (M12): je Ausdruck eine Platte vorn am Kopf, sichtbar ist nur eine
+  let faces = null;
+  if (fine) {
+    faces = {};
+    for (const expr of EXPRESSIONS) {
+      const plate = new THREE.Mesh(geo(buildFacePlate16(spec, expr)), material);
+      plate.position.set(0, -14 * U, 2 * U);
+      plate.castShadow = true;
+      plate.receiveShadow = true;
+      plate.visible = expr === 'normal';
+      plate.renderOrder = 2; // nach Mikas Umriss (renderOrder 1.75), sonst schimmert er über dem Gesicht
+      head.add(plate);
+      faces[expr] = plate;
+    }
+  }
+
   // Lider zum Blinzeln (nur fein): eine Hautreihe über den Augen und darunter
   // die Wimpernlinie – liegt eine Voxelschicht vor dem Gesicht, meist versteckt
   let eyelids = null;
@@ -235,6 +313,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
     eyelids = new THREE.Mesh(geo(lids), material);
     eyelids.position.set(0, -14 * U, 2 * U);
     eyelids.visible = false;
+    eyelids.renderOrder = 2;
     head.add(eyelids);
   }
 
@@ -249,12 +328,14 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   // Laterne (zunächst versteckt) in der linken Hand
   const lanternParts = buildLantern();
   const lanternGroup = new THREE.Group();
-  const lanternFrame = new THREE.Mesh(lanternParts.frame.toGeometry({ jitter: 0, seed }), material);
+  const lanternFrame = new THREE.Mesh(lanternParts.frame.toGeometry({ jitter: 0, seed, size: V / 2 }), material);
   lanternFrame.castShadow = true;
   const lanternGlow = createGlowMaterial(0xffffff);
-  const lanternGlass = new THREE.Mesh(lanternParts.glass.toGeometry({ jitter: 0, ao: false }), lanternGlow);
+  const lanternGlass = new THREE.Mesh(lanternParts.glass.toGeometry({ jitter: 0, ao: false, size: V / 2 }), lanternGlow);
+  lanternFrame.renderOrder = 2; // nach Mikas Umriss, sonst schimmert der Arm durch die Laterne
+  lanternGlass.renderOrder = 2;
   lanternGroup.add(lanternFrame, lanternGlass);
-  lanternGroup.position.set(0.5 * V, -5 * V, 0);
+  lanternGroup.position.set(V, -5 * V, 0.5 * V); // Mitte wie bei der groben Laterne
   lanternGroup.visible = false;
   handL.add(lanternGroup);
 
@@ -264,6 +345,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
     const geometry = fine ? fineTool(name, model()).toGeometry({ jitter: 0.02, seed, size: V / 2 }) : model().toGeometry({ jitter: 0.02, seed });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
+    mesh.renderOrder = 2; // wie die Laterne: nach Mikas Umriss
     mesh.position.set(-0.5 * V, 0, -0.5 * V);
     mesh.visible = false;
     hand.add(mesh);
@@ -273,7 +355,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true }
   return {
     root,
     material,
-    parts: { body, torso, head, armL, armR, legL, legR, hand, handL, eyelids },
+    parts: { body, torso, head, armL, armR, legL, legR, hand, handL, eyelids, faces },
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
     tools,
   };

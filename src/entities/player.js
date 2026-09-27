@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { clamp, damp, dampAngle, lerp } from '../core/math.js';
-import { buildCharacter, MIKA } from './characters.js';
+import { buildCharacter, MIKA, OPEN_EYES } from './characters.js';
 import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
@@ -55,6 +55,10 @@ export class Player {
     this.swingReadyAt = 0; // abgebrochenes Ausschwingen: nächster Schlag erst ab hier (this.time)
     this.flinch = 0; // Zusammenzucken nach einem Treffer (Sekunden)
     this.blinkAt = 2 + Math.random() * 3; // nächstes Blinzeln (this.time)
+    this.mood = 'normal'; // Grundstimmung im Gesicht (setzt game.js, M12)
+    this.faceTemp = 'normal'; // kurzer Ausdruck (express)
+    this.faceTimer = 0;
+    this.faceShown = 'normal';
     this._probe = { x: 0, z: 0 };
     this._lanternWorld = new THREE.Vector3();
   }
@@ -115,6 +119,12 @@ export class Player {
         for (const child of mesh.children) if (child.userData.outline) child.geometry = geo;
       });
     }
+  }
+
+  /** Kurzer Gesichtsausdruck (M12), z. B. 'froh' nach einem Fund. */
+  express(expr, seconds = 1) {
+    this.faceTemp = expr;
+    this.faceTimer = seconds;
   }
 
   get busy() {
@@ -272,10 +282,22 @@ export class Player {
     p.head.rotation.z = Math.sin(this.phase) * 0.04 * amt;
     // Beim Rennen etwas vorgebeugt
     p.body.rotation.x = running * 0.14;
-    // Blinzeln: alle paar Sekunden für einen Augenblick die Lider zu
+    // Gesicht (M12): Treffer, Arbeit und Kampf gehen vor, dann ein kurzer Ausdruck, sonst die Stimmung
+    if (p.faces) {
+      this.faceTimer = Math.max(0, this.faceTimer - dt);
+      let expr = this.faceTimer > 0 ? this.faceTemp : this.mood;
+      if (this.flinch > 0) expr = 'aua';
+      else if (a && (a.kind === 'swing' || a.kind === 'roll')) expr = 'entschlossen';
+      if (expr !== this.faceShown && p.faces[expr]) {
+        p.faces[this.faceShown].visible = false;
+        p.faces[expr].visible = true;
+        this.faceShown = expr;
+      }
+    }
+    // Blinzeln: alle paar Sekunden für einen Augenblick die Lider zu (nur bei offenen Augen)
     if (p.eyelids) {
       if (this.time > this.blinkAt + 0.13) this.blinkAt = this.time + 2.2 + Math.random() * 3.5;
-      p.eyelids.visible = this.time >= this.blinkAt;
+      p.eyelids.visible = this.time >= this.blinkAt && OPEN_EYES.has(this.faceShown);
     }
     // Getroffen: kurz zusammenzucken, Kopf nach hinten
     if (this.flinch > 0) {

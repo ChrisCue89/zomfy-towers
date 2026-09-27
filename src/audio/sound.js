@@ -91,6 +91,8 @@ const SFX = {
       s.tone('sine', 2340, t + dt, 0.14, { peak: 0.025 * v, attack: 0.003, out: o });
     }
   },
+  // Krähe fliegt auf (M12)
+  kraehe: (s, t, v, o) => s.caw(t, 0, 1.3 * v, o),
   // Haustür (M11): knarzende Angel, dann fällt die Tür leise zu
   tuer: (s, t, v, o) => {
     s.noise(t, 0.2, { type: 'bandpass', freq: 560, freqEnd: 380, q: 4, peak: 0.07 * v, out: o });
@@ -152,6 +154,8 @@ export class Sound {
     this.nextCricket = 1;
     this.nextPop = 0;
     this.nextGroan = 3;
+    this.nextDrip = 0; // Regentropfen (M12)
+    this.nextCrow = 14; // Krähen am Tag (M12)
     this.music = null; // der Soundtrack (M10d), entsteht mit dem AudioContext
   }
 
@@ -194,6 +198,7 @@ export class Sound {
     // Wind: endloses, weich gefiltertes Rauschen
     this.wind = this.loop({ type: 'lowpass', freq: 380, gain: 0 });
     this.fire = this.loop({ type: 'lowpass', freq: 260, gain: 0 });
+    this.rainLoop = this.loop({ type: 'bandpass', freq: 2200, gain: 0 }); // Nieselregen (M12)
     this.sfxPans = this.panPool(this.sfxBus, 0.7);
     this.ambPans = this.panPool(this.ambBus, 0.8);
     this.music = new Music(this, this.musicBus);
@@ -474,7 +479,8 @@ export class Sound {
     const night = s.hours >= 20.25 || s.hours < 5.5;
     const day = s.hours >= 6 && s.hours < 19.5;
     // Wind: leise, nachts etwas kräftiger, drinnen gedämpft
-    const windTarget = (night ? 0.05 : 0.032) * (s.inside ? 0.35 : 1) * (0.75 + 0.25 * Math.sin(t * 0.13) * Math.sin(t * 0.07));
+    // Windige Tage (M12) wehen hörbar stärker
+    const windTarget = (night ? 0.05 : 0.032) * (s.inside ? 0.35 : 1) * (0.75 + 0.25 * Math.sin(t * 0.13) * Math.sin(t * 0.07)) * Math.pow(s.wind ?? 1, 0.8);
     this.wind.gain.gain.setTargetAtTime(windTarget, t, 0.8);
     this.wind.filter.frequency.setTargetAtTime(300 + 180 * (0.5 + 0.5 * Math.sin(t * 0.21)), t, 0.8);
     // Feuer: Grundrauschen und Knistern in der Nähe
@@ -483,6 +489,19 @@ export class Sound {
     if (fire > 0 && (this.nextPop -= dt) <= 0) {
       this.nextPop = 0.04 + Math.random() * 0.25;
       this.noise(t, 0.012 + Math.random() * 0.02, { type: 'bandpass', freq: 1400 + Math.random() * 2200, q: 2, peak: 0.07 * fire, out: this.ambBus });
+    }
+    // Nieselregen (M12): Rauschen und einzelne Tropfen – drinnen trommelt er dumpf aufs Dach
+    const rain = s.rain || 0;
+    this.rainLoop.gain.gain.setTargetAtTime(rain * (s.inside ? 0.05 : 0.08), t, 0.8);
+    this.rainLoop.filter.frequency.setTargetAtTime(s.inside ? 650 : 2200, t, 0.5);
+    if (rain > 0.15 && !s.quiet && (this.nextDrip -= dt) <= 0) {
+      this.nextDrip = (0.05 + Math.random() * 0.2) / rain;
+      this.tone('sine', 1800 + Math.random() * 2600, t, 0.025, { peak: 0.012 * rain * (s.inside ? 0.4 : 1), attack: 0.002, out: this.pan(this.ambPans, this.ambBus, Math.random() * 2 - 1) });
+    }
+    if (!s.inside && !s.quiet && day && rain < 0.5 && (this.nextCrow -= dt) <= 0) {
+      // Krähen irgendwo am Waldrand (Lebenszeichen, DESIGN 3.2)
+      this.nextCrow = 25 + Math.random() * 40;
+      this.caw(t, Math.random() * 2 - 1, 0.7);
     }
     if (!s.inside && !s.quiet) {
       // Vögel am Tag: kurze Pfiffe mit schnellem Tonhöhenwechsel
@@ -511,6 +530,18 @@ export class Sound {
     for (let k = 0; k < n; k++) {
       const up = Math.random() < 0.5;
       this.tone('sine', base * (up ? 0.85 : 1.15), t + k * 0.09, 0.07, { freqEnd: base * (up ? 1.2 : 0.8), peak: 0.035, attack: 0.01, out });
+    }
+  }
+
+  /** Krähe: zwei, drei heisere Rufe. */
+  caw(t, dir = 0, volume = 1, out = null) {
+    const o = out || this.pan(this.ambPans, this.ambBus, dir);
+    const n = 2 + Math.floor(Math.random() * 2);
+    const f = 480 + Math.random() * 90;
+    for (let k = 0; k < n; k++) {
+      const s0 = t + k * (0.3 + Math.random() * 0.08);
+      this.tone('sawtooth', f, s0, 0.2, { freqEnd: f * 0.72, peak: 0.024 * volume, attack: 0.012, filter: 1500, out: o });
+      this.noise(s0, 0.15, { type: 'bandpass', freq: 1300, q: 2, peak: 0.012 * volume, attack: 0.01, out: o });
     }
   }
 

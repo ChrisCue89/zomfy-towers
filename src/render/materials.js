@@ -20,6 +20,7 @@ export const sharedUniforms = {
   uCutStrength: { value: 0 },
   uNight: { value: 0 }, // 0 = Tag, 1 = tiefe Nacht (world.js)
   uTime: { value: 0 }, // Sekunden, für Wind in Gras und Blumen
+  uWind: { value: 1 }, // Windstärke des Tages (Wetter, M12): 1 = normal
 };
 
 const DECLARATIONS = /* glsl */ `
@@ -74,7 +75,7 @@ const WIND_VERTEX = /* glsl */ `
   #endif
   float h = max(0.0, position.y);
   float gust = 0.6 + 0.4 * sin(uTime * 0.35 + base.x * 0.07);
-  transformed.x += (sin(uTime * 1.7 + base.x * 0.9 + base.z * 0.6) * 0.1 + sin(uTime * 3.3 + base.z * 1.3) * 0.035) * h * gust;
+  transformed.x += (sin(uTime * 1.7 + base.x * 0.9 + base.z * 0.6) * 0.1 + sin(uTime * 3.3 + base.z * 1.3) * 0.035) * h * gust * uWind;
 }
 #endif
 #ifdef WIND_HANG
@@ -83,7 +84,7 @@ const WIND_VERTEX = /* glsl */ `
   vec3 base = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
   float h = max(0.0, -position.y);
   float gust = 0.55 + 0.45 * sin(uTime * 0.4 + base.x * 0.3);
-  transformed.z += (sin(uTime * 2.3 + base.x * 1.7) * 0.22 + sin(uTime * 5.1 + base.x * 2.9) * 0.06) * h * gust;
+  transformed.z += (sin(uTime * 2.3 + base.x * 1.7) * 0.22 + sin(uTime * 5.1 + base.x * 2.9) * 0.06) * h * gust * min(uWind, 1.6);
   transformed.x += sin(uTime * 1.4 + base.x) * 0.05 * h;
 }
 #endif
@@ -94,7 +95,7 @@ function patch(material, extraUniforms = {}) {
     Object.assign(shader.uniforms, sharedUniforms, extraUniforms);
     if (material.defines?.WIND !== undefined || material.defines?.WIND_HANG !== undefined) {
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nuniform float uTime;')
+        .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uWind;')
         .replace('#include <begin_vertex>', WIND_VERTEX);
     }
     shader.fragmentShader = shader.fragmentShader

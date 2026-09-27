@@ -10,7 +10,7 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3, Rng, fbm, valueNoise } from '../core/rng.js';
 import { LAYOUT, snapV } from './layout.js';
-import { MAP, ISLANDS } from './map.js';
+import { MAP, ISLANDS, BAY, shoreX } from './map.js';
 
 /** Laubfarben (dunkel → hell) für Kronen. */
 export const LEAVES = {
@@ -197,6 +197,89 @@ function buildMushroom(seed) {
   return m;
 }
 
+// --- Herbst (Meilenstein 12): im feinen Maß (1/16 m) -------------------------
+
+/** Schilf mit Rohrkolben: steht im flachen Wasser am Ufer und wiegt sich im Wind. */
+function buildReeds(seed) {
+  const m = new VoxelModel();
+  const rng = new Rng(seed);
+  const stalks = rng.int(7, 11);
+  for (let i = 0; i < stalks; i++) {
+    const x = rng.int(-5, 5);
+    const z = rng.int(-3, 3);
+    const h = rng.int(10, 19);
+    const bend = rng.int(-1, 1); // die Spitze neigt sich ein wenig
+    for (let y = 0; y < h; y++) {
+      const dx = y > h * 0.7 ? bend : 0;
+      m.set(x + dx, y, z, y < 3 ? P.g3 : y >= h - 4 ? P.e7 : hash3(x, y, z, seed) < 0.3 ? P.e6 : P.g5);
+    }
+    // Rohrkolben: dunkelbraune Walze unter der Spitze
+    if (rng.chance(0.5)) m.box(x + bend, h - 6, z, x + bend + 1, h - 3, z, (xx, yy) => (yy === h - 3 ? P.e3 : P.e2));
+  }
+  // Schmale Blätter, die schräg abstehen
+  for (let i = 0; i < 4; i++) {
+    const x = rng.int(-5, 5);
+    const z = rng.int(-3, 3);
+    const dir = rng.chance(0.5) ? 1 : -1;
+    for (let k = 0; k < 7; k++) m.set(x + dir * Math.floor(k / 3), k, z, k > 4 ? P.e7 : P.g4);
+  }
+  return m;
+}
+
+/** Pilzgruppe: Fliegenpilze, Steinpilze oder Pfifferlinge – auf den ersten Blick zu unterscheiden. */
+function buildMushroomGroup(seed, kind) {
+  const m = new VoxelModel();
+  const rng = new Rng(seed);
+  const count = kind === 'pfifferling' ? rng.int(4, 6) : rng.int(2, 3);
+  const gap = kind === 'pfifferling' ? 3 : 6;
+  const spots = [];
+  for (let i = 0; i < count; i++) {
+    let x = 0;
+    let z = 0;
+    for (let tries = 0; tries < 30; tries++) {
+      x = rng.int(-5, 4);
+      z = rng.int(-4, 3);
+      if (!spots.some(([a, b]) => Math.abs(a - x) < gap && Math.abs(b - z) < gap)) break;
+    }
+    spots.push([x, z]);
+    const s = i === 0 ? 1 : rng.range(0.55, 0.85);
+    if (kind === 'fliegenpilz') {
+      // Weißer Stiel mit Ring, roter Hut mit weißen Tupfen
+      const h = Math.round(3 + 2 * s);
+      m.box(x, 0, z, x + 1, h, z + 1, (xx, y) => (y === h - 1 ? P.s7 : P.s9));
+      const r = 1.6 + 1.3 * s;
+      m.ellipsoid(x + 1, h + 1, z + 1, r, 1.1 + 0.8 * s, r, (xx, y, zz, dx, dy) => {
+        if (dy < -0.35) return null;
+        if (dy < 0.05) return P.s8; // helle Lamellen unter dem Rand
+        return hash3(xx, y, zz, seed) < 0.2 ? P.a4 : dy > 0.7 ? P.r4 : P.r3;
+      });
+    } else if (kind === 'steinpilz') {
+      // Dicker heller Stiel, brauner Hut
+      const h = Math.round(2 + 2 * s);
+      m.cylinder(x + 1, z + 1, 0, h, 1.2 + 0.5 * s, (xx, y) => (y < 2 ? P.e8 : P.e9));
+      const r = 1.8 + 1.3 * s;
+      m.ellipsoid(x + 1, h + 1, z + 1, r, 1.2 + 0.8 * s, r, (xx, y, zz, dx, dy) => {
+        if (dy < -0.35) return null;
+        return dy < 0.05 ? P.e8 : dy > 0.6 ? P.e5 : P.e4;
+      });
+    } else {
+      // Pfifferlinge: kleine gelbe Trichter
+      const h = Math.round(1 + 2 * s);
+      m.box(x, 0, z, x, h, z, P.f6);
+      m.box(x - 1, h + 1, z - 1, x + 1, h + 1, z + 1, (xx, y, zz) => (xx === x && zz === z ? P.f5 : P.f6));
+    }
+  }
+  return m;
+}
+
+/** Pilzgruppen am Fuß der Bäume in der Bucht (fest, M12). */
+const BAY_MUSHROOMS = [
+  { x: -6.5, z: -11.25, kind: 1 }, // unter der Eiche
+  { x: -1.5, z: -11.5, kind: 0 }, // an der Birke
+  { x: -6.0, z: 10.0, kind: 2 }, // am jungen Baum im Süden
+  { x: 1.75, z: 10.5, kind: 0 },
+];
+
 // --- Verteilen und Instanzen -------------------------------------------------
 
 const CHUNK = 12;
@@ -217,22 +300,22 @@ export class InstanceScatter {
    * @param {string} name
    * @param {VoxelModel} model
    * @param {THREE.Material} material
-   * @param {{shadow?: 'coarse'|'full'|'none', jitter?: number}} [options]
+   * @param {{shadow?: 'coarse'|'full'|'none', jitter?: number, size?: number}} [options] size: Voxelgröße (1/16 m für das feine Maß)
    */
-  addModel(name, model, material, { shadow = 'coarse', jitter = 0.05 } = {}) {
-    this.models.set(name, { model, material, shadow, jitter, visuals: new Map(), proxy: null });
+  addModel(name, model, material, { shadow = 'coarse', jitter = 0.05, size = 1 / 8 } = {}) {
+    this.models.set(name, { model, material, shadow, jitter, size, visuals: new Map(), proxy: null });
   }
 
   visualGeometry(entry, turns) {
     if (!entry.visuals.has(turns)) {
       const rotated = turns ? entry.model.rotated(turns) : entry.model;
-      entry.visuals.set(turns, rotated.toGeometry({ jitter: entry.jitter, seed: this.seed, visibleOnly: true }));
+      entry.visuals.set(turns, rotated.toGeometry({ jitter: entry.jitter, seed: this.seed, visibleOnly: true, size: entry.size }));
     }
     return entry.visuals.get(turns);
   }
 
   proxyGeometry(entry) {
-    if (!entry.proxy) entry.proxy = shadowGeometry(entry.model, entry.shadow);
+    if (!entry.proxy) entry.proxy = shadowGeometry(entry.model, entry.shadow, entry.size);
     return entry.proxy;
   }
 
@@ -289,6 +372,7 @@ export class InstanceScatter {
  */
 export function createNature({ seed, materials, colliders, blockers, map, nodes = [] }) {
   const rng = new Rng(seed ^ 0x5eed);
+  const deco = new Rng(seed ^ 0xa07); // Herbstschmuck (M12): eigener Zufall, der Wald bleibt, wie er war
   const scatter = new InstanceScatter(seed);
   const { occluder, world } = materials;
   const windy = materials.windy || world;
@@ -315,6 +399,10 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   const flowerColors = [P.a2, P.a3, P.f6, P.a3, P.a1];
   const flowers = flowerColors.map((c, i) => buildFlower(seed + 61 + i, c));
   const mushrooms = [buildMushroom(seed + 71), buildMushroom(seed + 72)];
+  // Herbst (M12): Pilzgruppen und Schilf im feinen Maß
+  const FINE = 1 / 16;
+  const groups = ['fliegenpilz', 'steinpilz', 'pfifferling'].flatMap((kind, k) => [buildMushroomGroup(seed + 81 + k * 2, kind), buildMushroomGroup(seed + 82 + k * 2, kind)]);
+  const reeds = [0, 1, 2, 3].map((i) => buildReeds(seed + 91 + i));
 
   firs.forEach((m, i) => scatter.addModel(`fir${i}`, m, occluder));
   oaks.forEach((m, i) => scatter.addModel(`oak${i}`, m, occluder));
@@ -325,6 +413,10 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   tufts.forEach((m, i) => scatter.addModel(`tuft${i}`, m, windy, { shadow: 'none', jitter: 0.03 }));
   flowers.forEach((m, i) => scatter.addModel(`flower${i}`, m, windy, { shadow: 'none', jitter: 0 }));
   mushrooms.forEach((m, i) => scatter.addModel(`mushroom${i}`, m, world, { shadow: 'none' }));
+  groups.forEach((m, i) => scatter.addModel(`pilze${i}`, m, world, { shadow: 'none', jitter: 0.03, size: FINE }));
+  reeds.forEach((m, i) => scatter.addModel(`schilf${i}`, m, windy, { shadow: 'none', jitter: 0.02, size: FINE }));
+  /** Eine Pilzgruppe der Art 0 (Fliegenpilz), 1 (Steinpilz) oder 2 (Pfifferling). */
+  const placeMushrooms = (x, z, kind) => scatter.place(`pilze${kind * 2 + deco.int(0, 1)}`, snapV(x), snapV(z), deco.int(0, 3));
 
   const nearNode = (x, z, r) => nodes.some((n) => (n.x - x) ** 2 + (n.z - z) ** 2 < (r + (n.radius || 0.6)) ** 2);
   const blocked = (x, z, r) =>
@@ -368,6 +460,12 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
       trees++;
       if (edge < 1.6) colliders.addCircle(x, z, 0.35, 'waldbaum');
       if (nearEdge && rng.chance(0.2)) scatter.place(`mushroom${rng.int(0, 1)}`, snapV(x + rng.range(-1.2, 1.2)), snapV(z + rng.range(0.6, 1.4)), rng.int(0, 3));
+      if (nearEdge && deco.chance(0.2)) {
+        // Am Waldrand dazu Pilzgruppen im feinen Maß (M12)
+        const px = x + deco.range(-1.2, 1.2);
+        const pz = z + deco.range(0.6, 1.4);
+        if (map.pathDistance(px, pz) > 0.9) placeMushrooms(px, pz, deco.int(0, 2));
+      }
     }
   }
   // Inseln im See: ein paar Tannen und Felsen
@@ -380,6 +478,33 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
       trees++;
     }
     scatter.place(`rock${rng.int(0, 3)}`, snapV(isl.x + isl.r * 0.6), snapV(isl.z + isl.r * 0.35), rng.int(0, 3));
+  }
+
+  for (const spot of BAY_MUSHROOMS) placeMushrooms(spot.x, spot.z, spot.kind);
+
+  // --- Schilf am Ufer (M12): im flachen Wasser, in Gruppen, der Steg bleibt frei ---
+  let reedsPlaced = 0;
+  for (let z = MAP.z0 + 2; z <= MAP.z1 - 2; z += 0.7) {
+    if (z > BAY.dock.z0 - 2.5 && z < BAY.dock.z1 + 3) continue; // Anleger für Balduins Boot
+    if (valueNoise(0, z * 0.35, seed + 17) < 0.45) continue; // Lücken zwischen den Beständen
+    for (let k = 0; k < 2; k++) {
+      const x = shoreX(z) + deco.range(0.05, 1.1);
+      const zz = z + deco.range(-0.3, 0.3);
+      if (!map.isWater(x, zz) || deco.chance(0.25)) continue;
+      scatter.place(`schilf${deco.int(0, reeds.length - 1)}`, snapV(x), snapV(zz), deco.int(0, 3));
+      reedsPlaced++;
+    }
+  }
+  // Auch an den Felsinseln ein paar Halme
+  for (const isl of ISLANDS) {
+    for (let k = 0; k < 3; k++) {
+      const a = deco.range(Math.PI * 0.4, Math.PI * 1.6); // eher an der Westseite (zum Ufer hin)
+      const x = isl.x + Math.cos(a) * (isl.r + 0.3);
+      const z = isl.z + Math.sin(a) * (isl.r + 0.3) * 0.8;
+      if (!map.isWater(x, z)) continue;
+      scatter.place(`schilf${deco.int(0, reeds.length - 1)}`, snapV(x), snapV(z), deco.int(0, 3));
+      reedsPlaced++;
+    }
   }
 
   // --- Büsche und Felsen als Saum (dort endet das Begehbare) ---
@@ -432,5 +557,5 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   }
 
   const { group, instances } = scatter.build();
-  return { group, stats: { trees, bushes: bushesPlaced, rocks: rocksPlaced, tufts: tuftsPlaced, flowers: flowersPlaced, instances } };
+  return { group, stats: { trees, bushes: bushesPlaced, rocks: rocksPlaced, tufts: tuftsPlaced, flowers: flowersPlaced, reeds: reedsPlaced, instances } };
 }
