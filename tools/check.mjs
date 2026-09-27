@@ -1257,9 +1257,16 @@ async function runCombatChecks(browser, url) {
   const xpNachher = (await state()).player.xp;
   if (xpNachher - xpVorher >= 1) note(`✓ Erfahrung: Abschuss im Nahkampf gibt ${xpNachher - xpVorher} Erfahrung`);
   else fail(`Erfahrung: ${xpVorher} -> ${xpNachher}`);
+  // Neue Stufe mitten im Getümmel: Die Wahl wartet, bis es ruhig ist (m4-r1)
+  await z((pl) => window.zomfy.spawnZombie('brummer', pl.x + 2.2, pl.z + 0.5), nachRolle.player);
   await z(() => window.zomfy.giveXp(30));
-  await step(700);
+  await step(1200);
+  const imKampf = await z(() => ({ mode: window.zomfy.mode, wartet: window.zomfyView().perkWartet }));
+  await z(() => window.zomfy.killAllZombies());
+  await step(1500);
   const wahl = await z(() => ({ mode: window.zomfy.mode, view: window.zomfyView().perkWahl }));
+  if (imKampf.mode === 'play' && imKampf.wartet && wahl.mode === 'perk') note('✓ Perks: im Getümmel wartet die Wahl (Hinweis), danach öffnet sie');
+  else fail(`Perks im Getümmel: ${JSON.stringify(imKampf)}, danach ${wahl.mode}`);
   await page.screenshot({ path: join(SHOTS, 'perks.png') });
   note('  Screenshot: screenshots/perks.png');
   await page.keyboard.press('Digit1');
@@ -1268,8 +1275,9 @@ async function runCombatChecks(browser, url) {
   if (wahl.mode === 'perk' && wahl.view?.length === 3 && Object.keys(nachWahl.perks).length === 1) note(`✓ Perks: Stufe ${nachWahl.player.level}, drei Karten, Taste 1 wählt (${Object.keys(nachWahl.perks)[0]})`);
   else fail(`Perks: Wahl ${JSON.stringify(wahl)}, danach ${JSON.stringify(nachWahl.perks)}`);
   // Weitere offene Wahl (mehrere Stufen auf einmal) gleich mit erledigen
-  for (let k = 0; k < 4 && (await z(() => window.zomfy.mode)) === 'perk'; k++) {
-    await step(600);
+  for (let k = 0; k < 4; k++) {
+    await step(1200); // die nächste Wahl kommt nach einem ruhigen Augenblick
+    if ((await z(() => window.zomfy.mode)) !== 'perk') break;
     await page.keyboard.press('Digit2');
     await step(100);
   }

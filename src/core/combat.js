@@ -92,6 +92,7 @@ export class Combat {
       dir: lunge?.dir,
       speed: lunge?.speed,
       onHit: () => this.hit(id, w),
+      freeAfterHit: true,
     });
   }
 

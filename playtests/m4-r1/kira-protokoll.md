@@ -1,0 +1,83 @@
+# m4-r1 – Kira (Protokoll, abgebrochen)
+
+Die Sitzung wurde vom Nutzungslimit der Testspieler-Agenten mitten im Spiel
+beendet, bevor ein Bericht entstand. Hier stehen unverändert die Notizen,
+die während des Spielens entstanden sind (in der Reihenfolge des Spiels).
+Stand: Hauptzweig nach m3-r2 (vor Meilenstein 5).
+
+- Ich lese zuerst die Persona-Datei und die README der Playtest-Brücke.
+- Jetzt lese ich DESIGN.md, Abschnitte 1–3.
+- Ich habe die erlaubte Doku gelesen. Jetzt starte ich meine Sitzung.
+- Ein Einführungsdialog. Als Kira versuche ich gleich, mitten im Dialog das Menü zu öffnen.
+- Escape hat den ganzen Einführungsdialog übersprungen – das merke ich mir. Jetzt hole ich die Axt vom Hackklotz links.
+- Axt eingesteckt, ein Dialog läuft. Ich teste Bauleisten-Tasten und Tab mitten im Dialog.
+- Jetzt schaue ich mir den neuen Reiter „Figur“ in der Bauleiste an.
+- Ich teste zuerst den Schlag mit der Axt ins Leere (Klick) und gehe dann zum markierten Baum.
+- Ich erkunde die Lichtung auf der Suche nach Schrott und markierten Bäumen.
+- Südlich steht ein Autowrack – dort vermute ich Schrott.
+- „Durchsuchen“ – ich halte E gedrückt.
+- Die Figur hat sich beim Halten von W nicht bewegt. Ich schaue genau hin.
+- Das Auto blockiert nur, kein Fehler. Ich gehe links herum.
+- Werkbank ist bezahlbar. Ich gehe zurück Richtung Haus und baue sie.
+- Die Figur hat sich nicht bewegt. Ich prüfe per Screenshot.
+- Ein Dialog nach dem Bau hielt das Spiel an – erwartungsgemäß. Weiter.
+- Meine schnellen Enter-Drücke haben den Dialog geschlossen, die Werkbank geöffnet und sofort eine Spitzhacke hergestellt. Das notiere ich. Jetzt schließe ich die Werkbank.
+- Ich habe jetzt Axt und Spitzhacke. Zeit für erste Ausweich-Tests: Rolle ins Leere, gegen die Werkbank und gegen die Hauswand.
+- Die Figur steht vor der Tür. Jetzt rolle ich durch die Tür ins Haus.
+- Im Haus bleibt die Figur drin. Ich versuche, durch die Ostwand hinauszurollen (mehrfach).
+- Rollen im Haus bleiben sauber in den Wänden. Ich gehe raus und suche Schlurfer und Schrott im Osten.
+- Die Figur bewegt sich gar nicht mehr – möglicherweise nach den Rollen in der Hausecke festgeklemmt. Ich prüfe das.
+- Kein echtes Festhängen – die Figur stand in einer Nische zwischen Tisch, Süd- und Ostwand. Ich verlasse das Haus über die Tür.
+- Östlich liegt ein großer Felsen. Ich baue ihn mit der Spitzhacke ab.
+- Ich laufe mit Umschalt zur Werkbank zurück.
+- Der Stein ist verwertet, für die Bratpfanne fehlt jetzt Stein. Ich stelle stattdessen den Rechen her.
+- Rechen ist gebaut („Waffe: große Reichweite, trifft viele“). Jetzt teste ich Waffenwechsel mitten im Schwung und Klick-Spam.
+- Keine Konsolenmeldung beim Wechseln im Schwung. Jetzt warte ich auf Tagesschlurfer.
+- Ein Schlurfer links außerhalb des Bildes. Ich gehe ihm mit dem Rechen entgegen.
+- Der Schlurfer steht westlich. Ich ziele mit der Maus auf ihn und schlage mit dem Rechen zu.
+- Schlurfer besiegt: Schadenszahl „10“, Erfahrung 1/10, Loot liegt am Boden. Ich sammle es ein.
+- Loot kam per Magnet (+1 Schrott). Ich schaue mir das Esc-Menü an.
+- Auffällig: Im Pausenmenü steht noch „Meilenstein 3 – Nächte, Türme und Loot“. Ich prüfe die Steuerungsseite.
+- Die Steuerungsseite nennt die Leertaste nur als „Dialog weiter“ – das Ausweichen fehlt. Ich schließe das Menü und gehe zum Bett, um Ausruhen zu testen.
+- Ausruhen bis 18:30 wird angeboten. Ich wähle es und spamme während der Abblende Esc, Tab, Q, Klicks und Leertaste.
+- Ausruhen funktioniert, Eingaben während der Abblende werden sauber ignoriert. Jetzt 18:32 – ich prüfe den Figur-Reiter mit Waffe in der Hand.
+- Der Figur-Reiter bietet jetzt „Rechen 2“ für 10 Schrott – die Waffen-Aufwertung. Ich gehe vors Haus und warte auf die Welle.
+- Die Uhr steht nach 60 s Warten immer noch auf 19:00. Das schaue ich mir genau an.
+- Ein Dialog („Heute Nacht kommt die Horde“) hat das Spiel angehalten – keine Uhr-Panne. Weiter.
+- Nacht 1, Welle 1/3 – zwei Schlurfer oben links. Ich gehe in den Nahkampf.
+- Drei Schlurfer nähern sich von Norden. Ich schlage wiederholt in ihre Richtung.
+- Die Figur bewegt sich unter der Wäscheleine nicht nach Norden. Ich prüfe andere Richtungen.
+- Die Figur war nur an einem Hindernis (Pfosten) blockiert. Ich laufe zum Haus, wo die Schlurfer angreifen.
+- Die Schlurfer greifen das Haus von Nordwesten an (292/300). Ich gehe um das Haus herum.
+- Die Figur bewegt sich weder nach Westen noch nach Norden. Ich teste alle Richtungen einzeln.
+- Die Figur stand an der dunklen Anbau-Ecke. Ich gehe großzügig außen herum.
+- Jetzt steht ein Pulk Schlurfer direkt östlich neben mir. Angriff!
+- Erfahrung 9/10 – ein Treffer vor dem Stufenaufstieg. Kurz der Treffer-Screenshot:
+- Welle 2/3 kommt von Westen. Jetzt versuche ich, den Stufenaufstieg mit dem Öffnen des Menüs im selben Moment zu kombinieren. Erst orten:
+- Der Schlurfer steht direkt neben mir. Ich schlage zu und drücke im selben Moment Esc.
+- Das vermeintliche Ziel war meine Laterne; der verbleibende Schlurfer ist links unten. Ich gehe hin.
+- Die Schlurfer kommen näher. Ich schlage zu und drücke direkt einen Frame später Esc.
+- Kein Treffer. Ich kämpfe jetzt normal weiter und beobachte den Stufenaufstieg.
+- Stufe 2! Die Perk-Wahl ist offen (Konter, Zähe Natur, Sammlerherz). Screenshot und dann Tests darauf.
+- Esc öffnet über der Perk-Wahl kein Menü (sie bleibt offen). Jetzt der harte Test: Neu laden mit offener Perk-Wahl.
+- Nach dem Neuladen ist die Perk-Wahl wieder da (gut) – aber die Nacht-Anzeige fehlt („nacht“: null), obwohl es 21:49 ist. Screenshot:
+- Oben Mitte steht jetzt nur „Zuhause 200/300“ statt „Nacht 1 · Welle 2/3“. Ich wähle einen Perk mit Tasten-Spam (2 und 3 im selben Frame) und beobachte, wie die Nacht weitergeht.
+- Nur ein Perk wurde genommen (die erste Taste zählt), die Nacht-Anzeige ist nach der Wahl wieder da. Screenshot:
+- Die Rolle hat mich in den Schlurfer hinein bzw. durch ihn hindurch getragen, ohne Schaden. Jetzt echter Kampf mit Waffenwechsel mitten im Schwung.
+- Schadenszahlen „6“ und „12“, Erfahrung 3/20. Jetzt Aufwerten mitten in der Welle und mitten im Schwung: Rechen in die Hand, schlagen, Tab zu „Figur“, C drücken.
+- Die Aufwertung verlangt einen zweiten Druck. Ich bestätige mitten im Kampf.
+- Aufwerten im Schwung klappt sauber. Jetzt Klick-Spam (15 Klicks ohne Pause) im Kampf.
+- Klick-Spam ist sauber gedrosselt (Schaden jetzt 14). Jetzt lasse ich mich absichtlich verprügeln, um die Ohnmacht zu testen.
+- Die Schlurfer ignorieren mich weitgehend und gehen aufs Haus. Ich kämpfe weiter, um Stufe 3 zu erreichen.
+- Wieder am Bäumchen unter der Wäscheleine hängen geblieben. Ich laufe unten herum.
+- Ein großer Schlurfer (lavendel durchscheinend) hämmert an der Nordwestecke. Ich greife ihn an.
+- Der Rechen-Schwung ist gut sichtbar, Erfahrung 13/20. Ich warte auf Welle 3.
+- Welle 3/3 aus Nordosten. Ich laufe an der Nordseite des Hauses entlang nach Osten.
+- Die Schlurfer stehen verdeckt zwischen Baumstämmen am Waldrand. Ich ziele direkt auf sie.
+- 19/20. Beim nächsten Stufenaufstieg teste ich Fenstergröße ändern und Auswahl per Zifferntaste.
+- Die Perk-Wahl ging auf – und mein dritter „Angriffs“-Klick hat sie geschlossen. Welcher Perk wurde genommen?
+- Ein Kampfklick hat „Sammlerherz“ gewählt, ohne dass ich die Karten gesehen habe. Jetzt Fenstergröße mitten im Kampf ändern.
+- Bei 1000×500 sieht alles gut aus, im Hochformat 400×700 überlappen HUD-Teile. Weiter mit der Welle.
+- Drei Schlurfer stehen seit Minuten fast reglos hinter Baumstämmen am Nordost-Waldrand. Ich beobachte 3 Sekunden, ohne anzugreifen.
+- Sie folgen mir – nicht festgefahren. Angriff.
+- „Nacht 1 geschafft!“ Jetzt Schlafen und Morgenbericht – und auf dem Weg eine Rolle durch die Haustür.

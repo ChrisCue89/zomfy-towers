@@ -1,0 +1,94 @@
+# m4-r1 – Mira (Protokoll, abgebrochen)
+
+Die Sitzung wurde vom Nutzungslimit der Testspieler-Agenten mitten im Spiel
+beendet, bevor ein Bericht entstand. Hier stehen unverändert die Notizen,
+die während des Spielens entstanden sind (in der Reihenfolge des Spiels).
+Stand: Hauptzweig nach m3-r2 (vor Meilenstein 5).
+
+- Ich lese zuerst die Persona-Datei und die Brücken-Anleitung.
+- Jetzt lese ich DESIGN.md Abschnitt 1–3 (Vision und Look).
+- Ich habe die erlaubten Dokumente gelesen. Jetzt starte ich meine Sitzung.
+- Das Spiel beginnt mit einem Dialog. Ich lasse den Text fertig tippen und lese ihn.
+- Schöner Einstieg. Ich blättere weiter und lese jede Zeile.
+- Warmes Morgenlicht, sehr stimmungsvoll. Ich gehe zum Hackklotz links.
+- Da ist eine Wäscheleine und eine Reifenschaukel – liebevoll. Ich nehme die Axt.
+- Ich schaue mich in Ruhe um und suche Schrotthaufen.
+- Eine alte Straße mit bemoostem Autowrack – schön. Ich suche am Wrack nach Schrott.
+- Nette Sprechblase. Ich brauche noch 2 Schrott – weiter am Straßenrand entlang nach Westen.
+- Der Bolzenwerfer ist bezahlbar. Vorher schaue ich mir den neuen Reiter „Figur“ in der Bauleiste an.
+- Waffen gibt es hier offenbar nicht – vermutlich an der Werkbank. Erst baue ich den Bolzenwerfer nahe beim Haus.
+- Ich drücke Q für den Bolzenwerfer und schaue mir die Vorschau an.
+- Die Vorschau ist sehr hilfreich: Kreis, Pünktchen für den Weg der Horde, Kreuze für die Angriffspunkte. Ich setze den Turm zwischen beide Kreuze.
+- Der Turm steht. Nun brauche ich Holz für eine Werkbank – ich suche Bäume mit rot-weißem Band.
+- Oh, man kann schaukeln! Das muss Mira natürlich ausprobieren.
+- Herrlich: „…Ich bin erwachsen. Aber es guckt ja keiner.“
+- Jetzt suche ich markierte Bäume. Ich laufe nach Norden, an der Wäscheleine vorbei.
+- Ich sehe junge Bäume mit rot-weißem Band. Erst hebe ich auf, was hier liegt.
+- 12 Holz. Jetzt die Werkbank – ich wechsle in den Reiter „Zuhause“ und schaue, wo sie gut hinpasst.
+- Die Vorschau liegt auf dem Weg der Horde. Ich schiebe die Werkbank zwischen die beiden Pfade, näher ans Haus.
+- Ich gehe an die Werkbank und schaue, was sie anbietet.
+- Die Werkbank bietet Schaufel, Bratpfanne, Rechen und Fäustlinge – das klingt nach schrulligen Waffen! Ich lese jede Beschreibung.
+- Die Beschreibung steht nur im Bild. Ich gehe die Einträge einzeln durch und mache jeweils ein Bild.
+- Vier Waffen: Schaufel (ausgewogen, Rückstoß), Bratpfanne (wuchtig, betäubt), Rechen (Reichweite), Fäustlinge (schnell, jeder dritte doppelt). Ich schaue mir noch die Verwerten-Zeilen an.
+- „3 Holz werden zu 1 Schrott. E halten: weiter“ – etwas knapp formuliert. Ich verwerte je einmal Holz und Stein, um an 2 Schrott für die Fäustlinge zu kommen.
+- Jetzt stelle ich die Fäustlinge her.
+- Kleiner Grammatikfehler: „Fäustlinge gebaut – liegt in der Schnellleiste“ (Plural, müsste „liegen“ heißen). Ich schließe die Werkbank und schaue Mika mit den Fäustlingen an.
+- Lagerfeuer mit Grillrost, ein Stuhl, Blumenkasten, Regentonne – sehr gemütlich. Weiter nach Osten.
+- Ein rot-weißer Gittermast ragt ins Bild – schönes Wahrzeichen. Ich rupfe Fasern und sammle die Steine ein.
+- Den Stein erwische ich nicht, egal. Ich erkunde weiter Richtung Gittermast und suche Schrotthaufen.
+- Hier stehen mehrere markierte Bäume. Ich fälle einen für Holz.
+- Unten an der Straße liegt etwas Bläuliches. Ich schaue nach.
+- +3 Schrott. Mit einmal Verwerten reicht es für die Schaufel – dann kann ich zwei Waffen vergleichen. Zurück zur Werkbank, diesmal rennend.
+- Oh – das Halten von E hat dreimal hintereinander verwertet (9 Holz weg), nicht nur einmal. Die Schaufel ist trotzdem gebaut. Ich schaue mir Mika mit der Schaufel an.
+- Ich probiere einen Probeschwung mit der Schaufel und fange ihn im Bild ein.
+- Der Schwung ist im Kleinen kaum als Schaufel zu erkennen – die Figur ist nur rund 20 Pixel groß. Ich laufe jetzt Richtung westlicher Waldrand, woher die Horde kommt, und sammle unterwegs.
+- 6 Holz. Ich baue eine Laterne neben den Bolzenwerfer, damit es nachts dort warm leuchtet.
+- „Warmes Licht für lange Abende.“ – schön. Ich schiebe die Laterne neben den Turm.
+- Die Laterne steht. Es ist Vormittag – ich setze mich ans Lagerfeuer und schaue, ob tagsüber Schlurfer vorbeikommen.
+- „Wärme im Gesicht, Kälte im Rücken. So muss ein Lagerfeuer sein.“ – wunderbar. Ich ruhe mich bis zum Abend aus, um den Sonnenuntergang zu erleben.
+- Goldenes Abendlicht, 18:31. Ich gehe zum Turm, nehme die Fäustlinge in die Hand und warte auf die Dämmerung.
+- Das Fenster glüht, die Laterne wirft eine warme Lichtinsel. Ich mache meine Handlaterne an (F) und warte auf die Welle.
+- Kühles Blau, warme Lichtinseln – genau wie beschrieben. Gleich kommt die Horde.
+- Die Welle kommt aus Nordwesten, eine Randmarke zeigt nach links oben. Ich gehe dem Schlurfer mit den Fäustlingen entgegen.
+- Zwei Schlurfer sollen im Bild sein, ich erkenne sie im Dunkeln aber nicht sofort. Ich gehe ein Stück nach Norden.
+- Die Schlurfer sind knuffig: grüne Köpfe, gelb leuchtende Augen, rosa Pilzhütchen – eher drollig als gruselig. Jetzt teste ich die Fäustlinge.
+- Schadenszahlen „7“ und „14“ – der dritte Schlag doppelt, wie beschrieben. Ich schlage weiter.
+- Der erste Schlurfer ist erledigt (Erfahrung 2/10, 1 Schrott eingesammelt). Unter dem Lebensbalken gibt es jetzt einen Erfahrungsbalken. Weiter geht's mit dem nächsten links.
+- Mika hat noch volle Lebenspunkte, die Schlurfer wollen offenbar vor allem zum Haus. Ich verfolge den rechten.
+- Mika ist hinter dem Dach als goldener Umriss zu sehen – gut lesbar. Sie hat 6 Schaden bekommen. Ich schlage auf den Schlurfer direkt neben ihr.
+- Das Leuchtding rechts war wohl eine Lampe am Haus, kein Schlurfer. Links kommen zwei heran – ich schlage nach links.
+- Ein gelber Trefferblitz, Zahlen fliegen (7, 14, 6). Noch 2 Schlurfer. Ich probiere jetzt auch die Ausweichrolle.
+- Die Rolle ist als kleines Kippen der Figur zu sehen. Ich kämpfe weiter gegen die zwei neben Mika.
+- Stufenaufstieg! Das Spiel ist in der Perk-Wahl. Ich schaue mir das genau an.
+- „Neu: Zähe Natur“. Oben steht schon „Gleich: Westen“ für die nächste Welle. Etwas störend: mitten im Kampf blendet „E Holz hacken“ ein. Ich warte auf Welle 2.
+- Mika hat sich zwischendurch erholt (95/100). Welle 2 kommt von links unten. Ich gehe hin – diesmal mit der Schaufel zum Vergleich.
+- Drei Schlurfer direkt vor Mika. Schaufel-Schläge nach links unten.
+- Die Schaufel trifft mit 16 – deutlich wuchtiger als die Fäustlinge. Noch einer übrig.
+- 15 Schrott gesammelt. Einer ist noch im Bild.
+- Welle 2 ist geschafft, das Zuhause ist unversehrt (300/300). Ich gehe Richtung Haus und warte auf Welle 3.
+- Welle 3 kommt aus Nordosten. Mit 15 Schrott setze ich dort einen zweiten Bolzenwerfer.
+- „Kein Platz“ auf dem Blumenbeet. Ich verschiebe den Turm neben den Pfad der Horde.
+- Zweiter Turm steht. Ich warte daneben und schaue, wie er schießt.
+- Unter dem Gittermast sind Mika (gold) und die Schlurfer (lavendel) als gerasterte Umrisse zu sehen. Ich schlage nach oben.
+- Unter dem Mast ist es unübersichtlich. Ich trete einen Schritt heraus und kämpfe im Freien weiter.
+- Ein Schlurfer steckt oben unter dem Mast fest. Ich gehe hin.
+- Nacht 1 ist überstanden, das neue Ziel lautet „Stelle an der Werkbank eine Spitzhacke her.“ Unter dem Mast funkelt noch Loot – ich sammle es ein.
+- Den letzten Brocken finde ich nicht, egal. Ich laufe zur Werkbank und schaue, ob man Waffen dort aufwerten kann.
+- Hier gibt es keine Waffen-Aufwertung. Ich baue die Spitzhacke fürs Ziel und schaue danach im Reiter „Figur“ nach.
+- Da ist sie: Im Reiter „Figur“ erscheint die Aufwertung „Schaufel 2“ für 10 Schrott. Ich lese die Beschreibung.
+- „Schaufel 2: Schaden 22 pro Schlag“ ist klar. „Schlagkraft: Schläge ×1,5“ ist knapp – mehr Schaden oder mehr Schläge? Ich werte die Schaufel auf.
+- Man muss zur Bestätigung ein zweites Mal drücken. Mache ich.
+- „Schaufel ist jetzt Stufe 2“. Die nächste Stufe kostet „18 Schrott, 1 Zahnräder“ – da müsste es „1 Zahnrad“ heißen.
+- Jetzt ab ins Bett. Ich gehe zur Haustür.
+- Das Innere ist gemütlich: Bett, Ofen, Tisch mit Kerzen, Teppich, Topfpflanze. Mika schläft ein – ich warte auf den Morgenbericht.
+- Der Morgenbericht ist herzlich: „Keinen Kratzer abbekommen. Das Frühstück schmeckt heute doppelt gut.“ Allerdings hatte Mika durchaus Treffer eingesteckt (bis 76/100). Weiter mit E.
+- Tag 2 bricht an. Rechts am Rand zeigt eine goldene Raute auf das übrige Beutestück. Das hole ich zuerst.
+- Der Bolzenwerfer unter dem Mast ist als Armbrust auf Holzgestell gut zu erkennen. Das Beutestück finde ich nicht. Ich sammle stattdessen die Steine hier für die Bratpfanne.
+- Stein reicht jetzt. Für die Bratpfanne fehlt Schrott – die Schrottstellen sollten heute wieder voll sein. Erst die an der Oststraße.
+- 6 Schrott. Weiter zum Autowrack im Westen.
+- 10 Schrott, 2 Zahnräder. Ab zur Werkbank – jetzt kommt die Bratpfanne.
+- Der Cursor stand woanders als erwartet – ich lande auf „Fäustlinge (schon da)“. Zwei nach oben zur Bratpfanne.
+- Mika bleibt an der Hauswand hängen. Ich gehe links herum nach Norden.
+- Hinter dem Haus: Solarpaneele und Schornstein auf dem Dach, Mika als goldener Umriss. Links steht ein markierter Baum.
+- 9 Holz – genug für drei Barrikaden. Ich wechsle zu „Türme“ und schaue mir die Wege an.
+- „Palisade. Lenkt die Horde um.“ Ich setze drei Barrikaden quer über den Pfad, der von Westen zum Haus führt.
