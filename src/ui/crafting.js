@@ -1,8 +1,8 @@
 // Werkbank-Menü: Rezepte mit Kosten, W/S wählen, E herstellen, Esc schließen.
 // Klicks werden in update() ausgewertet (siehe CLAUDE.md). Verwerten (Vorrat
-// umwandeln) geht nur mit gehaltenem E bzw. gehaltener Maustaste – wie das
-// Sammeln draußen: Ein Balken füllt die Zeile, jede Füllung wandelt einmal um.
-// Ein kurzer Druck verwertet nichts, zeigt aber sofort, was zu tun ist.
+// umwandeln): Ein Druck wandelt einmal um, gehaltenes E bzw. gehaltene
+// Maustaste macht gemächlich weiter – ein Balken füllt die Zeile bis zur
+// nächsten Umwandlung, ein Zähler zeigt, wie viel schon dabei herauskam (m3-r2).
 
 import { T } from '../data/texts.js';
 import { RECIPES } from '../data/recipes.js';
@@ -12,10 +12,10 @@ import { measure, LINE_HEIGHT } from './font.js';
 import { canAfford } from '../core/inventory.js';
 
 const ROW_H = 22;
-const HOLD_FIRST = 0.5; // so lange halten bis zur ersten Umwandlung
-const HOLD_REPEAT = 0.35; // jede weitere, solange gehalten wird
-const TAP_HINT = 2.2;
+const HOLD_FIRST = 0.6; // so lange halten bis zur zweiten Umwandlung
+const HOLD_REPEAT = 0.6; // jede weitere, solange gehalten wird
 const FLASH = 0.35;
+const COUNTER = 1.6; // so lange bleibt der Zähler nach dem Loslassen stehen
 
 /** Wandelt das Rezept nur Vorrat um (statt ein Werkzeug zu bauen)? */
 const isConversion = (r) => Boolean(r.gives.inventory);
@@ -27,14 +27,14 @@ export class CraftingMenu {
     this.isOpen = false;
     this.focus = 0;
     this.hold = null; // { id, t, count } – Verwerten läuft, solange gehalten wird
-    this.tapHint = 0; // Hinweis »E halten« nach einem kurzen Druck
+    this.counter = null; // { id, count, t } – »+n« an der Zeile
     this.flash = null; // { id, t } – Zeile leuchtet nach einer Umwandlung kurz auf
   }
 
   open() {
     this.isOpen = true;
     this.hold = null;
-    this.tapHint = 0;
+    this.counter = null;
     this.flash = null;
     // Zuerst ein Werkzeug, das man sich leisten kann – nie ein Verwerten-Rezept
     const list = this.recipes();
@@ -87,8 +87,8 @@ export class CraftingMenu {
       input.consumeClick();
       this.focus = hovered;
     }
-    this.tapHint = Math.max(0, this.tapHint - dt);
     if (this.flash && (this.flash.t -= dt) <= 0) this.flash = null;
+    if (this.counter && !this.hold && (this.counter.t -= dt) <= 0) this.counter = null;
     const r = L.rows[this.focus]?.recipe;
     if (!r) return;
     const started = input.pressed('confirm') || clicked;
@@ -97,36 +97,37 @@ export class CraftingMenu {
       if (started) this.game.craft(r);
       return;
     }
-    // Verwerten: nur solange E (bzw. die Maus auf der Zeile) gehalten wird
-    if (started && r.affordable) this.hold = { id: r.id, t: 0, count: 0 };
-    else if (started) this.game.craft(r); // zu wenig Vorrat: sagt »Dafür fehlt noch etwas«
-    const mouseHold = input.mouse.down && hovered === this.focus;
-    if (!this.hold || this.hold.id !== r.id || this.focus !== before) {
-      this.hold = null;
-      return;
+    // Verwerten: ein Druck wandelt einmal um, gehalten geht es weiter
+    if (started) {
+      if (r.affordable && this.convert(r)) this.hold = { id: r.id, t: 0, count: 1 };
+      else this.game.craft(r); // zu wenig Vorrat: sagt »Dafür fehlt noch etwas«
     }
-    if (!input.isDown('confirm') && !mouseHold) {
-      if (this.hold.count === 0) this.tapHint = TAP_HINT; // losgelassen, bevor etwas passiert ist
+    const mouseHold = input.mouse.down && hovered === this.focus;
+    if (!this.hold || this.hold.id !== r.id || this.focus !== before || (!input.isDown('confirm') && !mouseHold)) {
       this.hold = null;
       return;
     }
     this.hold.t += dt;
-    if (this.hold.t < (this.hold.count ? HOLD_REPEAT : HOLD_FIRST)) return;
+    if (this.hold.t < (this.hold.count > 1 ? HOLD_REPEAT : HOLD_FIRST)) return;
     this.hold.t = 0;
     const current = this.recipes().find((x) => x.id === r.id);
-    if (current?.affordable && this.game.craft(current)) {
-      this.hold.count += 1;
-      this.flash = { id: r.id, t: FLASH };
-      this.tapHint = 0;
-    } else {
-      this.hold = null; // Vorrat aufgebraucht
-    }
+    if (current?.affordable && this.convert(current)) this.hold.count += 1;
+    else this.hold = null; // Vorrat aufgebraucht
+  }
+
+  /** Einmal umwandeln, Zeile aufleuchten lassen, Zähler hochzählen. */
+  convert(r) {
+    if (!this.game.craft(r)) return false;
+    this.flash = { id: r.id, t: FLASH };
+    const same = this.counter && this.counter.id === r.id;
+    this.counter = { id: r.id, count: (same ? this.counter.count : 0) + 1, t: COUNTER };
+    return true;
   }
 
   /** Füllstand des Haltebalkens für ein Rezept (0…1). */
   holdProgress(id) {
     if (!this.hold || this.hold.id !== id) return 0;
-    return Math.min(1, this.hold.t / (this.hold.count ? HOLD_REPEAT : HOLD_FIRST));
+    return Math.min(1, this.hold.t / (this.hold.count > 1 ? HOLD_REPEAT : HOLD_FIRST));
   }
 
   /** Unterkante des Fensters samt Info-Zeile (Meldungen erscheinen darunter). */
@@ -156,6 +157,14 @@ export class CraftingMenu {
       const size = iconSize(r.icon);
       drawIcon(ui.ctx, r.icon, rect.x + 4 + Math.floor((12 - size.w) / 2), rect.y + Math.floor((rect.h - size.h) / 2));
       ui.text(T.rezepte[r.id], rect.x + 20, rect.y + 3, r.owned ? COLORS.textDim : r.affordable ? COLORS.text : COLORS.textDim);
+      // Zähler beim Verwerten: wie viel ist schon dabei herausgekommen?
+      if (this.counter?.id === r.id) {
+        const [res, n] = Object.entries(r.gives.inventory)[0];
+        const text = T.werkbank.zaehler(this.counter.count * n);
+        const tx = rect.x + 24 + measure(T.rezepte[r.id]);
+        ui.text(text, tx, rect.y + 3, COLORS.gold);
+        drawIcon(ui.ctx, res, tx + measure(text) + 2, rect.y + 5);
+      }
       // Kosten rechtsbündig
       let cx = rect.x + rect.w - 6;
       if (r.owned) {
@@ -172,12 +181,12 @@ export class CraftingMenu {
         cx -= 6;
       }
     });
-    ui.textCentered(T.werkbank.hinweis, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
-    // Gewählte Zeile: was kommt dabei heraus? (Verwerten: »E halten: …«)
+    // Gewählte Zeile: was kommt dabei heraus? (Verwerten: »… E halten: weiter«)
     const r = L.rows[this.focus]?.recipe;
+    const conversion = r && isConversion(r) && !r.owned;
+    ui.textCentered(conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
     if (r) {
-      const conversion = isConversion(r) && !r.owned;
-      const loud = conversion && (this.tapHint > 0 || this.hold);
+      const loud = conversion && Boolean(this.hold);
       const info = conversion ? T.werkbank.halten(T.rezeptInfo[r.id]) : T.rezeptInfo[r.id];
       const w = measure(info) + 12;
       ui.panel(Math.round(L.x + (L.w - w) / 2), L.y + L.h + 4, w, LINE_HEIGHT + 6, loud ? { frame: COLORS.gold } : undefined);

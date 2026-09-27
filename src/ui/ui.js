@@ -24,6 +24,7 @@ export const COLORS = {
   green: hexToCss(P.a6),
   buildOk: hexToCss(P.g9),
   buildBad: hexToCss(P.f3),
+  hordePath: hexToCss(P.f2),
 };
 
 export class UICanvas {

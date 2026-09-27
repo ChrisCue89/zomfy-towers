@@ -26,9 +26,10 @@ export const TOWERS = {
       A: {
         key: 'scharf',
         levels: [
-          { cost: { schrott: 14, zahnraeder: 1 }, damage: 55, rate: 0.6, range: 7, pierce: true, strongest: true },
-          { cost: { schrott: 20, zahnraeder: 2 }, damage: 85, rate: 0.65, range: 7.8, pierce: true, strongest: true },
-          { cost: { schrott: 30, moderkerne: 1 }, damage: 140, rate: 0.7, range: 8.8, pierce: true, strongest: true },
+          // m3-r2: vorher nur +3 Schaden/s gegenüber Stufe 2 – jetzt der Turm gegen Zähe und Anführer
+          { cost: { schrott: 14, zahnraeder: 1 }, damage: 80, rate: 0.6, range: 7, pierce: true, strongest: true },
+          { cost: { schrott: 20, zahnraeder: 2 }, damage: 120, rate: 0.65, range: 7.8, pierce: true, strongest: true },
+          { cost: { schrott: 30, moderkerne: 1 }, damage: 190, rate: 0.7, range: 8.8, pierce: true, strongest: true },
         ],
       },
       B: {

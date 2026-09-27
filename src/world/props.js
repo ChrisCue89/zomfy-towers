@@ -485,8 +485,9 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addBox(car.x - 1.75, car.z - 0.85, car.x + 1.75, car.z + 0.85);
   block(car.x - 1.9, car.z - 1.0, car.x + 1.9, car.z + 1.0);
   interactions.push({ id: 'auto', x: car.x, z: car.z, radius: 2.3, prompt: 'durchsuchen', search: 'auto' });
-  add(buildCrate(seed + 6), car.x + 2.25, car.z - 1.5, { name: 'Kiste' });
-  colliders.addBox(car.x + 2.25, car.z - 1.5, car.x + 2.9, car.z - 0.85);
+  // Die Kiste steht neben dem Heck auf der Straße – nördlich am Auto vorbei bleibt frei (m3-r2)
+  add(buildCrate(seed + 6), car.x + 2.125, car.z - 0.25, { name: 'Kiste' });
+  colliders.addBox(car.x + 2.125, car.z - 0.25, car.x + 2.775, car.z + 0.4);
 
   // Funkturm-Stumpf mit Trümmerteil
   const tower = LAYOUT.tower;
@@ -539,9 +540,10 @@ export function createProps({ seed, materials, colliders }) {
   interactions.push(axeInteraction);
   const s = LAYOUT.shelter;
   const barrel = { x: s.x + s.width * V + 0.375, z: s.z + s.depth * V - 0.375 };
-  add(buildRainBarrel(seed + 14), barrel.x, barrel.z, { name: 'Regentonne' });
-  colliders.addCircle(barrel.x, barrel.z, 0.33);
-  interactions.push({ id: 'regentonne', x: barrel.x, z: barrel.z, radius: 1.2, prompt: 'ansehen', dialog: 'regentonne', inside: false });
+  const barrelObject = add(buildRainBarrel(seed + 14), barrel.x, barrel.z, { name: 'Regentonne' });
+  const barrelInteraction = { id: 'regentonne', x: barrel.x, z: barrel.z, radius: 1.2, prompt: 'ansehen', dialog: 'regentonne', inside: false };
+  let barrelCollider = colliders.addCircle(barrel.x, barrel.z, 0.33);
+  interactions.push(barrelInteraction);
   const garden = LAYOUT.garden;
   add(buildGardenBed(seed + 15), garden.x, garden.z, { name: 'Beet' });
   colliders.addBox(garden.x, garden.z, garden.x + 2.0, garden.z + 1.5);
@@ -568,6 +570,22 @@ export function createProps({ seed, materials, colliders }) {
     group,
     interactions,
     blockers,
+    /**
+     * Die Regentonne steht an der Ecke der Notunterkunft – genau dort, wo die
+     * Hütte ihren Anbau bekommt. Ab der Hütte verschwindet sie samt Kollision
+     * und Einblendung (m3-r2: sie stand sonst unsichtbar im neuen Zimmer).
+     */
+    setHouseLevel(level) {
+      const shown = level < 2;
+      barrelObject.visible = shown;
+      barrelInteraction.enabled = shown;
+      if (!shown && barrelCollider) {
+        colliders.remove(barrelCollider);
+        barrelCollider = null;
+      } else if (shown && !barrelCollider) {
+        barrelCollider = colliders.addCircle(barrel.x, barrel.z, 0.33);
+      }
+    },
     axe: { object: stuckAxe, interaction: axeInteraction },
     fire: {
       frames: flameFrames,

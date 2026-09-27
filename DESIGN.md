@@ -293,7 +293,7 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
   ein Moderkern.
 - Man sammelt es, indem man in die Nähe läuft. Im **Sammelradius** fliegt es
   von selbst zur Figur und wird mit einem »+1« verbucht.
-- Loot zerfällt nach zwei Minuten (es blinkt vorher). Es funkelt ab und zu,
+- Loot zerfällt nach anderthalb Minuten (es blinkt vorher). Es funkelt ab und zu,
   glimmt nachts, und Rauten am Bildrand zeigen, wo außerhalb des Bildes noch
   etwas liegt. Wer viel sammeln will, muss nachts raus aus der sicheren Zone
   und rein ins Getümmel – Risiko gegen Belohnung.
@@ -322,7 +322,8 @@ Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?**
 
 - Die **Werkbank** wird über die Bauleiste gebaut. An ihr stellt man
   Werkzeuge (Spitzhacke), Waffen und Möbel her und verwertet Überschuss zu
-  Schrott.
+  Schrott: ein Druck verwertet einmal, gehaltenes E macht gemächlich weiter
+  (mit Zähler).
 - Rezepte werden freigeschaltet durch Tage, Funde, Überlebende und den
   Ausbau des Zuhauses.
 
@@ -423,8 +424,9 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
   Verluste – und zum Schluss ein Gedanke von Mika. Er bleibt im Spielstand,
   bis man ihn mit `E` schließt.
 - **Reparieren** über die Bauleiste (Reiter Zuhause: alles auf einmal, oder
-  einzeln über die Auswahl eines Baus) kostet Holz und Schrott; reicht der
-  Vorrat nicht, wird anteilig geflickt. Solange nachts eine Welle läuft,
+  einzeln über die Auswahl eines Baus) kostet Holz und Schrott (Zuhause: je
+  10 Standfestigkeit 1 Holz, je 15 ein Schrott – Schaden soll zählen); reicht
+  der Vorrat nicht, wird anteilig geflickt. Solange nachts eine Welle läuft,
   geht Reparieren nicht – erst abwehren, dann flicken.
 
 ### 6.13 Nahkampf und eigene Figur
@@ -434,7 +436,10 @@ Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
 - **Angriff** mit der linken Maustaste (in Richtung des Mauszeigers);
   gedrückt halten schlägt weiter, ein Klick mitten im Schwung wird
   vorgemerkt. Mika schlägt mit dem, was sie in der Hand hat (Schnellleiste):
-  Waffe, Axt, Spitzhacke – sonst mit den Fäusten.
+  Waffe, Axt, Spitzhacke – sonst mit den Fäusten. Steht ein Schlurfer knapp
+  außer Reichweite, macht sie beim Ausholen einen **Ausfallschritt** (bis gut
+  1 m) auf ihn zu. Dicht am Schlurfer (unter 2,4 m) hat Zuschlagen Vorrang
+  vor dem Auswählen eines Baus.
 - **Ausweichen** mit der Leertaste: kurze Rolle (0,3 s, gut 1,5 m) in
   Laufrichtung, dabei unverwundbar, danach 0,75 s Pause. Eine Rolle bricht
   einen Schwung ab.
