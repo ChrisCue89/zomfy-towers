@@ -1,16 +1,18 @@
 // Gebaute Dinge auf dem Raster: anlegen, laden, ausbauen, abreißen. Jeder Bau
 // belegt Rasterzellen, bekommt eine Kollision und eine Interaktion (benutzen
 // oder mit E auswählen). Türme haben Stufe, Spezialisierung, Haltbarkeit und
-// einen Kopf, der sich zum Ziel dreht. Nach jeder Änderung rechnet die Horde
+// einen Kopf, der sich zum Ziel dreht. Barrikaden (nur auf Wegfeldern) haben
+// Stufen, zeigen ihren Schaden und bleiben zerstört als Trümmer liegen, bis
+// man sie wieder aufbaut oder abräumt. Nach jeder Änderung rechnet die Horde
 // ihre Wege neu (pathing.rebuild).
 
 import * as THREE from 'three';
 import { createStaticVoxelObject, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { P } from '../render/palette.js';
-import { BUILDINGS, footprint } from '../data/buildings.js';
+import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
 import { towerStats } from '../data/towers.js';
-import { BUILDING_MODELS } from './buildingModels.js';
+import { BUILDING_MODELS, buildBarricade, buildRubble } from './buildingModels.js';
 import { fineTowerModels } from './towerModels.js';
 import { V } from './layout.js';
 
@@ -59,22 +61,28 @@ export class Buildings {
   }
 
   /**
-   * Prüft, ob ein Bau an (i, j) passt – auch, ob er der Horde den letzten Weg
-   * zum Zuhause abschneiden würde (Ergebnis zwischengespeichert).
+   * Prüft, ob ein Bau an (i, j) passt: Barrikaden nur auf Wegfeldern, alles
+   * andere nie auf einem Weg (Meilenstein 9) – und ob er der Horde den letzten
+   * Weg zum Zuhause abschneiden würde (Ergebnis zwischengespeichert).
    * @returns {{ok:boolean, reason?:string}}
    */
   check(type, i, j, turns, blockers = []) {
     const def = BUILDINGS[type];
     if (def.max && this.count(type) >= def.max) return { ok: false, reason: 'max' };
     const { w, d } = footprint(type, turns);
+    const cells = this.grid.cells(i, j, w, d);
+    const onPath = cells.map(([ci, cj]) => this.grid.isPath(ci, cj));
+    if (def.onPath && onPath.some((p) => !p)) return { ok: false, reason: 'nurWeg' };
+    if (!def.onPath && onPath.some(Boolean)) return { ok: false, reason: 'aufWeg' };
     if (!this.grid.canPlace(i, j, w, d)) {
-      const why = this.grid.cells(i, j, w, d).map(([ci, cj]) => this.grid.blockReason(ci, cj)).find(Boolean) || null;
+      const why = cells.map(([ci, cj]) => this.grid.blockReason(ci, cj)).find(Boolean) || null;
       return { ok: false, reason: 'belegt', why };
     }
     for (const b of blockers) {
       if (b.x + b.r > i && b.x - b.r < i + w && b.z + b.r > j && b.z - b.r < j + d) return { ok: false, reason: 'figur' };
     }
-    if (this.pathing) {
+    // Barrikaden sperren nie ab: Die Horde schlägt sich durch
+    if (this.pathing && !def.onPath) {
       const key = `${i}|${j}|${w}|${d}|${this.pathing.version}`;
       if (this.checkCache.key !== key) {
         this.checkCache = { key, result: this.pathing.wouldBlock(this.grid.cells(i, j, w, d)) };
@@ -90,12 +98,15 @@ export class Buildings {
    * @param {{material?: THREE.Material, glowMaterial?: THREE.Material, shadow?: string, level?: number, spec?: string|null}} [options]
    */
   object(type, turns, options = {}) {
-    const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null } = options;
+    const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null, look = 'ganz' } = options;
     if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow);
-    const key = type;
+    const key = type === 'barrikade' ? `${type}|${level}|${look}` : type;
     if (!this.models.has(key)) {
       const s = BUILDING_MODELS[type];
-      this.models.set(key, { model: s.model(this.seed), glow: s.glow ? s.glow() : null });
+      let model;
+      if (type === 'barrikade') model = look === 'truemmer' ? buildRubble(this.seed, level) : buildBarricade(this.seed, level, look === 'kaputt' ? 0.55 : 0);
+      else model = s.model(this.seed);
+      this.models.set(key, { model, glow: s.glow ? s.glow() : null });
     }
     const { model, glow } = this.models.get(key);
     const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow });
@@ -136,7 +147,11 @@ export class Buildings {
       building.level = extra.level || 1;
       building.spec = extra.spec || null;
     }
-    if (def.hp) building.hp = Math.min(def.hp, extra.hp ?? def.hp);
+    if (type === 'barrikade') {
+      building.level = Math.max(1, Math.min(3, extra.level || 1));
+      building.broken = Boolean(extra.broken);
+    }
+    if (def.hp) building.hp = building.broken ? 0 : Math.min(maxHpOf(building), extra.hp ?? maxHpOf(building));
     const cx = i + w / 2;
     const cz = j + d / 2;
     this.attachObject(building);
@@ -145,6 +160,7 @@ export class Buildings {
       def.tower && w === 1 && d === 1
         ? this.colliders.addCircle(cx, cz, 0.36, `bau-${building.id}`)
         : this.colliders.addBox(i + 0.08, j + 0.08, i + w - 0.08, j + d - 0.08, `bau-${building.id}`);
+    if (building.broken) building.collider.enabled = false; // Trümmer: begehbar
     this.grid.occupy(building.id, i, j, w, d);
     const radius = 1.1 + Math.max(w, d) * 0.3;
     // Werkbank, Bank, Beet: benutzen. Alles andere (auch Türme): mit E auswählen.
@@ -169,7 +185,8 @@ export class Buildings {
       this.lightPools.remove(b.pool);
       b.pool = null;
     }
-    b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec });
+    b.look = this.lookOf(b);
+    b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec, look: b.look });
     if (BUILDINGS[b.type].tower) this.addOutline(b.object);
     b.object.position.set(cx, 0, cz);
     b.head = b.object.userData.head || null;
@@ -196,6 +213,44 @@ export class Buildings {
       outline.renderOrder = 1;
       mesh.add(outline);
     }
+  }
+
+  /** Aussehen einer Barrikade: ganz, kaputt (unter halber Haltbarkeit) oder Trümmer. */
+  lookOf(b) {
+    if (b.type !== 'barrikade') return 'ganz';
+    if (b.broken) return 'truemmer';
+    return b.hp < maxHpOf(b) * 0.5 ? 'kaputt' : 'ganz';
+  }
+
+  /** Nach Schaden oder Flicken: Aussehen der Barrikade nachziehen. */
+  refreshLook(b) {
+    if (this.lookOf(b) !== b.look) this.attachObject(b);
+  }
+
+  /** Barrikade zerbricht: Trümmer bleiben liegen, die Horde läuft darüber. */
+  breakBarricade(b) {
+    b.broken = true;
+    b.hp = 0;
+    b.collider.enabled = false;
+    this.attachObject(b);
+    this.pathing?.rebuild();
+  }
+
+  /** Barrikade aus Trümmern wieder aufbauen (volle Haltbarkeit). */
+  rebuildBarricade(b) {
+    b.broken = false;
+    b.hp = maxHpOf(b);
+    b.collider.enabled = true;
+    this.attachObject(b);
+    this.pathing?.rebuild();
+  }
+
+  /** Barrikade eine Stufe höher: der Schaden bleibt anteilig erhalten. */
+  upgradeBarricade(b) {
+    const share = b.hp / maxHpOf(b);
+    b.level = Math.min(3, b.level + 1);
+    b.hp = maxHpOf(b) * share;
+    this.attachObject(b);
   }
 
   /** Turm auf eine neue Stufe/Spezialisierung bringen. */
@@ -234,7 +289,8 @@ export class Buildings {
       if (b.day) e.day = b.day;
       if (b.level) e.level = b.level;
       if (b.spec) e.spec = b.spec;
-      if (b.hp !== undefined && b.hp < BUILDINGS[b.type].hp) e.hp = Math.round(b.hp);
+      if (b.broken) e.broken = true;
+      if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       return e;
     });
   }

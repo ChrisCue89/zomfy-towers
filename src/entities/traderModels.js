@@ -1,11 +1,11 @@
-// Balduins Bollerwagen (Meilenstein 8) im feinen Maß (1/16 m). Der Wagen
-// fährt, deshalb mit allen Flächen gebaut (nicht nur den sichtbaren) – er
-// dreht sich zum Abfahren um. Räder und Deichsel sind eigene Teile, die sich
-// bewegen; die Fransen am Sonnendach wehen im Wind (Vertex-Shader).
-//
-// Lesbar schon von Weitem: lila-gelb gestreiftes Sonnendach auf vier Stangen,
-// darunter Kiste, Fass, Sack und Einmachgläser mit trüber grüner Brühe
-// (in einem schwimmt ein Auge – was er mit den Zombieteilen macht, sagt er nicht).
+// Balduins Boot (Meilenstein 9, einfache Fassung) im feinen Maß (1/16 m).
+// Seit M9 kommt Balduin nur noch übers Wasser – der Bollerwagen aus M8 ist
+// fort. Ein kleines Fischerboot: dunkelblauer Rumpf mit weißem Streifen,
+// Holzreling, hinten ein Steuerhaus mit rotem Dach und einem lila-gelben
+// Wimpel, vorn Kisten, ein Fass und die Einmachgläser mit trüber grüner Brühe
+// (in einem schwimmt ein Auge – was er mit den Zombieteilen macht, sagt er
+// nicht). Bug zeigt nach −x (es kommt von Osten und legt längs am Steg an).
+// Ursprung: Mitte des Boots auf der Wasserlinie.
 
 import * as THREE from 'three';
 import { VoxelModel } from '../render/voxel.js';
@@ -13,151 +13,91 @@ import { P } from '../render/palette.js';
 
 const U = 1 / 16;
 
-/** Wagenmaße in Voxeln (Ursprung: Mitte des Wagens am Boden). */
-export const CART = {
-  halfLength: 10, // Kasten x -10..10
-  halfWidth: 5, // Kasten z -5..5
-  wheelX: 7, // Achsen bei x = ±7
-  wheelZ: 7, // Räder bei z = ±7
-  wheelY: 4, // Radmitte
-  wheelRadius: 4.5,
-  handleY: 6, // Gelenk der Deichsel am Kastenende
+/** Lila-gelbe Streifen (Balduins Farben, am Wimpel). */
+const stripe = (x) => (Math.floor((x + 12) / 3) % 2 ? P.f6 : P.d3);
+
+/** Bootsmaße in Voxeln (1/16 m). */
+export const BOAT = {
+  halfLength: 30, // Rumpf x -30..29
+  halfWidth: 11, // z -11..11
+  deck: 7, // Oberkante Deck (Balduin steht darauf)
 };
 
-const stripe = (x) => (Math.floor((x + 12) / 3) % 2 ? P.f6 : P.d3);
-const ROOF = 32; // Höhe des Sonnendachs (2 m)
-
-function bodyModel() {
+function boatModel() {
   const m = new VoxelModel();
-  const L = CART.halfLength;
-  const W = CART.halfWidth;
-  // Unterbau: Längsbalken und Achsen
-  m.box(-L + 1, 5, -W + 1, L - 1, 5, -W + 1, P.e2).box(-L + 1, 5, W - 1, L - 1, 5, W - 1, P.e2);
-  for (const x of [-CART.wheelX, CART.wheelX]) m.box(x, CART.wheelY, -CART.wheelZ + 1, x, CART.wheelY, CART.wheelZ - 1, P.s2);
-  // Boden und Bordwände aus Brettern, dunkle Pfosten, Eisenbeschläge an den Ecken
-  m.box(-L, 6, -W, L, 7, W, (x, y) => (y === 6 ? P.e2 : P.e3));
-  m.box(-L, 8, -W, L, 10, W, (x, y, z) => {
-    const edge = x === -L || x === L || z === -W || z === W;
-    if (!edge) return null;
-    const corner = (x === -L || x === L) && (z === -W || z === W);
-    if (corner) return y === 10 ? P.s3 : P.e2;
-    if (z === W && y === 10) return null; // vorn niedriger: die Ladung soll man sehen
-    if (x === 0 || x === -5 || x === 5) return P.e3;
-    if (y === 10) return P.e4;
-    return (y + (z === W || z === -W ? x : z)) % 4 === 0 ? P.e4 : P.e5;
-  });
-  // Ladung: Kiste (links hinten)
-  m.box(-9, 8, -4, -4, 12, 0, (x, y, z) => (x === -9 || x === -4 || y === 12 || z === 0 || z === -4 ? P.e4 : P.e6));
-  m.box(-8, 13, -3, -6, 13, -1, (x, y, z) => ((x + z) % 2 ? P.s5 : null)); // Schraubenkram obenauf
-  // Fass (rechts hinten) mit Eisenreifen
-  m.box(5, 8, -4, 9, 14, 0, (x, y, z) => {
-    if ((x === 5 || x === 9) && (z === -4 || z === 0)) return null; // runde Kanten
-    if (y === 9 || y === 13) return P.s3;
-    return y === 14 ? P.e4 : x % 2 ? P.e5 : P.e4;
-  });
-  // Sack (rechts vorn) mit Schnur
-  m.box(6, 8, 1, 9, 10, 4, (x, y, z) => ((x === 6 || x === 9) && (z === 1 || z === 4) && y === 10 ? null : (x + y + z) % 3 ? P.e7 : P.e6));
-  m.set(7, 11, 2, P.e5).set(8, 11, 3, P.e5);
-  // Einmachgläser mit trüber grüner Brühe auf einem Brett – in einem schwimmt ein Auge
-  m.box(-4, 8, 1, 5, 9, 3, (x, y) => (y === 9 ? P.e5 : P.e3));
-  for (const [x0, h] of [[-3, 4], [0, 3], [3, 4]]) {
-    m.box(x0, 10, 1, x0 + 1, 9 + h, 2, (x, y) => (y === 9 + h ? P.b5 : (x + y) % 3 ? P.g5 : P.g6));
-    m.box(x0, 10 + h, 1, x0 + 1, 10 + h, 2, P.s3); // Deckel
-  }
-  m.set(0, 11, 2, P.s9).set(1, 11, 2, P.n1); // das Auge
-  // Glöckchen an der vorderen linken Stange
-  m.set(-L - 1, ROOF - 5, W, P.e3).set(-L - 1, ROOF - 6, W, P.f5).set(-L - 1, ROOF - 7, W, P.f4);
-  // Vier Stangen und das gestreifte Sonnendach – höher als Balduins Hut
-  for (const x of [-L, L]) for (const z of [-W, W]) m.box(x, 11, z, x, ROOF - 1, z, P.e3);
-  // Dach in zwei Lagen: von oben zeigt die Stufe am Rand die Form
-  m.box(-12, ROOF, -7, 12, ROOF, 7, (x) => stripe(x));
-  m.box(-11, ROOF + 1, -5, 11, ROOF + 1, 5, (x) => stripe(x));
-  return m;
-}
-
-/** Fransen an der Vorderkante (Ursprung oben: sie hängen nach unten und wehen). */
-function fringeModel() {
-  const m = new VoxelModel();
-  for (let x = -12; x <= 12; x++) {
-    const c = stripe(x);
-    m.set(x, -1, 0, c);
-    if ((x + 12) % 3 !== 2) m.set(x, -2, 0, c);
-    if ((x + 12) % 3 === 1) m.set(x, -3, 0, c);
-  }
-  return m;
-}
-
-/** Speichenrad in der x-y-Ebene, Mitte im Ursprung; die Nabe zeigt nach `out` (±1). */
-function wheelModel(out) {
-  const m = new VoxelModel();
-  const R = CART.wheelRadius;
-  for (let y = -5; y <= 5; y++) {
-    for (let x = -5; x <= 5; x++) {
-      const r = Math.hypot(x, y);
-      if (r > R) continue;
-      if (r > R - 1.2) m.set(x, y, 0, (x + y) % 2 ? P.s2 : P.s3); // Eisenreifen
-      else if (r <= 1) m.set(x, y, 0, P.s4).set(x, y, out, P.s3); // Nabe
-      else if (x === 0 || y === 0 || Math.abs(x) === Math.abs(y)) m.set(x, y, 0, P.e4); // Speichen
+  const L = BOAT.halfLength;
+  const W = BOAT.halfWidth;
+  // Rumpf: am Heck (+x) breit, zum Bug (−x) spitz
+  for (let x = -L; x < L; x++) {
+    const t = (x + L) / (2 * L); // 0 am Bug, 1 am Heck
+    const half = t > 0.35 ? W : W * Math.sqrt(Math.max(0, t / 0.35)) + 1;
+    for (let z = -W; z <= W; z++) {
+      const d = Math.abs(z) / half;
+      if (d > 1) continue;
+      const shell = d > 0.82 || x === -L || x === L - 1 || (d > 0.7 && half < 4);
+      for (let y = 0; y <= BOAT.deck; y++) {
+        if (y === BOAT.deck) {
+          // Reling oben am Rand, sonst Deck
+          m.set(x, y, z, shell ? P.e5 : (x + 60) % 4 === 0 ? P.e4 : P.e6);
+          if (shell) m.set(x, y + 1, z, P.e4);
+          continue;
+        }
+        if (!shell) continue;
+        m.set(x, y, z, y === 1 ? P.r2 : y === 4 ? P.s8 : (x + z) % 5 === 0 ? P.b1 : P.b2);
+      }
     }
   }
-  return m;
-}
-
-/** Deichsel: zeigt nach -x, Gelenk im Ursprung, Griff als Querholz. */
-function handleModel() {
-  const m = new VoxelModel();
-  m.box(-11, 0, 0, -1, 0, 0, P.e4);
-  m.box(-3, 0, -2, -1, 0, -2, P.e3).box(-3, 0, 2, -1, 0, 2, P.e3); // Gabel am Kasten
-  m.set(-4, 0, -1, P.e3).set(-4, 0, 1, P.e3);
-  m.box(-12, 0, -3, -12, 0, 3, P.e2); // Griff
+  // Name am Heck? Lieber ein Rettungsring an der Seite (zur Kamera hin)
+  for (let a = 0; a < 12; a++) {
+    const t = (a / 12) * Math.PI * 2;
+    m.set(12 + Math.round(Math.cos(t) * 2.2), 4 + Math.round(Math.sin(t) * 2.2), W + 1, a % 3 === 0 ? P.s9 : P.f3);
+  }
+  // Steuerhaus hinten
+  const d = BOAT.deck + 1;
+  m.box(14, d, -7, 25, d + 13, 7, (x, y, z) => {
+    const wall = x === 14 || x === 25 || z === -7 || z === 7;
+    if (!wall) return null;
+    const window = y >= d + 6 && y <= d + 9 && ((z === 7 && x > 16 && x < 23) || (x === 14 && Math.abs(z) < 4));
+    if (window) return y === d + 9 ? P.n4 : P.n3;
+    return (x + y) % 6 === 0 ? P.e6 : P.e7;
+  });
+  m.box(13, d + 14, -8, 26, d + 14, 8, (x) => (x % 2 ? P.r2 : P.r3)); // Dach
+  m.box(14, d + 15, -6, 25, d + 15, 6, P.r3);
+  // Mast mit Wimpel
+  m.box(22, d + 16, 0, 22, d + 26, 0, P.e3);
+  for (let k = 0; k < 6; k++) for (let y = 0; y < 3 - Math.floor(k / 3); y++) m.set(21 - k, d + 24 - y, 0, stripe(k * 3));
+  // Ladung vorn: Kisten, Fass, Einmachgläser auf einem Brett
+  m.box(-12, d, -8, -5, d + 5, -2, (x, y, z) => (x === -12 || x === -5 || y === d + 5 || z === -8 || z === -2 ? P.e4 : P.e6));
+  m.box(-10, d + 6, -7, -7, d + 8, -4, (x, y, z) => (x === -10 || x === -7 || y === d + 8 ? P.e4 : P.e7));
+  m.box(2, d, -8, 6, d + 6, -4, (x, y, z) => {
+    if ((x === 2 || x === 6) && (z === -8 || z === -4)) return null;
+    if (y === d + 1 || y === d + 5) return P.s3;
+    return y === d + 6 ? P.e4 : x % 2 ? P.e5 : P.e4;
+  });
+  m.box(-4, d, 2, 8, d, 5, P.e3);
+  for (const [x0, h] of [[-3, 4], [0, 3], [3, 4], [6, 3]]) {
+    m.box(x0, d + 1, 3, x0 + 1, d + h, 4, (x, y) => (y === d + h ? P.b5 : (x + y) % 3 ? P.g5 : P.g6));
+    m.box(x0, d + h + 1, 3, x0 + 1, d + h + 1, 4, P.s3);
+  }
+  m.set(0, d + 2, 4, P.s9).set(1, d + 2, 4, P.n1); // das Auge
+  // Laterne am Bug
+  m.box(-L + 3, d + 1, 0, -L + 3, d + 5, 0, P.e3);
+  m.box(-L + 2, d + 6, -1, -L + 4, d + 7, 1, P.f6);
   return m;
 }
 
 /**
- * Bollerwagen als bewegliche Gruppe.
- * @param {{world: THREE.Material, fringe: THREE.Material}} materials
- * @returns {{root: THREE.Group, turn: THREE.Group, wheels: THREE.Group[], handle: THREE.Group}}
+ * Balduins Boot als bewegliche Gruppe (schaukelt nur auf und ab, dreht nicht).
+ * @param {{world: THREE.Material}} materials
+ * @returns {{root: THREE.Group}}
  */
-export function buildCart(materials) {
-  const geo = (model, seed) => model.toGeometry({ jitter: 0.04, seed, size: U });
-  const mesh = (model, material, seed) => {
-    const m = new THREE.Mesh(geo(model, seed), material);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    return m;
-  };
-  // Voxel (x, y, z) liegt bei [x·U, (x+1)·U] – Mitte um ein halbes Voxel verschieben
-  const centered = (object) => {
-    object.position.set(-U / 2, 0, -U / 2);
-    return object;
-  };
+export function buildBoat(materials) {
   const root = new THREE.Group();
-  root.name = 'Bollerwagen';
-  const turn = new THREE.Group(); // dreht den Wagen zum Abfahren um (Deichsel voran)
-  root.add(turn);
-  turn.add(centered(mesh(bodyModel(), materials.world, 41)));
-  const fringe = mesh(fringeModel(), materials.fringe, 43);
-  fringe.castShadow = false;
-  fringe.position.set(-U / 2, ROOF * U, 7.5 * U);
-  turn.add(fringe);
-  const wheels = [];
-  const models = { [-1]: wheelModel(-1), [1]: wheelModel(1) };
-  for (const x of [-CART.wheelX, CART.wheelX]) {
-    for (const z of [-CART.wheelZ, CART.wheelZ]) {
-      const pivot = new THREE.Group();
-      pivot.position.set(x * U, (CART.wheelY + 0.5) * U, z * U);
-      const m = mesh(models[Math.sign(z)], materials.world, 47); // Nabe zeigt nach außen
-      m.position.set(-U / 2, -U / 2, -U / 2);
-      pivot.add(m);
-      turn.add(pivot);
-      wheels.push(pivot);
-    }
-  }
-  const handle = new THREE.Group();
-  handle.position.set((-CART.halfLength - 0.5) * U, (CART.handleY + 0.5) * U, 0);
-  const h = mesh(handleModel(), materials.world, 53);
-  h.position.set(0, -U / 2, -U / 2);
-  handle.add(h);
-  turn.add(handle);
-  return { root, turn, wheels, handle };
+  root.name = 'Balduins Boot';
+  const mesh = new THREE.Mesh(boatModel().toGeometry({ jitter: 0.04, seed: 61, size: U }), materials.world);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.position.set(-U / 2, 0, -U / 2);
+  root.add(mesh);
+  return { root };
 }

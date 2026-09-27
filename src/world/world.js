@@ -1,11 +1,15 @@
-// Die Welt: setzt Boden, Natur, Zuhause, Requisiten, Ressourcenquellen und
-// Bauten zusammen und betreibt alles, was sich in ihr bewegt oder leuchtet.
+// Die Welt: setzt Karte, Boden, See, Natur, Zuhause, Requisiten,
+// Ressourcenquellen und Bauten zusammen und betreibt alles, was sich in ihr
+// bewegt oder leuchtet. Die Bucht ist immer gleich, das Wegenetz entsteht aus
+// dem Startwert der Karte (`mapSeed`, liegt im Spielstand).
 
 import * as THREE from 'three';
 import { createWorldMaterial, createGlowMaterial, sharedUniforms } from '../render/materials.js';
 import { damp } from '../core/math.js';
 import { Colliders } from './colliders.js';
 import { createTerrain } from './terrain.js';
+import { createWater } from './water.js';
+import { GameMap } from './map.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
 import { createProps } from './props.js';
@@ -17,7 +21,6 @@ import { Pathing, homeRect } from './pathing.js';
 import { DayNight } from './daynight.js';
 import { WarmLights } from './lights.js';
 import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js';
-import { LAYOUT } from './layout.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
 const SMOKE_NIGHT = [new THREE.Color(0x58719e), new THREE.Color(0x353f69)];
@@ -26,15 +29,17 @@ export class World {
   /**
    * @param {object} options
    * @param {THREE.Scene} options.scene
-   * @param {number} options.seed
+   * @param {number} options.seed Startwert für Modelle und Zufall
+   * @param {number} options.mapSeed Startwert des Wegenetzes (je Spiel)
    * @param {object} options.renderConfig
    */
-  constructor({ scene, seed, renderConfig }) {
+  constructor({ scene, seed, mapSeed, renderConfig }) {
     this.scene = scene;
     this.seed = seed;
+    this.mapSeed = mapSeed >>> 0;
+    this.map = new GameMap(this.mapSeed);
     this.colliders = new Colliders();
-    const c = LAYOUT.clearing;
-    this.colliders.setBounds(c.cx, c.cz, c.rx, c.rz, c.power);
+    this.colliders.setBoundsFn((pos, radius, horde) => this.map.pushInside(pos, radius, horde));
 
     this.materials = {
       world: createWorldMaterial(),
@@ -44,31 +49,34 @@ export class World {
       // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
       building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),
       flame: createGlowMaterial(0xffffff, { vertexColors: true }),
-      beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Funkturm (Meilenstein 6)
+      beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Leuchtmast (Meilenstein 6)
+      spawnGlow: createGlowMaterial(0xffffff), // fahle Laternen an den Spawns (Meilenstein 9)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
     this.beaconPool = null;
 
-    const terrain = createTerrain(seed);
+    const terrain = createTerrain(seed, this.map);
     scene.add(terrain.group);
+    this.water = createWater(this.map, seed);
+    scene.add(this.water.group);
 
     this.shelterMaterials = createShelterMaterials();
     this.shelter = createShelter({ seed, colliders: this.colliders, level: 1, materials: this.shelterMaterials });
     scene.add(this.shelter.group);
 
-    this.props = createProps({ seed, materials: this.materials, colliders: this.colliders });
+    this.props = createProps({ seed, materials: this.materials, colliders: this.colliders, map: this.map });
     scene.add(this.props.group);
 
-    this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed });
+    this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed, map: this.map });
 
-    const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers });
+    const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers, map: this.map, nodes: this.resources.nodes });
     scene.add(nature.group);
     this.stats = nature.stats;
 
     // Bauraster: alles, was jetzt schon im Weg steht, ist blockiert – dazu
     // die Grundfläche aller Ausbaustufen des Zuhauses (die Hütte wächst dorthin).
-    this.grid = new BuildGrid({ minX: -16, maxX: 16, minZ: -12, maxZ: 13 });
+    this.grid = new BuildGrid(this.map);
     this.grid.markStatic(this.colliders);
     for (const level of [1, 2]) for (const r of shelterFootprint(level)) this.grid.blockRect(r.minX, r.minZ, r.maxX, r.maxZ, level);
     // Kleine Quellen (Kiesel, Gras, Äste) sind begehbar, aber nicht bebaubar –
@@ -87,7 +95,7 @@ export class World {
       lights: this.lights,
       seed,
     });
-    this.pathing = new Pathing(this.grid, (id) => this.buildings.get(id));
+    this.pathing = new Pathing(this.grid, (id) => this.buildings.get(id), this.map);
     this.pathing.setHome(homeRect(1));
     this.buildings.pathing = this.pathing;
 
@@ -96,21 +104,24 @@ export class World {
     this.chimneySmoke = new SmokeEmitter(this.particles, this.shelter.chimney, { rate: 1.3, size: [3, 8], life: [4.5, 6.5], rise: 0.4 });
     this.fireSmoke = new SmokeEmitter(this.particles, this.props.fire.smoke, { rate: 0.9, size: [2, 5], life: [2.5, 4], rise: 0.45 });
     this.embers = new EmberEmitter(this.particles, this.props.fire.embers, 5);
-    this.fireflies = new Fireflies(46, seed + 5, [
-      [-11, 3, 4],
-      [8.5, 0.5, 5],
-      [-6.5, -1.5, 4],
-      [3.5, 5.5, 5],
-      [12, -5, 3],
-      [-12, -6.5, 3],
-      [0.5, 9.5, 6],
-      [-9.5, 8.5, 3],
-    ]);
+    // Glühwürmchen: in der Bucht, am Ufer und über den offenen Streifen an den Wegen
+    const swarms = [
+      [-3, 6, 4],
+      [8, -2, 4],
+      [-5, -8, 3],
+      [5, 9, 4],
+      [11.5, -9, 3],
+    ];
+    for (const path of this.map.paths) {
+      const p = path.points[Math.floor(path.points.length * 0.45)];
+      swarms.push([p.x, p.z - 3.5, 4]);
+    }
+    this.fireflies = new Fireflies(64, seed + 5, swarms);
     scene.add(this.fireflies.object);
 
     this.interactions = [];
     this.refreshInteractions();
-    this.heightZones = this.shelter.heightZones;
+    this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
 
     this.fadeValue = 0;
     this.flameTimer = 0;
@@ -140,13 +151,14 @@ export class World {
     L.addGlow(s.glow.fairy, { dim: 0x555555, bright: 0xffffff, boost: 1.6, mode: 'lamp', twinkle: true });
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
     L.addGlow(this.materials.beacon, { dim: 0xc8b070, bright: 0xfff2c4, boost: 1.8, mode: 'lamp' });
+    L.addGlow(this.materials.spawnGlow, { dim: 0x3b4a44, bright: 0x6cc0ae, boost: 1.05, mode: 'lamp' });
   }
 
-  /** Funkturm-Ausbau zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
+  /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
   setTowerStage(stage, beaconRange = 9) {
     this.props.setTowerStage(stage);
     if (stage >= 3 && !this.beaconPool) {
-      const t = this.props.towerPos;
+      const t = this.props.beaconPos;
       this.beaconPool = this.lightPools.add(t.x, t.z, beaconRange);
     } else if (stage < 3 && this.beaconPool) {
       this.lightPools.remove(this.beaconPool);
@@ -170,7 +182,7 @@ export class World {
     this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
     this.props.setHouseLevel(level);
-    this.heightZones = this.shelter.heightZones;
+    this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
     this.pathing.setHome(homeRect(level));
     this.refreshInteractions();
   }
@@ -267,6 +279,7 @@ export class World {
     this.lights.update(dt, dn.lampLevel);
     this.lightPools.update(dn.lampLevel);
     this.resources.update(dt);
+    this.water.update(dt, focus);
 
     // Flammen: zufällig zwischen Einzelbildern wechseln
     this.flameTimer -= dt;

@@ -5,6 +5,76 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 9 – Die Bucht und die Wege ✓ (großer Umbau)
+
+**Auftrag:** das neue Grundkonzept umsetzen (DESIGN.md 0, OFFENE-FRAGEN
+63–74). Diesmal testet der Auftraggeber selbst – keine Testspieler-Agenten.
+
+**Fertig**
+
+- **Karte (`world/map.js`):** 96 × 60 m. Rechts der Stillsee mit Inseln und
+  treibenden Wellen (`water.js`), am Ufer die feste Bucht: altes Fischerhaus,
+  Hof als letzte Verteidigung, Steg nach Osten, Bootswrack am Strand,
+  Leuchtmast am Stegende. Links ein Wegenetz, das bei jedem neuen Spiel aus
+  einem Startwert entsteht (`state.world.mapSeed`): drei Spawns am linken
+  Rand (Nordweg, Mittelweg, Südweg) mit Warnpfählen und fahlgrünen Laternen,
+  Zuführungen mit Verzweigung, gemeinsamer letzter Abschnitt in den Hof.
+  Begehbar sind Bucht, Steg und die Streifen neben den Wegen; zwischen den
+  Wegen stehen Waldinseln.
+- **Herbst:** Gelände neu gemalt (Herbstwiese mit Laub, Erdwege, Sand und
+  Kiesel am Ufer, Seegrund), Laubbäume in Orange, Rot und Gelb, gelbe
+  Birken, dazwischen Tannen; südlich von Wegen und Bucht nur niedriger
+  Bewuchs, damit keine Krone den Weg verdeckt.
+- **Übersichtskarte (M):** das ganze Wegenetz mit Spawns, Türmen,
+  Barrikaden, Schlurfern, liegenden Überresten und Mika; das Spiel steht still.
+- **Wege der Horde:** Flussfeld nur über Weg und Hof (Wegmitte billiger),
+  alle Schlurfer laufen danach und schlagen Barrikaden ein (Brummer und
+  Anführer doppelt); wer hinter Mika her vom Weg abkommt, findet über ein
+  eigenes Feld zurück. Die Wegvorschau beim Bauen ist geblieben.
+- **Bauen:** Türme und alle anderen Bauten nie auf Wegfeldern, Barrikaden nur
+  dort (der Geist sagt, warum nicht). Barrikaden mit drei Stufen
+  (Holzbarriere, verstärkt, Metall), sichtbarem Schaden, Trümmern, die
+  liegen bleiben, und Wiederaufbau am Tag; sie stellen sich von selbst quer
+  zum Weg. Türme schauen anfangs nach Westen.
+- **Tag und Morgen:** tagsüber nur einzelne Schlurfer; Überreste bleiben drei
+  Spieltage liegen (auch über das Schlafen), eine verlorene Nacht räumt sie
+  nicht mehr ab.
+- **Balduin:** kommt mit seinem Boot über den See, legt am Steg an und
+  handelt dort; neues Aussehen als Seebär (Schiebermütze, Bart, roter Schal,
+  dunkler Mantel, riesiger Rucksack). Das Boot: blauer Rumpf, Steuerhaus,
+  Kisten, Fass und die Einmachgläser mit der grünen Brühe.
+- **Überlebende** auf Plätzen in der Bucht; Knopf bellt ohne Richtung, Juna
+  meldet morgens, wie viele Wellen und welche Arten kommen (OFFENE-FRAGEN 74).
+- **Spielstand v8:** Startwert der Karte; Migration erstattet Türme und
+  Barrikaden der alten Lichtung, stellt Werkbank, Beete, Bänke, Laternen und
+  Zelte in der Bucht neu auf (sonst Erstattung), setzt Quellen, Überreste und
+  Horde zurück. Ein neues Spiel über einem alten Stand lädt einmal neu
+  (frische Karte, Name und Aussehen bleiben).
+- **Tempo und Druck:** Schlurfer rund ein Viertel schneller, weil die Wege
+  lang sind. Wellen dichter gestaffelt (über höchstens 20 statt 30 Sekunden,
+  sonst räumte jeder Turm die Gruppen einzeln ab) und etwas mehr Budget
+  (Nacht 1: 30, Nacht 5: 82 – M8: 26, 74).
+- **Jagd um Bauten:** Steht zwischen einem Schlurfer und Mika ein Bau oder
+  Hindernis, sucht er über eine kleine Breitensuche um Mika (12 Felder
+  Umkreis) den Weg außen herum, statt davor festzuhängen. Wer vor dem Haus
+  auf der Fläche künftiger Anbauten steht (im Raster gesperrt), greift an,
+  statt vor der Wand zu zappeln.
+- **Prüfung:** neuer Abschnitt `wege` (Karte, Horde auf den Wegen,
+  Barrikadenreihe bis zu Trümmern und Wiederaufbau, Überreste drei Tage,
+  Tagesschlurfer, Übersichtskarte, Speichern v8, Migration v7 → v8); alle
+  übrigen Abschnitte auf die Bucht umgestellt. Volle Prüfung: 111
+  Prüfpunkte grün, Konsole sauber.
+
+**Entscheidungen:** OFFENE-FRAGEN 75–83 (Kartengröße, Spawn-Markierung,
+Hof, Wegfeld-Regel, Barrikadenwerte, Leuchtmast, neues Spiel lädt neu,
+Tempo, Tagesschlurfer). Nr. 66 bleibt offen (Stand vermerkt).
+
+**Offen / nächste Schritte:** Rückmeldung des Auftraggebers abwarten;
+M10 (Balduins Ankunft als Ereignis), M11 (Innenraum als eigenes Bild),
+M12 (Herbst, Wetter, Lesbarkeit), M13 (Balance über viele Nächte).
+
+---
+
 ## Neues Grundkonzept: die Bucht und die Strecke
 
 **Anlass:** Der Auftraggeber hat das Konzept überarbeitet und ein Konzeptbild

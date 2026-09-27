@@ -127,7 +127,7 @@ export class TowerSystem {
       list.push(z);
     }
     if (strongest) list.sort((a, b) => b.hp - a.hp);
-    else list.sort((a, b) => pathing.remaining(a.x, a.z, Boolean(a.def.breaksBarricades)) - pathing.remaining(b.x, b.z, Boolean(b.def.breaksBarricades)));
+    else list.sort((a, b) => pathing.remaining(a.x, a.z) - pathing.remaining(b.x, b.z));
     return list.slice(0, n);
   }
 

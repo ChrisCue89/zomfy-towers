@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Events } from './events.js';
 import { Input } from './input.js';
-import { SaveStore } from './save.js';
-import { createNewState, hoursOf, clockText, DAY_MINUTES } from './state.js';
+import { SaveStore, randomMapSeed } from './save.js';
+import { createNewState, hoursOf, clockText, DAY_MINUTES, absoluteMinute } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
 import { Builder } from './builder.js';
 import { Gathering } from './gathering.js';
@@ -42,6 +42,7 @@ import { BuildBar } from '../ui/buildbar.js';
 import { CraftingMenu } from '../ui/crafting.js';
 import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
+import { MapView } from '../ui/mapView.js';
 import { perkValue, PERKS, xpForLevel } from '../data/perks.js';
 import { drawText, measure, GLYPH_ROWS, setPlayerName } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
@@ -51,7 +52,7 @@ import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from 
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
-import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, barricadeLevel, maxHpOf } from '../data/buildings.js';
 import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
@@ -77,6 +78,30 @@ const LOOT_PITCH = { schrott: 700, teile: 560, holz: 620, stein: 660, fasern: 74
 const PERK_NEAR = 6;
 const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
 const DAY_FLOOR = 0.75; // so weit nagen Streuner das Zuhause tagsüber höchstens herunter
+const FRESH_KEY = 'zomfy-towers.neues-spiel';
+
+/** Neues Spiel über ein Neuladen hinweg merken (Name und Aussehen). false = geht nicht. */
+function stashFreshStart(data) {
+  try {
+    globalThis.sessionStorage.setItem(FRESH_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Gemerktes neues Spiel abholen (nur einmal). */
+function takeFreshStart() {
+  try {
+    const raw = globalThis.sessionStorage.getItem(FRESH_KEY);
+    if (!raw) return null;
+    globalThis.sessionStorage.removeItem(FRESH_KEY);
+    const data = JSON.parse(raw);
+    return data && typeof data.name === 'string' ? data : null;
+  } catch {
+    return null;
+  }
+}
 
 export class Game {
   constructor() {
@@ -120,7 +145,13 @@ export class Game {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0d0b18);
-    this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, renderConfig: CONFIG.render });
+    // Erst den Spielstand lesen: Das Wegenetz entsteht aus seinem Startwert (Meilenstein 9).
+    // Ohne Spielstand bekommt das neue Spiel gleich einen frischen.
+    this.saves = new SaveStore({ disabled: CONFIG.noSave, config: CONFIG });
+    const loaded = this.saves.load();
+    const mapSeed = loaded.state?.world.mapSeed ?? CONFIG.world.mapSeed ?? randomMapSeed();
+    this.worldFromSave = loaded.status === 'ok'; // gehört die Karte zu einem Spielstand?
+    this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, mapSeed, renderConfig: CONFIG.render });
     this.effects = new Effects(this.world.particles);
     this.player = new Player({ world: this.world, config: CONFIG.player });
     this.scene.add(this.player.object);
@@ -140,13 +171,14 @@ export class Game {
     this.crafting = new CraftingMenu(this);
     this.report = new ReportPanel(this);
     this.perkChoice = new PerkChoice(this);
+    this.mapView = new MapView(this);
     this.title = new TitleScreen(this);
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
       onKill: (z, source) => this.onZombieKilled(z, source),
       onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
-      onBarricadeHit: (b, dmg) => this.onBarricadeHit(b, dmg),
+      onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
       onDamage: (z, amount, source) => {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
       },
@@ -166,9 +198,7 @@ export class Game {
     this.furnishing = new Furnishing(this);
     this.portraits = renderPortraits();
 
-    this.saves = new SaveStore({ disabled: CONFIG.noSave, config: CONFIG });
-    const loaded = this.saves.load();
-    this.state = loaded.state || createNewState(CONFIG);
+    this.state = loaded.state || createNewState(CONFIG, this.world.mapSeed);
     this.isNewGame = loaded.status !== 'ok';
     if (CONFIG.startMinute !== null) this.state.time.minute = CONFIG.startMinute;
     if (CONFIG.spawn === 'inside') {
@@ -187,13 +217,22 @@ export class Game {
 
     if (loaded.status === 'corrupt') this.hud.toast(T.meldungen.defekt, null, 6);
     if (loaded.status === 'ok') this.hud.toast(T.meldungen.willkommen, 'haus');
+    // Alter Spielstand auf der neuen Karte: einmal erklären, was passiert ist
+    if (loaded.status === 'ok' && this.state.flags.umgezogen) {
+      delete this.state.flags.umgezogen;
+      this.hud.toast(T.meldungen.umgezogen, 'haus', 9);
+    }
     // Einführung auch nach einem Neuladen mitten im Intro noch einmal zeigen
     const introOpen = this.isNewGame || !this.state.flags.introGesehen;
     if (introOpen && !CONFIG.skipIntro) this.pendingIntro = true;
     else if (introOpen) this.hud.showHint(T.meldungen.hinweisStart, 14);
     if (CONFIG.test) this.intro.t = this.intro.duration;
-    // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
-    if (CONFIG.showTitle) {
+    // Neues Spiel nach dem Neuladen (frische Karte): gleich mit Name und Aussehen los
+    const fresh = takeFreshStart();
+    if (fresh && !this.worldFromSave) {
+      this.startNewFromTitle(fresh.name, fresh.look);
+    } else if (CONFIG.showTitle) {
+      // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
       this.titleIntro = this.pendingIntro;
       this.pendingIntro = false;
       this.mode = 'title';
@@ -263,7 +302,8 @@ export class Game {
     const st = this.state;
     this.builder.cancel();
     this.world.setHouseLevel(st.world.houseLevel);
-    this.world.buildings.load(st.world.buildings);
+    if (st.world.relocate) this.relocateOldBuildings();
+    else this.world.buildings.load(st.world.buildings);
     st.world.buildings = this.world.buildings.toState();
     this.world.setTowerStage(st.world.tower, BEACON.glow);
     this.furnishing.apply();
@@ -285,7 +325,7 @@ export class Game {
     this.rig.jumpTo(this.player.position.x, this.player.position.z);
     this.updateHeldItem(false);
     this.horde.load(st.horde);
-    this.loot.load(st.loot);
+    this.loot.load(st.loot, absoluteMinute(st.time));
     this.towers.clear();
     this.nights.reset();
     this.nights.load(st.hordeQueue);
@@ -295,6 +335,46 @@ export class Game {
     this.updateGoals(true);
     this.applyLook();
     if (st.report) this.showReport();
+  }
+
+  /**
+   * Alter Spielstand auf der neuen Karte (Meilenstein 9, Migration v7 → v8):
+   * Werkbank, Beete, Bänke, Laternen und Zelte bekommen in der Bucht einen
+   * neuen Platz nahe einem passenden Ort; wo keiner frei ist, gibt es das
+   * Material zurück. Türme und Barrikaden hat die Migration schon erstattet.
+   */
+  relocateOldBuildings() {
+    const st = this.state;
+    const buildings = this.world.buildings;
+    const anchors = { werkbank: [-1.5, -4], beet: [-4.5, -8.5], bank: [-1.5, 1.5], laternenpfahl: [2.5, -3.5], zelt: [-2, 8.5] };
+    const old = Array.isArray(st.world.buildings) ? st.world.buildings : [];
+    buildings.load([]);
+    const refund = {};
+    for (const e of old) {
+      const def = BUILDINGS[e.type];
+      if (!def || def.tower || def.defense) continue;
+      const [ax, az] = anchors[e.type] || [0, 7];
+      const turns = e.turns || 0;
+      let spot = null;
+      for (let r = 0; r <= 12 && !spot; r++) {
+        for (let dj = -r; dj <= r && !spot; dj++) {
+          for (let di = -r; di <= r && !spot; di++) {
+            if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+            const i = Math.floor(ax) + di;
+            const j = Math.floor(az) + dj;
+            if (buildings.check(e.type, i, j, turns).ok) spot = { i, j };
+          }
+        }
+      }
+      if (spot) {
+        const b = buildings.place(e.type, spot.i, spot.j, turns, e.id, e);
+        if (e.day) b.day = e.day;
+      } else {
+        gain(refund, def.cost);
+      }
+    }
+    gain(st.inventory, refund);
+    st.world.relocate = false;
   }
 
   /** Bewegliches (Horde, Loot, Haltbarkeit) in den Zustand übernehmen. */
@@ -321,7 +401,8 @@ export class Game {
 
   newGame() {
     this.saves.clear();
-    this.state = createNewState(CONFIG);
+    this.state = createNewState(CONFIG, this.world.mapSeed);
+    this.worldFromSave = true;
     this.isNewGame = true;
     this.applyState();
     this.menu.close();
@@ -352,7 +433,7 @@ export class Game {
           best = { x, y: 1.0, z };
         }
       };
-      consider('auto', LAYOUT.car.x, LAYOUT.car.z);
+      consider('wrack', LAYOUT.wreck.x, LAYOUT.wreck.z);
       for (const node of this.world.resources.byId.values()) if (node.rules.search && !node.depleted) consider(node.id, node.x, node.z);
       return best;
     }
@@ -534,7 +615,7 @@ export class Game {
     }
   }
 
-  /** @param {'werkbank'|'haendler'} [source] Werkbank oder Balduins Bollerwagen */
+  /** @param {'werkbank'|'haendler'} [source] Werkbank oder Balduins Handel am Boot */
   openCrafting(source = 'werkbank') {
     this.builder.cancel();
     this.mode = 'craft';
@@ -568,7 +649,7 @@ export class Game {
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
     if (recipe.trade) {
-      // Balduins Bollerwagen (Meilenstein 8)
+      // Balduins Handel (Meilenstein 8, seit M9 am Boot)
       this.trader.sold(recipe);
       this.hud.toast(T.ueberlebende.getauscht(T.menge(gives[1], gives[0])), recipe.icon, 2);
       this.sound.play('loot', { pitch: LOOT_PITCH[gives[0]] || 880 });
@@ -777,17 +858,22 @@ export class Game {
     if (st.world.homeHp <= 0 && this.nights.active) this.loseNight();
   }
 
-  onBarricadeHit(b, dmg) {
-    b.hp -= dmg;
+  /** Ein Schlurfer schlägt auf eine Barrikade ein (Metall fängt einen Teil ab). */
+  onBarricadeHit(b, dmg, z) {
+    if (b.broken) return;
+    const block = barricadeLevel(b.level).block || 0;
+    b.hp -= dmg * (z?.def.smash || 1) * (1 - block);
     const c = this.world.buildings.bounds(b);
-    this.effects.chips(c.x, 0.6, c.z, 'holz', 5);
-    if (b.hp > 0) return;
-    this.world.buildings.remove(b.id);
-    this.world.refreshInteractions();
+    this.effects.chips(c.x, 0.6, c.z, b.level >= 3 ? 'schrott' : 'holz', 5);
+    if (b.hp > 0) {
+      this.world.buildings.refreshLook(b);
+      return;
+    }
+    this.world.buildings.breakBarricade(b);
     this.effects.dust(c.x, c.z, 1.2);
+    this.sound.play('abriss', { x: c.x, z: c.z });
     this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
     if (this.nights.active) this.state.night.broken = (this.state.night.broken || 0) + 1;
-    if (this.builder.selection === b.id) this.builder.cancel();
   }
 
   /** Mika geht zu Boden: nachts verliert man die Nacht, tagsüber nur Zeit. */
@@ -844,20 +930,24 @@ export class Game {
     const damaged = { towers: 0, barricades: 0 };
     for (const b of this.world.buildings.list) {
       const def = BUILDINGS[b.type];
-      if (!def.hp) continue;
+      if (!def.hp || b.broken) continue;
+      const max = maxHpOf(b);
       // Türme nie unter ein Drittel: Sie schießen auch nach einer Pechsträhne weiter
-      const floor = def.tower ? def.hp * TOWER_LOSS_FLOOR : 0;
-      b.hp = Math.max(Math.min(b.hp, floor), b.hp - def.hp / 3);
+      const floor = def.tower ? max * TOWER_LOSS_FLOOR : 0;
+      b.hp = Math.max(Math.min(b.hp, floor), b.hp - max / 3);
       if (def.tower) damaged.towers += 1;
-      else damaged.barricades += 1;
+      else {
+        damaged.barricades += 1;
+        if (b.hp <= 0) this.world.buildings.breakBarricade(b);
+        else this.world.buildings.refreshLook(b);
+      }
     }
     // Notdürftig geflickt: ein Viertel – aber nie besser als zu Beginn der Nacht
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     st.world.homeHp = Math.max(1, Math.min(Math.round(max * 0.25), st.night.homeStart));
     st.night.fell = true;
     this.horde.clear();
-    this.loot.clear();
-    this.towers.clear();
+    this.towers.clear(); // Überreste bleiben liegen (M9): Morgens sieht man die Folgen
     st.night.losses = losses;
     st.night.damaged = damaged;
     this.nights.finishNight(false);
@@ -893,13 +983,13 @@ export class Game {
 
   // --- Titelbild (Meilenstein 7) ------------------------------------------------------
 
-  /** Kamera auf dem Titelbild: langsam über die Lichtung; bei der Figur neben Mika. */
+  /** Kamera auf dem Titelbild: langsam über die Bucht; bei der Figur neben Mika. */
   titleFocus(dt) {
     const f = this._titleFocus || (this._titleFocus = new THREE.Vector3());
     this.titleT = (this.titleT || 0) + dt;
     const p = this.player.position;
     if (this.title.screen === 'figur') f.set(p.x + 3.2, p.y, p.z - 0.4); // Mika links neben der Tafel
-    else f.set(1.5 + Math.sin(this.titleT * 0.07) * 3, 0, 1.5 + Math.sin(this.titleT * 0.05) * 1.2);
+    else f.set(6.5 + Math.sin(this.titleT * 0.07) * 3, 0, -2.5 + Math.sin(this.titleT * 0.05) * 1.0); // Haus, Steg und See
     return f;
   }
 
@@ -952,6 +1042,14 @@ export class Game {
 
   /** Neues Spiel mit Name und Aussehen. */
   startNewFromTitle(name, look) {
+    // Die Karte gehört noch zum alten Spielstand: einmal neu laden, dann entsteht
+    // ein neues Wegenetz und es geht gleich mit diesem Namen weiter
+    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look })) {
+      this.saves.clear();
+      this.holdSave = true;
+      location.reload();
+      return;
+    }
     this.title.close();
     this.holdSave = false;
     this.newGame();
@@ -1036,6 +1134,10 @@ export class Game {
         this.updateSleep(dt);
         this.player.idle(dt);
         break;
+      case 'karte':
+        if (this.mapView.update(input, dt)) this.mode = 'play';
+        this.player.idle(dt);
+        break;
       default:
         break;
     }
@@ -1047,7 +1149,7 @@ export class Game {
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
-    this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z));
+    this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
@@ -1078,6 +1180,13 @@ export class Game {
       return;
     }
     if (this.mode !== 'play') return; // die Bauleiste kann einen Dialog öffnen
+    // Übersichtskarte (Meilenstein 9): Das Spiel steht still, solange sie offen ist
+    if (input.pressed('map')) {
+      this.builder.cancel();
+      this.mapView.open();
+      this.mode = 'karte';
+      return;
+    }
 
     const slot = input.slotPressed();
     if (slot >= 0) this.selectSlot(slot);
@@ -1291,7 +1400,7 @@ export class Game {
       if (node.rules.tool && !st.tools[node.rules.tool]) return T.aktionen.brauchtWerkzeug(T.gegenstaende[node.rules.tool]);
       if (node.rules.search && this.gathering.searchEmpty(node.id)) return T.aktionen.leerBald;
     }
-    if (it.search && this.gathering.searchEmpty(it.id)) return it.id === 'auto' ? T.aktionen.ausgeraeumt : T.aktionen.leerBald;
+    if (it.search && this.gathering.searchEmpty(it.id)) return it.id === 'wrack' ? T.aktionen.ausgeraeumt : T.aktionen.leerBald;
     if (it.use === 'ernten') {
       const b = this.world.buildings.get(it.building);
       if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
@@ -1338,6 +1447,7 @@ export class Game {
     this.crafting.draw(ui);
     this.report.draw(ui);
     this.perkChoice.draw(ui);
+    this.mapView.draw(ui);
     // Meldungen liegen über dem Bericht; bei offener Werkbank darunter (nicht über dem Titel)
     const toastY = this.crafting.isOpen ? this.crafting.bottom(ui) : this.perkChoice.isOpen ? this.perkChoice.bottom(ui) : Math.max(64, (this.hud.bannerBottom || 0) + 4);
     this.hud.drawToasts(ui, toastY);
@@ -1540,6 +1650,10 @@ export class Game {
       get ready() {
         return game.ready;
       },
+      /** Das ganze Spiel (nur für Prüfung und Fehlersuche). */
+      get game() {
+        return game;
+      },
       get frame() {
         return game.frame;
       },
@@ -1674,7 +1788,7 @@ export class Game {
       // Meilenstein 8: Balduin, der Händler
       trader: () => {
         const n = game.trader.npc;
-        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, cart: game.trader.cart.root.position.x, standX: game.trader.standX, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled };
+        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, boat: game.trader.boat.root.position.x, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled };
       },
       /** Ein Angebot des Tages tauschen (wie ein Druck auf E im Handelsfenster). */
       trade(key) {
@@ -1702,6 +1816,39 @@ export class Game {
         return true;
       },
       pathBlocked: (cells) => game.world.pathing.wouldBlock(cells),
+      /** Meilenstein 9: Wegfelder einer Spalte (j-Werte), Karte, Wege der Horde. */
+      pathColumn(i) {
+        const g = game.world.grid;
+        const out = [];
+        for (let j = g.minZ; j < g.minZ + g.height; j++) if (g.isPath(i, j)) out.push(j);
+        return out;
+      },
+      mapInfo: () => {
+        const m = game.world.map;
+        return { seed: m.seed, topology: m.topology, spawns: m.spawns.map((s) => ({ ...s })), merge: { ...m.merge }, paths: m.paths.map((p) => p.id) };
+      },
+      traces: () => Object.keys(game.world.pathing.entries).map((name) => {
+        const pts = game.world.pathing.trace(name);
+        const last = pts[pts.length - 1];
+        return { name, n: pts.length, x: last.x, z: last.z, reach: game.world.pathing.brute[game.world.pathing.entries[name].k] };
+      }),
+      spawnAtEntry: (type, entry, count = 1) => game.nights.spawnGroup(type, entry, count, {}),
+      onPathOrYard: (x, z) => {
+        const g = game.world.grid;
+        const k = g.index(Math.floor(x), Math.floor(z));
+        return k >= 0 && (g.path[k] === 1 || g.yard[k] === 1);
+      },
+      lootDetails: () => game.loot.items.map((l) => ({ res: l.res, x: l.x, z: l.z, until: l.until })),
+      dropLoot: (x, z, n = 3) => {
+        for (let k = 0; k < n; k++) game.loot.spawn('teile', x, z);
+      },
+      rebuildBarricade: (id) => game.builder.repairBuilding(game.world.buildings.get(id)),
+      upgradeBarricade: (id) => game.builder.upgradeBarricade(game.world.buildings.get(id)),
+      hitBarricade(id, dmg) {
+        const b = game.world.buildings.get(id);
+        if (b) game.onBarricadeHit(b, dmg, null);
+        return b ? { hp: b.hp, broken: Boolean(b.broken), look: b.look } : null;
+      },
       /** Waldbäume am Rand der Lichtung (nicht fällbar) im Umkreis. */
       forestTrees: (x, z, r) => game.world.colliders.near(x, z, r).filter((c) => c.tag === 'waldbaum').map((c) => ({ x: c.x, z: c.z })),
       debugPath() {
@@ -1710,7 +1857,8 @@ export class Game {
           targets: pa.targets.length,
           home: pa.home,
           entries: Object.values(pa.entries).map((e) => ({ name: e.name, x: e.x, z: e.z, walk: pa.walk[e.k], brute: pa.brute[e.k] })),
-          reachable: Array.from(pa.walk).filter((v) => v < 1e8).length,
+          reachable: Array.from(pa.brute).filter((v) => v < 1e8).length,
+          // Textkarte: = Weg, , Hof, o Ziel am Haus, B Bau, # Hindernis, . sonst begehbar
           map: (() => {
             const g = game.world.grid;
             const rows = [];
@@ -1718,11 +1866,12 @@ export class Game {
               let row = '';
               for (let i = 0; i < g.width; i++) {
                 const k = j * g.width + i;
-                if (!g.inside[k]) row += ' ';
+                if (!g.inside[k] && !g.path[k]) row += ' ';
                 else if (g.blocked[k]) row += '#';
                 else if (g.occupant[k] !== null) row += 'B';
-                else if (pa.walk[k] === 0) row += 'o';
-                else if (pa.walk[k] >= 1e8) row += 'x';
+                else if (pa.brute[k] === 0) row += 'o';
+                else if (g.path[k]) row += '=';
+                else if (g.yard[k]) row += ',';
                 else row += '.';
               }
               rows.push(`${String(g.minZ + j).padStart(3)} ${row}`);

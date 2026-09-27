@@ -23,6 +23,16 @@ const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
 const BARK_AHEAD = 12; // Spielminuten vor einer Welle bellt Knopf
 
+/** »Schlurfer, Flitzer und ein Brummer« – was in einer Nacht kommt (für Junas Funkspruch). */
+export function nightMix(plan) {
+  const counts = {};
+  for (const wave of plan.waves) for (const s of wave.spawns) counts[s.type] = (counts[s.type] || 0) + (s.type === 'schwaermer' ? 0.25 : 1);
+  const order = ['schlurfer', 'flitzer', 'schwaermer', 'leuchtpilz', 'brummer', 'anfuehrer'];
+  const parts = order.filter((t) => counts[t]).map((t) => (counts[t] <= 1 ? T.horde.arten[t][0] : T.horde.arten[t][1]));
+  if (parts.length <= 1) return parts[0] || T.horde.arten.schlurfer[1];
+  return `${parts.slice(0, -1).join(', ')}${T.horde.und}${parts[parts.length - 1]}`;
+}
+
 export class Survivors {
   /** @param {import('./game.js').Game} game */
   constructor(game) {
@@ -184,7 +194,7 @@ export class Survivors {
     this.npcs.update(dt, p);
   }
 
-  /** Knopf bellt kurz vor jeder Welle in ihre Richtung – auch vor der ersten. */
+  /** Knopf bellt kurz vor jeder Welle – auch vor der ersten (M9: ohne feste Richtung, OFFENE-FRAGEN Nr. 74). */
   barkBeforeWave() {
     if (!this.resident('knopf')) return;
     const g = this.game;
@@ -210,8 +220,7 @@ export class Survivors {
       dog.bark = 1.2;
       g.sound.play('bellen', { x: dog.x, z: dog.z });
     }
-    const woher = wave.entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
-    g.hud.toast(T.ueberlebende.bellt(woher), 'pfote', 3.5);
+    g.hud.toast(T.ueberlebende.bellt, 'pfote', 3.5);
   }
 
   // --- Gespräche ------------------------------------------------------------------
@@ -419,9 +428,9 @@ export class Survivors {
       lines.push({ text: T.ueberlebende.tee });
     }
     if (this.resident('juna')) {
+      // Juna meldet, was heute Nacht kommt (M9: Arten statt Richtung, OFFENE-FRAGEN Nr. 74)
       const plan = planNight(st.time.day, g.world.seed, ENTRY_NAMES);
-      const first = plan.waves[0].entries.map((e) => T.horde.richtung[e]).join(T.horde.und);
-      lines.push({ text: T.ueberlebende.funk(first) });
+      lines.push({ text: T.ueberlebende.funk(plan.waves.length, nightMix(plan)) });
     }
     this.arrive(true);
     this.greeted.clear();
@@ -504,7 +513,7 @@ export class Survivors {
   /** Leuchtfeuer: Schlurfer in seinem Licht sind langsamer (0 = nicht). */
   beaconSlow(x, z) {
     if (this.towerStage() < 3) return 0;
-    const t = this.game.world.props.towerPos;
+    const t = this.game.world.props.beaconPos;
     return Math.hypot(x - t.x, z - t.z) < BEACON.range ? BEACON.slow : 0;
   }
 }

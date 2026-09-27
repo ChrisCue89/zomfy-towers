@@ -84,9 +84,10 @@ export class Npcs {
       bark: 0, // Bellen (Sekunden)
       sit: 0,
       sitTarget: 0,
-      drive: null, // m/s: Position setzt jemand anderes (Balduin mit dem Bollerwagen)
+      drive: null, // m/s: Position setzt jemand anderes
+      y: null, // Höhe, wenn sie nicht vom Boden kommt (Balduin im Boot)
       restFacing: null, // Blickrichtung im Stehen, wenn Mika weiter weg ist
-      pull: null, // 'L'/'R': dieser Arm hält die Deichsel
+      pull: null,
     };
     model.root.visible = false;
     this.group.add(model.root);
@@ -110,7 +111,7 @@ export class Npcs {
 
   sync(n) {
     const root = n.model.root;
-    root.position.set(n.x, this.world.heightAt(n.x, n.z), n.z);
+    root.position.set(n.x, n.y ?? this.world.heightAt(n.x, n.z), n.z);
     root.rotation.y = n.facing;
   }
 
@@ -168,8 +169,6 @@ export class Npcs {
     p.legR.rotation.x = -s * 0.7 * amt;
     p.armL.rotation.x = -s * 0.55 * amt;
     p.armR.rotation.x = s * 0.55 * amt;
-    // Zieht den Bollerwagen: ein Arm greift nach hinten zur Deichsel
-    if (n.pull) (n.pull === 'R' ? p.armR : p.armL).rotation.x = 0.6;
     p.body.position.y = Math.abs(Math.cos(n.phase)) * 0.03 * amt + Math.sin(this.time * 2 + n.x) * 0.005 * idle;
     p.head.rotation.x = Math.sin(n.phase * 2) * 0.05 * amt;
     p.head.rotation.y = Math.sin(this.time * 0.4 + n.z) * 0.15 * idle;

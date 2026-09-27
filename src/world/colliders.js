@@ -1,6 +1,7 @@
 // Kollision in der Bodenebene (x/z): Kreise, achsenparallele Rechtecke und
-// eine elliptische Außengrenze der Lichtung. Ein Raster aus 2-m-Zellen
-// sortiert die Hindernisse vor, damit auch viele Schlurfer schnell prüfen.
+// die Außengrenze des Begehbaren (Karte: Wald und Wasser, siehe map.js). Ein
+// Raster aus 2-m-Zellen sortiert die Hindernisse vor, damit auch viele
+// Schlurfer schnell prüfen.
 
 const CELL = 2;
 
@@ -8,7 +9,7 @@ export class Colliders {
   constructor() {
     this.circles = [];
     this.boxes = [];
-    this.bounds = null; // { cx, cz, rx, rz, power }
+    this.boundsFn = null; // (pos, radius, horde) => verschoben? – schiebt ins Begehbare zurück
     this.cells = new Map(); // "i,j" -> Hindernisse
     this.stamp = 0;
     this._near = [];
@@ -63,9 +64,9 @@ export class Colliders {
     }
   }
 
-  /** Außengrenze als Superellipse (power 2 = Ellipse, 4 = abgerundetes Rechteck). */
-  setBounds(cx, cz, rx, rz, power = 2) {
-    this.bounds = { cx, cz, rx, rz, power };
+  /** Außengrenze: Funktion, die eine Position ins Begehbare zurückschiebt. */
+  setBoundsFn(fn) {
+    this.boundsFn = fn;
   }
 
   /** Alle Hindernisse im Umkreis (ohne Doppelte). Die Liste wird wiederverwendet. */
@@ -87,9 +88,9 @@ export class Colliders {
 
   /**
    * Position (Objekt mit x/z) aus allen Hindernissen herausschieben.
-   * @param {{bounds?: boolean, horde?: boolean}} [options] bounds = Lichtungsgrenze
-   *   beachten; horde = Schlurfer laufen durch Hindernisse mit `hordeFree` (Balduins
-   *   Wagen steht nur morgens da und gehört nicht ins Flussfeld)
+   * @param {{bounds?: boolean, horde?: boolean}} [options] bounds = Außengrenze
+   *   beachten; horde = Schlurfer laufen durch Hindernisse mit `hordeFree` und
+   *   dürfen auf den Wegen auch dort gehen, wo die Figur nicht hinkommt
    */
   resolve(pos, radius, { bounds = true, horde = false } = {}) {
     for (let iteration = 0; iteration < 3; iteration++) {
@@ -136,17 +137,7 @@ export class Colliders {
           moved = true;
         }
       }
-      if (bounds && this.bounds) {
-        const { cx, cz, rx, rz, power } = this.bounds;
-        const ex = Math.abs(pos.x - cx) / (rx - radius);
-        const ez = Math.abs(pos.z - cz) / (rz - radius);
-        const e = Math.pow(Math.pow(ex, power) + Math.pow(ez, power), 1 / power);
-        if (e > 1) {
-          pos.x = cx + (pos.x - cx) / e;
-          pos.z = cz + (pos.z - cz) / e;
-          moved = true;
-        }
-      }
+      if (bounds && this.boundsFn && this.boundsFn(pos, radius, horde)) moved = true;
       if (!moved) break;
     }
     return pos;

@@ -1,5 +1,6 @@
-// Requisiten der Lichtung. Jedes Modell ist ein kleines Voxel-Bauwerk mit
-// Ursprung am Boden; Positionen liegen auf dem 1/8-m-Raster.
+// Requisiten der Bucht (Meilenstein 9): Feuerstelle, Steg, Leuchtmast,
+// Bootswrack, Wäscheleine, Holzstapel … Jedes Modell ist ein kleines
+// Voxel-Bauwerk mit Ursprung am Boden; Positionen liegen auf dem 1/8-m-Raster.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
@@ -110,50 +111,6 @@ function buildArmchair(seed) {
   m.box(0, 4, 0, 5, 6, 0, fabric); // Armlehnen
   m.box(0, 4, 6, 5, 6, 6, fabric);
   m.box(6, 12, 1, 7, 12, 5, fabric);
-  return m;
-}
-
-function buildCar(seed) {
-  const m = new VoxelModel();
-  const L = 26;
-  const Wd = 13;
-  const paint = (x, y, z) => {
-    const h = hash3(x, y, z, seed);
-    const rust = hash3(Math.floor(x / 3), Math.floor(y / 2), Math.floor(z / 3), seed + 1);
-    if (rust > 0.78) return h < 0.5 ? P.r2 : P.e4;
-    return h < 0.12 ? P.a6 : P.a5;
-  };
-  // Räder (platt, halb eingesunken)
-  for (const [x, z] of [[4, 0], [4, Wd - 2], [20, 0], [20, Wd - 2]]) {
-    m.box(x, 0, z, x + 3, 2, z + 1, (xx, y, zz) => (y === 1 && (zz === z || zz === z + 1) && (xx === x + 1 || xx === x + 2) ? P.s4 : P.s1));
-  }
-  // Karosserie
-  m.box(0, 2, 1, L - 1, 5, Wd - 2, paint);
-  m.box(1, 2, 0, L - 2, 4, 0, paint);
-  m.box(1, 2, Wd - 1, L - 2, 4, Wd - 1, paint);
-  // Stoßstangen, Lichter
-  m.box(-1, 2, 1, -1, 3, Wd - 2, P.s5);
-  m.box(L, 2, 1, L, 3, Wd - 2, P.s5);
-  m.box(L - 1, 4, 1, L - 1, 4, 2, P.s8).box(L - 1, 4, Wd - 3, L - 1, 4, Wd - 2, P.s8);
-  m.box(0, 4, 1, 0, 4, 2, P.r3).box(0, 4, Wd - 3, 0, 4, Wd - 2, P.r3);
-  // Kabine mit Fenstern
-  m.box(6, 6, 2, 19, 9, Wd - 3, (x, y, z) => {
-    const edge = x === 6 || x === 19 || z === 2 || z === Wd - 3;
-    if (y === 9) return paint(x, y, z);
-    if (edge && y >= 6 && y <= 8) {
-      const pillar = x === 6 || x === 19 || x === 12 || x === 13;
-      if (pillar) return paint(x, y, z);
-      if (hash3(x, y, z, seed + 7) < 0.18) return null; // zerbrochene Scheibe
-      return y === 8 ? P.n4 : P.n3;
-    }
-    return edge ? paint(x, y, z) : P.n1;
-  });
-  // Moos auf dem Dach und ein Busch, der aus der Motorhaube wächst
-  m.box(7, 10, 3, 18, 10, Wd - 4, (x, y, z) => {
-    const h = hash3(x, y, z, seed + 2);
-    return h < 0.45 ? null : h < 0.8 ? P.g4 : P.g5;
-  });
-  m.ellipsoid(23, 7.5, 6.5, 3, 2.5, 3, (x, y, z) => (hash3(x, y, z, seed + 4) < 0.3 ? null : y > 7 ? P.g6 : P.g5));
   return m;
 }
 
@@ -323,28 +280,6 @@ function buildMailbox() {
   return m;
 }
 
-function buildStreetLamp(seed) {
-  const m = new VoxelModel();
-  m.box(0, 0, 0, 1, 1, 1, P.s4);
-  m.box(0, 2, 0, 1, 33, 1, (x, y) => (y % 8 === 0 ? P.s4 : P.s3));
-  m.box(0, 33, 2, 1, 34, 6, P.s3);
-  m.box(-1, 31, 5, 2, 32, 8, P.s2);
-  m.box(0, 30, 6, 1, 30, 7, P.n4); // Glas (dunkel, kaputt)
-  // Nest mit Vogel
-  m.box(-1, 35, 1, 2, 35, 3, (x, y, z) => ((x + z) % 2 ? P.e4 : P.e6));
-  m.set(0, 36, 2, P.e5).set(1, 36, 2, P.e5).set(1, 37, 2, P.e5).set(1, 36, 3, P.f5);
-  // Ranke
-  for (let y = 2; y < 22; y++) {
-    if (hash3(1, y, 1, seed) < 0.6) m.set(y % 4 < 2 ? -1 : 2, y, y % 3 === 0 ? 0 : 1, y % 5 === 0 ? P.a1 : P.g5);
-  }
-  return m;
-}
-
-/**
- * Wäscheleine: Pfosten und Leine als ein Modell, jedes Wäschestück als eigenes
- * (Ursprung oben an der Leine) – die flattern im Wind (M5).
- * @returns {{line: VoxelModel, cloths: Array<{model: VoxelModel, x: number, y: number}>}}
- */
 function buildClothesline(seed, spanVoxels) {
   const m = new VoxelModel();
   const pole = (x) => {
@@ -462,33 +397,6 @@ function buildOakWithSwing(seed) {
   return m;
 }
 
-function buildRoadBarrier(seed) {
-  const m = new VoxelModel();
-  // zwei Böcke
-  for (const z of [0, 17]) {
-    m.line(-2, 0, z, 0, 7, z, P.s4);
-    m.line(2, 0, z, 0, 7, z, P.s4);
-  }
-  m.box(0, 6, -2, 0, 8, 19, (x, y, z) => (Math.floor((z + y) / 3) % 2 ? P.r4 : P.s9));
-  // alte Reifen daneben
-  for (const [x, z, y] of [[4, 4, 0], [4, 4, 2], [5, 12, 0]]) {
-    m.box(x - 2, y, z - 2, x + 2, y + 1, z + 2, (xx, yy, zz) => (Math.abs(xx - x) < 1 && Math.abs(zz - z) < 1 ? null : P.s1));
-  }
-  return m;
-}
-
-function buildFallenTree(seed) {
-  const m = new VoxelModel();
-  logZ(m, -16, 16, 0, 3, 3, seed, { moss: true });
-  // Aststümpfe und etwas Grün
-  m.line(0, 5, -8, -3, 9, -9, P.e3);
-  m.line(0, 5, 6, 3, 8, 8, P.e3);
-  m.ellipsoid(-4, 9, -10, 3, 2, 3, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? null : P.t2));
-  // Wurzelteller am Nordende
-  m.box(-4, 0, -19, 4, 8, -17, (x, y, z) => (hash3(x, y, z, seed) < 0.25 ? null : y > 5 ? P.e3 : P.e2));
-  return m;
-}
-
 function buildCrate(seed) {
   const m = new VoxelModel();
   m.box(0, 0, 0, 4, 4, 4, (x, y, z) => {
@@ -498,13 +406,123 @@ function buildCrate(seed) {
   return m;
 }
 
+/**
+ * Schiefer Warnpfahl am Spawn: helles Brett mit rotem Kreuz, ein Fetzen Stoff,
+ * oben eine alte Laterne (ihr Glas leuchtet nachts fahlgrün, siehe buildWarnLight).
+ */
+function buildWarnPost(seed, side) {
+  const m = new VoxelModel();
+  const lean = side > 0 ? 1 : -1;
+  for (let y = 0; y <= 17; y++) m.box(y > 11 ? lean : 0, y, 0, (y > 11 ? lean : 0) + 1, y, 0, hash3(0, y, 0, seed) < 0.3 ? P.e2 : P.e3);
+  // Brett mit rotem Kreuz
+  for (let x = -3; x <= 4; x++) {
+    for (let y = 11; y <= 16; y++) {
+      const u = x - 0.5;
+      const v = y - 13.5;
+      const cross = Math.abs(u - v * 1.3) < 0.9 || Math.abs(u + v * 1.3) < 0.9;
+      const edge = x === -3 || x === 4 || y === 11 || y === 16;
+      m.set(x + lean, y, 1, cross ? (hash3(x, y, 2, seed) < 0.2 ? P.r2 : P.r3) : edge ? P.e5 : hash3(x, y, 1, seed) < 0.3 ? P.e7 : P.e8);
+    }
+  }
+  // Laterne an einem Haken
+  m.box(lean * 2, 18, 0, lean * 2 + 1, 18, 0, P.s3);
+  m.box(lean * 2, 15, -1, lean * 2 + 1, 15, 0, P.s2);
+  m.box(lean * 2, 19, -1, lean * 2 + 1, 19, 0, P.s2);
+  // Fetzen und ein paar Steine am Fuß
+  m.set(-lean, 10, 1, P.r2).set(-lean, 9, 1, P.r1).set(-lean * 2, 8, 1, P.r2).set(-lean * 2, 7, 1, P.r1);
+  m.set(1, 0, 1, P.s5).set(-1, 0, -1, P.s4).set(0, 0, 2, P.s6).set(2, 0, 0, P.s5);
+  return m;
+}
+
+/** Glas der Laterne am Warnpfahl. */
+function buildWarnLight(side) {
+  const lean = side > 0 ? 1 : -1;
+  return new VoxelModel().box(lean * 2, 16, -1, lean * 2 + 1, 18, 0, 0xffffff);
+}
+
+/**
+ * Steg in den See: Bretter quer, Pfähle an beiden Seiten, am Ende ein Poller
+ * (dort macht Balduin fest). Länge in Voxeln entlang x, Breite entlang z.
+ */
+function buildDock(seed, length, width) {
+  const m = new VoxelModel();
+  const deck = 2; // Oberkante der Bretter (y)
+  for (let x = 0; x < length; x++) {
+    const gap = x % 5 === 4;
+    for (let z = 0; z < width; z++) {
+      const h = hash3(x, 0, z, seed);
+      if (gap && h < 0.7) continue; // Fugen zwischen den Brettern
+      const plank = hash3(x - (x % 5), 0, 0, seed + 3);
+      if (plank > 0.93 && x > 8 && z > 2 && z < width - 3) continue; // ein fehlendes Brett
+      m.set(x, deck, z, h < 0.12 ? P.e4 : plank < 0.5 ? P.e6 : P.e5);
+      m.set(x, deck - 1, z, P.e3);
+    }
+  }
+  // Pfähle alle 2 m, auf beiden Seiten
+  for (let x = 2; x < length; x += 16) {
+    for (const z of [-1, width]) {
+      m.box(x, -2, z, x + 1, deck + 2, z, (xx, y) => (y > deck ? P.e4 : hash3(xx, y, z, seed) < 0.4 ? P.e2 : P.e3));
+      m.set(x, deck + 3, z, P.e5);
+    }
+  }
+  // Poller am Ende und ein Seil
+  const px = length - 3;
+  m.box(px, deck + 1, 1, px + 1, deck + 3, 2, P.s3);
+  m.box(px - 1, deck + 3, 1, px + 2, deck + 3, 2, P.s4);
+  m.box(px - 4, deck + 1, width - 3, px - 2, deck + 1, width - 2, P.e7);
+  m.set(px - 3, deck + 2, width - 3, P.e8);
+  return m;
+}
+
+/** Altes Ruderboot, kieloben am Strand angespült – mit Löchern im Rumpf (einmal Schrott). */
+function buildWreck(seed) {
+  const m = new VoxelModel();
+  const L = 30;
+  const W = 12;
+  const rng = new Rng(seed);
+  for (let x = 0; x < L; x++) {
+    const t = x / (L - 1);
+    // Heck (x = 0) breit, zum Bug spitz
+    const half = (W / 2) * (t < 0.6 ? 1 : Math.sqrt(Math.max(0, 1 - ((t - 0.6) / 0.4) ** 2)));
+    if (half < 0.5) continue;
+    for (let z = -Math.ceil(half); z < Math.ceil(half); z++) {
+      const dz = Math.abs(z + 0.5) / half;
+      if (dz > 1) continue;
+      // Kieloben: die Rundung des Rumpfs zeigt nach oben
+      const top = Math.round(5 - dz * dz * 3.2);
+      for (let y = 0; y <= top; y++) {
+        const outer = y === top || dz > 0.82;
+        if (!outer) continue;
+        const h = hash3(x, y, z, seed);
+        const stripe = y >= top - 1 && y > 2 && Math.abs(z + 0.5) < 1.2;
+        let c = stripe ? P.e3 : h < 0.25 ? P.b2 : h < 0.6 ? P.b3 : P.a6; // verblasste Farbe
+        if (hash3(Math.floor(x / 3), 0, Math.floor(z / 3), seed + 5) > 0.72) c = h < 0.5 ? P.e5 : P.e4; // blankes Holz
+        if (h > 0.96) c = P.r2; // Rost an den Nägeln
+        m.set(x + 1, y, z + W / 2, c);
+      }
+    }
+  }
+  // Löcher im Rumpf (dort sieht man hinein)
+  for (let k = 0; k < 4; k++) {
+    const hx = rng.int(4, L - 8);
+    const hz = rng.int(2, W - 4);
+    m.remove(hx, 1, hz, hx + rng.int(1, 3), 6, hz + 1);
+  }
+  // Ein Ruder und Tang
+  m.line(-3, 0, W + 1, 8, 1, W + 2, P.e6);
+  m.box(-4, 0, W + 1, -2, 0, W + 3, P.e7);
+  for (let k = 0; k < 10; k++) m.set(rng.int(0, L), 0, rng.chance(0.5) ? -1 : W, rng.chance(0.5) ? P.g3 : P.t2);
+  return m;
+}
+
 // --- Aufstellen -------------------------------------------------------------
 
 /**
  * Stellt alle Requisiten auf.
  * @returns {{ group, fire, interactions, lights, emitters, blockers }}
  */
-export function createProps({ seed, materials, colliders }) {
+export function createProps({ seed, materials, colliders, map }) {
+  // Die Requisiten der Bucht stehen fest; nur die Warnpfähle folgen den Spawns der Karte.
   const group = new THREE.Group();
   group.name = 'Requisiten';
   const interactions = [];
@@ -544,33 +562,53 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addBox(fire.x + 1.6, fire.z - 0.4, fire.x + 2.6, fire.z + 0.5);
   interactions.push({ id: 'sessel', x: fire.x + 2.1, z: fire.z + 0.05, radius: 1.1, prompt: 'hinsetzen', dialog: 'sessel' });
 
-  // Autowrack auf der Straße
-  const car = LAYOUT.car;
-  add(buildCar(seed + 5), car.x - 1.625, car.z - 0.75, { occluder: true, name: 'Autowrack' });
-  colliders.addBox(car.x - 1.75, car.z - 0.85, car.x + 1.75, car.z + 0.85);
-  block(car.x - 1.9, car.z - 1.0, car.x + 1.9, car.z + 1.0);
-  interactions.push({ id: 'auto', x: car.x, z: car.z, radius: 2.3, prompt: 'durchsuchen', search: 'auto' });
-  // Die Kiste steht neben dem Heck auf der Straße – nördlich am Auto vorbei bleibt frei (m3-r2)
-  add(buildCrate(seed + 6), car.x + 2.125, car.z - 0.25, { name: 'Kiste' });
-  colliders.addBox(car.x + 2.125, car.z - 0.25, car.x + 2.775, car.z + 0.4);
+  // Bootswrack am Strand (einmal Schrott, Meilenstein 8/9) und eine Kiste daneben
+  const wreck = LAYOUT.wreck;
+  add(buildWreck(seed + 5), wreck.x - 2.0, wreck.z - 0.75, { occluder: true, name: 'Bootswrack' });
+  colliders.addBox(wreck.x - 1.9, wreck.z - 0.7, wreck.x + 1.9, wreck.z + 0.7);
+  block(wreck.x - 2.5, wreck.z - 1.0, wreck.x + 2.2, wreck.z + 1.2);
+  interactions.push({ id: 'wrack', x: wreck.x, z: wreck.z, radius: 2.3, prompt: 'durchsuchen', search: 'wrack' });
+  add(buildCrate(seed + 6), wreck.x - 3.25, wreck.z - 0.5, { name: 'Kiste' });
+  colliders.addBox(wreck.x - 3.25, wreck.z - 0.5, wreck.x - 2.6, wreck.z + 0.15);
 
-  // Funkturm-Stumpf mit Trümmerteil
-  const tower = LAYOUT.tower;
+  // Steg in den See (Balduin legt hier an). Begehbar, eine Stufe hoch.
+  const dock = LAYOUT.dock;
+  const dockLen = Math.round((dock.x1 - dock.x0) / V);
+  const dockWidth = Math.round((dock.z1 - dock.z0) / V);
+  add(buildDock(seed + 19, dockLen, dockWidth), dock.x0, dock.z0, { name: 'Steg' });
+  const heightZones = [{ minX: dock.x0 + 0.5, maxX: dock.x1, minZ: dock.z0, maxZ: dock.z1, y: 3 * V }];
+
+  // Leuchtmast am Steg: der alte Funkturm-Stumpf mit Trümmerteil (Juna baut ihn aus)
+  const tower = LAYOUT.lighthouse;
   add(buildTower(seed + 7), tower.x, tower.z, { occluder: true, name: 'Funkturm' });
   for (const [dx, dz] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) colliders.addCircle(tower.x + dx, tower.z + dz, 0.35);
-  colliders.addBox(tower.x + 1.625, tower.z + 0.25, tower.x + 2.125, tower.z + 0.875);
   block(tower.x - 2, tower.z - 2, tower.x + 2.2, tower.z + 2);
-  interactions.push({ id: 'turm', x: tower.x, z: tower.z + 1.5, radius: 2.0, prompt: 'ansehen', dialog: 'funkturm' });
+  interactions.push({ id: 'turm', x: tower.x - 1.5, z: tower.z, radius: 1.8, prompt: 'ansehen', dialog: 'funkturm' });
   // Ausbaustufen (Juna, Meilenstein 6): anfangs versteckt, siehe setTowerStage
   const towerStages = [add(buildTowerRepair(seed + 7), tower.x, tower.z, { occluder: true, name: 'Funkturm-Leiter' }), add(buildTowerAntenna(), tower.x, tower.z, { occluder: true, name: 'Funkturm-Antenne' })];
   const beacon = add(buildTowerBeacon(), tower.x, tower.z, { occluder: true, name: 'Leuchtfeuer' });
   if (materials.beacon) beacon.add(createStaticVoxelObject(buildTowerBeaconGlass(), materials.beacon, { shadow: 'none', jitter: 0 }));
   towerStages.push(beacon);
   for (const o of towerStages) o.visible = false;
-  add(buildTowerDebris(seed + 8), tower.x - 2.0, tower.z + 2.75, { name: 'Turmteil' });
-  block(tower.x - 2.1, tower.z + 2.65, tower.x + 0.7, tower.z + 3.65);
+  const debris = LAYOUT.towerDebris;
+  add(buildTowerDebris(seed + 8), debris.x, debris.z, { name: 'Turmteil' });
+  block(debris.x - 0.1, debris.z - 0.1, debris.x + 2.7, debris.z + 0.9);
 
-  // Wegweiser, Briefkasten, Straßenlaterne
+  // Warnpfähle an den Spawns: Hier kommt die Horde aus dem Wald (Lesbarkeit, DESIGN.md 0 Nr. 11)
+  for (const spawn of map.spawns) {
+    const path = map.paths.find((p) => p.feeder === spawn.name);
+    if (!path) continue;
+    const at = path.points.reduce((best, p) => (Math.abs(p.x + 50.5) < Math.abs(best.x + 50.5) ? p : best), path.points[0]);
+    const x = Math.round(at.x * 8) / 8;
+    for (const side of [-1, 1]) {
+      const z = Math.round((at.z + side * (path.width / 2 + 0.75)) * 8) / 8;
+      const post = add(buildWarnPost(seed + 30 + side, side), x, z, { name: 'Warnpfahl' });
+      if (materials.spawnGlow) post.add(createStaticVoxelObject(buildWarnLight(side), materials.spawnGlow, { shadow: 'none', jitter: 0 }));
+      colliders.addCircle(x + 0.0625, z, 0.2, 'warnpfahl');
+    }
+  }
+
+  // Wegweiser am Hofeingang, Briefkasten
   const sign = LAYOUT.sign;
   add(buildSign(seed + 9), sign.x, sign.z, { name: 'Wegweiser' });
   colliders.addCircle(sign.x + 0.125, sign.z + 0.125, 0.2);
@@ -579,10 +617,6 @@ export function createProps({ seed, materials, colliders }) {
   add(buildMailbox(), mail.x, mail.z, { name: 'Briefkasten' });
   colliders.addCircle(mail.x, mail.z, 0.2);
   interactions.push({ id: 'briefkasten', x: mail.x, z: mail.z, radius: 1.2, prompt: 'nachsehen', dialog: 'briefkasten' });
-  const lamp = LAYOUT.streetLamp;
-  add(buildStreetLamp(seed + 10), lamp.x, lamp.z, { occluder: true, name: 'Straßenlaterne' });
-  colliders.addCircle(lamp.x + 0.125, lamp.z + 0.125, 0.2);
-  interactions.push({ id: 'strassenlaterne', x: lamp.x, z: lamp.z, radius: 1.3, prompt: 'ansehen', dialog: 'strassenlaterne' });
 
   // Wäscheleine
   const cl = LAYOUT.clothesline;
@@ -599,7 +633,7 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addCircle(cl.x1, cl.z, 0.15);
   interactions.push({ id: 'waesche', x: (cl.x0 + cl.x1) / 2, z: cl.z, radius: 1.3, prompt: 'ansehen', dialog: 'waesche' });
 
-  // Holzstapel an der Westwand, Hackklotz, Regentonne, Beet
+  // Holzstapel an der Westwand des Hauses, Hackklotz, Regentonne, Beet
   const wp = LAYOUT.woodpile;
   add(buildWoodpile(seed + 12), wp.x, wp.z, { occluder: true, name: 'Holzstapel' });
   colliders.addBox(wp.x - 0.15, wp.z - 0.15, wp.x + 1.15, wp.z + 2.5);
@@ -627,21 +661,13 @@ export function createProps({ seed, materials, colliders }) {
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
   interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', dialog: 'schaukel', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
 
-  // Straßensperren an beiden Enden
-  const west = LAYOUT.roadBlockWest;
-  add(buildFallenTree(seed + 17), west.x, west.z, { occluder: true, name: 'Baumstamm' });
-  colliders.addBox(west.x - 0.5, west.z - 2.5, west.x + 0.5, west.z + 2.2);
-  interactions.push({ id: 'baumstamm', x: west.x + 0.6, z: west.z, radius: 1.6, prompt: 'ansehen', dialog: 'baumstamm' });
-  const east = LAYOUT.roadBlockEast;
-  add(buildRoadBarrier(seed + 18), east.x, east.z - 1.125, { name: 'Absperrung' });
-  colliders.addBox(east.x - 0.4, east.z - 1.5, east.x + 0.8, east.z + 1.5);
-  interactions.push({ id: 'absperrung', x: east.x - 0.4, z: east.z, radius: 1.6, prompt: 'ansehen', dialog: 'absperrung' });
-
   return {
     group,
     interactions,
     blockers,
+    heightZones,
     towerPos: { x: tower.x, z: tower.z },
+    beaconPos: { x: LAYOUT.beacon.x, z: LAYOUT.beacon.z }, // wohin das Leuchtfeuer fällt
     /** Funkturm-Ausbau zeigen (0 = Stumpf, 3 = Leuchtfeuer). */
     setTowerStage(stage) {
       towerStages.forEach((o, k) => {

@@ -11,46 +11,46 @@ export const SURVIVORS = {
     name: 'Knopf',
     dog: true,
     day: 2, // kommt am Morgen dieses Tages
-    arrive: { x: -1.2, z: 8.2 }, // sitzt am Briefkasten
-    spot: { x: 3.1, z: 2.1 }, // tagsüber am Feuer
+    arrive: { x: -5.5, z: 6.0 }, // sitzt am Briefkasten (Bucht, Meilenstein 9)
+    spot: { x: -0.75, z: -0.25 }, // tagsüber am Feuer
     tent: false,
     prompt: 'streicheln',
   },
   hilde: {
     name: 'Oma Hilde',
     day: 3,
-    arrive: { x: 9.2, z: 9.4 }, // mit dem Lastenrad auf der Straße
-    spot: { x: 1.4, z: 5.2 },
+    arrive: { x: -4.75, z: 4.75 }, // mit dem Lastenrad am Hofeingang
+    spot: { x: -2.25, z: 5.0 },
     tent: true,
     prompt: 'ansprechen',
   },
   juna: {
     name: 'Juna',
     day: 4,
-    arrive: { x: 8.2, z: -4.6 }, // am Funkturm
-    spot: { x: 8.0, z: -4.6 },
+    arrive: { x: 19.75, z: -1.0 }, // am alten Mast am Ende des Stegs
+    spot: { x: 20.25, z: -1.25 },
     tent: true,
     prompt: 'ansprechen',
   },
   bert: {
     name: 'Bert',
     day: 5,
-    arrive: { x: -12.5, z: 9.2 }, // kommt von Westen die Straße entlang
-    spot: { x: -5.6, z: 1.2 }, // beim Hackklotz
+    arrive: { x: -5.25, z: 0.25 }, // kommt den Weg herauf in den Hof
+    spot: { x: 0.75, z: -5.25 }, // beim Hackklotz
     tent: true,
     prompt: 'ansprechen',
   },
   yusuf: {
     name: 'Dr. Yusuf',
     day: 6,
-    arrive: { x: 12.8, z: 1.5 },
-    spot: { x: 6.4, z: 2.6 }, // am Feuer, beim Sessel
+    arrive: { x: 11.25, z: 7.25 }, // unten am Strand
+    spot: { x: 3.5, z: -0.5 }, // am Feuer, beim Sessel
     tent: true,
     prompt: 'ansprechen',
   },
 };
 
-/** Stufen des Funkturms (Juna): Kosten und was dazukommt. */
+/** Stufen des Leuchtmasts am Steg (früher Funkturm, Juna): Kosten und was dazukommt. */
 export const TOWER_STAGES = [
   null,
   { cost: { schrott: 20, holz: 12 }, hours: 2 }, // Leiter und Plattform

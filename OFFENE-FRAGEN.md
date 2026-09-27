@@ -650,6 +650,12 @@ Im neuen Konzept laufen Zombies nur auf den Wegen und Türme stehen nie
 darauf. Offen ist, ob Barrikaden die Horde auf einen anderen Zweig des
 Wegenetzes umlenken dürfen (statt sie nur zu stauen) und ob die Wegvorschau
 bleibt.
+*Stand Meilenstein 9 (nichts entfernt, nichts Neues):* Das Flussfeld ist
+geblieben, reicht aber nur noch über Weg und Hof. Das Wegenetz ist ein Baum
+– jeder Spawn hat genau einen Weg zum Hof –, deshalb gibt es keinen anderen
+Zweig, auf den eine Barrikade umlenken könnte: Die Horde weicht innerhalb
+der Wegbreite aus oder schlägt sich durch. Die Wegvorschau beim Bauen ist
+geblieben (rote Punkte vom Spawn bis ans Haus, Pfeile am Bildrand).
 
 ### 67. Gibt es tagsüber noch Schlurfer?
 **Festgelegt: ja, aber nur sehr wenige.** Der Tag ist ruhig und deutlich
@@ -702,6 +708,69 @@ sinnvoll neu gesetzt oder ebenfalls erstattet.
 feste Richtung zu nennen. Juna meldet morgens, was in der kommenden Nacht zu
 erwarten ist (Arten, besondere Gegner, Anführer). Bei prozedural wechselnden
 Wegen kündigt sie keine dauerhaft festgelegte Angriffsrichtung an.
+
+### Entscheidungen beim Umbau (Meilenstein 9)
+
+### 75. Wie groß ist die Karte, wie lang sind die Wege?
+**Entscheidung:** 96 × 60 m. Die Bucht (rechts) ist fest, die Spawns liegen
+bei x = −57 im Wald (»Nordweg«, »Mittelweg«, »Südweg«), Mika kommt bis
+x = −50. Je Spiel eine von drei Formen: Nord und Mitte treffen sich zuerst,
+Mitte und Süd treffen sich zuerst, oder alle drei erst am Zusammenfluss bei
+x ≈ −22; von dort läuft der gemeinsame letzte Abschnitt (4 m breit) rund
+15 m bis in den Hof. Zusammen gut 150 m Weg – Platz für weit über 60 Türme.
+Zwischen den Wegen stehen Waldinseln, damit die Wege natürlich begrenzt
+bleiben. *Warum:* kurz genug, dass eine Nacht nicht zäh wird, lang genug für
+eine Verteidigung, die nach außen wächst.
+
+### 76. Wie sieht man, wo die Horde herkommt?
+**Entscheidung:** An jedem Spawn stehen zwei schiefe Warnpfähle mit rotem
+Kreuz, nachts mit fahlgrüner Laterne. Die Übersichtskarte (Taste M) zeigt das
+ganze Wegenetz mit Spawns, Türmen, Barrikaden, Schlurfern, liegenden
+Überresten und Mika; das Spiel steht still, solange sie offen ist.
+Nachtleiste und Banner nennen den Weg (»Aus: Nordweg«).
+
+### 77. Wo ist die letzte Verteidigung?
+**Entscheidung:** im Hof vor dem Haus. Das Flussfeld reicht über Weg und
+Hof; im Hof darf man bauen (Werkbank, Bänke, Türme …), aber kein Bau darf
+den Weg zum Haus ganz abschneiden (Grund »Versperrt den letzten Weg«).
+
+### 78. Wie genau gilt »Türme nie auf dem Weg«?
+**Entscheidung:** Ein Rasterfeld ist ein Wegfeld, wenn seine Mitte höchstens
+0,2 m vom Wegrand entfernt liegt. Türme und alle anderen Bauten nie auf
+Wegfeldern, Barrikaden nur dort; kein Pufferstreifen dazwischen. Der Geist
+beim Bauen zeigt es gleich (»Auf dem Weg nur Barrikaden«, »Barrikaden nur
+auf den Weg«). Barrikaden stellen sich von selbst quer zum Weg.
+
+### 79. Wie stark sind Barrikaden?
+**Entscheidung (Werte in `data/buildings.js`):** Holzbarriere 80 (3 Holz),
+verstärkt 170 (+5 Holz), Metall 300 (+2 Holz, 6 Schrott) und fängt ein
+Viertel jedes Schlags ab. Seit M9 schlagen **alle** Schlurfer auf Barrikaden
+ein (vorher nur Brummer), Brummer und Anführer doppelt so hart. Zerstört
+bleiben Trümmer liegen (die Horde läuft darüber); tagsüber baut man sie für
+60 % des Eingesetzten wieder auf oder räumt sie ab. Unter halber
+Haltbarkeit sieht man lose Bretter.
+
+### 80. Wo steht der Leuchtmast, wohin fällt sein Licht?
+**Entscheidung:** am Ende des Stegs (»Leuchtmast am Steg«). Das Leuchtfeuer
+fällt auf den Hof – dort liegt die Lichtinsel, und dort bremst es die Horde
+wie vorher der Funkturm. So bleibt Junas Geschichte ein Beitrag zur letzten
+Verteidigung.
+
+### 81. Neues Spiel = neues Wegenetz – wie?
+**Entscheidung:** Die Welt entsteht beim Laden aus dem Startwert im
+Spielstand. Wer über einen bestehenden Stand ein neues Spiel beginnt, lädt
+die Seite einmal neu; Name und Aussehen aus dem Titelbild werden
+mitgenommen. Die Prüfung spielt immer auf Karte 3 (`?map=` erzwingt eine).
+
+### 82. Wie schnell ist die Horde auf den langen Wegen?
+**Entscheidung:** etwa ein Viertel schneller als in M8 (Schlurfer 1,0 m/s,
+Flitzer 1,8, Brummer 0,62). Vom Spawn bis in den Hof braucht ein Schlurfer
+knapp eine Minute – die Türme an den Wegen haben Zeit, die Nacht zieht sich
+nicht. Feinabstimmung in M13.
+
+### 83. Wie viele Tagesschlurfer?
+**Entscheidung:** am ersten Tag einer, danach zwei, ab Tag 6 manchmal drei –
+immer einzeln, nie Trupps (Grundregel 5).
 
 ## Technik mit Auswirkung aufs Design
 

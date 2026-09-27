@@ -91,13 +91,13 @@ function withRest(lines, state) {
 export const DIALOGE = {
   // --- Balduin, der Händler (Meilenstein 8) ---
   balduinTreffen: [
-    { s: 'balduin', t: 'Morgen, Morgen! Balduin mein Name. Handel, Wandel, Wagenladung!' },
+    { s: 'balduin', t: 'Ahoi! Balduin mein Name. Handel, Wandel, Bootsladung!' },
     { s: 'balduin', t: 'Ich kaufe Zombieteile. Hände, Füße, Ohren – alles, was nachts so abfällt. Ich zahle in Schrott, Holz, Stoff, manchmal Zahnrädern.' },
     { s: 'mika', t: 'Zombieteile? Wofür um alles in der Welt …' },
     { s: 'balduin', t: 'Frag nicht. Wissenschaft! Oder Kunst. Oder Suppe – nein, keine Suppe.' },
     {
       s: 'balduin',
-      t: 'Jeden Morgen komm ich vorbei und bleibe bis Mittag. Nachts sammelst du, morgens handeln wir. Abgemacht?',
+      t: 'Jeden Morgen leg ich hier am Steg an und bleibe bis Mittag. Nachts sammelst du, morgens handeln wir. Abgemacht?',
       antworten: [
         { t: 'Zeig mal her!', aktion: 'handeln' },
         { t: 'Später.', standard: true },
@@ -148,8 +148,8 @@ export const DIALOGE = {
   },
   junaTreffen: [
     { s: 'juna', t: 'Du hast mein Signal gehört? Radio Stillwald – das bin ich! Na ja, ich und dieses Funkgerät.' },
-    { s: 'juna', t: 'Der alte Turm war mal der höchste Punkt im ganzen Wald. Wenn wir ihn wieder hochkriegen …' },
-    { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen Wald. Alle, die noch unterwegs sind, finden her.' },
+    { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Wenn wir ihn wieder hochkriegen …' },
+    { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen See. Alle, die noch unterwegs sind, finden her.' },
     { s: 'mika', t: 'Ein Leuchtfeuer. Ich bin dabei. Was brauchen wir?' },
     { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht in der Bauleiste, Reiter „Einrichten“.' },
   ],
@@ -214,7 +214,7 @@ export const DIALOGE = {
     { s: 'yusuf', t: 'Wunderbar. Eine Bitte hätte ich: Für meinen Tee fehlt Kamille.' },
     { s: 'yusuf', t: 'Sie wächst im hohen Gras. Sechs Fasern und ein Stück Stoff als Beutel – dann wird der Tee richtig gut.' },
   ],
-  funkturm1: [{ s: 'juna', t: 'Die Beine stehen wieder gerade, die Leiter hält. Von da oben sieht man bis zur Straße!' }],
+  funkturm1: [{ s: 'juna', t: 'Die Beine stehen wieder gerade, die Leiter hält. Von da oben sieht man über den ganzen See!' }],
   funkturm2: [
     { s: 'juna', t: 'Hörst du das? Rauschen … und dazwischen Stimmen. Da draußen sind noch mehr!' },
     { s: 'juna', t: 'Jetzt fehlt nur noch das Licht. Dafür brauchen wir einen Moderkern.' },
@@ -222,15 +222,15 @@ export const DIALOGE = {
   funkturm3: [
     { s: 'juna', t: 'Es brennt! Schau nur, wie weit das Licht reicht.' },
     { s: 'mika', t: 'Die Schlurfer werden im Schein ganz langsam. Wie Motten – nur andersrum.' },
-    { s: 'juna', t: 'Jetzt sind wir ein Leuchtturm im Wald. Wer noch unterwegs ist, findet her.' },
+    { s: 'juna', t: 'Jetzt leuchten wir über den See. Wer noch unterwegs ist, findet her.' },
     { s: 'mika', t: 'Und wir halten die Nächte durch. Gemeinsam.' },
   ],
 
   intro: [
-    { s: 'mika', t: 'Eine Lichtung, ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
-    { s: 'mika', t: 'Die Notunterkunft ist wacklig, aber sie hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
-    { s: 'mika', t: 'Nur nachts, heißt es, schlurfen sie aus dem Wald. Bis dahin brauche ich Werkzeug – und einen Turm oder zwei.' },
-    { s: 'mika', t: 'Am Hackklotz steckt sogar noch eine Axt. Damit fange ich an.' },
+    { s: 'mika', t: 'Ein altes Fischerhaus am See, ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
+    { s: 'mika', t: 'Wacklig, aber es hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
+    { s: 'mika', t: 'Hinter mir nur Wasser. Nachts schlurfen sie aus dem Wald – über die alten Wege von links bis hierher an den Hof.' },
+    { s: 'mika', t: 'Neben die Wege gehören Türme, auf die Wege Barrikaden. Aber erst brauche ich Werkzeug: Am Hackklotz steckt noch eine Axt.' },
   ],
 
   bettFrueh: [
@@ -252,7 +252,7 @@ export const DIALOGE = {
         ]
       : [
           { s: 'radio', t: '…krrzz… hier ist … Radio Stillwald … falls uns jemand hört …' },
-          { s: 'radio', t: '…der alte Funkturm … wenn ihn jemand wieder … krrrzzz…' },
+          { s: 'radio', t: '…der alte Mast am Steg … wenn ihn jemand wieder … krrrzzz…' },
           { s: 'mika', t: 'Da war eine Stimme! Da draußen ist noch jemand.' },
         ],
 
@@ -279,30 +279,28 @@ export const DIALOGE = {
   sessel: (state) =>
     withRest(
       state.flags.sesselProbiert
-        ? [{ s: 'mika', t: 'Mein Lieblingssessel. Mitten auf der Wiese. Genau richtig.' }]
+        ? [{ s: 'mika', t: 'Mein Lieblingssessel. Mitten im Hof, mit Blick aufs Wasser. Genau richtig.' }]
         : [
-            { s: 'mika', t: 'Ein Ohrensessel mitten auf der Wiese. Irgendwer hatte hier Prioritäten.' },
+            { s: 'mika', t: 'Ein Ohrensessel mitten im Hof. Irgendwer hatte hier Prioritäten.' },
             { s: 'mika', t: '…Sehr bequem. Kann ich bestätigen.' },
           ],
       state
     ),
 
   funkturm: [
-    { s: 'mika', t: 'Der alte Funkturm. Oder das, was von ihm übrig ist.' },
-    { s: 'mika', t: 'Wenn der wieder stünde – mit einem Licht ganz oben – man würde es über den ganzen Wald sehen.' },
+    { s: 'mika', t: 'Der alte Mast am Steg. Früher hat er den Fischern heimgeleuchtet.' },
+    { s: 'mika', t: 'Wenn der wieder stünde – mit einem Licht ganz oben – man würde es über den ganzen See sehen.' },
   ],
 
   schild: [
-    { s: 'schild', t: '„Moosbach 12 km →“\n„← Freibad Stillwald – vorübergehend geschlossen“\n„↑ Lichtung. Du bist da.“' },
-    { s: 'mika', t: 'Vorübergehend. Na klar.' },
+    { s: 'schild', t: '„→ Fischerhaus am Stillsee“\n„← Moosbach 12 km – Weg gesperrt“\n„Bitte Füße abtreten.“' },
+    { s: 'mika', t: 'Füße abtreten. Die Schlurfer lesen das bestimmt.' },
   ],
 
   briefkasten: (state) =>
     state.flags.briefkastenGesehen
       ? [{ s: 'mika', t: 'Immer noch leer. Aber nachsehen macht trotzdem Spaß.' }]
       : [{ s: 'mika', t: 'Der Briefkasten ist leer. Noch.' }],
-
-  strassenlaterne: [{ s: 'mika', t: 'Die Straßenlaterne ist schon lange aus. Dafür wohnt jetzt ein Vogel oben im Lampenkopf. Gute Wahl.' }],
 
   waesche: [{ s: 'mika', t: 'Die Wäsche ist trocken. Und die Socken passen sogar zusammen. Beinahe.' }],
 
@@ -311,7 +309,7 @@ export const DIALOGE = {
   hackklotz: [{ s: 'mika', t: 'Der Hackklotz. Die Axt habe ich schon eingesteckt.' }],
 
   axtFund: [
-    { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich die jungen Bäume auf der Lichtung fällen.' },
+    { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich Bäume fällen.' },
     { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Und in den Schrotthaufen findet sich Kram für einen Turm – die Leiste unten rechts zeigt, was geht.' },
   ],
 
@@ -329,7 +327,7 @@ export const DIALOGE = {
 
   ersterTurm: [
     { s: 'mika', t: 'Ein Bolzenwerfer. Der schießt von selbst auf alles, was aus dem Wald geschlurft kommt.' },
-    { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft, die Kreuze, wo sie am Haus ankommt – das ist nicht nur vorn an der Tür. Dort gehören Türme hin.' },
+    { s: 'mika', t: 'Die roten Pünktchen beim Bauen zeigen, wo die Horde langläuft. Neben den Weg gehören Türme – und auf den Weg Barrikaden, an denen sie hängen bleibt.' },
     { s: 'mika', t: 'Heute Nacht kommt die Horde. Was sie liegen lässt, sammle ich ein – vielleicht kann ich damit ja etwas anfangen.' },
   ],
 
@@ -340,9 +338,9 @@ export const DIALOGE = {
       ? { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott habe ich genug – schnell einen bauen, unten in der Bauleiste!' }
       : {
           s: 'mika',
-          t: state.flags?.autoLeer
-            ? `Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand${state.flags?.balduinGetroffen ? ' – und morgens bei Balduin.' : '.'}`
-            : 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen am Waldrand und im alten Auto.',
+          t: state.flags?.wrackLeer
+            ? `Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen an den Wegen${state.flags?.balduinGetroffen ? ' – und morgens bei Balduin.' : '.'}`
+            : 'Ohne Turm stehe ich da allein. Schrott finde ich in den Haufen an den Wegen und im Bootswrack am Strand.',
         },
   ],
 
@@ -361,19 +359,12 @@ export const DIALOGE = {
     { s: 'mika', t: '…Ich bin erwachsen. Aber es guckt ja keiner.' },
   ],
 
-  baumstamm: [{ s: 'mika', t: 'Ein umgestürzter Baum liegt quer über der Straße. Da komme ich noch nicht durch.' }],
-
-  absperrung: [
-    { s: 'mika', t: '„Durchfahrt verboten.“ Die Absperrung steht bestimmt schon seit Jahren hier. Dahinter wuchert alles zu.' },
-    { s: 'mika', t: 'Irgendwann schaue ich nach, was dahinter liegt. Heute nicht.' },
-  ],
-
   morgen: (state) => [
     {
       s: 'mika',
       t: pick(
         [
-          'Guten Morgen, Lichtung.',
+          'Guten Morgen, See.',
           'Ausgeschlafen. Der Tag kann kommen.',
           'Die Vögel sind schon wach. Dann wohl ich auch.',
           // m3-r2: vor dem Ausbau ist es noch die Notunterkunft

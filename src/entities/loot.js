@@ -1,17 +1,21 @@
-// Loot am Boden (DESIGN.md 6.5): Stirbt ein Schlurfer, fällt sein Loot genau
-// dort hin – Zombieteile (seit Meilenstein 8, vorher Schrott), manchmal ein
-// Zahnrad, beim Anführer ein Moderkern. Im Sammelradius fliegt es von selbst zu Mika. Nach anderthalb Minuten
-// zerfällt es (die letzten 15 Sekunden blinkt es). Liegendes Loot funkelt ab
-// und zu, nachts glimmt es; außerhalb des Bildes zeigen Rauten am Rand hin.
+// Überreste am Boden (DESIGN.md 0 Nr. 8, 6.5): Stirbt ein Schlurfer, fällt
+// seine Beute genau dort hin – Zombieteile (seit Meilenstein 8, vorher
+// Schrott), manchmal ein Zahnrad, beim Anführer ein Moderkern. Im Sammelradius
+// fliegt sie von selbst zu Mika. Seit Meilenstein 9 bleibt sie bis zu drei
+// Spieltage liegen (auch über das Schlafen hinweg) und verrottet dann; die
+// letzte Spielstunde blinkt sie. Liegende Beute funkelt ab und zu, nachts
+// glimmt sie; außerhalb des Bildes zeigen Rauten am Rand hin.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial } from '../render/materials.js';
 
-export const LOOT_LIFE = 90; // m3-r2: lag sonst so lange, dass Einsammeln nie eilte
-const BLINK = 15;
-const MAX = 160;
+/** So viele Spieltage bleiben Überreste liegen (M9: vorher 90 Sekunden). */
+export const LOOT_DAYS = 3;
+const LIFE = LOOT_DAYS * 24 * 60; // in Spielminuten
+const BLINK = 60; // die letzte Spielstunde blinkt es
+const MAX = 240;
 
 function scrapModel() {
   const m = new VoxelModel();
@@ -123,6 +127,7 @@ const GLINT_TIME = 0.22;
 
 export class Loot {
   constructor(scene, rng) {
+    this.now = 0; // absolute Spielzeit in Minuten (vom Spiel gesetzt)
     this.rng = rng;
     this.items = [];
     this.material = createWorldMaterial({ selfLight: 0.55 }); // Beute glimmt nachts
@@ -163,10 +168,10 @@ export class Loot {
   }
 
   spawn(res, x, z) {
-    if (this.items.length >= MAX * 2) this.items.shift();
+    if (this.items.length >= MAX * 2.5) this.items.shift();
     const a = this.rng.range(0, Math.PI * 2);
     const s = this.rng.range(0.6, 1.6);
-    this.items.push({ res, x, z, y: 0.4, vx: Math.cos(a) * s, vz: Math.sin(a) * s, vy: this.rng.range(2, 3.2), age: 0, flying: false, spin: this.rng.range(0, 6) });
+    this.items.push({ res, x, z, y: 0.4, vx: Math.cos(a) * s, vz: Math.sin(a) * s, vy: this.rng.range(2, 3.2), age: 0, until: this.now + LIFE, flying: false, spin: this.rng.range(0, 6) });
   }
 
   clear() {
@@ -178,14 +183,16 @@ export class Loot {
    * @param {{x:number, z:number}} player
    * @param {number} radius Sammelradius
    * @param {(res:string, x:number, y:number, z:number) => void} onCollect
+   * @param {number} now absolute Spielzeit in Minuten (state.absoluteMinute)
    */
-  update(dt, player, radius, onCollect) {
+  update(dt, player, radius, onCollect, now) {
     this.time += dt;
+    this.now = now;
     for (let i = this.items.length - 1; i >= 0; i--) {
       const it = this.items[i];
       it.age += dt;
       it.spin += dt * 2.5;
-      if (it.age > LOOT_LIFE) {
+      if (now >= it.until) {
         this.items.splice(i, 1);
         continue;
       }
@@ -229,9 +236,9 @@ export class Loot {
       const mesh = this.meshes[it.res];
       const k = counts[it.res];
       if (k >= MAX) continue;
-      // Letzte Sekunden: blinken
-      const left = LOOT_LIFE - it.age;
-      if (left < BLINK && Math.floor(left * (left < 4 ? 8 : 4)) % 2 === 0) continue;
+      // Letzte Spielstunde: blinken (schneller zum Schluss)
+      const left = it.until - this.now;
+      if (left < BLINK && Math.floor(this.time * (left < 12 ? 8 : 4)) % 2 === 0) continue;
       const bob = it.vy === 0 && !it.flying ? 0.08 + Math.sin(it.spin * 1.6) * 0.05 : 0;
       d.position.set(it.x, it.y + bob, it.z);
       d.rotation.set(0, it.res === 'zahnraeder' ? it.spin : it.spin * 0.3, 0);
@@ -261,16 +268,20 @@ export class Loot {
     this.glints.instanceMatrix.needsUpdate = true;
   }
 
-  /** Zum Speichern (liegt noch Loot herum?). */
+  /** Zum Speichern (liegt noch Beute herum?). */
   toState() {
-    return this.items.filter((it) => !it.flying).map((it) => ({ res: it.res, x: +it.x.toFixed(2), z: +it.z.toFixed(2), age: Math.round(it.age) }));
+    return this.items.filter((it) => !it.flying).map((it) => ({ res: it.res, x: +it.x.toFixed(2), z: +it.z.toFixed(2), until: Math.round(it.until) }));
   }
 
-  load(entries) {
+  /** @param {number} now absolute Spielzeit in Minuten */
+  load(entries, now) {
     this.clear();
+    this.now = now;
     for (const e of entries || []) {
       if (!MODELS[e.res]) continue;
-      this.items.push({ res: e.res, x: e.x, z: e.z, y: 0.05, vx: 0, vz: 0, vy: 0, age: e.age || 0, flying: false, spin: this.rng.range(0, 6) });
+      const until = Number.isFinite(e.until) ? e.until : now + LIFE;
+      if (until <= now) continue; // inzwischen verrottet (z. B. im Schlaf)
+      this.items.push({ res: e.res, x: e.x, z: e.z, y: 0.05, vx: 0, vz: 0, vy: 0, age: 1, until, flying: false, spin: this.rng.range(0, 6) });
     }
   }
 }

@@ -393,9 +393,13 @@ Bild, z nach Süden = unten im Bild; die Kamera blickt nach Norden):
   Weg sind Hindernisse, an denen sie hängen bleibt und die sie angreift. Die
   Figur zieht sie nur aus der Nähe vom Weg; danach kehren die Schlurfer auf
   den Weg zurück.
+- **Übersicht:** An jedem Spawn stehen Warnpfähle (nachts mit fahlgrüner
+  Laterne); die Übersichtskarte (Taste M) zeigt das ganze Wegenetz mit
+  Türmen, Barrikaden, Schlurfern, liegenden Überresten und Mika.
 - **Offen (OFFENE-FRAGEN Nr. 66):** ob und wie Barrikaden die Horde auf einen
   anderen Zweig umlenken und ob die Wegvorschau beim Bauen bleibt. Bis das
-  geklärt ist, wird davon nichts entfernt und nichts Neues entwickelt.
+  geklärt ist, wird davon nichts entfernt und nichts Neues entwickelt (Stand
+  M9: Das Netz ist ein Baum, die Wegvorschau ist geblieben).
 
 ### 6.3 Sammeln
 
@@ -724,7 +728,18 @@ freiem Bauraster (die Horde ließ sich mit Bauten umlenken). Das neue
 Grundkonzept ersetzt die Karte; was aus dem Umlenken und der Wegvorschau
 wird, klärt OFFENE-FRAGEN Nr. 66.
 
-### Meilenstein 9 – Die Bucht und die Wege (großer Umbau)
+### Meilenstein 9 – Die Bucht und die Wege (großer Umbau) ✓
+
+*Umgesetzt:* Karte 96 × 60 m mit fester Bucht und prozeduralem Wegenetz
+(Startwert im Spielstand, drei Spawns mit Warnpfählen), See mit treibenden
+Wellen und Inseln, Herbstwald, Steg, Bootswrack, Leuchtmast am Stegende,
+Übersichtskarte (M); Horde nur auf Weg und Hof, alle Schlurfer schlagen
+Barrikaden; Türme nie auf, Barrikaden nur auf Wegfeldern (drei Stufen,
+Trümmer, Wiederaufbau); Überreste drei Tage; Tagesschlurfer nur einzeln;
+Balduin mit Boot und im Seebär-Look; Spielstand v8 mit Erstattung und Umzug
+der Bauten. Entscheidungen: OFFENE-FRAGEN 75–83.
+
+*Geplant war:*
 
 - **Neue Karte nach Grundregel 11:** rechts der Stillsee mit Inseln und
   Nebel, am Ufer das alte Fischerhaus mit Steg, davor der Hof als letzte
@@ -760,12 +775,11 @@ langläuft. Jedes neue Spiel hat ein etwas anderes Wegenetz.
 
 ### Meilenstein 10 – Balduin kommt übers Wasser
 
-- Ausbau der einfachen Fassung aus M9: Boot mit Kisten, Fässern und
-  Einmachgläsern; Ankunft als kleines Ereignis (Bootshorn, das Boot taucht
-  zwischen den Inseln auf, tuckert heran, legt am Steg an), Abfahrt gegen
-  Mittag.
-- Balduin im Aussehen des Konzeptbilds (Seebär mit Schiebermütze, kräftigem
-  Bart, rotem Schal, robuster Kleidung, Rucksack).
+- Ausbau der einfachen Fassung aus M9 (Boot mit Kisten, Fass und
+  Einmachgläsern, Seebär-Look sind schon da): Ankunft als kleines Ereignis
+  (Bootshorn, das Boot taucht zwischen den Inseln auf, tuckert heran, die
+  Leine fliegt über den Poller), Abfahrt gegen Mittag.
+- Balduin im feinen Look-Schliff (Gesicht, Porträt, Gesten).
 - Handel wie bisher, dazu besondere Turmteile, Upgrades und Werkzeuge,
   gelegentliche Nebenaufträge; Running Gag mit täglichen Sprüchen.
 

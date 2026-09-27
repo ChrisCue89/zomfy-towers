@@ -38,6 +38,9 @@ export const CONFIG = {
   world: {
     voxel: 1 / 8,
     seed: Number(params.get('seed')) || 20260926,
+    // Startwert des Wegenetzes (Meilenstein 9): sonst je neuem Spiel zufällig;
+    // die Prüfung spielt immer auf derselben Karte
+    mapSeed: params.has('map') ? Number(params.get('map')) >>> 0 : params.has('test') || params.has('playtest') ? 3 : null,
   },
   time: {
     secondsPerGameMinute: 0.4, // M8: 0,6 s zogen sich (ein Tag rund 9 statt 14 Minuten)

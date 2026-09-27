@@ -1,12 +1,71 @@
 // Speichern und Laden im Browser (localStorage), versioniert und mit Migrationen.
 
 import { SAVE_VERSION, sanitizeState } from './state.js';
+import { BUILDINGS } from '../data/buildings.js';
+import { towerInvested, towerBuildCost } from '../data/towers.js';
+import { LAYOUT } from '../world/layout.js';
+
+/** Ein neuer Startwert für das Wegenetz. */
+export function randomMapSeed() {
+  return (Math.floor(Math.random() * 0xffffffff) >>> 0) || 1;
+}
+
+/**
+ * v7 -> v8: Meilenstein 9 (die Bucht und die Wege). Die Karte ist neu:
+ * Türme und Barrikaden gibt es voll zurück (sie gehören jetzt neben bzw. auf
+ * die Wege), die übrigen Bauten stellt das Spiel beim Laden in der Bucht neu
+ * auf (world.relocate). Quellen, Überreste und Horde beginnen frisch; Mika
+ * steht vor der Tür. Wer das Autowrack ausgeräumt hat, findet im Bootswrack
+ * nichts mehr.
+ */
+function migrateToBay(data) {
+  const refund = {};
+  const add = (cost) => {
+    for (const [res, n] of Object.entries(cost || {})) refund[res] = (refund[res] || 0) + n;
+  };
+  const keep = [];
+  const towersSeen = {};
+  for (const b of Array.isArray(data.world?.buildings) ? data.world.buildings : []) {
+    const def = b && BUILDINGS[b.type];
+    if (!def) continue;
+    if (def.tower) {
+      const n = towersSeen[b.type] || 0;
+      towersSeen[b.type] = n + 1;
+      const level = Math.max(1, Math.min(5, Math.floor(b.level || 1)));
+      const invested = towerInvested(b.type, level, b.spec === 'A' || b.spec === 'B' ? b.spec : 'A');
+      const first = towerInvested(b.type, 1, null);
+      add(towerBuildCost(b.type, n));
+      for (const [res, v] of Object.entries(invested)) refund[res] = (refund[res] || 0) + v - (first[res] || 0);
+    } else if (def.defense) {
+      add(def.cost);
+    } else {
+      keep.push(b);
+    }
+  }
+  const inventory = { ...(data.inventory || {}) };
+  for (const [res, n] of Object.entries(refund)) inventory[res] = (inventory[res] || 0) + n;
+  const flags = { ...(data.flags || {}), umgezogen: true };
+  if (flags.autoLeer) flags.wrackLeer = true;
+  if (flags.autoGesehen) flags.wrackGesehen = true;
+  return {
+    ...data,
+    version: 8,
+    inventory,
+    player: { ...(data.player || {}), x: LAYOUT.start.x, z: LAYOUT.start.z, facing: LAYOUT.start.facing },
+    world: { ...(data.world || {}), mapSeed: randomMapSeed(), relocate: true, buildings: keep, nodes: {}, searched: {} },
+    horde: [],
+    hordeQueue: [],
+    loot: [],
+    flags,
+  };
+}
 
 export const SAVE_KEY = 'zomfy-towers.spielstand';
 const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  7: migrateToBay,
   // v6 -> v7: Meilenstein 8 (Zombieteile, Balduin, Autowrack nur einmal). Wer das
   // Wrack schon durchsucht hat, findet dort nichts mehr; Zombieteile beginnen bei null.
   6: (data) => ({

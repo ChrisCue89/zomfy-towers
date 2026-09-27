@@ -8,20 +8,31 @@ import { SURVIVOR_ORDER } from '../data/survivors.js';
 import { FURNITURE } from '../data/furniture.js';
 import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
 import { TRADER_OFFERS } from '../data/trader.js';
+import { LAYOUT } from '../world/layout.js';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
 
-export function createNewState(config) {
+/** Absolute Spielzeit in Minuten (Tag 1, 06:00 = 1440) – für alles, was Tage überdauert. */
+export function absoluteMinute(time) {
+  return time.day * DAY_MINUTES + time.minute;
+}
+
+/**
+ * @param {object} config
+ * @param {number} [mapSeed] Startwert des Wegenetzes (Meilenstein 9, je Spiel neu)
+ */
+export function createNewState(config, mapSeed = 1) {
   const slots = new Array(HOTBAR_SIZE).fill(null);
+  const start = LAYOUT.start;
   return {
     version: SAVE_VERSION,
     time: { day: 1, minute: config.time.newGameMinute },
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
-    player: { x: -0.625, z: 0.25, facing: 0, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
+    player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
     inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
@@ -33,14 +44,15 @@ export function createNewState(config) {
     // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
     // trader: was Balduin am Tag `day` schon verkauft hat (Vorrat der Sonderangebote, M8)
-    world: { houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
+    // mapSeed: Startwert des Wegenetzes (M9); relocate: Bauten eines alten Stands neu aufstellen
+    world: { mapSeed: mapSeed >>> 0, relocate: false, houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
     // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
     survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }])), // errand: 0 offen, 1 läuft, 2 erledigt
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
     night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
     horde: [], // lebende Schlurfer (zum Weiterspielen nach dem Neuladen)
     hordeQueue: [], // noch ausstehende Schlurfer der laufenden Welle
-    loot: [], // Loot am Boden
+    loot: [], // Überreste am Boden (bleiben bis zu drei Tage, `until` in absoluten Spielminuten)
     report: null, // Morgenbericht, der noch gezeigt werden muss
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0 },
@@ -72,7 +84,7 @@ export function sanitizeState(data, config) {
   if (!data || typeof data !== 'object') return out;
   out.time.day = Math.floor(num(data.time?.day, base.time.day, 1, 1e6));
   out.time.minute = num(data.time?.minute, base.time.minute, 0, DAY_MINUTES - 0.001);
-  out.player.x = num(data.player?.x, base.player.x, -40, 40);
+  out.player.x = num(data.player?.x, base.player.x, -70, 40);
   out.player.z = num(data.player?.z, base.player.z, -40, 40);
   out.player.facing = num(data.player?.facing, 0, -10, 10);
   out.player.lantern = Boolean(data.player?.lantern);
@@ -110,6 +122,8 @@ export function sanitizeState(data, config) {
   out.tools.axt = Boolean(data.tools?.axt);
   out.tools.spitzhacke = Boolean(data.tools?.spitzhacke);
   const w = data.world || {};
+  out.world.mapSeed = Math.floor(num(w.mapSeed, 1, 0, 4294967295));
+  out.world.relocate = Boolean(w.relocate);
   out.world.houseLevel = Math.floor(num(w.houseLevel, 1, 1, 2));
   out.world.homeHp = num(w.homeHp, out.world.houseLevel >= 2 ? 450 : 300, 0, 5000);
   if (w.dayEvents && Number.isFinite(w.dayEvents.day)) out.world.dayEvents = { day: Math.floor(w.dayEvents.day), done: Math.floor(num(w.dayEvents.done, 0, 0, 99)), lost: num(w.dayEvents.lost, 0, 0, 5000) };
@@ -128,7 +142,10 @@ export function sanitizeState(data, config) {
   const listOf = (v) => (Array.isArray(v) ? v.filter((e) => e && typeof e === 'object') : []);
   out.horde = listOf(data.horde).filter((z) => typeof z.type === 'string' && Number.isFinite(z.x) && Number.isFinite(z.z)).slice(0, 300);
   out.hordeQueue = listOf(data.hordeQueue).slice(0, 300);
-  out.loot = listOf(data.loot).filter((l) => typeof l.res === 'string' && Number.isFinite(l.x) && Number.isFinite(l.z)).slice(0, 300);
+  out.loot = listOf(data.loot)
+    .filter((l) => typeof l.res === 'string' && Number.isFinite(l.x) && Number.isFinite(l.z))
+    .map((l) => ({ res: l.res, x: l.x, z: l.z, ...(Number.isFinite(l.until) ? { until: Math.floor(l.until) } : {}) }))
+    .slice(0, 600);
   out.report = data.report && typeof data.report === 'object' ? data.report : null;
   if (Array.isArray(w.buildings)) {
     out.world.buildings = w.buildings
@@ -139,6 +156,7 @@ export function sanitizeState(data, config) {
         if (Number.isFinite(b.level)) entry.level = Math.floor(num(b.level, 1, 1, 5));
         if (b.spec === 'A' || b.spec === 'B') entry.spec = b.spec;
         if (Number.isFinite(b.hp)) entry.hp = num(b.hp, 100, 0, 1000);
+        if (b.broken === true) entry.broken = true; // zerstörte Barrikade (Trümmer)
         return entry;
       });
   }

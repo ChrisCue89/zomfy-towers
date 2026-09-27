@@ -8,8 +8,8 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { hash3, Rng } from '../core/rng.js';
-import { NODES } from './layout.js';
-import { buildBirch, buildDeciduous, buildFir, buildRock } from './nature.js';
+import { BAY_NODES } from './layout.js';
+import { buildBirch, buildDeciduous, buildFir, buildRock, LEAVES } from './nature.js';
 
 /**
  * Regeln je Art. yield = pro Treffer, bonus = beim letzten Treffer.
@@ -27,9 +27,9 @@ export const NODE_RULES = {
 /** Beute beim Durchsuchen: [min, max] oder Wahrscheinlichkeit für 1. */
 export const SEARCH_LOOT = {
   schrott: { schrott: [2, 3], stoff: [0, 1], zahnraeder: 0.15 },
-  // Das Autowrack gibt nur einmal etwas her (M8: »dass der Schrott jedes Mal im
-  // Auto gefunden wird, ist unwahrscheinlich«) – dafür reichlich für den ersten Turm
-  auto: { schrott: [5, 6], stoff: [1, 2], zahnraeder: 0.35 },
+  // Das Bootswrack gibt nur einmal etwas her (M8: früher das Autowrack) – dafür
+  // reichlich für den ersten Turm
+  wrack: { schrott: [5, 6], stoff: [1, 2], zahnraeder: 0.35 },
 };
 
 /** So viele Tage braucht ein Schrotthaufen, bis wieder etwas darin liegt. */
@@ -141,19 +141,19 @@ function treeModel(model, seed) {
   let m;
   switch (model) {
     case 'birke':
-      m = buildBirch(seed, 1.0);
+      m = buildBirch(seed, 1.0, [P.e7, P.f5, P.f6, P.f7]);
       break;
     case 'tanne':
       m = buildFir(seed, 0.85);
       break;
     case 'eiche':
-      m = buildDeciduous(seed, 0.9);
+      m = buildDeciduous(seed, 0.9, LEAVES.orange);
       break;
     case 'jungtanne':
       m = buildFir(seed, 0.6);
       break;
     default:
-      m = buildDeciduous(seed, 0.62);
+      m = buildDeciduous(seed, 0.62, LEAVES.gelb);
   }
   ribbon(m, 5);
   return m;
@@ -161,18 +161,71 @@ function treeModel(model, seed) {
 
 // --- Verwaltung -----------------------------------------------------------------
 
+/**
+ * Quellen entlang der Wege (je Spiel neu, aus dem Startwert der Karte): alle
+ * gut 8 m ein Baum, Fels, Kiesel, Faserbusch, Äste oder Schrott – seitlich
+ * neben dem Weg auf dem offenen Streifen, wo später auch Türme stehen.
+ * @param {import('./map.js').GameMap} map
+ */
+export function pathNodes(map) {
+  const rng = new Rng(map.seed * 131 + 7);
+  const out = [];
+  const kinds = [
+    ['baum', 0.3],
+    ['felsen', 0.14],
+    ['kiesel', 0.14],
+    ['gras', 0.16],
+    ['aeste', 0.18],
+    ['schrott', 0.08],
+  ];
+  const trees = ['birke', 'eiche', 'tanne', 'jung', 'jungtanne'];
+  const taken = [...BAY_NODES];
+  for (const path of map.paths) {
+    const pts = path.points;
+    for (let k = 6; k < pts.length - 4; k += 16) {
+      const a = pts[k];
+      const b = pts[k + 1];
+      const tx = b.x - a.x;
+      const tz = b.z - a.z;
+      const len = Math.hypot(tx, tz) || 1;
+      const off = path.width / 2 + rng.range(2, 4.2);
+      let r = rng.next();
+      let kind = 'aeste';
+      for (const [name, w] of kinds) {
+        if (r < w) {
+          kind = name;
+          break;
+        }
+        r -= w;
+      }
+      // Bäume nur nördlich vom Weg: Ihre Krone ragt im Bild nach oben und verdeckt ihn sonst
+      const sides = [1, -1].map((side) => ({ x: Math.round((a.x - (tz / len) * off * side) * 8) / 8, z: Math.round((a.z + (tx / len) * off * side) * 8) / 8 }));
+      const spot = kind === 'baum' ? (sides[0].z < sides[1].z ? sides[0] : sides[1]) : sides[rng.int(0, 1)];
+      const { x, z } = spot;
+      if (map.edgeDistance(x, z) > -1.2 || map.pathDistance(x, z) < 1.6 || map.inBay(x, z, -2)) continue;
+      if (taken.some((n) => (n.x - x) ** 2 + (n.z - z) ** 2 < 16)) continue;
+      const node = { id: `weg-${out.length + 1}`, kind, x, z };
+      if (kind === 'baum') node.model = rng.pick(trees);
+      if (kind === 'felsen') node.model = rng.chance(0.3) ? 'gross' : 'mittel';
+      out.push(node);
+      taken.push(node);
+    }
+  }
+  return out;
+}
+
 export class ResourceNodes {
   /**
-   * @param {object} deps scene, colliders, materials, seed
+   * @param {object} deps scene, colliders, materials, seed, map
    */
-  constructor({ scene, colliders, materials, seed }) {
+  constructor({ scene, colliders, materials, seed, map }) {
     this.group = new THREE.Group();
     this.group.name = 'Ressourcen';
     scene.add(this.group);
     this.nodes = [];
     this.byId = new Map();
 
-    for (const def of NODES) {
+    for (const def of [...BAY_NODES, ...pathNodes(map)]) {
       const node = { ...def, rules: NODE_RULES[def.kind], hitsLeft: NODE_RULES[def.kind].hits, shake: 0 };
       const s = seed + hash3(Math.round(def.x * 8), 0, Math.round(def.z * 8), 5) * 1000;
       let model;

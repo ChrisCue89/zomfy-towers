@@ -30,19 +30,89 @@ export function buildWorkbenchGlow() {
   return new VoxelModel().set(-6, 8, 1, 0xffffff);
 }
 
-export function buildBarricade(seed) {
+/**
+ * Barrikaden (Meilenstein 9, DESIGN.md 6.10): quer über den Weg, improvisiert
+ * und als Block lesbar. Jede füllt ihr Feld fast ganz aus (fast quadratisch),
+ * damit eine Reihe von oben wie aus der Kamera eine geschlossene Sperre ist –
+ * egal, wie der Weg läuft. Stufe 1: Verschlag aus Brettern und Stämmen mit
+ * angespitzten Pfählen und einer alten Tür davor; 2: höher, mit Eisenbändern
+ * und mehr Spitzen; 3: Stahlkasten mit Wellblech und einem Stahlkreuz
+ * obendrauf. `damage` 0–1 nimmt Bretter und Blech weg (sichtbarer Schaden).
+ */
+export function buildBarricade(seed, level = 1, damage = 0) {
   const m = new VoxelModel();
-  const stakes = [-4, -1, 2];
-  stakes.forEach((sx, i) => {
-    const h = 7 + (i % 2);
-    m.box(sx, 0, -1, sx + 1, h, 0, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? P.e4 : P.e5));
-    m.set(sx, h + 1, -1, P.e6); // Spitze
-  });
-  m.box(-4, 2, 1, 3, 2, 1, P.e3);
-  m.box(-4, 5, 1, 3, 5, 1, P.e3);
-  for (const sx of stakes) {
-    m.set(sx, 2, 1, P.e8).set(sx, 5, 1, P.e8);
+  const loose = (x, y, z) => damage > 0 && y > 0 && hash3(x, y, z, seed + 9) < damage * (0.16 + y * 0.07);
+  const put = (x, y, z, c) => {
+    if (!loose(x, y, z)) m.set(x, y, z, c);
+  };
+  const box = (x0, y0, z0, x1, y1, z1, color) => {
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) {
+      const c = typeof color === 'function' ? color(x, y, z) : color;
+      if (c !== null) put(x, y, z, c);
+    }
+  };
+  const shell = (x, z) => x === -4 || x === 3 || z === -3 || z === 2;
+  if (level >= 3) {
+    // Stahlkasten: Rahmen, Wellblech mit Rostflecken, oben ein Stahlkreuz
+    box(-4, 0, -3, 3, 5, 2, (x, y, z) => {
+      if (!shell(x, z) && y < 5) return null;
+      const corner = (x === -4 || x === 3) && (z === -3 || z === 2);
+      if (corner || y === 5 || y === 0) return (x + y + z) % 3 === 0 ? P.s3 : P.s4;
+      const rust = hash3(Math.floor(x / 2), Math.floor(y / 2), z, seed + 3) > 0.66;
+      return rust ? (y % 2 ? P.r2 : P.r3) : (x + z) % 2 ? P.s5 : P.s6;
+    });
+    for (let k = -3; k <= 2; k++) {
+      put(k, 6, k, P.s4);
+      put(k, 7, k, P.s3);
+      put(k, 6, -1 - k, P.s4);
+      put(k, 7, -1 - k, P.s3);
+    }
+    for (const x of [-3, 0, 2]) put(x, 3, 3, P.s8); // Nieten vorn
+    return m;
   }
+  const high = level === 2 ? 6 : 4;
+  // Verschlag: Bretter außen, Stämme innen, oben ein Deckel aus Brettern
+  box(-4, 0, -3, 3, high, 2, (x, y, z) => {
+    if (shell(x, z)) {
+      const plank = Math.floor((y + (x + z < 0 ? 1 : 0)) / 2);
+      if (level === 2 && (y === 2 || y === high - 1)) return P.s3; // Eisenbänder
+      return hash3(x + z, plank, 0, seed) < 0.25 ? P.e4 : plank % 2 ? P.e6 : P.e5;
+    }
+    return y === high ? ((x + z) % 2 ? P.e5 : P.e4) : null;
+  });
+  // Angespitzte Pfähle ragen oben heraus – die Spitzen machen die Sperre schon von Weitem kenntlich
+  const stakes = level === 2 ? [[-4, -3], [-1, -3], [2, -3], [-3, 0], [1, 0], [-4, 2], [-1, 2], [2, 2]] : [[-3, -3], [1, -3], [-1, 0], [-3, 2], [1, 2]];
+  for (const [x, z] of stakes) {
+    box(x, high + 1, z, x + 1, high + 2, z, (xx, y) => (y === high + 2 ? P.e7 : P.e3));
+    put(x, high + 3, z, P.e8);
+  }
+  if (level === 2) {
+    for (const x of [-3, 0, 2]) put(x, 4, 3, P.s6); // Nägel vorn
+    return m;
+  }
+  // Stufe 1: eine alte Tür lehnt vorn (verblasstes Blau mit Knauf)
+  box(-2, 0, 3, 0, 5, 3, (x, y) => (x === 0 && y === 3 ? P.s6 : hash3(x, y, 3, seed) < 0.3 ? P.b2 : P.b3));
+  return m;
+}
+
+/** Trümmer einer zerstörten Barrikade: Latten oder Blech am Boden, ein Stumpf. */
+export function buildRubble(seed, level = 1) {
+  const m = new VoxelModel();
+  const metal = level >= 3;
+  for (let k = 0; k < 7; k++) {
+    const x0 = -4 + ((k * 3) % 7);
+    const z0 = -3 + ((k * 5) % 6);
+    const len = 2 + (k % 3);
+    const along = hash3(k, 0, 0, seed) < 0.5;
+    for (let t = 0; t < len; t++) {
+      const x = along ? x0 + t : x0;
+      const z = along ? z0 : z0 + t;
+      if (x > 3 || z > 3) continue;
+      m.set(x, 0, z, metal ? (t % 2 ? P.s5 : P.r2) : t % 2 ? P.e5 : P.e4);
+    }
+  }
+  m.set(-4, 1, 0, metal ? P.s3 : P.e3).set(-4, 2, 0, metal ? P.s4 : P.e5); // Stumpf eines Pfostens
+  m.set(3, 1, 0, metal ? P.s3 : P.e3);
   return m;
 }
 
@@ -132,7 +202,7 @@ export function buildTentGlow() {
 export const BUILDING_MODELS = {
   zelt: { model: buildTent, glow: buildTentGlow },
   werkbank: { model: buildWorkbench, glow: buildWorkbenchGlow },
-  barrikade: { model: buildBarricade },
+  barrikade: { model: (seed) => buildBarricade(seed, 1) }, // Stufen und Trümmer: buildings.js
   laternenpfahl: { model: buildLampPost, glow: buildLampPostGlow, pool: { y: 1.3, radius: 3.0 } },
   beet: { model: buildGardenPlot },
   bank: { model: buildBench },

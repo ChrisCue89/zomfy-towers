@@ -1,50 +1,101 @@
-// Der Boden: eine große Fläche mit einer Textur, die pro 1/8 m einen Texel hat
-// (5 × 3 Spielpixel). Wiese, Waldboden, Trampelpfad, Feuerstelle und die alte
-// Landstraße werden hier prozedural gemalt.
+// Der Boden: eine große Fläche mit einer Textur, die pro 1/8 m einen Texel hat.
+// Herbstwiese, Waldboden mit Laub, die Erdwege der Horde, Sand und Kiesel am
+// Ufer, der Seegrund und die Hofstellen (Feuerstelle, Hackklotz, Beet) werden
+// hier prozedural gemalt. Das Wasser darüber (Wellen) kommt aus water.js.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { fbm, hash2, valueNoise } from '../core/rng.js';
-import { LAYOUT, V, clearingDistance, distanceToPolyline } from './layout.js';
+import { LAYOUT, V } from './layout.js';
+import { MAP, shoreX, ISLANDS } from './map.js';
 
-export const AREA = { x0: -26, x1: 26, z0: -22, z1: 26 };
+export const AREA = MAP;
 
 function pick(h, a, b, threshold) {
   return h < threshold ? a : b;
 }
 
+/** Herbstwiese: Grün mit Gelb und Braun, dazwischen Laub. */
+function meadow(h, h2, patch, clump, wild) {
+  const ramp = [P.g3, P.g4, P.g5, P.g5, P.g6];
+  let k = patch < 0.34 ? 0 : patch < 0.48 ? 1 : patch < 0.62 ? 2 : patch < 0.74 ? 3 : 4;
+  if (clump > 0.74) k = Math.min(4, k + 1);
+  else if (clump < 0.22) k = Math.max(0, k - 1);
+  let color = ramp[k];
+  // Trockene, gelbliche Flecken (Herbst)
+  if (patch > 0.66 && h2 < 0.35) color = h < 0.5 ? P.g7 : P.e7;
+  if (h < 0.03) color = k >= 2 ? P.g7 : P.g6;
+  // Gefallenes Laub: mehr, je wilder
+  const leaf = 0.018 + wild * 0.05;
+  if (h > 1 - leaf) color = h2 < 0.35 ? P.f4 : h2 < 0.6 ? P.r3 : h2 < 0.85 ? P.f5 : P.e6;
+  return color;
+}
+
+/** Waldboden: Moos, Nadeln, viel Laub. */
+function forestFloor(h, h2, patch, clump) {
+  const k = patch < 0.42 ? 0 : patch < 0.6 ? 1 : 2;
+  let color = [P.t1, P.g3, P.e3][k];
+  if (clump > 0.7) color = P.g3;
+  if (h < 0.07) color = P.e2;
+  else if (h < 0.1) color = P.e4;
+  else if (h > 0.93) color = h2 < 0.4 ? P.r2 : h2 < 0.7 ? P.f3 : P.e5; // Laub
+  return color;
+}
+
 /** Farbe eines Bodentexels an der Weltposition (x, z). */
-function groundColor(x, z, i, j, seed) {
+function groundColor(map, x, z, i, j, seed) {
   const h = hash2(i, j, seed);
   const h2 = hash2(i, j, seed + 17);
-  const e = clearingDistance(x, z);
   const patch = fbm(x * 0.16, z * 0.16, 3, seed);
   const clump = valueNoise(x * 0.85, z * 0.85, seed + 7);
 
-  // --- Wiese und Waldboden ---------------------------------------------
-  let color;
-  if (e < 0.97) {
-    const ramp = [P.g4, P.g5, P.g5, P.g6];
-    let k = patch < 0.36 ? 0 : patch < 0.52 ? 1 : patch < 0.66 ? 2 : 3;
-    if (clump > 0.74) k = Math.min(3, k + 1);
-    else if (clump < 0.22) k = Math.max(0, k - 1);
-    color = ramp[k];
-    if (h < 0.035) color = k >= 2 ? P.g7 : P.g6;
-    if (h > 0.992 && patch > 0.45) color = h2 < 0.5 ? P.a4 : h2 < 0.8 ? P.f6 : P.a1;
-  } else {
-    // Waldboden: Moos, Nadeln, Laub
-    const k = patch < 0.45 ? 0 : patch < 0.6 ? 1 : 2;
-    color = [P.t1, P.g3, P.t2][k];
-    if (clump > 0.7) color = P.g3;
-    if (h < 0.08) color = P.e3;
-    else if (h < 0.11) color = P.e4;
-    else if (h > 0.97) color = P.t3;
+  // --- See, Ufer, Inseln ---------------------------------------------------
+  const shore = shoreX(z);
+  const wobble = (valueNoise(x * 1.1, z * 1.1, seed + 3) - 0.5) * 0.5;
+  const s = x - shore + wobble * 0.6;
+  if (s > 0 && !map.onIsland(x, z)) {
+    // Seegrund: flach und hell am Ufer, dann tief und dunkel (die Wellen liegen darüber)
+    if (s < 0.3) return pick(h, P.s6, P.e7, 0.5); // nasser Kies an der Wasserkante
+    if (s < 1.4) return h < 0.12 ? P.a5 : pick(h2, P.b2, P.a5, 0.55);
+    if (s < 3.2) return h < 0.08 ? P.b3 : P.b2;
+    return h < 0.05 ? P.b2 : pick(patch, P.b1, P.n4, 0.5);
   }
-  // Übergang Wiese -> Wald: abgedunkelter Saum
-  if (e >= 0.9 && e < 0.97 && h < (e - 0.9) * 9) color = P.g3;
+  for (const isl of ISLANDS) {
+    const d = Math.hypot(x - isl.x, (z - isl.z) * 1.25) + (map.noise(x, z, 0.9, 71) - 0.5) * 0.8;
+    if (d < isl.r) return d > isl.r - 0.45 ? pick(h, P.s5, P.s4, 0.5) : d > isl.r - 1 ? pick(h, P.e8, P.s6, 0.6) : forestFloor(h, h2, patch, clump);
+  }
+  // Sand und Kiesel am Ufer
+  if (s > -1.7) {
+    let color = h < 0.55 ? P.e8 : h < 0.85 ? P.e9 : P.s7;
+    if (h2 > 0.9) color = pick(h, P.s5, P.s6, 0.5); // Kiesel
+    if (s < -1.25 && h < 0.5) color = pick(h2, P.g5, P.e7, 0.5); // Übergang ins Gras
+    return color;
+  }
 
-  // --- Feuerstelle ------------------------------------------------------
+  // --- Land ----------------------------------------------------------------
+  const edge = map.edgeDistance(x, z); // < 0: begehbar
+  const wild = Math.max(0, Math.min(1, (edge + 3) / 3));
+  let color = edge > 0.15 ? forestFloor(h, h2, patch, clump) : meadow(h, h2, patch, clump, wild);
+  // Waldsaum: dunkler, mit Laub
+  if (edge > -0.6 && edge <= 0.15 && h < (edge + 0.6) * 1.2) color = h2 < 0.3 ? P.e4 : P.g3;
+
+  // --- Wege der Horde ------------------------------------------------------
+  const dPath = map.sampleLinear(map.pathField, x, z) + (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.45;
+  if (dPath < -0.1) {
+    const rut = valueNoise(x * 0.7, z * 0.7, seed + 21);
+    color = rut > 0.62 ? pick(h, P.e4, P.e3, 0.7) : pick(h, P.e5, P.e6, 0.58);
+    if (dPath > -0.35 && h < 0.5) color = P.e4; // Rand: festgetreten, dunkler
+    if (h2 > 0.965) color = pick(h, P.s5, P.s6, 0.5); // Kiesel
+    else if (h2 < 0.02) color = P.f4; // ein Blatt
+  } else if (dPath < 0.25 && h < 0.5) {
+    color = h2 < 0.5 ? P.e4 : P.g3; // abgetretener Saum
+  }
+
+  // --- Hof: festgetretene Stellen ------------------------------------------
+  if (map.inYard(x, z) && patch > 0.58 && h < 0.3) color = pick(h2, P.e5, P.e4, 0.5);
+
+  // --- Feuerstelle ----------------------------------------------------------
   const fire = LAYOUT.campfire;
   const rFire = Math.hypot(x - fire.x, z - fire.z) + (clump - 0.5) * 0.35;
   if (rFire < 1.7) {
@@ -55,63 +106,28 @@ function groundColor(x, z, i, j, seed) {
     color = P.g4;
   }
 
-  // --- Trampelpfade -----------------------------------------------------
-  const wobble = (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.3;
-  const dPath = distanceToPolyline(x, z, LAYOUT.path) + wobble;
-  const dSide = distanceToPolyline(x, z, LAYOUT.sidePath) + wobble;
-  if (dPath < 0.5 || dSide < 0.32) {
-    color = pick(h, P.e5, P.e6, 0.62);
-    if (dPath > 0.4 && dSide > 0.22) color = P.e4;
-    if (h2 > 0.96) color = pick(h, P.s6, P.s7, 0.5);
-  } else if ((dPath < 0.7 || dSide < 0.45) && h < 0.45) {
-    color = h2 < 0.5 ? P.e4 : P.g4;
-  }
+  // --- Unter und um das Haus -------------------------------------------------
+  const sh = LAYOUT.shelter;
+  const sx1 = sh.x + sh.width * V;
+  const sz1 = sh.z + sh.depth * V;
+  if (x > sh.x - 0.25 && x < sx1 + 0.25 && z > sh.z - 0.25 && z < sz1 + 0.25) color = pick(h, P.e3, P.e4, 0.6);
 
-  // --- Alte Landstraße --------------------------------------------------
-  const { z0, z1 } = LAYOUT.road;
-  const edgeN = (valueNoise(x * 1.6, 11.3, seed + 5) - 0.5) * 0.5;
-  const edgeS = (valueNoise(x * 1.6, 27.7, seed + 6) - 0.5) * 0.5;
-  if (z > z0 + edgeN && z < z1 + edgeS) {
-    color = h < 0.62 ? P.s2 : h < 0.9 ? P.s3 : h < 0.95 ? P.s1 : P.s4;
-    // Mittellinie, verblasst
-    const mid = (z0 + z1) / 2;
-    if (Math.abs(z - mid) < 0.07 && ((x % 3) + 3) % 3 < 1.5 && h2 > 0.25) color = h2 > 0.8 ? P.e8 : P.e9;
-    // Risse, aus denen Gras wächst
-    const crack = Math.abs(valueNoise(x * 0.8, z * 0.8, seed + 9) * 2 - 1);
-    if (crack < 0.035) color = P.s1;
-    else if (crack < 0.07 && h2 > 0.55) color = pick(h, P.g4, P.g5, 0.6);
-    // Überwucherte Stellen
-    const over = fbm(x * 0.35, z * 0.35, 2, seed + 13);
-    const edgeDist = Math.min(z - (z0 + edgeN), z1 + edgeS - z);
-    if (over > 0.64 || (edgeDist < 0.35 && h < 0.35)) color = pick(h2, P.g4, P.g5, 0.5);
-  } else if (z > z0 - 0.4 + edgeN && z < z1 + 0.4 + edgeS && h < 0.5) {
-    color = pick(h2, P.e5, P.s5, 0.5); // Bankett aus Kies
-  }
-
-  // --- Unter und um die Notunterkunft ----------------------------------
-  const s = LAYOUT.shelter;
-  const sx1 = s.x + s.width * V;
-  const sz1 = s.z + s.depth * V;
-  if (x > s.x - 0.25 && x < sx1 + 0.25 && z > s.z - 0.25 && z < sz1 + 0.25) {
-    color = pick(h, P.e3, P.e4, 0.6);
-  }
-
-  // --- Hackklotz: Späne ---------------------------------------------------
+  // --- Hackklotz: Späne ---------------------------------------------------------
   const cb = LAYOUT.choppingBlock;
   if (Math.hypot(x - cb.x, z - cb.z) < 0.9 && h > 0.7) color = h2 < 0.5 ? P.e7 : P.e8;
 
-  // --- Gartenbeet --------------------------------------------------------
+  // --- Gartenbeet --------------------------------------------------------------
   const g = LAYOUT.garden;
   if (x > g.x - 0.25 && x < g.x + 2.25 && z > g.z - 0.25 && z < g.z + 1.75) color = pick(h, P.e3, P.g4, 0.7);
 
-  // --- Ölfleck unter dem Autowrack ---------------------------------------
-  const car = LAYOUT.car;
-  if (Math.abs(x - car.x) < 1.9 && Math.abs(z - car.z) < 0.9 && h < 0.7) color = pick(h2, P.s1, P.t0, 0.5);
+  // --- Unter dem Bootswrack -----------------------------------------------------
+  const w = LAYOUT.wreck;
+  if (Math.abs(x - w.x) < 2.3 && Math.abs(z - w.z) < 1.1 && h < 0.6) color = pick(h2, P.e7, P.s6, 0.5);
 
   return color;
 }
 
-export function createTerrain(seed) {
+export function createTerrain(seed, map) {
   const width = Math.round((AREA.x1 - AREA.x0) / V);
   const height = Math.round((AREA.z1 - AREA.z0) / V);
   const data = new Uint8Array(width * height * 4);
@@ -119,7 +135,7 @@ export function createTerrain(seed) {
     const z = AREA.z0 + (j + 0.5) * V;
     for (let i = 0; i < width; i++) {
       const x = AREA.x0 + (i + 0.5) * V;
-      const c = groundColor(x, z, i, j, seed);
+      const c = groundColor(map, x, z, i, j, seed);
       const k = (j * width + i) * 4;
       data[k] = (c >> 16) & 255;
       data[k + 1] = (c >> 8) & 255;
@@ -145,15 +161,15 @@ export function createTerrain(seed) {
   ground.receiveShadow = true;
   ground.name = 'Boden';
 
-  // Dunkler Waldboden weit außerhalb, falls der Blick je so weit reicht.
-  const outer = new THREE.Mesh(
-    new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ color: P.t0 })
-  );
+  // Dunkler Grund weit außerhalb, falls der Blick je so weit reicht (links Wald, rechts See).
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: P.t0 }));
   outer.position.y = -0.02;
   outer.name = 'Waldboden';
+  const lake = new THREE.Mesh(new THREE.PlaneGeometry(200, 400).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: P.n4 }));
+  lake.position.set(x1 + 100, -0.01, 0);
+  lake.name = 'Seegrund';
 
   const group = new THREE.Group();
-  group.add(ground, outer);
+  group.add(ground, outer, lake);
   return { group, texture };
 }

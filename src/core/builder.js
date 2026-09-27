@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
-import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint } from '../data/buildings.js';
+import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint, maxHpOf, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD } from '../data/buildings.js';
 import { TOWERS, towerStats, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
@@ -139,15 +139,15 @@ export class Builder {
    * (m3-r1). Solange nachts Schlurfer da sind, geht es gar nicht – erst die
    * Welle abwehren, dann flicken (sonst ist das Zuhause unverwundbar).
    */
-  repairOption({ id, cost, action }, inv) {
+  repairOption({ id, cost, action, rebuild = false }, inv) {
     const busy = this.waveRunning();
     const share = cost ? this.repairShare(cost) : 0;
     const o = this.option(
       {
         id,
         icon: 'reparieren',
-        name: T.bauleiste.reparieren,
-        info: T.bautenInfo.reparieren,
+        name: rebuild ? T.barrikaden.aufbauen : T.bauleiste.reparieren,
+        info: rebuild ? T.barrikaden.aufbauenInfo : T.bautenInfo.reparieren,
         cost: cost || {},
         disabled: !cost || busy,
         disabledText: busy ? T.bauleiste.erstWelle : T.bauleiste.nichtsKaputt,
@@ -155,7 +155,8 @@ export class Builder {
       },
       inv
     );
-    if (!o.disabled && !o.affordable && share > 0) {
+    // Anteilig flicken geht, anteilig aufbauen nicht
+    if (!rebuild && !o.disabled && !o.affordable && share > 0) {
       o.affordable = true;
       o.hint = T.bauleiste.teilweise(Math.round(share * 100));
     }
@@ -274,7 +275,17 @@ export class Builder {
         options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
       }
     }
-    if (def.hp && b.hp < def.hp) {
+    if (b.type === 'barrikade') {
+      if (b.broken) {
+        // Trümmer: wieder aufbauen (tagsüber) oder abräumen
+        options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b), rebuild: true }, inv));
+      } else if (b.level < BARRICADE_LEVELS.length - 1) {
+        const next = b.level + 1;
+        const [name, info] = T.barrikaden[BARRICADE_LEVELS[next].key];
+        options.push(this.option({ id: `stufe${next}`, icon: def.icon, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: BARRICADE_LEVELS[next].cost, buy: true, action: () => this.upgradeBarricade(b) }, inv));
+      }
+    }
+    if (def.hp && !b.broken && b.hp < maxHpOf(b)) {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
@@ -284,8 +295,8 @@ export class Builder {
     options.push({
       id: `abriss-${b.id}`,
       icon: 'abriss',
-      name: T.bauleiste.abreissen,
-      info: guestName ? T.bautenInfo.abrissBewohnt(guestName) : def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
+      name: b.broken ? T.barrikaden.abraeumen : T.bauleiste.abreissen,
+      info: guestName ? T.bautenInfo.abrissBewohnt(guestName) : b.broken ? T.barrikaden.abraeumenInfo : def.tower || def.defense ? T.bautenInfo.abrissTurm : T.bautenInfo.abriss,
       confirmText: guestName ? T.bauleiste.nochmalBewohnt(guestName) : null,
       cost: {},
       refund: this.refundFor(b),
@@ -371,11 +382,34 @@ export class Builder {
     this.game.quietSave();
   }
 
+  /** Barrikade eine Stufe höher (Holz → verstärkt → Metall). */
+  upgradeBarricade(b) {
+    const next = BARRICADE_LEVELS[b.level + 1];
+    if (!next || !pay(this.game.state.inventory, next.cost)) return;
+    this.game.sound.play('aufwertung');
+    this.world.buildings.upgradeBarricade(b);
+    this.game.state.world.buildings = this.world.buildings.toState();
+    const c = this.world.buildings.bounds(b);
+    this.game.effects.dust(c.x, c.z, 1.1);
+    this.game.effects.splat(c.x, 0.9, c.z, b.level >= 3 ? 'funken' : 'holz', 12, 0.8);
+    this.game.hud.toast(T.meldungen.ausgebaut(T.barrikaden[next.key][0]), BUILDINGS[b.type].icon, 2.4);
+    this.game.quietSave();
+  }
+
   // --- Reparieren ------------------------------------------------------------------------
 
+  /** Flicken (anteilig nach Schaden) bzw. Wiederaufbau aus Trümmern – oder null. */
   buildingRepairCost(b) {
     const def = BUILDINGS[b.type];
-    const missingHp = (def.hp - b.hp) / def.hp;
+    if (b.type === 'barrikade') {
+      const invested = barricadeInvested(b.level);
+      const share = b.broken ? BARRICADE_REBUILD : (maxHpOf(b) - b.hp) / maxHpOf(b);
+      if (share <= 0) return null;
+      const cost = {};
+      for (const [res, n] of Object.entries(invested)) cost[res] = Math.max(1, Math.ceil(n * share));
+      return cost;
+    }
+    const missingHp = (maxHpOf(b) - b.hp) / maxHpOf(b);
     if (missingHp <= 0) return null;
     if (def.tower) return { holz: Math.max(1, Math.ceil(missingHp * 4)), schrott: Math.max(1, Math.ceil(missingHp * 4)) };
     return { holz: Math.max(1, Math.ceil(missingHp * 3)) };
@@ -392,7 +426,7 @@ export class Builder {
     const home = maxHome - st.world.homeHp;
     // m3-r2: Flicken war fast umsonst (76 Schaden = 5 Holz + 2 Schrott) – Schaden soll zählen
     if (home > 0.5) add({ holz: Math.ceil(home / 10), schrott: Math.ceil(home / 15) });
-    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && b.hp < BUILDINGS[b.type].hp) add(this.buildingRepairCost(b));
+    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && (b.broken || b.hp < maxHpOf(b))) add(this.buildingRepairCost(b));
     if (!Object.keys(total).length) return null;
     // Bert flickt mit: nur ein Teil der Kosten (Meilenstein 6)
     const factor = this.game.survivors.repairFactor();
@@ -410,8 +444,14 @@ export class Builder {
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     st.world.homeHp = Math.min(max, st.world.homeHp + (max - st.world.homeHp) * share);
     for (const b of this.world.buildings.list) {
-      const full = BUILDINGS[b.type].hp;
-      if (full) b.hp = Math.min(full, b.hp + (full - b.hp) * share);
+      if (!BUILDINGS[b.type].hp) continue;
+      if (b.broken) {
+        if (share >= 1) this.world.buildings.rebuildBarricade(b); // Trümmer nur ganz oder gar nicht
+        continue;
+      }
+      const full = maxHpOf(b);
+      b.hp = Math.min(full, b.hp + (full - b.hp) * share);
+      this.world.buildings.refreshLook(b);
     }
     st.world.buildings = this.world.buildings.toState();
     this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2.4);
@@ -422,11 +462,24 @@ export class Builder {
   repairBuilding(b) {
     const cost = this.buildingRepairCost(b);
     if (!cost || this.waveRunning()) return;
+    if (b.broken) {
+      // Wiederaufbau: ganz oder gar nicht
+      if (!pay(this.game.state.inventory, cost)) return;
+      this.world.buildings.rebuildBarricade(b);
+      this.game.state.world.buildings = this.world.buildings.toState();
+      const c = this.world.buildings.bounds(b);
+      this.game.effects.dust(c.x, c.z, 1.1);
+      this.game.sound.play('bau');
+      this.game.hud.toast(T.barrikaden.wiederAufgebaut, 'barrikade', 2);
+      this.game.quietSave();
+      return;
+    }
     const share = this.repairShare(cost);
     if (share <= 0) return;
     this.payShare(cost, share);
-    const full = BUILDINGS[b.type].hp;
+    const full = maxHpOf(b);
     b.hp = Math.min(full, b.hp + (full - b.hp) * share);
+    this.world.buildings.refreshLook(b);
     this.game.state.world.buildings = this.world.buildings.toState();
     this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2);
   }
@@ -491,8 +544,13 @@ export class Builder {
     const pl = this.placement;
     if (pl) {
       const wheel = input.consumeWheel();
-      if (wheel) pl.turns = (pl.turns + (wheel > 0 ? 1 : 3)) % 4;
+      if (wheel) {
+        pl.turns = (pl.turns + (wheel > 0 ? 1 : 3)) % 4;
+        pl.turned = true;
+      }
       const { i, j } = this.target(pl.type, pl.turns);
+      // Barrikaden stellen sich von selbst quer zum Weg (bis man selbst dreht)
+      if (BUILDINGS[pl.type].onPath && !pl.turned) pl.turns = this.fenceTurns(i, j);
       const p = this.game.player.position;
       const check = this.world.buildings.check(pl.type, i, j, pl.turns, [{ x: p.x, z: p.z, r: 0.32 }]);
       const affordable = canAfford(this.game.state.inventory, pl.cost);
@@ -541,6 +599,13 @@ export class Builder {
       this.preview.hide();
     }
     return rest;
+  }
+
+  /** Drehung, bei der eine Barrikade quer zur Laufrichtung der Horde steht. */
+  fenceTurns(i, j) {
+    const dir = this.world.pathing.direction(i + 0.5, j + 0.5, true, this._dir || (this._dir = { x: 0, z: 0 }));
+    if (!dir) return 0;
+    return Math.abs(dir.x) >= Math.abs(dir.z) ? 1 : 0;
   }
 
   /** Bildschirm-Kasten um Geist, Umriss und Grund-Zeile – dort soll keine Tafel liegen. */
@@ -636,6 +701,8 @@ export class Builder {
         belegt: (pl.why && T.meldungen.keinPlatzWeil[pl.why]) || T.meldungen.keinPlatz,
         figur: T.meldungen.figurImWeg,
         weg: T.bauleiste.weg,
+        aufWeg: T.bauleiste.grund.aufWeg,
+        nurWeg: T.bauleiste.grund.nurWeg,
         teuer: T.bauleiste.fehlt(this.lackText(pl.cost)),
       }[pl.reason];
       hud.toast(text || T.meldungen.keinPlatz, null, 2);
@@ -646,7 +713,7 @@ export class Builder {
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
     this.game.sound.play('bau');
     if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
-    b.headAngle = Math.PI; // Türme schauen anfangs nach Norden (zum Wald)
+    b.headAngle = -Math.PI / 2; // Türme schauen anfangs nach Westen (von dort kommt die Horde)
     if (b.head) b.head.rotation.y = b.headAngle;
     this.world.refreshInteractions();
     state.world.buildings = this.world.buildings.toState();
@@ -689,6 +756,7 @@ export class Builder {
       const extra = towerBuildCost(b.type, Math.max(0, this.world.buildings.count(b.type) - 1)).schrott - TOWERS[b.type].base[0].cost.schrott;
       return scale({ ...invested, schrott: (invested.schrott || 0) + extra }, TOWER_REFUND);
     }
+    if (b.type === 'barrikade') return b.broken ? {} : scale(barricadeInvested(b.level), TOWER_REFUND); // Trümmer: nur abräumen
     if (def.defense) return scale(def.cost, TOWER_REFUND);
     return def.cost;
   }
@@ -762,12 +830,14 @@ export class Builder {
       const grid = this.world.grid;
       const cx = pl.i + w / 2;
       const cz = pl.j + d / 2;
+      // Barrikaden nur auf Wegfeldern, alles andere nur daneben
+      const onPath = Boolean(BUILDINGS[pl.type].onPath);
       for (let j = Math.floor(cz) - 4; j <= Math.floor(cz) + 4; j++) {
         for (let i = Math.floor(cx) - 4; i <= Math.floor(cx) + 4; i++) {
           if (Math.hypot(i + 0.5 - cx, j + 0.5 - cz) > 3.6) continue;
           if (i >= pl.i && i < pl.i + w && j >= pl.j && j < pl.j + d) continue;
           const r = box(i, j, 1, 1);
-          if (!grid.isFree(i, j)) {
+          if (!grid.isFree(i, j) || grid.isPath(i, j) !== onPath) {
             // belegt: kleiner roter Punkt in der Mitte (so sieht man, warum es rot wird)
             if (grid.index(i, j) >= 0 && grid.inside[grid.index(i, j)]) ui.rect(r.x + r.w / 2 - 1, r.y + r.h / 2, 2, 1, COLORS.buildBad);
             continue;
