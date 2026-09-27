@@ -11,12 +11,35 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 
 ## Projekt in Kürze
 
-- 3D-Pixel-Art-Browserspiel, three.js (WebGL 2), reines JavaScript mit
+- Gemütliches Herbst-Tower-Defense an einem See: tagsüber ein Zuhause am
+  Wasser, nachts Verteidigung an einer klaren Strecke (DESIGN.md).
+- 3D-Voxel-Browserspiel, three.js (WebGL 2), reines JavaScript mit
   ES-Modulen, **kein Build-Schritt**.
 - Wird von GitHub Pages direkt aus dem `main`-Branch ausgeliefert
   (`index.html` im Wurzelverzeichnis).
 - Alle Spieltexte auf Deutsch, Code-Bezeichner auf Englisch, Kommentare auf
   Deutsch.
+
+## Grundregeln des Spiels (verbindlich, DESIGN.md Abschnitt 0)
+
+Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
+
+- **Aufbau im Bild von oben nach unten:** Wasser → Basis/Haus/Steg → letzte
+  Verteidigung → Strecke mit Barrikaden → Türme links und rechts der
+  Strecke → weitere Barrikaden → Wald/Landseite/Zombie-Spawn. Vom Wasser
+  kommen nie Zombies.
+- **Eine klar erkennbare Strecke:** Die Horde läuft sie entlang, keine
+  verstreuten Angriffswege. Türme nur auf Baupunkten neben der Strecke, nie
+  darauf; Barrikaden (mit Lebenspunkten, vier Stufen, reparier- und neu
+  baubar) bewusst auf der Strecke.
+- **Drei Verteidigungsebenen:** Türme – Barrikaden – die Figur selbst am Hof.
+  Die Basis hat Lebenspunkte; fällt sie, ist die Nacht verloren.
+- **Ruhiger Tag, angespannte Nacht** in derselben cozy, herbstlichen Welt;
+  tagsüber keine Schlurfer.
+- **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste sind
+  seine Handelsware, warum er sie will, bleibt offen.
+- Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
+  bloß Neues daneben gesetzt.
 
 ## Harte Regeln
 
@@ -48,6 +71,11 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
    der Prüfablauf nach einer Änderung schlechter aus, Änderung zurücknehmen.
 
 ## Look-Regeln (siehe DESIGN.md, Abschnitt 3)
+
+Stimmung: cozy, herbstlich, Spooky Season, warm – Herbstfarben, warme
+Lichtinseln in kalten Nächten, keine Horror-Ästhetik. Der Pixel-Look ist
+Stilmittel, kein Selbstzweck: Lesbarkeit und Stimmung gehen vor. Technisch
+gilt bis auf Weiteres:
 
 - Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**,
   ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
@@ -175,6 +203,9 @@ Grundprinzipien:
   (`pathing.js`): `walk` (Bauten sperren) und `brute` (Brummer gehen durch
   Barrikaden). Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der
   einen Waldpfad abschneidet, wird mit Grund `weg` abgelehnt.
+  **Stand der alten Waldlichtung – wird in Meilenstein 9 ersetzt:** feste
+  Strecke statt Flussfeldern, Baupunkte für Türme, Barrikadenplätze auf der
+  Strecke, das Raster nur noch für Bauten rund um das Haus.
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.

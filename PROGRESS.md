@@ -5,6 +5,37 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Neues Grundkonzept: die Bucht und die Strecke
+
+**Anlass:** Der Auftraggeber hat das Konzept überarbeitet und ein Konzeptbild
+geschickt (Bucht am See mit Fischerhaus und Steg, eine Strecke aus dem Wald
+mit Türmen auf runden Plattformen links und rechts und Holzbarrikaden auf
+dem Weg; nachts dieselbe Szene mit Mond und Feuer; Balduin als bärtiger
+Seebär am Steg; ein gemütlicher Innenraum mit Kamin; Turm- und
+Barrikadenstufen; Schlurfer-Arten). Die zwölf Grundregeln sind jetzt
+verbindlich und ersetzen ältere Annahmen.
+
+**Überarbeitet**
+
+- `DESIGN.md` neu gefasst: Abschnitt 0 mit den Grundregeln, Karte und
+  Strecke (6.2), Barrikaden mit vier Stufen (6.10), letzte Verteidigung
+  (6.12), Zuhause am Wasser (6.8), Balduin mit Boot (6.15), Herbst-Look
+  (3), neuer Meilensteinplan M9–M13.
+- `OFFENE-FRAGEN.md` 63–74: eine Strecke, feste Baupunkte, feste
+  Barrikadenplätze, kein Mazing, keine Tagesschlurfer, Überreste bis
+  Mittag, Balduin per Boot, Kamera nach Norden (See oben), Pixel-Look nur
+  noch als Stilmittel, Bootswrack statt Auto, Leuchtmast am Steg, alte
+  Spielstände. Ersetzte Antworten (1, 2, 3, 8, 53, 59, 61, 62) sind
+  markiert.
+- `CLAUDE.md`: Grundregeln des Spiels als eigener Abschnitt.
+
+**Folgen für den Code:** Bis Meilenstein 8 spielt alles auf der alten
+Waldlichtung (vier Waldpfade, Mazing auf dem Raster, Tagesschlurfer,
+Balduin mit Bollerwagen über die Straße). Meilenstein 9 baut Karte und
+Verteidigung nach dem neuen Plan um, Meilenstein 10 bringt Balduins Boot.
+
+---
+
 ## Meilenstein 8 – Nach dem ersten Probespielen (läuft)
 
 **Anlass:** Nach dem eigenen Probespielen kam vom Auftraggeber: Die Zeit

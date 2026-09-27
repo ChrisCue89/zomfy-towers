@@ -11,6 +11,8 @@ Format: **Frage** – Entscheidung – Begründung.
 ## Verteidigung und Horde
 
 ### 1. Versperren Türme den Weg, oder laufen Zombies feste Wege?
+> *Ersetzt durch Nr. 66 (neues Grundkonzept: eine feste Strecke, kein Mazing).*
+
 **Entscheidung: Türme und Barrikaden versperren den Weg (Mazing).** Die
 Horde betritt die Lichtung über feste Waldpfade und sucht sich dann auf dem
 1-m-Raster den kürzesten Weg zum Zuhause (Flussfeld, bei jeder Bauänderung neu
@@ -22,6 +24,8 @@ und passt zur offenen Lichtung. Die Pflicht-Lücke verhindert Frust durch
 »eingemauerte« Horden; die Brummer halten reines Einmauern trotzdem ehrlich.
 
 ### 2. Wie viele Wellen hat eine Nacht, und wann ist sie gewonnen?
+> *Die Richtungen (Wellen aus vier Waldpfaden) sind ersetzt durch Nr. 63; Wellen, Punkte und Sieg gelten weiter.*
+
 **Entscheidung:** Nacht 1 hat 3 Wellen, jede weitere Nacht eine halbe Welle
 mehr (bis 8). Die Punkte der ganzen Nacht steigen gleichmäßig (18, 25, 32,
 41, 52 … – seit m3-r1 unabhängig von der Zahl der Wellen, vorher sprang
@@ -36,6 +40,8 @@ Nacht vorbei sein«).
 Früh ins Bett zu gehen hätte die Nacht einfach übersprungen.
 
 ### 3. Was passiert tagsüber?
+> *Ersetzt durch Nr. 67 (keine Schlurfer am Tag).*
+
 **Entscheidung:** Alle paar Spielstunden taucht ein einzelner träger
 Schlurfer am Waldrand auf (wenig Leben, wenig Loot). Ab Tag 2 kommt ein-,
 ab Tag 4 zweimal am Tag ein kleiner Trupp (3–4). Tagesschlurfer laufen
@@ -91,6 +97,8 @@ Zahlen 1–8 gehören der Schnellleiste.
 *Warum:* Mit der linken Hand auf WASD erreichbar, kein Konflikt.
 
 ### 8. Wie lange bleibt Loot liegen?
+> *Ersetzt durch Nr. 68 (Überreste bleiben bis zum Mittag).*
+
 **Entscheidung:** Zwei Minuten, die letzten 15 Sekunden blinkt es. Liegendes
 Loot funkelt ab und zu und glimmt nachts; liegt es außerhalb des Bildes,
 zeigen goldene Rauten am Rand hin. Der Sammelradius beginnt bei 2 m.
@@ -480,6 +488,8 @@ der Perk-Wahl fest; ihre Werte für Nacht 1 und 3 waren nicht belastbar.)
 siehe Nr. 57.
 
 ### 53. Wie erfährt man, welche Wege offen sind?
+> *Ersetzt durch Nr. 66 (die Strecke ist immer sichtbar; Warnung nur noch: kein Turm an der Strecke).*
+
 **Entscheidung:** Eine Stunde vor der Horde prüft das Spiel, ob am Weg der
 ersten Welle ein schießender Turm steht (Reichweite über irgendeinem Punkt
 des Weges vom Waldrand bis zur Hauswand). Wenn nicht, sagt es Mika in einer
@@ -543,6 +553,8 @@ weil Teile und Schrott verschiedene Dinge sind. Zahnräder und Moderkern
 sind knapp gehalten, damit Anführer und Turmstufen besonders bleiben.
 
 ### 59. Wann kommt Balduin, und wie lange bleibt er?
+> *Ersetzt durch Nr. 69 (Balduin kommt mit dem Boot zum Steg).*
+
 **Entscheidung:** Ab Tag 2 (dem ersten Morgen nach einer Nacht) jeden Tag.
 Um 06:40 zieht er den Wagen von Osten heran (Mika ist dann gerade wach),
 bleibt bis 12:00 und zieht dann weiter. Er zieht nie ein. Wo er ist, ergibt
@@ -562,6 +574,8 @@ wenig verrückt«). Ein Geheimnis passt zum gemütlich-schrägen Ton und lässt
 Raum für eine spätere Geschichte.
 
 ### 61. Autowrack und Schrotthaufen
+> *Das Autowrack ist ersetzt durch Nr. 72 (Bootswrack am Ufer); Schrotthaufen alle zwei Tage gelten weiter.*
+
 **Entscheidung:** Das Wrack gibt einmal 5–6 Schrott, 1–2 Stoff und
 vielleicht ein Zahnrad her, danach steht dort »Ausgeräumt«. Schrotthaufen
 füllen sich alle zwei Tage wieder. Alte Spielstände, in denen das Wrack
@@ -571,6 +585,8 @@ unwahrscheinlich.« Einmal reicht zusammen mit den drei Haufen (je 2–3) für
 den ersten Bolzenwerfer an Tag 1; danach übernimmt Balduin.
 
 ### 62. Steht Balduins Wagen der Horde im Weg?
+> *Ersetzt durch Nr. 69 (kein Wagen mehr).*
+
 **Entscheidung:** Nein. Mika und die Überlebenden stoßen sich am Wagen,
 Schlurfer laufen hindurch. Solange er steht, ist sein Stand nicht bebaubar;
 steht dort nachmittags etwas, hält er am nächsten Morgen an einem anderen
@@ -580,6 +596,116 @@ Platz an der Straße.
 stimmte nicht mehr. Ein fester, dauerhaft gesperrter Stand hätte dagegen
 ausgerechnet an der Straße, über die zwei Waldpfade laufen, Bauplatz
 gekostet.
+
+## Neues Grundkonzept: Bucht und Strecke (verbindlich seit M8)
+
+Die Grundregeln stehen in DESIGN.md, Abschnitt 0 – sie ersetzen ältere
+Antworten. Hier die Entscheidungen, die das Konzept offenließ.
+
+### 63. Eine Strecke oder mehrere?
+**Entscheidung:** Eine Strecke vom Waldrand im Süden zur Bucht im Norden,
+leicht geschwungen (zwei, drei Bögen), etwa 3 m breit. Auch spätere Nächte
+bekommen keine zweite Strecke.
+*Warum:* Grundregel 1 und 11 verlangen eine klar definierte Strecke, die man
+jederzeit versteht. Abwechslung kommt von Arten, Wellen und der eigenen
+Aufstellung, nicht von neuen Wegen.
+
+### 64. Freie Bauflächen oder feste Baupunkte für Türme?
+**Entscheidung:** Feste Baupunkte (runde Holzplattformen) links und rechts
+der Strecke, je Abschnitt drei bis vier, insgesamt rund zwölf, von Anfang
+an alle nutzbar.
+*Warum:* So zeigt es das Konzeptbild. Baupunkte machen sofort sichtbar, wo
+Türme hingehören, halten die Strecke von selbst frei und machen Kreuzfeuer
+in den Bögen planbar. Der Reiz liegt in der Wahl: welcher Turm auf welchen
+Punkt, welcher Punkt zuerst.
+
+### 65. Wo stehen Barrikaden, und wie funktionieren sie?
+**Entscheidung:** Auf festen Barrikadenplätzen quer über der Strecke (vier:
+vor dem Hof, zwei in der Mitte, am Waldrand), an Pfosten erkennbar. Vier
+Stufen: einfacher Holzzaun, verstärkte Bretterwand, schwere Barriere aus
+Stämmen mit Blech, befestigte Barrikade mit angespitzten Pfählen (Stacheln
+verletzen Angreifer). Schlurfer bleiben davor stehen und schlagen darauf
+ein, Brummer und Anführer besonders hart. Zerstört bleiben Trümmer liegen;
+tagsüber flickt man anteilig oder baut zum Stufenpreis neu auf, während
+einer Welle geht beides nicht.
+*Warum:* Grundregel 3. Feste Plätze gliedern die Strecke in Abschnitte
+(Grundregel 11) und machen »Barrikade plus Kreuzfeuer« planbar. Freies
+Setzen auf dem Weg wäre flexibler, aber schwerer zu lesen und würde die
+Abschnitte verwischen.
+
+### 66. Was wird aus Mazing, Wegfindung, Waldpfaden und Wegvorschau?
+**Entscheidung:** Das entfällt. Die Horde folgt der Strecke, Bauten lenken
+sie nicht mehr um, »Versperrt den letzten Weg« gibt es nicht mehr, und die
+Wegvorschau ist überflüssig, weil die Strecke immer zu sehen ist. Übrig
+bleibt eine Warnung am Abend, wenn noch kein Turm an der Strecke steht.
+*Warum:* Grundregel 1 und 2: keine verstreuten Routen, Türme blockieren nie.
+
+### 67. Gibt es tagsüber noch Schlurfer?
+**Entscheidung:** Nein. Tagesstreuner und kleine Trupps am Tag entfallen.
+*Warum:* Grundregel 5 und 10: Der Tag ist ruhig und bildet den Kontrast zur
+Nacht.
+
+### 68. Wie lange bleiben Überreste liegen?
+**Entscheidung:** Bis zum Mittag des nächsten Tages, dann zerfallen sie zu
+Moos.
+*Warum:* Grundregel 12 (Morgen: Überreste einsammeln). Wer mitten in der
+Nacht schon Material braucht, sammelt zwischen den Wellen – riskant, aber
+möglich.
+
+### 69. Wie kommt Balduin, und wie sieht er aus?
+**Entscheidung:** Per Boot über den See zum Steg, jeden Vormittag ab dem
+Morgen nach der ersten Nacht: erst das Horn, dann taucht das Boot zwischen
+den Inseln auf und legt an; gegen Mittag legt er wieder ab. Aussehen nach
+dem Konzeptbild: ein fröhlicher, bärtiger Seebär mit Schiebermütze, rotem
+Schal, dunklem Mantel und großem Rucksack. Kurs und Angebote (Nr. 58) und
+sein Geheimnis (Nr. 60) bleiben; dazu kommen besondere Turmteile, Upgrades,
+Werkzeuge und gelegentliche Nebenaufträge.
+*Warum:* Grundregel 7 und 8. Der Bollerwagen aus M8.2 (über Land, mit
+Zylinder und Monokel) war eine Zwischenlösung auf der alten Karte.
+
+### 70. Wo liegt was auf dem Bildschirm?
+**Entscheidung:** Die Kamera blickt weiter nach Norden: Der See ist oben im
+Bild, die Bucht mit Haus und Steg darunter, die Strecke läuft von unten
+(Waldrand, Spawn) nach oben. Die Horde läuft ins Bild hinein, auf das Haus
+zu.
+*Warum:* Genau die Ansicht des Konzeptbilds – und die feste Kamera trägt die
+sauberen Kanten und die Leistungskniffe (nur Ober- und Südseiten zeichnen).
+
+### 71. Pixelgrafik oder nicht?
+**Entscheidung:** Die Technik bleibt (Voxel-3D im Browser, alles im Code
+erzeugt); der Pixel-Look ist kein Selbstzweck mehr. Er bleibt als
+Stilmittel, aber Lesbarkeit und Herbststimmung gehen vor: alle Modelle im
+feinen Maß, Herbstfarben, feinere oder weichere Darstellung, wo sie hilft
+(Meilenstein 12).
+*Warum:* »Keine Pixelgrafik zwingend« – die Stilrichtung beschreibt
+Stimmung, Figuren und Farbwelt. Ein gemalter Stil ohne fremde Assets wäre
+im Code kaum zu leisten; Voxel mit Herbstpalette, warmem Licht und klaren
+Silhouetten kommen dem Konzeptbild am nächsten.
+
+### 72. Was wird aus Straße, Autowrack, Funkturm und Ankunftsorten?
+**Entscheidung:** Die Straße entfällt. Statt des Autowracks liegt ein
+Bootswrack am Ufer (einmal Schrott), Schrotthaufen bleiben. Der Funkturm
+wird zum Leuchtmast auf dem Steg; Junas Geschichte bleibt. Überlebende
+kommen tagsüber über den Holzfällerweg, am Ufer oder mit Balduins Boot.
+*Warum:* Die Bucht hat keine Straße, und ein Leuchtfeuer über dem See passt
+noch besser zur Geschichte.
+
+### 73. Was passiert mit alten Spielständen?
+**Entscheidung:** Sie laden (Spielstand v8 mit Migration). Tag, Vorrat,
+Figur, Waffen, Perks, Überlebende, Möbel, Hausstufe und Leuchtmast bleiben.
+Türme und Barrikaden der alten Lichtung werden voll erstattet (sie passen
+nicht auf die Baupunkte), andere Bauten (Werkbank, Beete, Bänke, Laternen,
+Zelte) rund um das Haus neu gesetzt oder erstattet. Eine Meldung erklärt
+den Umzug.
+*Warum:* Spielstände dürfen nie kaputtgehen, und niemand soll für den Umbau
+bezahlen.
+
+### 74. Knopf und Juna, wenn es nur eine Richtung gibt?
+**Entscheidung:** Knopf bellt weiter kurz vor jeder Welle, nur ohne
+Richtung. Juna meldet am Morgen, was heute Nacht kommt (Arten, Anführer),
+statt woher.
+*Warum:* Die Fähigkeiten behalten ihren Nutzen, nur die Nachricht ändert
+sich.
 
 ## Technik mit Auswirkung aufs Design
 

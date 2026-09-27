@@ -1,180 +1,260 @@
 # Zomfy Towers – Design-Dokument
 
-> Gemütliche Endzeit mit Zombies. Tower Defense als Kern, dazu Sammeln,
-> Crafting und der Ausbau eines eigenen Rückzugshauses – als
-> 3D-Pixel-Art-Spiel im Browser.
+> Gemütliche Herbst-Endzeit an einem nordischen See. Tagsüber ein Zuhause am
+> Wasser, nachts Tower Defense an einer klaren Strecke – mit Türmen,
+> Barrikaden und der eigenen Figur als letzter Verteidigung. Ein 3D-Spiel im
+> Browser, alles im Code erzeugt.
 
-Dieses Dokument ist die gemeinsame Grundlage für alle Arbeitssitzungen. Es
-beschreibt, **was** das Spiel sein soll und **in welcher Reihenfolge** es
-entsteht. Wie der Code aufgebaut ist und welche technischen Regeln gelten,
-steht in `CLAUDE.md`. Entscheidungen, die hier (noch) nicht stehen, sammelt
+Dieses Dokument ist der Bauplan für alle Arbeitssitzungen. Es beschreibt,
+**was** das Spiel sein soll und **in welcher Reihenfolge** es entsteht. Wie
+der Code aufgebaut ist und welche technischen Regeln gelten, steht in
+`CLAUDE.md`. Entscheidungen, die hier (noch) nicht stehen, sammelt
 `OFFENE-FRAGEN.md`; den Arbeitsstand führt `PROGRESS.md`.
+
+**Seit dem neuen Grundkonzept (nach Meilenstein 8) gelten die Grundregeln in
+Abschnitt 0 verbindlich.** Sie ersetzen alle älteren, widersprüchlichen
+Annahmen. Widerspricht bestehender Code oder eine bisherige Mechanik dieser
+Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
 
 ---
 
+## 0. Verbindliche Grundregeln
+
+1. **Die Karte:** Die Basis liegt an einem großen See, an einer rauen,
+   nordischen Küste. Hinter der Basis ist Wasser – von dort kommen keine
+   Zombies. Sie greifen nur von der Landseite an, und zwar entlang **einer
+   klar erkennbaren Strecke** vom Waldrand bis zur Basis. Es gibt keine
+   über die Karte verstreuten Angriffswege. Links und rechts begrenzen Wald,
+   Felsen, Hänge und Gestrüpp die Strecke so natürlich, dass man versteht,
+   warum die Horde genau diesen Weg nimmt.
+2. **Türme stehen nie auf der Strecke,** sondern auf Baupunkten links und
+   rechts davon, und greifen die Vorbeiziehenden von der Seite an: Spawn →
+   Strecke → mehrere Verteidigungsabschnitte → letzte Verteidigung → Basis.
+   Die Strecke darf leicht geschwungen sein (Reichweiten, Kreuzfeuer), aber
+   nie so verwinkelt, dass man nicht sofort sieht, woher die Horde kommt und
+   wohin sie will.
+3. **Barrikaden stehen bewusst auf der Strecke.** Sie halten die Horde auf,
+   haben Lebenspunkte, werden nachts angegriffen und zerstört und tagsüber
+   geflickt oder neu gebaut. Keine festen Mauern, sondern Handgebautes aus
+   Brettern, Stämmen, alten Türen, Zäunen und Blech – in vier Ausbaustufen.
+4. **Letzte Verteidigung:** Wer Türme und Barrikaden überwindet, erreicht
+   den Platz vor dem Haus. Dort verteidigt die Figur selbst. Die Basis hat
+   eigene Lebenspunkte; fällt sie, ist die Nacht verloren. Drei Ebenen:
+   **Türme entlang der Strecke – Barrikaden auf der Strecke – persönliche
+   Verteidigung an der Basis.**
+5. **Der Tag ist ruhig** und bildet den starken Kontrast zur Nacht:
+   Barrikaden flicken und bauen, Türme setzen und verbessern, sammeln,
+   Basis und Haus ausbauen, einrichten und dekorieren, Nebenaufträge, Leute
+   treffen, handeln, die Nacht vorbereiten. Das Spiel ist nicht nur Tower
+   Defense.
+6. **Die Basis ist ein Zuhause,** keine Festung: ein kleines, altes
+   Fischerhaus direkt am Wasser, das wächst – Wohnraum, Küche,
+   Schlafzimmer, Werkstatt, Lager, Veranda, Garten, Gewächshaus, Holzlager,
+   Anleger, Nebengebäude. Tagsüber ein gemütlicher Rückzugsort; nachts muss
+   genau dieser Ort verteidigt werden.
+7. **Balduin, der Händler, kommt nur über das Wasser.** Man sieht und hört
+   sein Boot, bevor er am Steg festmacht; dann kann man mit ihm reden und
+   handeln: Baumaterial, seltene Ressourcen, Bauteile für Türme, Upgrades,
+   Werkzeuge, manchmal Besonderes oder ein Nebenauftrag.
+8. **Zombie-Überreste** bleiben nach der Nacht liegen. Balduin will sie aus
+   einem nicht erklärten Grund haben und tauscht Material dafür. Warum er sie
+   sammelt, bleibt vorerst offen – ein schwarzhumoriger Running Gag, der
+   später Teil der Geschichte werden kann.
+9. **Stimmung:** cozy, herbstlich, Spooky Season, leicht humorvoll,
+   charmant, etwas melancholisch, gelegentlich gruselig, grundsätzlich warm
+   und einladend. Grobe Richtung: Stardew-Valley-Gemütlichkeit mit etwas
+   Anime und westlichem Comicstil – das beschreibt Stimmung, Figuren und
+   Farbwelt, keine Pflicht zur Pixelgrafik.
+10. **Tag-Nacht-Kontrast:** Tag ruhig, warm, gemütlich; Nacht angespannt und
+    dunkel – aber dieselbe cozy Herbstwelt. Warme Fenster, Feuer, Laternen
+    und Verteidigungsanlagen sind Lichtinseln in der kalten Nacht. Keine
+    Horror-Ästhetik.
+11. **Lesbarkeit der Karte – unveränderliche Grundregel.** Im Bild (die
+    Kamera blickt nach Norden) von oben nach unten:
+
+    ```
+    WASSER                                 oben im Bild (Norden)
+    BASIS / HAUS / STEG
+    LETZTE VERTEIDIGUNG
+    STRECKE MIT BARRIKADEN
+    TÜRME LINKS UND RECHTS DER STRECKE
+    WEITERE BARRIKADEN
+    WALD / LANDSEITE / ZOMBIE-SPAWN         unten im Bild (Süden)
+    ```
+
+    Die Strecke ist immer klar zu erkennen. Türme dürfen sie nie blockieren,
+    Barrikaden stehen bewusst darauf.
+12. **Die Spielschleife:**
+    - **Tag:** Schäden begutachten → Ressourcen verwalten → Barrikaden
+      reparieren → Türme bauen oder verbessern → Haus und Basis ausbauen →
+      Nebenaufträge → Balduin und andere treffen → handeln → die nächste
+      Nacht vorbereiten.
+    - **Nacht:** Welle startet → Zombies betreten die Strecke → Türme greifen
+      an → Barrikaden halten die Horde auf und werden beschädigt oder
+      zerstört → Zombies erreichen vielleicht die Basis → die Figur
+      verteidigt selbst → die Welle endet.
+    - **Morgen:** Die Folgen der Nacht sind zu sehen → Zombie-Überreste
+      einsammeln → Schäden reparieren → ein neuer Tag beginnt.
+
 ## 1. Vision
 
-Nach dem Zusammenbruch ist die Welt still geworden. Straßen reißen auf, Moos
-kriecht über Autodächer, in den Vorgärten wachsen Birken. Es ist keine Welt
-voller Schrecken, sondern eine, die sich langsam erholt – und in der man sich
-ein Zuhause bauen kann.
+Nach dem Zusammenbruch ist die Welt still geworden. Am Ufer des **Stillsees**,
+eines großen, kalten Sees im Norden, steht ein altes Fischerhaus mit einem
+wackligen Steg. Die Birken leuchten orange, zwischen den Tannen liegt Nebel,
+und morgens ziehen Krähen über das Wasser. Es ist keine Welt voller
+Schrecken, sondern eine, die sich langsam erholt – und in der man sich ein
+Zuhause bauen kann.
 
-**Der Tag** ist die ruhige Phase: erkunden, sammeln, craften, das Zuhause
-ausbauen, mit Überlebenden reden. Ein paar versprengte Schlurfer streifen
-umher, gelegentlich gibt es einen kleinen Angriff – genug, um wachsam zu
-bleiben, nie genug, um beim Bauen zu stören.
+**Der Tag** ist die ruhige Phase: Schäden flicken, Barrikaden neu aufbauen,
+Türme verbessern, sammeln, das Haus ausbauen und einrichten, mit Überlebenden
+reden, am Steg mit Balduin handeln. Keine Schlurfer, nur Herbstwind und
+Arbeit.
 
-**Die Nacht** ist Tower Defense mit voller Wucht: Die Horde kommt aus dem
-Wald, viele Schlurfer, viel Action, und sie wird Nacht für Nacht stärker.
-Mit erbeutetem Loot baut man Türme, levelt sie hoch und spezialisiert sie.
-Bricht die Horde durch, steht die eigene Figur als letzte Verteidigungslinie
-im Nahkampf.
+**Die Nacht** ist Tower Defense an einer klaren Strecke: Die Horde kommt aus
+dem Stillwald über den alten Holzfällerweg zur Bucht. Türme links und rechts
+schießen, Barrikaden auf dem Weg halten sie auf und gehen zu Bruch. Was
+durchkommt, erreicht den Hof vor dem Haus – dort kämpft die Figur selbst.
+Jede Nacht wird die Horde stärker.
 
-**Der Kern des Gefühls** ist der Kontrast zwischen dem sicheren, warm
-beleuchteten Zuhause und der kühlen, blauen Nacht draußen – und die ständige
-Entscheidung, wohin das hart erkämpfte Loot fließt: in die Türme oder in die
-eigene Figur.
+**Der Kern des Gefühls** ist der Kontrast zwischen dem warmen Zuhause am
+Wasser und der kalten Herbstnacht an der Strecke – und die ständige
+Entscheidung, wohin das Material fließt: in Türme, Barrikaden, die eigene
+Figur oder das Zuhause.
 
 ### Pitch in einem Satz
 
-*Aus einer wackligen Notunterkunft auf einer Waldlichtung wird Tag für Tag ein
-warmes, wehrhaftes Zuhause – und jede Nacht zeigt, ob die Türme halten.*
+*Ein altes Fischerhaus am See wird Tag für Tag zum Zuhause – und jede Nacht
+zeigt sich an der Strecke, ob Türme und Barrikaden halten.*
 
 ### Mechanische Vorbilder (nur Mechanik, nie Look oder Inhalte)
 
-- **Tower Defense wie in klassischen Warcraft-3-Custom-Maps:** Türme mit Loot
-  bauen, über Stufen hochleveln, spezialisieren, gegen eine Horde, die jede
-  Nacht stärker wird.
-- **Einsammeln wie in Vampire Survivors:** Loot fällt, wo ein Zombie stirbt,
-  und fliegt im Sammelradius von selbst zur Figur.
-- **Bauleiste wie in den alten Command-&-Conquer-Spielen:** unten im HUD, jede
-  Option mit Symbol und Preis, ausgegraut bis bezahlbar, dann leuchtet sie auf.
+- **Tower Defense mit fester Strecke und Baupunkten:** Die Horde läuft einen
+  Weg ab, Türme stehen an vorgegebenen Plätzen daneben; Kurven ergeben
+  Kreuzfeuer, die Strecke gliedert sich in Abschnitte.
+- **Türme hochleveln und spezialisieren** wie in klassischen
+  Warcraft-3-Custom-Maps.
+- **Einsammeln wie in Vampire Survivors:** Beute fliegt im Sammelradius von
+  selbst zur Figur.
+- **Bauleiste wie in den alten Command-&-Conquer-Spielen:** Symbol und Preis,
+  ausgegraut bis bezahlbar, dann leuchtet sie auf.
+- **Tagesleben wie in einer Hofsimulation (Stardew Valley):** Zuhause
+  ausbauen und einrichten, Leute treffen, handeln – nur Stimmung und
+  Mechanik, nie Look, Figuren oder Inhalte.
 
 ## 2. Spielgefühl und Ton
 
 **Säulen** – daran wird jedes Feature gemessen:
 
-1. **Geborgenheit.** Das Zuhause ist der wärmste, hellste Ort der Welt. Wer es
-   betritt, soll aufatmen.
-2. **Ruhige Tage, wilde Nächte.** Tagsüber hat man Zeit und Ruhe. Nachts geht
-   es richtig ab – laut, voll, spannend, mit Entscheidungen im Sekundentakt.
-3. **Jede Entscheidung kostet Loot.** Turm oder Figur, neuer Turm oder Ausbau,
-   jetzt ausgeben oder sparen. Das ist die zentrale Spannung.
-4. **Sichtbarer Fortschritt.** Jeder Tag hinterlässt Spuren: ein neuer Turm,
-   eine neue Stufe, eine bessere Waffe, ein neues Brett am Haus.
-5. **Warmer, schrulliger Humor.** Die Welt nimmt sich nicht zu ernst.
-   Schlurfer tragen Kochmützen und Warnwesten, Türme heißen Kürbiskatapult.
-6. **Nicht düster, nicht blutig.** Kein Blut. Treffer blitzen hell auf,
-   besiegte Schlurfer zerfallen zu Moos und Pilzen und lassen Kram fallen.
-7. **Verlieren kostet Material, nie den Spielstand.** Eine verlorene Nacht
-   bringt Schäden am Zuhause und Materialverlust – und einen neuen Morgen.
+1. **Geborgenheit.** Das Zuhause am Wasser ist der wärmste, hellste Ort der
+   Welt. Wer es betritt, soll aufatmen.
+2. **Ruhige Tage, angespannte Nächte.** Tagsüber hat man Zeit und Ruhe.
+   Nachts wird es eng, laut und spannend – aber es bleibt dieselbe Welt.
+3. **Die Strecke ist immer lesbar.** Man sieht jederzeit, woher die Horde
+   kommt, wo sie langläuft und wo sie aufgehalten wird.
+4. **Jede Entscheidung kostet Material.** Turm oder Barrikade, Figur oder
+   Zuhause, jetzt ausgeben oder sparen.
+5. **Sichtbarer Fortschritt.** Jeder Tag hinterlässt Spuren: ein neuer Turm,
+   eine stärkere Barrikade, ein neuer Raum, ein Beet im Garten.
+6. **Warmer, schrulliger Humor.** Schlurfer tragen Kochmützen und
+   Warnwesten, Türme heißen Kürbiskatapult, und Balduin will partout nicht
+   sagen, was er mit den Zombieteilen macht.
+7. **Cozy Spooky Season, nicht düster, nicht blutig.** Kein Blut. Treffer
+   blitzen hell auf, besiegte Schlurfer zerfallen zu Moos und Pilzen.
+8. **Verlieren kostet Material, nie den Spielstand.** Eine verlorene Nacht
+   bringt Schäden, zerbrochene Barrikaden und Materialverlust – und einen
+   neuen Morgen.
 
-**Tonfall der Texte:** freundlich, knapp, mit leisem Witz. Man duzt sich.
-Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
+**Tonfall der Texte:** freundlich, knapp, mit leisem Witz, gern ein wenig
+melancholisch. Man duzt sich. Keine Anglizismen, wo es ein schönes deutsches
+Wort gibt.
 
 ## 3. Look und Präsentation
 
-### 3.1 Pixel-3D
+### 3.1 Stil und Technik
 
-- Echte 3D-Szene (three.js), gerendert in einer **festen Pixelauflösung**
-  und **ohne Glättung** ganzzahlig auf Bildschirmgröße hochskaliert. Jeder
-  Spielpixel ist ein scharfes Quadrat. Seit Meilenstein 5: **80 Spielpixel
-  pro Meter**, die Szene hat etwa 900 Bildzeilen – Full HD zeigt sie 1 : 1
-  (Sicht ca. 24 m breit, die ganze Lichtung wie ein Diorama), 1440p mit
-  Skalierung 2, 720p mit Skalierung 1 (Sicht 16 m). Meilenstein 1–4 liefen
-  mit 40 px pro Meter und rund 360 Zeilen.
-- Die **Oberfläche** hat eine eigene, gröbere Pixel-Leinwand (etwa 360
-  Zeilen, eigene ganzzahlige Skalierung): Schrift, Symbole und Leisten
-  bleiben kräftig und gut lesbar, egal wie fein die Szene ist.
-- **Orthografische Kamera** schräg von oben in Dreiviertel-Ansicht, Blick nach
-  Norden, folgt der Figur. Neigung mit Steigung 3 : 4 (ca. 36,9°): Ein Voxel
-  von 1/16 m ist auf dem Bildschirm genau 5 px breit, 3 px tief (Böden) und
-  4 px hoch (Wände), einer von 1/8 m doppelt so groß. Alle Kanten haben
-  saubere, gleichmäßige Pixeltreppen.
-- Die Kamera rastet auf das Pixelraster ein, der Rest-Versatz wird beim
-  Hochskalieren ausgeglichen – stehende Dinge flimmern nicht, Bewegung bleibt
-  weich.
-- **Zwei Voxelgrößen:** 1/16 m für alles Kleine und Lebendige (Figur,
-  Schlurfer, Türme, Werkzeuge und Waffen, Loot), 1/8 m für Gelände, Natur,
-  Gebäude und große Requisiten. Statisches steht auf 1/8-m-Positionen und nur
-  in 90°-Drehungen.
-- Nachbearbeitung im Pixelmaßstab: dunkle, farbige Umrisse an Silhouetten,
-  helle Kanten an Außenecken, Vignette.
-- **Begrenzte Palette** (rund 80 Farben in farbverschobenen Rampen), auf die
-  das fertige Bild abgebildet wird; Übergänge mit geordnetem Dithering.
-- Keine Weichzeichner, kein Bloom, keine Unschärfe.
+- **Farbwelt Herbst:** Orange, Rot und Gold der Laubbäume, dunkles
+  Tannengrün, graue Felsen, goldenes Gras, das kalte Blaugrau des Sees –
+  und dagegen warmes Licht aus Fenstern, Kamin und Laternen.
+- **Figuren** knuffig mit großem Kopf und ausdrucksstarken Gesichtern
+  (etwas Anime), **Formen** mit klaren Silhouetten und kräftigen Umrissen
+  (westlicher Comic).
+- **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
+  erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
+  **Blick nach Norden**: der See oben im Bild, der Wald mit dem Spawn unten,
+  die Strecke dazwischen von unten nach oben. Die Kamera folgt der Figur.
+- **Der Pixel-Look ist kein Selbstzweck mehr.** Er bleibt als Stilmittel –
+  niedrig gerendert und scharf hochskaliert, dunkle farbige Umrisse,
+  begrenzte Palette mit Dithering, Kamera auf dem Pixelraster –, aber
+  **Lesbarkeit und Stimmung gehen vor**: alle Modelle im feinen Maß
+  (1/16 m), und wo feinere Auflösung oder weichere Übergänge helfen, werden
+  sie genutzt.
+- Maße seit Meilenstein 5: 80 Spielpixel pro Meter, etwa 900 Bildzeilen
+  (Full HD 1 : 1, 1440p ×2, 720p ×1). Ein 1/16-m-Voxel ist genau 5 px breit,
+  3 px tief und 4 px hoch (Neigung 3 : 4). Die Oberfläche hat eine eigene,
+  gröbere Leinwand (etwa 360 Zeilen), damit Schrift und Leisten kräftig
+  bleiben.
 
-### 3.2 Licht und Tagesverlauf
+### 3.2 Licht, Tageszeiten und Wetter
 
-- **Morgen:** frisches, rosa-goldenes Licht. **Tag:** warmes Weiß mit kühlen,
-  bläulichen Schatten. **Abend:** goldenes Licht, violette Schatten, die
-  Lampen gehen an. **Nacht:** tiefes Blau, schwaches Mondlicht – und warme
-  Lichtinseln: Lagerfeuer, Laternen, Fenster, Türme.
+- **Morgen:** Nebel über dem Wasser, rosa-goldenes Licht. **Tag:** warmes
+  Herbstlicht, kühle Schatten. **Abend:** goldenes Licht, lange Schatten,
+  Lampen und Fackeln gehen an. **Nacht:** kaltes Blau, Mond über dem See –
+  und warme Lichtinseln: Fenster, Kamin, Feuer, Laternen, Fackeln an der
+  Strecke, Türme.
+- **Wetter:** klare Tage, Nieselregen, Wind mit fallendem Laub,
+  Nebelmorgen; kalte Nächte mit Atemwölkchen.
 - Kühle Töne wirken nur auf Schatten und Mitten; Lichtquellen bleiben warm.
-- Schatten sind weich und farbig, nie schwarz.
-- Lebenszeichen: Rauch aus dem Ofenrohr, Funken, Glühwürmchen.
+  Schatten sind farbig, nie schwarz.
+- Lebenszeichen: Rauch aus dem Schornstein, Funken, Krähen, Wellen am Steg,
+  Glühwürmchen im Spätsommerrest.
 
-### 3.3 Modelle
+### 3.3 Modelle und Umgebung
 
-- Figuren, Gebäude, Türme, Schlurfer und Umgebung sind kompakte, liebevoll
-  detaillierte Voxel-Modelle aus dem Code. Keine fremden Assets, keine
-  Anlehnung an bekannte Spiele, Figuren oder Marken.
-- Figuren sind knuffig proportioniert (großer Kopf).
+- Kompakte, liebevoll detaillierte Voxel-Modelle, keine Anlehnung an bekannte
+  Spiele, Figuren oder Marken.
+- **Umgebung:** orange und rote Laubbäume, dunkle Tannen, Felsen und Hänge,
+  Pilze, Kürbisse, Holzstapel, Schilf am Ufer, Treibholz, ein Bootssteg,
+  Inseln im Nebel, Krähen auf Zaunpfählen.
 - Eingebackene Umgebungsverdeckung und leichte Farbstreuung pro Voxel.
 
 ### 3.4 Kampf-Look
 
 - Treffer: kurzes weißes Aufblitzen, winziger Rückstoß, ein, zwei Bilder
-  Trefferstopp, Pixelfunken und Moosflocken. Kein Blut.
-- Schadenszahlen in der Pixelschrift, klein und kurz.
-- Türme haben lesbare Schüsse: Bolzen, Kürbisse im Bogen, Wasserfächer,
-  Lichtkegel.
-- Leichtes Bildwackeln um einen Spielpixel bei schweren Treffern.
+  Trefferstopp, Funken und Moosflocken. Kein Blut.
+- Barrikaden splittern sichtbar: Bretter fliegen, Stufen fallen ab, am Ende
+  bleiben Trümmer auf dem Platz.
+- Schadenszahlen klein und kurz; lesbare Schüsse (Bolzen, Kürbisse im Bogen,
+  Wasserfächer, Lichtkegel); leichtes Bildwackeln bei schweren Treffern.
 
 ### 3.5 Benutzeroberfläche
 
-- Gleicher Pixelmaßstab wie die 3D-Szene, eigene Pixelschrift mit Umlauten.
-- Warme, dunkle Pflaumentöne mit Holzrahmen und cremefarbener Schrift.
-- **Oben links:** Tag, Uhrzeit, Tageszeit; darunter das **aktuelle Ziel**
-  (führt durch die ersten Schritte, verschwindet, wenn alles erledigt ist).
-  **Oben rechts:** Vorrat (seltene Vorräte erst ab dem ersten Fund).
-  **Oben Mitte (nachts):** Welle, Standfestigkeit des Zuhauses.
-- **Unten links:** Laterne (linke Hand, Taste F) und Schnellleiste
-  (8 Plätze, Tasten 1–8, rechte Hand: Werkzeuge, später Waffen).
-  **Unten rechts:** Bauleiste (siehe 6.6). Beide liegen nebeneinander und
-  überdecken sich nie. Lebensbalken der Figur über der Schnellleiste.
-- Gedanken der Figur (z. B. beim Aufwachen) erscheinen als Sprechblase über
-  ihr und halten das Spiel nicht an.
-- Dialogfenster mit Porträt und Namen, Schreibmaschinen-Effekt, Antworten.
-- Kontexthinweise (»E Schlafen«), kurze Meldungen, schwebende »+2«-Zahlen.
+- Eigene Schrift mit Umlauten; warme, dunkle Pflaumentöne mit Holzrahmen und
+  cremefarbener Schrift.
+- **Oben links:** Tag, Uhrzeit, Tageszeit; darunter das aktuelle Ziel.
+  **Oben rechts:** Vorrat. **Oben Mitte (nachts):** Welle und
+  Standfestigkeit des Zuhauses.
+- **Unten links:** Laterne (Taste F) und Schnellleiste (8 Plätze).
+  **Unten rechts:** Bauleiste. Lebensbalken der Figur über der
+  Schnellleiste.
+- Freie **Baupunkte** und **Barrikadenplätze** leuchten auf, sobald man
+  einen Turm oder eine Barrikade in der Bauleiste gewählt hat.
+- Gedanken der Figur sind Sprechblasen und halten das Spiel nie an;
+  Dialoge mit Porträt, Schreibmaschinen-Effekt und Antworten.
 
-### 3.6 Lesbarkeit, Detailgrad und Animation
+### 3.6 Lesbarkeit
 
 - **Man muss auf einen Blick erkennen, was was ist:** Figur, Schlurfer-Arten,
-  Türme, Loot, Werkzeuge, Rohstoffquellen, Bauten. Lesbarkeit geht vor
-  Stimmung.
-- **Nachts** bleibt die Welt dunkel, aber alles, worum es im Kampf geht,
-  bekommt einen Hauch Eigenlicht in der eigenen Farbe: Schlurfer, Bauten und
-  Türme, Loot (das zusätzlich funkelt), das Geistermodell beim Bauen.
-  Schüsse leuchten (Bolzen mit Leuchtspur, heller Wasserfächer).
-- **Verdeckt** etwas (Dach, Baumkrone) Schlurfer oder Figur, scheinen sie als
-  gerasterter Umriss durch – Schlurfer lavendel, Mika gold. Liegt etwas
-  außerhalb des Bildes, zeigen Randmarken hin: Pfeile für Schlurfer (mit
-  Anzahl), eine Haus-Marke bei Angriffen aufs Zuhause, Rauten für Loot.
-- Im Getümmel treten Einblendungen (»E Fasern rupfen«) zurück.
-- Meilenstein 1–4 waren bewusst ein **grober** Durchgang (große Voxel,
-  wenige Pixel pro Meter, sparsame Animation), solange die Mechaniken
-  wuchsen. **Meilenstein 5 »Detailgrad und Animationen«** hebt das an:
-  80 px pro Meter, 1/16-m-Voxel für Figur, Schlurfer, Türme, Werkzeuge und
-  Loot, eigene Merkmale je Art (Gänseblümchen, rote Kapuze, Fliegenpilz-
-  Kappen, Warnkegel und -weste, Leuchthut, Geweihkrone mit Moosumhang),
-  Stufen-Fahnen an den Türmen und mehr Animation: Laufzyklus mit Kopfnicken
-  und Blinzeln, Zusammenzucken bei Treffern, Schlurfen, Stampfen und
-  Trippeln je Art, Rückstoß der Schlurfer, Rückstoß und Wurfarm der Türme,
-  Wind in Gras und Blumen, flatternde Wäsche.
-- Der Pixel-Look bleibt dabei verbindlich: scharfe Pixel, begrenzte Palette,
-  keine Glättung, keine Unschärfe.
-- Testspieler prüfen in jeder Runde: »Erkennt man, was was ist?«
+  Türme, Barrikaden und ihre Stufe, Loot, Rohstoffquellen, Bauten.
+- **Die Strecke ist immer eindeutig:** ein heller, festgetretener Weg mit
+  klaren Rändern (Steine, Wurzeln, Grasbüschel), nachts mit Fackeln und
+  einem Hauch Eigenlicht. **Baupunkte** sind sichtbare Holzplattformen
+  neben dem Weg, **Barrikadenplätze** erkennt man an Pfosten am Wegrand.
+- Nachts bekommt alles, worum es im Kampf geht, einen Hauch Eigenlicht:
+  Schlurfer, Türme, Barrikaden, Loot.
+- Verdeckte Figuren scheinen als gerasterter Umriss durch; Randmarken
+  zeigen Schlurfer auf der Strecke außerhalb des Bildes.
+- Testspieler prüfen in jeder Runde: »Erkennt man, was was ist, und sieht
+  man, wo die Horde langläuft?«
 
 ## 4. Welt und Geschichte
 
@@ -182,412 +262,393 @@ Keine Anglizismen, wo es ein schönes deutsches Wort gibt.
 
 Vor ein paar Jahren ist die Welt einfach stehen geblieben. Seitdem schlurfen
 **Schlurfer** durch die Wälder: Menschen, die der **Moder** erwischt hat – ein
-Pilzgeflecht, das sie träge, grummelig und nachtaktiv macht. Tagsüber sind
-sie benommen, nur wenige streifen umher. Nachts ziehen sie in Scharen los,
-angelockt von Wärme und Stimmen. Helles, warmes Licht macht sie langsamer.
+Pilzgeflecht, das sie träge, grummelig und nachtaktiv macht. Tagsüber dösen
+sie im Wald, nachts ziehen sie in Scharen los, angelockt von Wärme und
+Stimmen. Wasser meiden sie – deshalb ist die Seeseite sicher. Helles, warmes
+Licht macht sie langsamer.
 
 ### 4.2 Der Ort
 
-Die **Lichtung im Stillwald**: eine Wiese zwischen Tannen und Birken, eine
-zusammengezimmerte **Notunterkunft**, ein Lagerfeuerplatz, ein Stück alte
-Landstraße mit Autowrack – und der Stumpf des **alten Funkturms**. Waldpfade
-führen von allen Seiten auf die Lichtung; über sie kommt die Horde.
+Eine kleine **Bucht am Stillsee**: ein altes Fischerhaus mit Steg und
+Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Hinter der Bucht
+steigt der **Stillwald** an – dicht, felsig, voller Hänge. Der einzige gute
+Weg aus dem Wald zum Ufer ist der **alte Holzfällerweg**: Über ihn kommt die
+Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
 
 ### 4.3 Hauptfigur
 
 **Mika**, früher Hausmeister\*in in einem Wohnblock, kann fast alles
-reparieren und redet gern mit sich selbst. Orange Wollmütze, grüne Jacke,
-Rucksack. (Name und Aussehen werden im letzten Meilenstein wählbar.)
+reparieren und redet gern mit sich selbst. Name und Aussehen sind auf dem
+Titelbild wählbar.
 
 ### 4.4 Roter Faden
 
-Aus der Notunterkunft wird ein wehrhaftes Zuhause, aus dem Zuhause ein
-Zufluchtsort für andere Überlebende – und am Ende wird der Funkturm zum
-**Leuchtturm im Wald**, dessen Licht die Horde zurückdrängt und allen, die
-noch unterwegs sind, den Weg zeigt. Danach geht das Spiel als endlose
-Verteidigung mit immer stärkeren Nächten weiter.
+Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein Zufluchtsort
+für andere Überlebende. Mit Juna wird der alte **Leuchtmast am Steg** wieder
+zum **Leuchtfeuer** über dem See, das alle, die noch unterwegs sind, in die
+Bucht führt und die Horde zurückdrängt. Und irgendwann stellt sich die Frage,
+was Balduin eigentlich mit all den Zombieteilen macht. Danach geht das Spiel
+als endlose Verteidigung mit immer stärkeren Nächten weiter.
 
-### 4.5 Überlebende
+### 4.5 Überlebende und Besucher
 
 | Figur | Wer | Was sie mitbringt |
 |---|---|---|
-| **Oma Hilde** | Ehemalige Postbotin mit Lastenrad | Neuigkeiten, Aufträge, Tauschhandel |
-| **Baumarkt-Bert** | Brummiger Ex-Verkäufer | Neue Turm-Spezialisierungen, Reparaturen |
-| **Juna** | Jugendliche Funkbastlerin | Hauptgeschichte um den Funkturm, Technik |
-| **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee, Ausdauer |
-| **Knopf** | Struppiger Hund | Bellt, wenn die Horde kommt; findet Loot |
-| **Balduin** | Ein wenig verrückter Händler mit Bollerwagen (zieht nicht ein) | Kommt jeden Morgen, tauscht Zombieteile gegen Rohstoffe – wofür er sie braucht, sagt er nie |
+| **Knopf** | Struppiger Hund | Bellt, bevor eine Welle kommt; buddelt Kram aus |
+| **Oma Hilde** | Ehemalige Postbotin | Neuigkeiten, Aufträge, Tauschhandel, Morgengaben |
+| **Juna** | Jugendliche Funkbastlerin | Hauptgeschichte um das Leuchtfeuer, Technik |
+| **Baumarkt-Bert** | Brummiger Ex-Verkäufer | Reparaturen, Barrikaden, nachts flickt er |
+| **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee |
+| **Balduin** | Händler mit Boot (zieht nie ein) | Kommt übers Wasser, legt am Steg an, tauscht Zombieteile gegen Material – und sagt nicht, wofür |
+
+Überlebende kommen tagsüber an – über den Holzfällerweg, am Ufer entlang
+oder mit Balduins Boot.
 
 ## 5. Tagesablauf
 
 | Uhrzeit | Phase | Was passiert |
 |---|---|---|
-| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht (Beute, Schäden), reparieren; ab Tag 2 zieht Balduin seinen Bollerwagen heran und handelt bis 12:00 |
-| 08:00–17:00 | **Tag** | Sammeln, craften, bauen, erkunden; vereinzelte Schlurfer, selten ein kleiner Angriff |
-| 17:00–20:30 | **Abend** | Verteidigung ausbauen, Türme stellen; erste Vorboten |
-| 20:30–05:30 | **Nacht** | Die Horde in mehreren Wellen, Anführer in besonderen Nächten |
+| 06:00–08:00 | **Morgen** | Aufwachen, Morgenbericht; die Folgen der Nacht sind zu sehen (Trümmer, Überreste auf der Strecke); einsammeln, reparieren; Balduins Boot legt an |
+| 08:00–17:00 | **Tag** | Ruhig: bauen, reparieren, sammeln, Haus ausbauen, einrichten, Nebenaufträge, handeln – **keine Schlurfer** |
+| 17:00–20:30 | **Abend** | Letzte Vorbereitungen; Lampen und Fackeln an der Strecke gehen an |
+| 20:30–05:30 | **Nacht** | Die Horde kommt in Wellen über die Strecke; Anführer in besonderen Nächten |
 | danach | **Schlafen** | Im eigenen Bett: Tag endet, Spiel speichert, nächster Morgen |
 
-- Ein voller Tag dauert bei normalem Tempo etwa 9 Minuten Echtzeit
-  (1 Spielminute = 0,4 s; bis Meilenstein 7 waren es 0,6 s und rund
-  14 Minuten – das zog sich, M8). Am Lagerfeuer, im Sessel oder auf der Bank kann
-  man bis zum Abend bzw. bis kurz vor der Horde ausruhen – in die Nacht
-  hinein wird nicht gewartet.
+- Ein voller Tag dauert etwa 9 Minuten Echtzeit (1 Spielminute = 0,4 s).
+  Am Feuer, im Sessel oder auf der Bank kann man bis zum Abend bzw. bis kurz
+  vor der Horde ausruhen – in die Nacht hinein wird nicht gewartet.
 - Ein Spieltag zählt von 06:00 bis 06:00. Schlafen führt zum Morgen 06:30.
-- Schlafen geht erst, wenn die Nacht des Tages vorbei ist (»Erst muss die
-  Nacht vorbei sein«). Ist die letzte Welle besiegt – oder bricht um 05:30
-  der Morgen an und die letzten Schlurfer fliehen –, ist die Nacht gewonnen.
-- Um 20:00 warnt eine Meldung vor der Horde; wer um 19:00 noch keinen Turm
-  hat, bekommt einen Hinweis von Mika.
+- Schlafen geht erst, wenn die Nacht des Tages vorbei ist. Ist die letzte
+  Welle besiegt – oder bricht um 05:30 der Morgen an und die letzten
+  Schlurfer fliehen in den Wald –, ist die Nacht gewonnen.
+- Um 20:00 warnt eine Meldung vor der Horde; steht an der Strecke noch kein
+  Turm, sagt Mika es vorher.
 - In Dialogen und im Menü steht die Zeit still. Bauen geht jederzeit.
 
 ## 6. Systeme
 
-### 6.1 Zeit und Tag-Nacht
+### 6.1 Zeit, Tag-Nacht und Wetter
 
-Eine zentrale Uhr (Tag + Minuten seit 06:00) treibt Licht, Lampen,
-Glühwürmchen, Tagesstreuner, Horde-Wellen und Tagesereignisse. Lichtwerte
-kommen aus einer Schlüsselbild-Tabelle über 24 Stunden.
+Eine zentrale Uhr (Tag + Minuten seit 06:00) treibt Licht, Lampen, Fackeln,
+Nebel, Horde-Wellen, Balduins Boot und Tagesereignisse. Lichtwerte kommen aus
+einer Schlüsselbild-Tabelle über 24 Stunden. Das Wetter wechselt von Tag zu
+Tag (klar, Nieselregen, Wind, Nebel) und färbt Licht und Klang.
 
-### 6.2 Bewegung und Steuerung
+### 6.2 Karte und Strecke
 
-Siehe Abschnitt 7. Kollision in der Ebene, weiche Kamerafolge. Verdeckt
-etwas die Figur, wird es rund um sie gerastert durchsichtig; im Haus
-blenden Dach, Vorderwand und Vordach aus.
+Die Karte folgt Grundregel 11. Grober Grundriss (x nach Osten, z nach Süden,
+die Kamera blickt nach Norden):
+
+```
+            ~ ~ ~   S T I L L S E E   ~ ~ ~        Inseln im Nebel
+       ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+   ~ ~ ~ ~ ~ ~ ~  Steg ═╗ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     Balduin legt hier an
+   ─── Ufer, Felsen, Schilf, Treibholz ────────
+      Garten    HAUS mit Veranda    Holzlager
+            ── Hof: Feuer, Werkbank ──           LETZTE VERTEIDIGUNG
+   Felsen │   ○   ║═══║   ○    │ Tannen          Barrikadenplatz 1
+   Hang   │ ○     ║   ║     ○  │                  Türme links und rechts
+          │    ○   ╲   ╲   ○   │ Laubwald         Abschnitt 1
+          │  ○  ═══║═══║    ○  │                  Barrikadenplatz 2
+   Tannen │     ○  │   │  ○    │ Felsen           Abschnitt 2
+          │   ○   ╱   ╱    ○   │
+          │  ═══║═══║   ○      │ Hang             Barrikadenplatz 3
+   ───────┴──── Waldrand: hier kommt die Horde ──  SPAWN (unten im Bild)
+```
+
+- **Maße:** rund 40 m breit. Der See nimmt den Norden ein, die Bucht mit Haus,
+  Steg und Hof rund 16 × 12 m. Die **Strecke** führt vom Hof rund 35 m nach
+  Süden bis zum Waldrand, ist etwa 3 m breit und macht zwei, drei sanfte
+  Bögen.
+- **Natürliche Grenzen:** Links und rechts der Strecke stehen dichter Wald,
+  Felsen und Hänge. Die Figur kann am Waldrand sammeln, aber niemand kommt
+  quer durch den Wald – die Strecke ist der einzige Weg zur Bucht.
+- **Die Horde läuft die Strecke entlang** (jeder Schlurfer mit etwas
+  seitlichem Versatz innerhalb der Wegbreite). Sie verlässt sie nur, um die
+  Figur anzugreifen, wenn sie ihr nahe kommt, und kehrt danach zurück. Kein
+  Umlenken durch Gebäude, keine Wegfindung quer über die Karte.
+- **Baupunkte für Türme:** feste Plätze links und rechts der Strecke, je
+  Abschnitt drei bis vier, insgesamt rund zwölf. Sichtbar als runde
+  Holzplattformen; von jedem reicht ein Turm auf die Strecke, in den Bögen
+  überschneiden sich die Reichweiten.
+- **Barrikadenplätze:** feste Plätze quer über der Strecke – einer vor dem
+  Hof (erste Linie), einer oder zwei in der Mitte, einer am Waldrand. Man
+  erkennt sie an Pfosten am Wegrand, auch wenn noch nichts gebaut ist.
+- **Letzte Verteidigung:** der Hof zwischen dem Ende der Strecke und dem
+  Haus. Hier kommen die an, die alles überwunden haben.
 
 ### 6.3 Sammeln
 
 | Material | Quelle | Wofür |
 |---|---|---|
-| **Holz** | Bäume (Axt), Äste | Werkbank, Barrikaden, Zuhause |
-| **Stein** | Felsen (Spitzhacke), Kiesel | Werkbank, Zuhause |
-| **Fasern** | Hohes Gras, Büsche | Seile, Stoffe, Verbände |
-| **Stoff** | Wäsche, Planen, Autowracks | Werkbank, Einrichtung |
+| **Holz** | Laubbäume und Tannen am Waldrand (Axt), Äste, Treibholz am Ufer | Barrikaden, Werkbank, Zuhause |
+| **Stein** | Felsen (Spitzhacke), Kiesel am Strand | Werkbank, Zuhause |
+| **Fasern** | Schilf am Ufer, hohes Gras | Seile, Stoffe, Verbände |
+| **Stoff** | Angespülte Netze und Planen, Balduin | Werkbank, Einrichtung |
+| **Schrott** | Ein Bootswrack am Ufer (einmal), Schrotthaufen (alle zwei Tage), vor allem Balduin | Türme, Barrikaden ab Stufe 3 |
 
-Quellen wachsen über die Tage nach. Schrotthaufen füllen sich alle zwei Tage
-wieder; das Autowrack an der Straße gibt nur **einmal** etwas her (M8: dass
-dort jeden Tag neuer Schrott lag, war unglaubwürdig). Seltene Funde (Baupläne, Samen,
+Quellen wachsen über die Tage nach. Seltene Funde (Baupläne, Samen,
 Erinnerungsstücke) treiben Geschichte und Rezepte voran.
 
-### 6.4 Loot und Vorrat – ein Vorrat, klare Rollen
+### 6.4 Vorrat und Rollen
 
-Alles landet im **selben Vorrat** (oben rechts im HUD). Die Rollen sind klar
-getrennt:
+Alles landet im **selben Vorrat** (oben rechts im HUD):
 
-- **Schrott** ist die Hauptwährung der Bauleiste: Türme, Turm-Ausbau,
-  Aufwertungen der Figur. Tagsüber gibt es etwas Schrott aus Schrotthaufen
-  (und einmal aus dem Autowrack), vor allem aber **bei Balduin**.
-- **Zombieteile** sind das Loot der Schlurfer (M8). Man sammelt sie nachts
-  ein und tauscht sie morgens bei **Balduin**, dem Händler mit dem
-  Bollerwagen: immer Schrott (3 Teile → 2 Schrott), dazu jeden Tag zwei
-  wechselnde Sonderangebote (Holz, Stein, Fasern, Stoff, Zahnräder – an
-  manchen Tagen ein Moderkern), manche nur in kleiner Menge. Was er mit den
-  Teilen macht, verrät er nicht.
-- **Zahnräder** sind seltene Bauteile: von zähen Schlurfern, aus besonderen
-  Nächten und selten beim Plündern. Sie schalten die starken Turmstufen und
-  die starken Figur-Aufwertungen frei.
-- **Moderkerne** lassen nur Anführer fallen – oder Balduin tauscht an
-  manchen Tagen einen. Sie schalten die höchsten Stufen frei.
-- **Tagesmaterialien** (Holz, Stein, Fasern, Stoff) gehen in die Werkbank und
-  ins Zuhause: Werkzeuge, Waffen, Barrikaden, Möbel, Hausausbau.
-- **Brücke:** An der Werkbank lassen sich überzählige Tagesmaterialien zu
-  Schrott verwerten. So zahlt Tagesarbeit auf die Nacht ein.
+- **Zombieteile** sind die Überreste der Schlurfer. Man sammelt sie nachts
+  oder am Morgen ein und tauscht sie bei **Balduin** gegen Material.
+- **Schrott** ist die Hauptwährung für Türme und die schweren Barrikaden.
+  Es gibt ihn vor allem bei Balduin, dazu aus Schrotthaufen und einmal aus
+  dem Wrack.
+- **Holz** ist das Material der Barrikaden und des Zuhauses.
+- **Zahnräder** (von zähen Schlurfern, bei Balduin, selten beim Plündern)
+  schalten starke Turmstufen und Barrikaden-Stufe 4 frei, **Moderkerne**
+  (Anführer, selten bei Balduin) die höchsten Stufen.
+- **Tagesmaterialien** gehen auch in Werkbank und Zuhause: Werkzeuge,
+  Waffen, Möbel, Ausbau.
 
-Damit bleibt die Bauleiste mit einer Hauptwährung lesbar, und die zentrale
-Spannung ist eindeutig: **Schrott in die Türme oder in die Figur?** Der
-Rhythmus ist: nachts Teile sammeln, morgens bei Balduin tauschen, tagsüber
-bauen.
+Der Rhythmus: **nachts Teile sammeln, morgens bei Balduin tauschen, tagsüber
+bauen und flicken.** Die zentrale Spannung: Material in Türme, Barrikaden,
+die Figur oder das Zuhause?
 
-### 6.5 Loot einsammeln
+### 6.5 Zombie-Überreste einsammeln
 
-- Stirbt ein Schlurfer – egal ob durch Turm oder Figur –, fällt sein Loot
-  genau dort zu Boden: Zombieteile (eine grünliche Hand), manchmal ein
-  Zahnrad, bei Anführern ein Moderkern.
-- Man sammelt es, indem man in die Nähe läuft. Im **Sammelradius** fliegt es
-  von selbst zur Figur und wird mit einem »+1« verbucht.
-- Loot zerfällt nach anderthalb Minuten (es blinkt vorher). Es funkelt ab und zu,
-  glimmt nachts, und Rauten am Bildrand zeigen, wo außerhalb des Bildes noch
-  etwas liegt. Wer viel sammeln will, muss nachts raus aus der sicheren Zone
-  und rein ins Getümmel – Risiko gegen Belohnung.
-- Der Sammelradius ist eine Aufwertung der Figur in der Bauleiste.
+- Stirbt ein Schlurfer – durch Turm, Barrikade oder Figur –, bleiben seine
+  Überreste genau dort liegen: Zombieteile, manchmal ein Zahnrad, bei
+  Anführern ein Moderkern.
+- Man sammelt sie, indem man in die Nähe läuft; im **Sammelradius** fliegen
+  sie von selbst zur Figur. Nachts ist das riskant, am Morgen gemütlich:
+  **Die Überreste bleiben bis zum Mittag des nächsten Tages liegen,** dann
+  zerfallen sie zu Moos.
+- Randmarken zeigen, wo außerhalb des Bildes noch etwas liegt. Der
+  Sammelradius ist eine Aufwertung der Figur.
 
 ### 6.6 Bauleiste
 
-- Sitzt unten rechts im HUD, neben der Schnellleiste. Reiter:
-  **Türme** · **Figur** · **Zuhause**. `Tab` wechselt den Reiter.
-- Jede Option zeigt **Symbol und Preis**. Unbezahlbares ist ausgegraut; ein
-  Füllbalken zeigt jederzeit, wie nah man dran ist. Sobald genug Loot da
-  ist, **leuchtet die Option auf** (kurzes Glitzern, Rahmen in Gold).
-- Die ersten Optionen haben Tastenkürzel: **Q R T G C V** (Positionen rund um
-  WASD, gleiche Lage auf deutschen und englischen Tastaturen). Die Zahlen
-  1–8 bleiben der Schnellleiste vorbehalten.
-- **Turm bauen:** Option wählen, auf dem Raster platzieren (grün = passt,
-  rot = geht nicht), Klick setzt. Rechtsklick oder `Esc` bricht ab.
-- **Turm ausbauen:** Turm anklicken (oder davorstehen und `E`). Die Leiste
-  zeigt dann seine Ausbau- und Spezialisierungsoptionen und »Abreißen«
-  (immer auf `V`, mit Rückfrage – ein gewohntes `Q`/`R` reißt nie etwas ab).
-  Steht ein Schlurfer unter dem Mauszeiger, ist ein Klick ein Schlag, keine
-  Auswahl.
-- Bauen und Ausbauen geht **jederzeit**, auch mitten in der Nacht.
+- Unten rechts im HUD, Reiter **Verteidigung** (Türme und Barrikaden) ·
+  **Figur** · **Zuhause** · **Einrichten**. `Tab` wechselt den Reiter.
+  Jede Option zeigt Symbol und Preis, ausgegraut mit Füllbalken bis
+  bezahlbar, dann leuchtet sie auf. Tastenkürzel **Q R T G C V**.
+- **Turm bauen:** Turm wählen → freie Baupunkte leuchten auf → Klick (oder
+  `E` davor) setzt ihn. **Barrikade bauen:** wählen → freie
+  Barrikadenplätze leuchten auf → setzen.
+- **Ausbauen und Reparieren:** Turm oder Barrikade anklicken (oder davor `E`):
+  Die Leiste zeigt Stufen, Spezialisierungen, Reparatur und »Abreißen«
+  (immer auf `V`, mit Rückfrage).
+- **Zuhause:** Werkbank, Beete, Bänke, Laternen, Zelte und Deko stehen frei
+  auf dem Raster rund um das Haus (nie auf der Strecke); Ausbauten des
+  Hauses und Nebengebäude haben feste Plätze.
+- Bauen geht jederzeit; Reparieren nicht, solange nachts eine Welle läuft.
 
 ### 6.7 Crafting (Werkbank)
 
-- Die **Werkbank** wird über die Bauleiste gebaut. An ihr stellt man
-  Werkzeuge (Spitzhacke), Waffen und Möbel her und verwertet Überschuss zu
-  Schrott: ein Druck verwertet einmal, gehaltenes E macht gemächlich weiter
-  (mit Zähler).
-- Rezepte werden freigeschaltet durch Tage, Funde, Überlebende und den
-  Ausbau des Zuhauses.
+Werkzeuge (Spitzhacke), Waffen und Möbel; Überschuss lässt sich zu Schrott
+verwerten (ein Druck einmal, gehaltenes E weiter). Rezepte kommen mit Tagen,
+Funden, Überlebenden, Balduin und dem Ausbau des Zuhauses. Später steht die
+Werkbank in der Werkstatt.
 
-### 6.8 Bauen und Zuhause
+### 6.8 Zuhause und Basis
 
-- **Raster** mit 1-m-Feldern auf der ganzen Lichtung. Gebäude blockieren
-  Felder (für die Figur und für die Horde).
-- Abreißen gibt Material zurück (Zuhause-Bauten ganz, Türme zu 70 %).
-- **Zuhause-Stufen:** Notunterkunft → Hütte → Haus → Hof → Turmhaus mit
-  Leuchtfeuer. Jede Stufe hat mehr **Standfestigkeit** (die Lebenspunkte des
-  Zuhauses), sieht sichtbar anders aus und schaltet Neues frei.
-- **Einrichten:** Sobald jemand angekommen ist, gibt es in der Bauleiste den
-  Reiter »Einrichten«: Möbel für drinnen (Bild, Teekanne, Wimpelkette,
-  Lichterkette, Leselampe, Lesesessel) an festen Plätzen, für Knopf ein
-  Körbchen am Feuer, dazu Zelte und der Funkturm. Möbel geben
-  Gemütlichkeit (bis 10). Jeden Morgen bringt sie ebenso viel Erfahrung, ab 5
-  ist Mika »ausgeschlafen« (bis Mittag 10 % schneller).
-- **Sitzbank:** Hinsetzen heilt Mika sofort (höchstens alle 30 Sekunden) –
-  eine Verschnaufpause mitten in der Nacht, ohne Dialog. Tagsüber kann man
-  dort auch ausruhen.
+- **Das Haus:** ein kleines, altes Fischerhaus am Wasser mit Steg. Es wächst
+  in Stufen und Räumen: **Wohnraum mit Kamin → Küche → Schlafzimmer (auch
+  als Dachboden) → Werkstatt → Lager**; draußen **Veranda, Garten,
+  Gewächshaus, Holzlager, ein längerer Anleger** und Nebengebäude (Zelte,
+  Schuppen für Überlebende). Jede Stufe gibt mehr **Standfestigkeit** (die
+  Lebenspunkte der Basis) und schaltet Neues frei.
+- **Drinnen ist ein eigenes Bild** (wie in Stardew Valley): Wer durch die
+  Tür geht, sieht den Innenraum groß, warm und im feinen Maß – Kamin, Küche,
+  Bett, Regale, Pflanzen, Knopfs Körbchen. Draußen läuft die Welt weiter.
+- **Einrichten und Dekorieren:** Möbel drinnen, Deko draußen (Kürbisse,
+  Laternen, Blumenkästen, Wimpel). Gemütlichkeit bringt jeden Morgen
+  Erfahrung, ab 5 ist Mika »ausgeschlafen« (bis Mittag schneller).
+- **Garten und Gewächshaus:** Beete geben täglich Fasern, später Kräuter
+  und Kürbisse.
+- Abreißen gibt Material zurück (Zuhause-Bauten ganz, Türme und Barrikaden
+  zu 70 %).
 
 ### 6.9 Türme
 
-Türme arbeiten autonom. Vier Rollen, jede mit fünf Stufen. Stufe 1–2 sind
-allgemein, auf **Stufe 3 spezialisiert** man in eine von zwei Richtungen;
-Stufe 4 und 5 bauen die gewählte Richtung aus.
+Türme stehen **nur auf Baupunkten** und arbeiten autonom. Vier Rollen, jede
+mit fünf Stufen. Stufe 1–2 sind allgemein, auf **Stufe 3 spezialisiert** man
+in eine von zwei Richtungen; Stufe 4 und 5 bauen sie aus.
 
 | Turm | Rolle | Spezialisierung A | Spezialisierung B |
 |---|---|---|---|
 | **Bolzenwerfer** | Schaden gegen einzelne starke Gegner | **Scharfschütze** – große Reichweite, durchschlägt Panzer, zielt auf den Stärksten | **Repetierer** – sehr schnell, zwei Ziele |
 | **Kürbiskatapult** | Flächenschaden gegen Gruppen | **Feuerkürbis** – brennender Boden | **Streukürbis** – zerplatzt in drei Ladungen |
 | **Rasensprenger** | Verlangsamen und Kontrolle | **Frostnebel** – starke Verlangsamung, kurzes Einfrieren | **Schlammschleuder** – Rückstoß, hält Zähe auf |
-| **Laternenturm** | Unterstützung benachbarter Türme | **Leuchtfeuer** – stärkere Schadens-Aura, Licht bremst die Horde | **Glückslaterne** – mehr Loot von allem, was im Licht fällt |
+| **Laternenturm** | Unterstützung benachbarter Türme | **Leuchtfeuer** – stärkere Schadens-Aura, Licht bremst die Horde | **Glückslaterne** – mehr Beute im Licht |
 
-- Bau und Stufe 2 kosten Schrott, Stufe 3–4 zusätzlich **Zahnräder**, Stufe 5
-  einen **Moderkern**. Jeder weitere Turm derselben Art kostet 2 Schrott mehr
-  (höchstens +8), damit sich Aufrüsten gegen bloßes Streuen lohnt.
-- Dazu **Barrikaden** (günstige Wände zum Lenken der Horde).
+- Bau und Stufe 2 kosten Schrott, Stufe 3–4 zusätzlich Zahnräder, Stufe 5
+  einen Moderkern; Balduin verkauft manchmal besondere Turmteile.
+- Am stärksten wirken Türme dort, wo Barrikaden die Horde aufhalten:
+  **Barrikade plus Kreuzfeuer** ist das Herz jeder Verteidigung.
 
-### 6.10 Die Horde
+### 6.10 Barrikaden
+
+Barrikaden stehen **auf den Barrikadenplätzen quer über der Strecke.** Die
+Horde bleibt davor stehen und schlägt darauf ein, bis sie bricht; dann zieht
+sie weiter. Sie sind handgebaut und improvisiert:
+
+| Stufe | Aussehen | Material | Haltbarkeit | Besonderes |
+|---|---|---|---|---|
+| 1 | Einfacher Holzzaun (Latten, Pfosten) | Holz | gering | – |
+| 2 | Verstärkte Bretterwand mit Streben | Holz | mittel | – |
+| 3 | Schwere Holzbarriere aus Stämmen mit Blech und alten Türen | Holz, Schrott | hoch | fängt einen Teil jedes Schlags ab |
+| 4 | Befestigte Barrikade mit angespitzten Pfählen | Holz, Schrott, Zahnrad | sehr hoch | Stacheln verletzen, wer darauf einschlägt |
+
+- Brummer und Anführer schlagen besonders hart zu.
+- Schaden ist sichtbar (lockere Bretter, fehlende Latten); eine zerstörte
+  Barrikade hinterlässt **Trümmer** auf dem Platz.
+- **Tagsüber** flickt man beschädigte Barrikaden (anteilig, Holz und
+  Schrott) oder baut zerstörte neu auf – die Stufe bleibt, wenn man den
+  Wiederaufbau bezahlt. Während einer Welle geht beides nicht.
+
+### 6.11 Die Horde
 
 | Schlurfer | Eigenschaft | Wirkt gut dagegen |
 |---|---|---|
 | **Schlurfer** | Standard, langsam | alles |
 | **Flitzer** | schnell, wenig Leben | Rasensprenger, Repetierer |
-| **Schwärmer** | kleine, kommen in Pulks | Kürbiskatapult |
-| **Brummer** | groß, gepanzert, schlägt Barrikaden ein | Scharfschütze, Schlammschleuder |
-| **Leuchtpilz** | heilt und beschleunigt Nachbarn, trotzt Verlangsamung | Bolzenwerfer (Fokus) |
+| **Schwärmer** | kleine, kommen in Pulks, krabbeln | Kürbiskatapult |
+| **Brummer** | groß, gepanzert, zerlegt Barrikaden | Scharfschütze, Schlammschleuder |
+| **Leuchtpilz** | heilt und beschleunigt Nachbarn | Bolzenwerfer (Fokus) |
 | **Anführer** | Boss in besonderen Nächten, ruft Nachschub | alles zusammen, plus Nahkampf |
 
-- **Jede Nacht wird stärker:** mehr Schlurfer, mehr Leben, und nach und nach
-  neue Arten (Nacht 2 Flitzer, Nacht 3 Schwärmer, Nacht 4 Brummer, Nacht 6
-  Leuchtpilze). **Jede fünfte Nacht** ist eine **Anführernacht** mit besserem
-  Loot.
-- Die Steigerung ist so gebaut, dass man **ohne Ausbau irgendwann nicht mehr
-  mithält**.
-- **Tagsüber** streifen vereinzelte, träge Schlurfer umher (wenig Loot), und
-  ein- bis zweimal am Tag kommt ein kleiner Trupp. Tagesschlurfer greifen
-  nicht gezielt an, solange man baut oder sammelt – sie stören nie ernsthaft:
-  Am Zuhause nagen sie langsam und höchstens bis zur Hälfte, und ein Angriff
-  meldet sich groß mit der Wand, an der er passiert.
-- Die Punkte einer Nacht steigen gleichmäßig (Nacht 1: 18, 2: 25, 3: 32,
-  4: 41, 5: 52), egal auf wie viele Wellen sie sich verteilen.
+- Alle kommen **vom Waldrand über die Strecke**, in mehreren Wellen je
+  Nacht; die Nachtleiste zeigt Welle und Anzahl, Knopf bellt vorher.
+- **Jede Nacht wird stärker:** mehr Schlurfer, mehr Leben, nach und nach neue
+  Arten; jede fünfte Nacht ist eine **Anführernacht**. Ohne Ausbau hält man
+  irgendwann nicht mehr mit.
+- **Tagsüber kommen keine Schlurfer** – der Tag gehört der Ruhe.
 
-### 6.11 Wege der Horde
+### 6.12 Letzte Verteidigung, verlorene Nacht, Morgen
 
-Die Horde betritt die Lichtung über feste **Waldpfade** und sucht sich dann
-über das Raster den kürzesten Weg zum Zuhause. **Gebäude und Barrikaden
-blockieren Felder** – man lenkt die Horde also mit seinem Aufbau (»Mazing«).
-Ein Bauplatz, der das Zuhause vollständig abschneiden würde, wird abgelehnt.
-Brummer nehmen den Weg durch Barrikaden und schlagen sie ein.
-
-- Vier Waldpfade: Westen, Osten, Nordwesten, Nordosten. Eine Welle kommt in
-  den ersten Nächten von einer Seite, ab Nacht 3 manchmal von zwei; die
-  Meldung sagt, woher (»Welle 1 von 3 – aus dem Westen!«), die Nachtleiste
-  behält es (»Aus: Westen«) und kündigt zwischen den Wellen die nächste an
-  (»Gleich: Osten«). Pfeile am Bildrand zeigen Schlurfer außerhalb des Bildes.
-- **Offene Wege:** Steht am Weg der ersten Welle kein schießender Turm, sagt
-  Mika es eine Stunde vorher (»Heute Nacht kommen sie zuerst aus dem Osten –
-  und an dem Weg steht noch kein Turm.«); zwischen den Wellen warnt eine
-  Meldung vor der nächsten.
-- **Wegvorschau:** Beim Setzen jedes Baus laufen rote Punkte die Wege der
-  Horde entlang, vom Waldrand bis an die Hauswand; die Tafel erklärt Kreis
-  (Reichweite) und Punkte. Alle Wege treffen sich am Haus – dort lohnen die
-  ersten Türme am meisten.
-- Am Haus angekommen, schlagen die Schlurfer auf die nächste Wand ein.
-
-### 6.12 Verlorene Nacht, Morgenbericht, Reparatur
-
-- Sinkt die Standfestigkeit des Zuhauses auf null, ist die Nacht verloren:
-  Mika verschanzt sich im Keller, die Nacht endet sofort. Geht Mika nachts zu
-  Boden, rettet sie sich ins Haus und kommt mit 40 % Leben wieder – die Nacht
-  läuft weiter.
-- Folgen: ein Viertel des Schrotts und ein Zehntel der übrigen
-  Tagesmaterialien sind weg (Zahnräder und Moderkerne bleiben), Türme und
-  Barrikaden verlieren ein Drittel ihrer Haltbarkeit – Türme aber nie mehr
-  als bis auf ein Drittel, damit sie auch nach einer Pechsträhne weiter
-  schießen (ein Turm ohne Haltbarkeit schwiege). Das Zuhause wird notdürftig
-  auf ein Viertel geflickt – nie besser, als es zu Beginn der Nacht war.
+- Wer alle Barrikaden überwindet, erreicht den Hof und schlägt auf das Haus
+  ein. Mika wehrt ab, was durchkommt – Türme am letzten Abschnitt helfen.
+- Sinkt die Standfestigkeit auf null, ist die Nacht verloren: Mika
+  verschanzt sich drinnen, die Nacht endet. Geht Mika nachts zu Boden,
+  rettet sie sich ins Haus und kommt mit 40 % Leben wieder.
+- Folgen einer verlorenen Nacht: ein Teil des Vorrats ist weg, Türme verlieren
+  Haltbarkeit (nie unter ein Drittel), das Zuhause wird notdürftig geflickt.
   **Nie Spielende, nie Verlust des Spielstands.**
-- **Tagsüber bricht nichts durch:** Tagesschlurfer bringen das Zuhause
-  höchstens auf drei Viertel. Geht Mika am Tag zu Boden, wacht sie zwei
-  Stunden später im Bett auf, ohne Verluste.
-- **Morgenbericht:** besiegte Schlurfer, eingesammeltes Loot (auch das nach
-  der letzten Welle), was Streuner schon vor der Nacht abgenagt haben, der
-  Schaden der Nacht mit dem Stand danach, Beute, die noch draußen liegt,
-  Verluste – und zum Schluss ein Gedanke von Mika. Er bleibt im Spielstand,
-  bis man ihn mit `E` schließt.
-- **Reparieren** über die Bauleiste (Reiter Zuhause: alles auf einmal, oder
-  einzeln über die Auswahl eines Baus) kostet Holz und Schrott (Zuhause: je
-  10 Standfestigkeit 1 Holz, je 15 ein Schrott – Schaden soll zählen); reicht
-  der Vorrat nicht, wird anteilig geflickt. Solange nachts eine Welle läuft,
-  geht Reparieren nicht – erst abwehren, dann flicken.
+- **Morgen:** Der Morgenbericht zeigt Abschüsse, Eingesammeltes, zerstörte
+  Barrikaden, Schäden und Verluste. Draußen sieht man die Folgen: Trümmer
+  auf den Barrikadenplätzen, Überreste auf der Strecke. Einsammeln,
+  reparieren, neuer Tag.
+- **Reparieren:** Barrikaden und Türme einzeln über die Auswahl, das Zuhause
+  über die Bauleiste (Holz und Schrott, anteilig, wenn der Vorrat nicht
+  reicht).
 
 ### 6.13 Nahkampf und eigene Figur
 
-- Die Figur ist die **letzte Verteidigungslinie**. Tagesschlurfer erledigt man
-  selbst; nachts muss man ran, wenn die Horde durchbricht.
-- **Angriff** mit der linken Maustaste (in Richtung des Mauszeigers);
-  gedrückt halten schlägt weiter, ein Klick mitten im Schwung wird
-  vorgemerkt. Mika schlägt mit dem, was sie in der Hand hat (Schnellleiste):
-  Waffe, Axt, Spitzhacke – sonst mit den Fäusten. Steht ein Schlurfer knapp
-  außer Reichweite, macht sie beim Ausholen einen **Ausfallschritt** (bis gut
-  1 m) auf ihn zu. Dicht am Schlurfer (unter 2,4 m) hat Zuschlagen Vorrang
-  vor dem Auswählen eines Baus.
-- **Ausweichen** mit der Leertaste: kurze Rolle (0,3 s, gut 1,5 m) in
-  Laufrichtung, dabei unverwundbar, danach 0,75 s Pause. Eine Rolle bricht
-  einen Schwung ab.
-- **Waffen** mit spürbar verschiedenem Spielgefühl, gebaut an der Werkbank
-  und zweimal aufgewertet über die Bauleiste (Reiter »Figur«, Taste C, die
-  Waffe in der Hand):
+- Die Figur ist die **letzte Verteidigung** am Hof – und kann an der Strecke
+  aushelfen, wo eine Barrikade wankt.
+- **Angriff** mit der linken Maustaste in Richtung des Mauszeigers; gedrückt
+  halten schlägt weiter. Mika schlägt mit dem, was sie in der Hand hat
+  (Waffe, Axt, Spitzhacke, sonst Fäuste); knapp außer Reichweite macht sie
+  einen **Ausfallschritt**.
+- **Ausweichen** mit der Leertaste: kurze Rolle, dabei unverwundbar.
+- **Waffen** an der Werkbank, zweimal aufwertbar (Reiter »Figur«):
 
 | Waffe | Gefühl | Schaden | Tempo | Reichweite | Besonderes |
 |---|---|---|---|---|---|
 | Fäuste | Notbehelf | 6 | 2,6/s | 1,25 m | – |
 | Axt | Werkzeug, solide | 12 | 2,2/s | 1,55 m | trifft bis zu 3 |
 | Schaufel | ausgewogen | 16 | 1,9/s | 1,7 m | guter Rückstoß |
-| Bratpfanne | langsam, wuchtig | 30 | 1,0/s | 1,45 m | betäubt 0,9 s (Zähe halb so lange) |
+| Bratpfanne | langsam, wuchtig | 30 | 1,0/s | 1,45 m | betäubt 0,9 s |
 | Rechen | große Reichweite | 10 | 1,4/s | 2,3 m | trifft bis zu 5 |
-| Fäustlinge | schnelle Schlagfolge | 7 | 3,6/s | 1,25 m | jeder 3. Treffer in Folge doppelt |
+| Fäustlinge | schnelle Schlagfolge | 7 | 3,6/s | 1,25 m | jeder 3. Treffer doppelt |
 
-  Stufe 2 und 3 machen ×1,35 bzw. ×1,75 Schaden.
-- **Erfahrung und Perks:** Jeder besiegte Schlurfer gibt Erfahrung – im
-  Nahkampf doppelt, Tagesstreuner halb. Jede Stufe bringt eine Wahl aus drei
-  Perks; das Spiel hält dafür an. Neun Perks mit je zwei oder drei Stufen:
-  Sammlerherz (Sammelradius), Konter (nach dem Ausweichen doppelt), Flick-
-  schusterin (Bauten in der Nähe flicken sich), Rückendeckung (mehr Schaden
-  nahe Türmen), Zähe Natur (Treffer heilen), Flinke Hände (Schlagtempo),
-  Dickes Fell (weniger Schaden), Glückspilz (mehr Schrott), Zweiter Atem
-  (früher regenerieren).
-- **Aufwertungen der Figur** in der Bauleiste: Sammelradius, Lebenskraft,
-  Schlagkraft, Tempo.
+- **Erfahrung und Perks:** Besiegte Schlurfer geben Erfahrung (im Nahkampf
+  doppelt); jede Stufe bringt eine Wahl aus drei Perks, sobald es ruhig ist.
+- **Aufwertungen der Figur:** Sammelradius, Lebenskraft, Schlagkraft, Tempo.
 
 ### 6.14 Überlebende und Geschichte
 
-- **Ankunft:** Ab Tag 2 kommt jeden Morgen jemand an: Knopf (Tag 2, am
-  Briefkasten), Oma Hilde (3, mit dem Lastenrad auf der Straße), Juna (4, am
-  Funkturm), Bert (5, von Westen), Dr. Yusuf (6, am östlichen Waldrand). Mika
-  bemerkt es in einer Sprechblase. Wer neu ist, winkt, sobald Mika in der
-  Nähe ist.
-- **Kennenlernen → Gast → Einzug:** Ansprechen mit E (Dialog mit Porträt).
-  Gäste bleiben tagsüber und schlafen am Feuer. Ein Zelt (Reiter
-  »Einrichten«) wird ihr Schlafplatz, dann ziehen sie ein. Knopf zieht ein,
-  sobald man ihn streichelt. Wird ein Zelt abgerissen, ist sein Bewohner
-  wieder Gast.
-- **Aufträge:** Kaum eingezogen, bittet jeder um etwas. Der Auftrag steht
-  im Ziel-Feld. Hilde will 8 Fasern und strickt dafür einen Schal (+15
-  Lebenspunkte). Bert will einen Laternenpfahl neben seinem Zelt und gibt
-  dafür Zahnräder und Schrott. Dr. Yusuf will Kamille (Fasern und Stoff),
-  danach wirkt sein Tee stärker. Junas Auftrag ist der Funkturm.
-- **Fähigkeiten:** Knopf bellt kurz vor jeder Welle und nennt die Richtung;
-  morgens hat er Schrott ausgebuddelt. Hilde tauscht einmal am Tag (das
-  Angebot wechselt täglich) und bringt Morgengaben. Juna belauscht die Horde
-  am Funk (die Richtung der ersten Welle steht im Morgenbericht). Bei Bert
-  kostet Reparieren die Hälfte, und nachts flickt er die Türme. Dr. Yusuf
-  kocht morgens Tee (schneller heilen) und verarztet Mika einmal je Nacht,
-  bevor sie zu Boden geht.
-- Tagsüber (06:30–20:15) stehen alle an ihren Plätzen um Feuer und Hütte,
-  nachts schlafen sie in den Zelten. Knopf liegt nachts am Feuer.
-- **Roter Faden – der Funkturm:** Mit Juna in drei Stufen, je ein paar
-  Stunden Werkeln: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
-  (braucht einen Moderkern von einem Anführer). Das Leuchtfeuer brennt jede
-  Nacht und bremst Schlurfer in seinem Schein um 30 %. Danach geht es als
-  endlose Verteidigung weiter.
-- **Balduin, der Händler (M8):** Ab Tag 2 zieht er jeden Morgen um 06:40
-  seinen Bollerwagen (lila-gelb gestreiftes Sonnendach, Einmachgläser mit
-  trüber grüner Brühe) von Osten die Straße entlang, bimmelt beim Anhalten
-  und handelt bis 12:00; dann packt er ein und zieht weiter. Beim ersten
-  Treffen stellt er sich vor (»Frag nicht. Wissenschaft! Oder Kunst. Oder
-  Suppe – nein, keine Suppe.«), danach öffnet E direkt seinen Bollerwagen:
-  dasselbe Fenster wie die Werkbank (E tauscht einmal, gehalten weiter), oben
-  sein Spruch des Tages. Sein Stand ist morgens nicht bebaubar; steht dort
-  inzwischen etwas, hält er an einem anderen Platz an der Straße. Die Horde
-  läuft durch seinen Wagen hindurch – er gehört nicht ins Flussfeld.
+- **Ankunft:** Ab Tag 2 kommt nach und nach jemand an (Knopf, Hilde, Juna,
+  Bert, Dr. Yusuf) – tagsüber, über den Holzfällerweg, am Ufer oder mit
+  Balduins Boot. Wer neu ist, winkt.
+- **Kennenlernen → Gast → Einzug:** Ansprechen mit E; ein Schlafplatz (Zelt,
+  später ein Zimmer oder Nebengebäude) macht aus dem Gast einen Bewohner.
+- **Aufträge und Nebenaufträge:** Jeder bittet um etwas (Hilde: Fasern für
+  einen Schal, Bert: Licht am Schlafplatz, Yusuf: Kamille, Juna: das
+  Leuchtfeuer); Balduin bringt gelegentlich eigene.
+- **Fähigkeiten:** Knopf bellt kurz vor jeder Welle und buddelt morgens
+  etwas aus; Hilde tauscht und bringt Morgengaben; Juna hört die Horde am
+  Funk (was heute Nacht kommt); Bert flickt billiger und nachts Barrikaden
+  und Türme; Dr. Yusuf kocht Tee und verarztet Mika einmal je Nacht.
+- **Roter Faden – das Leuchtfeuer:** Mit Juna in drei Stufen am Leuchtmast
+  auf dem Steg: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
+  (braucht einen Moderkern). Das Leuchtfeuer brennt jede Nacht über dem See
+  und bremst Schlurfer in seinem Schein.
 
-### 6.15 Dialoge
+### 6.15 Balduin und der Handel
+
+- **Ankunft übers Wasser:** Ab dem Morgen nach der ersten Nacht kommt
+  Balduin jeden Vormittag. Erst hört man sein Bootshorn über den See, dann
+  sieht man das Boot zwischen den Inseln auftauchen; es tuckert heran und
+  legt am Steg an, Balduin wirft die Leine über den Poller. Gegen Mittag
+  legt er wieder ab. Wer ihn verpasst, handelt am nächsten Morgen.
+- **Aussehen:** ein fröhlicher, bärtiger Seebär mit Schiebermütze, rotem
+  Schal, dunklem Mantel und einem riesigen Rucksack; sein Boot ist
+  vollgestapelt mit Kisten, Fässern und Einmachgläsern mit trüber grüner
+  Brühe.
+- **Handel** im Fenster der Werkbank (»Balduins Boot«): Zombieteile gegen
+  Schrott (immer), dazu täglich wechselnde Angebote – Holz, Stein, Fasern,
+  Stoff, Zahnräder, manchmal ein Moderkern, **besondere Turmteile**,
+  **Upgrades und Werkzeuge**, später Saatgut und Möbel. Manches nur in
+  kleiner Menge am Tag. Gelegentlich bringt er einen Nebenauftrag mit.
+- **Running Gag:** Balduin ist erstaunlich scharf auf die Teile und weicht
+  jeder Frage aus (»Frag nicht. Wissenschaft! Oder Kunst. Oder Suppe – nein,
+  keine Suppe.«). Jeden Tag ein anderer Spruch.
+
+### 6.16 Dialoge
 
 Dialoge sind Daten (Zeilen mit Sprecher, Text, Antworten und Folgen) und
-können vom Spielzustand abhängen.
+können vom Spielzustand abhängen. Rückfragen haben immer eine harmlose
+Vorwahl.
 
-### 6.16 Speichern
+### 6.17 Speichern
 
 - Der Spielstand liegt im Browser (`localStorage`), versioniert, mit
-  Migrationen.
+  Migrationen. **Alte Stände laden immer:** Beim Umzug an die Küste bleiben
+  Fortschritt, Vorrat, Figur, Überlebende und Möbel erhalten; Bauten der
+  alten Lichtung werden erstattet oder, wo möglich, neu gesetzt.
 - **Schlafen im eigenen Bett beendet den Tag und speichert.** Zusätzlich
   sichert das Spiel still beim Verlassen der Seite.
 - Beschädigte Stände werden erkannt und beiseitegelegt.
 
-### 6.17 Balance-Ziele
+### 6.18 Balance-Ziele
 
-- Nacht 1 fordert schon (M8): Wer nur zwei Türme stellt und zusieht,
-  verliert sie; mit drei Türmen (einer ausgebaut) und Mitkämpfen hält das
-  Zuhause. Nacht 2 schafft man mit drei, vier Türmen und Nahkampf.
-- Ab Nacht 4 braucht man Spezialisierungen, ab Nacht 6 eine gezielte
-  Mischung gegen die Schlurfer-Arten.
-- Jede Nacht bringt so viele Zombieteile, dass man sich bei Balduin
-  mindestens eine spürbare Verbesserung ertauschen kann – aber nie alles
-  (Nacht 1: rund 30–35 Teile ≈ 20–23 Schrott).
+- Nacht 1 fordert schon: Wer nur zwei Türme stellt und zusieht, verliert
+  sie; mit drei Türmen, einer Barrikade vor dem Hof und Mitkämpfen hält das
+  Zuhause.
+- Ab Nacht 3 braucht man eine gute Barrikade in jedem Abschnitt, ab Nacht 4
+  Spezialisierungen, ab Nacht 6 eine gezielte Mischung.
+- Jede Nacht bringt so viele Zombieteile, dass man sich morgens bei Balduin
+  mindestens eine spürbare Verbesserung ertauschen **und** die Barrikaden
+  flicken kann – aber nie alles.
 - Ohne Ausbau kippt es spätestens um Nacht 5.
 
-### 6.18 Klang
+### 6.19 Klang
 
-Alle Klänge werden im Browser erzeugt (Web Audio), es gibt keine Tondateien.
-Der Klang startet mit der ersten Taste oder dem ersten Klick – vorher
-sperrt der Browser ihn ohnehin.
+Alle Klänge werden im Browser erzeugt (Web Audio), es gibt keine Tondateien;
+der Klang startet mit der ersten Eingabe.
 
-- **Effekte** aus gefiltertem Rauschen und kleinen Oszillatoren: Schritte
-  (drinnen auf Holz), Hacken, Stein, Rupfen, Durchsuchen, Schwung, Treffer,
-  Autsch, Ausweichrolle, Bolzen, Katapult und Aufprall, Wasserstrahl,
-  Einsammeln (seltene Beute klingt heller), Bauen, Abreißen, Aufwerten,
-  Stufenaufstieg, Wellenhorn, Schlurfer-Brummeln und ihr Ende, Knopfs
-  Bellen, Balduins Wagenglöckchen und das Rumpeln seiner Räder, ein leises
-  Glöckchen, wenn in der Bauleiste etwas bezahlbar wird,
-  ein kurzes Tippen je Buchstabe im Dialog (jede Stimme etwas anders).
-  Ferne Klänge werden leiser und kommen von der Seite.
-- **Umgebung:** Wind, am Tag Vögel, nachts Grillen, Knistern am Feuer.
-- **Musik:** am Abend eine leise Pentatonik-Melodie über warmen Akkorden,
-  während der Wellen ein treibender Rhythmus (Pauke, Hi-Hat, Bass). Beides
-  blendet sanft ein und aus.
+- **Effekte:** Schritte, Hacken, Stein, Rupfen, Durchsuchen, Schwung,
+  Treffer, Ausweichrolle, Türme, Barrikaden (Holz splittert, Schläge auf
+  Bretter), Einsammeln, Bauen, Aufwerten, Wellenhorn, Schlurfer-Brummeln,
+  Knopfs Bellen, **Balduins Bootshorn und Motor**, Tippen im Dialog.
+- **Umgebung:** Wind, Wellen am Steg, Krähen, Regen, Knistern am Kamin.
+- **Musik:** am Abend eine leise, etwas melancholische Melodie, während der
+  Wellen ein treibender Rhythmus.
 
-### 6.19 Titelbild und Einstellungen
+### 6.20 Titelbild und Einstellungen
 
-- **Titelbild:** großer Schriftzug über der Lichtung im Abendlicht, die
-  Kamera zieht langsam darüber. Weiterspielen (mit Spielstand), Neues Spiel,
-  Einstellungen, Steuerung.
-- **Neues Spiel:** Name (bis 12 Zeichen) und Aussehen (Mütze, Jacke, Haare,
-  Haut), live an der Figur in der Szene. Texte, die »Mika« sagen, zeigen den
-  gewählten Namen.
-- **Einstellungen:** Lautstärke, Musik, Geräusche (0–10), Pixelgröße (klein
-  = mehr Überblick, groß = näher dran – immer ganzzahlig skaliert),
-  Textgeschwindigkeit. Sie liegen neben dem Spielstand und bleiben bei einem
-  neuen Spiel erhalten.
+- **Titelbild:** großer Schriftzug über der Bucht im Abendlicht.
+  Weiterspielen, Neues Spiel (Name und Aussehen), Einstellungen, Steuerung.
+- **Einstellungen:** Lautstärke, Musik, Geräusche, Pixelgröße,
+  Textgeschwindigkeit – neben dem Spielstand gespeichert.
 
 ## 7. Steuerung
 
@@ -595,7 +656,7 @@ sperrt der Browser ihn ohnehin.
 |---|---|
 | W A S D / Pfeiltasten | Laufen |
 | Umschalt | Rennen |
-| Linke Maustaste | Angreifen · auf dem Raster: bauen · Turm anklicken: auswählen |
+| Linke Maustaste | Angreifen · Baupunkt/Platz anklicken: bauen · Turm oder Barrikade anklicken: auswählen |
 | Rechte Maustaste / Esc | Bauen abbrechen, Auswahl aufheben |
 | Leertaste | Ausweichen |
 | E / Enter | Benutzen, Dialog weiter; gedrückt halten: weiter sammeln |
@@ -608,122 +669,96 @@ sperrt der Browser ihn ohnehin.
 
 ## 8. Meilensteinplan
 
-Jeder Meilenstein ergibt eine in sich spielbare Version, die auf GitHub Pages
-direkt aus dem Repository läuft. Nach jedem Meilenstein folgen Playtests mit
-Testspieler-Agenten (siehe `CLAUDE.md`), Nachbesserung, Prüfablauf, Commit.
+Jeder Meilenstein ergibt eine in sich spielbare Version. Nach jedem
+Meilenstein folgen Playtests mit Testspieler-Agenten (siehe `CLAUDE.md`),
+Nachbesserung, Prüfablauf, Commit.
 
-### Meilenstein 1 – Fundament und Look ✓
+### Erledigt: Meilenstein 1–8 (auf der Waldlichtung)
 
-Pixel-Render-Pipeline, Lichtung mit Notunterkunft, Figur, Tag-Nacht-Zyklus
-mit warmen Lichtern, HUD-Grundgerüst, Dialoge mit Porträts, Speichern durch
-Schlafen, Ausruhen am Feuer, Prüfskript mit Screenshots.
+- **M1 Fundament und Look ✓:** Pixel-Render-Pipeline, Figur, Tag-Nacht mit
+  warmen Lichtern, Dialoge, Speichern durch Schlafen, Prüfskript.
+- **M2 Sammeln, Crafting, Bauen ✓:** Quellen, Werkzeuge, Werkbank,
+  Bauleiste, Raster, Hüttenausbau.
+- **M3 Nächte, Türme, Loot ✓:** Wellen, vier Türme mit Stufen und
+  Spezialisierungen, Schlurfer-Arten, Loot, Morgenbericht, Reparieren.
+- **M4 Nahkampf, Waffen, Perks ✓.**
+- **M5 Detailgrad und Animationen ✓:** 80 px pro Meter, feine Figuren.
+- **M6 Überlebende, Geschichte, Einrichten ✓.**
+- **M7 Feinschliff ✓:** Klang, Titelbild, Einstellungen.
+- **M8 Nach dem ersten Probespielen ✓:** schnellere Zeit (ein Tag rund
+  9 Minuten), fordernde Nächte ab Nacht 1; Zombieteile als Beute und
+  Balduins Handel (noch mit Bollerwagen über Land – das Boot kommt in M10);
+  Autowrack nur einmal. Die geplanten Punkte »Innenraum als eigenes Bild«
+  und »Detailgrad« gehen in M11 und M12 auf.
 
-### Meilenstein 2 – Sammeln, Crafting und Bauen ✓
+Bis hierhin spielt das Spiel auf einer Waldlichtung mit vier Waldpfaden und
+freiem Bauraster (die Horde ließ sich mit Bauten umlenken). Das neue
+Grundkonzept ersetzt das.
 
-- Ressourcenquellen: Bäume, Felsen, Kiesel, hohes Gras, Äste,
-  Schrotthaufen, Autowrack; Nachwachsen über Tage; Sammel-Animation mit
-  Spänen, schwebende »+2«; **E gedrückt halten** sammelt weiter.
-- Werkzeuge: Axt (vom Hackklotz), Spitzhacke (Werkbank). Das passende
-  Werkzeug nimmt Mika beim Sammeln von selbst in die Hand.
-- **Bauleiste** mit dem Reiter **Zuhause**: Werkbank, Barrikade,
-  Laternenpfahl, Flachsbeet (jeden Tag Fasern ernten), Sitzbank (ausruhen),
-  Ausbau zur Hütte. Raster-Platzierung mit Vorschau, Drehen, Auswählen,
-  Abreißen mit voller Rückgabe.
-- Werkbank mit Rezepten (Spitzhacke) und Verwerten zu Schrott und Stoff.
-- Erste Zuhause-Stufe: Notunterkunft → Hütte (Anbau, Veranda).
-- Ziel-Anzeige für die ersten Schritte, Laterne auf der linken Hand.
-- Spielstand v2 mit Migration.
+### Meilenstein 9 – Die Bucht und die Strecke (großer Umbau)
 
-**Spielbar heißt:** Einen Tag lang sammeln, eine Werkbank bauen, daraus eine
-Spitzhacke herstellen, Barrikaden setzen und die Unterkunft zur Hütte
-ausbauen.
+- **Neue Karte nach Grundregel 11:** Stillsee im Norden mit Inseln und Nebel,
+  Ufer mit Felsen, Schilf und Treibholz; das alte Fischerhaus mit Steg;
+  der Hof als letzte Verteidigung; die Strecke (alter Holzfällerweg) leicht
+  geschwungen bis zum Waldrand im Süden; dichter Wald, Felsen und Hänge als
+  natürliche Grenzen. Gelände und Natur gleich in Herbstfarben.
+- **Horde auf der Strecke:** Schlurfer folgen dem Weg, bleiben an Barrikaden
+  stehen, greifen am Ende das Haus an; die Figur ziehen sie nur aus der
+  Nähe von der Strecke. Kein Mazing, keine Wegfindung über das Raster,
+  keine Wellen aus vier Richtungen, **keine Tagesschlurfer**.
+- **Baupunkte** links und rechts der Strecke; Türme nur dort.
+- **Barrikaden** auf festen Plätzen mit vier Stufen, Lebenspunkten,
+  sichtbarem Schaden, Trümmern, Reparatur und Wiederaufbau am Tag.
+- **Letzte Verteidigung** am Hof, Standfestigkeit der Basis, verlorene Nacht.
+- Überreste bleiben bis zum Mittag liegen; der Morgen zeigt die Folgen.
+- Überlebende, Leuchtmast (am Steg), Werkbank, Beete, Zelte und Möbel auf
+  der neuen Karte; Bauleiste mit dem Reiter »Verteidigung«.
+- Spielstand v8 mit Migration (alte Stände laden, Bauten werden erstattet).
+- Prüfskript: Strecke, Baupunkte, Barrikaden bauen, beschädigen, reparieren,
+  neu bauen, Nacht über die Strecke gewonnen und verloren, Migration.
 
-### Meilenstein 3 – Nächte, Türme und Loot (großer Meilenstein) ✓
+**Spielbar heißt:** Ein ganzer Tag-Nacht-Morgen-Zyklus an der Bucht: tagsüber
+Türme auf Baupunkte und Barrikaden auf die Strecke, nachts halten sie die
+Horde, morgens Trümmer und Überreste – und man sieht immer, wo die Horde
+langläuft.
 
-- Schlurfer-Arten mit Animationen, Anführer; Tagesstreuner und kleine
-  Angriffe; Horde in Wellen, jede Nacht stärker.
-- Wegfindung auf dem Raster mit Mazing (Gebäude blockieren).
-- Vier Turmarten mit fünf Stufen und Spezialisierung; Schüsse und Effekte.
-- Loot-Drops, Einsammeln mit Sammelradius, Zerfall.
-- Bauleiste mit **Türme** und **Figur**, Aufleuchten, Tastenkürzel.
-- Einfacher Nahkampf (ein Schlag) als Übergang zu Meilenstein 4.
-- Standfestigkeit, verlorene Nacht, Morgenbericht, Reparieren.
+### Meilenstein 10 – Balduin kommt übers Wasser
 
-**Spielbar heißt:** Mehrere Nächte hintereinander verteidigen, Loot
-einsammeln, Türme bauen und spezialisieren – mit spürbar steigender
-Schwierigkeit und einer Anführernacht.
+- Boot mit Kisten, Fässern und Einmachgläsern; Ankunft als kleines Ereignis
+  (Bootshorn, das Boot taucht zwischen den Inseln auf, tuckert heran, legt
+  am Steg an), Abfahrt gegen Mittag.
+- Balduin im neuen Aussehen (Schiebermütze, Bart, roter Schal, Rucksack).
+- Handel wie bisher, dazu besondere Turmteile, Upgrades und Werkzeuge,
+  gelegentliche Nebenaufträge; Running Gag mit täglichen Sprüchen.
 
-### Meilenstein 4 – Nahkampf, Waffen und Perks ✓
+### Meilenstein 11 – Das Zuhause am Wasser
 
-- Direkter Nahkampf mit Treffer-Feedback, Ausweichrolle, Lebenspunkte.
-- Vier Waffen mit eigenem Spielgefühl, Bau an der Werkbank, Aufwertung in
-  der Bauleiste.
-- Erfahrung, Stufen, Perk-Auswahl.
+- Das Fischerhaus als Zuhause in Stufen und Räumen (Wohnraum mit Kamin,
+  Küche, Schlafzimmer, Werkstatt, Lager) und draußen Veranda, Garten,
+  Gewächshaus, Holzlager, längerer Anleger, Nebengebäude.
+- **Innenraum als eigenes Bild** (wie in Stardew Valley), groß und im feinen
+  Maß; Möbel und Deko drinnen und draußen.
 
-**Spielbar heißt:** Durchbrüche im Nahkampf abwehren und spüren, wie die
-Figur über die Nächte stärker wird.
+### Meilenstein 12 – Herbst, Wetter und Lesbarkeit
 
-### Meilenstein 5 – Detailgrad und Animationen
+- Herbst überall: Laub in Orange und Rot, Kürbisse, Pilze, Krähen,
+  Holzstapel, Nebel über dem Wasser, fallendes Laub, Regen und Wind, kalte
+  Nächte mit warmen Lichtinseln.
+- Alle Modelle im feinen Maß (1/16 m) und auf den ersten Blick erkennbar;
+  Figuren mit ausdrucksstärkeren Gesichtern; Look-Feinschliff (Pixel-Look
+  nur, wo er hilft).
 
-Kommt, sobald die Mechaniken sitzen (siehe 3.6) – und vor den Überlebenden,
-damit neue Figuren und Möbel gleich im neuen Detailgrad entstehen.
+### Meilenstein 13 – Balance und Testrunden
 
-- Höhere Renderauflösung und mehr Spielpixel pro Meter; Kamera, Umrisse,
-  Dithering und Palette darauf abgestimmt.
-- Feinere Voxel (1/16 m) für Figur, Schlurfer, Türme, Werkzeuge, Loot und
-  kleine Requisiten; Gebäude und Natur mit mehr Einzelheiten.
-- Klare Silhouetten und Farbcodes je Schlurfer- und Turmart, lesbares Loot.
-- Mehr Animation: Laufzyklen, Schlurfen, Angriffe, Rückstoß und Zielen der
-  Türme, Leerlauf-Bewegungen, Wind in Gras und Laub, Türen, Rauch.
-- Leistung trotz mehr Dreiecken (Instancing, Stellvertreter, Culling).
-
-**Spielbar heißt:** Dasselbe Spiel wie nach Meilenstein 4 – aber jede Art,
-jeder Turm, jedes Loot und jede Quelle ist ohne Erklärung erkennbar, und die
-Welt bewegt sich lebendig.
-
-### Meilenstein 6 – Überlebende, Geschichte und Einrichten
-
-- Überlebende mit Dialogen, Aufträgen, Einzug und Verteidigungsfähigkeit.
-- Geschichte über viele Tage bis zum entzündeten Leuchtfeuer.
-- Einrichten mit Gemütlichkeit und Morgen-Boni; weitere Zuhause-Stufen.
-
-### Meilenstein 7 – Feinschliff
-
-- Klang und Musik (alles im Browser erzeugt).
-- Balance aller Kosten, Wellen und Belohnungen.
-- Titelbildschirm, Namens- und Aussehenswahl, sanfter Einstieg.
-- Einstellungen (Lautstärke, Pixelgröße, Textgeschwindigkeit), Leistung.
-
-### Meilenstein 8 – Nach dem ersten Probespielen
-
-Rückmeldung nach dem ersten eigenen Probespielen: Die Zeit vergeht zu
-langsam, die Schlurfer sind keine Herausforderung (schon gar nicht in
-Nacht 1), drinnen soll es ein eigenes, schöneres Bild geben (wie in Stardew
-Valley), dass das Autowrack jeden Tag Schrott hergibt, ist unglaubwürdig,
-und die Pixel lassen zu wenig erkennen – man rät oder liest, was etwas ist.
-
-1. **Tempo und Herausforderung ✓:** Ein Tag dauert rund 9 statt 14 Minuten.
-   Nacht 1 bringt etwa 24 statt 16 Schlurfer, schon mit Flitzern; Schlurfer
-   laufen schneller, beißen fester und gehen früher auf Mika los; das
-   Zuhause nimmt mehr Schaden.
-2. **Zombieteile und Balduin ✓:** Schlurfer lassen Zombieteile statt Schrott
-   fallen. Balduin tauscht sie morgens gegen Rohstoffe (siehe 6.4, 6.14).
-   Das Autowrack gibt nur einmal etwas her, Schrotthaufen alle zwei Tage.
-3. **Innenraum als eigenes Bild:** Wer die Hütte betritt, sieht ein eigenes,
-   liebevoll eingerichtetes Innenbild im feinen Maß (1/16 m) – wie in
-   Stardew Valley. Draußen läuft die Welt weiter.
-4. **Detailgrad:** Alles im feinen Maß (1/16 m) und so umgebaut, dass man
-   jede Sache erkennt, ohne das Schild zu lesen.
-
-**Spielbar heißt:** Das Spiel vom Titelbild bis zur späten Nacht, flotter und
-fordernder, mit Balduins Handel als Morgenritual, einer eigenen Innenszene
-und Modellen, die man auf den ersten Blick erkennt.
+- Balance über zehn und mehr Nächte an der Strecke, Testrunden mit allen
+  Personas, Feinschliff.
 
 ## 9. Ideen-Parkplatz
 
-- Wetter: Nieselregen, Nebel, Sternschnuppennächte.
-- Jahreszeiten mit Laubfarben und Schnee.
-- Angeln am Teich, Kochen am Lagerfeuer mit kleinen Boni.
+- Angeln am Steg, Kochen am Kamin mit kleinen Boni.
+- Kürbisfest im Herbst, Laternenumzug, erster Schnee.
+- Krähen, die etwas bringen (oder stehlen).
+- Mit Balduins Boot eine Insel besuchen.
+- Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte.
-- Weitere Gebiete jenseits der Straßensperren.
 - Fotomodus.
