@@ -5,6 +5,9 @@ import { BUILDINGS } from '../data/buildings.js';
 import { towerInvested, towerBuildCost } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 
+/** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
+const OLD_BARRICADE_COST = { holz: 3 };
+
 /** Ein neuer Startwert für das Wegenetz. */
 export function randomMapSeed() {
   return (Math.floor(Math.random() * 0xffffffff) >>> 0) || 1;
@@ -37,7 +40,7 @@ function migrateToBay(data) {
       add(towerBuildCost(b.type, n));
       for (const [res, v] of Object.entries(invested)) refund[res] = (refund[res] || 0) + v - (first[res] || 0);
     } else if (def.defense) {
-      add(def.cost);
+      add(b.type === 'barrikade' ? OLD_BARRICADE_COST : def.cost);
     } else {
       keep.push(b);
     }

@@ -57,7 +57,7 @@ import { GOALS } from '../data/goals.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 import { MAX_COZY } from '../data/furniture.js';
-import { HOUSE_DAMAGE } from '../data/zombies.js';
+import { HOUSE_DAMAGE, PARTS_FROM_TOWERS } from '../data/zombies.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -623,8 +623,10 @@ export class Game {
   }
 
   closeCrafting() {
+    const shop = this.crafting.shop;
     this.crafting.close();
     this.mode = 'play';
+    if (shop) this.trader.closed(); // M9.1: nach dem Handel sagt Balduin Tschüss und legt ab
   }
 
   craft(recipe) {
@@ -817,7 +819,12 @@ export class Game {
     st.stats.kills = (st.stats.kills || 0) + 1;
     if (this.nights.active) st.night.kills += 1;
     const factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
-    this.loot.drop(z.x, z.z, z.def.loot, factor);
+    // Zombieteile (M9.1): selbst erschlagen – sicher welche; durch Türme nur mit Glück
+    const melee = source === 'spieler';
+    const table = { ...z.def.loot };
+    if (!melee && !z.def.partsAlways && table.teile && !this.loot.rng.chance(this.partsFromTowers ?? PARTS_FROM_TOWERS)) delete table.teile;
+    const dropped = this.loot.drop(z.x, z.z, table, factor);
+    if (melee && table.teile && !(dropped.teile > 0)) this.loot.spawn('teile', z.x, z.z);
     // Perk »Glückspilz«: manchmal ein Stück Schrott mehr
     if (this.world.particles.rng.next() < perkValue(st, 'glueckspilz')) this.loot.drop(z.x, z.z, { schrott: [1, 1] }, 1);
     this.effects.splat(z.x, 0.6, z.z, 'moos', 12, 0.9);
@@ -1455,6 +1462,17 @@ export class Game {
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
     if (this.intro.t < this.intro.duration) this.drawIntro(ui);
+    if (this.input.lostFocus) this.drawFocusHint(ui);
+  }
+
+  /** Die Seite ringsum hat den Tastaturfokus (M9.1): sagen, wie es weitergeht. */
+  drawFocusHint(ui) {
+    const text = T.meldungen.fokus;
+    const w = measure(text) + 16;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round(ui.height * 0.3);
+    ui.panel(x, y, w, 19, { frame: COLORS.gold });
+    ui.text(text, x + 8, y + 3, COLORS.gold);
   }
 
   /** Einblenden beim Start: Titelkarte, dann löst sich das Schwarz gerastert auf. */
@@ -1734,6 +1752,15 @@ export class Game {
       killAllZombies() {
         for (const z of [...game.horde.list]) if (z.state !== 'dying') game.horde.kill(z, 'test');
       },
+      /** Einen Schlurfer erledigen, als hätte ihn `source` getroffen ('turm', 'spieler' …). */
+      killZombie(id, source = 'test') {
+        const z = game.horde.list.find((q) => q.id === id);
+        if (z && z.state !== 'dying') game.horde.kill(z, source);
+      },
+      /** Chance auf Zombieteile bei Turm-Abschüssen (null = Wert aus zombies.js). */
+      setPartsChance(p) {
+        game.partsFromTowers = p;
+      },
       lootItems: () => game.loot.items.map((l) => ({ res: l.res, x: l.x, z: l.z })),
       setHomeHp(v) {
         game.state.world.homeHp = v;
@@ -1788,7 +1815,7 @@ export class Game {
       // Meilenstein 8: Balduin, der Händler
       trader: () => {
         const n = game.trader.npc;
-        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, boat: game.trader.boat.root.position.x, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled };
+        return { phase: game.trader.phase, x: n.x, z: n.z, visible: n.model.root.visible, boat: game.trader.boat.root.position.x, offers: game.trader.offers().map((o) => o.key), prompt: game.trader.interaction.enabled, fanfares: game.trader.fanfares, leaving: game.trader.leaving };
       },
       /** Ein Angebot des Tages tauschen (wie ein Druck auf E im Handelsfenster). */
       trade(key) {

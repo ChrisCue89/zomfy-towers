@@ -14,7 +14,7 @@
 export const ZOMBIES = {
   schlurfer: {
     hp: 30,
-    speed: 1.0, // M8: 0,72 – keine Herausforderung; M9: 0,8 – die Wege sind jetzt 50 m und mehr lang
+    speed: 1.1, // M8: 0,72 – keine Herausforderung; M9: 0,8 – lange Wege; M9.1: 1,0 – »etwas schneller« (alle Arten +10 %)
     armor: 0,
     hit: 4,
     bite: 7,
@@ -27,7 +27,7 @@ export const ZOMBIES = {
   },
   flitzer: {
     hp: 20,
-    speed: 1.8,
+    speed: 1.95,
     armor: 0,
     hit: 3,
     bite: 5,
@@ -40,7 +40,7 @@ export const ZOMBIES = {
   },
   schwaermer: {
     hp: 12,
-    speed: 1.25,
+    speed: 1.35,
     armor: 0,
     hit: 2,
     bite: 3,
@@ -53,7 +53,7 @@ export const ZOMBIES = {
   },
   brummer: {
     hp: 150,
-    speed: 0.62,
+    speed: 0.68,
     armor: 6,
     hit: 12,
     bite: 12,
@@ -67,7 +67,7 @@ export const ZOMBIES = {
   },
   leuchtpilz: {
     hp: 48,
-    speed: 1.0,
+    speed: 1.1,
     armor: 0,
     hit: 4,
     bite: 5,
@@ -83,7 +83,7 @@ export const ZOMBIES = {
   },
   anfuehrer: {
     hp: 700,
-    speed: 0.68,
+    speed: 0.75,
     armor: 4,
     hit: 18,
     bite: 16,
@@ -93,6 +93,7 @@ export const ZOMBIES = {
     smash: 2,
     summon: { type: 'schlurfer', count: 3, every: 9 },
     loot: { teile: [18, 24], zahnraeder: [2, 3], moderkerne: 1 },
+    partsAlways: true, // sein Haufen Teile hängt nicht an einem Münzwurf
     xp: 20,
   },
 };
@@ -103,6 +104,14 @@ export const ZOMBIES = {
  * mitzukämpfen. Türme, Barrikaden und Mika treffen die Schlurfer wie bisher.
  */
 export const HOUSE_DAMAGE = 0.8; // M8: 0,6 machte die Nächte zu harmlos
+
+/**
+ * Zombieteile (M9.1, Wunsch des Auftraggebers): Nicht jeder Schlurfer verliert
+ * Teile. Wer ihn selbst erschlägt, bekommt sicher welche; fällt er durch einen
+ * Turm (auch im Feuer), nur mit dieser Wahrscheinlichkeit. Zahnräder und
+ * Moderkerne fallen wie bisher, der Anführer lässt immer Teile (partsAlways).
+ */
+export const PARTS_FROM_TOWERS = 0.5;
 
 /** Nachts: Spürweite für Arten ohne eigenen Wert (m). */
 export const NIGHT_AGGRO = 4;

@@ -199,7 +199,11 @@ Grundprinzipien:
   Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel, `confirm`
   (E/Enter/Leertaste) in Dialogen und Menüs, `dodge` (Leertaste) im Spiel.
   Im Trefferstopp bleiben Tastendrücke liegen (`frozenFrame`, kein
-  `endFrame`), damit kein Druck verloren geht.
+  `endFrame`), damit kein Druck verloren geht. Esc gehört dem Spiel
+  (Capture-Phase, `preventDefault`, `stopPropagation`) – im Artefakt-Rahmen
+  nahm die Seite ringsum dem Spiel sonst den Tastaturfokus (M9.1). Ohne
+  Fokus zeigt das Spiel einen Hinweis (`input.lostFocus`); der Klick, der
+  den Fokus zurückholt, ist kein Schlag.
 - **Die Maus wählt nur, wenn sie bewegt wird** (`input.mouse.moved`), sonst
   überschreibt ein ruhender Zeiger die Tastaturwahl. Vorgewählt ist in
   Rückfragen immer die harmlose Antwort (`standard: true` in dialogs.js).
@@ -285,7 +289,10 @@ Grundprinzipien:
    Überreste halten drei Tage, tagsüber nur einzelne Schlurfer,
    Übersichtskarte mit M, Speichern v8 mit Startwert der Karte, Migration
    v7 → v8 mit Erstattung und Umzug der Bauten (Bilder: wege, barrikaden,
-   karte). **Jede Konsolenmeldung
+   karte); ab M9.1: Zombieteile von Hand immer, von Türmen etwa jedes zweite
+   Mal, der Anführer immer, Balduins Fanfare bei der Ankunft, »Tschüss,
+   Balduin!« schließt den Handel, er verabschiedet sich und legt ab.
+   **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
    Playwright kommt aus `node_modules` oder der globalen Installation;
@@ -337,7 +344,10 @@ und prüfen, ob ein Bau passt (`placeCheck`, mit Grund); ab Meilenstein 9
 die Karte abfragen (`mapInfo`, `traces`, `pathColumn`, `onPathOrYard`),
 Schlurfer an einem Spawn starten (`spawnAtEntry`), Barrikaden treffen,
 wieder aufbauen und ausbauen (`hitBarricade`, `rebuildBarricade`,
-`upgradeBarricade`) und Überreste fallen lassen (`dropLoot`, `lootDetails`).
+`upgradeBarricade`) und Überreste fallen lassen (`dropLoot`, `lootDetails`);
+ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
+(`killZombie(id, 'turm'|'spieler')`) und die Teile-Chance der Türme setzen
+(`setPartsChance`, `null` = Wert aus `zombies.js`).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

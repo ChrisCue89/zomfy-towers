@@ -567,11 +567,11 @@ async function runBuildChecks(browser, url) {
   const regeln = await z((j) => ({ turm: window.zomfy.placeCheck('bolzen', -11, j).reason, laterne: window.zomfy.placeCheck('laternenpfahl', -11, j).reason, barrikade: window.zomfy.placeCheck('barrikade', 2, 5).reason }), wegJ);
   if (regeln.turm === 'aufWeg' && regeln.laterne === 'aufWeg' && regeln.barrikade === 'nurWeg') note('✓ Wege: Türme und andere Bauten nie auf einem Wegfeld, Barrikaden nur dort');
   else fail(`Wegregeln: ${JSON.stringify(regeln)}`);
-  // Abreißen: Barrikaden sind Verteidigung und geben 70 % zurück
+  // Abreißen: Barrikaden sind Verteidigung und geben 70 % zurück, gerundet (M9.1: 1 von 1 Holz)
   const holzVorAbriss = (await state()).inventory.holz;
   await z((id) => window.zomfy.demolish(id), perMaus?.id);
   const holzNachAbriss = (await state()).inventory.holz;
-  if (holzNachAbriss === holzVorAbriss + 2) note('✓ Abreißen: Barrikade gibt 70 % zurück (2 von 3 Holz)');
+  if (holzNachAbriss === holzVorAbriss + 1) note('✓ Abreißen: Barrikade gibt 70 % zurück, gerundet (1 von 1 Holz)');
   else fail(`Abreißen: Holz ${holzVorAbriss} -> ${holzNachAbriss}`);
 
   // Spitzhacke an der Werkbank, dann Felsen abbauen
@@ -858,13 +858,13 @@ async function runPathChecks(browser, url) {
     window.zomfy.upgradeBarricade(id);
     window.zomfy.upgradeBarricade(id);
     const b3 = window.zomfy.buildings().find((b) => b.id === id);
-    const treffer = window.zomfy.hitBarricade(id, 220);
+    const treffer = window.zomfy.hitBarricade(id, 100);
     window.zomfy.rebuildBarricade(id);
     const geflickt = window.zomfy.buildings().find((b) => b.id === id);
     return { kosten, b1, b3, treffer, geflickt };
   }, zerbrochen?.id);
-  if (aufbau.kosten === 2 && !aufbau.b1?.broken && aufbau.b3?.level === 3 && aufbau.treffer?.look === 'kaputt' && Math.round(aufbau.treffer.hp) === 135 && aufbau.geflickt?.hp === undefined) {
-    note('✓ Barrikaden: Trümmer für 2 Holz wieder aufgebaut, ausgebaut bis zur Metallbarriere (fängt ein Viertel ab), Schaden sichtbar, geflickt');
+  if (aufbau.kosten === 1 && !aufbau.b1?.broken && aufbau.b3?.level === 3 && aufbau.treffer?.look === 'kaputt' && Math.round(aufbau.treffer.hp) === 65 && aufbau.geflickt?.hp === undefined) {
+    note('✓ Barrikaden: Trümmer für 1 Holz wieder aufgebaut, ausgebaut bis zum Metallkreuz (fängt ein Viertel ab), Schaden sichtbar, geflickt');
   } else fail(`Barrikaden am Tag: ${JSON.stringify(aufbau)}`);
 
   // Überreste halten drei Tage (auch über das Schlafen hinweg)
@@ -886,6 +886,34 @@ async function runPathChecks(browser, url) {
   const nachDrei = (await z(() => window.zomfy.lootDetails())).length;
   if (vorher >= 3 && nachZwei === vorher && nachDrei === 0) note(`✓ Überreste: ${vorher} Zombieteile liegen nach zwei Tagen noch, nach drei Tagen sind sie verrottet`);
   else fail(`Überreste: ${JSON.stringify({ vorher, nachZwei, nachDrei })}`);
+
+  // Zombieteile (M9.1): selbst erschlagen – immer; durch Türme etwa jedes zweite Mal; der Anführer immer
+  const beute = await z(() => {
+    window.zomfy.teleport(15, -1, 0); // Mika auf dem Steg, weit weg vom Magneten
+    // Die Abschüsse bringen Erfahrung – danach wie vorher (sonst öffnet sich mittendrin eine Perk-Wahl)
+    const st = window.zomfy.game.state;
+    const vorher = { xp: st.player.xp, level: st.player.level, choice: st.perkChoice, kills: st.stats.kills };
+    const run = (type, source, n) => {
+      let mit = 0;
+      for (let k = 0; k < n; k++) {
+        window.zomfy.game.loot.clear();
+        const id = window.zomfy.spawnZombie(type, -20, 0.5);
+        window.zomfy.killZombie(id, source);
+        if (window.zomfy.lootItems().some((l) => l.res === 'teile')) mit++;
+      }
+      window.zomfy.game.loot.clear();
+      return mit;
+    };
+    const out = { hand: run('schlurfer', 'spieler', 12), turm: run('schlurfer', 'turm', 40), anfuehrer: run('anfuehrer', 'turm', 3) };
+    Object.assign(st.player, { xp: vorher.xp, level: vorher.level });
+    st.perkChoice = vorher.choice;
+    st.stats.kills = vorher.kills;
+    return out;
+  });
+  await z(() => window.zomfy.killAllZombies());
+  await step(500);
+  if (beute.hand === 12 && beute.turm >= 10 && beute.turm <= 30 && beute.anfuehrer === 3) note(`✓ Zombieteile: selbst erschlagen 12 von 12, durch Türme ${beute.turm} von 40, Anführer 3 von 3`);
+  else fail(`Zombieteile: ${JSON.stringify(beute)}`);
 
   // Tagsüber nur einzelne Schlurfer – keine Trupps
   const tage = await z(async () => {
@@ -1057,8 +1085,10 @@ async function runNightChecks(browser, url) {
 
   // Der Turm erledigt einen Schlurfer, der Loot fallen lässt
   if (turm) {
-    // Mika geht aus dem Sammelradius, sonst fliegt das Loot sofort heran
+    // Mika geht aus dem Sammelradius, sonst fliegt das Loot sofort heran.
+    // Turm-Abschüsse lassen nur jedes zweite Mal Teile (M9.1) – hier sicher, die Regel prüft `wege`
     await z((t) => {
+      window.zomfy.setPartsChance(1);
       window.zomfy.teleport(t.i + 4, t.j + 0.5, 0);
       window.zomfy.spawnZombie('schlurfer', t.i - 3.5, t.j + 0.5);
     }, turm);
@@ -1068,6 +1098,7 @@ async function runNightChecks(browser, url) {
       kills = (await state()).stats.kills || 0;
     }
     const loot = await z(() => window.zomfy.lootItems());
+    await z(() => window.zomfy.setPartsChance(null));
     if (kills === 1 && loot.length) note(`✓ Türme: Bolzenwerfer erledigt einen Schlurfer, Loot liegt am Boden (${loot.map((l) => l.res).join(', ')})`);
     else fail(`Türme: ${kills} Abschüsse, ${loot.length} Loot`);
 
@@ -1577,8 +1608,8 @@ async function runTraderChecks(browser, url) {
   const kommt = await z(() => window.zomfy.trader());
   await step(9000); // rund 07:08
   const steht = await z(() => window.zomfy.trader());
-  if (tag1.phase === 'weg' && frueh.phase === 'weg' && kommt.phase === 'kommt' && kommt.boat > steht.boat + 3 && steht.phase === 'steht' && steht.prompt && steht.x < steht.boat) {
-    note(`✓ Balduin: nicht an Tag 1, an Tag 2 ab 06:40 mit dem Boot unterwegs (x ${kommt.boat.toFixed(1)}), dann am Steg (Boot bei ${steht.boat.toFixed(1)}, er auf dem Steg)`);
+  if (tag1.phase === 'weg' && frueh.phase === 'weg' && kommt.phase === 'kommt' && kommt.boat > steht.boat + 3 && steht.phase === 'steht' && steht.prompt && steht.x < steht.boat && kommt.fanfares === frueh.fanfares + 1 && steht.fanfares === kommt.fanfares) {
+    note(`✓ Balduin: nicht an Tag 1, an Tag 2 ab 06:40 mit dem Boot unterwegs (x ${kommt.boat.toFixed(1)}) – mit Fanfare –, dann am Steg (Boot bei ${steht.boat.toFixed(1)}, er auf dem Steg)`);
   } else fail(`Balduin kommt: ${JSON.stringify({ tag1: tag1.phase, frueh: frueh.phase, kommt, steht })}`);
 
   // Ziel nach der ersten Nacht: bei Balduin tauschen
@@ -1625,11 +1656,22 @@ async function runTraderChecks(browser, url) {
   if (st.inventory.teile - einmal.inventory.teile === 3 && einmal.inventory.schrott - st.inventory.schrott === 2 && gehalten.inventory.teile < einmal.inventory.teile && gehalten.flags.gehandelt && zeilen[0]?.startsWith('> 2 Schrott')) {
     note(`✓ Handel: E tauscht 3 Zombieteile gegen 2 Schrott, gehalten weiter (Teile ${st.inventory.teile} → ${gehalten.inventory.teile})`);
   } else fail(`Handel: ${JSON.stringify({ vorher: st.inventory, einmal: einmal.inventory, gehalten: gehalten.inventory, zeilen })}`);
-  await press('Escape', 200);
+  // »Tschüss, Balduin!« (letzte Zeile – W springt von oben dorthin) schließt das Fenster;
+  // wer gehandelt hat, dem sagt er Tschüss, und er legt gleich ab (M9.1)
+  await press('KeyW', 100);
+  const tschuess = ((await view()).werkbank || []).find((l) => l.startsWith('> ')) || '';
+  await press('KeyE', 200);
   const zu = await z(() => window.zomfy.mode);
   const zielDanach = (await view()).ziel || '';
-  if (zu === 'play' && !/Tausche Zombieteile/.test(zielDanach)) note('✓ Handel: Esc schließt das Handelsfenster, das Ziel ist erreicht');
-  else fail(`Handel schließen: ${JSON.stringify({ zu, zielDanach })}`);
+  const blase = (await view()).gedanke || '';
+  const ankunft = await z(() => window.zomfy.trader());
+  await step(3000);
+  const legtAb = await z(() => window.zomfy.trader());
+  await step(10000);
+  const fort = await z(() => window.zomfy.trader());
+  if (zu === 'play' && tschuess.includes('Tschüss, Balduin!') && !/Tausche Zombieteile/.test(zielDanach) && blase.startsWith('„') && ankunft.leaving && legtAb.phase === 'geht' && !legtAb.prompt && fort.phase === 'weg') {
+    note(`✓ Handel: »Tschüss, Balduin!« schließt das Fenster, das Ziel ist erreicht – er sagt ${blase}, legt ab und ist fort`);
+  } else fail(`Handel schließen: ${JSON.stringify({ zu, tschuess, zielDanach, blase, ankunft, legtAb: legtAb.phase, fort: fort.phase })}`);
 
   // Nächster Morgen: andere Sonderangebote, Zahnräder nur zweimal am Tag
   await z(() => {
@@ -1643,7 +1685,7 @@ async function runTraderChecks(browser, url) {
   if (angebote.join() === 'schrott,stein,zahnrad' && zahn.join() === 'true,true,false') note(`✓ Balduin: Tag 3 bietet ${angebote.join(', ')} – Zahnräder nur zweimal am Tag`);
   else fail(`Angebote/Vorrat: ${JSON.stringify({ angebote, zahn })}`);
   const bericht = await z(() => window.zomfy.morning());
-  if (bericht.some((l) => l.startsWith('Balduin handelt bis 12 Uhr am Steg'))) note('✓ Morgenbericht: Balduin handelt bis 12 Uhr am Steg');
+  if (bericht.some((l) => l.startsWith('Balduin wartet bis 12 Uhr am Steg'))) note('✓ Morgenbericht: Balduin wartet bis 12 Uhr am Steg');
   else fail(`Morgenbericht ohne Balduin: ${JSON.stringify(bericht)}`);
 
   // Bild vom Boot am Steg am Vormittag

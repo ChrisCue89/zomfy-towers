@@ -767,10 +767,60 @@ mitgenommen. Die Prüfung spielt immer auf Karte 3 (`?map=` erzwingt eine).
 Flitzer 1,8, Brummer 0,62). Vom Spawn bis in den Hof braucht ein Schlurfer
 knapp eine Minute – die Türme an den Wegen haben Zeit, die Nacht zieht sich
 nicht. Feinabstimmung in M13.
+**M9.1 (Rückmeldung: Nacht 1 regelt »ein Turm und bisschen Handarbeit«):**
+alle Arten noch 10 % schneller (Schlurfer 1,1 m/s) und das Budget jeder
+Nacht +3 (Nacht 1: 33).
 
 ### 83. Wie viele Tagesschlurfer?
 **Entscheidung:** am ersten Tag einer, danach zwei, ab Tag 6 manchmal drei –
 immer einzeln, nie Trupps (Grundregel 5).
+
+### 84. Lässt jeder Schlurfer Zombieteile fallen? (M9.1, Rückmeldung)
+**Entscheidung des Auftraggebers:** Nein. Wer einen Schlurfer selbst
+erschlägt, bekommt sicher Teile; fällt er durch einen Turm (auch im Feuer),
+nur jedes zweite Mal (`PARTS_FROM_TOWERS` in `data/zombies.js`).
+**Ergänzt:** Der Anführer lässt immer Teile – sein großer Haufen soll nicht
+an einem Münzwurf hängen. Zahnräder und Moderkerne fallen wie bisher.
+
+### 85. Barrikaden erkennbar, billig und zerbrechlich (M9.1, Rückmeldung)
+**Rückmeldung:** Die Barrikaden waren nicht als solche zu erkennen; sie
+sollen nur 1 Holz kosten, aber schnell kaputtgehen.
+**Entscheidung:** neue Modelle im feinen Maß (1/16 m) als Spanischer Reiter –
+ein dunkler Balken quer über den Weg, ein kräftiges Kreuz aus hellen,
+angespitzten Pfählen je Feld, vorn ein rot-weißer Warnlappen. Die Kreuze
+stehen längs zum Weg und zeigen auf den meist west-östlichen Wegen zur Kamera;
+in einer Reihe ergibt das eine Kette aus Kreuzen. Stufe 2 mit Eisenbändern,
+eisernen Spitzen und zweitem Kreuz, Stufe 3 »Metallkreuz« (Stahligel aus
+rostigen Trägern). Werte (ersetzen Nr. 79): Holz 20 Haltbarkeit für 1 Holz,
+verstärkt 55 (+2 Holz), Metall 140 (+1 Holz, 4 Schrott), fängt ein Viertel
+ab. Ein Schlurfer braucht rund 8 s, ein Trupp oder Brummer 2–3 s. Alte
+Spielstände bekommen für Barrikaden aus der Zeit vor M9 weiter 3 Holz zurück.
+
+### 86. Bleibt Balduin nach dem Handel? (M9.1, Rückmeldung)
+**Entscheidung des Auftraggebers:** Nein – nach dem Handel verabschiedet er
+sich. Umgesetzt: Schließt Mika das Handelsfenster, nachdem sie heute
+getauscht hat, sagt er Tschüss (Sprechblase), winkt und legt nach zwei
+Sekunden ab. Ohne Tausch wartet er weiter bis 12 Uhr. Ob heute getauscht
+wurde, steht schon im Spielstand – nach dem Laden ist er dann fort, ohne
+neues Speicherformat. Das Fenster hat unten die Zeile »Tschüss, Balduin!«.
+
+### 87. Musik bei Balduins Ankunft (M9.1, Rückmeldung)
+**Entscheidung des Auftraggebers:** eine epische Musik beim Eintreffen.
+Umgesetzt als kurze Fanfare aus dem Klang-Baukasten (keine Tondateien):
+Schiffshorn von Osten, Paukenwirbel, drei Takte Blechbläser in D-Dur mit Tuba
+und kleiner Trommel; der Schlussakkord mit Becken fällt genau aufs Anlegen
+(die Einfahrt dauert 9,6 s). Läuft über den Musik-Regler.
+
+### 88. Nach dem Handelsfenster erst schlagen, dann laufen (M9.1, Fehler)
+**Befund:** Im Artefakt lief Mika nach dem Schließen mit Esc erst nach einem
+Klick wieder; im Browser allein ließ sich das nicht nachstellen. Vermutlich
+reichte die Seite um das Spiel Esc weiter und nahm ihm den Tastaturfokus –
+der Klick (ein Schlag) holte ihn zurück.
+**Entscheidung:** Esc gehört dem Spiel (`preventDefault`, `stopPropagation`,
+Tastatur-Hören in der Capture-Phase). Außerdem lässt sich der Handel mit
+»Tschüss, Balduin!« ganz ohne Esc beenden. Und falls die Seite dem Spiel den
+Fokus doch einmal nimmt: Das Spiel zeigt dann »Zum Weiterspielen ins Bild
+klicken«, und der Klick, der den Fokus zurückholt, ist kein Schlag mehr.
 
 ## Technik mit Auswirkung aufs Design
 

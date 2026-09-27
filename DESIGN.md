@@ -438,7 +438,9 @@ die Figur oder das Zuhause?
 
 - Stirbt ein Schlurfer – durch Turm, Barrikade oder Figur –, bleiben seine
   Überreste genau dort liegen: Zombieteile, manchmal ein Zahnrad, bei
-  Anführern ein Moderkern.
+  Anführern ein Moderkern. **Nicht jeder verliert Teile (M9.1):** Wer ihn
+  selbst erschlägt, bekommt sicher welche; fällt er durch einen Turm, nur
+  jedes zweite Mal. Der Anführer lässt immer Teile.
 - Man sammelt sie, indem man in die Nähe läuft; im **Sammelradius** fliegen
   sie von selbst zur Figur. Am besten birgt man sie schon während oder direkt
   nach der Nacht – dann hat man morgens bei Balduin Handelsware. **Liegen
@@ -518,10 +520,15 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 
 | Hindernis | Aussehen | Material | Haltbarkeit | Besonderes |
 |---|---|---|---|---|
-| **Holzbarriere** | Lattenzaun, Bretter, alte Türen | Holz | gering | günstig, schnell gebaut, schnell zerstört |
-| **Verstärkte Holzbarriere** | Bretterwand mit Streben, Stämme | Holz | mittel | Ausbau der Holzbarriere |
-| **Metallbarriere** | Blech, Rohre, Gitter | Holz, Schrott | hoch | fängt einen Teil jedes Schlags ab |
-| **Metallkreuz** | geschweißte Stahlkreuze | Schrott | hoch | später; weitere Hindernisse folgen (z. B. Stacheln, die Angreifer verletzen) |
+| **Holzbarriere** | Spanischer Reiter: dunkler Balken quer über den Weg, ein Kreuz aus hellen, angespitzten Pfählen, rot-weißer Warnlappen | 1 Holz | gering (20) | billig, schnell gebaut, schnell zerstört – bremst, damit die Türme Zeit haben |
+| **Verstärkte Holzbarriere** | dazu Eisenbänder, eiserne Spitzen, ein zweites Kreuz, unterer Riegel | +2 Holz | mittel (55) | Ausbau der Holzbarriere |
+| **Metallkreuz** | Stahligel aus rostigen Trägern über Kreuz | +1 Holz, 4 Schrott | hoch (140) | fängt ein Viertel jedes Schlags ab |
+| **Weitere Hindernisse** | z. B. Stacheln, die Angreifer verletzen | – | – | später |
+
+- **Lesbarkeit (M9.1):** Barrikaden sind im feinen Maß (1/16 m) gebaut. Die
+  Kreuze stehen längs zum Weg – auf den meist west-östlichen Wegen zeigen sie
+  genau zur Kamera, in einer Reihe ergibt das eine Kette aus Kreuzen. Helles
+  Holz und heller Stahl heben sich vom braunen Weg ab.
 
 - Brummer und Anführer schlagen besonders hart zu.
 - Schaden ist sichtbar (lockere Bretter, verbogenes Blech); eine zerstörte
@@ -619,8 +626,11 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 - **Ankunft übers Wasser:** Ab dem Morgen nach der ersten Nacht kommt
   Balduin jeden Vormittag. Erst hört man sein Bootshorn über den See, dann
   sieht man das Boot zwischen den Inseln auftauchen; es tuckert heran und
-  legt am Steg an, Balduin wirft die Leine über den Poller. Gegen Mittag
-  legt er wieder ab. Wer ihn verpasst, handelt am nächsten Morgen.
+  legt am Steg an, Balduin wirft die Leine über den Poller. Dazu spielt eine
+  kurze, epische Fanfare (Schiffshorn, Pauken, Blechbläser), deren
+  Schlussakkord aufs Anlegen fällt (M9.1). **Nach dem Handel verabschiedet er
+  sich** (Sprechblase, Winken) und legt gleich ab; ohne Handel wartet er bis
+  Mittag. Wer ihn verpasst, handelt am nächsten Morgen.
 - **Aussehen:** ein fröhlicher, bärtiger Seebär mit Schiebermütze, rotem
   Schal, dunklem Mantel und einem riesigen Rucksack; sein Boot ist
   vollgestapelt mit Kisten, Fässern und Einmachgläsern mit trüber grüner
@@ -673,7 +683,7 @@ der Klang startet mit der ersten Eingabe.
   Knopfs Bellen, **Balduins Bootshorn und Motor**, Tippen im Dialog.
 - **Umgebung:** Wind, Wellen am Steg, Krähen, Regen, Knistern am Kamin.
 - **Musik:** am Abend eine leise, etwas melancholische Melodie, während der
-  Wellen ein treibender Rhythmus.
+  Wellen ein treibender Rhythmus; Balduins Ankunftsfanfare (M9.1).
 
 ### 6.20 Titelbild und Einstellungen
 
@@ -773,12 +783,19 @@ Türme neben die Wege und Barrikaden auf die Wege, nachts stauen sie die
 Horde, morgens Trümmer und Überreste – und man sieht immer, wo die Horde
 langläuft. Jedes neue Spiel hat ein etwas anderes Wegenetz.
 
+### M9.1 – Nach der Rückmeldung des Auftraggebers ✓
+
+Barrikaden als Spanische Reiter (erkennbar, 1 Holz, schnell kaputt), Zombieteile
+sicher nur von Hand (Türme: jedes zweite Mal), Balduin mit Ankunftsfanfare und
+Abschied nach dem Handel (»Tschüss, Balduin!«), Esc bleibt im Spiel, Nächte
+etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
+
 ### Meilenstein 10 – Balduin kommt übers Wasser
 
 - Ausbau der einfachen Fassung aus M9 (Boot mit Kisten, Fass und
-  Einmachgläsern, Seebär-Look sind schon da): Ankunft als kleines Ereignis
-  (Bootshorn, das Boot taucht zwischen den Inseln auf, tuckert heran, die
-  Leine fliegt über den Poller), Abfahrt gegen Mittag.
+  Einmachgläsern, Seebär-Look, Fanfare und Abschied nach dem Handel sind
+  schon da): Ankunft als kleines Ereignis (das Boot taucht zwischen den
+  Inseln auf, tuckert heran, die Leine fliegt über den Poller).
 - Balduin im feinen Look-Schliff (Gesicht, Porträt, Gesten).
 - Handel wie bisher, dazu besondere Turmteile, Upgrades und Werkzeuge,
   gelegentliche Nebenaufträge; Running Gag mit täglichen Sprüchen.

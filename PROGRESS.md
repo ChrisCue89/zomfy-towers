@@ -5,6 +5,53 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## M9.1 – Nach der Rückmeldung des Auftraggebers ✓
+
+**Rückmeldung (Auftraggeber als Testspieler):** Nacht 1 ist okay, könnte etwas
+schneller oder voller sein (»ein Turm und bisschen Handarbeit regelt«);
+nicht jeder Schlurfer soll Teile verlieren (Turm 1/2, von Hand sicher);
+Barrikaden sind nicht als solche erkennbar, sollen 1 Holz kosten und schnell
+kaputtgehen; Handel klappt (Balance später); Balduin soll sich nach dem Handel
+verabschieden und bei der Ankunft epische Musik spielen; kleiner Fehler: nach
+dem Handelsfenster erst schlagen, dann laufen. Wege, Spawns und
+Übersichtskarte sind gut.
+
+**Geändert**
+
+- **Barrikaden neu:** im feinen Maß als Spanischer Reiter – dunkler Balken
+  quer über den Weg, je Feld ein kräftiges Kreuz aus hellen, angespitzten
+  Pfählen, rot-weißer Warnlappen; verstärkt mit Eisenbändern, eisernen
+  Spitzen und zweitem Kreuz; Metallkreuz als rostiger Stahligel. Die Kreuze
+  zeigen auf den west-östlichen Wegen zur Kamera, eine Reihe ist eine Kette
+  aus Kreuzen – auch nachts gut zu sehen. Neues Symbol in der Bauleiste.
+  Kosten und Haltbarkeit: 1 Holz / 20, +2 Holz / 55, +1 Holz und 4 Schrott /
+  140 (fängt ein Viertel ab). Alte Barrikaden werden auf die neue Haltbarkeit
+  gekappt; wer noch einen Stand von vor M9 hat, bekommt weiter 3 Holz zurück.
+  Abreißen gibt 70 % gerundet zurück – eine versetzte Holzbarriere ihr 1 Holz.
+- **Zombieteile:** von Hand erschlagen immer, durch Türme jedes zweite Mal,
+  der Anführer immer (`PARTS_FROM_TOWERS`).
+- **Balduin:** Fanfare bei der Ankunft (Schiffshorn, Paukenwirbel, drei Takte
+  Blechbläser in D-Dur, der Schlussakkord fällt aufs Anlegen), alles im
+  Klang-Baukasten erzeugt; nach dem Handel sagt er beim Schließen des Fensters
+  Tschüss (Sprechblase über ihm, er winkt) und legt ab. Die neue letzte Zeile
+  »Tschüss, Balduin!« schließt das Fenster auch ohne Esc. Morgenbericht:
+  »Balduin wartet bis 12 Uhr am Steg«.
+- **Fehler »erst schlagen, dann laufen«:** im Browser nicht nachzustellen
+  (dort läuft Mika sofort). Vermutlich reichte die Artefakt-Seite Esc weiter
+  und nahm dem Spiel den Tastaturfokus. Esc gehört jetzt dem Spiel
+  (Capture-Phase, `preventDefault`, `stopPropagation`). Verliert das Spiel
+  den Fokus trotzdem, steht »Zum Weiterspielen ins Bild klicken« im Bild, und
+  der Klick, der ihn zurückholt, schlägt nicht mehr zu.
+- **Nächte:** alle Arten 10 % schneller, Budget +3 (Nacht 1: 33).
+- **Prüfung:** neue Punkte für die Teile-Regel, den Abschied mit Ablegen und
+  die Fanfare bei der Ankunft; Barrikaden-Werte angepasst. Volle Prüfung
+  112 Prüfpunkte grün (»Abreißen« nach der Rundung im Abschnitt `bauen`
+  nachgeprüft), Konsole sauber.
+
+**Entscheidungen:** OFFENE-FRAGEN 84–88.
+
+---
+
 ## Meilenstein 9 – Die Bucht und die Wege ✓ (großer Umbau)
 
 **Auftrag:** das neue Grundkonzept umsetzen (DESIGN.md 0, OFFENE-FRAGEN

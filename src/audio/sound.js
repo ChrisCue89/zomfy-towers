@@ -6,7 +6,8 @@
 //   Effekte   play('hacken', { x, z }) – kurz, aus Rauschen und Oszillatoren,
 //             leiser mit der Entfernung zu Mika, leicht nach links/rechts
 //   Umgebung  Wind, Vögel am Tag, Grillen in der Nacht, Knistern am Feuer
-//   Musik     leise Melodie am Abend, treibender Rhythmus während der Wellen
+//   Musik     leise Melodie am Abend, treibender Rhythmus während der Wellen;
+//             Balduins Fanfare, wenn sein Boot kommt (M9.1)
 
 const VOICES = 32; // höchstens so viele Effekte gleichzeitig
 const HEAR = 16; // Meter: weiter weg hört man nichts mehr
@@ -22,6 +23,27 @@ const CHORDS = [
   [196.0, 246.94, 293.66], // G
 ];
 const BASS = [55.0, 55.0, 65.41, 49.0]; // A1 A1 C2 G1
+
+// Balduins Fanfare (M9.1): D-Dur, 100 Schläge pro Minute. Noten als
+// [Schlag, Länge in Schlägen, Frequenz]. Drei Takte Ruf, dann der Schlussakkord
+// genau aufs Anlegen (die Einfahrt dauert 24 Spielminuten = 9,6 s).
+const N = { A1: 55.0, D2: 73.42, G1: 49.0, A2: 110.0, D3: 146.83, Fis3: 185.0, G3: 196.0, A3: 220.0, H3: 246.94, Cis4: 277.18, D4: 293.66, E4: 329.63, Fis4: 369.99, G4: 392.0, A4: 440.0, H4: 493.88, D5: 587.33, E5: 659.25, Fis5: 739.99, G5: 783.99, A5: 880.0 };
+const FANFARE = {
+  beat: 0.6,
+  start: 2.4, // davor: Schiffshorn und Paukenwirbel
+  melody: [
+    [0, 1.5, N.A4], [1.5, 0.5, N.A4], [2, 2, N.D5],
+    [4, 1, N.Fis5], [5, 0.5, N.E5], [5.5, 0.5, N.D5], [6, 1, N.E5], [7, 1, N.A4],
+    [8, 1, N.H4], [9, 0.5, N.D5], [9.5, 0.5, N.G5], [10, 1, N.Fis5], [11, 1, N.E5],
+  ],
+  // Akkorde der Blechbläser: [Schlag, Länge, Töne]
+  chords: [
+    [0, 4, [N.D4, N.Fis4, N.A4]], [4, 2, [N.D4, N.Fis4, N.A4]], [6, 2, [N.Cis4, N.E4, N.A4]],
+    [8, 2, [N.D4, N.G4, N.H4]], [10, 2, [N.Cis4, N.E4, N.A4]],
+  ],
+  bass: [N.D2, N.A1, N.D2, N.A1, N.D2, N.D2, N.A1, N.A1, N.G1, N.G1, N.A1, N.A1],
+  final: [N.D3, N.A3, N.D4, N.Fis4, N.A4, N.D5],
+};
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -281,6 +303,83 @@ export class Sound {
     src.connect(f).connect(g).connect(out);
     src.start(t, Math.random() * 1.5);
     this.track(src, t + dur + 0.05);
+  }
+
+  /**
+   * Blechbläser: zwei leicht verstimmte Sägezähne durch einen Tiefpass, der beim
+   * Anblasen kurz aufgeht (der »Biss« eines Horns), mit gehaltenem Ton.
+   */
+  brass(freq, t, dur, peak, out) {
+    const c = this.ctx;
+    const f = c.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 1.1;
+    f.frequency.setValueAtTime(freq * 1.5, t);
+    f.frequency.linearRampToValueAtTime(Math.min(4200, freq * 6), t + 0.05);
+    f.frequency.exponentialRampToValueAtTime(Math.min(2600, freq * 3.2), t + 0.3);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.045);
+    g.gain.linearRampToValueAtTime(peak * 0.8, t + Math.max(0.06, dur - 0.05));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.16);
+    f.connect(g).connect(out);
+    for (const detune of [-7, 6]) {
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(freq, t);
+      o.detune.value = detune;
+      o.connect(f);
+      o.start(t);
+      this.track(o, t + dur + 0.22);
+    }
+  }
+
+  /**
+   * Balduins Auftritt (M9.1, Wunsch des Auftraggebers: »eine epische Musik beim
+   * Eintreffen«): ein Schiffshorn aus dem Osten, ein Paukenwirbel, dann drei Takte
+   * Fanfare in D-Dur über Horn-Akkorden, Tuba und kleiner Trommel. Der
+   * Schlussakkord mit Becken fällt aufs Anlegen. Läuft über den Musik-Regler.
+   */
+  fanfare() {
+    if (!this.ready) return;
+    const c = this.ctx;
+    const t0 = c.currentTime + 0.05;
+    const out = c.createGain();
+    out.gain.value = 0.85;
+    out.connect(this.musicBus);
+    const F = FANFARE;
+    const at = (beat) => t0 + F.start + beat * F.beat;
+    // Schiffshorn: tief, zweistimmig, von rechts (das Boot kommt von Osten)
+    let horn = out;
+    if (c.createStereoPanner) {
+      horn = c.createStereoPanner();
+      horn.pan.value = 0.55;
+      horn.connect(out);
+    }
+    for (const [start, len] of [[0, 1.2], [1.4, 0.55]]) for (const f of [N.D2, N.A2]) this.brass(f, t0 + start, len, 0.11, horn);
+    // Paukenwirbel zum Einsatz: immer dichter und lauter
+    for (let k = 0, t = t0 + 1.0; t < at(0) - 0.02; k++) {
+      const v = 0.08 + 0.22 * ((t - t0 - 1.0) / (F.start - 1.0));
+      this.tone('sine', 98, t, 0.25, { freqEnd: 60, peak: v, attack: 0.004, out });
+      t += Math.max(0.055, 0.16 - k * 0.012);
+    }
+    // Melodie (Horn, hell) und Akkorde (Hörner, weich)
+    for (const [beat, len, f] of F.melody) this.brass(f, at(beat), len * F.beat * 0.92, 0.1, out);
+    for (const [beat, len, notes] of F.chords) for (const f of notes) this.brass(f, at(beat), len * F.beat * 0.96, 0.03, out);
+    // Tuba je Schlag, Pauke auf die Eins, kleine Trommel auf zwei und vier
+    F.bass.forEach((f, k) => {
+      this.tone('square', f, at(k), F.beat * 0.8, { peak: 0.09, attack: 0.02, filter: 320, out });
+      if (k % 4 === 0) this.tone('sine', f * 1.5, at(k), 0.45, { freqEnd: f, peak: 0.3, attack: 0.004, out });
+      if (k % 2 === 1) this.noise(at(k), 0.1, { type: 'bandpass', freq: 1900, q: 0.9, peak: 0.07, out });
+    });
+    // Trommelwirbel in den Schluss hinein
+    for (let t = at(11.25); t < at(12) - 0.02; t += 0.055) this.noise(t, 0.05, { type: 'bandpass', freq: 2000, q: 1, peak: 0.05, out });
+    // Schlussakkord mit Pauke und Becken – Balduin ist da
+    const end = at(12);
+    for (const f of F.final) this.brass(f, end, 1.7, f > 500 ? 0.05 : 0.035, out);
+    this.tone('sine', 110, end, 0.8, { freqEnd: N.D2, peak: 0.36, attack: 0.004, out });
+    this.noise(end, 1.8, { type: 'highpass', freq: 5200, peak: 0.08, attack: 0.004, out });
+    this.tone('square', N.D2, end, 1.6, { peak: 0.1, attack: 0.02, filter: 320, out });
   }
 
   // --- Effekte ----------------------------------------------------------------------------

@@ -13,7 +13,7 @@ export const BUILDINGS = {
   sprenger: { w: 1, d: 1, tower: true, cost: TOWERS.sprenger.base[0].cost, icon: 'sprenger', hp: 100, height: 1.4 },
   laternenturm: { w: 1, d: 1, tower: true, cost: TOWERS.laternenturm.base[0].cost, icon: 'laternenturm', hp: 100, height: 2.4 },
   werkbank: { w: 2, d: 1, cost: { holz: 8, stein: 2 }, max: 1, icon: 'werkbank', use: 'werkbank', height: 1.6 },
-  barrikade: { w: 1, d: 1, cost: { holz: 3 }, icon: 'barrikade', repeat: true, defense: true, onPath: true, hp: 80, height: 1.1 },
+  barrikade: { w: 1, d: 1, cost: { holz: 1 }, icon: 'barrikade', repeat: true, defense: true, onPath: true, hp: 20, height: 1 },
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2 },
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1 },
@@ -31,12 +31,16 @@ export const TOWER_LOSS_FLOOR = 1 / 3;
 /**
  * Barrikaden je Stufe (DESIGN.md 6.10): 1 Holzbarriere, 2 verstärkt, 3 Metall.
  * cost = Ausbau auf diese Stufe; block = Anteil jedes Schlags, der abprallt.
+ * M9.1 (Auftraggeber: »nur 1 Holz, aber schnell kaputt«): Eine Holzbarriere
+ * hält einen Schlurfer rund 8 s auf, einen Trupp oder Brummer 2–3 s – sie
+ * bremst, damit die Türme Zeit haben. Die Stufen im selben Verhältnis
+ * (M9: 80/170/300 für 3/5/2+6).
  */
 export const BARRICADE_LEVELS = [
   null,
-  { key: 'holz', hp: 80, cost: { holz: 3 } },
-  { key: 'verstaerkt', hp: 170, cost: { holz: 5 } },
-  { key: 'metall', hp: 300, cost: { holz: 2, schrott: 6 }, block: 0.25 },
+  { key: 'holz', hp: 20, cost: { holz: 1 } },
+  { key: 'verstaerkt', hp: 55, cost: { holz: 2 } },
+  { key: 'metall', hp: 140, cost: { holz: 1, schrott: 4 }, block: 0.25 },
 ];
 
 /** Wiederaufbau aus Trümmern: dieser Anteil dessen, was in der Barrikade steckt. */

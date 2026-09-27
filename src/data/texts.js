@@ -312,10 +312,21 @@ export const T = {
   haendler: {
     titel: 'Balduins Boot',
     hinweis: 'W/S wählen · E tauschen · Esc fertig',
+    // M9.1: Nach dem Handel verabschiedet er sich und legt ab
+    fertig: 'Tschüss, Balduin!',
+    fertigInfo: 'Er verabschiedet sich und legt ab.',
+    fertigInfoWarten: 'Er wartet noch bis 12 Uhr am Steg.',
+    tschuess: [
+      '„Gute Geschäfte! Bis morgen früh!“',
+      '„Anker hoch! Halt die Ohren steif – und sammel sie!“',
+      '„Beehr mich wieder. Mit vollen Taschen!“',
+      '„Leinen los! Die Sammlung wächst!“',
+    ],
+    bisSpaeter: ['„Überleg’s dir. Ich bin bis Mittag hier.“', '„Kein Handel? Ich warte noch ein bisschen.“'],
     vorrat: (menge, n) => `${menge} (noch ${n})`,
     ausverkauft: 'ausverkauft',
     ankunft: 'Da tuckert ein Boot über den See …',
-    bericht: 'Balduin handelt bis 12 Uhr am Steg: Zombieteile gegen Rohstoffe.',
+    bericht: 'Balduin wartet bis 12 Uhr am Steg: Zombieteile gegen Rohstoffe.',
     berichtErst: 'Heute Morgen legt ein Boot am Steg an. Mal hingehen!',
     keineTeile: '„Keine Teile dabei? Nachts liegen genug herum. Ich warte!“',
     info: {
@@ -382,6 +393,7 @@ export const T = {
     morgenAusgeschlafen: (n) => `Ausgeschlafen (Gemütlichkeit ${n}): +${n} Erfahrung, bis Mittag schneller unterwegs.`,
   },
   meldungen: {
+    fokus: 'Zum Weiterspielen ins Bild klicken', // M9.1: die Seite ringsum hat den Tastaturfokus
     gespeichert: 'Spielstand gespeichert',
     speichernFehler: 'Speichern nicht möglich',
     speichernAus: 'Test-Modus: Speichern aus',
@@ -441,9 +453,9 @@ export const T = {
   },
   // Barrikaden auf den Wegen (Meilenstein 9): Stufen, Trümmer, Wiederaufbau
   barrikaden: {
-    holz: ['Holzbarriere', 'Latten und eine alte Tür – günstig, schnell gebaut, schnell zerschlagen.'],
-    verstaerkt: ['Verstärkte Barriere', 'Bretterwand mit Streben und Stämmen.'],
-    metall: ['Metallbarriere', 'Blech und Rohre – fängt ein Viertel jedes Schlags ab.'],
+    holz: ['Holzbarriere', 'Angespitzte Pfähle über Kreuz – kostet fast nichts, bricht schnell.'],
+    verstaerkt: ['Verstärkte Barriere', 'Mehr Pfähle, Eisenbänder und eiserne Spitzen.'],
+    metall: ['Metallkreuz', 'Rostige Stahlträger über Kreuz – fängt ein Viertel jedes Schlags ab.'],
     haelt: (hp) => `Hält ${hp}.`,
     aufbauen: 'Wieder aufbauen',
     aufbauenInfo: 'Aus den Trümmern wird wieder eine Barrikade.',

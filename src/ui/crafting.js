@@ -70,7 +70,12 @@ export class CraftingMenu {
 
   recipes() {
     const g = this.game;
-    if (this.shop) return g.trader.offers();
+    if (this.shop) {
+      // Letzte Zeile: Tschüss sagen (M9.1 – schließt das Fenster auch ohne Esc)
+      const traded = g.trader.tradedToday();
+      const bye = { id: 'tschuess', close: true, icon: 'boot', name: T.haendler.fertig, info: traded ? T.haendler.fertigInfo : T.haendler.fertigInfoWarten, cost: {}, gives: {}, affordable: true };
+      return [...g.trader.offers(), bye];
+    }
     return RECIPES.map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
@@ -116,6 +121,11 @@ export class CraftingMenu {
     const r = L.rows[this.focus]?.recipe;
     if (!r) return;
     const pressed = input.pressed('confirm');
+    if (r.close) {
+      this.hold = null;
+      if ((pressed || clicked) && this.openT >= OPEN_LOCK) this.game.closeCrafting();
+      return;
+    }
     const calm = this.openT - (this.lastPressAt ?? -Infinity) >= MASH_GAP;
     if (pressed) this.lastPressAt = this.openT;
     const started = (pressed || clicked) && this.openT >= OPEN_LOCK;
@@ -213,7 +223,7 @@ export class CraftingMenu {
     });
     // Gewählte Zeile: was kommt dabei heraus? (Verwerten: »… E halten: weiter«)
     const r = L.rows[this.focus]?.recipe;
-    const conversion = r && isConversion(r) && !r.owned;
+    const conversion = r && !r.close && isConversion(r) && !r.owned;
     const hint = this.shop ? T.haendler.hinweis : conversion ? T.werkbank.hinweisVerwerten : T.werkbank.hinweis;
     ui.textCentered(hint, L.x + L.w / 2, L.y + L.h - 14, COLORS.textDim);
     if (r) {

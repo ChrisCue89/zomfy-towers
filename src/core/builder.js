@@ -756,7 +756,9 @@ export class Builder {
       const extra = towerBuildCost(b.type, Math.max(0, this.world.buildings.count(b.type) - 1)).schrott - TOWERS[b.type].base[0].cost.schrott;
       return scale({ ...invested, schrott: (invested.schrott || 0) + extra }, TOWER_REFUND);
     }
-    if (b.type === 'barrikade') return b.broken ? {} : scale(barricadeInvested(b.level), TOWER_REFUND); // Trümmer: nur abräumen
+    // Trümmer: nur abräumen. Sonst gerundet (M9.1: eine Holzbarriere kostet 1 Holz –
+    // wer sie versetzt, bekommt es zurück, statt 70 % davon abgerundet auf nichts)
+    if (b.type === 'barrikade') return b.broken ? {} : scale(barricadeInvested(b.level), TOWER_REFUND, Math.round);
     if (def.defense) return scale(def.cost, TOWER_REFUND);
     return def.cost;
   }
@@ -978,10 +980,10 @@ export class Builder {
 }
 
 /** Kosten mit Faktor (abgerundet), z. B. 70 % Rückgabe. */
-function scale(cost, factor) {
+function scale(cost, factor, round = Math.floor) {
   const out = {};
   for (const [res, n] of Object.entries(cost)) {
-    const v = Math.floor(n * factor);
+    const v = round(n * factor);
     if (v > 0) out[res] = v;
   }
   return out;

@@ -157,14 +157,18 @@ export class Loot {
    * @param {object} table { schrott: [1,2], zahnraeder: 0.2 }
    * @param {number} factor Mengenfaktor (Tagesschlurfer 0,5; Glückslaterne > 1)
    */
+  /** @returns {Record<string, number>} wie viel je Sorte gefallen ist */
   drop(x, z, table, factor = 1) {
+    const out = {};
     for (const [res, spec] of Object.entries(table)) {
       let n = Array.isArray(spec) ? this.rng.int(spec[0], spec[1]) : this.rng.chance(spec) ? 1 : 0;
       n *= factor;
       // Bruchteile als Wahrscheinlichkeit
       const whole = Math.floor(n) + (this.rng.chance(n - Math.floor(n)) ? 1 : 0);
       for (let k = 0; k < whole; k++) this.spawn(res, x, z);
+      out[res] = whole;
     }
+    return out;
   }
 
   spawn(res, x, z) {

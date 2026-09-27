@@ -110,9 +110,13 @@ export class Hud {
     if (this.numbers.length > 24) this.numbers.shift();
   }
 
-  /** Gedanke der Figur als Sprechblase über dem Kopf (hält das Spiel nicht an). */
-  say(text, duration = 4) {
-    this.speech = { text, time: 0, duration };
+  /**
+   * Gedanke der Figur als Sprechblase über dem Kopf (hält das Spiel nicht an).
+   * @param {{x:number, y:number, z:number}|null} [who] Weltpunkt über dem Kopf eines
+   *   anderen (z. B. Balduins Abschied); sonst spricht Mika
+   */
+  say(text, duration = 4, who = null) {
+    this.speech = { text, time: 0, duration, who };
   }
 
   showItemLabel(text) {
@@ -590,8 +594,8 @@ export class Hud {
     const s = this.speech;
     if (!s) return;
     if (s.duration - s.time < 0.4 && Math.floor(s.time * 12) % 2 === 0) return;
-    const p = this.game.player.position;
-    const at = this.game.worldToUi(p.x, p.y + 2.1, p.z);
+    const p = s.who || this.game.player.position;
+    const at = this.game.worldToUi(p.x, p.y + (s.who ? 0 : 2.1), p.z);
     const w = measure(s.text) + 12;
     const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
     const y = Math.round(Math.max(62, at.y - 18)); // nie über Uhr und Ziel

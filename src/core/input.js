@@ -26,7 +26,14 @@ const BINDINGS = {
   slot8: ['Digit8'],
 };
 
-const PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'F3', 'Tab']);
+const PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'F3', 'Tab', 'Escape']);
+/**
+ * Diese Tasten gehören ganz dem Spiel: Esc schließt Fenster und öffnet das
+ * Menü. Läuft das Spiel in einem Rahmen (Artefakt), reicht die Seite drumherum
+ * Esc sonst womöglich weiter und nimmt dem Spiel den Tastaturfokus – dann lief
+ * Mika erst nach einem Klick wieder (M9.1: »nach dem Handel erst schlagen«).
+ */
+const KEEP = new Set(['Escape']);
 
 export class Input {
   /**
@@ -41,21 +48,45 @@ export class Input {
     this.mouse = { x: -1, y: -1, inside: false, down: false, clicked: false, rightClicked: false, moved: false, wheel: 0 };
     this.onGesture = null; // erste echte Eingabe (für den Klang)
     this.typed = []; // getippte Zeichen dieses Bildes (Namensfeld); 'Backspace' zum Löschen
+    // Tastaturfokus (M9.1): Nimmt die Seite ringsum dem Spiel den Fokus, zeigt es einen
+    // Hinweis; der Klick, der ihn zurückholt, ist dann kein Schlag
+    this.focused = true;
+    this.blurredAt = 0;
+    this.refocusAt = -Infinity;
 
-    window.addEventListener('keydown', (e) => {
-      if (this.onGesture) this.onGesture();
-      if (PREVENT.has(e.code)) e.preventDefault();
-      if (!e.repeat) this.pressedCodes.add(e.code);
-      this.down.add(e.code);
-      if (e.key.length === 1 || e.key === 'Backspace') this.typed.push(e.key);
-    });
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (this.onGesture) this.onGesture();
+        this.focused = true;
+        if (PREVENT.has(e.code)) e.preventDefault();
+        if (KEEP.has(e.code)) e.stopPropagation();
+        if (!e.repeat) this.pressedCodes.add(e.code);
+        this.down.add(e.code);
+        if (e.key.length === 1 || e.key === 'Backspace') this.typed.push(e.key);
+      },
+      { capture: true }
+    );
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
-    window.addEventListener('blur', () => this.down.clear());
+    window.addEventListener('blur', () => {
+      this.down.clear();
+      this.mouse.down = false;
+      this.focused = false;
+      this.blurredAt = performance.now();
+    });
+    window.addEventListener('focus', () => {
+      if (!this.focused) this.refocusAt = performance.now();
+      this.focused = true;
+    });
 
     element.addEventListener('pointermove', (e) => this.updatePointer(e));
     element.addEventListener('pointerdown', (e) => {
       if (this.onGesture) this.onGesture();
       this.updatePointer(e);
+      // Holt dieser Klick den Fokus zurück? Dann nur zurückholen, nicht zuschlagen
+      const refocus = !this.focused || performance.now() - this.refocusAt < 200;
+      this.focused = true;
+      if (refocus) return;
       if (e.button === 0) {
         this.mouse.down = true;
         this.mouse.clicked = true;
@@ -86,6 +117,11 @@ export class Input {
     this.mouse.x = p.x;
     this.mouse.y = p.y;
     this.mouse.inside = true;
+  }
+
+  /** Seit einem Augenblick ohne Tastaturfokus (für den Hinweis)? */
+  get lostFocus() {
+    return !this.focused && performance.now() - this.blurredAt > 250;
   }
 
   isDown(action) {

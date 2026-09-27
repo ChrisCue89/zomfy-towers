@@ -36,10 +36,11 @@ export function isLeaderNight(n) {
  * schneller als die Bedrohung). Nacht 1 bleibt sanft.
  * M8: »keine Herausforderung, schon gar nicht in Nacht 1« – mehr ab Nacht 1.
  * M9: Auf den langen Wegen haben die Türme mehr Zeit – noch etwas mehr.
- * Nacht 1: 30, 2: 40, 3: 52, 4: 66, 5: 82, 8: 142 (M8: 26, 35, 46, 59, 74, 131).
+ * M9.1 (Auftraggeber: »ein Turm und bisschen Handarbeit regelt« Nacht 1): +3.
+ * Nacht 1: 33, 2: 43, 3: 55, 4: 69, 5: 85, 8: 145 (M9: 30, 40, 52, 66, 82, 142).
  */
 export function nightBudget(n) {
-  return 30 + 9 * (n - 1) + (n - 1) ** 2;
+  return 33 + 9 * (n - 1) + (n - 1) ** 2;
 }
 
 export function planNight(n, seed, entries) {
