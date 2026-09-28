@@ -236,7 +236,8 @@ export class Buildings {
     if (def.tower) {
       building.level = extra.level || 1;
       building.spec = extra.spec || null;
-      building.part = extra.part || null; // besonderes Turmteil (M10)
+      // Turmteile (M10; M21: ein Fach, ab Stufe 4 zwei) – alte Stände kennen nur `part`
+      building.parts = Array.isArray(extra.parts) ? extra.parts.filter((id) => typeof id === 'string').slice(0, 2) : extra.part ? [extra.part] : [];
       // Geschichte des Turms (M16): Erfahrung, Abschüsse, Name (Index in T.turmnamen)
       building.xp = extra.xp || 0;
       building.kills = extra.kills || 0;
@@ -331,7 +332,7 @@ export class Buildings {
     b.look = this.lookOf(b);
     b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec, look: b.look });
     this._lanterns = null; // Laternen neu einsammeln (M17e)
-    if (b.part) this.addPart(b);
+    (b.parts || []).forEach((id, k) => this.addPart(b, id, k)); // Turmteile (M10; M21: bis zu zwei)
     if (b.gear?.length && !b.broken) this.addGear(b);
     if (BUILDINGS[b.type].camp === 'tor' && !b.broken) this.addGateBanners(b);
     if (BUILDINGS[b.type].tower) {
@@ -429,21 +430,21 @@ export class Buildings {
   }
 
   /** Das Turmteil sichtbar am Turm (M10): Fernrohr auf dem Kopf, Ölkanne am Fuß, Münze vorn. */
-  addPart(b) {
+  addPart(b, id, slot = 0) {
     const F = 1 / 16; // Turmteile sind im Maß 1/16 gebaut (Lage und Mitte in diesem Maß) …
-    const model = edgeLight(towerPartModel(b.part).upsampled(2)); // … und werden wie die Türme doppelt fein gezeichnet (M13g)
+    const model = edgeLight(towerPartModel(id).upsampled(2)); // … und werden wie die Türme doppelt fein gezeichnet (M13g)
     const mesh = new THREE.Mesh(model.toGeometry({ jitter: 0.03, seed: this.seed, size: F / 2 }), this.materials.building || this.materials.occluder);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.name = b.part;
+    mesh.name = id;
     const head = b.object.userData.head;
-    if (b.part === 'fernrohr' && head) {
+    if (id === 'fernrohr' && head) {
       mesh.position.set(F / 2, b.object.userData.headTop + F, -F / 2);
       head.add(mesh);
       return;
     }
-    if (b.part === 'schmierfett') mesh.position.set(0.18, 0, 0.18);
-    else mesh.position.set(-F / 2, 0.55, 0.44);
+    if (id === 'schmierfett') mesh.position.set(slot ? -0.3 : 0.18, 0, 0.18);
+    else mesh.position.set(slot ? 0.22 : -F / 2, 0.55, 0.44); // zweites Fach (M21) rechts daneben
     b.object.add(mesh);
   }
 
@@ -666,7 +667,7 @@ export class Buildings {
       if (b.day) e.day = b.day;
       if (b.level) e.level = b.level;
       if (b.spec) e.spec = b.spec;
-      if (b.part) e.part = b.part;
+      if (b.parts?.length) e.parts = [...b.parts]; // Turmteile (M21)
       if (b.xp) e.xp = Math.round(b.xp);
       if (b.kills) e.kills = b.kills;
       if (b.name !== null && b.name !== undefined) e.name = b.name;

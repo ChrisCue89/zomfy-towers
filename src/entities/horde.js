@@ -26,6 +26,7 @@ import { V } from '../world/layout.js';
 import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { BUILDINGS, RAID } from '../data/buildings.js';
 import { STATUS, REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
+import { CHAMPION, TRAITS, cleanChampion } from '../data/champions.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
@@ -59,7 +60,11 @@ const TINT = {
   burning: new THREE.Color(1.5, 0.95, 0.6),
   slowed: new THREE.Color(0.85, 0.97, 1.2),
   stunned: new THREE.Color(1.35, 1.25, 0.75),
+  // Champions (M21): goldener Schimmer, der langsam pulsiert (zwischen den beiden Tönen)
+  champion: new THREE.Color(1.55, 1.22, 0.42),
+  championDim: new THREE.Color(1.25, 1.05, 0.55),
 };
+const championTint = new THREE.Color();
 
 /** Unsichtbares Gerüst einer Art: Gelenke als Object3D, Teile als Anker. */
 class Rig {
@@ -180,7 +185,7 @@ export class Horde {
   /**
    * Schlurfer anlegen.
    * @param {string} type
-   * @param {{from?:{x,z}, entry?:{x,z}, x?:number, z?:number, hpFactor?:number, day?:boolean}} o
+   * @param {{from?:{x,z}, entry?:{x,z}, x?:number, z?:number, hpFactor?:number, day?:boolean, champion?:{name:number, traits:string[]}|null}} o
    */
   spawn(type, o = {}) {
     const def = ZOMBIES[type];
@@ -250,8 +255,31 @@ export class Horde {
       lootFactor: day ? 0.5 : o.lootFactor || 1, // M16: Schwierigkeit und Mutbonus
     };
     if (o.entry) z.facing = Math.atan2(o.entry.x - start.x, o.entry.z - start.z);
+    if (o.champion && !day) this.makeChampion(z, o.champion);
     this.list.push(z);
     return z;
+  }
+
+  /**
+   * Champion (M21): mehr Leben, etwas größer, goldener Schimmer, ein Name und
+   * Merkmale (data/champions.js).
+   */
+  makeChampion(z, spec) {
+    const c = cleanChampion(spec);
+    if (!c) return;
+    z.champion = c;
+    z.size = CHAMPION.scale;
+    z.maxHp = z.hp = Math.round(z.maxHp * CHAMPION.hp);
+    z.calmT = 0; // seit wann ihn nichts getroffen hat (moosig)
+    for (const t of c.traits) {
+      const tr = TRAITS[t];
+      if (tr.armor) z.armor = (z.def.armor || 0) + tr.armor;
+      if (tr.speed) z.speed *= tr.speed;
+      if (tr.shield) z.shield = z.shieldMax = Math.round(z.maxHp * tr.shield);
+      if (tr.regen) z.regen = tr.regen;
+      if (tr.split) z.split = tr.split;
+      if (tr.lightproof) z.lightproof = true;
+    }
   }
 
   clear() {
@@ -276,7 +304,17 @@ export class Horde {
     }
     // Markiert (M20, Leuchtpfeil): Türme treffen härter
     if (z.markT > 0 && source === 'turm') amount *= 1 + z.markBonus;
-    const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
+    z.calmT = 0;
+    // Schild eines Champions (M21): fängt zuerst ab, dann bricht er
+    if (z.shield > 0) {
+      const caught = Math.min(z.shield, amount);
+      z.shield -= caught;
+      amount -= caught;
+      z.flash = 0.1;
+      if (z.shield <= 0) this.cb.onShieldBreak?.(z);
+      if (amount <= 0) return false;
+    }
+    const dealt = Math.max(1, Math.round(pierce ? amount : amount - (z.armor ?? z.def.armor)));
     z.hp -= dealt;
     z.flash = 0.1;
     z.recoil = RECOIL;
@@ -288,7 +326,7 @@ export class Horde {
       z.kx += (dx / d) * push * 6 * resist;
       z.kz += (dz / d) * push * 6 * resist;
     }
-    this.cb.onDamage?.(z, dealt, source, by);
+    this.cb.onDamage?.(z, dealt, source, by, kind);
     if (z.hp <= 0) {
       this.kill(z, source, lucky, by);
       return true;
@@ -317,9 +355,12 @@ export class Horde {
     z.windup = 0;
   }
 
-  /** Betäuben (Nahkampf, Laternenblitz): steht still, schlägt nicht, holt neu aus. Zähe nur halb so lange. */
-  stun(z, time) {
-    if (z.state === 'dying') return;
+  /**
+   * Betäuben (Nahkampf, Laternenblitz): steht still, schlägt nicht, holt neu aus. Zähe nur halb so lange.
+   * @param {boolean} [light] vom Licht (Laternenblitz) – ein lichtfressender Champion merkt das nicht (M21)
+   */
+  stun(z, time, light = false) {
+    if (z.state === 'dying' || (light && z.lightproof)) return;
     z.stunT = Math.max(z.stunT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
     z.windup = 0;
   }
@@ -346,7 +387,7 @@ export class Horde {
    * Zustände zu einer Reaktion treffen.
    */
   status(z, kind, time = STATUS[kind].time) {
-    if (z.state === 'dying') return;
+    if (z.state === 'dying' || (kind === 'geblendet' && z.lightproof)) return; // lichtfressend (M21)
     const key = STATUS_KEY[kind];
     z[key] = Math.max(z[key], time);
     this.react(z);
@@ -493,6 +534,19 @@ export class Horde {
           if (this.damage(z, n, { pierce: true, source: 'feuer', by: z.burnBy ?? null })) continue;
         }
       }
+      // Champions (M21): goldenes Glitzern ringsum
+      if (z.champion) {
+        z.sparkT = (z.sparkT || 0) - dt;
+        if (z.sparkT <= 0) {
+          z.sparkT = 0.4;
+          this.cb.onSparkle?.(z);
+        }
+      }
+      // Moosig (M21): Wen eine Weile nichts trifft, der wächst wieder zu
+      if (z.regen) {
+        z.calmT += dt;
+        if (z.calmT >= TRAITS.moosig.calm && z.hp < z.maxHp) z.hp = Math.min(z.maxHp, z.hp + z.maxHp * z.regen * dt);
+      }
       if (z.def.summon && z.state !== 'enter') {
         z.summonT -= dt;
         if (z.summonT <= 0) {
@@ -508,7 +562,7 @@ export class Horde {
 
       const lured = z.lureT > 0;
       const frozen = z.freezeT > 0 || z.stunT > 0 || lured;
-      const light = ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0; // Licht macht den Moder müde
+      const light = ctx.lightSlow && !z.lightproof ? ctx.lightSlow(z.x, z.z) : 0; // Licht macht den Moder müde (nicht den lichtfressenden Champion, M21)
       if (light > 0) z.blindT = Math.max(z.blindT, STATUS.geblendet.light); // … und blendet (M18)
       this.react(z);
       let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - light);
@@ -919,7 +973,8 @@ export class Horde {
       counts[z.type]++;
       this.pose(kind.rig, z);
       kind.rig.root.updateMatrixWorld(true);
-      const tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
+      let tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
+      if (z.champion && tint === TINT.normal) tint = championTint.copy(TINT.championDim).lerp(TINT.champion, 0.5 + 0.5 * Math.sin(this.time * 3 + z.id)); // M21
       for (const name of kind.parts) {
         const mesh = kind.meshes[name];
         mesh.setMatrixAt(k, kind.rig.anchors[name].matrixWorld);
@@ -947,7 +1002,7 @@ export class Horde {
   }
 
   pose(rig, z) {
-    const s = z.def.scale;
+    const s = z.def.scale * (z.size || 1); // Champions (M21) sind etwas größer
     const t = this.time;
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
@@ -999,16 +1054,19 @@ export class Horde {
 
   /** Zustand zum Speichern (nur Lebende). */
   toState() {
-    return this.list.filter((z) => z.state !== 'dying').map((z) => ({ type: z.type, x: +z.x.toFixed(2), z: +z.z.toFixed(2), hp: Math.round(z.hp), max: z.maxHp, day: z.day || undefined }));
+    return this.list
+      .filter((z) => z.state !== 'dying')
+      .map((z) => ({ type: z.type, x: +z.x.toFixed(2), z: +z.z.toFixed(2), hp: Math.round(z.hp), max: z.maxHp, day: z.day || undefined, champion: z.champion || undefined, shield: z.shield > 0 ? Math.round(z.shield) : undefined }));
   }
 
   load(entries) {
     this.clear();
     for (const e of entries || []) {
       if (!ZOMBIES[e.type]) continue;
-      const z = this.spawn(e.type, { x: e.x, z: e.z, day: e.day });
+      const z = this.spawn(e.type, { x: e.x, z: e.z, day: e.day, champion: e.champion || null });
       z.maxHp = e.max || z.maxHp;
       z.hp = Math.min(z.maxHp, e.hp || z.maxHp);
+      if (z.shieldMax) z.shield = Math.max(0, Math.min(z.shieldMax, Number.isFinite(e.shield) ? e.shield : 0)); // Schild eines Champions (M21)
       z.state = 'walk';
     }
   }

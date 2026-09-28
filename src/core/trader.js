@@ -314,6 +314,11 @@ export class Trader {
         const [name, info] = T.bauplaene.kaufen;
         return { ...common, icon: 'bauplan', name: T.haendler.vorrat(name, left), info, gives: { blueprint: true }, owned: soldOut || none, ownedText: none ? T.bauplaene.keine : T.haendler.ausverkauft, affordable: !soldOut && !none && canAfford(st.inventory, o.give) };
       }
+      if (o.bag) {
+        // Wundertüte (M21): ein zufälliges Turmteil
+        const [name, info] = T.wundertuete.kaufen;
+        return { ...common, icon: 'wundertuete', name: T.haendler.vorrat(name, left), info, gives: { bag: true } };
+      }
       if (o.part) {
         // Besonderes Turmteil (M10)
         const [name, info] = T.turmteile[o.part];

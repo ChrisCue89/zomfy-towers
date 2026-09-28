@@ -1318,7 +1318,19 @@ Balduin bringt den ersten Moderkern schon an Tag 4. Spielstand v15.
 *Spielbar heißt:* Man entdeckt ein Rezept, baut es, und der Abend sieht
 anders aus.
 
-#### M21 – Beute mit Glanz: Turmteile, Seltenheit, Champions
+#### M21 – Beute mit Glanz: Turmteile, Seltenheit, Champions ✓
+
+*Umgesetzt (28.09.2026):* Zwölf Turmteile in vier Seltenheiten – gewöhnlich
+(Schleifstein, Hufeisen, Zahnkranz), selten (Fernrohr, Schmierfett,
+Kupferspule), besonders (Brennglas, Eiskristall, Uhrwerk, Glücksmünze),
+einzigartig (Omas Stricknadel, Mondstein). Ein Fach je Turm, ab Stufe 4 zwei.
+Champions ab Nacht 3 (einer, ab Nacht 6 zwei, ab Nacht 10 drei, je Welle
+höchstens einer): dreifaches Leben, etwas größer, goldenes Glitzern, Name und
+Merkmale über dem Kopf; bis Nacht 5 ein Merkmal, danach zwei. Die Fundkiste
+fliegt nicht zu Mika – sie platzt auf, wenn Mika davorsteht, und bringt ein
+Turmteil nach Seltenheit plus Schrott und Zombieteile. Basteln an der Werkbank
+(drei gleiche → ein zufälliges der nächsten Seltenheit), Balduins Wundertüte
+ab Tag 3 (8 Zombieteile, einmal am Tag). Spielstand v16.
 
 *Vorbild:* YouTD (Gegenstände in Türmen), Gem TD (Kombinieren), Truhen wie in
 Vampire Survivors.

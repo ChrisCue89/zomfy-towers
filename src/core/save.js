@@ -71,6 +71,22 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
   // v14 -> v15: M20 (Mischtürme). Das Werkstattbuch beginnt leer.
+  // v15 -> v16: M21 (Turmteile mit Seltenheit). Ein Turm trägt seine Teile als Liste
+  // (ein Fach, ab Stufe 4 zwei) – aus `part` wird `parts`.
+  15: (data) => ({
+    ...data,
+    version: 16,
+    world: {
+      ...data.world,
+      buildings: Array.isArray(data.world?.buildings)
+        ? data.world.buildings.map((b) => {
+            if (!b || typeof b !== 'object' || !b.part) return b;
+            const { part, ...rest } = b;
+            return { ...rest, parts: [part] };
+          })
+        : data.world?.buildings,
+    },
+  }),
   14: (data) => ({ ...data, version: 15, recipes: {} }),
   // v13 -> v14: M19 (Baupläne). Wer schon eine Nacht gewonnen hat, darf gleich den
   // ersten Bauplan wählen – sonst gäbe es den ersten erst nach der nächsten Nacht.

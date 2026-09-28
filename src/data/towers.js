@@ -260,21 +260,62 @@ export function towerStats(type, level, spec) {
 }
 
 /**
- * Besondere Turmteile (Meilenstein 10, DESIGN.md 6.9: »Balduin verkauft manchmal
- * besondere Turmteile«): Aufsätze, von denen jeder Turm einen tragen kann.
- * range/rate/aura sind Faktoren auf die Werte der Stufe; parts: Abschüsse
- * dieses Turms lassen immer Zombieteile fallen (sonst nur jedes zweite Mal).
+ * Turmteile (Meilenstein 10, seit M21 mit Seltenheit, DESIGN.md 8): Aufsätze im
+ * Fach eines Turms – eins, ab Stufe 4 zwei. Sie kommen aus Fundkisten der
+ * Champions, von Balduin (Wundertüte, Sonderangebote) und von der Werkbank
+ * (drei gleiche ergeben eines der nächsten Seltenheit).
+ *   damage/range/rate/aura  Faktoren auf die Werte der Stufe
+ *   loot    Beute-Faktor bei Abschüssen dieses Turms          (Hufeisen)
+ *   parts   Abschüsse lassen immer Zombieteile fallen         (Glücksmünze)
+ *   burn    Treffer setzen in Brand: [Schaden je s, s]         (Brennglas)
+ *   frost   Treffer machen frostig (s)                        (Eiskristall)
+ *   chain   jeder n-te Treffer springt auf ein zweites Ziel    (Kupferspule)
+ *   double  jeder n-te Schuss kommt gleich noch einmal         (Uhrwerk)
+ *   hold    [Chance, s]: das Ziel wird festgestrickt           (Omas Stricknadel)
+ *   not     passt nicht in diese Turmarten
  */
+export const PART_RARITIES = ['gewoehnlich', 'selten', 'besonders', 'einzigartig'];
 export const TOWER_PARTS = {
-  fernrohr: { range: 1.25 }, // weiter sehen: Reichweite (beim Laternenturm auch die Aura)
-  schmierfett: { rate: 1.25, aura: 1.25 }, // geölte Mechanik: schneller (Laternenturm: stärkere Aura)
-  gluecksmuenze: { parts: true, not: ['laternenturm'] }, // Glück: jeder Abschuss lässt Teile fallen (die Laterne schießt nicht)
+  schleifstein: { rarity: 'gewoehnlich', damage: 1.15, not: ['laternenturm'] },
+  hufeisen: { rarity: 'gewoehnlich', loot: 1.3, not: ['laternenturm'] },
+  zahnkranz: { rarity: 'gewoehnlich', rate: 1.1 },
+  fernrohr: { rarity: 'selten', range: 1.25 }, // weiter sehen: Reichweite (beim Laternenturm auch die Aura)
+  schmierfett: { rarity: 'selten', rate: 1.25, aura: 1.25 }, // geölte Mechanik: schneller (Laternenturm: stärkere Aura)
+  kupferspule: { rarity: 'selten', chain: 5, not: ['laternenturm'] },
+  brennglas: { rarity: 'besonders', burn: [6, 2], not: ['laternenturm'] },
+  eiskristall: { rarity: 'besonders', frost: 2, not: ['laternenturm'] },
+  uhrwerk: { rarity: 'besonders', double: 4, not: ['laternenturm', 'vogelscheuche'] },
+  gluecksmuenze: { rarity: 'besonders', parts: true, not: ['laternenturm'] }, // Glück: jeder Abschuss lässt Teile fallen (die Laterne schießt nicht)
+  stricknadel: { rarity: 'einzigartig', hold: [0.25, 1.2], not: ['laternenturm'] },
+  mondstein: { rarity: 'einzigartig', damage: 1.25, range: 1.15, aura: 1.3 },
 };
 export const TOWER_PART_IDS = Object.keys(TOWER_PARTS);
+/** Basteln an der Werkbank (M21): so viele gleiche ergeben eines der nächsten Seltenheit. */
+export const TINKER_COUNT = 3;
+
+/** Nächste Seltenheit nach der dieses Teils (null bei »einzigartig«). */
+export function nextRarity(id) {
+  return PART_RARITIES[PART_RARITIES.indexOf(TOWER_PARTS[id]?.rarity) + 1] || null;
+}
 
 /** Passt dieses Teil in diese Turmart? */
 export function partFits(type, id) {
-  return !(TOWER_PARTS[id]?.not || []).includes(type);
+  return Boolean(TOWER_PARTS[id]) && !(TOWER_PARTS[id].not || []).includes(type);
+}
+
+/** Fächer eines Turms für Turmteile (M21): eins, ab Stufe 4 zwei. */
+export function partSlots(b) {
+  return (b.level || 1) >= 4 ? 2 : 1;
+}
+
+/** Trägt der Turm dieses Teil? */
+export function hasPart(b, id) {
+  return Boolean(b.parts?.includes(id));
+}
+
+/** Teile einer Seltenheit (für Fundkiste, Wundertüte und Werkbank). */
+export function partsOfRarity(rarity) {
+  return TOWER_PART_IDS.filter((id) => TOWER_PARTS[id].rarity === rarity);
 }
 
 /**
@@ -283,17 +324,20 @@ export function partFits(type, id) {
  */
 export function towerStatsOf(b) {
   const rank = towerRank(b.xp);
-  const key = `${b.level}|${b.spec}|${b.part || ''}|${rank}`;
+  const key = `${b.level}|${b.spec}|${(b.parts || []).join(',')}|${rank}`;
   if (b._statsKey === key) return b._stats;
   const base = towerStats(b.type, b.level, b.spec);
-  const part = b.part ? TOWER_PARTS[b.part] : null;
   let s = base;
-  if (part && (part.range || part.rate || part.aura)) {
-    s = { ...base };
-    if (part.range && base.range) s.range = base.range * part.range;
-    if (part.range && base.auraRange) s.auraRange = base.auraRange * part.range;
-    if (part.rate && base.rate && b.type !== 'laternenturm') s.rate = base.rate * part.rate;
-    if (part.aura && base.aura) s.aura = base.aura * part.aura;
+  // Turmteile (M10, M21: bis zu zwei): Faktoren auf die Werte der Stufe
+  for (const id of b.parts || []) {
+    const part = TOWER_PARTS[id];
+    if (!part || !(part.range || part.rate || part.aura || part.damage)) continue;
+    if (s === base) s = { ...base };
+    if (part.range && base.range) s.range *= part.range;
+    if (part.range && base.auraRange) s.auraRange *= part.range;
+    if (part.rate && base.rate && b.type !== 'laternenturm') s.rate *= part.rate;
+    if (part.aura && base.aura) s.aura *= part.aura;
+    if (part.damage && base.damage) s.damage *= part.damage;
   }
   // Rang (M16): ein wenig mehr Schaden bzw. Aura
   const bonus = TOWER_RANKS[rank - 1].bonus;

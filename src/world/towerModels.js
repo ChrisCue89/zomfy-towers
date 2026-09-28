@@ -396,6 +396,9 @@ function fineLantern(level, spec, seed) {
  * - Fernrohr: Messingrohr auf dem Kopf, zeigt nach vorn (+z) – dreht beim Zielen mit
  * - Schmierfett: grüne Ölkanne mit langem Ausguss am Fuß
  * - Glücksmünze: goldene Münze an einer roten Schnur, vorn am Turm
+ * - M21 (vorn am Turm, das zweite Fach rechts daneben): Schleifstein, Hufeisen,
+ *   Zahnkranz, Kupferspule mit Funken, Brennglas, Eiskristall, Uhrwerk, Omas
+ *   Wollknäuel mit Stricknadeln, Mondstein
  */
 export function towerPartModel(id) {
   const m = new VoxelModel();
@@ -412,6 +415,65 @@ export function towerPartModel(id) {
     for (let k = 0; k < 4; k++) m.set(4 + k, 3 + (k >> 1), 1, P.s5); // langer Ausguss
     m.set(8, 4, 1, P.e1); // ein Tropfen Öl
     m.set(1, 2, 3, P.f6).set(2, 2, 3, P.f6); // gelbes Etikett
+    return m;
+  }
+  // M21: neue Teile – klein, aber jedes mit eigener Form und Farbe
+  if (id === 'schleifstein') {
+    for (let y = 0; y <= 5; y++) for (let x = 0; x <= 5; x++) if (Math.hypot(x - 2.5, y - 2.5) <= 3) m.set(x, y, 0, x + y < 4 ? P.s6 : P.s5);
+    m.set(2, 2, 0, P.e3).set(3, 3, 0, P.e3); // Achse
+    return m;
+  }
+  if (id === 'hufeisen') {
+    for (const [x, y] of [[0, 0], [0, 1], [0, 2], [0, 3], [1, 4], [2, 5], [3, 5], [4, 4], [5, 3], [5, 2], [5, 1], [5, 0]]) m.set(x, y, 0, y >= 4 ? P.s7 : P.s5);
+    m.set(0, 2, 0, P.n1).set(5, 2, 0, P.n1); // Nagellöcher
+    return m;
+  }
+  if (id === 'zahnkranz') {
+    for (let y = 0; y <= 6; y++) for (let x = 0; x <= 6; x++) {
+      const d = Math.hypot(x - 3, y - 3);
+      if (d > 3.4 || d < 1.2) continue;
+      if (d > 2.6 && (x + y) % 2) continue; // Zähne
+      m.set(x, y, 0, d > 2.4 ? P.f5 : P.f4);
+    }
+    return m;
+  }
+  if (id === 'kupferspule') {
+    m.box(1, 0, 0, 2, 6, 1, P.e3); // Kern
+    for (let y = 0; y <= 6; y++) m.set(0, y, 0, y % 2 ? P.f3 : P.f4).set(3, y, 0, y % 2 ? P.f4 : P.f3); // Wicklung aus Kupfer
+    m.set(1, 7, 0, P.f6).set(2, 8, 0, P.f7); // Funke
+    return m;
+  }
+  if (id === 'brennglas') {
+    for (let y = 0; y <= 5; y++) for (let x = 0; x <= 5; x++) {
+      const d = Math.hypot(x - 2.5, y - 2.5);
+      if (d > 3) continue;
+      m.set(x, y, 0, d > 2.2 ? P.f5 : x + y < 4 ? P.a4 : P.b5); // Messingrand, Glas
+    }
+    m.box(2, -3, 0, 3, -1, 0, P.e3); // Griff
+    return m;
+  }
+  if (id === 'eiskristall') {
+    for (const [x, y] of [[2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [0, 3], [1, 3], [3, 3], [4, 3], [1, 1], [3, 5], [1, 5], [3, 1]]) m.set(x, y, 0, y === 3 || x === 2 ? P.a4 : P.b5);
+    return m;
+  }
+  if (id === 'uhrwerk') {
+    for (let y = 0; y <= 6; y++) for (let x = 0; x <= 6; x++) {
+      const d = Math.hypot(x - 3, y - 3);
+      if (d > 3.4) continue;
+      m.set(x, y, 0, d > 2.6 ? P.f4 : P.s8); // Messing, Zifferblatt
+    }
+    m.set(3, 4, 0, P.n1).set(3, 5, 0, P.n1).set(4, 3, 0, P.n1); // Zeiger
+    m.box(0, 3, 1, 6, 3, 1, P.f5); // Aufzug hinten
+    return m;
+  }
+  if (id === 'stricknadel') {
+    for (let y = 0; y <= 5; y++) for (let x = 0; x <= 5; x++) if (Math.hypot(x - 2.5, y - 2.5) <= 2.8) m.set(x, y, 0, (x + y) % 3 ? P.r3 : P.r4); // Wollknäuel
+    m.line(-1, 7, 0, 5, -1, 0, P.s8).line(0, 8, 0, 6, 0, 0, P.s7); // zwei Nadeln
+    return m;
+  }
+  if (id === 'mondstein') {
+    for (let y = 0; y <= 5; y++) for (let x = 0; x <= 4; x++) if (Math.hypot((x - 2) * 1.2, y - 2.5) <= 2.8) m.set(x, y, 0, x + y < 3 ? P.a4 : P.n8);
+    m.set(1, 4, 0, P.s9);
     return m;
   }
   // Glücksmünze an der Schnur

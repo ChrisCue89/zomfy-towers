@@ -5,6 +5,38 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 21 – Beute mit Glanz: Turmteile, Seltenheit, Champions ✓
+
+**Ziel (DESIGN 8):** Nachts einen goldenen Schlurfer jagen, morgens die Kiste
+öffnen und die Kupferspule in den Lieblingsturm bauen.
+
+- **Turmteile in vier Seltenheiten** (`data/towers.js`): gewöhnlich
+  Schleifstein (+15 % Schaden), Hufeisen (+30 % Beute), Zahnkranz (+10 %
+  Tempo); selten Fernrohr, Schmierfett, Kupferspule (jeder fünfte Treffer
+  springt als Funke weiter); besonders Brennglas (Brand), Eiskristall
+  (frostig), Uhrwerk (jeder vierte Schuss doppelt), Glücksmünze; einzigartig
+  Omas Stricknadel (strickt fest) und Mondstein (Schaden, Reichweite, Aura).
+  Ein Fach, ab Stufe 4 zwei; jedes Teil sitzt sichtbar am Turm, das zweite
+  rechts neben dem ersten. Mischtürme behalten so viele, wie sie Fächer haben.
+- **Champions** (`data/champions.js`): ab Nacht 3 im Wellenplan, mit Namen
+  (»Graf Moosbart«, »Tante Hedwig«, »Knorz« …) und Merkmalen (moosig,
+  gepanzert, flink, mit Schild, teilend, lichtfressend); dreifaches Leben,
+  goldener Schimmer mit Glitzern, Name, Merkmale und Balken über dem Kopf,
+  Banner und Hörner bei der Ankunft.
+- **Fundkiste:** fällt, wenn ein Champion fällt, und platzt auf, wenn Mika
+  davorsteht – ein Turmteil nach Seltenheit, dazu Schrott, Zombieteile und
+  vielleicht ein Zahnrad. Der Morgenbericht erinnert an eine liegende Kiste.
+- **Basteln** an der Werkbank: drei gleiche Teile ergeben ein zufälliges der
+  nächsten Seltenheit (höchstens drei Zeilen, nur was man hat).
+- **Balduins Wundertüte** ab Tag 3: ein zufälliges Turmteil, einmal am Tag.
+- **Spielstand v16** (Teile als Liste, Champions in Horde und Warteschlange),
+  Migration v15 → v16.
+- **Prüfung:** neuer Abschnitt `glanz` (nur der Kern); der alte Prüfpunkt der
+  Turmteile (M10) liest jetzt `parts`, Balduins Angebote an Tag 3 enthalten
+  Bauplan und Wundertüte.
+
+---
+
 ## Meilenstein 20 – Mischtürme ✓
 
 **Ziel (DESIGN 8):** Man entdeckt ein Rezept, baut es, und der Abend sieht

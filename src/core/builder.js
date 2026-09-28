@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
 import { BUILDINGS, HOME_TAB, TOWER_TAB, TRAP_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
-import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, partFits } from '../data/towers.js';
+import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, TOWER_PARTS, partFits, partSlots, hasPart } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
@@ -79,7 +79,7 @@ export class Builder {
     if (BUILDINGS[b.type].camp) return `${name} · ${T.lager.stufen[campLevel(b.level).key][0]}`; // M17
     if (!BUILDINGS[b.type].tower) return name;
     const spec = b.spec && !BUILDINGS[b.type].mix ? ` · ${T.tuerme[b.spec][b.type][0]}` : ''; // Mischtürme (M20) tragen ihr Rezept schon im Namen
-    const part = b.part ? ` · ${T.turmteile[b.part][0]}` : '';
+    const part = b.parts?.length ? ` · ${b.parts.map((id) => T.turmteile[id][0]).join(', ')}` : '';
     // M16: Türme tragen einen Namen – »Gertrud, Bolzenwerfer«
     return `${this.game.towerRanks.title(b)} · ${T.bauleiste.stufe(b.level)}${spec}${part}`; // »Bolzenwerfer 2« las sich wie »der zweite«
   }
@@ -371,11 +371,11 @@ export class Builder {
     // Mischtürme (M20): mit einem Nachbarn verbinden
     if (def.tower && !def.mix && b.level >= MIX_MIN_LEVEL && b.hp > 0) options.push(...this.mixOptions(b, inv));
     // Besondere Turmteile einbauen (M10): eins je Turm, solange die Leiste Platz hat
-    if (def.tower && !b.part) {
+    if (def.tower && (b.parts?.length || 0) < partSlots(b)) {
       const room = 5 - options.length - (def.hp && b.hp < maxHpOf(b) ? 1 : 0);
-      for (const id of TOWER_PART_IDS.filter((p) => this.game.state.towerParts[p] > 0 && partFits(b.type, p)).slice(0, Math.max(0, room))) {
+      for (const id of TOWER_PART_IDS.filter((p) => this.game.state.towerParts[p] > 0 && partFits(b.type, p) && !hasPart(b, p)).slice(0, Math.max(0, room))) {
         const [name, info] = T.turmteile[id];
-        options.push({ id: `teil-${id}`, icon: id, name: T.turmteile.einbauen(name), info, cost: {}, affordable: true, progress: 1, action: () => this.mountPart(b, id) });
+        options.push({ id: `teil-${id}`, icon: id, name: T.turmteile.einbauen(name), info: `${T.turmteile.seltenheit[TOWER_PARTS[id].rarity]} · ${info}`, cost: {}, affordable: true, progress: 1, action: () => this.mountPart(b, id) });
       }
     }
     if (b.type === 'barrikade') {
@@ -475,7 +475,10 @@ export class Builder {
     const bs = this.world.buildings;
     const across = a.j === c.j; // nebeneinander, sonst übereinander
     const [lead, other] = (c.xp || 0) > (a.xp || 0) ? [c, a] : [a, c];
-    if (lead.part && other.part) st.towerParts[other.part] = (st.towerParts[other.part] || 0) + 1;
+    // Turmteile (M21): so viele, wie der Mischturm Fächer hat – der Rest kommt in den Vorrat
+    const slots = Math.min(a.level, c.level) >= 4 ? 2 : 1;
+    const parts = [...new Set([...(lead.parts || []), ...(other.parts || [])])];
+    for (const p of parts.slice(slots)) st.towerParts[p] = (st.towerParts[p] || 0) + 1;
     const extra = {
       level: Math.min(a.level, c.level),
       spec: 'A',
@@ -483,7 +486,7 @@ export class Builder {
       xp: Math.max(a.xp || 0, c.xp || 0),
       kills: (a.kills || 0) + (c.kills || 0),
       name: lead.name,
-      part: lead.part || other.part || null,
+      parts: parts.slice(0, slots),
     };
     const i = Math.min(a.i, c.i);
     const j = Math.min(a.j, c.j);
@@ -606,9 +609,9 @@ export class Builder {
   /** Ein besonderes Turmteil aus dem Vorrat an diesen Turm (M10). */
   mountPart(b, id) {
     const st = this.game.state;
-    if (b.part || !(st.towerParts[id] > 0) || !partFits(b.type, id)) return;
+    if ((b.parts?.length || 0) >= partSlots(b) || hasPart(b, id) || !(st.towerParts[id] > 0) || !partFits(b.type, id)) return;
     st.towerParts[id] -= 1;
-    b.part = id;
+    b.parts = [...(b.parts || []), id];
     this.world.buildings.attachObject(b);
     st.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
@@ -1070,7 +1073,7 @@ export class Builder {
     this.game.sound.play('abriss');
     const state = this.game.state;
     gain(state.inventory, refund);
-    if (b.part) state.towerParts[b.part] = (state.towerParts[b.part] || 0) + 1; // das Turmteil bleibt heil (M10)
+    for (const id of b.parts || []) state.towerParts[id] = (state.towerParts[id] || 0) + 1; // Turmteile bleiben heil (M10)
     state.world.buildings = buildings.toState();
     this.selection = null;
     this.preview.hide();

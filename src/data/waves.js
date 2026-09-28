@@ -4,6 +4,7 @@
 
 import { Rng } from '../core/rng.js';
 import { difficultyOf } from './difficulty.js';
+import { addChampions } from './champions.js';
 
 /** Minuten seit 06:00: erste Welle um 20:30, die Nacht endet um 05:30. */
 export const NIGHT_START = 14 * 60 + 30;
@@ -108,6 +109,8 @@ export function planNight(n, seed, entries, difficulty) {
     // Warten zwischen den Wellen zog sich)
     at += Math.max(36, 62 - n * 3) + rng.int(-6, 6);
   }
+  // Champions (M21): ab Nacht 3 einzelne Schlurfer mit Namen und Merkmalen (eigener Zufall)
+  addChampions(waves, n, seed);
   return { night: n, hpFactor: hpFactor(n) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves };
 }
 

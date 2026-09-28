@@ -13,6 +13,7 @@ import { drawIcon, iconSize } from './icons.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { canAfford } from '../core/inventory.js';
 import { WEAPONS } from '../data/weapons.js';
+import { TOWER_PART_IDS, TINKER_COUNT, nextRarity } from '../data/towers.js';
 
 const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
 
@@ -24,8 +25,10 @@ const COUNTER = 1.6; // so lange bleibt der Zähler nach dem Loslassen stehen
 const OPEN_LOCK = 0.6; // gleich nach dem Öffnen stellt E nichts her (schnelles Durchdrücken, m4-r1; m7-r1: 0,3 s reichten Jonas nicht)
 const MASH_GAP = 0.3; // Werkzeug/Waffe: ein Druck zählt nur, wenn davor so lange keiner kam – Hämmern auf E baut nichts (m7-r1)
 
-/** Wandelt das Rezept nur Vorrat um (statt ein Werkzeug zu bauen)? */
-const isConversion = (r) => Boolean(r.gives.inventory);
+/** Wandelt das Rezept nur Vorrat um (statt ein Werkzeug zu bauen)? Basteln (M21) zählt dazu. */
+const isConversion = (r) => Boolean(r.gives.inventory || r.gives.tinker);
+/** Höchstens so viele Zeilen »Basteln« (M21) – sonst wird das Fenster zu hoch. */
+const TINKER_ROWS = 3;
 
 export class CraftingMenu {
   /** @param {import('../core/game.js').Game} game */
@@ -76,10 +79,17 @@ export class CraftingMenu {
       const bye = { id: 'tschuess', close: true, icon: 'boot', name: T.haendler.fertig, info: traded ? T.haendler.fertigInfo : T.haendler.fertigInfoWarten, cost: {}, gives: {}, affordable: true };
       return [...g.trader.offers(), bye];
     }
-    return RECIPES.map((r) => {
+    const list = RECIPES.map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
     });
+    // Basteln (M21): drei gleiche Turmteile ergeben eines der nächsten Seltenheit – nur, was man hat
+    const parts = g.state.towerParts;
+    for (const id of TOWER_PART_IDS.filter((p) => (parts[p] || 0) >= TINKER_COUNT && nextRarity(p)).slice(0, TINKER_ROWS)) {
+      const name = T.turmteile[id][0];
+      list.push({ id: `basteln-${id}`, icon: id, name: T.werkbank.basteln(name), info: T.werkbank.bastelnInfo(T.turmteile.seltenheit[nextRarity(id)]), cost: { [id]: TINKER_COUNT }, stock: parts, gives: { tinker: id }, affordable: true });
+    }
+    return list;
   }
 
   layout(ui) {
@@ -201,11 +211,11 @@ export class CraftingMenu {
       ui.text(name, rect.x + 20, rect.y + 3, r.owned ? COLORS.textDim : r.affordable ? COLORS.text : COLORS.textDim);
       // Zähler beim Verwerten: wie viel ist schon dabei herausgekommen?
       if (this.counter?.id === r.id) {
-        const [res, n] = Object.entries(r.gives.inventory)[0];
-        const text = T.werkbank.zaehler(this.counter.count * n);
+        const entry = r.gives.inventory ? Object.entries(r.gives.inventory)[0] : null; // Basteln (M21): nur die Zahl
+        const text = T.werkbank.zaehler(this.counter.count * (entry ? entry[1] : 1));
         const tx = rect.x + 24 + measure(name);
         ui.text(text, tx, rect.y + 3, COLORS.gold);
-        drawIcon(ui.ctx, res, tx + measure(text) + 2, rect.y + 5);
+        if (entry) drawIcon(ui.ctx, entry[0], tx + measure(text) + 2, rect.y + 5);
       }
       // Kosten rechtsbündig
       let cx = rect.x + rect.w - 6;
@@ -217,7 +227,7 @@ export class CraftingMenu {
       for (const [res, v] of Object.entries(r.cost).reverse()) {
         const text = String(v);
         cx -= measure(text);
-        ui.text(text, cx, rect.y + 3, (inv[res] || 0) >= v ? COLORS.text : COLORS.red);
+        ui.text(text, cx, rect.y + 3, ((r.stock || inv)[res] || 0) >= v ? COLORS.text : COLORS.red); // Basteln (M21): Turmteile statt Vorrat
         cx -= 12;
         drawIcon(ui.ctx, res, cx, rect.y + 5);
         cx -= 6;

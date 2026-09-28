@@ -24,7 +24,7 @@
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
-import { towerStatsOf } from '../data/towers.js';
+import { towerStatsOf, hasPart, TOWER_PARTS } from '../data/towers.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { dampAngle } from '../core/math.js';
@@ -307,6 +307,7 @@ export class TowerSystem {
       if (t.hp <= 0) continue;
       const s = towerStatsOf(t);
       const mult = 1 + (t.aura || 0);
+      const coolBefore = t.cool;
       switch (t.type) {
         case 'bolzen':
           this.runBolt(t, s, mult, dt);
@@ -356,6 +357,11 @@ export class TowerSystem {
           break;
         default:
           break;
+      }
+      // Uhrwerk (M21): jeder vierte Schuss kommt gleich noch einmal
+      if (t.cool > coolBefore && hasPart(t, 'uhrwerk')) {
+        t.shots = (t.shots || 0) + 1;
+        if (t.shots % TOWER_PARTS.uhrwerk.double === 0) t.cool = Math.min(t.cool, 0.12);
       }
       if (t.head) this.poseHead(t, dt);
     }
@@ -417,7 +423,7 @@ export class TowerSystem {
     t.swing = 1;
     for (const z of list) {
       if (z.state === 'enter') continue;
-      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'glocke' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'glocke' })) continue;
       this.horde.stun(z, s.stun);
     }
     const healed = s.heal ? this.world.buildings.healAround(o.x, o.z, range, s.heal) : 0;
@@ -514,7 +520,7 @@ export class TowerSystem {
       if (sw.acc >= 1) {
         const n = Math.floor(sw.acc);
         sw.acc -= n;
-        const dead = this.horde.damage(goal, n, { pierce: true, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'bienen' });
+        const dead = this.horde.damage(goal, n, { pierce: true, source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'bienen' });
         if (!dead && s.blind) {
           // Glühschwarm (M20): leuchtende Bienen blenden – ein Bolzen trifft danach die Schwachstelle
           this.horde.status(goal, 'geblendet', s.blind);
@@ -548,7 +554,7 @@ export class TowerSystem {
             const n = Math.floor(z.peckAcc);
             z.peckAcc -= n;
             if (Math.random() < 0.25) this.effects.splat(z.x, 1.4 * z.def.scale, z.z, 'federn', 2, 0.4);
-            this.horde.damage(z, n, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'kraehen' });
+            this.horde.damage(z, n, { source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'kraehen' });
           }
         }
       }
@@ -592,7 +598,7 @@ export class TowerSystem {
     t.kick = 1;
     const o = this.origin(t);
     for (const z of list) {
-      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0, lucky: t.part === 'gluecksmuenze', by: t.id });
+      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0, lucky: hasPart(t, 'gluecksmuenze'), by: t.id });
     }
     this.cb.onShot?.('bolzen', o.x, o.z);
   }
@@ -630,7 +636,7 @@ export class TowerSystem {
     const tx = best.x + Math.sin(best.facing) * lead;
     const tz = best.z + Math.cos(best.facing) * lead;
     const dist = Math.hypot(tx - o.x, tz - o.z);
-    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z, lucky: t.part === 'gluecksmuenze', by: t.id });
+    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z, lucky: hasPart(t, 'gluecksmuenze'), by: t.id });
     this.cb.onShot?.('katapult', o.x, o.z);
   }
 
@@ -663,7 +669,7 @@ export class TowerSystem {
     const freezeNow = s.freeze && t.freezeCd <= 0;
     if (freezeNow) t.freezeCd = 4;
     for (const z of inRange) {
-      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'spray' })) continue;
       this.horde.slow(z, s.slow, s.slowTime);
       this.horde.status(z, status);
       if (freezeNow) {
@@ -695,7 +701,7 @@ export class TowerSystem {
     const dz = list[0].z - o.z;
     const d = Math.hypot(dx, dz) || 1;
     const reach = s.range * this.weatherRange(t) + 1.5;
-    this.projectiles.push({ kind: 'spear', x: o.x, y: o.y, z: o.z, dx: dx / d, dz: dz / d, left: reach, speed: 15, angle: Math.atan2(dx, dz), damage: s.damage * mult, pierce: s.pierce, burst: s.burst * mult, splash: s.splash, hit: [], lucky: t.part === 'gluecksmuenze', by: t.id });
+    this.projectiles.push({ kind: 'spear', x: o.x, y: o.y, z: o.z, dx: dx / d, dz: dz / d, left: reach, speed: 15, angle: Math.atan2(dx, dz), damage: s.damage * mult, pierce: s.pierce, burst: s.burst * mult, splash: s.splash, hit: [], lucky: hasPart(t, 'gluecksmuenze'), by: t.id });
     this.cb.onShot?.('ballista', o.x, o.z);
   }
 
@@ -712,7 +718,7 @@ export class TowerSystem {
     t.kick = 1;
     const o = this.origin(t);
     const z = list[0];
-    this.projectiles.push({ kind, x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: kind === 'icicle' ? 12 : 16, damage: s.damage * mult, angle: 0, lucky: t.part === 'gluecksmuenze', by: t.id, frost: s.frost || 0, slow: s.slow || 0, slowTime: s.slowTime || 0, shatter: s.shatter || 1, mark: s.mark || 0, markBonus: s.markBonus || 0, blind: s.blind || 0 });
+    this.projectiles.push({ kind, x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: kind === 'icicle' ? 12 : 16, damage: s.damage * mult, angle: 0, lucky: hasPart(t, 'gluecksmuenze'), by: t.id, frost: s.frost || 0, slow: s.slow || 0, slowTime: s.slowTime || 0, shatter: s.shatter || 1, mark: s.mark || 0, markBonus: s.markBonus || 0, blind: s.blind || 0 });
     this.cb.onShot?.('bolzen', o.x, o.z);
   }
 
@@ -750,7 +756,7 @@ export class TowerSystem {
       x: o.x,
       y: o.y,
       z: o.z,
-      lucky: t.part === 'gluecksmuenze',
+      lucky: hasPart(t, 'gluecksmuenze'),
       by: t.id,
       // Matschkessel
       mud: s.mud || 0,
@@ -782,7 +788,7 @@ export class TowerSystem {
     for (let k = 0; k < 14; k++) this.effects.spray(o.x, o.y - 0.5, o.z, (k / 14) * Math.PI * 2, range * 0.8, 'nebel');
     this.effects.splat(o.x, o.y, o.z, 'licht', 8, 0.8);
     for (const z of list) {
-      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'spray' })) continue;
       this.horde.status(z, 'nass', s.wet);
       this.horde.status(z, 'geblendet', s.blind);
       this.horde.slow(z, s.slow, s.slowTime);
@@ -811,7 +817,7 @@ export class TowerSystem {
       let diff = Math.abs(Math.atan2(z.x - o.x, z.z - o.z) - a) % (Math.PI * 2);
       if (diff > Math.PI) diff = Math.PI * 2 - diff;
       if (diff > s.cone) continue;
-      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: hasPart(t, 'gluecksmuenze'), by: t.id, kind: 'spray' })) continue;
       this.horde.status(z, 'nass', s.wet);
       this.horde.slow(z, s.slow, s.slowTime);
       this.horde.blowBack(z, s.push);

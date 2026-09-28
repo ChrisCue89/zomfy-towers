@@ -11,6 +11,7 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { shade } from '../world/voxelKit.js';
+import { CHEST_REACH } from '../data/champions.js';
 
 /** So viele Spieltage bleiben Überreste liegen (M9: vorher 90 Sekunden). */
 export const LOOT_DAYS = 3;
@@ -107,6 +108,21 @@ function part32() {
   return m;
 }
 
+/**
+ * Fundkiste (M21): Holzkiste mit Messingbeschlägen, gewölbtem Deckel und Schloss –
+ * die Beute eines Champions. Sie fliegt nicht zu Mika, sie platzt auf, wenn Mika davorsteht.
+ */
+function chest32() {
+  const m = new VoxelModel();
+  const band = (x) => x === -7 || x === 6 || x === -3 || x === 2; // Beschläge
+  m.box(-7, 0, -5, 6, 6, 4, (x, y) => (band(x) ? (y === 6 ? P.f6 : P.f5) : y === 0 ? P.e2 : y === 3 ? P.e4 : (x + y) % 5 === 0 ? P.e5 : P.e6));
+  m.box(-7, 7, -5, 6, 8, 4, (x, y) => (band(x) ? P.f6 : y === 8 ? P.e7 : P.e6)); // Deckel
+  m.box(-7, 9, -3, 6, 9, 2, (x) => (band(x) ? P.f7 : P.e7)); // Wölbung
+  m.box(-1, 4, 5, 0, 7, 5, P.f6).set(-1, 5, 5, P.e1).set(0, 5, 5, P.e1); // Schloss vorn
+  m.set(-7, 9, -3, P.f8).set(2, 9, -3, P.f8); // Glanzpunkte
+  return m;
+}
+
 /** Grobe Variante (Stand vor Meilenstein 5): nur noch zum Laden alter Stände nötig. */
 function partModel() {
   const m = new VoxelModel();
@@ -115,8 +131,8 @@ function partModel() {
   return m;
 }
 
-const MODELS = { schrott: scrapModel, teile: partModel, zahnraeder: gearModel, moderkerne: coreModel };
-const FINE32_MODELS = { schrott: scrap32, teile: part32, zahnraeder: gear32, moderkerne: core32 };
+const MODELS = { schrott: scrapModel, teile: partModel, zahnraeder: gearModel, moderkerne: coreModel, kiste: chest32 };
+const FINE32_MODELS = { schrott: scrap32, teile: part32, zahnraeder: gear32, moderkerne: core32, kiste: chest32 };
 
 /** Funkeln über liegender Beute: ein kleines helles Kreuz (zum Finden, auch nachts). */
 function glintModel() {
@@ -205,7 +221,14 @@ export class Loot {
       const dx = player.x - it.x;
       const dz = player.z - it.z;
       const d = Math.hypot(dx, dz);
-      if (!it.flying && it.age > 0.35 && d < radius) it.flying = true;
+      // Fundkiste (M21): fliegt nicht, platzt auf, wenn Mika davorsteht
+      if (it.res === 'kiste') {
+        if (it.age > 0.6 && d < CHEST_REACH && it.y <= 0.05) {
+          this.items.splice(i, 1);
+          onCollect(it.res, it.x, it.y, it.z);
+          continue;
+        }
+      } else if (!it.flying && it.age > 0.35 && d < radius) it.flying = true;
       if (it.flying) {
         // Beschleunigt auf Mika zu, landet in der Tasche
         const speed = 3 + it.age * 0 + Math.max(0, 7 - d * 1.5);
@@ -235,7 +258,7 @@ export class Loot {
   }
 
   render() {
-    const counts = { schrott: 0, teile: 0, zahnraeder: 0, moderkerne: 0 };
+    const counts = { schrott: 0, teile: 0, zahnraeder: 0, moderkerne: 0, kiste: 0 };
     const d = this.dummy;
     let glints = 0;
     for (const it of this.items) {
@@ -245,10 +268,11 @@ export class Loot {
       // Letzte Spielstunde: blinken (schneller zum Schluss)
       const left = it.until - this.now;
       if (left < BLINK && Math.floor(this.time * (left < 12 ? 8 : 4)) % 2 === 0) continue;
-      const bob = it.vy === 0 && !it.flying ? 0.08 + Math.sin(it.spin * 1.6) * 0.05 : 0;
+      const chest = it.res === 'kiste'; // steht still auf dem Boden, gerade ausgerichtet
+      const bob = it.vy === 0 && !it.flying && !chest ? 0.08 + Math.sin(it.spin * 1.6) * 0.05 : 0;
       d.position.set(it.x, it.y + bob, it.z);
-      d.rotation.set(0, it.res === 'zahnraeder' ? it.spin : it.spin * 0.3, 0);
-      const scale = it.res === 'schrott' || it.res === 'teile' ? 1.25 : 1.1;
+      d.rotation.set(0, chest ? 0 : it.res === 'zahnraeder' ? it.spin : it.spin * 0.3, 0);
+      const scale = chest ? 1.35 : it.res === 'schrott' || it.res === 'teile' ? 1.25 : 1.1; // die Kiste soll auffallen
       d.scale.set(scale, scale, scale);
       d.updateMatrix();
       mesh.setMatrixAt(k, d.matrix);
@@ -256,8 +280,8 @@ export class Loot {
       // Liegende Beute funkelt ab und zu (jedes Stück zu seiner eigenen Zeit)
       const phase = (this.time + it.spin * 0.61) % GLINT_EVERY;
       if (!it.flying && it.vy === 0 && phase < GLINT_TIME && glints < MAX) {
-        const grow = Math.sin((phase / GLINT_TIME) * Math.PI);
-        d.position.set(it.x + 0.08, it.y + 0.42, it.z);
+        const grow = Math.sin((phase / GLINT_TIME) * Math.PI) * (chest ? 1.6 : 1);
+        d.position.set(it.x + (chest ? 0.22 : 0.08), it.y + (chest ? 0.62 : 0.42), it.z);
         d.rotation.set(0, 0, 0);
         d.scale.set(grow, grow, 1);
         d.updateMatrix();

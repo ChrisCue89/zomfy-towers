@@ -1378,6 +1378,34 @@ Wetterhahn), weitere mit Glocke und Vogelscheuche folgen. **Warum:** Wer ein
 Rezept selbst findet, fühlt sich klug (DESIGN 10.2); die Hinweise machen die
 Überlebenden wertvoller.
 
+### 140. Wie selten ist was, und woher kommen Turmteile? (M21)
+**Entscheidung:** Vier Seltenheiten mit zwölf Teilen (DESIGN M21). Quellen:
+Fundkisten der Champions (gewöhnlich 40 %, selten 34 %, besonders 21 %,
+einzigartig 5 %), Balduins Wundertüte (62 / 27 / 9 / 2 %) und seine festen
+Angebote wie bisher, dazu Basteln an der Werkbank (drei gleiche → ein
+zufälliges der nächsten Seltenheit). **Warum:** Die Kiste soll sich wie ein
+Fund anfühlen (öfter selten als die Tüte), die Tüte ist die sichere, kleine
+Freude am Morgen. Basteln macht auch doppelte Teile wertvoll (Gem TD).
+
+### 141. Was können Champions, und wie erkennt man sie? (M21)
+**Entscheidung:** Ab Nacht 3, je Welle höchstens einer (Nacht 3–5 einer, ab 6
+zwei, ab 10 drei), aus Schlurfer, Flitzer, Brummer oder Leuchtpilz. Dreifaches
+Leben, 15 % größer, goldener Schimmer mit Glitzern, Name und Merkmale über dem
+Kopf, eigener Lebensbalken mit Schild. Merkmale: moosig (heilt, wenn ihn nichts
+trifft), gepanzert (+6 Rüstung), flink (35 % schneller), mit Schild (fängt
+Schaden bis zur Hälfte seines Lebens), teilend (zerfällt in zwei kleine
+Schlurfer), lichtfressend (nicht zu blenden, der Laternenblitz betäubt ihn
+nicht, Licht bremst ihn nicht). Bis Nacht 5 eins, danach zwei. **Warum:** Jede
+Nacht ab der dritten hat so einen »Moment« (DESIGN 10.3); jedes Merkmal fragt
+nach einer anderen Antwort (Dauerfeuer, Durchschlag, Bremsen, Nahkampf).
+
+### 142. Wie öffnet man die Fundkiste? (M21)
+**Entscheidung:** Hingehen – die Kiste fliegt nicht mit dem Magnet, sie platzt
+auf, sobald Mika davorsteht (auch nachts). Sie liegt wie alle Beute drei Tage;
+der Morgenbericht erinnert an eine liegende Kiste. **Warum:** »Nachts einen
+goldenen Schlurfer jagen, morgens die Kiste öffnen« (DESIGN M21) – das Öffnen
+ist ein eigener kleiner Gang, kein Nebenbei-Aufsammeln.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

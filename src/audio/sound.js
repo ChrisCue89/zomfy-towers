@@ -200,6 +200,16 @@ const SFX = {
     s.noise(t, 0.6, { type: 'highpass', freq: 1800, attack: 0.15, peak: 0.1 * v, out: o });
     s.tone('sine', 1320, t, 0.45, { peak: 0.04 * v, attack: 0.05, out: o });
   },
+  // M21: ein Champion kommt (tiefe Hörner), die Fundkiste platzt auf (Knall und Glitzern), ein Funke springt
+  champion: (s, t, v, o) => {
+    s.tone('sawtooth', 196, t, 0.32, { attack: 0.04, peak: 0.06 * v, filter: 900, out: o });
+    s.tone('sawtooth', 261.63, t + 0.28, 0.55, { attack: 0.05, peak: 0.06 * v, filter: 1000, vibrato: 4, out: o });
+  },
+  kiste: (s, t, v, o) => {
+    s.noise(t, 0.12, { type: 'lowpass', freq: 900, freqEnd: 300, peak: 0.22 * v, out: o });
+    [783.99, 987.77, 1174.66, 1567.98].forEach((f, k) => s.tone('triangle', f, t + 0.08 + k * 0.06, 0.16, { peak: 0.07 * v, out: o }));
+  },
+  funke: (s, t, v, o) => s.tone('square', 1800, t, 0.06, { freqEnd: 600, peak: 0.03 * v, filter: 4000, out: o }),
   windstoss: (s, t, v, o) => s.noise(t, 0.7, { type: 'bandpass', freq: 380, freqEnd: 900, q: 0.7, attack: 0.25, peak: 0.16 * v, out: o }),
   // Bienenkorb: kurzes Summen, wenn ein Schwarm ausfliegt
   summen: (s, t, v, o) => s.tone('sawtooth', 210, t, 0.5, { freqEnd: 240, attack: 0.08, peak: 0.025 * v, filter: 900, vibrato: 14, out: o }),

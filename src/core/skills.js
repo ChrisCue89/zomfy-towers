@@ -193,7 +193,7 @@ export class Skills {
         g.sound.play('blitz');
         g.rig.shake = Math.max(g.rig.shake || 0, 0.08);
         for (const zo of g.horde.inRange(x, z, S.radius)) {
-          g.horde.stun(zo, S.stun * power);
+          g.horde.stun(zo, S.stun * power, true); // Licht: den lichtfressenden Champion betäubt es nicht (M21)
           g.horde.slow(zo, S.slow, S.slowTime * power);
           g.horde.status(zo, 'geblendet', S.slowTime * power); // M18: geblendet – Bolzen treffen die Schwachstelle
           zo.flash = 0.25;

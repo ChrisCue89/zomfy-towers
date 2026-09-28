@@ -268,6 +268,7 @@ export class Hud {
     if (show.prompt) {
       this.drawZombieBars(ui);
       this.drawStatus(ui);
+      this.drawChampions(ui);
       this.drawRings(ui);
       this.drawSwooshes(ui);
       this.drawNumbers(ui);
@@ -563,11 +564,38 @@ export class Hud {
     }
   }
 
+  /**
+   * Champions (M21): goldener Name über dem Kopf, darunter die Merkmale, dazu ein
+   * breiter Lebensbalken (der Schild als heller Streifen darüber).
+   */
+  drawChampions(ui) {
+    const g = this.game;
+    this.championsShown = 0;
+    for (const z of g.horde.list) {
+      if (!z.champion || z.state === 'dying') continue;
+      const p = g.worldToUi(z.x, 2.05 * z.def.scale * (z.size || 1), z.z);
+      if (p.x < -40 || p.y < -30 || p.x > ui.width + 40 || p.y > ui.height + 30) continue;
+      this.championsShown++;
+      const name = T.champions.namen[z.champion.name];
+      const traits = z.champion.traits.map((t) => T.champions.merkmale[t]).join(', ');
+      const y = Math.round(p.y) - 12; // über den Zeichen der Zustände
+      ui.text(traits, Math.round(p.x - measure(traits) / 2), y - LINE_HEIGHT, COLORS.textWarm, { outline: COLORS.outline });
+      ui.text(name, Math.round(p.x - measure(name) / 2), y - LINE_HEIGHT * 2, COLORS.gold, { outline: COLORS.outline });
+      const w = 26;
+      const x = Math.round(p.x - w / 2);
+      const by = Math.round(p.y);
+      ui.rect(x - 1, by - 1, w + 2, 5, COLORS.gold);
+      ui.rect(x, by, w, 3, COLORS.outline);
+      ui.rect(x + 1, by + 1, Math.max(1, Math.round((w - 2) * (z.hp / z.maxHp))), 1, COLORS.buildBad);
+      if (z.shield > 0) ui.rect(x + 1, by + 2, Math.max(1, Math.round((w - 2) * (z.shield / z.shieldMax))), 1, COLORS.text);
+    }
+  }
+
   /** Kleine Lebensbalken über verletzten Schlurfern. */
   drawZombieBars(ui) {
     const g = this.game;
     for (const z of g.horde.list) {
-      if (z.state === 'dying' || z.hp >= z.maxHp) continue;
+      if (z.state === 'dying' || z.hp >= z.maxHp || z.champion) continue; // Champions: eigener Balken (M21)
       const p = g.worldToUi(z.x, 2.05 * z.def.scale, z.z);
       const w = z.type === 'anfuehrer' ? 30 : z.type === 'brummer' ? 20 : 12;
       const x = Math.round(p.x - w / 2);

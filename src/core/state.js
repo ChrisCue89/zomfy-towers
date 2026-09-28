@@ -19,7 +19,7 @@ import { BLUEPRINTS, BLUEPRINT_CHOICES } from '../data/blueprints.js';
 import { MIXES } from '../data/mixes.js';
 import { TOWERS } from '../data/towers.js';
 
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -77,7 +77,7 @@ export function createNewState(config, mapSeed = 1) {
     loot: [], // Überreste am Boden (bleiben bis zu drei Tage, `until` in absoluten Spielminuten)
     report: null, // Morgenbericht, der noch gezeigt werden muss
     flags: {},
-    stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0 },
+    stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
 }
 
@@ -139,6 +139,8 @@ export function sanitizeState(data, config) {
   out.stats.kills = Math.floor(num(data.stats?.kills, 0, 0, 1e9));
   out.stats.nightsWon = Math.floor(num(data.stats?.nightsWon, 0, 0, 1e6));
   out.stats.nightsLost = Math.floor(num(data.stats?.nightsLost, 0, 0, 1e6));
+  out.stats.champions = Math.floor(num(data.stats?.champions, 0, 0, 1e6)); // M21
+  out.stats.chests = Math.floor(num(data.stats?.chests, 0, 0, 1e6));
   for (const k of Object.keys(out.upgrades)) out.upgrades[k] = Math.floor(num(data.upgrades?.[k], 0, 0, 3));
   for (const k of WEAPON_ORDER) if (Number.isFinite(data.weapons?.[k])) out.weapons[k] = Math.floor(num(data.weapons[k], 1, 1, 3));
   for (const k of PERK_IDS) if (Number.isFinite(data.perks?.[k])) out.perks[k] = Math.floor(num(data.perks[k], 0, 0, PERKS[k].max));
@@ -220,7 +222,9 @@ export function sanitizeState(data, config) {
         if (b.spec === 'A' || b.spec === 'B') entry.spec = b.spec;
         if (Number.isFinite(b.hp)) entry.hp = num(b.hp, 100, 0, 1000);
         if (b.broken === true) entry.broken = true; // zerstörte Barrikade (Trümmer)
-        if (typeof b.part === 'string' && TOWER_PARTS[b.part]) entry.part = b.part; // Turmteil (M10)
+        // Turmteile (M10; M21: bis zu zwei als Liste)
+        if (Array.isArray(b.parts)) entry.parts = [...new Set(b.parts.filter((id) => typeof id === 'string' && TOWER_PARTS[id]))].slice(0, 2);
+        else if (typeof b.part === 'string' && TOWER_PARTS[b.part]) entry.parts = [b.part];
         // Geschichte des Turms (M16): Erfahrung, Abschüsse, Name
         if (Number.isFinite(b.xp) && b.xp > 0) entry.xp = Math.round(num(b.xp, 0, 0, 1e7));
         if (Number.isFinite(b.kills) && b.kills > 0) entry.kills = Math.floor(num(b.kills, 0, 0, 1e7));

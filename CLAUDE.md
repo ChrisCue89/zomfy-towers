@@ -250,6 +250,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       blueprints (Baupläne: Vorrat, Gewichte, Wahl, M19),
                       traps (Werte der Fallen, M19),
                       mixes (Mischtürme: Rezepte, Werte, Kosten, M20),
+                      champions (Champions: Anzahl je Nacht, Merkmale,
+                      Fundkiste, M21),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -382,6 +384,17 @@ Grundprinzipien:
   Herkunft für den Abriss) und trägt das Rezept in `state.recipes` ein.
   `towers.origin` nimmt bei zwei Feldern die Mitte; neue Geschosse haben
   eigene Pools (`PROJECTILE_POOL`), Markieren läuft über `horde.mark`.
+- **Turmteile und Champions (M21):** Ein Turm trägt `parts` (Liste, ein Fach,
+  ab Stufe 4 zwei, `partSlots`); Werte wirken über `towerStatsOf`, Treffer-
+  Wirkungen (Brennglas, Eiskristall, Stricknadel, Kupferspule) über
+  `game.partsOnHit` im `onDamage` der Horde (nur `source: 'turm'`, nie für den
+  Funken selbst), das Uhrwerk in `TowerSystem.update` (Abklingzeit nach jedem
+  vierten Schuss). Champions stehen im Wellenplan (`addChampions` mit eigenem
+  Zufall – alte Pläne bleiben gleich), `horde.makeChampion` setzt Leben,
+  Größe (`z.size`), Rüstung (`z.armor`), Schild, Heilung und `lightproof`;
+  Warteschlange und Horde speichern `champion`. Die Fundkiste ist Beute
+  (`res: 'kiste'`), die nicht fliegt; `game.openChest` würfelt das Teil
+  (`randomPart` mit Gewichten je Seltenheit).
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -541,7 +554,14 @@ Grundprinzipien:
    die Kürbisballiste auf beiden Feldern (Moderkern, Banner, Werkstattbuch),
    ihr Bolzen durchschlägt eine Reihe; übereinander entsteht die Nebelleuchte
    (nass, geblendet); das Werkstattbuch mit Esc, S, E; Speichern v15 und
-   Migration v14 → v15 (Bilder: mischturm, werkstattbuch).
+   Migration v14 → v15 (Bilder: mischturm, werkstattbuch); ab M21 (Abschnitt
+   `glanz`, nur der Kern): ein Turm auf Stufe 4 nimmt mit echten Tasten zwei
+   Turmteile, ein drittes passt nicht; das Brennglas setzt in Brand; Nacht 3
+   hat einen Champion im Plan, die ersten beiden keinen; ein Champion mit
+   Schild zeigt Name und Merkmale, fällt und lässt eine Fundkiste liegen, die
+   mit echter Taste aufplatzt; Basteln (drei Hufeisen → ein seltenes Teil);
+   Balduins Wundertüte; Speichern v16 (auch ein lebender Champion) und
+   Migration v15 → v16 (Bilder: champion, fundkiste).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -626,7 +646,12 @@ Pläne, offene Wahl und Reiter, `giveBlueprint(id)` schaltet einen frei,
 `lured()` die Gelockten, `bells()` Glockenschläge und Geflicktes,
 `grindMills()` lässt die Mühlen mahlen; ab M20 zeigt `recipes()` das
 Werkstattbuch, `mixPartners(id)` die Nachbarn zum Verbinden, `mergeTowers(a, c)`
-verbindet zwei Türme (mit Kosten).
+verbindet zwei Türme (mit Kosten); ab M21 nimmt `spawnZombie(art, x, z,
+champion)` auch einen Champion (`{ name, traits }`), `champions()` nennt die
+lebenden (Name, Merkmale, Leben, Schild, Rüstung, ob die Anzeige steht),
+`championPlan(n)` die Champions im Plan einer Nacht, `lastChest()` das Teil
+der zuletzt geöffneten Fundkiste, `mountPart(id, teil)` baut ein Teil ein,
+`tinker(teil)` bastelt, `tinkerRows()` zeigt die Basteln-Zeilen der Werkbank.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

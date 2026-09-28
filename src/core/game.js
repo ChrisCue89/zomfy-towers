@@ -19,7 +19,7 @@ import { TowerRanks } from './towerRanks.js';
 import { Rng } from './rng.js';
 import { damp } from './math.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
-import { hexToCss } from '../render/palette.js';
+import { hexToCss, P } from '../render/palette.js';
 import { REACTION_COLORS, REACTION_PITCH, WEATHER_EFFECTS } from '../data/reactions.js';
 import { NIGHT_START } from '../data/waves.js';
 import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.js';
@@ -65,7 +65,9 @@ import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
-import { towerInvested, towerStatsOf } from '../data/towers.js';
+import { towerInvested, towerStatsOf, TOWER_PARTS, PART_RARITIES, TINKER_COUNT, partsOfRarity, hasPart } from '../data/towers.js';
+import { CHAMPION, CHEST_RARITY, CHEST_LOOT } from '../data/champions.js';
+import { BAG_RARITY } from '../data/trader.js';
 import { GOALS } from '../data/goals.js';
 import { RECIPES } from '../data/recipes.js';
 import { upgradeValue } from '../data/upgrades.js';
@@ -224,9 +226,19 @@ export class Game {
         this.sound.play('klirr', { x: z.x, z: z.z });
         this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.reaktionen.zerspringt, hexToCss(REACTION_COLORS.eisblock));
       },
-      onDamage: (z, amount, source, by) => {
+      onDamage: (z, amount, source, by, kind) => {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
-        if (by !== null && by !== undefined) this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
+        if (by !== null && by !== undefined) {
+          this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
+          if (source === 'turm' && kind !== 'funke') this.partsOnHit(z, amount, by); // M21: Turmteile mit Wirkung
+        }
+      },
+      // Champions (M21): goldenes Glitzern, der Schild bricht
+      onSparkle: (z) => this.effects.splat(z.x + (this.world.particles.rng.next() - 0.5) * 0.5, 1.2 * z.def.scale * (z.size || 1), z.z, 'licht', 2, 0.35),
+      onShieldBreak: (z) => {
+        this.effects.splat(z.x, 1.1, z.z, 'funken', 12, 0.9);
+        this.sound.play('klirr', { x: z.x, z: z.z });
+        this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.champions.schildBricht, hexToCss(P.f5));
       },
     });
     this.bellStats = { rings: 0, healed: 0 }; // Glockenschläge und geflickte Bauten (M19, Prüfung)
@@ -868,6 +880,10 @@ export class Game {
   /** Loot ist bei Mika angekommen. */
   collectLoot(res, x, y, z) {
     const st = this.state;
+    if (res === 'kiste') {
+      this.openChest(x, z); // Fundkiste (M21): platzt auf, statt in die Tasche zu fliegen
+      return;
+    }
     st.inventory[res] = (st.inventory[res] || 0) + 1;
     if (this.nights.active || (st.night.n === st.time.day && !st.report)) st.night.loot[res] = (st.night.loot[res] || 0) + 1;
     // Nach »Nacht geschafft« Aufgesammeltes zählt noch zur Nacht (m3-r1: Bericht zählte zu wenig)
@@ -909,6 +925,7 @@ export class Game {
       this.hud.toast(recipe.ownedText || T.werkbank.vorhanden, recipe.icon, 1.8);
       return false;
     }
+    if (recipe.gives.tinker) return this.tinker(recipe); // Basteln (M21): bezahlt mit Turmteilen
     if (!canAfford(st.inventory, recipe.cost)) {
       this.hud.toast(T.meldungen.zuTeuer, null, 1.8);
       return false;
@@ -936,14 +953,20 @@ export class Game {
     if (recipe.gives.part) {
       // Besonderes Turmteil von Balduin (M10): kommt in den Vorrat, eingebaut wird über die Turm-Auswahl
       const id = recipe.gives.part;
-      st.towerParts[id] = (st.towerParts[id] || 0) + 1;
+      this.gainPart(id);
       this.trader.sold(recipe);
       this.hud.toast(T.turmteile.gekauft(T.turmteile[id][0]), id, 3.2);
-      if (!st.flags.turmteilHinweis) {
-        st.flags.turmteilHinweis = true;
-        this.hud.showHint(T.turmteile.hinweis, 9);
-      }
       this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
+    if (recipe.gives.bag) {
+      // Balduins Wundertüte (M21): ein zufälliges Turmteil, meist gewöhnlich
+      const id = this.randomPart(BAG_RARITY);
+      this.gainPart(id);
+      this.trader.sold(recipe);
+      this.hud.toast(T.wundertuete.auf(T.turmteile[id][0], T.turmteile.seltenheit[TOWER_PARTS[id].rarity]), id, 4);
+      this.sound.play('kiste');
       this.quietSave();
       return true;
     }
@@ -1114,6 +1137,8 @@ export class Game {
     // M19: was die Mühlen gemahlen haben, und ob ein Bauplan wartet
     if (this.milled) extra.push({ text: T.muehle.gemahlen(this.milled) });
     if (st.blueprintChoice) extra.push({ text: T.bauplaene.bericht });
+    // M21: Eine Fundkiste wartet draußen (morgens öffnen)
+    if (this.loot.items.some((it) => it.res === 'kiste')) extra.push({ text: T.fundkiste.bericht });
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.placeInside(w);
@@ -1191,7 +1216,11 @@ export class Game {
     st.stats.kills = (st.stats.kills || 0) + 1;
     this.towerRanks.onKill(by, z); // Strichliste und Erfahrung der Türme (M16)
     if (this.nights.active) st.night.kills += 1;
-    const factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
+    let factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
+    // Hufeisen (M21): mehr Beute von den Abschüssen dieses Turms; Champions lassen doppelt so viel
+    const tower = by !== null && by !== undefined ? this.world.buildings.get(by) : null;
+    if (tower && hasPart(tower, 'hufeisen')) factor *= TOWER_PARTS.hufeisen.loot;
+    if (z.champion) factor *= CHAMPION.loot;
     // Zombieteile (M9.1): selbst erschlagen – sicher welche; durch Türme nur mit Glück
     const melee = source === 'spieler';
     const table = { ...z.def.loot };
@@ -1202,8 +1231,125 @@ export class Game {
     if (this.world.particles.rng.next() < perkValue(st, 'glueckspilz')) this.loot.drop(z.x, z.z, { schrott: [1, 1] }, 1);
     this.effects.splat(z.x, 0.6, z.z, 'moos', 12, 0.9);
     this.sound.play('tod', { x: z.x, z: z.z });
-    // Erfahrung: im Nahkampf doppelt, Tagesschlurfer halb
-    this.combat.gainXp(z.def.xp * (source === 'spieler' ? 2 : 1) * (z.day ? 0.5 : 1));
+    // Erfahrung: im Nahkampf doppelt, Tagesschlurfer halb, Champions vierfach (M21)
+    this.combat.gainXp(z.def.xp * (source === 'spieler' ? 2 : 1) * (z.day ? 0.5 : 1) * (z.champion ? CHAMPION.xp : 1));
+    if (z.champion) this.championDown(z);
+  }
+
+  /** Ein Champion betritt die Wege (M21): groß ansagen, beim ersten Mal erklären. */
+  onChampion(z) {
+    const c = z.champion;
+    this.hud.showBanner(T.champions.kommt(T.champions.namen[c.name]));
+    this.hud.toast(T.champions.merkmaleText(c.traits.map((t) => T.champions.merkmale[t]).join(', ')), 'champion', 5);
+    this.sound.play('champion');
+    if (!this.state.flags.championHinweis) {
+      this.state.flags.championHinweis = true;
+      this.hud.showHint(T.champions.hinweis, 9);
+    }
+  }
+
+  /** Ein Champion fällt (M21): Fundkiste, Glanz – und wer teilend ist, zerfällt in kleine Schlurfer. */
+  championDown(z) {
+    const st = this.state;
+    st.stats.champions = (st.stats.champions || 0) + 1;
+    if (this.nights.active) st.night.champions = (st.night.champions || 0) + 1;
+    this.loot.spawn('kiste', z.x, z.z);
+    this.effects.splat(z.x, 1.2, z.z, 'licht', 18, 1.2);
+    this.sound.play('jubel', { x: z.x, z: z.z });
+    this.hud.toast(T.champions.faellt(T.champions.namen[z.champion.name]), 'kiste', 4);
+    if (!z.split) return;
+    this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.champions.zerfaellt, hexToCss(P.g6));
+    for (let k = 0; k < z.split; k++) {
+      const o = this.horde.spawn('schlurfer', { x: z.x + (k - (z.split - 1) / 2) * 0.5, z: z.z + 0.2, lootFactor: 0.3 });
+      o.maxHp = o.hp = Math.max(10, Math.round(z.maxHp * 0.3));
+      o.size = 0.8;
+      o.state = 'walk';
+    }
+  }
+
+  /**
+   * Turmteile mit Wirkung am Treffer (M21): Brennglas, Eiskristall, Omas Stricknadel,
+   * Kupferspule. Nur für Treffer von Türmen – nicht für den Brand und nicht für den Funken selbst.
+   */
+  partsOnHit(z, amount, by) {
+    const t = this.world.buildings.get(by);
+    if (!t?.parts?.length || z.hp <= 0 || z.state === 'dying') return;
+    for (const id of t.parts) {
+      const part = TOWER_PARTS[id];
+      if (!part) continue;
+      if (part.burn) this.horde.ignite(z, part.burn[0], part.burn[1], by);
+      if (part.frost) this.horde.status(z, 'frostig', part.frost);
+      if (part.hold && z.stunT <= 0 && this.loot.rng.chance(part.hold[0])) {
+        this.horde.stun(z, part.hold[1]);
+        this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.turmteile.festgestrickt, hexToCss(P.r4));
+      }
+      if (part.chain) {
+        t.partHits = (t.partHits || 0) + 1;
+        if (t.partHits % part.chain) continue;
+        const next = this.horde.inRange(z.x, z.z, 3).find((o) => o !== z && o.state !== 'dying' && o.state !== 'enter');
+        if (!next) continue;
+        this.effects.splat(next.x, 1.1, next.z, 'funken', 8, 0.6);
+        this.sound.play('funke', { x: next.x, z: next.z });
+        this.horde.damage(next, amount, { source: 'turm', by, kind: 'funke' });
+      }
+    }
+  }
+
+  /** Ein zufälliges Turmteil nach Gewichten je Seltenheit (Fundkiste, Wundertüte, M21). */
+  randomPart(weights, rng = this.loot.rng) {
+    let r = rng.next() * Object.values(weights).reduce((a, b) => a + b, 0);
+    let rarity = PART_RARITIES[0];
+    for (const [k, w] of Object.entries(weights)) {
+      rarity = k;
+      if ((r -= w) < 0) break;
+    }
+    return rng.pick(partsOfRarity(rarity));
+  }
+
+  /** Ein Turmteil in den Vorrat – beim ersten Mal erklärt Mika, wie man es einbaut. */
+  gainPart(id) {
+    const st = this.state;
+    st.towerParts[id] = (st.towerParts[id] || 0) + 1;
+    if (!st.flags.turmteilHinweis) {
+      st.flags.turmteilHinweis = true;
+      this.hud.showHint(T.turmteile.hinweis, 9);
+    }
+  }
+
+  /** Die Fundkiste platzt auf (M21): ein Turmteil nach Seltenheit, dazu Schrott, Teile, vielleicht ein Zahnrad. */
+  openChest(x, z) {
+    const st = this.state;
+    const id = this.randomPart(CHEST_RARITY);
+    this.gainPart(id);
+    st.stats.chests = (st.stats.chests || 0) + 1;
+    const p = this.player.position;
+    this.loot.drop(p.x, p.z, CHEST_LOOT, 1);
+    this.effects.splat(x, 0.5, z, 'licht', 16, 1);
+    this.effects.chips(x, 0.4, z, 'holz', 6);
+    this.sound.play('kiste', { x, z });
+    this.player.express('froh', 1.4);
+    this.hud.toast(T.fundkiste.auf(T.turmteile[id][0], T.turmteile.seltenheit[TOWER_PARTS[id].rarity]), id, 4.5);
+    this.hud.popWord(x, 1.2, z, T.fundkiste.wort, hexToCss(P.f7));
+    this.lastChest = id; // für die Prüfung
+    this.quietSave();
+  }
+
+  /** Basteln an der Werkbank (M21): drei gleiche Turmteile ergeben eines der nächsten Seltenheit. */
+  tinker(recipe) {
+    const st = this.state;
+    const id = recipe.gives.tinker;
+    const next = PART_RARITIES[PART_RARITIES.indexOf(TOWER_PARTS[id]?.rarity) + 1];
+    if (!next || !((st.towerParts[id] || 0) >= TINKER_COUNT)) {
+      this.hud.toast(T.meldungen.zuTeuer, null, 1.8);
+      return false;
+    }
+    st.towerParts[id] -= TINKER_COUNT;
+    const got = this.loot.rng.pick(partsOfRarity(next));
+    this.gainPart(got);
+    this.hud.toast(T.werkbank.gebastelt(T.turmteile[got][0], T.turmteile.seltenheit[next]), got, 3.5);
+    this.sound.play('aufwertung');
+    this.quietSave();
+    return true;
   }
 
   onHouseHit(dmg, z) {
@@ -1302,7 +1448,7 @@ export class Game {
         const def = BUILDINGS[other.type];
         const cost = def.tower ? towerInvested(other.type, other.level, other.spec) : other.type === 'barrikade' ? (other.broken ? {} : barricadeInvested(other.level)) : def.cost || {};
         for (const [res, n] of Object.entries(cost)) back[res] = (back[res] || 0) + n;
-        if (other.part) this.state.towerParts[other.part] = (this.state.towerParts[other.part] || 0) + 1;
+        for (const id of other.parts || []) this.state.towerParts[id] = (this.state.towerParts[id] || 0) + 1;
         bs.remove(other.id);
       }
     }
@@ -2651,10 +2797,30 @@ export class Game {
         return { ok: c.ok, reason: c.reason || null, why: c.why || null };
       },
       buildings: () => game.world.buildings.toState(),
-      spawnZombie(type, x, z) {
-        const zo = game.horde.spawn(type, { x, z });
+      /** @param {{name:number, traits:string[]}} [champion] als Champion (M21) */
+      spawnZombie(type, x, z, champion = null) {
+        const zo = game.horde.spawn(type, { x, z, champion });
         zo.state = 'walk';
+        if (zo.champion) game.onChampion(zo);
         return zo.id;
+      },
+      // M21: Champions, Fundkiste, Turmteile, Basteln
+      champions: () => game.horde.list.filter((q) => q.champion && q.state !== 'dying').map((q) => ({ id: q.id, type: q.type, name: T.champions.namen[q.champion.name], traits: [...q.champion.traits], hp: q.hp, maxHp: q.maxHp, shield: q.shield || 0, size: q.size, armor: q.armor ?? q.def.armor, speed: q.speed, x: q.x, z: q.z, shown: game.hud.championsShown })),
+      championPlan: (n) => game.nights.planFor(n).waves.flatMap((w, k) => w.spawns.filter((q) => q.champion).map((q) => ({ wave: k + 1, type: q.type, name: T.champions.namen[q.champion.name], traits: q.champion.traits }))),
+      lastChest: () => game.lastChest || null,
+      mountPart(id, part) {
+        const b = game.world.buildings.get(id);
+        if (!b) return false;
+        game.builder.mountPart(b, part);
+        return [...(b.parts || [])];
+      },
+      tinker: (part) => game.tinker({ gives: { tinker: part } }),
+      tinkerRows: () => {
+        const was = game.crafting.source;
+        game.crafting.source = 'werkbank';
+        const rows = game.crafting.recipes().filter((r) => r.gives.tinker).map((r) => r.id);
+        game.crafting.source = was;
+        return rows;
       },
       zombies: () => game.horde.list.map((z) => ({ id: z.id, type: z.type, x: z.x, z: z.z, hp: z.hp, state: z.state, stun: z.stunT })),
       killAllZombies() {

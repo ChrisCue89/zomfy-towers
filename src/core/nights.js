@@ -251,7 +251,7 @@ export class Nights {
       if (s.delay > 0) continue;
       this.queue.splice(i, 1);
       const p = this.plan;
-      this.spawnGroup(s.type, s.entry, 1, { hpFactor: p ? p.hpFactor : 1, speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1) });
+      this.spawnGroup(s.type, s.entry, 1, { hpFactor: p ? p.hpFactor : 1, speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1), champion: s.champion || null });
     }
 
     // Geschafft?
@@ -273,13 +273,14 @@ export class Nights {
     return null;
   }
 
-  spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1 } = {}) {
+  spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1, champion = null } = {}) {
     const g = this.game;
     const entry = g.world.pathing.entries[entryName];
     for (let k = 0; k < count; k++) {
       const jitter = (k - (count - 1) / 2) * 0.7;
       const from = { x: entry.from.x + jitter, z: entry.from.z + jitter * 0.5 };
-      g.horde.spawn(type, { from, entry, hpFactor, speedFactor, lootFactor, day });
+      const z = g.horde.spawn(type, { from, entry, hpFactor, speedFactor, lootFactor, day, champion });
+      if (z.champion) g.onChampion(z); // M21: ein Champion kommt – groß ansagen
     }
   }
 
@@ -344,7 +345,7 @@ export class Nights {
 
   /** Zum Speichern: noch ausstehende Schlurfer der laufenden Welle. */
   toState() {
-    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1), ...(s.bonus ? { bonus: true } : {}) }));
+    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1), ...(s.bonus ? { bonus: true } : {}), ...(s.champion ? { champion: s.champion } : {}) }));
   }
 
   load(queue) {

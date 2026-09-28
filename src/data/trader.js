@@ -42,7 +42,13 @@ export const TRADER_OFFERS = {
   gluecksmuenze: { give: { teile: 10 }, part: 'gluecksmuenze', stock: 1 },
   // M19: ein Bauplan (Wahl aus drei) an ungeraden Tagen ab Tag 3
   bauplan: { give: { teile: 12 }, blueprint: true, stock: 1 },
+  // M21: die Wundertüte – ein zufälliges Turmteil (Seltenheit nach BAG_RARITY)
+  wundertuete: { give: { teile: 8 }, bag: true, stock: 1 },
 };
+
+/** Wundertüte (M21): ab diesem Tag jeden Tag; Gewichte der Seltenheiten. */
+export const BAG_FROM_DAY = 3;
+export const BAG_RARITY = { gewoehnlich: 62, selten: 27, besonders: 9, einzigartig: 2 };
 
 /** Turmteile im Angebot: an geraden Tagen ab Tag 4 eines, reihum (M10). */
 export const TRADER_PARTS = ['fernrohr', 'schmierfett', 'gluecksmuenze'];
@@ -68,5 +74,6 @@ export function offersOfDay(day) {
   const k = Math.max(0, day - TRADER.fromDay) % TRADER_DAILY.length;
   const part = day >= PARTS_FROM_DAY && day % 2 === 0 ? [TRADER_PARTS[(day / 2) % TRADER_PARTS.length]] : [];
   const plan = day >= PLANS_FROM_DAY && day % 2 === 1 ? ['bauplan'] : [];
-  return [...TRADER_BASE, ...TRADER_DAILY[k], ...part, ...plan];
+  const bag = day >= BAG_FROM_DAY ? ['wundertuete'] : [];
+  return [...TRADER_BASE, ...TRADER_DAILY[k], ...part, ...plan, ...bag];
 }

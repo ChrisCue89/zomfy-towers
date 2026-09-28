@@ -412,6 +412,10 @@ export const T = {
     vorhanden: 'schon da',
     // Waffen mit Zahlen wie die Türme (m5-r1)
     werte: (schaden, tempo, reichweite, ziele) => `Schaden ${schaden} · ${tempo} Schläge/s · ${reichweite} m${ziele > 1 ? ` · bis zu ${ziele} auf einmal` : ''}`,
+    // Basteln (M21): drei gleiche Turmteile ergeben eines der nächsten Seltenheit
+    basteln: (name) => `Basteln: 3 × ${name}`,
+    bastelnInfo: (seltenheit) => `Wird ein zufälliges Teil, Seltenheit: ${seltenheit}.`,
+    gebastelt: (name, seltenheit) => `Gebastelt: ${name} (${seltenheit})!`,
   },
   // Wetter (M12): Name in der Uhr, Satz im Morgenbericht
   wetter: {
@@ -764,10 +768,59 @@ export const T = {
   },
   // Barrikaden auf den Wegen (Meilenstein 9): Stufen, Trümmer, Wiederaufbau
   // Besondere Turmteile von Balduin (Meilenstein 10)
+  // Champions (M21): Schlurfer mit goldenem Schimmer, Namen und Merkmalen
+  champions: {
+    namen: [
+      'Graf Moosbart',
+      'Tante Hedwig',
+      'Der lange Egon',
+      'Knorz',
+      'Brummbert',
+      'Frieda Fußlahm',
+      'Onkel Otto',
+      'Schlappohr',
+      'Baron Schimmel',
+      'Rostige Rita',
+      'Hinkebein-Heinz',
+      'Muffel',
+      'Rübennase',
+      'Förster Moderich',
+      'Knarzbein',
+      'Oma Grummel',
+    ],
+    merkmale: { moosig: 'moosig', gepanzert: 'gepanzert', flink: 'flink', schildtragend: 'mit Schild', teilend: 'teilend', lichtfressend: 'lichtfressend' },
+    kommt: (name) => `Ein Champion: ${name}!`,
+    merkmaleText: (liste) => `Goldener Schimmer, ${liste} – er trägt eine Fundkiste.`,
+    faellt: (name) => `${name} ist gefallen – eine Fundkiste!`,
+    schildBricht: 'Schild bricht!',
+    zerfaellt: 'zerfällt!',
+    hinweis: 'Champions sind zäh, aber wer sie erwischt, findet eine Fundkiste mit einem Turmteil.',
+  },
+  fundkiste: {
+    auf: (name, seltenheit) => `Fundkiste: ${name} (${seltenheit})!`,
+    wort: 'Fundkiste!',
+    bericht: 'Draußen liegt noch eine Fundkiste.',
+  },
+  wundertuete: {
+    kaufen: ['Wundertüte', 'Ein zufälliges Turmteil – mit Glück ein seltenes.'],
+    auf: (name, seltenheit) => `In der Wundertüte: ${name} (${seltenheit})!`,
+  },
   turmteile: {
+    // M21: vier Seltenheiten
+    schleifstein: ['Schleifstein', 'Frisch geschliffen: 15 % mehr Schaden.'],
+    hufeisen: ['Hufeisen', 'Bringt Glück: 30 % mehr Beute von seinen Abschüssen.'],
+    zahnkranz: ['Zahnkranz', 'Greift sauber ineinander: 10 % schneller.'],
     fernrohr: ['Fernrohr', 'Messing-Fernrohr: 25 % mehr Reichweite.'],
     schmierfett: ['Schmierfett', 'Geölte Mechanik: 25 % schneller (Laternenturm: stärkere Aura).'],
+    kupferspule: ['Kupferspule', 'Jeder fünfte Treffer springt als Funke auf ein zweites Ziel.'],
+    brennglas: ['Brennglas', 'Bündelt das Licht: Treffer setzen in Brand.'],
+    eiskristall: ['Eiskristall', 'Treffer machen frostig.'],
+    uhrwerk: ['Uhrwerk', 'Tick, tack: Jeder vierte Schuss kommt gleich noch einmal.'],
     gluecksmuenze: ['Glücksmünze', 'Wen dieser Turm erwischt, der lässt sicher Teile fallen.'],
+    stricknadel: ['Omas Stricknadel', 'Ab und zu strickt sie ein Ziel kurz fest.'],
+    mondstein: ['Mondstein', 'Kühles Leuchten: mehr Schaden, Reichweite und Aura.'],
+    seltenheit: { gewoehnlich: 'gewöhnlich', selten: 'selten', besonders: 'besonders', einzigartig: 'einzigartig' },
+    festgestrickt: 'festgestrickt!',
     einbauen: (name) => `${name} einbauen`,
     eingebaut: (name) => `${name} eingebaut.`,
     gekauft: (name) => `${name} gekauft!`,
