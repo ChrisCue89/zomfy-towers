@@ -177,7 +177,10 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Erfahrung, Rang, Wimpel, Name, Turm der Nacht, M16),
                       posts (Posten auf den Hochsitzen, Knopf im Hof,
                       Rückzug, Fest am Feuer, M23), quests (Nebenaufträge:
-                      Bitte, Fundstücke, Belohnung, M23),
+                      Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
+                      Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
+                      (Herbstbuch: Sterne, Taten, Herbstschmuck,
+                      Schlurferkunde, Turmalbum, M25),
                       survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
                       Funkturm), furnishing (Möbel, Gemütlichkeit), trader
@@ -224,6 +227,9 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Wohnraum des Innenraums),
                       questModels (Fundstücke der Nebenaufträge, M23),
+                      decoModels (Herbstschmuck: Regentonne, Kürbis,
+                      Kürbislaterne, Laubhaufen – für Requisiten und
+                      Herbstbuch, M25),
                       voxelKit (Baukasten für feine Modelle: Farbstufen,
                       Bretter, Rundholz, Steine, Quader im 1/16-Maß,
                       Kantenlicht; FINE, FINE32)
@@ -239,7 +245,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       Balduin), dogModel, traderModels (Balduins Boot),
                       crows (Krähen: sitzen, picken, fliegen auf, M12)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
-                      Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
+                      Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
+                      (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
                       buildbar (Bauleiste), crafting (Werkbank und
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), splash
@@ -261,7 +268,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       M23), quests (Nebenaufträge, Belohnungen, M23),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
-                      Schnee, danach, M25),
+                      Schnee, danach, M25), book (Taten, Herbstschmuck,
+                      Reihenfolge der Schlurferkunde, Turmalbum, M25),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -464,6 +472,16 @@ Grundprinzipien:
   legt über `uSnow` eine Schneedecke auf alles mit `snow` im Material (nur
   Feststehendes draußen; der Boden mit `snow: 0.5` nur bestäubt), der Moder
   glimmt über `world.moderFactor` schwächer. Werte in `data/autumn.js`.
+- **Herbstbuch (M25, Teil 2, `core/book.js`):** `state.book` hält Sterne je Nacht
+  (`nights.finishNight` → `book.starsFor`/`onNightWon`: gehalten, makellos aus
+  `settleRisk`, mutig aus `night.called`), die Tage gelungener Taten, erledigte
+  Arten (`book.onKill` aus `onZombieKilled`) und früh gerufene Wellen
+  (`book.onCall`). `book.check()` trägt Taten ein (alle 1,5 s im Spiel, nach
+  jeder Nacht, nach dem Laden leise); jede dritte schaltet ein Stück
+  Herbstschmuck frei (`book.decoUnlocked()` → Reiter `schmuck` der Bauleiste,
+  Bauten mit `deco`). Der Turm der Nacht bekommt einen Strich (`b.best`,
+  `towerRanks.crown`). Das Pausenmenü zeigt das Buch (`menu.bookData`, Seiten
+  `taten`/`kunde`/`album`, A/D blättern). Werte in `data/book.js`.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -663,7 +681,13 @@ Grundprinzipien:
    zerfällt, Schnee am Morgen und der schlafende Moder, Bericht (echte Taste),
    Abspann, Esc zur Wahl, Enter nimmt »Hierbleiben«; Nacht 31 würfelt sich neu;
    Speichern v19, neue Runde, Migration v18 → v19 (Bilder: finale, abspann,
-   schnee).
+   schnee); ab M25, Teil 2 (Abschnitt `buch`): drei Sterne im Morgenbericht (N
+   ruft abends die erste Welle, niemand kommt ins Lager), gelungene Taten mit
+   Meldung, die dritte bringt den Kürbis (Reiter »Schmuck« mit Tab, Q und
+   Mausklick), das Herbstbuch mit echten Tasten (Esc, S, E; D/A blättern:
+   Taten, Schlurferkunde mit Dr. Yusufs Notiz, Turmalbum mit dem Turm der
+   Nacht), Speichern v20, Migration v19 → v20 mit leise eingetragenen Taten
+   (Bilder: sterne, herbstbuch, schlurferkunde, schmuck).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -768,7 +792,10 @@ ob sie schon freigeschaltet ist, `lureEntryAt(x, z)`, zu welchem Spawn eine
 Stelle gehört; `quietChoices()` entscheidet Perk- und Fähigkeiten-Wahlen still
 mit der ersten Karte (für Prüfabschnitte, deren Aufräumen Stufen bringt); ab
 M25 zeigt `autumn()` Frost, Modus, Abspann, das Herz (Leben, Phase) und wie oft
-es gerufen hat, `spawnHeart(x, z)` lässt das Moderherz erscheinen.
+es gerufen hat, `spawnHeart(x, z)` lässt das Moderherz erscheinen; ab M25,
+Teil 2 zeigt `book()` Sterne je Nacht, Taten, Herbstschmuck, erledigte Arten,
+gerufene Wellen und das Turmalbum, `bookCheck()` trägt gelungene Taten sofort
+ein.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

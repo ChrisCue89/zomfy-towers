@@ -5,6 +5,29 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 25 – Ein Herbst mit Ende (Teil 2: Herbstbuch) ✓
+
+**Ziel (DESIGN 8):** Sterne je Nacht, Herbstbuch mit Deko als Belohnung,
+Schlurferkunde mit Dr. Yusufs Notizen, Turmalbum.
+
+- **Sterne:** gehalten, makellos (niemand im Lager, das Zuhause heil), mutig
+  (eine Welle früh gerufen) – ganz oben im Morgenbericht, goldene und graue
+  Sterne (OFFENE-FRAGEN 155).
+- **Herbstbuch** im Pausenmenü (A/D blättern, Reiter auch per Maus): **Taten** –
+  zwölf, mit Stand und Tag; jede dritte bringt **Herbstschmuck** (Kürbis,
+  Laubhaufen, Regentonne, Kürbislaterne mit Lichtinsel) im neuen Reiter
+  »Schmuck« (OFFENE-FRAGEN 156); **Schlurferkunde** – sechzehn Arten mit Zähler,
+  was sie tun und Dr. Yusufs Notizen, sobald er da ist (OFFENE-FRAGEN 157);
+  **Turmalbum** – die acht fleißigsten Türme mit Rang, Abschüssen, wie oft Turm
+  der Nacht und seit wann sie stehen.
+- **Abspann:** nennt jetzt auch Sterne und Taten.
+- **Technik:** `core/book.js`, `data/book.js`; die Herbst-Modelle der
+  Requisiten liegen jetzt in `world/decoModels.js` (Requisiten und Schmuck
+  teilen sie); Speichern v20 mit Migration v19 → v20 (Taten, die ein alter
+  Stand erfüllt, stehen leise im Buch); Prüfabschnitt `buch`.
+
+---
+
 ## Meilenstein 25 – Ein Herbst mit Ende (Teil 1) ✓
 
 **Ziel (DESIGN 8, OFFENE-FRAGEN 117):** Ein Spiel hat ein Ende – ein Finale nach
@@ -26,7 +49,7 @@ einem Herbst, danach weiterspielen oder eine neue Runde.
   v18 → v19; Prüfabschnitt `finale`.
 - **Offen:** Die Frostnacht ist noch nicht mit dem Balance-Durchlauf über 30
   Nächte vermessen (dauert Stunden); Sterne je Nacht, Herbstbuch,
-  Schlurferkunde und Turmalbum folgen in Teil 2.
+  Schlurferkunde und Turmalbum kamen in Teil 2.
 
 ---
 

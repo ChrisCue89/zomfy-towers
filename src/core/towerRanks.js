@@ -108,6 +108,12 @@ export class TowerRanks {
     return best;
   }
 
+  /** Der Turm der Nacht bekommt einen Strich mehr (Turmalbum, M25). */
+  crown(id) {
+    const b = this.tower(id);
+    if (b) b.best = (b.best || 0) + 1;
+  }
+
   /** Für die Prüfung. */
   view() {
     return this.buildings.towers.map((b) => ({ id: b.id, type: b.type, name: this.nameOf(b), xp: Math.round(b.xp || 0), kills: b.kills || 0, rang: towerRank(b.xp), wimpel: b.object?.getObjectByName('wimpel') ? b.object.getObjectByName('wimpel').children.length - 1 : 0 }));

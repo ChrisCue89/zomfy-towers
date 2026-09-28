@@ -6,9 +6,14 @@ import { T } from '../data/texts.js';
 import { clockText } from '../core/state.js';
 import { RESOURCES } from '../data/items.js';
 import { FLAWLESS } from '../data/risk.js';
+import { STAR_KEYS } from '../data/book.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { drawIcon } from './icons.js';
+
+/** Sternenzeile (M25): Platz für ein Symbol samt Abstand zum Namen, Abstand zwischen zwei Sternen. */
+const STAR_ICON = 12;
+const STAR_GAP = 12;
 
 export class ReportPanel {
   /** @param {import('../core/game.js').Game} game */
@@ -83,6 +88,8 @@ export class ReportPanel {
       const heil = !r.homeLost && !r.broken && (r.homeNow === undefined || r.homeNow >= r.homeMax);
       out.push({ text: heil ? T.bericht.schlussHeil : T.bericht.schlussKratzer, dim: true });
     }
+    // M25, Teil 2: die Sterne der Nacht ganz oben (gehalten, makellos, mutig)
+    if (r.stars) out.unshift({ text: '', stars: r.stars });
     return ui ? this.wrapLines(ui, out) : out;
   }
 
@@ -100,9 +107,24 @@ export class ReportPanel {
   /** Lage des Kastens (auch für die Meldungen darunter, m12-r1). */
   layout(ui, lines = this.lines(ui)) {
     const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
-    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => measure(l.text) + (l.res ? resW(l.res) + 8 : 0) + 24)));
+    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => (l.stars ? this.starsWidth() : measure(l.text)) + (l.res ? resW(l.res) + 8 : 0) + 24)));
     const h = 34 + lines.length * (LINE_HEIGHT + 3) + 16;
     return { x: Math.round((ui.width - w) / 2), y: Math.round((ui.height - h) / 2) - 16, w, h };
+  }
+
+  /** Breite der Sternenzeile: je Stern Symbol, Name und Abstand. */
+  starsWidth() {
+    return STAR_KEYS.reduce((w, k) => w + STAR_ICON + measure(T.buch.sterne[k]) + STAR_GAP, -STAR_GAP);
+  }
+
+  /** Sternenzeile (M25): drei Sterne mit Namen, verdiente golden, fehlende grau – mittig. */
+  drawStars(ui, stars, x, w, cy) {
+    let cx = Math.round(x + (w - this.starsWidth()) / 2);
+    STAR_KEYS.forEach((k, i) => {
+      drawIcon(ui.ctx, stars[i] ? 'stern' : 'sternLeer', cx, cy + 1);
+      ui.text(T.buch.sterne[k], cx + STAR_ICON, cy, stars[i] ? COLORS.gold : COLORS.textDim);
+      cx += STAR_ICON + measure(T.buch.sterne[k]) + STAR_GAP;
+    });
   }
 
   /** Unterkante des Kastens: Meldungen erscheinen darunter statt über der Überschrift. */
@@ -124,6 +146,11 @@ export class ReportPanel {
     ui.rect(x + 10, y + 20, w - 20, 1, COLORS.frameDark);
     let cy = y + 27;
     for (const l of lines) {
+      if (l.stars) {
+        this.drawStars(ui, l.stars, x, w, cy);
+        cy += LINE_HEIGHT + 3;
+        continue;
+      }
       ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : l.bad && !l.res ? COLORS.buildBad : l.warm ? COLORS.gold : COLORS.text);
       if (l.res) {
         let cx = x + 12 + measure(l.text) + 8;

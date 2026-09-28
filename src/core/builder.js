@@ -58,6 +58,7 @@ export class Builder {
     // Baupläne (M19): mehr als fünf Türme – zweite Seite; die erste bleibt Q R T G C
     const outside = this.knownTowers().length > TAB_PAGE ? ['tuerme', 'tuerme2'] : ['tuerme'];
     if (this.knownTraps().length || this.lureUnlocked()) outside.push('fallen'); // M24: die Moderlocke liegt bei den Fallen
+    if (this.game.book?.decoUnlocked().length) outside.push('schmuck'); // M25: Herbstschmuck aus dem Herbstbuch
     const tabs = [...outside, 'figur', 'zuhause', ...(guests ? ['einrichten'] : [])];
     // Drinnen (M11) wird nichts aufgestellt: keine Türme, nur Figur, Zuhause und Einrichten
     return this.game.viewInside ? tabs.filter((t) => !outside.includes(t)) : tabs;
@@ -147,6 +148,7 @@ export class Builder {
     if (tab === 'figur') return this.figureOptions();
     if (tab === 'zuhause') return this.homeOptions();
     if (tab === 'einrichten') return this.furnishOptions();
+    if (tab === 'schmuck') return this.buildOptions(this.game.book.decoUnlocked());
     return [];
   }
 
@@ -518,6 +520,7 @@ export class Builder {
       from: [a, c].map((t) => ({ t: t.type, l: t.level, s: t.spec })),
       xp: Math.max(a.xp || 0, c.xp || 0),
       kills: (a.kills || 0) + (c.kills || 0),
+      best: (a.best || 0) + (c.best || 0), // Turmalbum (M25): Turm der Nacht
       name: lead.name,
       parts: parts.slice(0, slots),
     };

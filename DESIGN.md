@@ -1450,7 +1450,7 @@ Schlagkraft, Pfanne durchschlägt Panzer).
   und Ausbau, tote Optionen (Holzlager, Bank, Pfanne), Nahkampf – über zehn
   und mehr Nächte in allen drei Schwierigkeitsgraden.
 
-#### M25 – Ein Herbst mit Ende (Teil 1 ✓)
+#### M25 – Ein Herbst mit Ende ✓
 
 *Umgesetzt (28.09.2026, Teil 1):* Die Uhr zeigt »Tag 12 von 30«, ab Tag 25
 zählen die Nächte bis zum ersten Frost herunter. In der **Frostnacht** (Nacht 30)
@@ -1464,8 +1464,21 @@ auf Dächern, Bäumen und Türmen, der Boden nur bestäubt), der Moder glimmt ni
 mehr, der **Abspann** nennt die Menschen der Bucht, die fleißigsten Türme und die
 Zahlen des Herbsts – dann die Wahl: **hierbleiben** (jede Nacht würfelt sich neu:
 Wege, Arten, Merkmale, Bosse; die Horde wächst halb so schnell) oder eine **neue
-Runde** an einer neuen Bucht (Name, Aussehen und Schwierigkeit bleiben). Sterne,
-Herbstbuch, Schlurferkunde und Turmalbum folgen in Teil 2.
+Runde** an einer neuen Bucht (Name, Aussehen und Schwierigkeit bleiben).
+
+*Umgesetzt (28.09.2026, Teil 2):* Jede gehaltene Nacht bringt bis zu drei
+**Sterne** – gehalten, makellos (niemand im Lager, das Zuhause heil) und mutig
+(mindestens eine Welle früh gerufen); der Morgenbericht zeigt sie ganz oben. Das
+**Herbstbuch** im Pausenmenü hat drei Seiten (A/D blättern): zwölf **Taten** (die
+erste Nacht, drei Sterne, zehn gerufene Wellen, drei Menschen in der Bucht, drei
+Reaktionen, zwei Mischtürme, ein Turm auf Rang III, zwölf Arten, die vier Bosse,
+das ganze Zuhause, fünfzig Sterne, die Frostnacht) – jede dritte bringt ein Stück
+**Herbstschmuck** zum Aufstellen (Kürbis, Laubhaufen, Regentonne, Kürbislaterne
+im neuen Reiter »Schmuck«; nur zum Schönmachen); die **Schlurferkunde** zählt je
+Art, wie oft sie erledigt wurde, und sagt, was sie tut – mit **Dr. Yusufs
+Notizen**, sobald er in der Bucht ist; das **Turmalbum** zeigt die acht
+fleißigsten Türme mit Rang, Abschüssen und wie oft sie Turm der Nacht waren. Der
+Abspann nennt Sterne und Taten.
 
 *Vorbild:* die letzte Welle jeder TD-Karte, Schwierigkeitsgrade, Bestwerte.
 

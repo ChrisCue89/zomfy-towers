@@ -72,6 +72,9 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 const MIGRATIONS = {
   // v18 -> v19: M25 (Ein Herbst mit Ende). Der Frost kam noch nicht – auch wer schon
   // über Tag 30 hinaus spielt, bekommt die Frostnacht noch (in der nächsten Nacht).
+  // v19 -> v20: M25, Teil 2 (Herbstbuch). Sterne, Arten und gerufene Wellen beginnen bei null;
+  // Taten, die der Stand schon erfüllt, trägt das Buch nach dem Laden leise ein.
+  19: (data) => ({ ...data, version: 20, book: { stars: {}, deeds: {}, kinds: {}, called: 0 } }),
   18: (data) => ({ ...data, version: 19, autumn: { frost: null, mode: 'herbst', credits: false } }),
   // v17 -> v18: M24 (Wagnis und Vorrat). Noch keine makellose Nacht in Folge, kein Schatz.
   17: (data) => ({ ...data, version: 18, risk: { streak: 0, treasure: false } }),

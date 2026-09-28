@@ -1550,6 +1550,38 @@ damit die Wege lesbar bleiben. Figuren, Horde und Beute bekommen keinen Schnee
 gar nicht, danach nur schwach. **Warum:** Der Schnee ist die Belohnung und das
 Bild des Endes; er darf die Lesbarkeit nicht kosten (Look-Regel).
 
+### 155. Wofür gibt es Sterne? (M25, Teil 2)
+**Entscheidung:** Drei Sterne je gehaltener Nacht: **gehalten** (jede gewonnene
+Nacht), **makellos** (niemand im Lager, das Zuhause heil – dieselbe Bedingung wie
+die makellose Nacht aus M24) und **mutig** (mindestens eine Welle früh gerufen,
+auch das »Ich bin bereit« am Abend). DESIGN nannte »niemand auf dem Hof« und »Haus
+heil« als zwei Sterne; seit Tor und Wall (M17) wird das Haus aber nur getroffen,
+wenn jemand im Lager ist – zwei Sterne für fast dasselbe wären keine Wahl. Eine
+wiederholte Nacht zählt mit ihrem besten Ergebnis. **Warum:** Jeder Stern ist
+eine eigene Frage (Durchhalten, Sauberkeit, Wagnis), und der Mut-Stern macht das
+frühe Rufen aus M16 zu einem Ziel, ohne es zu erzwingen.
+
+### 156. Was bringt das Herbstbuch? (M25, Teil 2)
+**Entscheidung:** Zwölf Taten, die durch den ganzen Herbst führen (die erste
+Nacht bis zur Frostnacht) und jedes System einmal anfassen (Wellen rufen,
+Menschen, Reaktionen, Mischtürme, Turm-Ränge, Arten, Bosse, Zuhause, Sterne). Jede
+dritte bringt ein Stück **Herbstschmuck** – Kürbis, Laubhaufen, Regentonne,
+Kürbislaterne (die leuchtet abends mit einer Lichtinsel) –, das man im Reiter
+»Schmuck« billig aufstellt. Der Schmuck tut nichts außer schön sein (der
+Lichtkreis der Kürbislaterne ist so klein wie Stimmung). Taten, die ein alter
+Spielstand schon erfüllt, trägt das Buch nach dem Laden leise ein; eine neue
+Runde an einer neuen Bucht beginnt mit einem neuen Buch.
+**Warum:** Gemütliche Belohnungen statt Kraft (kein Kaufen von Stärke); die Taten
+zeigen nebenbei, was es alles gibt.
+
+### 157. Wann schreibt Dr. Yusuf in der Schlurferkunde mit? (M25, Teil 2)
+**Entscheidung:** Eine Art steht im Buch, sobald Mika oder ein Turm sie einmal
+erledigt hat (vorher »???«) – mit Zähler und dem, was sie tut. Dr. Yusufs Notiz
+dazu erscheint erst, wenn er in der Bucht ist (angesprochen oder eingezogen);
+vorher steht dort »Ein Arzt wüsste mehr darüber …«. **Warum:** Das verbindet die
+Kunde mit einem Menschen der Bucht und macht Yusufs Ankunft zu einem kleinen
+Ereignis; das Buch ist trotzdem von Anfang an nützlich.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

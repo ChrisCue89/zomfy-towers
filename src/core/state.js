@@ -20,8 +20,14 @@ import { MIXES } from '../data/mixes.js';
 import { TOWERS } from '../data/towers.js';
 import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
+import { DEEDS, KIND_ORDER } from '../data/book.js';
 
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
+
+/** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
+export function freshBook() {
+  return { stars: {}, deeds: {}, kinds: {}, called: 0 };
+}
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -83,6 +89,7 @@ export function createNewState(config, mapSeed = 1) {
     feast: 0, // M23: Tag des Fests am Feuer (nach einer gehaltenen Bossnacht)
     risk: { streak: 0, treasure: false }, // M24: makellose Nächte in Folge, wartet Balduins Schatz?
     autumn: { frost: null, mode: 'herbst', credits: false }, // M25: Tag des ersten Frosts, nach dem Herbst weiter?, Abspann gesehen
+    book: freshBook(), // M25, Teil 2: Herbstbuch – Sterne je Nacht, Taten, Schlurferkunde, früh gerufene Wellen
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -189,6 +196,18 @@ export function sanitizeState(data, config) {
   // M25: ein Herbst mit Ende – Tag des ersten Frosts (oder noch keiner), weiterspielen?, Abspann gesehen
   const frost = Number.isFinite(data.autumn?.frost) && data.autumn.frost >= 1 ? Math.floor(data.autumn.frost) : null;
   out.autumn = { frost, mode: frost && data.autumn?.mode === 'weiter' ? 'weiter' : 'herbst', credits: Boolean(frost && data.autumn?.credits) };
+  // M25, Teil 2: Herbstbuch – Sterne je Nacht (0–3), Taten (Tag), erledigte Arten, früh gerufene Wellen
+  const bk = data.book || {};
+  if (bk.stars && typeof bk.stars === 'object') {
+    for (const [n, k] of Object.entries(bk.stars)) if (Number(n) >= 1 && Number.isFinite(k)) out.book.stars[Math.floor(Number(n))] = Math.floor(num(k, 0, 0, 3));
+  }
+  if (bk.deeds && typeof bk.deeds === 'object') {
+    for (const d of DEEDS) if (Number.isFinite(bk.deeds[d.id]) && bk.deeds[d.id] >= 1) out.book.deeds[d.id] = Math.floor(bk.deeds[d.id]);
+  }
+  if (bk.kinds && typeof bk.kinds === 'object') {
+    for (const k of KIND_ORDER) if (Number.isFinite(bk.kinds[k]) && bk.kinds[k] > 0) out.book.kinds[k] = Math.floor(num(bk.kinds[k], 0, 0, 1e7));
+  }
+  out.book.called = Math.floor(num(bk.called, 0, 0, 1e6));
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
@@ -258,6 +277,7 @@ export function sanitizeState(data, config) {
         if (Number.isFinite(b.xp) && b.xp > 0) entry.xp = Math.round(num(b.xp, 0, 0, 1e7));
         if (Number.isFinite(b.kills) && b.kills > 0) entry.kills = Math.floor(num(b.kills, 0, 0, 1e7));
         if (Number.isInteger(b.name) && b.name >= 0) entry.name = Math.floor(num(b.name, 0, 0, 999));
+        if (Number.isFinite(b.best) && b.best > 0) entry.best = Math.floor(num(b.best, 0, 0, 1e6)); // M25: wie oft Turm der Nacht
         // Hochsitz (M23): wer dort nachts Posten bezieht
         if (typeof b.post === 'string' && POST_ROLES[b.post]) entry.post = b.post;
         // Zubehör an Barrikade oder Tor (M17e)

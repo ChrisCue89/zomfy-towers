@@ -4,6 +4,7 @@
 // data/autumn.js; der Wellenplan kennt die Frostnacht (data/waves.js).
 
 import { AUTUMN, FINALE, isFinaleNight, isRogueNight, isSnowDay } from '../data/autumn.js';
+import { DEEDS } from '../data/book.js';
 import { T } from '../data/texts.js';
 import { SURVIVOR_ORDER, SURVIVORS } from '../data/survivors.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
@@ -188,6 +189,8 @@ export class Autumn {
     const s = st.stats;
     lines.push({ text: C.zahlen, head: true });
     lines.push({ text: C.naechte(s.nightsWon || 0) }, { text: C.besiegt(s.kills || 0) }, { text: C.bosse(s.bosses || 0) });
+    const book = this.game.book; // M25, Teil 2: Sterne und Taten aus dem Herbstbuch
+    if (book) lines.push({ text: C.sterne(book.totalStars) }, { text: C.taten(book.doneCount, DEEDS.length) });
     lines.push({ gap: true }, { text: C.von, head: true }, { text: C.studio }, { gap: true }, { text: C.danke, big: true }, { gap: true }, { text: C.weiter, dim: true });
     return lines;
   }

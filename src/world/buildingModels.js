@@ -9,6 +9,7 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
 import { shade, stoneBlob } from './voxelKit.js';
+import { buildPumpkin, buildJackOLantern, buildLeafPile, buildRainBarrel } from './decoModels.js';
 
 /** Alle Bauten sind doppelt fein gebaut (M13g; vorher 1/16 m). */
 export const BUILDING_UNIT = 1 / 32;
@@ -506,6 +507,23 @@ export function buildModerlockeGlow() {
   return m;
 }
 
+/** Herbstschmuck (M25): ein dicker Kürbis, daneben ein kleiner. */
+function buildPumpkinPair(seed) {
+  const m = new VoxelModel();
+  m.merge(buildPumpkin(seed, 1.1), -4, 0, -3);
+  m.merge(buildPumpkin(seed + 7, 0.7), 8, 0, 7);
+  return m;
+}
+
+/** Nur der Teil eines Modells, der im Grundriss liegt (x ∈ [x0, x1), z ∈ [z0, z1) in Voxeln). */
+function clipped(src, x0, x1, z0, z1) {
+  const m = new VoxelModel();
+  src.forEach((x, y, z, c) => {
+    if (x >= x0 && x < x1 && z >= z0 && z < z1) m.set(x, y, z, c);
+  });
+  return m;
+}
+
 export const BUILDING_MODELS = {
   holzlager: { model: buildWoodpile },
   zelt: { model: buildTent, glow: buildTentGlow },
@@ -516,4 +534,9 @@ export const BUILDING_MODELS = {
   bank: { model: buildBench },
   hochsitz: { model: buildHochsitz },
   moderlocke: { model: buildModerlocke, glow: buildModerlockeGlow }, // M24
+  // Herbstschmuck aus dem Herbstbuch (M25): die Modelle der Herbst-Requisiten (decoModels.js)
+  kuerbis: { model: buildPumpkinPair },
+  laubhaufen: { model: (seed) => clipped(buildLeafPile(seed), -32, 32, -16, 16) },
+  regentonne: { model: buildRainBarrel },
+  kuerbislaterne: { model: (seed) => buildJackOLantern(seed).model, glow: () => buildJackOLantern(0).glow, pool: { y: 0.4, radius: 1.8 } },
 };

@@ -135,6 +135,7 @@ export class Nights {
     this.plan.waves[night.wave].called = true;
     night.shift = (night.shift || 0) + delta;
     night.called = (night.called || 0) + 1;
+    this.game.book?.onCall(); // M25: Tat »Wer wagt …«
     return true;
   }
 
@@ -345,6 +346,7 @@ export class Nights {
     g.posts?.onNightEnd(won); // M23: nach einer gehaltenen Bossnacht wird gefeiert
     const risk = this.settleRisk(won); // M24: Moderlocke, makellose Nacht, Vorratskammer
     const finale = won && this.plan?.finale ? g.autumn?.onFrost(night) || null : null; // M25: der erste Frost
+    const stars = won && g.book ? g.book.starsFor(night, risk) : null; // M25, Teil 2: gehalten, makellos, mutig
     st.report = {
       n: night.n,
       won,
@@ -364,7 +366,10 @@ export class Nights {
       lager: night.breach ? { at: night.breach.at, gate: night.breach.gate, entered: night.inCamp || 0, raided: [...(night.raided || [])] } : night.campHit ? { held: true } : null,
       risk,
       finale,
+      stars,
     };
+    if (st.report.turm) g.towerRanks?.crown(st.report.turm.id); // Turmalbum (M25): wie oft Turm der Nacht
+    if (stars) g.book.onNightWon(night.n, stars);
     g.quietSave();
   }
 

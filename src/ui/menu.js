@@ -1,5 +1,5 @@
-// Pause-Menü: Weiter, Steuerung, Notizbuch (M18), Werkstattbuch (M20),
-// Einstellungen, Vollbild, Neues Spiel (mit Rückfrage).
+// Pause-Menü: Weiter, Steuerung, Herbstbuch (M25), Notizbuch (M18),
+// Werkstattbuch (M20), Einstellungen, Vollbild, Neues Spiel (mit Rückfrage).
 // Layout wird einmal berechnet und von update() (Klicks) und draw() genutzt.
 // Schutz vor versehentlichem Löschen: Nach jedem Seitenwechsel zählen Klicks
 // kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
@@ -13,11 +13,24 @@ import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
 import { hexToCss } from '../render/palette.js';
+import { DEEDS, KIND_ORDER } from '../data/book.js';
 
 /** Notizbuch (M18): Breite der Seite, Höhe einer Zeile der Liste, Breite der Beschreibung. */
 const NOTES_W = 300;
 const NOTE_ROW = 15;
 const NOTE_TEXT_W = NOTES_W - 24;
+
+/**
+ * Herbstbuch (M25, Teil 2): drei Seiten, Breite, Zeilenhöhe, höchstens so viele
+ * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
+ * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
+ */
+const BOOK_PAGES = ['taten', 'kunde', 'album'];
+const BOOK_W = 350;
+const BOOK_ROW = 13;
+const BOOK_ROWS = 8;
+const BOOK_TEXT_W = BOOK_W - 24;
+const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
 const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text'];
@@ -31,6 +44,8 @@ export class Menu {
     this.screen = 'main';
     this.focus = 0;
     this.guard = 0;
+    this.page = 'taten'; // Herbstbuch: aufgeschlagene Seite
+    this.bookCache = null; // Zeilen und Beschreibungen der Seite (das Spiel steht, solange das Menü offen ist)
   }
 
   open() {
@@ -47,6 +62,7 @@ export class Menu {
       return [
         { label: T.menue.weiter, action: () => this.game.closeMenu() },
         { label: T.menue.steuerung, action: () => this.go('controls') },
+        { label: T.buch.menue, action: () => this.go('buch') },
         { label: T.notizbuch.menue, action: () => this.go('notes') },
         { label: T.werkstattbuch.menue, action: () => this.go('recipes') },
         { label: T.menue.einstellungen, action: () => this.go('settings') },
@@ -78,6 +94,10 @@ export class Menu {
         ...REACTION_ORDER.map((k) => ({ label: notes[k] ? `${T.reaktionen[k][0]} · ${T.notizbuch.entdeckt(notes[k])}` : T.notizbuch.unbekannt, note: k, action: () => this.game.sound.play('klick') })),
         { label: T.menue.zurueck, action: () => this.go('main') },
       ];
+    }
+    if (this.screen === 'buch') {
+      // Herbstbuch (M25): je Seite eine Liste, darunter die Beschreibung der gewählten Zeile
+      return [...this.bookData().rows.map((row) => ({ label: row.label, row, action: () => this.game.sound.play('klick') })), { label: T.menue.zurueck, action: () => this.go('main') }];
     }
     if (this.screen === 'recipes') {
       // Werkstattbuch (M20): je Rezept eine Zeile, unentdeckte als »???«
@@ -121,6 +141,7 @@ export class Menu {
       return;
     }
     this.screen = screen;
+    this.bookCache = null;
     const safe = this.buttons().findIndex((b) => b.safe);
     this.focus = Math.max(0, safe);
     this.guard = 0.35;
@@ -176,8 +197,154 @@ export class Menu {
     ];
   }
 
+  // --- Herbstbuch (M25, Teil 2) ----------------------------------------------------
+
+  /** Umblättern: dir ±1 (A/D) oder direkt auf eine Seite (Klick auf den Reiter). */
+  turnPage(dir, page = null) {
+    const n = BOOK_PAGES.length;
+    const next = page || BOOK_PAGES[(BOOK_PAGES.indexOf(this.page) + dir + n) % n];
+    if (next === this.page) return;
+    this.page = next;
+    this.bookCache = null;
+    this.bookFocus = null;
+    this.focus = 0;
+    this.game.sound.play('klick');
+  }
+
+  /** Zeilen, Beschreibungen und Zähler der aufgeschlagenen Seite (einmal je Seite berechnet). */
+  bookData() {
+    if (this.bookCache?.page === this.page) return this.bookCache;
+    const book = this.game.book;
+    const W = BOOK_TEXT_W;
+    const lines = (text, color, gap = false) => wrap(text, W).map((t, i) => ({ text: t, color, gap: gap && i === 0 }));
+    let rows = [];
+    let count = '';
+    let empty = [];
+    if (this.page === 'taten') {
+      const next = book.nextDeco();
+      const deco = lines(next ? T.buch.naechsterSchmuck(next.left, T.bauten[next.type]) : T.buch.allerSchmuck, COLORS.textWarm, true);
+      rows = book.deedRows().map((d) => ({
+        id: d.id,
+        label: d.name,
+        right: d.done ? T.buch.geschafft(d.day) : T.buch.stand(d.have, d.need),
+        color: d.done ? COLORS.gold : COLORS.text,
+        rightColor: d.done ? COLORS.textWarm : COLORS.textDim,
+        detail: [...lines(d.info, COLORS.text), ...lines(d.done ? T.buch.geschafftAm(d.day) : T.buch.bisher(d.have, d.need), d.done ? COLORS.gold : COLORS.textDim), ...deco],
+      }));
+      count = T.buch.tatenZaehler(book.doneCount, DEEDS.length, book.totalStars);
+    } else if (this.page === 'kunde') {
+      // Schlurferkunde: Dr. Yusufs Notizen erst, wenn er in der Bucht ist
+      rows = book.kindRows().map((k) =>
+        k.n
+          ? {
+              id: k.id,
+              label: k.name,
+              right: String(k.n),
+              color: COLORS.text,
+              rightColor: COLORS.textDim,
+              detail: [...lines(k.info, COLORS.text), ...(book.yusufWrites ? lines(T.buch.notiz(k.note), COLORS.textWarm, true) : lines(T.buch.ohneYusuf, COLORS.textDim, true)), ...lines(T.buch.erledigt(k.n), COLORS.textDim, true)],
+            }
+          : { id: k.id, label: T.buch.unbekannt, right: '', color: COLORS.textDim, detail: lines(T.buch.nieErledigt, COLORS.textDim) }
+      );
+      count = T.buch.kundeZaehler(book.kindsKnown, KIND_ORDER.length);
+    } else {
+      rows = book.album().map((a) => ({
+        id: String(a.id),
+        label: a.name,
+        right: String(a.kills),
+        color: COLORS.text,
+        rightColor: COLORS.textDim,
+        detail: [
+          ...lines(T.turmrang.titel(a.name, a.art), COLORS.textWarm),
+          ...lines(T.buch.albumRang(a.rang, a.kills), COLORS.text),
+          ...(a.best ? lines(T.buch.albumNacht(a.best), COLORS.gold) : []),
+          ...(a.day ? lines(T.buch.albumSeit(a.day), COLORS.textDim) : []),
+        ],
+      }));
+      count = rows.length ? T.buch.albumZaehler(rows.length) : '';
+      empty = lines(T.buch.albumLeer, COLORS.textDim);
+    }
+    this.bookCache = { page: this.page, rows, count, empty };
+    return this.bookCache;
+  }
+
+  /**
+   * Herbstbuch: Reiter der Seiten, Zähler, Zeilen (bei mehr als acht in zwei
+   * Spalten, wählbar wie Knöpfe), die Beschreibung der gewählten, »Zurück«.
+   */
+  bookLayout(ui) {
+    const data = this.bookData();
+    const buttons = this.buttons();
+    const rows = buttons.filter((b) => b.row);
+    const cols = rows.length > BOOK_ROWS ? 2 : 1;
+    const perCol = Math.max(1, Math.ceil(rows.length / cols));
+    const lineH = (list) => list.reduce((h, l) => h + LINE_HEIGHT + (l.gap ? 3 : 0), 0);
+    const detailH = Math.max(BOOK_DETAIL_H, ...rows.map((b) => lineH(b.row.detail)));
+    const w = BOOK_W;
+    const h = 28 + 16 + LINE_HEIGHT + 4 + BOOK_ROWS * BOOK_ROW + 6 + detailH + 8 + 22 + 20;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2);
+    // Reiter der drei Seiten, mittig unter dem Titel
+    const tabW = BOOK_PAGES.map((p) => measure(T.buch.seiten[p]) + 12);
+    let tx = Math.round(x + (w - tabW.reduce((a, b) => a + b + 4, -4)) / 2);
+    const tabs = BOOK_PAGES.map((page, k) => {
+      const rect = { x: tx, y: y + 25, w: tabW[k], h: 13 };
+      tx += tabW[k] + 4;
+      return { page, rect };
+    });
+    const countY = y + 25 + 16;
+    const rowsY = countY + LINE_HEIGHT + 4;
+    const colW = Math.floor((w - 20) / cols);
+    let k = 0;
+    const rects = buttons.map((b) => {
+      if (b.row) {
+        const c = Math.floor(k / perCol);
+        const r = k % perCol;
+        k += 1;
+        return { ...b, rect: { x: x + 10 + c * colW, y: rowsY + r * BOOK_ROW, w: colW - (cols > 1 ? 4 : 0), h: BOOK_ROW - 1 } };
+      }
+      return { ...b, rect: { x: x + 20, y: y + h - 20 - 22, w: w - 40, h: 19 } };
+    });
+    // Beschreibung der gewählten Zeile – steht »Zurück« im Fokus, die zuletzt gewählte
+    const focused = buttons[Math.min(this.focus, buttons.length - 1)];
+    if (focused?.row) this.bookFocus = focused.row.id;
+    const shown = rows.find((b) => b.row.id === this.bookFocus)?.row || rows[0]?.row || null;
+    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + BOOK_ROWS * BOOK_ROW + 6, shown: shown?.id ?? null } };
+  }
+
+  /** Herbstbuch zeichnen: Reiter, Zähler, Zeilen mit Wert rechts, Beschreibung, »Zurück«. */
+  drawBook(ui, L) {
+    for (const t of L.book.tabs) {
+      const open = t.page === this.page;
+      if (open) ui.rect(t.rect.x, t.rect.y, t.rect.w, t.rect.h, COLORS.fillLight);
+      ui.textCentered(T.buch.seiten[t.page], t.rect.x + t.rect.w / 2, t.rect.y + 1, open ? COLORS.gold : COLORS.textDim);
+    }
+    if (L.book.count) ui.textCentered(L.book.count, L.x + L.w / 2, L.book.countY, COLORS.textDim);
+    L.buttons.forEach((b, i) => {
+      const focused = i === this.focus;
+      if (!b.row) {
+        ui.button(b.label, b.rect.x, b.rect.y, b.rect.w, b.rect.h, { focused, hoverHighlight: false });
+        return;
+      }
+      const shown = b.row.id === L.book.shown;
+      if (focused || shown) ui.rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, focused ? COLORS.fillHover : COLORS.fillLight);
+      if (focused) for (let k = 0; k < 3; k++) ui.rect(b.rect.x + 3 + k, b.rect.y + 2 + k, 1, 7 - 2 * k, COLORS.gold); // kleiner Pfeil
+      ui.text(b.row.label, b.rect.x + 12, b.rect.y, b.row.color);
+      if (b.row.right) ui.text(b.row.right, b.rect.x + b.rect.w - 4 - measure(b.row.right), b.rect.y, b.row.rightColor);
+    });
+    let cy = L.book.detailY;
+    ui.rect(L.x + 10, cy - 4, L.w - 20, 1, COLORS.frameDark);
+    for (const l of L.book.detail) {
+      if (l.gap) cy += 3;
+      ui.text(l.text, L.x + 12, cy, l.color);
+      cy += LINE_HEIGHT;
+    }
+    ui.textCentered(T.buch.fuss, L.x + L.w / 2, L.y + L.h - 15, COLORS.textDim);
+  }
+
   /** Maße und Knopf-Rechtecke für die aktuelle Seite. */
   layout(ui) {
+    if (this.screen === 'buch') return this.bookLayout(ui);
     if (this.screen === 'notes' || this.screen === 'recipes') return this.notesLayout(ui);
     const buttons = this.buttons();
     const controls = this.screen === 'controls' ? T.steuerung : [];
@@ -232,7 +399,21 @@ export class Menu {
     if (!this.isOpen) return;
     this.guard = Math.max(0, this.guard - dt);
     const ui = this.game.ui;
-    const { buttons } = this.layout(ui);
+    const L = this.layout(ui);
+    const { buttons } = L;
+    // Herbstbuch (M25): A/D blättern, ein Klick auf einen Reiter schlägt die Seite auf
+    if (L.book) {
+      if (input.pressed('left') || input.pressed('right')) {
+        this.turnPage(input.pressed('left') ? -1 : 1);
+        return;
+      }
+      const tab = L.book.tabs.find((t) => ui.hover(t.rect.x, t.rect.y, t.rect.w, t.rect.h));
+      if (tab && input.mouse.clicked) {
+        input.consumeClick();
+        if (this.guard <= 0) this.turnPage(0, tab.page);
+        return;
+      }
+    }
     const hovered = buttons.findIndex((b) => ui.hover(b.rect.x, b.rect.y, b.rect.w, b.rect.h));
     if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
     if (input.pressed('up')) this.focus = (this.focus + buttons.length - 1) % buttons.length;
@@ -259,7 +440,7 @@ export class Menu {
     ui.ditherFill(0.5);
     const L = this.layout(ui);
     ui.panel(L.x, L.y, L.w, L.h);
-    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel, recipes: T.werkstattbuch.titel }[this.screen] || T.menue.titel;
+    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel, recipes: T.werkstattbuch.titel, buch: T.buch.titel }[this.screen] || T.menue.titel;
     ui.textCentered(title, L.x + L.w / 2, L.y + 7, COLORS.gold);
     ui.rect(L.x + 10, L.y + 21, L.w - 20, 1, COLORS.frameDark);
     let cy = L.y + 28;
@@ -270,6 +451,10 @@ export class Menu {
     }
     if (L.notes) {
       this.drawNotes(ui, L);
+      return;
+    }
+    if (L.book) {
+      this.drawBook(ui, L);
       return;
     }
     for (const line of L.confirmText) {

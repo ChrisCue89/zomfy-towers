@@ -38,6 +38,8 @@ import { Furnishing } from './furnishing.js';
 import { Posts } from './posts.js';
 import { Quests } from './quests.js';
 import { Autumn } from './autumn.js';
+import { Book } from './book.js';
+import { STAR_KEYS } from '../data/book.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
@@ -334,6 +336,7 @@ export class Game {
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
+    this.book = new Book(this); // M25, Teil 2: Herbstbuch (Sterne, Taten, Schlurferkunde, Turmalbum)
     this.portraits = renderPortraits();
 
     this.state = loaded.state || createNewState(CONFIG, this.world.mapSeed);
@@ -470,6 +473,7 @@ export class Game {
     this.trader.apply();
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
+    this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
     const axe = this.world.props.axe;
     axe.object.visible = !st.tools.axt;
     // Solange die Axt dort steckt, geht der Hackklotz anderen Einblendungen vor; danach
@@ -1311,6 +1315,7 @@ export class Game {
     const st = this.state;
     st.stats.kills = (st.stats.kills || 0) + 1;
     this.towerRanks.onKill(by, z); // Strichliste und Erfahrung der Türme (M16)
+    this.book.onKill(z); // Schlurferkunde (M25)
     if (this.nights.active) st.night.kills += 1;
     let factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
     // Hufeisen (M21): mehr Beute von den Abschüssen dieses Turms; Champions lassen doppelt so viel
@@ -2306,6 +2311,7 @@ export class Game {
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.quests.update(dt);
     this.autumn.update(this.mode === 'play' ? dt : 0);
+    if (this.mode === 'play') this.book.update(dt); // M25: gelungene Taten eintragen
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
@@ -2966,6 +2972,7 @@ export class Game {
       // Mengen stehen im Bild als Symbole – für die Textansicht als Wörter (m7-r1: »Knopf hat etwas ausgebuddelt:« wirkte leer)
       bericht: this.report.isOpen
         ? this.report.lines().map((l) => {
+            if (l.stars) return `${T.buch.sterneZeile} ${STAR_KEYS.filter((k, i) => l.stars[i]).map((k) => T.buch.sterne[k]).join(', ')}`; // M25
             if (!l.res) return l.text;
             const parts = Object.entries(l.res).filter(([, n]) => n > 0).map(([r, n]) => T.menge(n, r));
             return `${l.text} ${parts.join(', ') || l.empty || ''}`.trim();
@@ -3164,6 +3171,9 @@ export class Game {
       risk: () => ({ ...game.state.risk, lure: game.lureEntry(), unlocked: game.builder.lureUnlocked() }),
       // M25: ein Herbst mit Ende – Frost, Modus, Abspann, das Herz und seine Phasen
       autumn: () => game.autumn.view(),
+      // M25, Teil 2: Herbstbuch – Sterne, Taten, Schmuck, Arten, Turmalbum; Taten jetzt prüfen
+      book: () => game.book.view(),
+      bookCheck: () => game.book.check(),
       /** Das Moderherz erscheinen lassen (wie aus dem Plan: Banner, erste Phase). */
       spawnHeart(x, z) {
         const zo = game.horde.spawn('moderherz', { x, z, hpFactor: game.nights.plan?.hpFactor || 1 });

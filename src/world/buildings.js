@@ -244,6 +244,7 @@ export class Buildings {
       building.xp = extra.xp || 0;
       building.kills = extra.kills || 0;
       building.name = Number.isInteger(extra.name) ? extra.name : null;
+      building.best = extra.best || 0; // M25: wie oft Turm der Nacht (Turmalbum)
       // Mischturm (M20): aus welchen Türmen er entstand (für den Abriss)
       if (def.mix) building.from = Array.isArray(extra.from) ? extra.from.map((f) => ({ t: f.t, l: f.l, s: f.s || null })) : [];
     }
@@ -674,6 +675,7 @@ export class Buildings {
       if (b.xp) e.xp = Math.round(b.xp);
       if (b.kills) e.kills = b.kills;
       if (b.name !== null && b.name !== undefined) e.name = b.name;
+      if (b.best) e.best = b.best; // M25: wie oft Turm der Nacht
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       if (b.gear?.length) e.gear = [...b.gear]; // Zubehör (M17e)

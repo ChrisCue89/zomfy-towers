@@ -37,6 +37,11 @@ export const BUILDINGS = {
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1, raid: 30 },
   // M23: Hochsitz neben dem Weg – nachts bezieht ein eingezogener Überlebender dort Posten (Reiter Einrichten)
   hochsitz: { w: 1, d: 1, cost: { holz: 10, schrott: 3 }, icon: 'hochsitz', post: true, max: 4, height: 2.4 },
+  // Herbstschmuck (M25): Belohnungen aus dem Herbstbuch – nur zum Schönmachen
+  kuerbis: { w: 1, d: 1, cost: { fasern: 2 }, icon: 'kuerbis', deco: true, max: 6, height: 0.6 },
+  laubhaufen: { w: 2, d: 1, cost: { fasern: 1 }, icon: 'laubhaufen', deco: true, max: 4, height: 0.4 },
+  regentonne: { w: 1, d: 1, cost: { holz: 3, schrott: 1 }, icon: 'regentonne', deco: true, max: 4, height: 0.9 },
+  kuerbislaterne: { w: 1, d: 1, cost: { fasern: 2, holz: 1 }, icon: 'kuerbislaterne', deco: true, max: 6, height: 0.7 },
   // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
   // M24 (Balance): 3 statt 2 Holz, und jeden Morgen baut es aus seinem Vorrat bis zu `rebuild` zerschlagene Barrikaden wieder auf
