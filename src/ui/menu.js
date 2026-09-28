@@ -7,11 +7,11 @@
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
-import { PIXEL_SIZES, TEXT_SPEEDS } from '../core/settings.js';
+import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS } from '../core/settings.js';
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
-const SETTING_KEYS = ['master', 'music', 'sfx', 'pixel', 'text'];
-const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS) };
+const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text'];
+const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS };
 
 export class Menu {
   /** @param {import('../core/game.js').Game} game */

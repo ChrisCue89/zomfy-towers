@@ -493,7 +493,8 @@ export const T = {
     ausgebaut: (name) => `${name} ausgebaut`,
     repariert: 'Alles wieder heil.',
     teilRepariert: (p) => `Geflickt, so gut es ging (${p} %).`,
-    hinweisStart: 'WASD laufen · Umschalt rennen · E benutzen · Klick schlagen · M Karte',
+    hinweisStart: 'WASD laufen · Umschalt rennen · E benutzen · Klick schlagen · M Karte · Z Ansicht',
+    ansicht: { nah: 'Ansicht: nah – Z geht wieder zurück', weit: 'Ansicht: weit – Z geht nah heran' },
   },
   // Barrikaden auf den Wegen (Meilenstein 9): Stufen, Trümmer, Wiederaufbau
   // Besondere Turmteile von Balduin (Meilenstein 10)
@@ -577,8 +578,9 @@ export const T = {
       sfx: 'Geräusche',
       pixel: 'Pixelgröße',
       text: 'Text',
+      view: 'Ansicht',
     },
-    wert: { klein: 'klein', mittel: 'mittel', gross: 'groß', langsam: 'langsam', normal: 'normal', schnell: 'schnell', sofort: 'sofort' },
+    wert: { klein: 'klein', mittel: 'mittel', gross: 'groß', langsam: 'langsam', normal: 'normal', schnell: 'schnell', sofort: 'sofort', nah: 'nah', weit: 'weit' },
     einstellungenHinweis: 'A/D oder Klick ändert den Wert.',
     sicherFrage: 'Wirklich neu beginnen? Der Spielstand wird gelöscht.',
     sicherJa: 'Ja, neu beginnen',
@@ -593,6 +595,7 @@ export const T = {
     ['1–8 / Mausrad', 'Schnellleiste'],
     ['F', 'Laterne an/aus'],
     ['M', 'Karte der Wege'],
+    ['Z', 'Ansicht nah / weit'],
     ['Q R T G C V', 'Bauleiste'],
     ['Tab', 'Reiter der Bauleiste'],
     ['Linksklick', 'Schlagen, bauen, auswählen'],

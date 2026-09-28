@@ -143,6 +143,8 @@ export class Game {
     this.settings = loadSettings();
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
     this.pixel.scaleShift = PIXEL_SIZES[this.settings.pixel];
+    // Ansicht draußen (M13): weit (80 px/m, Standard) oder nah (160 px/m, Taste Z); ?zoom erzwingt sie
+    this.view = CONFIG.view || this.settings.view;
     this.sound = new Sound(volumesOf(this.settings));
     // Alles, was in Szenenpixeln gemessen ist, wächst mit der Pixeldichte mit
     const density = CONFIG.render.pxPerMeter / 40;
@@ -171,7 +173,7 @@ export class Game {
     this.rig = new CameraRig(CONFIG.render, CONFIG.camera);
     this.rig.bounds = LAYOUT.cameraBounds;
     this.rig.limits = TERRAIN_AREA;
-    this.viewInside = false; // drinnen: eigenes Bild im doppelten Maßstab (M11)
+    this.viewInside = null; // drinnen: eigenes Bild im doppelten Maßstab (M11); null = noch nicht gesetzt
     this.passage = null; // gerade durch die Haustür unterwegs
     this.ride = null; // gerade auf der Reifenschaukel
 
@@ -485,9 +487,10 @@ export class Game {
   applyView(inside) {
     this.viewInside = inside;
     const r = CONFIG.render;
-    const ppm = inside ? r.interiorPxPerMeter : r.pxPerMeter;
+    const ppm = inside ? r.interiorPxPerMeter : this.view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
+    sharedUniforms.uCutRadius.value.set(26, 40).multiplyScalar(ppm / 40); // Durchsicht wächst mit dem Maßstab
     this.updateViewBounds();
     const p = this.player.position;
     this.rig.jumpTo(p.x, p.z);
@@ -1375,7 +1378,7 @@ export class Game {
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
     // Drinnen ist ein eigenes Bild (M11): Kamera umstellen, sobald Mika drinnen oder draußen ist
     const inside = !titled && this.world.isInside(this.player.position.x, this.player.position.z);
-    if (inside !== Boolean(this.viewInside)) this.applyView(inside);
+    if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else this.rig.update(dt, this.player.position, this.player.velocity);
     this.updateCutout();
@@ -1412,6 +1415,12 @@ export class Game {
       this.mapView.open();
       this.mode = 'karte';
       return;
+    }
+    // Ansicht nah/weit (M13): draußen jederzeit, drinnen gilt immer der Maßstab des Innenraums
+    if (input.pressed('zoom') && !this.viewInside) {
+      const next = this.view === 'weit' ? 'nah' : 'weit';
+      this.applySettings({ view: next });
+      this.hud.toast(T.meldungen.ansicht[next], null, 2.2);
     }
 
     const slot = input.slotPressed();
@@ -1660,6 +1669,10 @@ export class Game {
   applySettings(changes) {
     Object.assign(this.settings, changes);
     saveSettings(this.settings);
+    if (changes.view && changes.view !== this.view) {
+      this.view = changes.view;
+      if (!this.viewInside) this.applyView(false);
+    }
     this.sound.setVolumes(volumesOf(this.settings));
     this.dialog.speed = TEXT_SPEEDS[this.settings.text];
     const shift = PIXEL_SIZES[this.settings.pixel];

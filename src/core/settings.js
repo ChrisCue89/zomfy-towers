@@ -9,6 +9,8 @@ const KEY = 'zomfy-towers.einstellungen';
  * (ein Schritt feiner), groß = näher dran (ein Schritt gröber).
  */
 export const PIXEL_SIZES = { klein: -1, mittel: 0, gross: 1 };
+/** Ansicht draußen (M13): weit = 80 px/m (Standard, Größe wie immer), nah = 160 px/m wie drinnen. */
+export const VIEWS = ['nah', 'weit'];
 /** Zeichen pro Sekunde beim Tippen der Dialoge (0 = sofort). */
 export const TEXT_SPEEDS = { langsam: 36, normal: 72, schnell: 140, sofort: 0 };
 
@@ -18,6 +20,7 @@ export const DEFAULT_SETTINGS = {
   sfx: 8,
   pixel: 'mittel',
   text: 'normal',
+  view: 'weit',
 };
 
 export function loadSettings() {
@@ -29,6 +32,7 @@ export function loadSettings() {
       for (const k of ['master', 'music', 'sfx']) if (Number.isFinite(data[k])) out[k] = Math.max(0, Math.min(10, Math.round(data[k])));
       if (data.pixel in PIXEL_SIZES) out.pixel = data.pixel;
       if (data.text in TEXT_SPEEDS) out.text = data.text;
+      if (VIEWS.includes(data.view)) out.view = data.view;
     }
   } catch {
     // kaputt oder gesperrt: Standardwerte

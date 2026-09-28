@@ -1029,6 +1029,30 @@ mehr Details. Deshalb kommen in M13 alle Modelle draußen ins feine Maß
 Ober- und Südseiten sieht und viele Modelle als Instanzen gezeichnet werden,
 bleibt die Dreieckszahl beherrschbar – sie wird vorher und nachher gemessen.
 
+### 112. Wie nah ist die Kamera draußen? (M13, Rückmeldung)
+**Rückmeldung:** »Ich erkenne einfach nichts. Das heißt mehr Pixel und mehr
+Details an 3D-Modellen.« Dazu ein Vorbild (Bild eines Pixelspiels im
+Herbst): »Da siehst du, wie viele Pixel wir wirklich brauchen! Aber Größe
+und Stil wie jetzt beibehalten!«
+**Entscheidung:** Die Größe bleibt: draußen 80 px/m wie immer. Eine nahe
+Ansicht mit 160 px/m gibt es zusätzlich auf Z (gespeichert, auch im Menü
+»Ansicht«) – zum Hinsehen, nicht als Standard. Zwischenstufen wie 120 px/m
+hätten die Voxelkanten vom Pixelraster gerissen (7,5 px je Voxel). Der Boden
+bekam 1/16-m-Texel. Die eigentliche Antwort auf »mehr Pixel« ist Nr. 113.
+
+### 113. Noch feiner: Modelle im Maß 1/32 m? (M13g, zu Nr. 112)
+**Frage:** Das Vorbild zeigt Einzelheiten von zwei bis drei Bildpunkten – bei
+gleicher Größe. Ein Voxel von 1/16 m sind bei 80 px/m fünf Bildpunkte.
+**Entscheidung:** Die Modelle bekommen noch einmal doppelt so feine Voxel
+(1/32 m, 2,5 px): zuerst Mika, Hof und Haus, dann Bauten, Türme, Horde und
+Überlebende. Farbrauschen bleibt grob (je zwei Voxel), die neue Feinheit geht
+in Kanten, Fugen, Nägel, Maserung, Zeichen und Rundungen – sonst wird es
+Gries statt Zeichnung. Weil die Kamera auf ganze Bildpunkte einrastet, liegt
+das Muster aus 2 und 3 px fest in der Welt und flimmert nicht. Bäume bleiben
+bei 1/16 m (im Maß 1/32 wären es etwa 17 Mio. Dreiecke); der Boden bekommt
+innerhalb jedes Texels eine Feinzeichnung (Halme, Blattspitzen, Körner).
+Schatten bleiben bei 1/8 m. Umsetzung in M13g.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

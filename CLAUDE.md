@@ -84,7 +84,11 @@ Stilmittel, kein Selbstzweck: Lesbarkeit und Stimmung gehen vor. Technisch
 gilt bis auf Weiteres:
 
 - Szene: Render-Target mit ca. 900 Zeilen (`targetLines`), **80 px pro Meter**
-  (drinnen 160 px/m, `interiorPxPerMeter`, M11),
+  draußen (`pxPerMeter`, die Größe bleibt – Wunsch des Auftraggebers), auf
+  Wunsch nah mit 160 px/m (`nearPxPerMeter`, Einstellung `view`, Taste Z =
+  `zoom`, M13), drinnen immer 160 px/m (`interiorPxPerMeter`, M11).
+  `game.applyView` stellt Maßstab, Punktgröße und Durchsicht-Loch ein;
+  `?zoom=nah|weit` erzwingt eine Ansicht,
   ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
   `antialias: false`, CSS `image-rendering: pixelated`.
 - Oberfläche: eigene Leinwand mit ca. 360 Zeilen (`uiLines`), eigene
@@ -349,7 +353,11 @@ Grundprinzipien:
    weggesteckt, in einer dichten Reihe trifft der Zeiger die Barrikade
    darunter, neben dem Sessel geht die Werkbank vor, drinnen sind auf Stufe 5
    alle Räume zu Fuß erreichbar (nicht nur per Versetzen), E an der
-   Reifenschaukel lässt Mika schaukeln.
+   Reifenschaukel lässt Mika schaukeln; ab M13 (Abschnitt `ansicht`): draußen
+   weit mit 80 px/m als Standard, Z und Y gehen nah heran (160 px/m) und
+   zurück, die Wahl bleibt gespeichert, drinnen ändert Z nichts, Platzieren
+   mit der Maus trifft auch nah das richtige Feld (Bilder: nah-tag, nah-haus,
+   nah-nacht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -421,6 +429,7 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |
 | `?seed=123` | Anderer Welt-Seed (Modelle, Zufall) |
 | `?map=123` | Startwert des Wegenetzes erzwingen (sonst je neuem Spiel zufällig; `?test`/`?playtest` nehmen 3) |
+| `?zoom=nah` / `?zoom=weit` | Ansicht draußen erzwingen (M13; Standard weit) |
 
 ## Arbeitsweise
 

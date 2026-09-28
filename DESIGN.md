@@ -208,7 +208,10 @@ Wort gibt.
   sie genutzt.
 - Maße seit Meilenstein 5: 80 Spielpixel pro Meter, etwa 900 Bildzeilen
   (Full HD 1 : 1, 1440p ×2, 720p ×1). Ein 1/16-m-Voxel ist genau 5 px breit,
-  3 px tief und 4 px hoch (Neigung 3 : 4). Die Oberfläche hat eine eigene,
+  3 px tief und 4 px hoch (Neigung 3 : 4). Die Größe bleibt so (Wunsch des
+  Auftraggebers); mehr Einzelheiten kommen aus feineren Modellen, nicht aus
+  einem größeren Maßstab. Z geht auf Wunsch nah heran (160 px/m wie drinnen,
+  M13). Der Boden hat 1/16 m je Texel. Die Oberfläche hat eine eigene,
   gröbere Leinwand (etwa 360 Zeilen), damit Schrift und Leisten kräftig
   bleiben.
 
@@ -721,8 +724,8 @@ der Klang startet mit der ersten Eingabe.
 
 - **Titelbild:** großer Schriftzug über der Bucht im Abendlicht.
   Weiterspielen, Neues Spiel (Name und Aussehen), Einstellungen, Steuerung.
-- **Einstellungen:** Lautstärke, Musik, Geräusche, Pixelgröße,
-  Textgeschwindigkeit – neben dem Spielstand gespeichert.
+- **Einstellungen:** Lautstärke, Musik, Geräusche, Ansicht (nah/weit, M13),
+  Pixelgröße, Textgeschwindigkeit – neben dem Spielstand gespeichert.
 
 ## 7. Steuerung
 
@@ -738,6 +741,8 @@ der Klang startet mit der ersten Eingabe.
 | Q R T G C V | Bauleisten-Optionen |
 | Tab | Reiter der Bauleiste wechseln |
 | F | Laterne an/aus |
+| M | Karte der Wege |
+| Z | Ansicht nah / weit (M13; auf deutschen Tastaturen dieselbe Taste) |
 | Esc | Menü |
 | F3 | Entwickler-Anzeige |
 
@@ -888,6 +893,10 @@ Requisiten und Natur noch aus groben 1/8-m-Klötzen (OFFENE-FRAGEN 111).
   Grasbüschel; ein ruhigerer Boden, damit sich die Dinge abheben.
 - **Horde und Türme:** Schlurfer-Arten auf einen Blick unterscheidbar
   (Kleidung, Haltung, Merkmale), Türme mit mehr Teilen je Stufe.
+- **Mehr Pixel (zweite Rückmeldung, mit Vorbild):** Die Größe bleibt, die
+  Modelle werden noch einmal doppelt so fein – 1/32 m, gut 2 px je Voxel,
+  so dicht wie im Vorbild des Auftraggebers (OFFENE-FRAGEN 112, 113). Die
+  Bodentextur ist doppelt so fein; Z geht auf Wunsch nah heran (160 px/m).
 - Grundflächen und Kollision bleiben, wie sie sind; die Bildzeit wird vorher
   und nachher gemessen. Testrunde mit der Frage »Erkennt man, was was ist?«.
 

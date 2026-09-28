@@ -5,7 +5,7 @@
 //   node tools/check.mjs --nur=nahkampf,naechte
 //                                   nur einzelne Abschnitte (rundgang, speichern,
 //                                   bauen, wege, naechte, nahkampf, ueberlebende,
-//                                   haendler, herbst, nachbesserung, hd)
+//                                   haendler, herbst, nachbesserung, ansicht, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -157,6 +157,9 @@ async function runBrowserChecks() {
     // --- 6d. Nachbesserung nach der Testrunde m12-r1 ------------------------------------
     if (want('nachbesserung')) await runFixChecks(browser, url);
 
+    // --- 6e. Meilenstein 13: nahe Ansicht, Z schaltet auf die Übersicht --------------------
+    if (want('ansicht')) await runViewChecks(browser, url);
+
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
       const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
@@ -181,6 +184,101 @@ async function runBrowserChecks() {
     await browser.close();
     server.close();
   }
+}
+
+/**
+ * Meilenstein 13: Draußen bleibt die Übersicht mit 80 px/m Standard (Größe
+ * wie immer, Wunsch des Auftraggebers), Z (auf deutschen Tastaturen KeyY)
+ * geht nah heran (160 px/m) und zurück; die Wahl wird gespeichert; drinnen
+ * gilt der Maßstab des Innenraums.
+ */
+async function runViewChecks(browser, url) {
+  // Ohne ?test und ohne ?zoom: weit ist Standard
+  const plain = await openGame(browser, `${url}index.html?debug&nosave&nointro`, 'Ansicht (Standard)');
+  const p1 = plain.page;
+  await settle(p1, 30);
+  const ppm = (page) => page.evaluate(() => Math.round(1 / window.zomfy.game.rig.px));
+  const start = await ppm(p1);
+  await p1.keyboard.press('KeyZ');
+  await settle(p1, 3);
+  const nah = await ppm(p1);
+  const gespeichert = await p1.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.einstellungen') || '{}').view);
+  await p1.keyboard.press('KeyY'); // deutsche Tastatur: dort liegt das Z
+  await settle(p1, 3);
+  const wieder = await ppm(p1);
+  if (start === 80 && nah === 160 && gespeichert === 'nah' && wieder === 80) note('✓ Ansicht: draußen weit (80 px/m) wie immer, Z geht nah heran (160 px/m) und zurück, die Wahl bleibt gespeichert');
+  else fail(`Ansicht: Start ${start}, nach Z ${nah} (gespeichert ${gespeichert}), zurück ${wieder}`);
+  checkMessages(plain);
+  await plain.context.close();
+
+  // Mit ?test bleibt die Prüfung in der Übersicht, ?zoom=nah erzwingt nah
+  const session = await openGame(browser, `${url}index.html?test&nosave&zoom=nah`, 'Ansicht nah (Prüfung)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  await z(() => {
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setWeather('klar');
+    window.zomfy.setTime(11, 0);
+  });
+  await settle(page, 10);
+  const nahTest = await ppm(page);
+  // Drinnen: Z ändert nichts, der Innenraum hat seinen eigenen Maßstab
+  await z(() => {
+    const d = window.zomfy.interior().outsideDoor;
+    window.zomfy.teleport(d.x, d.z + 0.1, Math.PI);
+  });
+  await settle(page, 5);
+  await page.keyboard.press('KeyE');
+  await settle(page, 40);
+  await page.keyboard.press('KeyZ');
+  await settle(page, 3);
+  const drinnen = await z(() => ({ inside: window.zomfy.interior().inside, ppm: Math.round(1 / window.zomfy.game.rig.px), view: window.zomfy.game.view }));
+  if (nahTest === 160 && drinnen.inside && drinnen.ppm === 160 && drinnen.view === 'nah') note('✓ Ansicht: ?zoom=nah erzwingt die nahe Ansicht, drinnen ändert Z nichts');
+  else fail(`Ansicht mit ?zoom=nah: draußen ${nahTest}, drinnen ${JSON.stringify(drinnen)}`);
+
+  // Platzieren mit der Maus in der nahen Ansicht: der Turm landet auf dem angeklickten Feld
+  await z(() => {
+    window.zomfy.teleport(1.5, 4.5, 0);
+    window.zomfy.give({ schrott: 40 });
+  });
+  await settle(page, 20);
+  const ziel = await z(() => {
+    for (const [i, j] of [[2, 3], [3, 3], [1, 3], [2, 2], [3, 5]]) if (window.zomfy.placeCheck('bolzen', i, j).ok) return { i, j };
+    return null;
+  });
+  const tile = await z(() => window.zomfy.buildbarLayout().tiles.find((t) => t.id === 'bolzen'));
+  let perMaus = null;
+  if (ziel && tile) {
+    await page.mouse.click(tile.x, tile.y);
+    await settle(page, 3);
+    const pos = await z(({ i, j }) => window.zomfy.screenOf(i + 0.5, 0, j + 0.5), ziel);
+    await page.mouse.move(pos.x, pos.y);
+    await settle(page, 3);
+    await page.mouse.click(pos.x, pos.y);
+    await settle(page, 3);
+    perMaus = (await z(() => window.zomfy.buildings())).find((b) => b.type === 'bolzen');
+    await page.mouse.click(pos.x, pos.y, { button: 'right' });
+    await settle(page, 3);
+  }
+  if (ziel && perMaus && perMaus.i === ziel.i && perMaus.j === ziel.j) note(`✓ Ansicht nah: Bolzenwerfer landet mit der Maus genau auf dem angeklickten Feld (${ziel.i}, ${ziel.j})`);
+  else fail(`Ansicht nah, Platzieren mit der Maus: Ziel ${JSON.stringify(ziel)}, gebaut ${JSON.stringify(perMaus)}`);
+
+  // Bilder in der nahen Ansicht
+  await shot(page, 'nah-tag', () => {
+    window.zomfy.setTime(11, 0);
+    window.zomfy.teleport(2.0, -2.5, 0);
+  });
+  await shot(page, 'nah-haus', () => {
+    window.zomfy.setHouseLevel(5);
+    window.zomfy.teleport(8.0, -3.0, 0);
+  });
+  await shot(page, 'nah-nacht', () => {
+    window.zomfy.setTime(22, 0);
+    window.zomfy.teleport(2.0, -2.5, 0);
+  });
+  checkMessages(session);
+  await session.context.close();
 }
 
 /** Abschnitte 0 und 1: Spielstart mit Intro, Rundgang mit Bildern, Laufen, Laterne, Ausruhen, Schrift. */

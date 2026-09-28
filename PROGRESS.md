@@ -75,6 +75,17 @@ Laternenturm mit Pfahl, Trittsprossen, Streben und Laterne mit Spitzdach
 (Leuchtfeuer mit Blendring und zweitem Licht, Glücksklee mit Messing und
 Kleeblättern). Die Horde war seit M5 fein und bleibt, wie sie ist.
 
+**M13f – Ansicht und Boden (zweite Rückmeldung: »Ich erkenne einfach nichts.
+Das heißt mehr Pixel und mehr Details an 3D-Modellen.« – dann mit Vorbild:
+»Größe und Stil wie jetzt beibehalten«):** Die Größe bleibt bei 80 px/m. Z
+(auf deutschen Tastaturen auch die Taste daneben) geht auf Wunsch nah heran
+(160 px/m wie drinnen) und zurück, die Wahl steht im Menü (»Ansicht«) und
+bleibt gespeichert; drinnen gilt weiter der Maßstab des Innenraums. Die
+Bodentextur hat jetzt 1/16 m je Texel (in der Nähe sah man 20-px-Kacheln),
+die Ladezeit steigt dadurch um knapp eine Sekunde. Neuer Prüfabschnitt
+`ansicht` (OFFENE-FRAGEN 112). Mehr Einzelheiten je Ding kommen als
+Nächstes aus noch feineren Modellen (1/32 m, Nr. 113).
+
 **Leistung:** Im Bild steigen die Dreiecke je nach Stelle auf etwa das
 Doppelte (Hof 190 000 → 270 000, Weg 320 000 → 520 000); die Natur macht den
 größten Teil aus. Schatten bleiben grob (Bäume 1/4 m). Die softwaregerenderte

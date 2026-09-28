@@ -12,6 +12,7 @@ const BINDINGS = {
   dodge: ['Space'], // im Spiel: Ausweichrolle
   lantern: ['KeyF'],
   map: ['KeyM'], // Übersichtskarte (Meilenstein 9)
+  zoom: ['KeyZ', 'KeyY'], // Ansicht nah/weit (M13) – auf deutschen Tastaturen liegt Z dort, wo sonst Y ist
   menu: ['Escape', 'KeyP'],
   debug: ['F3'],
   buildTab: ['Tab'],

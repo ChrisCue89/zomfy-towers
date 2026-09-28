@@ -1,4 +1,6 @@
-// Der Boden: eine große Fläche mit einer Textur, die pro 1/8 m einen Texel hat.
+// Der Boden: eine große Fläche mit einer Textur, die pro 1/16 m einen Texel hat
+// (seit M13 so fein wie die Voxel der Modelle – in der nahen Ansicht waren die
+// 1/8-m-Texel als Kacheln zu sehen).
 // Herbstwiese, Waldboden mit Laub, die Erdwege der Horde, Sand und Kiesel am
 // Ufer, der Seegrund und die Hofstellen (Feuerstelle, Hackklotz, Beet) werden
 // hier prozedural gemalt. Das Wasser darüber (Wellen) kommt aus water.js.
@@ -11,6 +13,7 @@ import { LAYOUT, V } from './layout.js';
 import { MAP, shoreX, ISLANDS } from './map.js';
 
 export const AREA = MAP;
+const TEXEL = 1 / 16; // Kantenlänge eines Bodentexels
 
 function pick(h, a, b, threshold) {
   return h < threshold ? a : b;
@@ -137,15 +140,15 @@ function groundColor(map, x, z, i, j, seed, out) {
 }
 
 export function createTerrain(seed, map) {
-  const width = Math.round((AREA.x1 - AREA.x0) / V);
-  const height = Math.round((AREA.z1 - AREA.z0) / V);
+  const width = Math.round((AREA.x1 - AREA.x0) / TEXEL);
+  const height = Math.round((AREA.z1 - AREA.z0) / TEXEL);
   const data = new Uint8Array(width * height * 4);
   const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6)
   const out = { path: false };
   for (let j = 0; j < height; j++) {
-    const z = AREA.z0 + (j + 0.5) * V;
+    const z = AREA.z0 + (j + 0.5) * TEXEL;
     for (let i = 0; i < width; i++) {
-      const x = AREA.x0 + (i + 0.5) * V;
+      const x = AREA.x0 + (i + 0.5) * TEXEL;
       const c = groundColor(map, x, z, i, j, seed, out);
       const k = (j * width + i) * 4;
       data[k] = (c >> 16) & 255;

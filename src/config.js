@@ -25,6 +25,9 @@ export const CONFIG = {
     pxPerMeter: 80,
     // Drinnen (M11) doppelt so groß: 10 Spielpixel pro 1/16-m-Voxel
     interiorPxPerMeter: 160,
+    // Draußen auf Wunsch nah heran (M13, Taste Z): doppelt so groß wie die
+    // Übersicht. Nur Vielfache von 80 halten alle Voxelkanten auf dem Pixelraster.
+    nearPxPerMeter: 160,
     // Kameraneigung mit Steigung 3:4 (sin = 0,6; cos = 0,8): Böden 3 px, Wände 4 px pro 1/16-m-Voxel.
     pitchSin: 0.6,
     pitchCos: 0.8,
@@ -62,6 +65,8 @@ export const CONFIG = {
     // Blickpunkt liegt etwas nördlich der Figur: Hohes ragt im Bild nach oben.
     focusOffsetZ: -1.0,
   },
+  // Ansicht draußen (M13): ?zoom=nah|weit erzwingt sie; Standard (und die Prüfung) weit
+  view: ['nah', 'weit'].includes(params.get('zoom')) ? params.get('zoom') : params.has('test') ? 'weit' : null,
   debug: params.has('debug'),
   test: params.has('test'),
   playtest: params.has('playtest'),
