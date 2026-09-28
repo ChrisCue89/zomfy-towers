@@ -24,13 +24,13 @@ function bild() {
 function teekanne() {
   const m = new VoxelModel();
   // Auf dem Tisch (Decke bei y = FLOOR + 14): bauchige Kanne, Tülle, Deckel, Henkel, zwei Tassen
-  m.box(164, FLOOR + 15, 49, 167, FLOOR + 17, 52, (x, y) => (y === FLOOR + 17 ? P.a2 : P.a3));
-  m.box(165, FLOOR + 18, 50, 166, FLOOR + 18, 51, P.a2);
-  m.set(165, FLOOR + 19, 50, P.a4);
-  m.set(168, FLOOR + 16, 51, P.a2).set(169, FLOOR + 17, 51, P.a2); // Tülle
-  m.set(163, FLOOR + 16, 50, P.a2).set(163, FLOOR + 17, 50, P.a2); // Henkel
-  m.box(170, FLOOR + 15, 53, 171, FLOOR + 16, 54, P.a4); // Tassen
-  m.box(160, FLOOR + 15, 48, 161, FLOOR + 16, 49, P.a4);
+  m.box(172, FLOOR + 15, 49, 175, FLOOR + 17, 52, (x, y) => (y === FLOOR + 17 ? P.a2 : P.a3));
+  m.box(173, FLOOR + 18, 50, 174, FLOOR + 18, 51, P.a2);
+  m.set(173, FLOOR + 19, 50, P.a4);
+  m.set(176, FLOOR + 16, 51, P.a2).set(177, FLOOR + 17, 51, P.a2); // Tülle
+  m.set(171, FLOOR + 16, 50, P.a2).set(171, FLOOR + 17, 50, P.a2); // Henkel
+  m.box(178, FLOOR + 15, 53, 179, FLOOR + 16, 54, P.a4); // Tassen
+  m.box(168, FLOOR + 15, 48, 169, FLOOR + 16, 49, P.a4);
   return { model: m };
 }
 

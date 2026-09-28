@@ -344,7 +344,8 @@ Grundprinzipien:
    schnelles E nach einem Dialog öffnet nichts, ein bewusstes schon, Mika
    klettert über die eigene Barrikadenreihe, drinnen ist das Werkzeug
    weggesteckt, in einer dichten Reihe trifft der Zeiger die Barrikade
-   darunter, neben dem Sessel geht die Werkbank vor.
+   darunter, neben dem Sessel geht die Werkbank vor, drinnen sind auf Stufe 5
+   alle Räume zu Fuß erreichbar (nicht nur per Versetzen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

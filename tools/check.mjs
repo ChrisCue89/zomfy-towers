@@ -2607,6 +2607,39 @@ async function runFixChecks(browser, url) {
   if (sitz.gewaehlt && sitz.gewaehlt.startsWith('bau-')) note(`✓ E: Neben dem Sessel geht die Werkbank vor („${sitz.prompt}“)`);
   else fail(`Werkbank neben dem Sessel: ${JSON.stringify(sitz)}`);
 
+  // Drinnen kommt man zu Fuß in jeden Raum (Theo: der Stubentisch versperrte die Küche) –
+  // auf Stufe 5 von Raummitte zu Raummitte, auf Höhe der Durchgänge
+  const raeume = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    Z.setHouseLevel(5);
+    const rooms = Z.interior().rooms;
+    const walk = (x0, z0, x1, z1) => {
+      g.player.place(x0, z0, 0);
+      for (let k = 0; k < 240; k++) {
+        const p = g.player.position;
+        const d = Math.hypot(x1 - p.x, z1 - p.z);
+        if (d < 0.2) break;
+        g.player.update(1 / 30, { x: (x1 - p.x) / d, z: (z1 - p.z) / d }, false);
+      }
+      return Math.hypot(x1 - g.player.position.x, z1 - g.player.position.z);
+    };
+    const out = [];
+    for (let i = 0; i + 1 < rooms.length; i++) {
+      const a = (rooms[i].minX + rooms[i].maxX) / 2;
+      const b = (rooms[i + 1].minX + rooms[i + 1].maxX) / 2;
+      out.push({ weg: `${rooms[i].id}–${rooms[i + 1].id}`, rest: Math.max(walk(a, 2.85, b, 2.85), walk(b, 2.85, a, 2.85)) });
+    }
+    Z.setHouseLevel(1);
+    const d = Z.interior().outsideDoor;
+    Z.teleport(d.x, d.z + 1.2, 0);
+    return out;
+  });
+  await step(100);
+  // Raummitten können in Möbeln liegen – wer bis auf gut einen halben Meter herankommt, ist drin
+  if (raeume.length === 4 && raeume.every((r) => r.rest < 0.6)) note(`✓ Drinnen: Alle Räume sind zu Fuß erreichbar (${raeume.map((r) => r.weg).join(', ')})`);
+  else fail(`Räume zu Fuß: ${JSON.stringify(raeume)}`);
+
   checkMessages(session);
   await session.context.close();
 }

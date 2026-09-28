@@ -9,6 +9,14 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 Was die Testrunde als Feinschliff fand und ohne Balance zu lösen war:
 
+- **Küche war zu Fuß unerreichbar (Theo, eigentlich ein Blocker):** Der
+  Stubentisch stand so nah an der Trennwand, dass er den Durchgang zur Küche
+  versperrte – ab Stufe 2 kam man weder in die Küche (Suppe) noch später in
+  die Werkstatt. Die Prüfung von M11 hatte Mika in die Räume versetzt statt
+  sie laufen zu lassen. Der Tisch (mit Teekanne) steht jetzt eine Armlänge
+  weiter östlich; ein neuer Prüfpunkt läuft auf Stufe 5 von Raum zu Raum
+  (Gegenprobe: mit dem alten Tischplatz blieben 3,1 m übrig).
+
 - **Barrikaden:** Mika klettert über ihre eigenen Barrikaden – langsamer und
   ein Stück höher –, statt mitten in der Reihe hängen zu bleiben (Mira). Die
   Horde bleibt davor (Kollision mit Markierung `climb`, nur die Figur geht

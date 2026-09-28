@@ -197,6 +197,11 @@ Perk-Wahl aufging – das geht jetzt im Kampf nicht mehr.
 
 ## Nachtrag: Feinschliff
 
+**Nachträglich als Blocker erkannt:** Theos »Die Küche habe ich nicht
+erreicht« lag nicht an ihm – der Stubentisch versperrte den Durchgang, ab
+Stufe 2 waren Küche und Werkstatt zu Fuß unerreichbar. Behoben, mit
+Prüfpunkt.
+
 Ohne Balance nachgezogen (siehe PROGRESS.md »Feinschliff nach m12-r1«): Mika
 klettert über ihre eigenen Barrikaden, Kiesel und fällbare Bäume sind von der
 Deko zu unterscheiden (helle Kiesel, blau-weißer Markierpflock), drinnen ist

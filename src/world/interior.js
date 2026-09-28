@@ -321,7 +321,9 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   const kamin = fireplace(m, 184, seed);
   const dres = dresser(m, 150, seed);
   windowFrame(m, glass, 168, 181, 20, 37, seed, [P.r3, P.r2]);
-  const tab = table(m, 154, 44);
+  // Der Tisch steht eine Armlänge von der Trennwand weg – bei x = 154 versperrte er den
+  // Durchgang zur Küche (m12-r1: Theo kam nicht hinein; die Teekanne rückt mit)
+  const tab = table(m, 162, 44);
   rug(m, 180, 18, 219, 41, [P.r1, P.r3, P.f4, P.f6]);
   woodBasket(m, 176, 12);
   plant(m, 150, 68, seed);
