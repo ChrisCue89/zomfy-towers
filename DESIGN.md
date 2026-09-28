@@ -1420,7 +1420,22 @@ zur Wahl und Turmteile bis »einzigartig«.
 *Spielbar heißt:* Man stellt Bert ans Tor und Hilde an den Engpass – und
 morgens erzählen sie davon.
 
-#### M24 – Wagnis, Vorrat und die große Balance
+#### M24 – Wagnis, Vorrat und die große Balance ✓
+
+*Umgesetzt (28.09.2026):* **Moderlocke** (Reiter Fallen, nach zwei gewonnenen
+Nächten; 8 Zombieteile, 3 Fasern): nur auf einen Zulauf am Waldrand; in der
+nächsten Nacht bringt jede Welle rund ein Drittel mehr Horde über diesen Spawn
+(auch im Nachtplan angesagt), die dort 1,6-fache Beute trägt – hält die Nacht,
+wird die Locke zur Fundkiste. **Makellose Nacht** (niemand im Lager, das
+Zuhause heil): 12 Schrott und 4 Zombieteile; nach drei in Folge hat Balduin
+**seinen Schatz** dabei (ein einzigartiges Turmteil für 14 Teile).
+**Vorratskammer:** gespartes Schrott wächst über Nacht um 6 % (höchstens 12,
+mit dem Lager 24), nach einem Durchbruch nicht. **Die große Balance:** ein
+Balance-Durchlauf (`tools/balance.mjs`) spielt Nächte statt Testspielern und
+misst den Druck auch in gehaltenen Nächten; ab Nacht 4 werden die Schlurfer
+zäher (in Bossnächten weniger), Wild ist schwerer statt reicher; tote Optionen
+belebt (Holzlager baut morgens Barrikaden wieder auf, Bank gibt kurz mehr
+Schlagkraft, Pfanne durchschlägt Panzer).
 
 *Vorbild:* Element TD (Zinsen, die beim Durchbruch verfallen), Line Tower Wars
 (mehr Einkommen nur durch Risiko).

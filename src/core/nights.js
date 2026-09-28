@@ -87,6 +87,7 @@ export class Nights {
   /** Plan der Nacht von Tag `day` – mit der gewählten Schwierigkeit (M16). */
   planFor(day) {
     const plan = planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty);
+    if (this.hpMul) plan.hpFactor *= this.hpMul; // nur für den Balance-Durchlauf (tools/balance.mjs --nacht)
     // M24: Eine Moderlocke lockt in jeder Welle mehr Horde über ihren Spawn
     const lure = this.game.lureEntry?.();
     return lure ? applyLure(plan, lure, this.seed()) : plan;

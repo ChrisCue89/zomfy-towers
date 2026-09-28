@@ -5,6 +5,61 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 24 – Wagnis, Vorrat und die große Balance ✓
+
+**Ziel (DESIGN 8):** Mehr Einkommen nur durch Wagnis; Sparen lohnt sich; die
+Nächte tragen über zehn und mehr Runden in allen drei Schwierigkeiten.
+
+- **Moderlocke:** nach zwei gewonnenen Nächten im Reiter Fallen, nur auf einem
+  Zulauf am Waldrand. Jede Welle bringt dort mehr Horde (im Nachtplan
+  angesagt), die mehr Beute trägt; hält die Nacht, wird die Locke zur
+  Fundkiste.
+- **Makellose Nacht:** Bonus (12 Schrott, 4 Teile) und Serie – nach drei
+  wartet Balduins Schatz (ein einzigartiges Turmteil).
+- **Vorratskammer:** 6 % Zinsen auf gespartes Schrott (höchstens 12, mit dem
+  Lager 24), nicht nach einem Durchbruch.
+- **Tote Optionen belebt:** Holzlager (3 Holz, baut morgens bis zu zwei
+  Barrikaden wieder auf), Bank (voll geheilt und 20 s lang 25 % mehr
+  Schlagkraft), Pfanne (durchschlägt Panzer).
+- **Die große Balance:** neuer Balance-Durchlauf `tools/balance.mjs` statt
+  Testspielern. Ergebnis:
+
+  - *Vorher:* Ausgewogen und Wild hielten alle zwölf Nächte ohne einen
+    einzigen Treffer; ab Nacht 3 starb die Horde 15–30 m vor der ersten
+    Barrikadenreihe, Mikas Nahkampf und die Barrikaden hatten nichts mehr zu
+    tun. Wild war sogar reicher als Ausgewogen (mehr Horde, mehr Beute).
+  - *Gemessen:* Abgelegte Nächte mit mehr Leben je Schlurfer nachgespielt
+    (`--sichern`, `--nacht`). Der Bot geriet erst ab etwa 2,5-fachem Leben
+    (Nacht 4), 5-fachem (Nächte 6 und 8), 3-fachem (Nacht 10, Pilzmutter)
+    und über 8-fachem (Nacht 12) unter Druck – die Türme wachsen viel
+    schneller als die Horde.
+  - *Geändert:* Zähigkeit ab Nacht 4 (+0,4 je Nacht und ein wenig mehr in
+    späten Nächten: Nacht 8 ×3,5, Nacht 12 ×6,2); in Bossnächten nur 40 %
+    davon, dort ist der Boss die Prüfung; Bosse behalten ihre Kurve. Wild:
+    Budget 1,35 → 1,2, Leben 1,2 → 1,35, Beute 0,9 → 0,85 – schwerer, aber
+    nicht mehr reicher.
+  - *Ergebnis:* Ausgewogen – zwölf Nächte gehalten, kein Durchbruch, aber
+    in den Nächten 4, 7 und 9 steht die Horde an der Barrikadenreihe (Nacht 4:
+    Mika mit 47–64 Leben übrig, Nacht 9: die Barrikaden werden angeschlagen).
+    Wild – ab Nacht 8 echte Gefahr (eine Barrikade zerschlagen, Mika bei 84).
+    Gemütlich bleibt entspannt. Ohne
+    Mikas Nahkampf ist Nacht 1 mit einem Turm verloren – wie seit M9.1
+    gewollt (»ein Turm und bisschen Handarbeit«).
+
+- **Gefunden und behoben:** Die Moderlocke nutzte dasselbe Kennzeichen wie
+  die Vogelscheuche – die Vogelscheuche ließ sich nur noch am Waldrand bauen
+  und sperrte nicht mehr (jetzt `bait` für die Locke); die Kosten-Symbole der
+  Bauleiste kannten keine Zombieteile (Absturz, sobald die Locke in der
+  Leiste stand); der Leimtopf zählte keinen Tritt, wenn die Kletten davor
+  schon bremsten; die volle Prüfung hing in den Abschnitten von M16, M18 und
+  M19 an einer offenen Perk-Wahl, an einem Frost-Sprenger am falschen
+  Wegrand (seit dem Wall bei x = −8) und an einer Messung in ganzen Feldern
+  (Prüfaufbau angepasst, `quietChoices`).
+- **Technik:** Speichern v18 (Serie, Schatz) mit Migration v17 → v18;
+  Prüfabschnitt `wagnis`.
+
+---
+
 ## Meilenstein 23 – Gemeinsam durch die Nacht: Posten, Fest, Nebenaufträge ✓
 
 **Ziel (DESIGN 8):** Man stellt Bert ans Tor und Hilde an den Engpass – und

@@ -8,7 +8,7 @@
 export const DIFFICULTIES = {
   gemuetlich: { budget: 0.65, hp: 0.8, speed: 0.92, loot: 1.25 },
   ausgewogen: { budget: 1, hp: 1, speed: 1, loot: 1 },
-  wild: { budget: 1.35, hp: 1.2, speed: 1.08, loot: 0.9 },
+  wild: { budget: 1.2, hp: 1.35, speed: 1.08, loot: 0.85 },
 };
 
 export const DIFFICULTY_ORDER = ['gemuetlich', 'ausgewogen', 'wild'];

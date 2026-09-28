@@ -259,6 +259,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       angekündigte Angriffe, Zerfallen, M22),
                       posts (Rollen auf dem Posten, Knopf, Nerven, Fest,
                       M23), quests (Nebenaufträge, Belohnungen, M23),
+                      risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -268,6 +269,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
+tools/balance.mjs     Balance-Durchlauf: spielt Nächte mit einer Bau-Strategie
+                      (M24, statt Testspielern)
 tools/playtest.mjs    Playtest-Brücke (früher für Testspieler-Agenten)
 screenshots/          Ergebnisse der letzten Prüfung
 playtests/            Personas, Berichte, Zusammenfassungen
@@ -428,6 +431,25 @@ Grundprinzipien:
   Fundstücke sind eigene Einblendungen (`world.questInteractions`, Vorrang vor
   Wrack und Quellen), Balduins Bitte ist eine Zeile im Handelsfenster
   (`gives.quest`). Der Morgenbericht bricht lange Zeilen selbst um.
+- **Wagnis und Vorrat (M24):** Die Moderlocke ist ein begehbarer Bau auf dem
+  Weg (`bait: true`, wie Fallen: sperrt nie); `game.lureEntryAt` sagt, zu
+  welchem Spawn ein Zulauf westlich von `LURE.maxX` gehört. `nights.planFor`
+  legt dann `applyLure` über den Plan (zusätzliche Spawns mit `lure: true`,
+  `plan.lure`); nach der Nacht räumt `nights.settleRisk` auf: Locke → Fundkiste,
+  makellose Nacht (`night.homeHit`, Durchbruch), Serie und Schatz
+  (`state.risk`), Zinsen der Vorratskammer. Werte in `data/risk.js`.
+- **Balance-Durchlauf (M24):** `node tools/balance.mjs` spielt je Schwierigkeit
+  zwölf Nächte: festes Tageseinkommen (an den Quellen der Karte geeicht),
+  Beute und Tausch bei Balduin, Türme an die Stellen mit der meisten
+  Wegabdeckung, Barrikadenreihen, Tor, der Rest wird zu weiteren Türmen;
+  nachts schlägt Mika hinter der ersten Reihe zu (`--mika=aus`: nur die
+  Bauten). Je Nacht misst er auch den Druck (wie weit die Horde kam, Schaden
+  an Barrikaden und Tor, Mikas niedrigstes Leben). `--sichern=4,8 --ordner=…`
+  legt den Spielstand vor diesen Nächten ab, `--nacht=datei --hp=1,2,4` spielt
+  eine solche Nacht mit mehr Leben je Schlurfer nach (ein bis drei Minuten
+  statt einer halben Stunde). Er ersetzt die Testspieler für die Frage »zu
+  leicht, zu schwer?«; balanciert wird in `src/data/` (Zähigkeit:
+  `TOUGHNESS` in `waves.js`).
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -612,7 +634,15 @@ Grundprinzipien:
    Fest am Feuer, Türme ×1,1, der Bericht erzählt von den Posten; Hildes Garn
    mit echter Taste am Wrack (Bauplan zur Wahl), Balduins Bitte im
    Handelsfenster, Junas Antennenteile neben den Wegen; Speichern v17 und
-   Migration v16 → v17 (Bilder: posten, fest, auftrag).
+   Migration v16 → v17 (Bilder: posten, fest, auftrag); ab M24 (Abschnitt
+   `wagnis`, nur der Kern): die Moderlocke erst nach zwei gewonnenen Nächten
+   und nur auf einem Zulauf am Waldrand, jede Welle bringt dort mehr (auch im
+   Nachtplan), wer von dort kommt, trägt mehr Beute, die gehaltene Nacht macht
+   aus der Locke eine Fundkiste; makellose Nacht mit Bonus und Serie, Balduins
+   Schatz nach drei, ein Treffer am Zuhause bricht die Serie; Zinsen der
+   Vorratskammer, keine nach einem Durchbruch; Pfanne durchschlägt Panzer, die
+   Bank gibt Schlagkraft, das Holzlager baut morgens eine Barrikade wieder auf;
+   Speichern v18 und Migration v17 → v18 (Bilder: moderlocke, bericht-wagnis).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -712,7 +742,10 @@ Nachtplan; ab M23 zeigt `posts()` Posten, Dienst, Nerven, Leuchtfeuer und Fest,
 zündet das Leuchtfeuer, `setFeast(tag)` setzt das Fest; `quests()` zeigt den
 laufenden Auftrag und die Fundstücke, `offerQuest()` bietet den nächsten an,
 `questGoal()` die Zeile im Zielkasten, `tradeRows()` die Zeilen des
-Handelsfensters.
+Handelsfensters; ab M24 zeigt `risk()` Serie, Schatz, den Spawn der Locke und
+ob sie schon freigeschaltet ist, `lureEntryAt(x, z)`, zu welchem Spawn eine
+Stelle gehört; `quietChoices()` entscheidet Perk- und Fähigkeiten-Wahlen still
+mit der ersten Karte (für Prüfabschnitte, deren Aufräumen Stufen bringt).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

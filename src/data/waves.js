@@ -27,8 +27,24 @@ export function wavesInNight(n) {
   return Math.min(8, 3 + Math.floor((n - 1) / 2));
 }
 
+/**
+ * Zähigkeit (M24, »die große Balance«): Bis Nacht 3 wie bisher, danach wächst
+ * das Leben je Schlurfer zusätzlich um `per` je Nacht. Der Balance-Durchlauf
+ * (tools/balance.mjs) zeigte: Die Türme wuchsen viel schneller als die Horde –
+ * ab Nacht 3 kam kein Schlurfer mehr bis an die Barrikaden, Mikas Nahkampf und
+ * die Barrikaden hatten nichts mehr zu tun. Bosse behalten ihre eigene Kurve.
+ */
+export const TOUGHNESS = { from: 3, per: 0.4, grow: 0.02, bossNight: 0.4 };
+
+/** Zusätzliche Zähigkeit ab Nacht 4; in Bossnächten nur ein Teil davon – dort ist der Boss die Prüfung. */
+export function toughness(n) {
+  const k = Math.max(0, n - TOUGHNESS.from);
+  const extra = TOUGHNESS.per * k + TOUGHNESS.grow * k * k;
+  return 1 + extra * (isLeaderNight(n) ? TOUGHNESS.bossNight : 1);
+}
+
 export function hpFactor(n) {
-  return 1 + 0.25 * (n - 1);
+  return (1 + 0.25 * (n - 1)) * toughness(n);
 }
 
 export function isLeaderNight(n) {
@@ -169,7 +185,7 @@ export function planNight(n, seed, entries, difficulty) {
       for (let k = 0; k < g.count; k++) spawns.push({ type: g.type, entry: g.entry, delay: t + k * (g.type === 'schwaermer' ? 0.35 : 1.4) });
     });
     // Jede fünfte Nacht führt ein Boss die letzte Welle an (M22; vorher der Anführer)
-    if (isLeaderNight(n) && w === count - 1) spawns.push({ type: bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) });
+    if (isLeaderNight(n) && w === count - 1) spawns.push({ type: bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(n) });
     const shuffled = spawns.sort((a, b) => a.delay - b.delay);
     waves.push({ at: Math.round(at), entries: used, spawns: shuffled });
     // Verschnaufpausen zum Einsammeln und Flicken, später dichter (m3-r1: das

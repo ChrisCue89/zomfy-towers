@@ -13,6 +13,9 @@
 //
 //   node tools/balance.mjs [--naechte=12] [--schwierigkeit=gemuetlich,ausgewogen,wild]
 //                          [--einkommen=1] [--karte=3] [--mika=an|aus]
+//                          [--sichern=4,8,12 --ordner=pfad]   Spielstand vor diesen Nächten ablegen
+//   node tools/balance.mjs --nacht=pfad/ausgewogen-8.json --hp=1,2,4
+//                          eine abgelegte Nacht mit mehr Leben je Schlurfer nachspielen
 //
 // Ausgabe: je Nacht gehalten/verloren, Zuhause, Durchbruch, besiegte Schlurfer,
 // Türme (Stufen), Barrikaden, Vorrat, dazu der Druck auch in gehaltenen Nächten
@@ -21,7 +24,7 @@
 // Zusammenfassung.
 
 import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +37,10 @@ const LEVELS = arg('schwierigkeit', 'gemuetlich,ausgewogen,wild').split(',');
 const INCOME = Number(arg('einkommen', 1));
 const MAP = Number(arg('karte', 3));
 const MIKA = arg('mika', 'an') !== 'aus';
+const SAVE_DAYS = arg('sichern', '').split(',').filter(Boolean).map(Number);
+const SAVE_DIR = arg('ordner', '.');
+const REPLAY = arg('nacht', null);
+const HP_MULS = arg('hp', '1').split(',').map(Number);
 
 /**
  * Was ein fleißiger Spieler an einem Tag an den Quellen der Karte sammelt (Karte 3:
@@ -284,6 +291,14 @@ async function runLevel(browser, url, level) {
     const income = Object.fromEntries(Object.entries(DAILY).map(([r, n]) => [r, n * scale + (day === 1 ? FIRST_DAY[r] || 0 : 0)]));
     if (day >= 2) income.stein += 4; // mit der Spitzhacke auch die Felsen
     const tag = await page.evaluate(dayTurn, { day, income, keep: KEEP_PARTS, reserve: RESERVE });
+    if (SAVE_DAYS.includes(day)) {
+      const data = await page.evaluate(() => {
+        const g = window.zomfy.game;
+        g.snapshot();
+        return JSON.stringify(g.state);
+      });
+      writeFileSync(join(SAVE_DIR, `${level}-${day}.json`), data);
+    }
     const nacht = await nightTurn(page, day);
     rows.push({ day, ...nacht, ...tag });
     const home = nacht.homeMax ? `${nacht.homeNow}/${nacht.homeMax}` : `${nacht.homeNow}`;
@@ -295,10 +310,42 @@ async function runLevel(browser, url, level) {
   return rows;
 }
 
+/** Eine abgelegte Nacht nachspielen – je Faktor mit mehr Leben je Schlurfer. */
+async function replayNight(browser, url) {
+  const data = readFileSync(REPLAY, 'utf8');
+  const day = JSON.parse(data).time.day;
+  for (const mul of HP_MULS) {
+    const context = await browser.newContext({ viewport: { width: 960, height: 540 }, deviceScaleFactor: 1 });
+    await context.addInitScript((d) => localStorage.setItem('zomfy-towers.spielstand', d), data);
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(`${url}index.html?test&playtest&map=${MAP}`);
+    await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+    await page.evaluate((m) => {
+      window.__zomfyHold = true;
+      const g = window.zomfy.game;
+      g.holdSave = true; // den abgelegten Stand nicht überschreiben
+      g.nights.hpMul = m;
+    }, mul);
+    await page.evaluate(armMika, MIKA);
+    const n = await nightTurn(page, day);
+    const p = n.pressure;
+    console.log(`Nacht ${day} · Leben ×${mul} · ${n.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${n.homeNow}/${n.homeMax ?? '?'} · ${n.breach ? `Durchbruch (${n.inCamp} im Lager)` : 'Tor hält'} · besiegt ${n.kills} · zerschlagen ${n.broken} · bis x ${p.maxX ?? '–'}, Barrikaden −${p.barLost}, Tor −${p.gateLost}, Mika ≥ ${p.minHp}${errors.length ? ` · Fehler: ${errors[0]}` : ''}`);
+    await context.close();
+  }
+}
+
 const { chromium } = loadPlaywright();
 const launchArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 const browser = await chromium.launch({ args: launchArgs }).catch(() => (existsSync('/opt/pw-browsers/chromium') ? chromium.launch({ args: launchArgs, executablePath: '/opt/pw-browsers/chromium' }) : null));
 const { server, url } = await start(0, ROOT);
+if (REPLAY) {
+  await replayNight(browser, url);
+  await browser.close();
+  server.close();
+  process.exit(0);
+}
 const summary = [];
 for (const level of LEVELS) {
   const rows = await runLevel(browser, url, level);

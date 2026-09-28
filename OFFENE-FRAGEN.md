@@ -1481,6 +1481,44 @@ eingezogen, dessen Auftrag wartet, der nächste kommt vor. **Warum:** Die Tage
 bekommen Ziele mit Weg und Belohnung (m12-r1: »tagsüber ist wenig zu tun«),
 ohne Druck – kein Auftrag läuft ab.
 
+### 149. Wie funktioniert die Moderlocke? (M24)
+**Entscheidung:** Ein Bau im Reiter »Fallen« (8 Zombieteile, 3 Fasern,
+höchstens einer), den es nach zwei gewonnenen Nächten gibt. Er passt nur auf
+einen Zulauf westlich von x = −40, wo die Wege noch getrennt sind – so ist
+klar, welchen Spawn er lockt (die Spawns selbst liegen im Wald, dort kommt
+Mika nicht hin). In der nächsten Nacht kommen in jeder Welle zusätzlich rund
+35 % (mindestens zwei) über diesen Spawn, Arten aus der Welle, nie Boss oder
+Champion; alles von dort trägt 1,6-fache Beute. Hält die Nacht, wird die
+Locke zur Fundkiste; verloren, ist sie fort. **Warum:** Wagnis gegen Lohn wie
+bei Line Tower Wars – man entscheidet am Abend, ob der eigene Zulauf das
+aushält, und der Nachtplan zeigt ehrlich, was kommt.
+
+### 150. Makellose Nacht und Vorratskammer (M24)
+**Entscheidung:** Makellos ist eine gewonnene Nacht ohne Durchbruch, ohne
+Schlurfer im Lager und ohne Treffer am Zuhause: 12 Schrott und 4 Zombieteile,
+die Serie zählt mit; nach drei in Folge wartet Balduins Schatz (ein
+einzigartiges Turmteil für 14 Zombieteile, bis man ihn kauft). Gespartes
+Schrott wächst über Nacht um 6 % (höchstens 12, mit dem Lager im Haus 24),
+nach einem Durchbruch nicht. **Warum:** Sparen und sauberes Verteidigen sollen
+sich lohnen (Element TD), ohne dass man ausgebremst wird, wenn es einmal
+schiefgeht.
+
+### 151. Die große Balance: womit messen, was ändern? (M24)
+**Entscheidung:** Statt Testspielern spielt `tools/balance.mjs` zwölf Nächte je
+Schwierigkeit mit einer einfachen, vernünftigen Strategie (Einkommen an den
+Quellen der Karte geeicht, Tausch bei Balduin, Türme an die Stellen mit der
+meisten Wegabdeckung, Barrikaden, Tor; Mika schlägt an der Barrikadenreihe
+mit) und misst auch den Druck in gehaltenen Nächten. Nachgespielte Nächte mit
+mehr Leben je Schlurfer zeigten: Die Türme wachsen viel schneller als die
+Horde. Deshalb werden die Schlurfer ab Nacht 4 zäher (in Bossnächten weniger,
+dort ist der Boss die Prüfung), und Wild ist schwerer statt reicher. Ergebnis
+im Logbuch (PROGRESS, M24). Tote Optionen:
+Das Holzlager gibt 3 statt 2 Holz und baut jeden Morgen bis zu zwei
+zerschlagene Barrikaden wieder auf; die Bank heilt voll und gibt 20 s lang
+25 % mehr Schlagkraft (alle 25 s); die Pfanne durchschlägt Panzer, betäubt
+länger und schlägt etwas schneller – die Waffe gegen Brummer und Schildträger.
+**Warum:** Jede Option braucht eine Nische, in der sie die beste Wahl ist.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
