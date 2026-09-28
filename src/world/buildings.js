@@ -3,17 +3,19 @@
 // oder mit E auswählen). Türme haben Stufe, Spezialisierung, Haltbarkeit und
 // einen Kopf, der sich zum Ziel dreht. Barrikaden (nur auf Wegfeldern) haben
 // Stufen, zeigen ihren Schaden und bleiben zerstört als Trümmer liegen, bis
-// man sie wieder aufbaut oder abräumt. Nach jeder Änderung rechnet die Horde
-// ihre Wege neu (pathing.rebuild).
+// man sie wieder aufbaut oder abräumt. Wall und Tor (M17) umschließen das
+// Lager; was darin steht, kann die Horde nach einem Durchbruch umwerfen (M17d).
+// Nach jeder Änderung rechnet die Horde ihre Wege neu (pathing.rebuild).
 
 import * as THREE from 'three';
 import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { P } from '../render/palette.js';
-import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
+import { BUILDINGS, footprint, maxHpOf, hasHp, CAMP_MAX, GEAR, gearSlots, gearFits } from '../data/buildings.js';
+import { buildWall, buildWallRubble, buildGate, buildGear, buildGateBanner, CAMP_UNIT, WICKET, GATE_HALF, POST } from './campModels.js';
 import { towerStatsOf, towerRank } from '../data/towers.js';
 import { VoxelModel } from '../render/voxel.js';
-import { BUILDING_MODELS, buildBarricade, buildRubble, BUILDING_UNIT } from './buildingModels.js';
+import { BUILDING_MODELS, buildBarricade, buildRubble, collapseModel, BUILDING_UNIT } from './buildingModels.js';
 import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { V } from './layout.js';
 import { edgeLight } from './voxelKit.js';
@@ -102,19 +104,54 @@ export class Buildings {
   object(type, turns, options = {}) {
     const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null, look = 'ganz' } = options;
     if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow);
-    const key = type === 'barrikade' ? `${type}|${level}|${look}` : type;
+    if (BUILDINGS[type].camp) return this.campObject(type, level, look, material, shadow);
+    const key = type === 'barrikade' ? `${type}|${level}|${look}` : look === 'truemmer' ? `${type}|truemmer` : type;
     if (!this.models.has(key)) {
       const s = BUILDING_MODELS[type];
       let model;
       if (type === 'barrikade') model = look === 'truemmer' ? buildRubble(this.seed, level) : buildBarricade(this.seed, level, look === 'kaputt' ? 0.55 : 0);
+      else if (look === 'truemmer') model = collapseModel(s.model(this.seed), this.seed); // umgeworfen (M17d)
       else model = s.model(this.seed);
-      this.models.set(key, { model, glow: s.glow ? s.glow() : null });
+      this.models.set(key, { model, glow: s.glow && look !== 'truemmer' ? s.glow() : null });
     }
     const { model, glow } = this.models.get(key);
     // Alle Bauten doppelt fein (M13g, 1/32 m), Schatten grob wie im Maß 1/8
     const size = BUILDING_UNIT;
     const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow: shadow === 'full' ? 'coarse4' : shadow, size });
     if (glow) group.add(createStaticVoxelObject(glow, glowMaterial, { turns, shadow: 'none', jitter: 0, size }));
+    return group;
+  }
+
+  /**
+   * Wall-Abschnitt oder Tor (M17). Das Tor bekommt die Schlupftür als eigenes
+   * Mesh mit dem Ursprung am Scharnier (dreht sich auf, wenn Mika davorsteht).
+   */
+  campObject(type, level, look, material, shadow) {
+    const def = BUILDINGS[type];
+    const key = `${type}|${level}|${look}`;
+    if (!this.models.has(key)) {
+      const damage = look === 'kaputt' ? 0.55 : 0;
+      if (def.camp === 'tor') {
+        const gate = look === 'truemmer' ? { frame: buildWallRubble(this.seed + 3, level, def.d), wicket: null } : buildGate(this.seed, level, damage);
+        this.models.set(key, gate);
+      } else this.models.set(key, { frame: look === 'truemmer' ? buildWallRubble(this.seed + def.d, level, def.d) : buildWall(this.seed + def.d, level, def.d, damage), wicket: null });
+    }
+    const m = this.models.get(key);
+    const group = createStaticVoxelObject(m.frame, material, { turns: 0, seed: this.seed, shadow: shadow === 'full' ? 'coarse4' : shadow, size: CAMP_UNIT });
+    if (m.wicket) {
+      if (!m.wicketGeo) {
+        m.wicketGeo = m.wicket.toGeometry({ jitter: 0.03, seed: this.seed, size: CAMP_UNIT });
+        m.wicketGeo.userData.shared = true;
+      }
+      const hinge = new THREE.Group();
+      hinge.position.set(0, 0, WICKET.z0 * CAMP_UNIT);
+      const door = new THREE.Mesh(m.wicketGeo, material);
+      door.castShadow = shadow !== 'none';
+      door.receiveShadow = true;
+      hinge.add(door);
+      group.add(hinge);
+      group.userData.wicket = hinge;
+    }
     return group;
   }
 
@@ -196,7 +233,14 @@ export class Buildings {
       building.level = Math.max(1, Math.min(3, extra.level || 1));
       building.broken = Boolean(extra.broken);
     }
-    if (def.hp) building.hp = building.broken ? 0 : Math.min(maxHpOf(building), extra.hp ?? maxHpOf(building));
+    if (def.camp) {
+      building.level = Math.max(1, Math.min(CAMP_MAX, extra.level || 1));
+      building.broken = Boolean(extra.broken);
+    }
+    if (def.raid) building.broken = Boolean(extra.broken); // umgeworfen (M17d)
+    // Zubehör (M17e): Barrikade je Stufe eins, das Tor drei
+    if (gearSlots(building)) building.gear = [...new Set((extra.gear || []).filter((id) => gearFits(type, id)))].slice(0, gearSlots(building));
+    if (hasHp(type)) building.hp = building.broken ? 0 : Math.min(maxHpOf(building), extra.hp ?? maxHpOf(building));
     const cx = i + w / 2;
     const cz = j + d / 2;
     this.attachObject(building);
@@ -205,20 +249,54 @@ export class Buildings {
       def.tower && w === 1 && d === 1
         ? this.colliders.addCircle(cx, cz, 0.36, `bau-${building.id}`)
         : this.colliders.addBox(i + 0.08, j + 0.08, i + w - 0.08, j + d - 0.08, `bau-${building.id}`);
-    if (building.broken) building.collider.enabled = false; // Trümmer: begehbar
+    if (def.camp === 'tor') {
+      // Tor (M17): Pfosten und Flügel sperren alle, die Schlupftür in der Mitte nur die Horde
+      this.colliders.remove(building.collider);
+      const z0 = cz + WICKET.z0 * CAMP_UNIT;
+      const z1 = z0 + WICKET.len * CAMP_UNIT;
+      building.colliders = [
+        this.colliders.addBox(i + 0.12, j + 0.02, i + w - 0.12, z0 - 0.02, `bau-${building.id}`),
+        this.colliders.addBox(i + 0.12, z1 + 0.02, i + w - 0.12, j + d - 0.02, `bau-${building.id}`),
+      ];
+      building.collider = this.colliders.addBox(i + 0.2, z0, i + w - 0.2, z1, `bau-${building.id}`);
+      building.collider.livingFree = true;
+      building.colliders.push(building.collider);
+    } else if (def.camp) {
+      // Wall: durchgehend (die Abschnitte stoßen fast aneinander)
+      this.colliders.remove(building.collider);
+      building.collider = this.colliders.addBox(i + 0.1, j + 0.01, i + w - 0.1, j + d - 0.01, `bau-${building.id}`);
+      building.colliders = [building.collider];
+    }
+    if (building.broken && !def.raid) this.setBlocking(building, false); // Trümmer: begehbar (Umgeworfenes nicht)
     if (type === 'barrikade') building.collider.climb = true; // Mika klettert drüber, die Horde nicht (m12-r1)
     this.grid.occupy(building.id, i, j, w, d);
-    const radius = 1.1 + Math.max(w, d) * 0.3;
-    // Werkbank, Bank, Beet: benutzen. Alles andere (auch Türme): mit E auswählen.
-    building.interaction = def.use
-      ? { id: `bau-${building.id}`, x: cx, z: cz, radius, prompt: def.prompt || def.use, use: def.use, building: building.id }
-      : { id: `bau-${building.id}`, x: cx, z: cz, radius: radius - 0.2, prompt: 'auswaehlen', select: building.id };
-    // Breite Bauten zum Benutzen (Werkbank, Bank, Beet): Der Abstand zählt zur Grundfläche,
-    // nicht zur Mitte – vor ihrem Ende stehend war man sonst »zu weit weg« (m12-r1)
-    if (def.use && Math.max(w, d) > 1) Object.assign(building.interaction, { hw: w / 2, hd: d / 2, radius: 1.25 });
+    this.setInteraction(building);
     this.list.push(building);
     this.pathing?.rebuild();
     return building;
+  }
+
+  /**
+   * E am Bau: Werkbank, Bank, Beet, Holzlager benutzen – umgeworfen (M17d) nur
+   * auswählen (dort wieder aufstellen). Alles andere (auch Türme): auswählen.
+   */
+  setInteraction(b) {
+    const def = BUILDINGS[b.type];
+    const { w, d } = footprint(b.type, b.turns);
+    const cx = b.i + w / 2;
+    const cz = b.j + d / 2;
+    const radius = 1.1 + Math.max(w, d) * 0.3;
+    if (def.camp) {
+      b.interaction = { id: `bau-${b.id}`, x: cx + 0.9, z: cz, radius: 1.4 + d * 0.25, prompt: 'auswaehlen', select: b.id, hd: d / 2, hw: 0.9, camp: true };
+      return;
+    }
+    const use = def.use && !b.broken;
+    b.interaction = use
+      ? { id: `bau-${b.id}`, x: cx, z: cz, radius, prompt: def.prompt || def.use, use: def.use, building: b.id }
+      : { id: `bau-${b.id}`, x: cx, z: cz, radius: radius - 0.2, prompt: 'auswaehlen', select: b.id };
+    // Breite Bauten zum Benutzen (Werkbank, Bank, Beet): Der Abstand zählt zur Grundfläche,
+    // nicht zur Mitte – vor ihrem Ende stehend war man sonst »zu weit weg« (m12-r1)
+    if (use && Math.max(w, d) > 1) Object.assign(b.interaction, { hw: w / 2, hd: d / 2, radius: 1.25 });
   }
 
   /** Darstellung (neu) anlegen – nach Bau oder Ausbau. */
@@ -236,7 +314,10 @@ export class Buildings {
     }
     b.look = this.lookOf(b);
     b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec, look: b.look });
+    this._lanterns = null; // Laternen neu einsammeln (M17e)
     if (b.part) this.addPart(b);
+    if (b.gear?.length && !b.broken) this.addGear(b);
+    if (BUILDINGS[b.type].camp === 'tor' && !b.broken) this.addGateBanners(b);
     if (BUILDINGS[b.type].tower) {
       b.rank = towerRank(b.xp);
       if (b.rank > 1) this.addPennants(b);
@@ -247,8 +328,88 @@ export class Buildings {
     if (b.head && b.headAngle !== undefined) b.head.rotation.y = b.headAngle;
     this.group.add(b.object);
     const spec = BUILDING_MODELS[b.type];
-    if (spec?.pool) b.pool = this.lightPools.add(cx, cz + 0.3, spec.pool.radius);
+    if (spec?.pool && !b.broken) b.pool = this.lightPools.add(cx, cz + 0.3, spec.pool.radius);
     if (b.type === 'laternenturm') b.pool = this.lightPools.add(cx, cz, towerStatsOf(b).range);
+  }
+
+  /**
+   * Zubehör sichtbar an Barrikade oder Tor (M17e): Dornen, Laterne, Pechkessel,
+   * Glocke. Die Barrikade dreht es mit; eine Laterne bekommt eine Lichtinsel
+   * (am Tor draußen, wo die Horde steht).
+   */
+  addGear(b) {
+    const gate = BUILDINGS[b.type].camp === 'tor';
+    const host = gate ? 'tor' : 'barrikade';
+    const turns = gate ? 0 : b.turns;
+    const size = gate ? CAMP_UNIT : BUILDING_UNIT;
+    for (const id of b.gear) {
+      const key = `gear|${id}|${host}|${gate ? b.level : 0}`;
+      if (!this.models.has(key)) this.models.set(key, buildGear(id, host, b.level));
+      const { model, glow } = this.models.get(key);
+      const part = createStaticVoxelObject(model, this.materials.building || this.materials.occluder, { turns, seed: this.seed, shadow: 'coarse4', size });
+      part.name = `zubehoer-${id}`;
+      b.object.add(part);
+      if (glow) b.object.add(createStaticVoxelObject(glow, this.glowMaterial, { turns, shadow: 'none', jitter: 0, size }));
+    }
+    if (b.gear.includes('laterne')) {
+      const spot = this.lanternSpot(b);
+      b.pool = this.lightPools.add(spot.x, spot.z, GEAR.laterne.radius);
+    }
+  }
+
+  /** Zwei Fahnen über den Torpfosten (M17): Das Tor liest sich von Weitem, das Tuch weht im Wind. */
+  addGateBanners(b) {
+    const key = `torfahne|${b.level}`;
+    if (!this.models.has(key)) {
+      const m = buildGateBanner(b.level);
+      const pole = m.pole.toGeometry({ jitter: 0.03, seed: this.seed, size: CAMP_UNIT });
+      const cloth = m.cloth.toGeometry({ jitter: 0, ao: false, size: CAMP_UNIT });
+      pole.userData.shared = true;
+      cloth.userData.shared = true;
+      this.models.set(key, { pole, cloth, top: m.top });
+    }
+    const f = this.models.get(key);
+    const U = CAMP_UNIT;
+    for (const zc of [-GATE_HALF + POST / 2, GATE_HALF - POST / 2]) {
+      const pole = new THREE.Mesh(f.pole, this.materials.building || this.materials.occluder);
+      pole.position.set(0, 0, Math.round(zc) * U);
+      pole.castShadow = true;
+      const cloth = new THREE.Mesh(f.cloth, this.materials.laundry || this.materials.building);
+      cloth.position.set(0, f.top * U, Math.round(zc) * U);
+      cloth.castShadow = true;
+      cloth.name = 'torfahne';
+      b.object.add(pole, cloth);
+    }
+  }
+
+  /** Wo eine Laterne (M17e) leuchtet: an der Barrikade selbst, am Tor davor (außen). */
+  lanternSpot(b) {
+    const c = this.bounds(b);
+    return BUILDINGS[b.type].camp === 'tor' ? { x: b.i - 0.6, z: c.z } : { x: c.x, z: c.z };
+  }
+
+  /** Alle Laternen an Barrikaden und Tor (M17e), die gerade leuchten. */
+  get lanterns() {
+    if (!this._lanterns) {
+      this._lanterns = [];
+      for (const b of this.list) if (!b.broken && b.gear?.includes('laterne')) this._lanterns.push(this.lanternSpot(b));
+    }
+    return this._lanterns;
+  }
+
+  /** Blenden (M17e): Wer im Schein einer Laterne steht, ist um diesen Anteil langsamer. */
+  gearSlow(x, z) {
+    const r2 = GEAR.laterne.radius * GEAR.laterne.radius;
+    for (const L of this.lanterns) if ((x - L.x) ** 2 + (z - L.z) ** 2 <= r2) return GEAR.laterne.slow;
+    return 0;
+  }
+
+  /** Zubehör anbringen (M17e) – ohne Kosten (macht das Spiel). */
+  addGearTo(b, id) {
+    if (!gearFits(b.type, id) || b.gear.includes(id) || b.gear.length >= gearSlots(b)) return false;
+    b.gear.push(id);
+    this.attachObject(b);
+    return true;
   }
 
   /** Das Turmteil sichtbar am Turm (M10): Fernrohr auf dem Kopf, Ölkanne am Fuß, Münze vorn. */
@@ -339,9 +500,10 @@ export class Buildings {
     }
   }
 
-  /** Aussehen einer Barrikade: ganz, kaputt (unter halber Haltbarkeit) oder Trümmer. */
+  /** Aussehen einer Barrikade: ganz, kaputt (unter halber Haltbarkeit) oder Trümmer; im Lager auch umgeworfen. */
   lookOf(b) {
-    if (b.type !== 'barrikade') return 'ganz';
+    if (BUILDINGS[b.type].raid) return b.broken ? 'truemmer' : 'ganz';
+    if (!BUILDINGS[b.type].smash) return 'ganz';
     if (b.broken) return 'truemmer';
     return b.hp < maxHpOf(b) * 0.5 ? 'kaputt' : 'ganz';
   }
@@ -351,22 +513,69 @@ export class Buildings {
     if (this.lookOf(b) !== b.look) this.attachObject(b);
   }
 
-  /** Barrikade zerbricht: Trümmer bleiben liegen, die Horde läuft darüber. */
+  /** Kollision eines Baus an/aus (das Tor hat mehrere Teile). */
+  setBlocking(b, on) {
+    for (const c of b.colliders || [b.collider]) c.enabled = on;
+  }
+
+  /** Barrikade, Wall oder Tor zerbricht: Trümmer bleiben liegen, die Horde läuft darüber. */
   breakBarricade(b) {
     b.broken = true;
     b.hp = 0;
-    b.collider.enabled = false;
+    this.setBlocking(b, false);
     this.attachObject(b);
     this.pathing?.rebuild();
   }
 
-  /** Barrikade aus Trümmern wieder aufbauen (volle Haltbarkeit). */
+  /** Aus Trümmern wieder aufbauen (volle Haltbarkeit) – auch Umgeworfenes im Lager (M17d). */
   rebuildBarricade(b) {
     b.broken = false;
     b.hp = maxHpOf(b);
-    b.collider.enabled = true;
+    this.setBlocking(b, true);
     this.attachObject(b);
+    if (BUILDINGS[b.type].raid) this.setInteraction(b);
     this.pathing?.rebuild();
+  }
+
+  /**
+   * Umgeworfen (M17d): Der Bau liegt als Haufen seiner Teile da, bleibt aber im
+   * Weg (Kollision und Raster wie vorher) und tut nichts mehr – kein Licht, kein
+   * Benutzen –, bis Mika ihn wieder aufstellt. Die Welt sammelt die
+   * Interaktionen danach neu ein (world.refreshInteractions).
+   */
+  wreck(b) {
+    b.broken = true;
+    b.hp = 0;
+    this.attachObject(b);
+    this.setInteraction(b);
+  }
+
+  /** Wall-Abschnitt oder Tor eine Stufe höher (M17): danach wie neu. */
+  upgradeCamp(b) {
+    b.level = Math.min(CAMP_MAX, (b.level || 1) + 1);
+    b.hp = maxHpOf(b);
+    this.attachObject(b);
+  }
+
+  /** Wall und Tor (M17). */
+  get camp() {
+    return this.list.filter((b) => BUILDINGS[b.type].camp);
+  }
+
+  get gate() {
+    return this.list.find((b) => BUILDINGS[b.type].camp === 'tor') || null;
+  }
+
+  /** Stehen Wall und Tor ganz (nichts eingebrochen)? Dann kommt niemand von der Horde hindurch. */
+  get campShut() {
+    const camp = this.camp;
+    return camp.length > 0 && !camp.some((b) => b.broken);
+  }
+
+  /** Ostkante von Wall und Tor (x): Wer weiter östlich steht, ist im Lager (M17d). Ohne Tor: null. */
+  get campX() {
+    const gate = this.gate;
+    return gate ? gate.i + footprint(gate.type, gate.turns).w : null;
   }
 
   /** Barrikade eine Stufe höher: der Schaden bleibt anteilig erhalten. */
@@ -390,9 +599,10 @@ export class Buildings {
     const [building] = this.list.splice(index, 1);
     this.group.remove(building.object);
     building.object.traverse((o) => o.geometry && !o.geometry.userData.shared && o.geometry.dispose());
-    this.colliders.remove(building.collider);
+    for (const c of building.colliders || [building.collider]) this.colliders.remove(c);
     this.grid.release(building.id);
     if (building.pool) this.lightPools.remove(building.pool);
+    this._lanterns = null;
     this.pathing?.rebuild();
     return building;
   }
@@ -419,6 +629,7 @@ export class Buildings {
       if (b.name !== null && b.name !== undefined) e.name = b.name;
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
+      if (b.gear?.length) e.gear = [...b.gear]; // Zubehör (M17e)
       return e;
     });
   }
@@ -430,8 +641,10 @@ export class Buildings {
     for (const e of entries) {
       if (!BUILDINGS[e.type]) continue;
       const { w, d } = footprint(e.type, e.turns);
-      // Ältere Stände dürfen auf heutigen Rohstoff-Zellen stehen (nicht strikt)
-      if (!this.grid.canPlace(e.i, e.j, w, d, false)) continue;
+      // Ältere Stände dürfen auf heutigen Rohstoff-Zellen stehen (nicht strikt). Wall und
+      // Tor (M17) stellt die Welt selbst auf – sie stehen immer, auch über einem Hindernis
+      // (die volle Prüfung fand einen Abschnitt, der nach dem Neuladen fehlte)
+      if (!BUILDINGS[e.type].camp && !this.grid.canPlace(e.i, e.j, w, d, false)) continue;
       const b = this.place(e.type, e.i, e.j, e.turns, e.id, e);
       if (e.day) b.day = e.day;
     }

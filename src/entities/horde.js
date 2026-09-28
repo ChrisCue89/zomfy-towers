@@ -11,8 +11,10 @@
 //            (hinter Mika her), findet erst auf den nächsten Weg zurück
 //   approach vom Zielfeld an die Hauswand
 //   attack   aufs Zuhause einschlagen
-//   smash    Barrikade einschlagen (seit Meilenstein 9 alle Arten; Brummer und
-//            Anführer schlagen besonders hart zu)
+//   smash    Barrikade, Wall oder Tor einschlagen (seit Meilenstein 9 alle Arten;
+//            Brummer und Anführer schlagen besonders hart zu)
+//   raid     im Lager (M17d): umwerfen, was dort steht (Werkbank, Zelt, Beet,
+//            Lampe, Bank, Holzlager), danach weiter zum Haus
 //   chase    Mika verfolgen und schlagen, wenn sie nah ist; steht ein Bau
 //            dazwischen, außen herum (Breitensuche um Mika, pathing.js)
 //   dying    umfallen und im Boden versinken
@@ -22,6 +24,7 @@ import { createWorldMaterial, createSilhouetteMaterial } from '../render/materia
 import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { V } from '../world/layout.js';
 import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
+import { BUILDINGS, RAID } from '../data/buildings.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
@@ -215,6 +218,10 @@ export class Horde {
       anchored: false,
       rejoinT: 0,
       target: null,
+      inCamp: false, // schon einmal hinter Wall und Tor gewesen (M17d)
+      raidScan: 0,
+      raidT: 0,
+      raidIgnore: null, // an diesen Bau kam er nicht heran
       deathT: 0,
       aggro: day ? DAY_ZOMBIE.aggro : def.aggro ?? NIGHT_AGGRO,
       lootFactor: day ? 0.5 : o.lootFactor || 1, // M16: Schwierigkeit und Mutbonus
@@ -325,6 +332,10 @@ export class Horde {
       }
     }
 
+    // Wall und Tor (M17): Ostkante des Lagers und ob nichts eingebrochen ist
+    const campX = world.buildings.campX;
+    const campShut = campX !== null && world.buildings.campShut;
+
     for (let idx = this.list.length - 1; idx >= 0; idx--) {
       const z = this.list[idx];
       if (z.state === 'dying') {
@@ -365,7 +376,8 @@ export class Horde {
 
       const lured = z.lureT > 0;
       const frozen = z.freezeT > 0 || z.stunT > 0 || lured;
-      let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - (ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0));
+      const light = ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0; // Licht macht den Moder müde
+      let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - light);
       if (frozen) speed = 0;
       z.cooldown = Math.max(0, z.cooldown - dt);
       z.attackAnim = Math.max(0, z.attackAnim - dt);
@@ -382,9 +394,32 @@ export class Horde {
         z.anchored = true;
       }
 
-      // Mika in der Nähe? (Nicht, wenn sie im Haus ist.)
-      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro) z.state = 'chase';
-      else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive)) this.endChase(z);
+      // Mika in der Nähe? (Nicht, wenn sie im Haus ist – und nicht, solange Wall und Tor
+      // dazwischen stehen, M17: dann geht er weiter zum Tor und schlägt es ein. In der
+      // Schlupftür steht sie beiden Seiten offen.)
+      const walled = campShut && (z.x < campX - 1.05 ? player.x > campX : z.x > campX && player.x < campX - 1.05);
+      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro && !walled) z.state = 'chase';
+      else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive || walled)) this.endChase(z);
+
+      // Im Lager (M17d): Wer hinter Wall und Tor steht, wirft um, was dort steht
+      if (campX !== null && z.state !== 'enter' && z.x > campX + 0.2) {
+        if (!z.inCamp) {
+          z.inCamp = true;
+          this.cb.onEnterCamp?.(z);
+        }
+        if (z.state === 'walk') {
+          z.raidScan -= dt;
+          if (z.raidScan <= 0) {
+            z.raidScan = RAID.scan;
+            const b = this.raidTarget(z);
+            if (b) {
+              z.state = 'raid';
+              z.target = b.id;
+              z.raidT = 0;
+            }
+          }
+        }
+      }
 
       switch (z.state) {
         case 'enter': {
@@ -417,9 +452,9 @@ export class Horde {
           }
           vx = dir.x * speed;
           vz = dir.z * speed;
-          // Barrikade voraus: stehen bleiben und einschlagen (Trümmer sind kein Hindernis)
+          // Barrikade oder Tor voraus: stehen bleiben und einschlagen (Trümmer sind kein Hindernis)
           const ahead = world.buildings.atCell(Math.floor(z.x + dir.x * 0.55), Math.floor(z.z + dir.z * 0.55));
-          if (ahead && ahead.type === 'barrikade' && !ahead.broken) {
+          if (ahead && BUILDINGS[ahead.type].smash && !ahead.broken) {
             z.state = 'smash';
             z.target = ahead.id;
             vx = 0;
@@ -458,9 +493,40 @@ export class Horde {
           const c = world.buildings.bounds(b);
           z.facing = dampAngle(z.facing, Math.atan2(c.x - z.x, c.z - z.z), 8, dt);
           if (!frozen && z.cooldown <= 0) {
-            z.cooldown = 1 / z.def.hitRate;
+            z.cooldown = 1 / (z.def.hitRate * (1 - light)); // geblendet schlägt er seltener (M17e)
             z.attackAnim = 0.45;
             this.cb.onBarricadeHit?.(b, z.def.hit, z);
+          }
+          break;
+        }
+        case 'raid': {
+          // Im Lager (M17d): an die nächste Kante des Baus und draufschlagen
+          const b = world.buildings.get(z.target);
+          if (!b || b.broken) {
+            z.state = 'walk';
+            break;
+          }
+          const r = world.buildings.bounds(b);
+          const dx = Math.max(r.i, Math.min(z.x, r.i + r.w)) - z.x;
+          const dz = Math.max(r.j, Math.min(z.z, r.j + r.d)) - z.z;
+          const d = Math.hypot(dx, dz);
+          z.raidMoving = d > z.def.radius + 0.35;
+          if (z.raidMoving) {
+            z.raidT += dt;
+            if (z.raidT > RAID.giveUp) {
+              z.raidIgnore = b.id; // kommt nicht heran: weiter zum Haus
+              z.state = 'walk';
+              break;
+            }
+            vx = (dx / d) * speed;
+            vz = (dz / d) * speed;
+          } else {
+            z.facing = dampAngle(z.facing, Math.atan2(dx || r.x - z.x, dz || r.z - z.z), 8, dt);
+            if (!frozen && z.cooldown <= 0) {
+              z.cooldown = 1 / (z.def.hitRate * (1 - light));
+              z.attackAnim = 0.45;
+              this.cb.onRaidHit?.(b, z.def.hit, z);
+            }
           }
           break;
         }
@@ -544,7 +610,8 @@ export class Horde {
       // ausweichen – quer zur Laufrichtung, damit er sicher vorbeikommt (m3-r2:
       // Schlurfer hingen lange an der Wäscheleine).
       const chasing = z.state === 'chase' && pd > reach;
-      if (z.state === 'walk' || z.state === 'approach' || z.state === 'rejoin' || chasing) {
+      const raiding = z.state === 'raid' && (vx || vz);
+      if (z.state === 'walk' || z.state === 'approach' || z.state === 'rejoin' || chasing || raiding) {
         const progressed = Math.hypot(z.x - z.lastX, z.z - z.lastZ);
         const blocked = progressed < speed * dt * 0.2 && speed > 0;
         z.stuck = blocked ? z.stuck + dt : 0;
@@ -553,8 +620,15 @@ export class Horde {
         // standen Schlurfer stundenlang dort, griffen nichts an und waren nicht zu treffen)
         z.chaseStuck = chasing ? Math.max(0, (z.chaseStuck || 0) + (blocked ? dt : -dt * 0.5)) : 0;
         if (z.chaseStuck > CHASE_GIVE_UP) {
-          this.endChase(z);
-          z.noChase = CHASE_PAUSE;
+          // Mika hinter Wall oder Tor (M17): Wer dort hängt, schlägt sich durch, statt aufzugeben
+          const wall = this.campNear(z);
+          if (wall) {
+            z.state = 'smash';
+            z.target = wall.id;
+          } else {
+            this.endChase(z);
+            z.noChase = CHASE_PAUSE;
+          }
           z.chaseStuck = 0;
           z.stuck = 0;
         } else if (z.stuck > 0.5) {
@@ -585,6 +659,36 @@ export class Horde {
     z.attackAnim = 0.35;
     if (pd <= reach + BITE_LUNGE) this.cb.onPlayerHit?.(z.def.bite * (z.day ? 0.6 : 1), z);
     z.cooldown = 1 / z.def.hitRate;
+  }
+
+  /** Nächster Bau im Lager zum Umwerfen (M17d), höchstens RAID.reach bis zur Kante – oder null. */
+  raidTarget(z) {
+    let best = null;
+    let bestD = RAID.reach;
+    for (const b of this.world.buildings.list) {
+      if (!BUILDINGS[b.type].raid || b.broken || b.id === z.raidIgnore) continue;
+      const r = this.world.buildings.bounds(b);
+      const dx = Math.max(r.i - z.x, 0, z.x - (r.i + r.w));
+      const dz = Math.max(r.j - z.z, 0, z.z - (r.j + r.d));
+      const d = Math.hypot(dx, dz);
+      if (d < bestD) {
+        best = b;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  /** Heiler Wall-Abschnitt oder Tor direkt neben einem Schlurfer (höchstens 1,2 m bis zur Kante). */
+  campNear(z) {
+    for (const b of this.world.buildings.camp) {
+      if (b.broken) continue;
+      const r = this.world.buildings.bounds(b);
+      const dx = Math.max(r.i - z.x, 0, z.x - (r.i + r.w));
+      const dz = Math.max(r.j - z.z, 0, z.z - (r.j + r.d));
+      if (Math.hypot(dx, dz) < 1.2) return b;
+    }
+    return null;
   }
 
   /** Jagd vorbei: zurück zur letzten Stelle auf dem Weg – ohne eine zum nächsten Weg. */
@@ -680,7 +784,7 @@ export class Horde {
     const t = this.time;
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
-    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0);
+    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
     const heavy = z.type === 'brummer' || z.type === 'anfuehrer';

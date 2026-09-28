@@ -69,6 +69,9 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v11 -> v12: M17 (Tor und Wall). Neue Bauarten wall3, wall4 und tor – das Spiel stellt
+  // den Weidenzaun mit Tor beim Laden auf und gibt zurück, was auf der Linie stand.
+  11: (data) => ({ ...data, version: 12 }),
   // v10 -> v11: M16 (Die Nacht in der Hand). Bisherige Stände spielen »ausgewogen«,
   // Mika hat den Laternenblitz; eine fällige Fähigkeiten-Wahl kommt beim nächsten ruhigen Moment.
   10: (data) => ({ ...data, version: 11, difficulty: 'ausgewogen', skills: { slots: ['laternenblitz', null], ranks: { laternenblitz: 1 } }, skillChoice: null }),

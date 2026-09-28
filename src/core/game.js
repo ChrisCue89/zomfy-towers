@@ -17,6 +17,7 @@ import { Combat } from './combat.js';
 import { Skills } from './skills.js';
 import { TowerRanks } from './towerRanks.js';
 import { Rng } from './rng.js';
+import { damp } from './math.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
@@ -58,7 +59,8 @@ import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from 
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
-import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, houseLossFactor, maxHpOf } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
+import { towerInvested } from '../data/towers.js';
 import { GOALS } from '../data/goals.js';
 import { RECIPES } from '../data/recipes.js';
 import { upgradeValue } from '../data/upgrades.js';
@@ -207,6 +209,8 @@ export class Game {
       onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
+      onRaidHit: (b, dmg, z) => this.onRaidHit(b, dmg, z),
+      onEnterCamp: (z) => this.onEnterCamp(z),
       onDamage: (z, amount, source, by) => {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
         if (by !== null && by !== undefined) this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
@@ -352,6 +356,7 @@ export class Game {
     this.world.setHouseLevel(st.world.houseLevel);
     if (st.world.relocate) this.relocateOldBuildings();
     else this.world.buildings.load(st.world.buildings);
+    this.ensureCamp(); // M17: Wall und Tor stehen immer
     st.world.buildings = this.world.buildings.toState();
     this.world.setTowerStage(st.world.tower, BEACON.glow);
     this.world.weather.snap(st.time.day);
@@ -1151,19 +1156,191 @@ export class Game {
   /** Ein Schlurfer schlägt auf eine Barrikade ein (Metall fängt einen Teil ab). */
   onBarricadeHit(b, dmg, z) {
     if (b.broken) return;
-    const block = barricadeLevel(b.level).block || 0;
-    b.hp -= dmg * (z?.def.smash || 1) * (1 - block);
+    if (z) this.gearHit(b, z); // Zubehör (M17e)
+    const def = BUILDINGS[b.type];
+    let loss = dmg * (z?.def.smash || 1) * (1 - blockOf(b));
+    // Tagsüber nagen Streuner Wall und Tor nur bis auf drei Viertel ab (M17, wie am Haus)
+    if (def.camp && !this.nights.active) {
+      const floor = maxHpOf(b) * CAMP_DAY_FLOOR;
+      if (b.hp <= floor) return;
+      loss = Math.min(loss, b.hp - floor);
+    }
+    b.hp -= loss;
     const c = this.world.buildings.bounds(b);
-    this.effects.chips(c.x, 0.6, c.z, b.level >= 3 ? 'schrott' : 'holz', 5);
+    this.effects.chips(c.x, 0.6, z ? Math.max(c.z - c.d / 2 + 0.3, Math.min(c.z + c.d / 2 - 0.3, z.z)) : c.z, b.level >= 3 && !def.camp ? 'schrott' : def.camp && b.level >= 4 ? 'stein' : 'holz', 5);
+    if (def.camp) {
+      this.onCampHit(b);
+      if (this.nights.active) this.state.night.campHit = true;
+      this.hud.gateAlarm = 4; // Marke am Rand, solange sie draufschlagen
+      this.hud.gateSpot = { x: c.x, z: c.z };
+    }
     if (b.hp > 0) {
       this.world.buildings.refreshLook(b);
       return;
     }
     this.world.buildings.breakBarricade(b);
-    this.effects.dust(c.x, c.z, 1.2);
+    this.effects.dust(c.x, c.z, def.camp ? 2.2 : 1.2, def.camp ? 40 : 22);
     this.sound.play('abriss', { x: c.x, z: c.z });
-    this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
+    if (def.camp) this.onCampBreach(b);
+    else this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
     if (this.nights.active) this.state.night.broken = (this.state.night.broken || 0) + 1;
+  }
+
+  /**
+   * Wall und Tor (M17) stehen immer: Fehlen sie (neues Spiel, alter Stand),
+   * stellt das Spiel den Weidenzaun mit Tor auf. Was auf ihrer Linie stand,
+   * kommt ganz in den Vorrat zurück (Mika hat es nicht selbst abgerissen).
+   */
+  ensureCamp() {
+    const bs = this.world.buildings;
+    if (bs.gate) return;
+    const L = CAMP_LAYOUT;
+    const parts = [{ type: 'tor', j: L.gate.j }, ...L.walls];
+    const back = {};
+    for (const part of parts) {
+      for (let j = part.j; j < part.j + BUILDINGS[part.type].d; j++) {
+        const other = bs.atCell(L.i, j);
+        if (!other || BUILDINGS[other.type].camp) continue;
+        const def = BUILDINGS[other.type];
+        const cost = def.tower ? towerInvested(other.type, other.level, other.spec) : other.type === 'barrikade' ? (other.broken ? {} : barricadeInvested(other.level)) : def.cost || {};
+        for (const [res, n] of Object.entries(cost)) back[res] = (back[res] || 0) + n;
+        if (other.part) this.state.towerParts[other.part] = (this.state.towerParts[other.part] || 0) + 1;
+        bs.remove(other.id);
+      }
+    }
+    for (const part of parts) bs.place(part.type, L.i, part.j, 0, null, { level: 1 });
+    gain(this.state.inventory, back);
+    this.state.world.buildings = bs.toState();
+    this.world.refreshInteractions();
+    // Ein alter Stand: sagen, was geschehen ist (ein neues Spiel beginnt einfach damit)
+    if (!this.isNewGame) this.hud.toast(Object.keys(back).length ? T.lager.neuErstattet : T.lager.neu, 'tor', 6);
+  }
+
+  /**
+   * Zubehör an Barrikade oder Tor (M17e) wirkt beim Schlag: Dornen stechen
+   * jeden, der zuschlägt; der Pechkessel kippt beim ersten Schlag der Nacht und
+   * setzt alles ringsum in Brand; die Glocke am Tor läutet.
+   */
+  gearHit(b, z) {
+    const gear = b.gear;
+    if (!gear?.length || z.state === 'dying') return;
+    const c = this.world.buildings.bounds(b);
+    const night = this.state.night.n;
+    if (gear.includes('dornen')) {
+      this.horde.damage(z, GEAR.dornen.damage, { pierce: true, source: 'dornen' });
+      this.effects.splat(z.x, 0.7, z.z, 'funken', 3, 0.35);
+    }
+    if (gear.includes('pech') && b.pechNight !== night) {
+      b.pechNight = night;
+      for (const o of this.horde.inRange(c.x, c.z, GEAR.pech.radius)) this.horde.ignite(o, GEAR.pech.burn, GEAR.pech.burnTime);
+      this.effects.splat(c.x, 0.5, c.z, 'feuer', 30, 1.5);
+      this.effects.dust(c.x, c.z, 1.2, 16);
+      this.sound.play('pech', { x: c.x, z: c.z });
+      if (this.clock - (this.pechWarned || -99) > 8) {
+        this.pechWarned = this.clock;
+        this.hud.toast(T.zubehoer.pechKippt, 'pech', 2.4);
+      }
+    }
+    if (gear.includes('glocke') && b.bellNight !== night) {
+      b.bellNight = night;
+      this.ringBell(b);
+    }
+  }
+
+  /**
+   * Die Alarmglocke am Tor (M17e): läutet über das ganze Lager, Knopf bellt,
+   * und wohnt Bert hier, flickt er das Tor kurz darauf ein Stück.
+   */
+  ringBell(gate) {
+    this.sound.play('sturmglocke', { volume: 1 });
+    this.hud.showBanner(T.zubehoer.glockeLaeutet);
+    if (this.viewInside) this.hud.say(T.zubehoer.glockeDrinnen, 3.5);
+    this.survivors.alarmBark();
+    if (this.survivors.resident('bert')) this.bellRepair = { t: 3, id: gate.id };
+  }
+
+  /** Die Schlupftür schwingt auf, wenn Mika davorsteht (innen oder außen), und fällt wieder zu. */
+  updateCamp(dt) {
+    // Bert flickt nach der Glocke das Tor (M17e)
+    if (this.bellRepair) {
+      this.bellRepair.t -= dt;
+      if (this.bellRepair.t <= 0) {
+        const b = this.world.buildings.get(this.bellRepair.id);
+        this.bellRepair = null;
+        if (b && !b.broken && b.hp < maxHpOf(b)) {
+          b.hp = Math.min(maxHpOf(b), b.hp + maxHpOf(b) * GEAR.glocke.repair);
+          this.world.buildings.refreshLook(b);
+          const c = this.world.buildings.bounds(b);
+          this.effects.chips(c.x + 0.6, 1.2, c.z, b.level >= 4 ? 'stein' : 'holz', 10);
+          this.sound.play('bau', { x: c.x, z: c.z });
+          this.hud.toast(T.zubehoer.bertFlickt, 'reparieren', 3);
+        }
+      }
+    }
+    const gate = this.world.buildings.gate;
+    const hinge = gate?.object?.userData.wicket;
+    if (!hinge || gate.broken) return;
+    const c = this.world.buildings.bounds(gate);
+    const p = this.player.position;
+    const near = !this.viewInside && Math.abs(p.x - c.x) < 1.7 && Math.abs(p.z - c.z) < 1.0;
+    if (near && !gate.wicketNear) this.sound.play('tuer', { x: c.x, z: c.z, volume: 0.6 });
+    gate.wicketNear = near;
+    gate.wicketOpen = damp(gate.wicketOpen || 0, near ? 1 : 0, near ? 9 : 4, dt);
+    hinge.rotation.y = gate.wicketOpen * 1.45;
+  }
+
+  /** Wall oder Tor wird angegriffen (M17): Warnung mit Richtung, nicht zu oft. */
+  onCampHit(b) {
+    if (this.clock - (this.campWarned || -99) < 14) return;
+    this.campWarned = this.clock;
+    const gate = BUILDINGS[b.type].camp === 'tor';
+    this.hud.toast(gate ? T.lager.torAngriff(Math.round((b.hp / maxHpOf(b)) * 100)) : T.lager.wallAngriff, 'warnung', 3);
+    if (this.viewInside) this.hud.say(T.horde.drinnenHaemmern, 3);
+  }
+
+  /** Durchbruch (M17): Tor oder Wall gefallen – die Horde kommt ins Lager, jetzt kämpft Mika. */
+  onCampBreach(b) {
+    const gate = BUILDINGS[b.type].camp === 'tor';
+    this.hud.showBanner(gate ? T.lager.torGefallen : T.lager.wallGefallen);
+    this.hud.toast(T.lager.durchbruch, 'warnung', 5);
+    this.sound.play('zuhause', { volume: 1 });
+    this.rig.shake = Math.max(this.rig.shake || 0, 0.25);
+    if (this.nights.active) {
+      const night = this.state.night;
+      night.breach = night.breach || { at: Math.round(this.state.time.minute), gate };
+    }
+  }
+
+  /**
+   * Durchbruch (M17d): Ein Schlurfer im Lager schlägt auf Werkbank, Zelt, Beet,
+   * Lampe, Bank oder Holzlager ein. Bei null ist es umgeworfen – es tut nichts
+   * mehr, bis Mika es tagsüber wieder aufstellt.
+   */
+  onRaidHit(b, dmg, z) {
+    if (b.broken) return;
+    b.hp -= dmg * (z?.def.smash || 1);
+    const c = this.world.buildings.bounds(b);
+    this.effects.chips(c.x, 0.5, c.z, b.type === 'beet' ? 'gras' : 'holz', 4);
+    if (this.clock - (this.raidWarned || -99) > 10) {
+      this.raidWarned = this.clock;
+      this.hud.toast(T.lager.angriffAuf(b.type), 'warnung', 3);
+    }
+    if (b.hp > 0) return;
+    this.world.buildings.wreck(b);
+    this.world.refreshInteractions();
+    this.effects.dust(c.x, c.z, 1.3, 28);
+    this.sound.play('abriss', { x: c.x, z: c.z });
+    this.hud.toast(T.lager.umgeworfen(b.type), BUILDINGS[b.type].icon, 3.5);
+    if (this.nights.active) (this.state.night.raided ||= []).push(b.type);
+    this.state.world.buildings = this.world.buildings.toState();
+  }
+
+  /** Ein Schlurfer ist hinter Wall und Tor (M17d): mitzählen; ohne Durchbruch-Banner einmal warnen. */
+  onEnterCamp(z) {
+    if (!this.nights.active || z.day) return;
+    const night = this.state.night;
+    night.inCamp = (night.inCamp || 0) + 1;
+    if (night.inCamp === 1 && !night.breach) this.hud.toast(T.lager.imLager, 'warnung', 4);
   }
 
   /** Mika geht zu Boden: nachts verliert man die Nacht, tagsüber nur Zeit. */
@@ -1660,11 +1837,12 @@ export class Game {
     const inside = this.world.playerInside;
     this.horde.update(dt, {
       player: { x: p.x, z: p.z, inside, alive: this.state.player.hp > 0 },
-      lightSlow: (x, z) => Math.max(this.towers.lightSlow(x, z), this.survivors.beaconSlow(x, z)),
+      lightSlow: (x, z) => Math.max(this.towers.lightSlow(x, z), this.survivors.beaconSlow(x, z), this.world.buildings.gearSlow(x, z)),
     });
     this.towers.update(dt);
     this.combat.update(dt);
     this.skills.update(dt);
+    this.updateCamp(dt);
     if (this.mode !== 'play') return;
 
     // Kurz nach einem Dialog nimmt E nichts Neues an (Durchdrücken). Wer E über die
@@ -2356,6 +2534,41 @@ export class Game {
       // M16: Fähigkeiten abfragen, nutzen, lernen; Abklingzeit stellen
       skills: () => ({ slots: [...game.state.skills.slots], ranks: { ...game.state.skills.ranks }, cool: [...game.skills.cool], used: { ...game.skills.used }, choice: game.state.skillChoice ? JSON.parse(JSON.stringify(game.state.skillChoice)) : null, lure: game.skills.lure ? { ...game.skills.lure } : null }),
       useSkill: (k) => game.skills.use(k),
+      // M17: Wall und Tor abfragen, treffen, ausbauen
+      camp: () => game.world.buildings.camp.map((b) => ({ id: b.id, type: b.type, i: b.i, j: b.j, level: b.level, hp: Math.round(b.hp), max: maxHpOf(b), broken: Boolean(b.broken), look: b.look, wicket: +(b.wicketOpen || 0).toFixed(2), gear: [...(b.gear || [])] })),
+      // M17d/e: Lager und Zubehör – umgeworfene Bauten, Zubehör anbringen, Laternen, Nachtwerte
+      lager: () => ({
+        campX: game.world.buildings.campX,
+        umgeworfen: game.world.buildings.list.filter((b) => BUILDINGS[b.type].raid && b.broken).map((b) => ({ id: b.id, type: b.type, prompt: b.interaction.prompt })),
+        raider: game.horde.list.filter((q) => q.state === 'raid').map((q) => ({ id: q.id, target: q.target })),
+        imLager: game.horde.list.filter((q) => q.state !== 'dying' && q.inCamp).length,
+        nacht: { breach: game.state.night.breach || null, inCamp: game.state.night.inCamp || 0, raided: [...(game.state.night.raided || [])], campHit: Boolean(game.state.night.campHit) },
+        laternen: game.world.buildings.lanterns.map((l) => ({ x: +l.x.toFixed(2), z: +l.z.toFixed(2) })),
+      }),
+      addGear(id, gear) {
+        const b = game.world.buildings.get(id);
+        if (!b) return null;
+        const ok = game.world.buildings.addGearTo(b, gear);
+        game.state.world.buildings = game.world.buildings.toState();
+        return { ok, gear: [...(b.gear || [])] };
+      },
+      raidHit(id, dmg) {
+        const b = game.world.buildings.get(id);
+        if (b) game.onRaidHit(b, dmg, null);
+        return b ? { hp: Math.round(b.hp), broken: Boolean(b.broken) } : null;
+      },
+      hitCamp(id, dmg) {
+        const b = game.world.buildings.get(id);
+        if (b) game.onBarricadeHit(b, dmg, null);
+        return b ? { hp: Math.round(b.hp), broken: Boolean(b.broken), look: b.look } : null;
+      },
+      upgradeCamp(id) {
+        const b = game.world.buildings.get(id);
+        if (!b) return null;
+        game.world.buildings.upgradeCamp(b);
+        game.state.world.buildings = game.world.buildings.toState();
+        return { level: b.level, hp: b.hp };
+      },
       // M16: Türme mit Geschichte (Name, Erfahrung, Abschüsse, Rang, Wimpel)
       towerRanks: () => game.towerRanks.view(),
       giveTowerXp(id, xp) {

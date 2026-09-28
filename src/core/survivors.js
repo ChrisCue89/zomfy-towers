@@ -280,6 +280,15 @@ export class Survivors {
     g.hud.toast(T.ueberlebende.bellt, 'pfote', 3.5);
   }
 
+  /** Die Alarmglocke läutet (M17e): Knopf bellt, wo er gerade ist. */
+  alarmBark() {
+    if (!this.resident('knopf')) return;
+    const dog = this.npcs.list.get('knopf');
+    if (!dog) return;
+    dog.bark = 1.4;
+    this.game.sound.play('bellen', { x: dog.x, z: dog.z });
+  }
+
   // --- Gespräche ------------------------------------------------------------------
 
   talk(id) {
@@ -393,10 +402,17 @@ export class Survivors {
     return SURVIVOR_ORDER.find((id) => this.st[id].tent === tentId) || null;
   }
 
-  /** Ein Zelt, das noch niemandem gehört (oder null). */
+  /** Ein Zelt, das noch niemandem gehört und steht (oder null; umgeworfen zählt nicht, M17d). */
   freeTent() {
     const used = new Set(SURVIVOR_ORDER.map((id) => this.st[id].tent).filter((t) => t !== null && t !== undefined));
-    return this.tents().find((b) => !used.has(b.id)) || null;
+    return this.tents().find((b) => !used.has(b.id) && !b.broken) || null;
+  }
+
+  /** Liegt das Zelt dieses Bewohners umgeworfen da (M17d)? Dann bringt er morgens nichts. */
+  tentDown(id) {
+    const tent = this.st[id].tent;
+    if (tent === null || tent === undefined) return false;
+    return Boolean(this.game.world.buildings.get(tent)?.broken);
   }
 
   moveIn(id) {
@@ -476,6 +492,10 @@ export class Survivors {
     this.checkTents();
     for (const [id, gift] of Object.entries(MORNING_GIFTS)) {
       if (!this.resident(id)) continue;
+      if (this.tentDown(id)) {
+        lines.push({ text: T.ueberlebende.zeltUmgeworfen(SURVIVORS[id].name), bad: true });
+        continue;
+      }
       gain(st.inventory, gift);
       lines.push({ text: T.ueberlebende.gabe[id], res: gift });
     }

@@ -153,6 +153,22 @@ const SFX = {
     s.noise(t, 0.12, { type: 'lowpass', freq: 800, peak: 0.35 * v, out: o });
     s.tone('sine', 90, t, 0.18, { freqEnd: 50, peak: 0.3 * v, out: o });
   },
+  // Alarmglocke am Tor (M17e): vier Schläge einer tiefen Bronzeglocke – Brummton,
+  // Grundton, kleine Terz, Quinte und Oktave klingen verschieden lang nach
+  sturmglocke: (s, t, v, o) => {
+    for (const dt of [0, 0.62, 1.24, 1.86]) {
+      s.noise(t + dt, 0.03, { type: 'bandpass', freq: 2400, q: 2, peak: 0.08 * v, out: o });
+      for (const [f, dur, peak] of [[196, 1.6, 0.05], [392, 1.2, 0.07], [470.4, 0.9, 0.035], [588, 0.7, 0.03], [784, 0.5, 0.025]]) {
+        s.tone('sine', f, t + dt, dur, { peak: peak * v, attack: 0.004, out: o });
+      }
+    }
+  },
+  // Pechkessel kippt (M17e): dumpfes Wummern, dann Zischen und Knistern
+  pech: (s, t, v, o) => {
+    s.tone('sine', 110, t, 0.3, { freqEnd: 45, peak: 0.25 * v, out: o });
+    s.noise(t, 0.25, { type: 'lowpass', freq: 900, freqEnd: 200, peak: 0.3 * v, out: o });
+    s.noise(t + 0.08, 0.7, { type: 'highpass', freq: 2600, freqEnd: 1500, attack: 0.05, peak: 0.12 * v, out: o });
+  },
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */

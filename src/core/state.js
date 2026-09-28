@@ -1,7 +1,7 @@
 // Der Spielzustand: alles, was gespeichert wird, als reine Daten.
 // Änderungen am Aufbau: SAVE_VERSION erhöhen und Migration in save.js ergänzen.
 
-import { HOUSE_LEVELS, HOUSE_MAX } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, HOUSE_MAX, GEAR } from '../data/buildings.js';
 import { INTERIOR_ENTRY, INTERIOR_EXTENT } from '../world/interior.js';
 import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPON_ORDER } from '../data/weapons.js';
@@ -15,7 +15,7 @@ import { LAYOUT } from '../world/layout.js';
 import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { SKILLS, SKILL_IDS, SKILL_MAX_RANK, START_SKILL, freshSkills } from '../data/skills.js';
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -169,7 +169,12 @@ export function sanitizeState(data, config) {
     shift: num(n.shift, 0, 0, 24 * 60), // M16: um so viele Minuten sind späte Wellen vorgerückt
     called: Math.floor(num(n.called, 0, 0, 99)), // M16: selbst gerufene Wellen
     towers: {}, // M16: Abschüsse je Turm in dieser Nacht (Turm der Nacht)
+    // M17: Tor und Wall getroffen, Durchbruch (Uhrzeit, Tor oder Wall), wie viele im Lager waren, was umgeworfen wurde
+    campHit: Boolean(n.campHit),
+    inCamp: Math.floor(num(n.inCamp, 0, 0, 1e4)),
+    raided: Array.isArray(n.raided) ? n.raided.filter((t) => typeof t === 'string' && BUILDINGS[t]).slice(0, 60) : [],
   };
+  if (n.breach && Number.isFinite(n.breach.at)) out.night.breach = { at: Math.floor(num(n.breach.at, 0, 0, 24 * 60)), gate: Boolean(n.breach.gate) };
   if (n.towers && typeof n.towers === 'object') {
     for (const [id, k] of Object.entries(n.towers)) if (/^\d+$/.test(id) && Number.isFinite(k)) out.night.towers[id] = Math.floor(num(k, 0, 0, 1e6));
   }
@@ -197,6 +202,8 @@ export function sanitizeState(data, config) {
         if (Number.isFinite(b.xp) && b.xp > 0) entry.xp = Math.round(num(b.xp, 0, 0, 1e7));
         if (Number.isFinite(b.kills) && b.kills > 0) entry.kills = Math.floor(num(b.kills, 0, 0, 1e7));
         if (Number.isInteger(b.name) && b.name >= 0) entry.name = Math.floor(num(b.name, 0, 0, 999));
+        // Zubehör an Barrikade oder Tor (M17e)
+        if (Array.isArray(b.gear)) entry.gear = [...new Set(b.gear.filter((id) => typeof id === 'string' && GEAR[id]))].slice(0, 3);
         return entry;
       });
   }

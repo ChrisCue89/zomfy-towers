@@ -206,7 +206,10 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       effects (Späne, Staub), grid (Bauraster mit Weg- und
                       Hof-Feldern), resources (Quellen, auch entlang der
                       Wege), buildings + buildingModels (Bauten, Barrikaden
-                      mit Stufen und Trümmern), towerModels (Türme je
+                      mit Stufen und Trümmern, Umgeworfenes im Lager),
+                      campModels (Wall und Tor je Stufe, Schlupftür,
+                      Zubehör: Dornen, Laterne, Pechkessel, Glocke, M17),
+                      towerModels (Türme je
                       Stufe/Spezialisierung), buildPreview (Geistermodell,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
@@ -323,6 +326,22 @@ Grundprinzipien:
   wird balanciert, nicht im Code.
 - **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
   eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
+- **Das Lager (M17, `data/buildings.js` CAMP_*, RAID, GEAR):** Wall und Tor
+  stehen immer (Spalte i = −8, `CAMP_LAYOUT`; `game.ensureCamp` stellt sie bei
+  einem neuen Spiel und nach dem Laden eines alten Stands auf und erstattet,
+  was auf der Linie stand). Sie sind Bauten mit `camp` und `smash`: Die Horde
+  schlägt sie ein wie Barrikaden (im Flussfeld `GATE_COST`), tagsüber nur bis
+  75 % (`CAMP_DAY_FLOOR`). Die Schlupftür in der Mitte des Tors hat eine
+  Kollision mit `livingFree` (sperrt nur die Horde); `world.wicketAssist`
+  lenkt Mika hinein. Solange nichts eingebrochen ist (`buildings.campShut`),
+  jagt kein Schlurfer Mika durch Wall und Tor – er geht zum Tor und schlägt
+  es ein. Wer im Lager steht, wechselt in den Zustand `raid` und wirft um, was
+  `raid`-Haltbarkeit hat (Werkbank, Zelte, Beete, Lampen, Bänke, Holzlager):
+  `broken` heißt dort »umgeworfen« (Haufen aus `collapseModel`, keine
+  Funktion, E wählt nur aus, Aufstellen für die Hälfte). Zubehör (`b.gear`)
+  hängt an Barrikaden (je Stufe ein Platz) und am Tor (drei) und wird in
+  `game.gearHit` beim Schlag ausgelöst; Licht (Laternenturm, Leuchtfeuer,
+  Laternen) lässt Schlurfer auch langsamer zuschlagen.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -441,7 +460,19 @@ Grundprinzipien:
    Wimpel auf und tragen Namen (auch im Spielstand); der Morgenbericht kürt
    den Turm der Nacht; die Schwierigkeit lässt sich im Pausenmenü mit A/D
    umstellen; Migration v10 → v11 (Bilder: nachtplan, faehigkeiten,
-   faehigkeit-wahl, turm-rang, turm-der-nacht).
+   faehigkeit-wahl, turm-rang, turm-der-nacht); ab M17 (Abschnitt `lager`):
+   Weidenzaun mit Tor von Anfang an, der letzte Weg läuft durchs Tor; A führt
+   Mika durch die Schlupftür hinaus (die Laufhilfe lenkt von der Seite
+   hinein), D wieder herein; ein Streuner kommt tagsüber nicht durch und nagt
+   das Tor nur bis drei Viertel an; nachts fällt es mit Banner, die Horde
+   wirft im Lager die Werkbank um, der Morgenbericht nennt Uhrzeit, Anzahl
+   und Umgeworfenes; E und Q bauen das Tor wieder auf, Q Q machen es zur
+   Palisade, E und Q stellen die Werkbank wieder auf; R R bringt Dornen an
+   eine Barrikade, das Metallkreuz trägt dazu Laterne und Pechkessel, im
+   Kampf stechen, brennen und bremsen sie; die Alarmglocke läutet beim ersten
+   Schlag der Nacht, Bert flickt das Tor; Speichern v12 (Stufe, Zubehör,
+   Umgeworfenes) und Migration v11 → v12 (Bilder: lager, lager-nacht,
+   zubehoer).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -511,7 +542,11 @@ Einleitung (`wald`, `unterholz`, `zusammen`, `haus`); ab M16 zeigt
 auf einen Platz, `chooseSkill(id)` nimmt eine Karte der Fähigkeiten-Wahl,
 `readySkills()` beendet alle Abklingzeiten; `towerRanks()` nennt je Turm
 Name, Erfahrung, Abschüsse, Rang und Wimpel, `giveTowerXp(id, n)` schenkt
-Erfahrung.
+Erfahrung; ab M17 nennt `camp()` Wall und Tor (Stufe, Leben, Aussehen,
+Schlupftür, Zubehör), `hitCamp(id, n)` trifft sie, `upgradeCamp(id)` baut
+sie aus, `lager()` zeigt Ostkante, Umgeworfenes, Plünderer, Nachtwerte
+(Durchbruch, im Lager, umgeworfen) und Laternen, `addGear(id, art)` bringt
+Zubehör an, `raidHit(id, n)` trifft einen Bau im Lager.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

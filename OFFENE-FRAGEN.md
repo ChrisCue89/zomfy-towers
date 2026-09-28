@@ -1237,6 +1237,53 @@ Spielstand. Eine laufende Nacht behält ihren Plan; die neue Stufe gilt ab der
 nächsten. **Warum:** Wer merkt, dass es zu hart oder zu leicht ist, soll
 nicht neu anfangen müssen (Frage 118).
 
+### 125. Wo steht das Lager, und ist das Tor tagsüber offen? (M17)
+**Entscheidung:** Der Wall steht fest in der Spalte x = −8 bis −7 am
+Westrand der Bucht, von Ufer zu Ufer (24 m), das Tor über dem letzten Weg
+(5 m, bei jedem Startwert der Karte dieselben Zellen). Für die Horde ist es
+**immer zu** – auch am Tag. Streuner nagen es tagsüber höchstens bis auf drei
+Viertel an (wie am Haus), dann stehen sie davor, bis Mika oder ein Turm sie
+erledigt. **Warum:** Ein offenes Tor am Tag hieße, dass Streuner in den Hof
+laufen – der Tag soll ruhig bleiben, und das tägliche Flicken ist der kleine
+Kreislauf, den der Auftraggeber wollte (»täglich zu flicken«).
+
+### 126. Wie kommt Mika hinaus, und jagen Schlurfer sie durch den Zaun? (M17)
+**Entscheidung:** Eine Schlupftür (1 m) in der Mitte des Tors, deren
+Kollision nur die Horde sperrt; läuft Mika quer aufs Tor zu, lenkt eine
+Laufhilfe sie zur Tür (wie an der Haustür). Solange Wall und Tor ganz sind,
+jagt kein Schlurfer Mika durch den Zaun – er geht zum Tor und schlägt es
+ein. In der Schlupftür steht Mika beiden Seiten offen: Sie kann dort
+kämpfen, wird dort aber auch gebissen. **Warum:** Sonst drängten sich die
+Jäger stundenlang am Zaun hinter Mika, statt anzugreifen (Prüfung M17).
+
+### 127. Was passiert im Lager nach einem Durchbruch? (M17)
+**Entscheidung:** Wer im Lager steht, wirft um, was in 3,2 m Reichweite
+steht (Werkbank 60, Zelt 50, Holzlager 45, Beet und Bank 30, Laternenpfahl
+25), dann geht es zum Haus. Umgeworfen tut ein Bau nichts mehr (keine
+Werkbank, kein Licht, kein Ernten, keine Morgengabe aus dem Zelt), E wählt ihn
+nur aus; Aufstellen kostet die Hälfte der Baukosten, Abreißen gibt die
+Hälfte zurück (sonst wäre Abreißen und neu Bauen billiger). Türme greift die
+Horde im Lager nicht an. **Warum:** »Dann fallen sie unser Lager an« – der
+Durchbruch soll im eigenen Garten weh tun, aber nie das Spiel beenden.
+
+### 128. Zubehör: wie viel, wie lange, was wirkt? (M17)
+**Entscheidung:** Barrikaden tragen so viele Teile, wie ihre Stufe zählt,
+das Tor drei. Zubehör bleibt beim Zerbrechen und wirkt nach dem Wiederaufbau
+weiter; der Pechkessel füllt sich jede Nacht von selbst (keine tägliche
+Pflichtarbeit), die Glocke läutet einmal je Nacht. Licht macht den Moder
+müde (M15): Wer im Schein einer Laterne, des Laternenturms oder des
+Leuchtfeuers steht, läuft **und schlägt** langsamer – so hilft der
+Laternenturm jetzt auch an Barrikaden. **Warum:** Jede Wahl hat eine
+Gegenseite: ein Platz, drei Teile – Dornen für viele kleine Schläge, der
+Kessel für den ersten Ansturm, die Laterne für Zeit.
+
+### 129. Wie stark ist das Tor am Anfang? (M17)
+**Entscheidung:** Brüchig: 150 Leben als Weidenzaun – ein Trupp mit Brummer
+bricht es in wenigen Sekunden, fünf Schlurfer in gut zehn Sekunden.
+Stark wird es nur mit Ausbau (bis 1000 und ein Viertel Abwehr) und Türmen, die
+den Platz davor bestreichen. **Offen für die Testrunde:** ob das Tor zu früh
+alles entscheidet (ein fester Stauplatz vor den Türmen) oder zu schnell fällt.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

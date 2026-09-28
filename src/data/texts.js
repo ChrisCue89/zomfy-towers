@@ -1,6 +1,16 @@
 // Alle Texte der Oberfläche. Dialoge stehen in dialogs.js.
 // Jedes Zeichen muss in der Pixelschrift (src/ui/font.js) vorhanden sein.
 
+// M17d: Was die Horde im Lager umwerfen kann – mit Artikel (Werfall, Wemfall)
+const LAGER_DINGE = {
+  werkbank: ['Die Werkbank', 'der Werkbank'],
+  beet: ['Ein Flachsbeet', 'einem Flachsbeet'],
+  bank: ['Eine Sitzbank', 'einer Sitzbank'],
+  holzlager: ['Ein Holzlager', 'einem Holzlager'],
+  zelt: ['Ein Schlafzelt', 'einem Schlafzelt'],
+  laternenpfahl: ['Ein Laternenpfahl', 'einem Laternenpfahl'],
+};
+
 export const T = {
   spielName: 'Zomfy Towers',
   laden: 'Zomfy Towers wird geladen …',
@@ -63,6 +73,10 @@ export const T = {
     ausbau: [null, null, 'Zur Hütte ausbauen', 'Schlafzimmer unterm Dach', 'Werkstatt anbauen', 'Lager anbauen'],
     hausStufe: [null, 'Notunterkunft', 'Hütte', 'Hütte mit Schlafzimmer', 'Haus mit Werkstatt', 'Fischerhaus'],
     zelt: 'Schlafzelt',
+    // M17: Wall und Tor des Lagers
+    wall3: 'Wall',
+    wall4: 'Wall',
+    tor: 'Tor',
     holzlager: 'Holzlager',
   },
   bautenInfo: {
@@ -180,6 +194,54 @@ export const T = {
     dickesFell: ['Dickes Fell', 'Du nimmst 12 % weniger Schaden.'],
     glueckspilz: ['Glückspilz', 'Besiegte Schlurfer lassen öfter ein Stück Schrott mehr fallen.'],
     zweiterAtem: ['Zweiter Atem', 'Du erholst dich früher von Treffern.'],
+  },
+  // Wall und Tor (M17): das Lager an der Holzlände
+  lager: {
+    stufen: {
+      weidenzaun: ['Weidenzaun', 'Geflochtene Weidenruten auf einem Erdwall – besser als nichts.'],
+      palisade: ['Palisade', 'Angespitzte Pfähle dicht an dicht.'],
+      bohlenwand: ['Bohlenwand', 'Dicke Bohlen mit Eisenkappen, innen ein Wehrgang.'],
+      steinmauer: ['Steinmauer', 'Behauene Steine mit Zinnen. Hier kommt so schnell keiner durch.'],
+    },
+    haelt: (hp, max) => `Hält ${hp}/${max}`,
+    haeltBis: (hp) => `Hält bis ${hp}.`,
+    truemmer: 'Eingestürzt – tagsüber wieder aufbauen',
+    offen: 'OFFEN',
+    berichtGehalten: 'Tor und Wall haben gehalten.',
+    berichtGefallen: (gate, uhr) => (gate ? `Um ${uhr} fiel das Tor – die Horde war im Lager.` : `Um ${uhr} brach der Wall – die Horde war im Lager.`),
+    wiederAufgebaut: (name) => `${name} steht wieder`,
+    torAngriff: (prozent) => `Sie schlagen gegen das Tor! (${prozent} %)`,
+    wallAngriff: 'Sie schlagen gegen den Wall!',
+    torGefallen: 'Das Tor ist gefallen!',
+    wallGefallen: 'Der Wall ist durchbrochen!',
+    durchbruch: 'Die Horde ist im Lager – jetzt zählt jeder Schlag!',
+    neu: 'Mika hat einen Weidenzaun mit Tor um das Lager gezogen – brüchig, aber ein Anfang.',
+    neuErstattet: 'Mika hat einen Weidenzaun mit Tor um das Lager gezogen. Was auf der Linie stand, liegt wieder im Vorrat.',
+    // M17d: Durchbruch – die Horde im Lager
+    imLager: 'Schlurfer im Lager!',
+    angriffAuf: (type) => `Sie reißen an ${LAGER_DINGE[type]?.[1] || type}!`,
+    umgeworfen: (type) => `${LAGER_DINGE[type]?.[0] || type} ist umgeworfen!`,
+    umgeworfenZeile: 'Umgeworfen – bei Tag wieder aufstellen',
+    aufstellen: 'Wieder aufstellen',
+    aufstellenInfo: 'Für die Hälfte der Baukosten – dann tut es wieder seinen Dienst.',
+    wiederAufgestellt: (name) => `${name} steht wieder`,
+    berichtImLager: (n) => (n === 1 ? 'Ein Schlurfer kam ins Lager.' : `${n} Schlurfer kamen ins Lager.`),
+    berichtUmgeworfen: (liste) => `Umgeworfen: ${liste}`,
+  },
+  // Zubehör für Barrikaden und Tor (M17e)
+  zubehoer: {
+    dornen: ['Dornen', 'Eisendornen und Draht: Wer zuschlägt, sticht sich jedes Mal.'],
+    laterne: ['Laterne', 'Blendet: Schlurfer im Schein laufen und schlagen langsamer.'],
+    pech: ['Pechkessel', 'Kippt beim ersten Schlag der Nacht – ringsum brennt es.'],
+    glocke: ['Alarmglocke', 'Läutet beim ersten Schlag der Nacht: Knopf bellt, und wohnt Bert bei dir, flickt er das Tor.'],
+    anbringen: (name) => `${name} anbringen`,
+    angebracht: (name) => `${name} angebracht`,
+    voll: 'Kein Platz mehr – eine höhere Stufe trägt mehr.',
+    zeile: (liste) => `Zubehör: ${liste}`,
+    pechKippt: 'Der Pechkessel kippt – es brennt!',
+    glockeLaeutet: 'Die Glocke läutet – sie sind am Tor!',
+    glockeDrinnen: 'Die Glocke! Sie sind am Tor.',
+    bertFlickt: 'Bert flickt das Tor.',
   },
   // Türme mit Geschichte (M16): Namen, Ränge, Turm der Nacht
   turmnamen: ['Gertrud', 'Heribert', 'Walburga', 'Kuno', 'Mechthild', 'Ottokar', 'Elfriede', 'Adalbert', 'Frieda', 'Gunther', 'Hedwig', 'Rüdiger', 'Irmgard', 'Theobald', 'Waltraud', 'Leopold', 'Roswitha', 'Kasimir', 'Ottilie', 'Eberhard', 'Liesel', 'Egon', 'Hannelore', 'Wendelin'],
@@ -378,6 +440,7 @@ export const T = {
     zeltFrei: (name) => `${name} könnte ins freie Zelt ziehen – ich frag mal.`,
     zeltBauen: 'Wer bleiben will, braucht einen Schlafplatz. Ein Zelt aus der Bauleiste (Einrichten).',
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
+    zeltUmgeworfen: (name) => `${name}s Zelt liegt am Boden – heute bringt ${name} nichts.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
     knopfHilft: 'Knopf bleibt! Er bellt, bevor die Horde kommt – und morgens buddelt er Sachen aus.',
     bellt: 'Knopf bellt – gleich kommt die Horde!',

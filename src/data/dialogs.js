@@ -26,10 +26,10 @@ export const SPRECHER = {
 const RES_NAMES = { holz: 'Holz', stein: 'Stein', fasern: 'Fasern', stoff: 'Stoff', schrott: 'Schrott', teile: 'Zombieteile', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' };
 const amount = (res) => Object.entries(res).map(([r, n]) => `${n} ${RES_NAMES[r] || r}`).join(', ');
 
-/** Steht ein Zelt leer? (Zelte in den Bauten, Bewohner in state.survivors) */
+/** Steht ein Zelt leer? (Zelte in den Bauten, Bewohner in state.survivors; umgeworfene zählen nicht) */
 function freeTent(state) {
   const used = new Set(Object.values(state.survivors || {}).map((s) => s.tent).filter((t) => t !== null && t !== undefined));
-  return (state.world?.buildings || []).some((b) => b.type === 'zelt' && !used.has(b.id));
+  return (state.world?.buildings || []).some((b) => b.type === 'zelt' && !b.broken && !used.has(b.id));
 }
 
 /** Antworten für Gäste und Bewohner: einziehen (wenn ein Zelt frei ist), Extras, Tschüss. */

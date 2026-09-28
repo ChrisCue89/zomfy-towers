@@ -92,13 +92,15 @@ export class Colliders {
    *   Außengrenze beachten; horde = Schlurfer laufen durch Hindernisse mit
    *   `hordeFree` und dürfen auf den Wegen auch dort gehen, wo die Figur nicht
    *   hinkommt; climb = die Figur klettert über Hindernisse mit `climb`
-   *   (eigene Barrikaden, m12-r1)
+   *   (eigene Barrikaden, m12-r1). Hindernisse mit `livingFree` (Schlupftür im
+   *   Tor, M17) sperren nur die Horde – die Figur und die Überlebenden gehen hindurch.
    */
   resolve(pos, radius, { bounds = true, horde = false, climb = false } = {}) {
     for (let iteration = 0; iteration < 3; iteration++) {
       let moved = false;
       for (const c of this.near(pos.x, pos.z, radius + 1)) {
         if (horde && c.hordeFree) continue;
+        if (!horde && c.livingFree) continue;
         if (climb && c.climb) continue;
         if ('r' in c) {
           const dx = pos.x - c.x;

@@ -340,6 +340,7 @@ export class World {
    * @param {{x:number, z:number}} move Eingaberichtung
    */
   doorAssist(pos, move) {
+    move = this.wicketAssist(pos, move);
     const door = this.shelter.door.center;
     const dx = door.x - pos.x;
     const dz = pos.z - door.z; // > 0: draußen (südlich der Wand)
@@ -347,6 +348,23 @@ export class World {
     const towardDoor = (dz > 0 && move.z < 0) || (dz < 0 && move.z > 0);
     if (!towardDoor || Math.abs(move.x) > 0) return move;
     return { x: Math.max(-0.8, Math.min(0.8, dx * 3)), z: move.z };
+  }
+
+  /**
+   * Schlupftür im Tor (M17): Wer quer aufs Tor zuläuft, wird sanft zur Tür
+   * in der Mitte gelenkt – sonst stand man vor einem Flügel und dachte, das
+   * Tor sei zu.
+   */
+  wicketAssist(pos, move) {
+    const gate = this.buildings.gate;
+    if (!gate || gate.broken || move.x === 0) return move;
+    const c = this.buildings.bounds(gate);
+    const dx = c.x - pos.x; // > 0: Mika steht westlich (draußen)
+    const dz = c.z - pos.z;
+    if (Math.abs(dx) > 1.3 || Math.abs(dz) > 2.3 || Math.abs(dz) < 0.12) return move;
+    const toward = (dx > 0 && move.x > 0) || (dx < 0 && move.x < 0);
+    if (!toward || Math.abs(move.z) > Math.abs(move.x) * 0.5) return move;
+    return { x: move.x, z: Math.max(-0.8, Math.min(0.8, dz * 2.5)) };
   }
 
   /** Nächste benutzbare Stelle in Reichweite, bevorzugt in Blickrichtung. */
@@ -378,7 +396,10 @@ export class World {
       // Sitzplätze (Sessel, Feuer, Bank) treten hinter Bauten zurück, die man benutzt –
       // m12-r1: E an der Werkbank neben dem Sessel setzte Mika hin
       const rest = it.prompt === 'hinsetzen' || it.prompt === 'feuer' || it.use === 'bank';
-      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) + (rest ? 0.35 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
+      // Wall und Tor (M17) treten hinter Quellen, Bauten und Menschen zurück: Ihr Bereich
+      // reicht weit ins Lager – der junge Baum am Wall wurde sonst zum »Auswählen«
+      const camp = it.camp ? 1.0 : 0;
+      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) + (rest ? 0.35 : 0) + camp - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

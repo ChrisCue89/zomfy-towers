@@ -3,6 +3,7 @@
 // Klick schließt ihn.
 
 import { T } from '../data/texts.js';
+import { clockText } from '../core/state.js';
 import { RESOURCES } from '../data/items.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT } from './font.js';
@@ -44,6 +45,17 @@ export class ReportPanel {
     const out = [];
     out.push({ text: T.bericht.besiegt(r.kills) });
     if (r.turm) out.push({ text: T.turmrang.derNacht(r.turm.name, r.turm.art, r.turm.kills), warm: true }); // M16
+    // Tor und Wall (M17): gehalten – oder wann sie fielen
+    if (r.lager?.held) out.push({ text: T.lager.berichtGehalten, warm: true });
+    else if (r.lager) {
+      out.push({ text: T.lager.berichtGefallen(r.lager.gate, clockText(r.lager.at)), bad: true });
+      if (r.lager.entered) out.push({ text: T.lager.berichtImLager(r.lager.entered) });
+      // Was umgeworfen wurde (M17d): »Werkbank, 2× Schlafzelt«
+      const n = {};
+      for (const type of r.lager.raided || []) n[type] = (n[type] || 0) + 1;
+      const list = Object.entries(n).map(([type, k]) => (k > 1 ? `${k}× ${T.bauten[type]}` : T.bauten[type]));
+      if (list.length) out.push({ text: T.lager.berichtUmgeworfen(list.join(', ')), bad: true });
+    }
     out.push({ text: T.bericht.eingesammelt, res: r.loot, empty: T.bericht.nichts });
     if (r.preLoss > 0) out.push({ text: T.bericht.vorher(Math.round(r.preLoss)) });
     out.push({ text: r.fell ? T.bericht.gefallen(r.homeNow, r.homeMax) : T.bericht.zuhause(r.homeLost, r.homeNow, r.homeMax) });
@@ -89,7 +101,7 @@ export class ReportPanel {
     ui.rect(x + 10, y + 20, w - 20, 1, COLORS.frameDark);
     let cy = y + 27;
     for (const l of lines) {
-      ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : l.warm ? COLORS.gold : COLORS.text);
+      ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : l.bad && !l.res ? COLORS.buildBad : l.warm ? COLORS.gold : COLORS.text);
       if (l.res) {
         let cx = x + 12 + measure(l.text) + 8;
         const entries = RESOURCES.map((res) => [res, l.res[res] || 0]).filter(([, n]) => n > 0);

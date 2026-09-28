@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
-import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint, maxHpOf, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD } from '../data/buildings.js';
+import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
 import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, partFits } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
@@ -57,6 +57,7 @@ export class Builder {
     const b = this.selected();
     if (!b) return null;
     const name = T.bauten[b.type];
+    if (BUILDINGS[b.type].camp) return `${name} · ${T.lager.stufen[campLevel(b.level).key][0]}`; // M17
     if (!BUILDINGS[b.type].tower) return name;
     const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
     const part = b.part ? ` · ${T.turmteile[b.part][0]}` : '';
@@ -67,11 +68,47 @@ export class Builder {
   /** Strichliste des ausgewählten Turms (M16): Rang, Abschüsse, Erfahrung. */
   selectionRecord() {
     const b = this.selected();
+    if (b && BUILDINGS[b.type].camp) return b.broken ? T.lager.truemmer : T.lager.haelt(Math.ceil(b.hp), maxHpOf(b)) + this.gearNote(b); // M17
+    if (b && b.type === 'barrikade' && b.gear?.length) return T.zubehoer.zeile(b.gear.map((id) => T.zubehoer[id][0]).join(', ')); // M17e
+    // Im Lager (M17d): umgeworfen oder angeschlagen
+    if (b && BUILDINGS[b.type].raid) return b.broken ? T.lager.umgeworfenZeile : b.hp < maxHpOf(b) ? T.lager.haelt(Math.ceil(b.hp), maxHpOf(b)) : null;
     return b && BUILDINGS[b.type].tower ? this.game.towerRanks.record(b) : null;
   }
 
   selected() {
     return this.selection === null ? null : this.world.buildings.get(this.selection);
+  }
+
+  /** Angebrachtes Zubehör als Nachsatz (» · Dornen, Glocke«), sonst leer. */
+  gearNote(b) {
+    return b.gear?.length ? ` · ${b.gear.map((id) => T.zubehoer[id][0]).join(', ')}` : '';
+  }
+
+  /**
+   * Zubehör anbringen (M17e): alles, was an diesen Bau passt und noch nicht
+   * dran ist. Ist kein Platz mehr, zeigt die Kachel, dass eine höhere Stufe mehr trägt.
+   */
+  gearOptions(b, inv) {
+    if (b.broken || !gearSlots(b)) return [];
+    const full = b.gear.length >= gearSlots(b);
+    return GEAR_ORDER.filter((id) => gearFits(b.type, id) && !b.gear.includes(id)).map((id) => {
+      const [name, info] = T.zubehoer[id];
+      return this.option({ id: `zubehoer-${id}`, icon: id, name: T.zubehoer.anbringen(name), info, cost: GEAR[id].cost, buy: true, disabled: full, disabledText: T.zubehoer.voll, action: () => this.addGear(b, id) }, inv);
+    });
+  }
+
+  /** Zubehör bezahlen und anbringen (M17e). */
+  addGear(b, id) {
+    const bs = this.world.buildings;
+    if (b.broken || !gearFits(b.type, id) || b.gear.includes(id) || b.gear.length >= gearSlots(b)) return;
+    if (!pay(this.game.state.inventory, GEAR[id].cost)) return;
+    bs.addGearTo(b, id);
+    this.game.state.world.buildings = bs.toState();
+    const c = bs.bounds(b);
+    this.game.effects.splat(c.x, 0.9, c.z, 'funken', 10, 0.7);
+    this.game.sound.play('aufwertung');
+    this.game.hud.toast(T.zubehoer.angebracht(T.zubehoer[id][0]), id, 2.4);
+    this.game.quietSave();
   }
 
   /** Optionen des Reiters – oder die des ausgewählten Baus. */
@@ -162,15 +199,15 @@ export class Builder {
    * (m3-r1). Solange nachts Schlurfer da sind, geht es gar nicht – erst die
    * Welle abwehren, dann flicken (sonst ist das Zuhause unverwundbar).
    */
-  repairOption({ id, cost, action, rebuild = false }, inv) {
+  repairOption({ id, cost, action, rebuild = false, name = null, info = null }, inv) {
     const busy = this.waveRunning();
     const share = cost ? this.repairShare(cost) : 0;
     const o = this.option(
       {
         id,
         icon: 'reparieren',
-        name: rebuild ? T.barrikaden.aufbauen : T.bauleiste.reparieren,
-        info: rebuild ? T.barrikaden.aufbauenInfo : T.bautenInfo.reparieren,
+        name: name || (rebuild ? T.barrikaden.aufbauen : T.bauleiste.reparieren),
+        info: info || (rebuild ? T.barrikaden.aufbauenInfo : T.bautenInfo.reparieren),
         cost: cost || {},
         disabled: !cost || busy,
         disabledText: busy ? T.bauleiste.erstWelle : T.bauleiste.nichtsKaputt,
@@ -315,8 +352,25 @@ export class Builder {
         const [name, info] = T.barrikaden[BARRICADE_LEVELS[next].key];
         options.push(this.option({ id: `stufe${next}`, icon: def.icon, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: BARRICADE_LEVELS[next].cost, buy: true, action: () => this.upgradeBarricade(b) }, inv));
       }
+      options.push(...this.gearOptions(b, inv)); // Zubehör (M17e)
     }
-    if (def.hp && !b.broken && b.hp < maxHpOf(b)) {
+    if (def.camp) {
+      // Wall und Tor (M17): wieder aufbauen, flicken, eine Stufe höher – abreißen geht nicht
+      if (b.broken) options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b), rebuild: true }, inv));
+      else if (b.level < CAMP_MAX) {
+        const next = campLevel(b.level + 1);
+        const [name, info] = T.lager.stufen[next.key];
+        const hp = def.camp === 'tor' ? next.gateHp : next.wallHp * def.d;
+        const busy = this.waveRunning();
+        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name, info: `${info} ${T.lager.haeltBis(hp)}`, cost: campUpgradeCost(b), buy: true, disabled: busy, disabledText: T.bauleiste.erstWelle, action: () => this.upgradeCamp(b) }, inv));
+      }
+      if (!b.broken && b.hp < maxHpOf(b)) options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b) }, inv));
+      options.push(...this.gearOptions(b, inv)); // Zubehör am Tor (M17e)
+      return options;
+    }
+    // Umgeworfen (M17d): wieder aufstellen
+    if (def.raid && b.broken) options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b), rebuild: true, name: T.lager.aufstellen, info: T.lager.aufstellenInfo }, inv));
+    if (hasHp(b.type) && !b.broken && b.hp < maxHpOf(b)) {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
@@ -428,6 +482,20 @@ export class Builder {
     this.game.quietSave();
   }
 
+  /** Wall-Abschnitt oder Tor eine Stufe höher (M17) – nicht mitten in einer Welle. */
+  upgradeCamp(b) {
+    const cost = campUpgradeCost(b);
+    if (!cost || b.broken || this.waveRunning() || !pay(this.game.state.inventory, cost)) return;
+    this.game.sound.play('aufwertung');
+    this.world.buildings.upgradeCamp(b);
+    this.game.state.world.buildings = this.world.buildings.toState();
+    const c = this.world.buildings.bounds(b);
+    this.game.effects.dust(c.x, c.z, 1.6, 30);
+    this.game.effects.chips(c.x, 1.2, c.z, b.level >= 4 ? 'stein' : 'holz', 14);
+    this.game.hud.toast(T.meldungen.ausgebaut(this.selectionTitle() || T.bauten[b.type]), BUILDINGS[b.type].icon, 2.6);
+    this.game.quietSave();
+  }
+
   /** Barrikade eine Stufe höher (Holz → verstärkt → Metall). */
   upgradeBarricade(b) {
     const next = BARRICADE_LEVELS[b.level + 1];
@@ -447,12 +515,20 @@ export class Builder {
   /** Flicken (anteilig nach Schaden) bzw. Wiederaufbau aus Trümmern – oder null. */
   buildingRepairCost(b) {
     const def = BUILDINGS[b.type];
-    if (b.type === 'barrikade') {
-      const invested = barricadeInvested(b.level);
-      const share = b.broken ? BARRICADE_REBUILD : (maxHpOf(b) - b.hp) / maxHpOf(b);
+    if (b.type === 'barrikade' || def.camp) {
+      const invested = def.camp ? campInvested(b) : barricadeInvested(b.level);
+      const share = b.broken ? (def.camp ? CAMP_REBUILD : BARRICADE_REBUILD) : (maxHpOf(b) - b.hp) / maxHpOf(b);
       if (share <= 0) return null;
       const cost = {};
       for (const [res, n] of Object.entries(invested)) cost[res] = Math.max(1, Math.ceil(n * share));
+      return cost;
+    }
+    // Im Lager (M17d): Aufstellen kostet die Hälfte der Baukosten, Flicken anteilig davon
+    if (def.raid) {
+      const share = b.broken ? RAID.rebuild : ((maxHpOf(b) - b.hp) / maxHpOf(b)) * RAID.rebuild;
+      if (share <= 0) return null;
+      const cost = {};
+      for (const [res, n] of Object.entries(def.cost)) cost[res] = Math.max(1, Math.ceil(n * share));
       return cost;
     }
     const missingHp = (maxHpOf(b) - b.hp) / maxHpOf(b);
@@ -472,7 +548,7 @@ export class Builder {
     const home = maxHome - st.world.homeHp;
     // m3-r2: Flicken war fast umsonst (76 Schaden = 5 Holz + 2 Schrott) – Schaden soll zählen
     if (home > 0.5) add({ holz: Math.ceil(home / 10), schrott: Math.ceil(home / 15) });
-    for (const b of this.world.buildings.list) if (BUILDINGS[b.type].hp && (b.broken || b.hp < maxHpOf(b))) add(this.buildingRepairCost(b));
+    for (const b of this.world.buildings.list) if (hasHp(b.type) && (b.broken || b.hp < maxHpOf(b))) add(this.buildingRepairCost(b));
     if (!Object.keys(total).length) return null;
     // Bert flickt mit: nur ein Teil der Kosten (Meilenstein 6)
     const factor = this.game.survivors.repairFactor();
@@ -490,7 +566,7 @@ export class Builder {
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     st.world.homeHp = Math.min(max, st.world.homeHp + (max - st.world.homeHp) * share);
     for (const b of this.world.buildings.list) {
-      if (!BUILDINGS[b.type].hp) continue;
+      if (!hasHp(b.type)) continue;
       if (b.broken) {
         if (share >= 1) this.world.buildings.rebuildBarricade(b); // Trümmer nur ganz oder gar nicht
         continue;
@@ -500,12 +576,14 @@ export class Builder {
       this.world.buildings.refreshLook(b);
     }
     st.world.buildings = this.world.buildings.toState();
+    this.world.refreshInteractions(); // Aufgestelltes lässt sich wieder benutzen (M17d)
     this.game.hud.toast(share >= 1 ? T.meldungen.repariert : T.meldungen.teilRepariert(Math.round(share * 100)), 'reparieren', 2.4);
     this.game.sound.play('bau');
     this.game.quietSave();
   }
 
   repairBuilding(b) {
+    const def = BUILDINGS[b.type];
     const cost = this.buildingRepairCost(b);
     if (!cost || this.waveRunning()) return;
     if (b.broken) {
@@ -513,10 +591,11 @@ export class Builder {
       if (!pay(this.game.state.inventory, cost)) return;
       this.world.buildings.rebuildBarricade(b);
       this.game.state.world.buildings = this.world.buildings.toState();
+      if (def.raid) this.world.refreshInteractions(); // wieder benutzbar (M17d)
       const c = this.world.buildings.bounds(b);
       this.game.effects.dust(c.x, c.z, 1.1);
       this.game.sound.play('bau');
-      this.game.hud.toast(T.barrikaden.wiederAufgebaut, 'barrikade', 2);
+      this.game.hud.toast(def.camp ? T.lager.wiederAufgebaut(T.bauten[b.type]) : def.raid ? T.lager.wiederAufgestellt(T.bauten[b.type]) : T.barrikaden.wiederAufgebaut, def.icon, 2);
       this.game.quietSave();
       return;
     }
@@ -817,8 +896,17 @@ export class Builder {
     }
     // Trümmer: nur abräumen. Sonst gerundet (M9.1: eine Holzbarriere kostet 1 Holz –
     // wer sie versetzt, bekommt es zurück, statt 70 % davon abgerundet auf nichts)
-    if (b.type === 'barrikade') return b.broken ? {} : scale(barricadeInvested(b.level), TOWER_REFUND, Math.round);
+    if (b.type === 'barrikade') {
+      // Zubehör (M17e) gibt es zu 70 % zurück – auch aus Trümmern
+      const gear = {};
+      for (const id of b.gear || []) for (const [res, n] of Object.entries(GEAR[id].cost)) gear[res] = (gear[res] || 0) + n;
+      const back = scale(gear, TOWER_REFUND, Math.round);
+      if (!b.broken) for (const [res, n] of Object.entries(scale(barricadeInvested(b.level), TOWER_REFUND, Math.round))) back[res] = (back[res] || 0) + n;
+      return back;
+    }
     if (def.defense) return scale(def.cost, TOWER_REFUND);
+    // Umgeworfen (M17d): nur die Hälfte – sonst wäre Abreißen und neu Bauen billiger als Aufstellen
+    if (def.raid && b.broken) return scale(def.cost, 1 - RAID.rebuild);
     return def.cost;
   }
 

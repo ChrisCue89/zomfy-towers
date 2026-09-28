@@ -959,6 +959,77 @@ const ICONS = {
       '.kkk.',
     ],
   },
+  // Zubehör (M17e): Dornen, Pechkessel, Alarmglocke (die Laterne hat ihr Symbol schon)
+  dornen: {
+    legend: { k: P.s1, s: P.s5, S: P.s8, w: P.e5, W: P.e7 },
+    rows: [
+      '..S...S...S.',
+      '.kSk.kSk.kSk',
+      '.ksk.ksk.ksk',
+      'kssskssskssk',
+      'kWWWWWWWWWWk',
+      'kwwwwwwwwwwk',
+      'kkkkkkkkkkkk',
+    ],
+  },
+  pech: {
+    legend: { k: P.n0, s: P.s2, S: P.s4, n: P.n1, g: P.n6, f: P.f5, F: P.f7 },
+    rows: [
+      '...F..F...',
+      '..fFf.f...',
+      '.kkkkkkkk.',
+      'kgnnnnnnnk',
+      'kSkkkkkkSk',
+      '.kssssssk.',
+      '.kssssssk.',
+      '..kssssk..',
+      '.kk....kk.',
+    ],
+  },
+  glocke: {
+    legend: { k: P.e1, b: P.f3, B: P.f5, h: P.f7, s: P.s5 },
+    rows: [
+      '....kk....',
+      '...kssk...',
+      '...kBBk...',
+      '..kBhBbk..',
+      '..kBhBbk..',
+      '.kBBhBBbk.',
+      '.kBBBBBbk.',
+      'kbbbbbbbbk',
+      '.kkkkkkkk.',
+      '....ss....',
+    ],
+  },
+  // Wall und Tor (M17)
+  wall: {
+    legend: { k: P.e1, w: P.e6, W: P.e8, g: P.g4, G: P.g5, e: P.e3 },
+    rows: [
+      '.W..W..W..W.',
+      'kwk.kwk.kwk.',
+      'kwkkkwkkkwkk',
+      'kwwwwwwwwwwk',
+      'kwkkkwkkkwkk',
+      'kwk.kwk.kwk.',
+      'gGgggGgggGgg',
+      'eggGgggGgggG',
+      'eeeeeeeeeeee',
+    ],
+  },
+  tor: {
+    legend: { k: P.e1, w: P.e6, W: P.e8, s: P.s6, r: P.r3 },
+    rows: [
+      'rrr......rrr',
+      'kWk......kWk',
+      'kWkkkkkkkkWk',
+      'kWkwwkkwwkWk',
+      'kWkwwkkwwkWk',
+      'kWkwsksswkWk',
+      'kWkwwkkwwkWk',
+      'kWkwwkkwwkWk',
+      'kkkkkkkkkkkk',
+    ],
+  },
 };
 
 const cache = new Map();

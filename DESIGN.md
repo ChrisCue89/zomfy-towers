@@ -546,6 +546,26 @@ Werkbank in der Werkstatt.
   und Kürbisse.
 - Abreißen gibt Material zurück (Zuhause-Bauten ganz, Türme und Barrikaden
   zu 70 %).
+- **Wall und Tor (M17):** Ein Wall schließt die Bucht zur Landseite ab, vom
+  Ufer im Norden bis zum Ufer im Süden, auf einem Erdwall, damit man ihn aus
+  der Nordsicht liest. Der letzte Weg endet am **Tor** (zwei rote Fahnen über
+  den Pfosten, flach zur Kamera, zeigen es von Weitem); in dessen Mitte lässt
+  eine Schlupftür nur die Lebenden durch – sie schwingt auf, sobald Mika
+  davorsteht, eine Laufhilfe lenkt sie hinein. Vier Stufen:
+  | Stufe | Wall je Meter | Tor | Ausbau (Tor; Wall je Meter) |
+  |---|---|---|---|
+  | Weidenzaun (Start) | 25 | 150 | – |
+  | Palisade | 60 | 350 | 25 Holz, 6 Stein; 4 Holz |
+  | Bohlenwand | 110 | 650 | 35 Holz, 20 Schrott, 2 Zahnräder; 4 Holz, 3 Schrott (fängt 10 % ab) |
+  | Steinmauer | 170 | 1000 | 40 Stein, 30 Schrott, 1 Moderkern; 6 Stein, 2 Schrott (25 %) |
+  Tagsüber nagen Streuner Tor und Wall höchstens bis drei Viertel an – man
+  flickt jeden Tag ein wenig. Eingestürzt baut man sie tagsüber für die Hälfte
+  wieder auf; abreißen kann man sie nicht.
+- **Das Lager fällt an (M17):** Bricht die Horde durch, wirft sie um, was im
+  Lager steht – Werkbank, Zelte, Beete, Lampen, Bänke, Holzlager haben dafür
+  eigene Haltbarkeit. Umgeworfenes liegt als Haufen seiner Teile da und tut
+  nichts mehr (keine Werkbank, kein Licht, keine Morgengabe aus dem Zelt), bis
+  Mika es tagsüber für die Hälfte der Baukosten wieder aufstellt.
 
 ### 6.9 Türme
 
@@ -592,7 +612,7 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 | **Holzbarriere** | Spanischer Reiter: dunkler Balken quer über den Weg, ein Kreuz aus hellen, angespitzten Pfählen, rot-weißer Warnlappen | 1 Holz | gering (20) | billig, schnell gebaut, schnell zerstört – bremst, damit die Türme Zeit haben |
 | **Verstärkte Holzbarriere** | dazu Eisenbänder, eiserne Spitzen, ein zweites Kreuz, unterer Riegel | +2 Holz | mittel (55) | Ausbau der Holzbarriere |
 | **Metallkreuz** | Stahligel aus rostigen Trägern über Kreuz | +1 Holz, 4 Schrott | hoch (140) | fängt ein Viertel jedes Schlags ab |
-| **Weitere Hindernisse** | z. B. Stacheln, die Angreifer verletzen | – | – | später |
+| **Weitere Hindernisse** | Wall und Tor des Lagers (6.8) | – | – | M17 |
 
 - **Lesbarkeit (M9.1):** Barrikaden sind im feinen Maß (1/16 m) gebaut. Die
   Kreuze stehen längs zum Weg – auf den meist west-östlichen Wegen zeigen sie
@@ -606,6 +626,15 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
   zerstörte wieder auf. Während einer Welle geht beides nicht.
 - Barrikaden sind günstig und Verschleißteile – ein eigener Kreislauf aus
   Bauen, Halten, Brechen und Wiederaufbauen.
+- **Zubehör (M17):** Jede Barrikade trägt so viele Teile, wie ihre Stufe
+  zählt (Holz 1, verstärkt 2, Metall 3), das Tor drei. Zubehör bleibt, wenn
+  sie zerbricht, und wirkt wieder, sobald sie steht:
+  | Zubehör | Kosten | Wirkung |
+  |---|---|---|
+  | **Dornen** | 2 Holz, 2 Schrott | Eisendornen mit Draht: jeder Schlag darauf kostet den Schlurfer 4 Leben (durch jede Panzerung) |
+  | **Laterne** | 2 Schrott, 1 Stoff | blendet: im Schein (2,4 m) laufen und schlagen Schlurfer um 30 % langsamer; eine Lichtinsel |
+  | **Pechkessel** (nur Barrikade) | 2 Holz, 3 Schrott | kippt beim ersten Schlag der Nacht: alles im Umkreis brennt 4 s lang; bis zur nächsten Nacht füllt er sich wieder |
+  | **Alarmglocke** (nur Tor) | 4 Schrott, 1 Zahnrad | läutet beim ersten Schlag der Nacht: Banner, Knopf bellt, und wohnt Bert im Lager, flickt er das Tor um ein Fünftel |
 
 ### 6.11 Die Horde
 
@@ -630,8 +659,10 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 
 ### 6.12 Letzte Verteidigung, verlorene Nacht, Morgen
 
-- Wer alle Barrikaden überwindet, erreicht den Hof und schlägt auf das Haus
-  ein. Mika wehrt ab, was durchkommt – Türme am letzten Abschnitt helfen.
+- Wer alle Barrikaden überwindet, steht vor dem Tor (ab M17) und schlägt es
+  ein; die Glocke und eine Randmarke rufen Mika dorthin. Fällt es, strömt die
+  Horde ins Lager, wirft um, was dort steht, und schlägt dann auf das Haus
+  ein. Mika wehrt ab, was durchkommt – Türme am Tor und im Hof helfen.
 - Sinkt die Standfestigkeit auf null, ist die Nacht verloren: Mika
   verschanzt sich drinnen, die Nacht endet. Geht Mika nachts zu Boden,
   rettet sie sich ins Haus und kommt mit 40 % Leben wieder.
@@ -1092,7 +1123,18 @@ das ganze Wegenetz zählt.
 Wellen früher rufen, mit dem Laternenblitz eine Barrikade retten – und
 morgens lesen, dass Gertrud 23 Schlurfer erledigt hat.
 
-#### M17 – Tor und Wall: die Bucht wird ein Lager
+#### M17 – Tor und Wall: die Bucht wird ein Lager ✓
+
+*Umgesetzt (28.09.2026):* Wall (sechs Abschnitte) und Tor über dem letzten
+Weg stehen von Anfang an, vier Stufen (6.8); die Schlupftür lässt nur die
+Lebenden durch, eine Laufhilfe lenkt Mika hinein; tagsüber nagen Streuner
+höchstens bis drei Viertel; wer Mika jagt, während Wall und Tor ganz sind,
+geht zum Tor und schlägt es ein. Durchbruch mit Banner und Randmarke, die
+Horde wirft im Lager um, was dort steht; der Morgenbericht nennt Uhrzeit,
+wie viele kamen und was umgeworfen wurde. Zubehör für Barrikaden und Tor
+(6.10), die Glocke mit Knopf und Bert. Karte und Nachtleiste zeigen das Tor.
+Spielstand v12 (alte Stände bekommen den Weidenzaun; was auf der Linie stand,
+kommt in den Vorrat).
 
 *Wunsch des Auftraggebers* (statt Umlenken, OFFENE-FRAGEN 66 und 120): »Unsere
 Base sollte grundlegend ein Tor und einen Wall kriegen. Am Anfang noch

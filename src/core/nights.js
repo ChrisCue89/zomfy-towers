@@ -313,6 +313,8 @@ export class Nights {
       damaged: night.damaged || null,
       broken: night.broken || 0,
       turm: g.towerRanks?.bestOfNight() || null, // Turm der Nacht (M16)
+      // M17: Tor und Wall – gehalten oder durchbrochen, wie viele im Lager waren, was umgeworfen wurde
+      lager: night.breach ? { at: night.breach.at, gate: night.breach.gate, entered: night.inCamp || 0, raided: [...(night.raided || [])] } : night.campHit ? { held: true } : null,
     };
     g.quietSave();
   }

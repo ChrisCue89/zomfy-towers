@@ -218,6 +218,62 @@ export function buildRubble(seed, level = 1) {
   return m;
 }
 
+/**
+ * Umgeworfen (M17d): Aus dem Modell eines Baus wird ein flacher Haufen seiner
+ * eigenen Teile. Es zerfällt in Brocken zu 4 × 4 × 4 Voxeln (1/8 m), damit
+ * Bretter, Stoff und Steine als Stücke liegen bleiben und kein Gries entsteht.
+ * Die unterste Lage bleibt stehen, ein Teil ist fort (zerbrochen, verstreut),
+ * der Rest liegt flach (nur die unteren zwei Voxel eines Brockens) und etwas
+ * nach außen gerutscht – je höher er war, desto weiter. Der Haufen bleibt
+ * niedrig (höchstens HEAP Voxel). Versatz in ganzen 1/16 m: Die Kanten bleiben
+ * auf dem Pixelraster.
+ */
+const HEAP = 9;
+
+export function collapseModel(src, seed) {
+  const chunks = new Map();
+  let top = 4;
+  src.forEach((x, y, z, c) => {
+    const k = `${x >> 2},${y >> 2},${z >> 2}`;
+    let list = chunks.get(k);
+    if (!list) chunks.set(k, (list = []));
+    list.push([x, y, z, c]);
+    top = Math.max(top, y);
+  });
+  const out = new VoxelModel();
+  const height = new Map(); // Höhe des Haufens je Säule
+  const heightAt = (x, z) => height.get(`${x},${z}`) || 0;
+  const drop = (x, y, z, c) => {
+    out.set(x, y, z, c);
+    const k = `${x},${z}`;
+    height.set(k, Math.max(height.get(k) || 0, y + 1));
+  };
+  const keys = [...chunks.keys()].map((k) => k.split(',').map(Number)).sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[2] - b[2]);
+  for (const [bx, by, bz] of keys) {
+    const list = chunks.get(`${bx},${by},${bz}`);
+    if (by === 0) {
+      for (const [x, y, z, c] of list) drop(x, y, z, c);
+      continue;
+    }
+    if (hash3(bx, by, bz, seed) < 0.45) continue; // fort
+    const f = (by * 4) / top; // 0 unten … 1 oben
+    const ox = bx * 4 + 2;
+    const oz = bz * 4 + 2;
+    const len = Math.hypot(ox, oz) || 1;
+    const push = 2 + f * 7;
+    const dx = 2 * Math.round(((ox / len) * push + (hash3(bx, by, bz, seed + 7) - 0.5) * 6) / 2);
+    const dz = 2 * Math.round(((oz / len) * push * 0.7 + (hash3(bx, by, bz, seed + 13) - 0.5) * 6) / 2);
+    // Flach hingelegt: nur die unteren zwei Voxel des Brockens, auf die höchste Stelle darunter
+    const lowest = list.reduce((m, v) => Math.min(m, v[1]), Infinity);
+    const flat = list.filter((v) => v[1] - lowest < 2);
+    let base = 0;
+    for (const [x, , z] of flat) base = Math.max(base, heightAt(x + dx, z + dz));
+    if (base > HEAP) continue;
+    for (const [x, y, z, c] of flat) drop(x + dx, y - lowest + base, z + dz, c);
+  }
+  return out;
+}
+
 /** Laternenpfahl: Steinfuß, Pfahl mit Maserung und Kappe, Ausleger mit Strebe, daran eine Laterne mit Dach. */
 export function buildLampPost(seed) {
   const m = new VoxelModel();

@@ -4,6 +4,13 @@
 // defense: Verteidigung (Abreißen gibt wie bei Türmen nur 70 % zurück);
 // onPath: steht nur auf Wegfeldern (Barrikaden). Alles andere steht nie auf
 // einem Weg (Meilenstein 9, DESIGN.md 0 Nr. 2 und 3).
+// smash: die Horde bleibt davor stehen und schlägt es ein (Barrikaden, Wall, Tor).
+// camp: Wall und Tor des Lagers (M17) – die Welt stellt sie auf, die Bauleiste
+// nicht; Abreißen geht nicht. Ihre Haltbarkeit hängt an der Stufe (CAMP_LEVELS),
+// `hp: 1` heißt hier nur »hat Haltbarkeit«.
+// raid: Haltbarkeit gegen die Horde im Lager (M17d). Bricht sie durch, wirft sie
+// um, was dort steht; umgeworfen (`broken`) tut ein Bau nichts mehr, bis Mika
+// ihn tagsüber wieder aufstellt (RAID.rebuild der Baukosten).
 
 import { TOWERS } from './towers.js';
 
@@ -12,16 +19,129 @@ export const BUILDINGS = {
   katapult: { w: 1, d: 1, tower: true, cost: TOWERS.katapult.base[0].cost, icon: 'katapult', hp: 100, height: 1.5 },
   sprenger: { w: 1, d: 1, tower: true, cost: TOWERS.sprenger.base[0].cost, icon: 'sprenger', hp: 100, height: 1.4 },
   laternenturm: { w: 1, d: 1, tower: true, cost: TOWERS.laternenturm.base[0].cost, icon: 'laternenturm', hp: 100, height: 2.4 },
-  werkbank: { w: 2, d: 1, cost: { holz: 8, stein: 2 }, max: 1, icon: 'werkbank', use: 'werkbank', height: 1.6 },
-  barrikade: { w: 1, d: 1, cost: { holz: 1 }, icon: 'barrikade', repeat: true, defense: true, onPath: true, hp: 20, height: 1 },
-  laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2 },
-  beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7 },
-  bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1 },
+  werkbank: { w: 2, d: 1, cost: { holz: 8, stein: 2 }, max: 1, icon: 'werkbank', use: 'werkbank', height: 1.6, raid: 60 },
+  barrikade: { w: 1, d: 1, cost: { holz: 1 }, icon: 'barrikade', repeat: true, defense: true, onPath: true, smash: true, hp: 20, height: 1 },
+  laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2, raid: 25 },
+  beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7, raid: 30 },
+  bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1, raid: 30 },
   // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
-  holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4 },
-  zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
+  holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4, raid: 45 },
+  zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4, raid: 50 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
+  // M17: Wall (Abschnitte zu 3 und 4 m) und Tor (5 m) am Westrand der Bucht
+  wall3: { w: 1, d: 3, camp: 'wall', smash: true, defense: true, hp: 1, icon: 'wall', height: 1.6 },
+  wall4: { w: 1, d: 4, camp: 'wall', smash: true, defense: true, hp: 1, icon: 'wall', height: 1.6 },
+  tor: { w: 1, d: 5, camp: 'tor', smash: true, defense: true, hp: 1, icon: 'tor', height: 2.2 },
 };
+
+/**
+ * Wall und Tor je Stufe (M17, DESIGN.md 8): 1 Weidenzaun, 2 Palisade,
+ * 3 Bohlenwand mit Wehrgang, 4 Steinmauer. wallHp je Meter Wall, gateHp für
+ * das Tor; wallCost je Meter bzw. gateCost = Ausbau auf diese Stufe
+ * (Stufe 1: was ein Wiederaufbau aus Trümmern mindestens kostet); block =
+ * Anteil jedes Schlags, der abprallt. Ein Schlurfer schlägt rund 2,4 je
+ * Sekunde, ein Brummer 6, ein Anführer 11.
+ */
+export const CAMP_LEVELS = [
+  null,
+  { key: 'weidenzaun', wallHp: 25, gateHp: 150, wallCost: { holz: 1 }, gateCost: { holz: 6 } },
+  { key: 'palisade', wallHp: 60, gateHp: 350, wallCost: { holz: 4 }, gateCost: { holz: 25, stein: 6 } },
+  { key: 'bohlenwand', wallHp: 110, gateHp: 650, wallCost: { holz: 4, schrott: 3 }, gateCost: { holz: 35, schrott: 20, zahnraeder: 2 }, block: 0.1 },
+  { key: 'steinmauer', wallHp: 170, gateHp: 1000, wallCost: { stein: 6, schrott: 2 }, gateCost: { stein: 40, schrott: 30, moderkerne: 1 }, block: 0.25 },
+];
+export const CAMP_MAX = CAMP_LEVELS.length - 1;
+
+/** Wiederaufbau aus Trümmern: dieser Anteil dessen, was im Abschnitt steckt. */
+export const CAMP_REBUILD = 0.5;
+
+/**
+ * Durchbruch (M17d): Wer im Lager steht, sucht sich in dieser Reichweite (m bis
+ * zur Kante) etwas zum Umwerfen, sonst geht es weiter zum Haus. scan: so oft
+ * schaut er sich um (s); giveUp: kommt er so lange nicht heran, lässt er es;
+ * rebuild: Umgeworfenes wieder aufstellen kostet diesen Anteil der Baukosten.
+ */
+export const RAID = { reach: 3.2, scan: 0.5, giveUp: 3, rebuild: 0.5 };
+/** Tagsüber nagen Streuner Wall und Tor höchstens bis auf diesen Anteil ab (wie am Haus). */
+export const CAMP_DAY_FLOOR = 0.75;
+
+/**
+ * Lage im Raster (fest, M17): Spalte i = −8 (x −8 … −7) am Westrand der Bucht,
+ * das Tor über dem letzten Weg (j −1 … 3), der Wall nördlich und südlich davon.
+ */
+export const CAMP_LAYOUT = {
+  i: -8,
+  gate: { j: -1 },
+  walls: [
+    { type: 'wall3', j: -13 },
+    { type: 'wall3', j: -10 },
+    { type: 'wall3', j: -7 },
+    { type: 'wall3', j: -4 },
+    { type: 'wall4', j: 4 },
+    { type: 'wall3', j: 8 },
+  ],
+};
+
+export function campLevel(level) {
+  return CAMP_LEVELS[Math.max(1, Math.min(CAMP_MAX, Math.floor(level || 1)))];
+}
+
+/** Zellen eines Wall-Abschnitts (bzw. 5 für das Tor). */
+export function campCells(type) {
+  return BUILDINGS[type].d;
+}
+
+/** Was steckt in einem Abschnitt bzw. im Tor dieser Stufe (alle Stufen zusammen)? */
+export function campInvested(b) {
+  const gate = BUILDINGS[b.type].camp === 'tor';
+  const cells = campCells(b.type);
+  const total = {};
+  for (let l = 1; l <= (b.level || 1); l++) {
+    const cost = gate ? CAMP_LEVELS[l].gateCost : CAMP_LEVELS[l].wallCost;
+    for (const [res, n] of Object.entries(cost)) total[res] = (total[res] || 0) + n * (gate ? 1 : cells);
+  }
+  return total;
+}
+
+/** Ausbau eines Abschnitts bzw. des Tors auf die nächste Stufe (oder null). */
+export function campUpgradeCost(b) {
+  const next = (b.level || 1) + 1;
+  if (next > CAMP_MAX) return null;
+  const gate = BUILDINGS[b.type].camp === 'tor';
+  const cost = gate ? CAMP_LEVELS[next].gateCost : CAMP_LEVELS[next].wallCost;
+  return Object.fromEntries(Object.entries(cost).map(([res, n]) => [res, n * (gate ? 1 : campCells(b.type))]));
+}
+
+/**
+ * Zubehör (M17e, DESIGN.md 8 M17): Barrikaden tragen so viele Teile, wie ihre
+ * Stufe zählt (Holz 1, verstärkt 2, Metall 3), das Tor alle drei, die zu ihm
+ * passen. Zubehör bleibt, wenn der Bau zerbricht, und wirkt wieder, sobald er
+ * steht; Abreißen gibt 70 % zurück.
+ *   dornen:  Wer draufschlägt, verletzt sich (damage je Schlag, durch jede Panzerung).
+ *   laterne: blendet – Schlurfer im Umkreis (radius) laufen und schlagen um slow
+ *            langsamer; dazu eine Lichtinsel.
+ *   pech:    Der erste Schlag je Nacht kippt den Kessel: alles im Umkreis brennt
+ *            (burn je Sekunde, burnTime Sekunden). Füllt sich bis zur nächsten Nacht.
+ *   glocke:  (nur Tor) läutet beim ersten Schlag je Nacht – Knopf bellt, und wohnt
+ *            Bert im Lager, flickt er das Tor um repair seiner Haltbarkeit.
+ */
+export const GEAR = {
+  dornen: { on: ['barrikade', 'tor'], cost: { holz: 2, schrott: 2 }, damage: 4 },
+  laterne: { on: ['barrikade', 'tor'], cost: { schrott: 2, stoff: 1 }, radius: 2.4, slow: 0.3 },
+  pech: { on: ['barrikade'], cost: { holz: 2, schrott: 3 }, radius: 1.9, burn: 4, burnTime: 4 },
+  glocke: { on: ['tor'], cost: { schrott: 4, zahnraeder: 1 }, repair: 0.2 },
+};
+export const GEAR_ORDER = ['dornen', 'laterne', 'pech', 'glocke'];
+
+/** Wie viele Zubehörteile trägt dieser Bau (Barrikade: je Stufe eins, Tor: drei)? */
+export function gearSlots(b) {
+  if (b.type === 'barrikade') return Math.max(1, Math.min(3, b.level || 1));
+  return BUILDINGS[b.type]?.camp === 'tor' ? 3 : 0;
+}
+
+/** Passt dieses Zubehör an diesen Bau? */
+export function gearFits(type, id) {
+  return Boolean(GEAR[id]?.on.includes(type));
+}
 
 /**
  * Verlorene Nacht: Türme verlieren ein Drittel ihrer Haltbarkeit, aber nie mehr
@@ -59,10 +179,26 @@ export function barricadeInvested(level) {
   return total;
 }
 
-/** Volle Haltbarkeit eines Baus (Barrikaden je Stufe). */
+/** Volle Haltbarkeit eines Baus (Barrikaden je Stufe, im Lager gegen die Horde). */
 export function maxHpOf(b) {
   if (b.type === 'barrikade') return barricadeLevel(b.level).hp;
-  return BUILDINGS[b.type].hp || 0;
+  const def = BUILDINGS[b.type];
+  if (def.camp === 'tor') return campLevel(b.level).gateHp;
+  if (def.camp === 'wall') return campLevel(b.level).wallHp * def.d;
+  return def.hp || def.raid || 0;
+}
+
+/** Hat ein Bau Haltbarkeit (Türme, Barrikaden, Wall, Tor und alles im Lager)? */
+export function hasHp(type) {
+  const def = BUILDINGS[type];
+  return Boolean(def && (def.hp || def.raid));
+}
+
+/** Anteil jedes Schlags, der an einem Bau abprallt (Metallbarrikade, Bohlen, Stein). */
+export function blockOf(b) {
+  if (b.type === 'barrikade') return barricadeLevel(b.level).block || 0;
+  if (BUILDINGS[b.type].camp) return campLevel(b.level).block || 0;
+  return 0;
 }
 
 /** Reihenfolge in den Reitern der Bauleiste. */

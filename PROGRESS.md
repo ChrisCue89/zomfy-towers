@@ -5,6 +5,46 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 17 – Tor und Wall: die Bucht wird ein Lager ✓
+
+**Wunsch des Auftraggebers (OFFENE-FRAGEN 120):** ein Tor und ein Wall um das
+Lager, am Anfang brüchig, aufrüstbar; Barrikaden, die man täglich wieder
+aufbaut und weiter ausrüstet; durchs Tor nur die Lebenden; bricht die Horde
+durch, fällt sie das Lager an.
+
+- **Wall und Tor** (`world/campModels.js`, `data/buildings.js`): sechs
+  Abschnitte und ein Tor am Westrand der Bucht, auf einem Erdwall; vier
+  Stufen (Weidenzaun, Palisade, Bohlenwand, Steinmauer) mit eigenen Modellen,
+  Schaden und Trümmern; zwei rote Fahnen über den Torpfosten wehen im Wind
+  und zeigen das Tor von Weitem. Auswahl mit E: wieder aufbauen, flicken,
+  ausbauen (nicht in einer Welle); Quellen, Bauten und Menschen am Wall gehen
+  beim E vor (die volle Prüfung fand den jungen Baum am Wall als
+  »Auswählen«). Karte und Nachtleiste zeigen das Tor.
+- **Schlupftür:** schwingt auf, wenn Mika davorsteht; ihre Kollision sperrt
+  nur die Horde; eine Laufhilfe lenkt Mika von der Seite hinein.
+- **Horde am Tor:** Das Flussfeld führt durchs Tor, die Horde schlägt es ein;
+  tagsüber nur bis drei Viertel. Solange nichts eingebrochen ist, jagt
+  niemand Mika durch den Zaun. Eine Randmarke zeigt das Tor, wenn es außer
+  Sicht angegriffen wird.
+- **Durchbruch:** Banner »Das Tor ist gefallen!«, Alarm; im Lager wirft die
+  Horde Werkbank, Zelte, Beete, Lampen, Bänke und Holzlager um (flacher Haufen
+  ihrer eigenen Teile, keine Funktion, Aufstellen für die Hälfte; ein
+  umgeworfenes Zelt bringt morgens nichts). Der Morgenbericht nennt Uhrzeit,
+  Anzahl und was umgeworfen wurde.
+- **Zubehör:** Dornen, Laterne, Pechkessel an Barrikaden (je Stufe ein
+  Platz), Dornen, Laterne und Alarmglocke am Tor – angebracht über die
+  Auswahlleiste, sichtbar am Modell; neue Klänge (Sturmglocke, Pech). Licht
+  lässt Schlurfer auch langsamer zuschlagen.
+- **Spielstand v12:** Stufen, Zubehör und Umgeworfenes; alte Stände
+  bekommen den Weidenzaun, was auf der Linie stand, kommt in den Vorrat.
+- **Prüfung:** neuer Abschnitt `lager` (siehe CLAUDE.md), alle
+  Versionsprüfungen auf v12.
+- **Offen:** Das Tor liest sich aus der Nordsicht vor allem über Pfosten,
+  Schild und Erdwall – ob man es sofort erkennt, soll die nächste Runde
+  zeigen; ebenso, ob es zu früh alles entscheidet (OFFENE-FRAGEN 129).
+
+---
+
 ## Meilenstein 16 – Die Nacht in der Hand ✓
 
 **Ziel (DESIGN 8):** In jeder Welle gibt es etwas zu entscheiden, Warten ist

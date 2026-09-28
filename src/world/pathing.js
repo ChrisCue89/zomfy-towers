@@ -11,11 +11,13 @@
 
 import { LAYOUT } from './layout.js';
 import { SPAWN_NAMES } from './map.js';
+import { BUILDINGS } from '../data/buildings.js';
 
 /** Spawns (Namen nach ihrer Lage am linken Kartenrand). */
 export const ENTRY_NAMES = SPAWN_NAMES;
 
 const BARRICADE_COST = 8;
+const GATE_COST = 12; // M17: Das Tor ist der einzige Weg ins Lager – die Horde schlägt es ein
 const INF = 1e9;
 const CHASE_R = 12; // Umkreis (Zellen) um Mika, in dem Jäger einen Weg um Bauten suchen
 const TOWARD_CACHE = 16; // so viele Rückweg-Felder bleiben gemerkt (m12-r1)
@@ -119,9 +121,9 @@ export class Pathing {
     const id = g.occupant[k];
     if (id === null) return g.pathCost[k];
     const b = this.buildingOf(id);
-    if (!b || b.type !== 'barrikade') return INF;
+    if (!b || !BUILDINGS[b.type].smash) return INF;
     if (b.broken) return g.pathCost[k];
-    return brute ? BARRICADE_COST : INF;
+    return brute ? (BUILDINGS[b.type].camp ? GATE_COST : BARRICADE_COST) : INF;
   }
 
   /** Flussfelder neu berechnen (nach jeder Bauänderung). */

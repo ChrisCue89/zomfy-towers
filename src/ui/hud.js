@@ -4,7 +4,7 @@
 
 import { T } from '../data/texts.js';
 import { RESOURCES, RARE_RESOURCES, ITEMS, HOTBAR_SIZE } from '../data/items.js';
-import { HOUSE_LEVELS } from '../data/buildings.js';
+import { HOUSE_LEVELS, maxHpOf } from '../data/buildings.js';
 import { clockText, hoursOf } from '../core/state.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, drawTiny } from './font.js';
@@ -77,6 +77,8 @@ export class Hud {
     this.time = 0;
     this.homeFlash = 0;
     this.homeAlarm = 0; // Sekunden, die die Haus-Marke am Rand noch steht
+    this.gateAlarm = 0; // … und die Tor-Marke, wenn Tor oder Wall angegriffen werden (M17)
+    this.gateSpot = null; // wo (Mitte des getroffenen Abschnitts)
     this.speech = null; // { text, time, duration }
     this.banner = null; // { text, time }
     this.bannerBottom = null; // Unterkante des Banners (für die Meldungen)
@@ -214,6 +216,7 @@ export class Hud {
     this.goalFlash = Math.max(0, this.goalFlash - dt);
     this.homeFlash = Math.max(0, this.homeFlash - dt);
     this.homeAlarm = Math.max(0, this.homeAlarm - dt);
+    this.gateAlarm = Math.max(0, this.gateAlarm - dt);
     for (const n of this.numbers) n.t += dt;
     this.numbers = this.numbers.filter((n) => n.t < 0.7);
     for (const w of this.swooshes) w.t += dt;
@@ -366,7 +369,11 @@ export class Hud {
     const st = g.state;
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     const active = g.nights.active;
-    const damaged = st.world.homeHp < max - 0.5;
+    // Das Tor (M17) steht mit in der Leiste, sobald es angeschlagen ist oder die Nacht läuft
+    const gate = g.world.buildings.gate;
+    const gateMax = gate ? maxHpOf(gate) : 0;
+    const gateHurt = Boolean(gate && (gate.broken || gate.hp < gateMax - 0.5));
+    const damaged = st.world.homeHp < max - 0.5 || gateHurt;
     this.nightBarBottom = 4;
     this.bannerBottom = null;
     if (!active && !damaged && !this.banner) return;
@@ -379,11 +386,23 @@ export class Hud {
       const w = Math.max(124, from ? measure(from) + 12 : 0);
       const x = Math.round(cx - w / 2);
       const y = 4;
-      ui.panel(x, y, w, from ? 42 : 30);
-      bottom = y + (from ? 42 : 30);
+      const gateRow = gate && (active || gateHurt) ? 13 : 0;
+      ui.panel(x, y, w, (from ? 42 : 30) + gateRow);
+      bottom = y + (from ? 42 : 30) + gateRow;
       const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}${g.fast ? ` · ${T.nacht.raffer}` : ''}` : T.horde.zuhause;
       ui.textCentered(label, cx, y + 2, active ? COLORS.textWarm : COLORS.text);
-      if (from) ui.textCentered(from, cx, y + 28, COLORS.gold);
+      if (from) ui.textCentered(from, cx, y + 28 + gateRow, COLORS.gold);
+      if (gateRow) {
+        // Tor: eigener Balken unter dem Zuhause; eingestürzt blinkt die Zeile
+        const gq = gate.broken ? 0 : Math.max(0, Math.min(1, gate.hp / gateMax));
+        const gText = gate.broken ? T.lager.offen : `${Math.ceil(gate.hp)}/${gateMax}`;
+        const gW = w - 26 - gText.length * 4 - 3;
+        drawIcon(ui.ctx, 'tor', x + 5, y + 28);
+        ui.rect(x + 20, y + 31, gW, 5, COLORS.outline);
+        const blink = gate.broken && Math.floor(g.clock * 3) % 2 === 0;
+        ui.rect(x + 21, y + 32, Math.max(0, Math.round((gW - 2) * gq)), 3, gq > 0.5 ? COLORS.buildOk : gq > 0.25 ? COLORS.gold : COLORS.buildBad);
+        drawTiny(ui.ctx, gText, x + 20 + gW + 3, y + 31, blink ? COLORS.buildBad : COLORS.textWarm);
+      }
       const q = Math.max(0, Math.min(1, st.world.homeHp / max));
       drawIcon(ui.ctx, 'haus', x + 5, y + 15);
       // Standfestigkeit auch als Zahl (m3-r2: »nur ein Balken ohne Zahl«)
@@ -706,6 +725,18 @@ export class Hud {
         ui.rect(at.x - 8, at.y - 8, 16, 16, blink ? COLORS.buildBad : COLORS.fill);
         drawIcon(ui.ctx, 'haus', at.x - 6, at.y - 6);
         this.edgeMarks.push({ art: 'zuhause', richtung: where((hp.x - sx) / len, (hp.y - sy) / len), anzahl: 1 });
+      }
+    }
+    // Tor oder Wall unter Beschuss (M17) und nicht im Bild: eine Tor-Marke am Rand
+    if (this.gateAlarm > 0 && this.gateSpot) {
+      const gp = g.worldToUi(this.gateSpot.x, 1, this.gateSpot.z);
+      if (gp.x < 0 || gp.x >= ui.width || gp.y < 0 || gp.y >= ui.height) {
+        const len = Math.hypot(gp.x - sx, gp.y - sy) || 1;
+        const at = edge((gp.x - sx) / len, (gp.y - sy) / len);
+        ui.rect(at.x - 9, at.y - 9, 18, 18, COLORS.outline);
+        ui.rect(at.x - 8, at.y - 8, 16, 16, blink ? COLORS.buildBad : COLORS.fill);
+        drawIcon(ui.ctx, 'tor', at.x - 6, at.y - 5);
+        this.edgeMarks.push({ art: 'tor', richtung: where((gp.x - sx) / len, (gp.y - sy) / len), anzahl: 1 });
       }
     }
     // Nachtplan (M16): Woher kommt die nächste Welle? Hohle Pfeile mit der Nummer der
