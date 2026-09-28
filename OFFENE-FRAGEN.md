@@ -633,7 +633,8 @@ ganz sperren will, setzt mehrere nebeneinander.
 *Verworfen:* vier feste Barrikadenplätze quer über einer Strecke.
 
 ### 66. Was wird aus Umlenken der Horde, Waldpfaden und Wegvorschau?
-**Offen – Klärung ausstehend.** Der Auftraggeber möchte erst wissen, was die
+**Entschieden am 28.09.2026 – kein Umlenken, siehe unten und Nr. 120.**
+*Ursprünglich offen – Klärung ausstehend.* Der Auftraggeber möchte erst wissen, was die
 bisherigen Funktionen genau waren. Bis dahin wird **nichts davon entfernt
 und nichts Neues entwickelt.** Die bisherigen Funktionen:
 - **Umlenken (»Mazing«):** Jeder Bau (Turm, Barrikade, Werkbank …) sperrte
@@ -669,7 +670,11 @@ Wintermaul, mit kurzer Sperrzeit). Gewollt, sichtbar und lesbar.
 Weg, Barrikadenreihen auf einem Zweig lenken sie auf den anderen. Am nächsten
 am Labyrinth-Bauen, aber schwerer zu lesen.
 Die Wegvorschau bleibt in jedem Fall (m12-r1: die rote Punktlinie erklärt
-Türme und Barrikaden von selbst). **Entscheidung des Auftraggebers steht aus.**
+Türme und Barrikaden von selbst).
+**Entschieden (Auftraggeber, 28.09.2026): kein Umlenken.** »Nein, so wartet
+man ja nur darauf, dass die Monster weg sind.« Das Wegenetz bleibt ein Baum,
+Barrikaden stauen nur, die Wegvorschau bleibt (sie zeigt, wo die Horde
+läuft). Stattdessen bekommt die Basis **Tor und Wall** (Nr. 120, M17).
 
 ### 67. Gibt es tagsüber noch Schlurfer?
 **Festgelegt: ja, aber nur sehr wenige.** Der Tag ist ruhig und deutlich
@@ -1108,20 +1113,24 @@ Plan in DESIGN 8 (M16–M25). Übernommen werden Held mit Fähigkeiten, Zuständ
 und Reaktionen, Baupläne zur Wahl, Mischtürme, Türme mit Erfahrung und
 Namen, Turmteile mit Seltenheit, Champions mit Fundkisten, Wellenmerkmale,
 neue Arten und Bosse, ein Nachtplan, Wagnis (früher rufen, Moderlocke,
-makellose Nächte, Vorratskammer), Posten der Überlebenden,
-Schwierigkeitsgrade und ein Finale. **Verworfen:** Gegeneinander und Senden
-(Zomfy ist ein Spiel für eine Person), ein Labyrinth aus Türmen (Grundregel
-2), Hunderte Türme (lieber acht bis zehn Familien mit Charakter), Hektik als
-Pflicht. **Reihenfolge:** M16 zuerst, weil es genau die Schwächen der letzten
+makellose Nächte, Vorratskammer), Posten der Überlebenden und
+Nebenaufträge, Schwierigkeitsgrade, ein Finale – und, auf Wunsch des
+Auftraggebers, **Tor und Wall** ums Lager wie in den Burgverteidigungs-Karten
+(Nr. 120). **Verworfen:** Gegeneinander und Senden (Zomfy ist ein Spiel für
+eine Person), ein Labyrinth aus Türmen (Grundregel 2), Umlenken auf Schleifen
+(Nr. 66, Auftraggeber), Hunderte Türme (lieber acht bis zehn Familien mit
+Charakter), Hektik als Pflicht. **Reihenfolge:** M16 zuerst, weil es genau die Schwächen der letzten
 Testrunde trifft – leere Wartezeit, Nahkampf ohne Risiko, »alles gehört auf
 den letzten Abschnitt«, zu hart für Mira und zu leicht für Theo – und alles
 Weitere darauf aufbaut.
 
 ### 117. Hat ein Spiel ein Ende? (Spaß-Plan)
-**Annahme:** Ja. Ein Herbst dauert 30 Tage; in der Nacht des ersten Frosts
-(Nacht 30) kommt das Moderherz – ein Finale über alle Wege. Danach fällt
-Schnee, und es geht mit endlosen Mondnächten weiter oder mit einem neuen
-Herbst an einer neuen Bucht. **Warum:** Jede TD-Karte lebt von der letzten
+**Entschieden (Auftraggeber):** Ja, mit einem Finale – danach hat man die Wahl
+»wie bei RollerCoaster Tycoon damals«: weiterspielen, und die Wellen kommen
+Roguelike-artig jede Nacht anders (Nebenaufträge kann man weiter erfüllen),
+oder eine neue Runde beginnen. Ein Herbst dauert 30 Tage; in der Nacht des
+ersten Frosts (Nacht 30) kommt das Moderherz – ein Finale über alle Wege,
+danach fällt Schnee. **Warum:** Jede TD-Karte lebt von der letzten
 Welle als Ziel; der Herbst ist unser Thema, und Frost ist ein natürliches Ende
 für einen Pilz (»erster Schnee« stand schon im Ideen-Parkplatz). Das Zuhause
 und der Spielstand bleiben – verlieren kostet weiter nur Material.
@@ -1139,6 +1148,30 @@ Mutbonus, wie das frühe Rufen in den TD-Karten), und nachts gibt es einen
 Zeitraffer (doppelt so schnell). Beides ist ein Angebot, nie Pflicht; bauen
 geht weiter jederzeit. **Warum:** m3-r1 und m12-r1 – das Warten zwischen den
 Wellen zog sich, und wer sich sicher ist, soll schneller spielen dürfen.
+
+### 120. Tor und Wall um die Basis (Wunsch des Auftraggebers, statt Umlenken)
+**Wunsch:** »Ich finde, unsere Base sollte grundlegend ein Tor und einen Wall
+kriegen. Am Anfang noch brüchig, aber man kann es aufrüsten. Die Barrikaden
+werden von den Monstern attackiert, wenn sie nicht vorher erledigt sind;
+sie können jeden Tag wieder aufgebaut und weiter ausgerüstet werden. Durchs
+Tor kommen nur die Lebenden ohne Probleme. Wenn sie durchbrechen, geht noch
+der aktive Kampf gegen die Monster – dann fallen sie nämlich unser Lager an.«
+**Entscheidung (M17, DESIGN 0 Nr. 4 und 6, DESIGN 8):** Ein Wall umschließt
+Hof und Haus zur Landseite, vom Ufer im Norden bis zum Ufer im Süden; der
+letzte Weg endet am Tor. Stufen: brüchiger Weidenzaun zum Start, Palisade,
+Bohlenwand mit Wehrgang, Steinmauer. Abschnitte und Tor haben Lebenspunkte,
+zeigen Schäden und werden täglich geflickt, wieder aufgebaut und aufgerüstet.
+Das Tor lässt nur die Lebenden durch (Mika, die Überlebenden) und bekommt
+Zubehör (Dornen, Torlaternen, Alarmglocke); auch Barrikaden auf den Wegen
+bekommen Zubehör. Die Horde muss Tor oder Wall einschlagen; bricht sie durch,
+greift sie im Lager an, was dort steht, und Mika kämpft selbst. Fällt das
+Haus, ist die Nacht verloren – wie bisher kostet das nur Material. Damit gibt
+es vier Ebenen: Türme – Barrikaden – Tor und Wall – die Figur im Lager.
+**Warum es passt:** Barrikaden bremsen die Horde draußen, der Wall ist die
+letzte feste Linie, und das Lager dahinter bleibt ein Zuhause – der Moment,
+in dem das Tor fällt, macht den Kampf im eigenen Garten zum Höhepunkt der
+Nacht statt zum Dauerzustand. Offen für die Umsetzung: ob Türme auf dem
+Wehrgang stehen dürfen (Grundregel 2 sagt »neben den Wegen«).
 
 ## Technik mit Auswirkung aufs Design
 

@@ -51,7 +51,14 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
    den Platz vor dem Haus. Dort verteidigt die Figur selbst. Die Basis hat
    eigene Lebenspunkte; fällt sie, ist die Nacht verloren. Drei Ebenen:
    **Türme neben den Wegen – Barrikaden auf den Wegen – persönliche
-   Verteidigung an der Basis.**
+   Verteidigung an der Basis.** **Ab M17 mit Tor und Wall** (Wunsch des
+   Auftraggebers, OFFENE-FRAGEN 120): Ein Wall umschließt Hof und Haus zur
+   Landseite, der letzte Weg endet am Tor. Anfangs ist er brüchig, man rüstet
+   ihn auf und flickt ihn jeden Tag. Durchs Tor gehen nur die Lebenden; die
+   Horde muss Tor oder Wall einschlagen. Bricht sie durch, fällt sie das Lager
+   an – dann beginnt der Kampf der Figur. Vier Ebenen: **Türme neben den
+   Wegen – Barrikaden auf den Wegen – Tor und Wall ums Lager – die Figur im
+   Lager.**
 5. **Der Tag ist ruhig** – nur ganz vereinzelt taucht ein Schlurfer auf,
    nie Gruppen oder Wellen – und bildet den starken Kontrast zur Nacht:
    Barrikaden flicken und bauen, Türme setzen und verbessern, sammeln,
@@ -62,7 +69,9 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
    Fischerhaus direkt am Wasser, das wächst – Wohnraum, Küche,
    Schlafzimmer, Werkstatt, Lager, Veranda, Garten, Gewächshaus, Holzlager,
    Anleger, Nebengebäude. Tagsüber ein gemütlicher Rückzugsort; nachts muss
-   genau dieser Ort verteidigt werden.
+   genau dieser Ort verteidigt werden. Ein Wall mit Tor schützt ihn (ab M17)
+   und wächst mit – vom Weidenzaun zur Mauer –, aber dahinter bleibt es ein
+   Zuhause mit Garten, Feuer und Wäscheleine.
 7. **Balduin, der Händler, kommt nur über das Wasser.** Man sieht und hört
    sein Boot, bevor er am Steg festmacht; dann kann man mit ihm reden und
    handeln: Baumaterial, seltene Ressourcen, Bauteile für Türme, Upgrades,
@@ -105,7 +114,8 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
       Nacht vorbereiten.
     - **Nacht:** Welle startet → Zombies betreten die Wege → Türme greifen
       an → Barrikaden halten die Horde auf und werden beschädigt oder
-      zerstört → Zombies erreichen vielleicht die Basis → die Figur
+      zerstört → Zombies erreichen vielleicht die Basis (ab M17: Tor und
+      Wall; bricht die Horde durch, fällt sie das Lager an) → die Figur
       verteidigt selbst → die Welle endet.
     - **Morgen:** Die Folgen der Nacht sind zu sehen → Zombie-Überreste
       einsammeln → Schäden reparieren → ein neuer Tag beginnt.
@@ -961,15 +971,17 @@ Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
   nur auf festen Wegen, Bert erzählt von den geschotterten Holzfällerwegen,
   Dr. Yusuf, was der Moder ist, Balduin, warum auf den Inseln keiner wächst.
 
-### Der Plan ab M16 – jetzt kommt der Spaß (Vorschlag vom 28.09.2026)
+### Der Plan ab M16 – jetzt kommt der Spaß (28.09.2026)
 
 Auftrag: »Jetzt steht der Rumpf des Spiels, jetzt muss der Spaß rein« – mit
 den Elementen der Tower-Defense-Karten aus Warcraft 3 (Analyse in Abschnitt
-10, Entscheidungen in OFFENE-FRAGEN 66 und 116–119). Reihenfolge: N1 (Figuren
-aus Formen) und N2 (Startbild und Menümusik) fertigstellen → Testrunde mit
-der Frage »Wo macht es Spaß, wo langweilt es?« → M16 bis M25. Die Balance
-aus M14 geht in diesen Meilensteinen auf: Jede neue Mechanik kommt mit ihren
-Zahlen, die große Balance-Runde ist M24.
+10, Entscheidungen in OFFENE-FRAGEN 66 und 116–120). Der Auftraggeber hat
+entschieden: M16 zuerst, **kein Umlenken** – stattdessen **Tor und Wall**
+(M17) –, und ein **Finale**, nach dem man weiterspielen oder neu beginnen
+kann. Reihenfolge: N1 (Figuren aus Formen) und N2 (Startbild und Menümusik)
+fertigstellen → Testrunde mit der Frage »Wo macht es Spaß, wo langweilt
+es?« → M16 bis M25. Die Balance aus M14 geht in diesen Meilensteinen auf:
+Jede neue Mechanik kommt mit ihren Zahlen, die große Balance-Runde ist M24.
 
 #### M16 – Die Nacht in der Hand
 
@@ -1002,7 +1014,42 @@ das ganze Wegenetz zählt.
 Wellen früher rufen, mit dem Laternenblitz eine Barrikade retten – und
 morgens lesen, dass Gertrud 23 Schlurfer erledigt hat.
 
-#### M17 – Zusammenspiel: Zustände und Reaktionen
+#### M17 – Tor und Wall: die Bucht wird ein Lager
+
+*Wunsch des Auftraggebers* (statt Umlenken, OFFENE-FRAGEN 66 und 120): »Unsere
+Base sollte grundlegend ein Tor und einen Wall kriegen. Am Anfang noch
+brüchig, aber man kann es aufrüsten … Durchs Tor kommen nur die Lebenden
+ohne Probleme. Wenn sie durchbrechen, geht noch der aktive Kampf gegen die
+Monster – dann fallen sie nämlich unser Lager an.« *Vorbild:* die
+Burgverteidigungs-Karten (das Tor hält, bis es fällt).
+
+- **Der Wall** umschließt Hof und Haus zur Landseite, vom Ufer im Norden bis
+  zum Ufer im Süden; der letzte Weg endet am **Tor.** Stufen: brüchiger
+  Weidenzaun (Start) → Palisade → Bohlenwand mit Wehrgang → Steinmauer.
+  Abschnitte haben Lebenspunkte, zeigen Schäden und werden einzeln geflickt,
+  wieder aufgebaut und aufgerüstet – wie Barrikaden, nur größer.
+- **Das Tor** öffnet sich nur für die Lebenden – Mika, die Überlebenden,
+  Hilde mit dem Lastenrad – und schließt hinter ihnen. Die Horde muss es (oder
+  den Wall) einschlagen. Eigene Stufen und Ausrüstung: Dornen (verletzen, wer
+  zuschlägt), Torlaternen (blenden), eine Alarmglocke (Knopf und die
+  Überlebenden sind sofort wach).
+- **Barrikaden ausrüsten:** Auch Barrikaden auf den Wegen bekommen Zubehör
+  (Dornen, Laterne, Pechkessel), damit man sie jeden Tag nicht nur wieder
+  aufbaut, sondern weiter ausrüstet.
+- **Durchbruch:** Fällt ein Abschnitt oder das Tor, strömt die Horde ins Lager
+  und greift an, was dort steht – Haus, Zelte, Werkbank, Beete, Lampen. Jetzt
+  kämpft Mika (mit den Fähigkeiten aus M16); fällt das Haus, ist die Nacht
+  verloren. Morgens zeigt der Bericht, was durchkam und was es kostete.
+- **Wege der Horde:** Das Flussfeld endet am Tor; Tor und Wall sind für die
+  Horde Hindernisse mit Lebenspunkten, der Hof dahinter ist erst nach dem
+  Durchbruch erreichbar. Jäger laufen nicht mehr um das Lager herum.
+- Spielstand mit neuer Version und Migration: Alte Stände bekommen den
+  Weidenzaun mit Tor.
+
+*Spielbar heißt:* Nacht für Nacht hält das Tor ein bisschen länger – und in
+der Nacht, in der es fällt, kämpft man im eigenen Garten.
+
+#### M18 – Zusammenspiel: Zustände und Reaktionen
 
 *Vorbild:* Element TD (Elemente, die einander schlagen), Verlangsamen plus
 Flächenschaden in allen TD-Karten.
@@ -1026,7 +1073,7 @@ Flächenschaden in allen TD-Karten.
 *Spielbar heißt:* Wer einen Sprenger neben den Frostnebel stellt, sieht
 Eisblöcke zerspringen – und hat das selbst herausgefunden.
 
-#### M18 – Mehr Spielzeug: neue Türme, Fallen und Baupläne
+#### M19 – Mehr Spielzeug: neue Türme, Fallen und Baupläne
 
 *Vorbild:* Green TD (Vielfalt), Element TD (Wahl der Elemente), Gem TD
 (Zufall mit Wahl).
@@ -1050,7 +1097,7 @@ Eisblöcke zerspringen – und hat das selbst herausgefunden.
 *Spielbar heißt:* Zwei Spiele nebeneinander verteidigen sich verschieden –
 einmal mit Bienen und Glocken, einmal mit Windrad und Knallerbsen.
 
-#### M19 – Mischtürme
+#### M20 – Mischtürme
 
 *Vorbild:* Element TD (Doppel- und Dreifachtürme), Gem TD (Rezepte).
 
@@ -1063,14 +1110,14 @@ einmal mit Bienen und Glocken, einmal mit Windrad und Knallerbsen.
   alle Türme treffen härter), **Matschkessel** (Katapult + Sprenger),
   **Feuerwerk** (Katapult + Laterne: Kettenexplosionen, erhellt den Weg),
   **Nebelleuchte** (Sprenger + Laterne: Schlurfer laufen kurz zurück). Mit den
-  Familien aus M18 kommen weitere dazu.
+  Familien aus M19 kommen weitere dazu.
 - **Werkstattbuch:** Unentdeckte Rezepte stehen als Schattenriss darin; Bert
   und Juna geben Hinweise.
 
 *Spielbar heißt:* Man entdeckt ein Rezept, baut es, und der Abend sieht
 anders aus.
 
-#### M20 – Beute mit Glanz: Turmteile, Seltenheit, Champions
+#### M21 – Beute mit Glanz: Turmteile, Seltenheit, Champions
 
 *Vorbild:* YouTD (Gegenstände in Türmen), Gem TD (Kombinieren), Truhen wie in
 Vampire Survivors.
@@ -1089,7 +1136,7 @@ Vampire Survivors.
 *Spielbar heißt:* Nachts einen goldenen Schlurfer jagen, morgens die Kiste
 öffnen und die Kupferspule in den Lieblingsturm bauen.
 
-#### M21 – Die Horde stellt Fragen: Arten, Merkmale, Bosse
+#### M22 – Die Horde stellt Fragen: Arten, Merkmale, Bosse
 
 *Vorbild:* Green TD (fliegende, immune, unsichtbare Wellen, alle paar Wellen
 ein Boss), die Bosse der Hero-Defense-Karten.
@@ -1110,21 +1157,6 @@ ein Boss), die Bosse der Hero-Defense-Karten.
 *Spielbar heißt:* Der Nachtplan kündigt eine Nebelwelle an, und man stellt
 schnell noch Laternen an den Nordweg.
 
-#### M22 – Weichen und Schleifen (nur, wenn OFFENE-FRAGEN 66 so entschieden wird)
-
-*Vorbild:* Wintermaul (Labyrinth und Jonglieren), übertragen auf feste Wege.
-
-- Das Wegenetz bekommt ein bis zwei **Schleifen:** Ein Weg teilt sich und
-  trifft wieder zusammen, ein Zweig ist länger.
-- Am Abzweig steht ein **Schlagbaum.** Zu, und die Horde nimmt den langen
-  Zweig an den Türmen vorbei; mitten in der Welle umgelegt, kehren Gruppen
-  um (Jonglieren) – mit kurzer Sperrzeit, damit es ein Kniff bleibt und kein
-  Trick. Sind beide Zweige zu, schlägt sich die Horde durch.
-- Wegvorschau und Nachtplan zeigen den offenen Weg.
-
-*Spielbar heißt:* Man legt den Schlagbaum im richtigen Moment um und schickt
-den Brummer eine Extrarunde an den Katapulten vorbei.
-
 #### M23 – Gemeinsam durch die Nacht
 
 *Vorbild:* die Mitspieler der Teamkarten, Legion TD (Einheiten statt Türme).
@@ -1136,9 +1168,14 @@ den Brummer eine Extrarunde an den Katapulten vorbei.
   Hof und scheucht einzelne Schwärmer.
 - Niemand wird besiegt: Wer zu viel abbekommt, zieht sich ins Haus zurück.
 - Nach einer gehaltenen Anführernacht gibt es morgens ein **Fest** am Feuer.
+- **Nebenaufträge:** Die Überlebenden und Balduin bitten um Dinge (Hilde:
+  Garnrollen aus dem Wrack, Bert: sein Werkzeugkasten vom Nordweg, Juna:
+  Antennenteile, Dr. Yusuf: Proben von Champions, Balduin: Aufträge, über
+  die er nicht redet) – Belohnungen sind Baupläne, Turmteile und Deko. Das
+  füllt die Tage (m12-r1) und bleibt auch nach dem Finale.
 
-*Spielbar heißt:* Man stellt Bert an den Nordweg und Hilde an den Engpass –
-und morgens erzählen sie davon.
+*Spielbar heißt:* Man stellt Bert ans Tor und Hilde an den Engpass – und
+morgens erzählen sie davon.
 
 #### M24 – Wagnis, Vorrat und die große Balance
 
@@ -1163,8 +1200,11 @@ und morgens erzählen sie davon.
   der **Nacht des ersten Frosts** (Nacht 30) wächst das **Moderherz** aus dem
   Wald – ein Finale über alle Wege in mehreren Phasen. Danach fällt Schnee,
   der Moder schläft, die Bucht feiert (Abspann).
-- Danach **endlose Mondnächte** mit Bestwert – oder ein neuer Herbst an einer
-  neuen Bucht mit dem, was man freigespielt hat (Baupläne, Aussehen).
+- **Danach hat man die Wahl** – wie früher bei RollerCoaster Tycoon nach dem
+  Szenario (Wunsch des Auftraggebers): **weiterspielen** – die Wellen würfeln
+  sich jede Nacht neu (Roguelike: zufällige Arten, Merkmale, Wege und Bosse,
+  langsam steigend), offene Nebenaufträge bleiben – oder eine **neue Runde**
+  an einer neuen Bucht mit neuem Wegenetz.
 - **Sterne je Nacht** (niemand auf dem Hof, Haus heil, Wellen früh gerufen),
   **Herbstbuch** (Erfolge mit Deko als Belohnung), **Schlurferkunde** mit
   Dr. Yusufs Notizen, **Turmalbum.**
@@ -1228,24 +1268,29 @@ Schaden, Beschreibungen), kurze Partien und ein Ende – die letzte Welle.
 **Übernehmen,** angepasst an Bucht, Wege und cozy Herbst:
 
 - Held mit Fähigkeiten → Mika bekommt aktive Fähigkeiten (M16).
-- Kombinieren → Zustände und Reaktionen (M17), Mischtürme (M19).
-- Überraschung mit Wahl → Baupläne nach gewonnenen Nächten (M18),
-  Fundkisten von Champions (M20).
+- Kombinieren → Zustände und Reaktionen (M18), Mischtürme (M20).
+- Überraschung mit Wahl → Baupläne nach gewonnenen Nächten (M19),
+  Fundkisten von Champions (M21).
 - Wachsen → Türme mit Erfahrung, Rang und Namen (M16), Turmteile
-  verschiedener Seltenheit (M20).
+  verschiedener Seltenheit (M21).
 - Wellen mit Fragen → Nachtplan (M16), Wellenmerkmale, neue Arten und
-  Bosse (M21).
+  Bosse (M22).
 - Wagnis → Wellen früher rufen (M16), Moderlocke, makellose Nächte,
   Vorratskammer (M24).
-- Meisterschaft → Schwierigkeitsgrade (M16), Sterne, Finale, endlose Nächte
-  (M25); vielleicht Schlagbäume an Schleifen (M22, OFFENE-FRAGEN 66).
-- Mitspieler → Posten der Überlebenden (M23).
+- Meisterschaft → Schwierigkeitsgrade (M16), Sterne, Finale, danach
+  Weiterspielen mit Roguelike-Nächten (M25).
+- Burgverteidigung → Tor und Wall ums Lager, die man Nacht für Nacht
+  aufrüstet (M17, Wunsch des Auftraggebers).
+- Mitspieler → Posten der Überlebenden, Nebenaufträge (M23).
 
 **Nicht übernehmen:**
 
 - Kein Gegeneinander: Zomfy bleibt ein Spiel für eine Person; das Wagnis
   wählt man selbst.
-- Kein Labyrinth aus Türmen: Türme stehen nie auf Wegen (Grundregel 2).
+- Kein Labyrinth aus Türmen und kein Umlenken: Türme stehen nie auf Wegen
+  (Grundregel 2), und die Horde wird nicht auf Umwege gelenkt – »so wartet
+  man ja nur darauf, dass die Monster weg sind« (Auftraggeber, OFFENE-FRAGEN
+  66).
 - Keine Hunderte Türme: lieber wenige Familien mit Charakter (acht bis
   zehn), die sich spürbar unterscheiden.
 - Keine Hektik ohne Ausweg: Bauen geht jederzeit, Tempo ist ein Angebot,

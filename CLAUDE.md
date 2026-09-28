@@ -37,7 +37,11 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
   (Holz, später Metall, Metallkreuze …), mit Lebenspunkten, reparier- und
   neu baubar.
 - **Drei Verteidigungsebenen:** Türme – Barrikaden – die Figur selbst am Hof.
-  Die Basis hat Lebenspunkte; fällt sie, ist die Nacht verloren.
+  Die Basis hat Lebenspunkte; fällt sie, ist die Nacht verloren. **Ab M17
+  kommen Tor und Wall dazu** (OFFENE-FRAGEN 120): Der Wall umschließt das
+  Lager zur Landseite, der letzte Weg endet am Tor (anfangs brüchig,
+  aufrüstbar, täglich zu flicken); durchs Tor gehen nur die Lebenden. Bricht
+  die Horde durch, fällt sie das Lager an – dann kämpft die Figur.
 - **Ruhiger Tag** (nur ganz vereinzelte Schlurfer), angespannte Nacht, beides
   in derselben cozy, herbstlichen Welt.
 - **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste (halten
@@ -49,8 +53,10 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
   Mikas Bucht. Wasser spült den Moder ab, Licht und Wärme machen ihn müde.
   Mikas Aufgabe: die Nächte halten, ein Zuhause bauen, Zuflucht sein. Neue
   Inhalte bleiben in dieser Geschichte.
-- **Noch offen (OFFENE-FRAGEN Nr. 66):** Umlenken der Horde durch Bauten und
-  die Wegvorschau – bis zur Klärung weder entfernen noch neu entwickeln.
+- **Kein Umlenken (OFFENE-FRAGEN Nr. 66, entschieden):** Die Horde wird nicht
+  auf Umwege gelenkt, das Wegenetz bleibt ein Baum; die Wegvorschau bleibt.
+- **Ein Spiel hat ein Ende (Nr. 117):** Finale nach einem Herbst, danach
+  weiterspielen (Roguelike-Nächte, Nebenaufträge) oder neue Runde (M25).
 - Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
   bloß Neues daneben gesetzt.
 
@@ -281,8 +287,8 @@ Grundprinzipien:
   laufen nach `brute`, wer abseits steht, findet über `back` zurück auf den
   Weg. Nach jeder Bauänderung `pathing.rebuild()`; ein Bau, der den Hof vom
   Weg abschneiden würde, wird mit Grund `weg` abgelehnt (Barrikaden nie).
-  Die Wegvorschau beim Bauen bleibt; Umlenken über andere Zweige gibt es im
-  Baum-Netz nicht (OFFENE-FRAGEN Nr. 66 ist noch offen). Wer Mika jagt und
+  Die Wegvorschau beim Bauen bleibt; Umlenken über andere Zweige gibt es
+  nicht (OFFENE-FRAGEN Nr. 66: entschieden, kein Umlenken). Wer Mika jagt und
   einen Bau vor sich hat, kommt über eine kleine Breitensuche um Mika
   (`chaseDirection`) außen herum. Endet die Jagd, geht er zur letzten Stelle
   auf Weg oder Hof zurück (Zustand `rejoin`, `towardDirection`) – sonst stünde

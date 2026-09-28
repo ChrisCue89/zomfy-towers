@@ -5,7 +5,7 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
-## Der große Plan ab M16 (Vorschlag)
+## Der große Plan ab M16
 
 **Auftrag:** »Lass uns jetzt den großen weiteren Plan bauen – auch mit den
 Elementen aus den Tower-Defense-Karten von Warcraft 3. Jetzt steht der Rumpf
@@ -15,15 +15,17 @@ des Spiels, jetzt muss der Spaß rein.«
   Legion TD und Line Tower Wars, Hero-Defense-Karten – acht Gründe, warum sie
   Spaß machten, und was wir davon übernehmen oder bewusst nicht.
 - **Plan** (DESIGN 8): zehn Spaß-Meilensteine – M16 Die Nacht in der Hand,
-  M17 Zustände und Reaktionen, M18 neue Türme, Fallen und Baupläne, M19
-  Mischtürme, M20 Turmteile, Seltenheit und Champions, M21 neue Arten,
-  Merkmale und Bosse, M22 Schlagbäume an Schleifen (nur nach Entscheidung),
-  M23 Posten der Überlebenden, M24 Wagnis, Vorrat und die große Balance, M25
-  ein Herbst mit Finale. Davor N1, N2 und eine Testrunde zur Frage »Wo macht
-  es Spaß, wo langweilt es?«.
-- **Entscheidungen:** OFFENE-FRAGEN 116–119 (Annahmen); zu Nr. 66 (Umlenken)
-  drei Möglichkeiten mit Empfehlung – die Entscheidung trifft der
-  Auftraggeber.
+  M17 Tor und Wall, M18 Zustände und Reaktionen, M19 neue Türme, Fallen und
+  Baupläne, M20 Mischtürme, M21 Turmteile, Seltenheit und Champions, M22 neue
+  Arten, Merkmale und Bosse, M23 Posten der Überlebenden und Nebenaufträge,
+  M24 Wagnis, Vorrat und die große Balance, M25 ein Herbst mit Finale. Davor
+  N1, N2 und eine Testrunde zur Frage »Wo macht es Spaß, wo langweilt es?«.
+- **Entscheidungen des Auftraggebers:** M16 zuerst; **kein Umlenken** (Nr. 66)
+  – stattdessen **Tor und Wall** ums Lager, anfangs brüchig, aufrüstbar, nur
+  die Lebenden kommen durchs Tor, bricht die Horde durch, fällt sie das Lager
+  an (Nr. 120, M17); ein **Finale**, danach wie bei RollerCoaster Tycoon
+  weiterspielen (Roguelike-Nächte, Nebenaufträge) oder neue Runde (Nr. 117).
+  Dazu Annahmen in Nr. 116, 118 und 119.
 
 ---
 
