@@ -5,6 +5,34 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Feinschliff nach m12-r1
+
+Was die Testrunde als Feinschliff fand und ohne Balance zu lösen war:
+
+- **Barrikaden:** Mika klettert über ihre eigenen Barrikaden – langsamer und
+  ein Stück höher –, statt mitten in der Reihe hängen zu bleiben (Mira). Die
+  Horde bleibt davor (Kollision mit Markierung `climb`, nur die Figur geht
+  durch; OFFENE-FRAGEN 109).
+- **Kiesel und fällbare Bäume:** Kiesel sind ein Häufchen heller, glänzender
+  Steine auf dunkler Erde; kein Deko-Fels ist mehr so klein wie ein Kiesel.
+  Vor jedem fällbaren Baum steht ein blau-weißer Markierpflock mit Fähnchen –
+  das rote Band am Stamm verdeckte die Krone, und Rot-Weiß tragen schon die
+  Fliegenpilze (Jonas).
+- **Drinnen** steckt Mika das Werkzeug weg – die Axt ragte in der engen Stube
+  durch die Wand (Mira).
+- **Wrack:** ein umgedrehter Ruderboot-Rumpf mit Planken, Kiel, weißer Kante,
+  schmalem Heck und spitzem Bug statt eines gesprenkelten Rechtecks (Mira).
+- **Tageslicht:** rosa Morgen, warmes Herbstlicht, goldener Nachmittag und
+  goldene Stunde, eine hellere, wärmere Dämmerung (Mira, Jonas). Vor allem das
+  Himmelslicht färbt jetzt je Tageszeit; das Gras selbst bleibt grün – die
+  Palette hat keine goldenen Mitteltöne (offen, siehe OFFENE-FRAGEN 110).
+- **Durchsicht:** Mikas gelbe Durchsicht ist nur noch halb gerastert – dicht
+  verschmolz sie mit Schlurfern und Stühlen davor (Mira, Kira).
+- **Prüfung:** zwei neue Punkte im Abschnitt `nachbesserung` (Klettern über
+  die eigene Reihe, Werkzeug drinnen weggesteckt).
+
+---
+
 ## Testrunde m12-r1 und Nachbesserung
 
 **Runde:** vier Testspieler über M8–M12, je ein neues Spiel bis Tag 3

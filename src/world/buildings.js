@@ -172,6 +172,7 @@ export class Buildings {
         ? this.colliders.addCircle(cx, cz, 0.36, `bau-${building.id}`)
         : this.colliders.addBox(i + 0.08, j + 0.08, i + w - 0.08, j + d - 0.08, `bau-${building.id}`);
     if (building.broken) building.collider.enabled = false; // Trümmer: begehbar
+    if (type === 'barrikade') building.collider.climb = true; // Mika klettert drüber, die Horde nicht (m12-r1)
     this.grid.occupy(building.id, i, j, w, d);
     const radius = 1.1 + Math.max(w, d) * 0.3;
     // Werkbank, Bank, Beet: benutzen. Alles andere (auch Türme): mit E auswählen.

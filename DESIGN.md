@@ -398,7 +398,8 @@ Bild, z nach Süden = unten im Bild; die Kamera blickt nach Norden):
   Türme; dahinter wird der Wald dicht. Die Figur kann überall hin, wo kein
   Hindernis steht.
 - **Die Horde läuft nur auf den Wegen** vom Spawn zum Hof. Barrikaden auf dem
-  Weg sind Hindernisse, an denen sie hängen bleibt und die sie angreift. Die
+  Weg sind Hindernisse, an denen sie hängen bleibt und die sie angreift; die
+  Figur klettert langsam darüber (m12-r1). Die
   Figur zieht sie nur aus der Nähe vom Weg; danach kehren die Schlurfer genau
   dorthin zurück, wo sie ihn verlassen haben – nie hinter eine
   Barrikadenreihe (m12-r1).

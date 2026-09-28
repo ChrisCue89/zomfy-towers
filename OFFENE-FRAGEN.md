@@ -1003,6 +1003,22 @@ Vorschau sagt aber in Gold »Hier kommt keine Horde vorbei«.
 leben – sonst wartet sie. Ein Klick wählt erst, wenn die Maus seit dem
 Öffnen bewegt wurde; Tasten wählen wie bisher.
 
+### 109. Kommt Mika durch ihre eigenen Barrikaden? (m12-r1)
+**Entscheidung:** Sie klettert darüber – mit knapp halbem Tempo und ein Stück
+angehoben –, die Horde nicht. Mitten in der eigenen Reihe hängen zu bleiben,
+die Horde im Rücken, fühlte sich wie ein Fehler an (Mira), und außen herum
+kostet nachts zu viel. Die Ausweichrolle geht nicht hinüber. Jagende
+Schlurfer kommen weiter außen herum, danach an ihre Absprungstelle zurück
+(Nr. 105).
+
+### 110. Goldenes Gras am Abend? (m12-r1, DESIGN 3.1/3.2)
+**Stand:** Das Licht färbt je Tageszeit (rosa Morgen, goldene Stunde), aber
+das Gras bleibt grün: Die Palette hat für mittelhelles Gras keine goldenen
+Töne, jede warme Tönung landet wieder auf denselben Grüntönen (nachgerechnet).
+Goldenes Gras bräuchte eine eigene Oliv-/Goldrampe in der Palette – das
+verändert den ganzen Look und gehört in eine eigene Runde mit dem
+Auftraggeber.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

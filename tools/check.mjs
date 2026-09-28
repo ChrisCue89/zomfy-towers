@@ -2526,6 +2526,44 @@ async function runFixChecks(browser, url) {
   if (dialogAuf === 'dialog' && gehaemmert === 'play' && bewusst === 'dialog') note('✓ E: nach einem Dialog öffnet schnelles Weiterdrücken nichts, ein bewusster Druck schon');
   else fail(`E nach dem Dialog: ${JSON.stringify({ dialogAuf, gehaemmert, bewusst })}`);
 
+  // Über die eigene Barrikadenreihe klettert Mika (Mira: sie blieb nachts darin hängen),
+  // die Horde bleibt weiter davor (siehe oben)
+  const klettern = await z((col) => {
+    const Z = window.zomfy;
+    const j = col[Math.floor(col.length / 2)] + 0.5;
+    const ende = Z.probeWalk(-15.5, j, 1, 0, 60);
+    const g = Z.game;
+    g.player.place(-14.5, j, 0);
+    let hoch = 0;
+    for (let k = 0; k < 12; k++) {
+      g.player.update(1 / 30, { x: 1, z: 0 }, false);
+      hoch = Math.max(hoch, g.player.position.y);
+    }
+    return { x: ende && ende.x, hoch };
+  }, umweg.col);
+  if (klettern.x > -12.8 && klettern.hoch > 0.15) note(`✓ Barrikaden: Mika klettert über die eigene Reihe (bis x ${klettern.x.toFixed(1)}, ${klettern.hoch.toFixed(2)} m hoch)`);
+  else fail(`Klettern: ${JSON.stringify(klettern)}`);
+
+  // Drinnen steckt Mika das Werkzeug weg (Mira: die Axt ragte durch die Wand)
+  const werkzeug = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.player.heldTool = 'axt';
+    const vis = () => Object.entries(g.player.character.tools).filter(([, m]) => m.visible).map(([n]) => n);
+    g.player.update(1 / 30, { x: 0, z: 0 }, false);
+    const draussen = vis();
+    const w = Z.wakeSpot();
+    Z.teleport(w.x, w.z, 0);
+    g.player.update(1 / 30, { x: 0, z: 0 }, false);
+    const drinnen = vis();
+    const d = Z.interior().outsideDoor;
+    Z.teleport(d.x, d.z + 1.2, 0);
+    return { draussen, drinnen };
+  });
+  await step(100);
+  if (werkzeug.draussen.includes('axt') && werkzeug.drinnen.length === 0) note('✓ Werkzeug: draußen in der Hand, drinnen weggesteckt');
+  else fail(`Werkzeug drinnen: ${JSON.stringify(werkzeug)}`);
+
   checkMessages(session);
   await session.context.close();
 }

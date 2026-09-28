@@ -11,6 +11,12 @@ const LANTERN_RAISE = -1.3;
 export const FLINCH = 0.28; // Dauer des Zusammenzuckens
 const SLIDE_LOOK = 0.7; // so weit schaut Mika seitlich voraus, wenn sie festhängt (m7-r1: 0,4 m – im Haus blieb man zu oft an Möbeln hängen)
 const SLIDE_TURN = 1.15; // Richtung des Ausweichschritts (Bogenmaß zur Wunschrichtung)
+/**
+ * Über eigene Barrikaden klettert Mika, langsamer und ein Stück höher (m12-r1:
+ * sie blieb nachts mitten in der Reihe hängen, die Horde im Rücken).
+ */
+const CLIMB = { speed: 0.45, lift: 0.28 };
+const MOVE = { climb: true };
 
 function easeOut(t) {
   return 1 - (1 - t) * (1 - t);
@@ -25,11 +31,14 @@ export class Player {
   constructor({ world, config }) {
     this.world = world;
     this.config = config;
+    this.climbing = false; // klettert gerade über eine eigene Barrikade (m12-r1)
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
     // Hinter Verdeckungen (Haus, Bäume) bleibt Mika als warmer Umriss sichtbar
-    const silhouette = createSilhouetteMaterial(0xffc86a, 0.8); // Mika hebt sich deutlich ab
+    // Mika hebt sich ab – aber nur halb gerastert: dicht gerastert verschmolz sie mit
+    // Schlurfern und Stühlen davor zu einem gelben Klumpen (m12-r1)
+    const silhouette = createSilhouetteMaterial(0xffc86a, 0.5);
     for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
       const mesh = this.character.parts[name].children.find((c) => c.isMesh);
       if (!mesh) continue;
@@ -164,7 +173,8 @@ export class Player {
     }
     this.updateAction(dt);
 
-    const speed = (run ? this.config.runSpeed : this.config.walkSpeed) * this.speedFactor;
+    this.climbing = this.onBarricade(this.position.x, this.position.z);
+    const speed = (run ? this.config.runSpeed : this.config.walkSpeed) * this.speedFactor * (this.climbing ? CLIMB.speed : 1);
     const len = Math.hypot(move.x, move.z);
     const dirX = len > 0 ? move.x / len : 0;
     const dirZ = len > 0 ? move.z / len : 0;
@@ -189,13 +199,14 @@ export class Player {
 
     const beforeX = this.position.x;
     const beforeZ = this.position.z;
-    this.world.colliders.move(this.position, this.velocity.x * dt, this.velocity.z * dt, this.config.radius);
+    this.world.colliders.move(this.position, this.velocity.x * dt, this.velocity.z * dt, this.config.radius, MOVE);
     if (len > 0.1 && !roll && !lunge) this.slideAround(beforeX, beforeZ, this.velocity.x * dt, this.velocity.z * dt);
     if (dt > 0) {
       this.velocity.x = (this.position.x - beforeX) / dt;
       this.velocity.z = (this.position.z - beforeZ) / dt;
     }
-    this.position.y = damp(this.position.y, this.world.heightAt(this.position.x, this.position.z), 20, dt);
+    const lift = this.onBarricade(this.position.x, this.position.z) ? CLIMB.lift : 0;
+    this.position.y = damp(this.position.y, this.world.heightAt(this.position.x, this.position.z) + lift, lift ? 12 : 20, dt);
 
     const actual = Math.hypot(this.velocity.x, this.velocity.z);
     if (len > 0.1) this.facing = dampAngle(this.facing, Math.atan2(dirX, dirZ), 14, dt);
@@ -225,10 +236,10 @@ export class Player {
     for (const sign of [1, -1]) {
       probe.x = this.position.x;
       probe.z = this.position.z;
-      this.world.colliders.move(probe, -uz * sign * SLIDE_LOOK, ux * sign * SLIDE_LOOK, r);
+      this.world.colliders.move(probe, -uz * sign * SLIDE_LOOK, ux * sign * SLIDE_LOOK, r, MOVE);
       const bx = probe.x;
       const bz = probe.z;
-      this.world.colliders.move(probe, ux * SLIDE_LOOK, uz * SLIDE_LOOK, r);
+      this.world.colliders.move(probe, ux * SLIDE_LOOK, uz * SLIDE_LOOK, r, MOVE);
       const p = (probe.x - bx) * ux + (probe.z - bz) * uz;
       if (p > best) {
         best = p;
@@ -238,7 +249,13 @@ export class Player {
     if (!side) return;
     const c = Math.cos(SLIDE_TURN);
     const s = Math.sin(SLIDE_TURN) * side;
-    this.world.colliders.move(this.position, (ux * c - uz * s) * want, (uz * c + ux * s) * want, r);
+    this.world.colliders.move(this.position, (ux * c - uz * s) * want, (uz * c + ux * s) * want, r, MOVE);
+  }
+
+  /** Steht Mika auf einer heilen Barrikade (klettert gerade drüber)? */
+  onBarricade(x, z) {
+    const b = this.world.buildings?.atCell(Math.floor(x), Math.floor(z));
+    return Boolean(b && b.type === 'barrikade' && !b.broken);
   }
 
   updateAction(dt) {
@@ -315,8 +332,10 @@ export class Player {
       p.legR.rotation.x = -q * 0.8;
     }
 
-    // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl)
-    const shownTool = a ? a.tool : this.heldTool;
+    // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl). Drinnen
+    // steckt Mika es weg – in der engen Stube ragte die Axt durch die Wand (m12-r1)
+    const indoors = this.world.isInside?.(this.position.x, this.position.z);
+    const shownTool = a ? a.tool : indoors ? null : this.heldTool;
     for (const [name, mesh] of Object.entries(this.character.tools)) mesh.visible = name === shownTool;
 
     // Rechter Arm

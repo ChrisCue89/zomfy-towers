@@ -252,6 +252,8 @@ Grundprinzipien:
   (`chaseDirection`) außen herum. Endet die Jagd, geht er zur letzten Stelle
   auf Weg oder Hof zurück (Zustand `rejoin`, `towardDirection`) – sonst stünde
   er hinter einer Barrikadenreihe, um die er Mika nachgelaufen ist (m12-r1).
+  Über eigene Barrikaden klettert die Figur (Kollision mit `climb`, die
+  Figur bewegt sich mit `{ climb: true }`), die Horde nicht.
 - **Horde und Türme sind Daten plus Instancing:** Schlurfer liegen in
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
@@ -339,7 +341,9 @@ Grundprinzipien:
    Reichweite, Herzschlag bei wenig Leben, Banner, wenn das Zuhause nachts
    wankt, Fackeln und Eigenlicht der Wege, Jäger kehren vor die
    Barrikadenreihe zurück (Gegenprobe: ohne Rückkehr zogen sie vorbei),
-   schnelles E nach einem Dialog öffnet nichts, ein bewusstes schon.
+   schnelles E nach einem Dialog öffnet nichts, ein bewusstes schon, Mika
+   klettert über die eigene Barrikadenreihe, drinnen ist das Werkzeug
+   weggesteckt.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

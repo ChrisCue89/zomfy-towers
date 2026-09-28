@@ -394,7 +394,8 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
     buildBush(seed + 33, 0.8, false, [P.e5, P.e6, P.f4, P.f5]),
     buildBush(seed + 34, 1.0, true),
   ];
-  const rocks = [buildRock(seed + 41, 1.0), buildRock(seed + 42, 0.6), buildRock(seed + 43, 1.4), buildRock(seed + 44, 0.8)];
+  // Kein Fels so klein wie ein Kiesel – die grauen Brocken am Rand hielt man für Beute (m12-r1)
+  const rocks = [buildRock(seed + 41, 1.0), buildRock(seed + 42, 0.9), buildRock(seed + 43, 1.4), buildRock(seed + 44, 0.8)];
   const tufts = [0, 1, 2, 3, 4, 5].map((i) => buildTuft(seed + 51 + i));
   const flowerColors = [P.a2, P.a3, P.f6, P.a3, P.a1];
   const flowers = flowerColors.map((c, i) => buildFlower(seed + 61 + i, c));

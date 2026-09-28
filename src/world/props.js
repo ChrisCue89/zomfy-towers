@@ -594,22 +594,30 @@ function buildWreck(seed) {
   const rng = new Rng(seed);
   for (let x = 0; x < L; x++) {
     const t = x / (L - 1);
-    // Heck (x = 0) breit, zum Bug spitz
-    const half = (W / 2) * (t < 0.6 ? 1 : Math.sqrt(Math.max(0, 1 - ((t - 0.6) / 0.4) ** 2)));
+    // Bootsform von oben: schmales Heck (x = 0), breiteste Stelle vorn im ersten
+    // Drittel, zum Bug lang und spitz – wie ein Ruderboot, nicht wie eine Kiste (m12-r1)
+    const half = (W / 2) * (t < 0.35 ? 0.7 + 0.3 * Math.sin((t / 0.35) * (Math.PI / 2)) : Math.sqrt(Math.max(0, 1 - ((t - 0.35) / 0.65) ** 2)));
     if (half < 0.5) continue;
     for (let z = -Math.ceil(half); z < Math.ceil(half); z++) {
       const dz = Math.abs(z + 0.5) / half;
       if (dz > 1) continue;
       // Kieloben: die Rundung des Rumpfs zeigt nach oben
       const top = Math.round(5 - dz * dz * 3.2);
-      for (let y = 0; y <= top; y++) {
-        const outer = y === top || dz > 0.82;
+      // Planken längs des Rumpfs, abwechselnd hell und dunkel gestrichen, damit man
+      // von oben das Boot erkennt (m12-r1: ein gesprenkeltes Rechteck hielt man für
+      // eine Plane); die Farbe ist stellenweise abgeblättert (blankes Holz)
+      const plank = Math.floor(Math.abs(z + 0.5));
+      const keel = z === -1 && x > 1 && x < L - 4; // eine schmale Leiste auf dem Rücken
+      for (let y = 0; y <= top + (keel ? 1 : 0); y++) {
+        const outer = y >= top || dz > 0.82;
         if (!outer) continue;
         const h = hash3(x, y, z, seed);
-        const stripe = y >= top - 1 && y > 2 && Math.abs(z + 0.5) < 1.2;
-        let c = stripe ? P.e3 : h < 0.25 ? P.b2 : h < 0.6 ? P.b3 : P.a6; // verblasste Farbe
-        if (hash3(Math.floor(x / 3), 0, Math.floor(z / 3), seed + 5) > 0.72) c = h < 0.5 ? P.e5 : P.e4; // blankes Holz
-        if (h > 0.96) c = P.r2; // Rost an den Nägeln
+        const bare = hash3(Math.floor(x / 5), 0, plank, seed + 5) > 0.86;
+        let c = bare ? P.e6 : plank % 2 ? P.b3 : P.b4;
+        if (keel) c = y > top ? P.e3 : P.e4; // Kiel: dunkle Leiste vom Heck zum Bug
+        if (x === 0) c = P.e4; // flaches Heck
+        if (y === 0 && dz > 0.82) c = P.s9; // weiß gestrichene Kante am Boden
+        if (h > 0.985 && !keel) c = P.r2; // Rost an den Nägeln
         m.set(x + 1, y, z + W / 2, c);
       }
     }

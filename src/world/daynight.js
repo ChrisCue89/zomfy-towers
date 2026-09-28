@@ -15,12 +15,17 @@ const KEYS = [
   { h: 0.0, sun: col(0x8ea3e0), sunI: 0.5, sky: col(0x3a4686), ground: col(0x1e1c38), hemiI: 2.3, lamp: 1, exp: 1.12, tint: vec(0.86, 0.93, 1.2), sat: 0.62, vig: 0.55, vigC: vec(0.3, 0.26, 0.5), shadow: 0.6 },
   { h: 4.6, sun: col(0x8ea3e0), sunI: 0.42, sky: col(0x3a4686), ground: col(0x1e1c38), hemiI: 2.3, lamp: 1, exp: 1.12, tint: vec(0.86, 0.93, 1.2), sat: 0.62, vig: 0.55, vigC: vec(0.3, 0.26, 0.5), shadow: 0.6 },
   { h: 5.5, sun: col(0xa89ad0), sunI: 0.0, sky: col(0x6a5ca0), ground: col(0x2e2640), hemiI: 2.3, lamp: 0.9, exp: 1.08, tint: vec(0.94, 0.94, 1.1), sat: 0.8, vig: 0.46, vigC: vec(0.38, 0.28, 0.52), shadow: 0.6 },
-  { h: 6.3, sun: col(0xffb48c), sunI: 1.7, sky: col(0xb4a6dc), ground: col(0x5a4a58), hemiI: 1.8, lamp: 0.45, exp: 1.04, tint: vec(0.98, 0.97, 1.04), sat: 1.0, vig: 0.3, vigC: vec(0.5, 0.36, 0.55), shadow: 0.75 },
-  { h: 7.6, sun: col(0xffdcb2), sunI: 2.45, sky: col(0xaac4e6), ground: col(0x6e5f48), hemiI: 1.45, lamp: 0, exp: 1.0, tint: vec(1.0, 1.0, 1.0), sat: 1.05, vig: 0.22, vigC: vec(0.45, 0.4, 0.55), shadow: 0.85 },
-  { h: 12.0, sun: col(0xfff1dc), sunI: 2.75, sky: col(0xb4d0f0), ground: col(0x7a6d50), hemiI: 1.4, lamp: 0, exp: 1.0, tint: vec(1.0, 1.0, 1.0), sat: 1.0, vig: 0.2, vigC: vec(0.45, 0.42, 0.55), shadow: 0.85 },
-  { h: 16.8, sun: col(0xffe0b4), sunI: 2.65, sky: col(0xb0c4e4), ground: col(0x7a6448), hemiI: 1.38, lamp: 0, exp: 1.0, tint: vec(1.0, 1.0, 1.0), sat: 1.03, vig: 0.22, vigC: vec(0.45, 0.4, 0.5), shadow: 0.85 },
-  { h: 18.7, sun: col(0xffb866), sunI: 2.7, sky: col(0xa89ccc), ground: col(0x5e4a50), hemiI: 1.5, lamp: 0.3, exp: 1.02, tint: vec(0.98, 0.96, 1.04), sat: 1.08, vig: 0.28, vigC: vec(0.5, 0.34, 0.5), shadow: 0.8 },
-  { h: 19.7, sun: col(0xff9458), sunI: 1.9, sky: col(0x8474b8), ground: col(0x3e3452), hemiI: 1.9, lamp: 0.85, exp: 1.04, tint: vec(0.94, 0.94, 1.1), sat: 0.95, vig: 0.38, vigC: vec(0.4, 0.3, 0.55), shadow: 0.7 },
+  // Tag (m12-r1: Morgen, Mittag und Nachmittag sahen gleich aus): rosa-goldener
+  // Morgen, klares Herbstlicht, goldener Nachmittag bis zur goldenen Stunde, eine
+  // warme Dämmerung. Die Tönung muss kräftig sein – die Palette schluckt Feines.
+  { h: 6.3, sun: col(0xffa488), sunI: 1.8, sky: col(0xe8aab8), ground: col(0x6a4a50), hemiI: 1.75, lamp: 0.45, exp: 1.05, tint: vec(1.1, 0.93, 1.02), sat: 0.96, vig: 0.3, vigC: vec(0.55, 0.36, 0.52), shadow: 0.75 },
+  { h: 8.0, sun: col(0xffcc96), sunI: 2.35, sky: col(0xe6cca8), ground: col(0x6e5c48), hemiI: 1.5, lamp: 0, exp: 1.02, tint: vec(1.08, 1.0, 0.9), sat: 1.06, vig: 0.24, vigC: vec(0.5, 0.4, 0.5), shadow: 0.85 },
+  { h: 10.5, sun: col(0xffe6c4), sunI: 2.65, sky: col(0xb2cceb), ground: col(0x786a4e), hemiI: 1.42, lamp: 0, exp: 1.0, tint: vec(1.03, 1.0, 0.96), sat: 1.02, vig: 0.2, vigC: vec(0.45, 0.42, 0.55), shadow: 0.85 },
+  { h: 13.0, sun: col(0xfff1dc), sunI: 2.75, sky: col(0xb4d0f0), ground: col(0x7a6d50), hemiI: 1.4, lamp: 0, exp: 1.0, tint: vec(1.0, 1.0, 1.0), sat: 1.0, vig: 0.2, vigC: vec(0.45, 0.42, 0.55), shadow: 0.85 },
+  { h: 15.3, sun: col(0xffdeb0), sunI: 2.7, sky: col(0xd4ccb4), ground: col(0x7a6448), hemiI: 1.4, lamp: 0, exp: 1.0, tint: vec(1.05, 1.0, 0.92), sat: 1.05, vig: 0.22, vigC: vec(0.48, 0.4, 0.5), shadow: 0.85 },
+  { h: 17.4, sun: col(0xffbe6e), sunI: 2.75, sky: col(0xf0c272), ground: col(0x705030), hemiI: 1.6, lamp: 0, exp: 1.0, tint: vec(1.12, 1.0, 0.82), sat: 1.12, vig: 0.26, vigC: vec(0.52, 0.38, 0.42), shadow: 0.82 },
+  { h: 18.7, sun: col(0xffa250), sunI: 2.6, sky: col(0xf0a862), ground: col(0x6a4030), hemiI: 1.7, lamp: 0.3, exp: 1.03, tint: vec(1.14, 0.96, 0.84), sat: 1.1, vig: 0.3, vigC: vec(0.52, 0.34, 0.45), shadow: 0.8 },
+  { h: 19.7, sun: col(0xff8e5c), sunI: 2.0, sky: col(0xc88ca4), ground: col(0x4a3a50), hemiI: 1.95, lamp: 0.85, exp: 1.07, tint: vec(1.04, 0.94, 1.02), sat: 0.98, vig: 0.36, vigC: vec(0.44, 0.3, 0.55), shadow: 0.72 },
   { h: 20.5, sun: col(0xa89ad0), sunI: 0.0, sky: col(0x55509a), ground: col(0x262244), hemiI: 2.3, lamp: 1, exp: 1.08, tint: vec(0.9, 0.93, 1.14), sat: 0.75, vig: 0.48, vigC: vec(0.33, 0.26, 0.5), shadow: 0.6 },
   { h: 21.3, sun: col(0x8ea3e0), sunI: 0.45, sky: col(0x3a4686), ground: col(0x1e1c38), hemiI: 2.3, lamp: 1, exp: 1.12, tint: vec(0.86, 0.93, 1.2), sat: 0.62, vig: 0.55, vigC: vec(0.3, 0.26, 0.5), shadow: 0.6 },
 ];

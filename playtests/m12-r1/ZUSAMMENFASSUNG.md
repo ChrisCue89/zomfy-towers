@@ -195,6 +195,15 @@ Perk-Wahl aufging – das geht jetzt im Kampf nicht mehr.
   Dialog. Die Musikprüfung geht in kleinen Schritten vor: Eine offene
   Perk-Wahl geht jetzt erst in Ruhe auf und hielt den großen Schritt an.
 
+## Nachtrag: Feinschliff
+
+Ohne Balance nachgezogen (siehe PROGRESS.md »Feinschliff nach m12-r1«): Mika
+klettert über ihre eigenen Barrikaden, Kiesel und fällbare Bäume sind von der
+Deko zu unterscheiden (helle Kiesel, blau-weißer Markierpflock), drinnen ist
+das Werkzeug weggesteckt, das Wrack ist ein erkennbarer Bootsrumpf, das
+Tageslicht wechselt über den Tag, Mikas Durchsicht ist nur noch halb
+gerastert.
+
 ## Offen
 
 - Balance (oben) mit dem Auftraggeber in M13, zuerst der Nahkampf ohne Risiko.

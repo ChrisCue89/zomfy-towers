@@ -88,15 +88,18 @@ export class Colliders {
 
   /**
    * Position (Objekt mit x/z) aus allen Hindernissen herausschieben.
-   * @param {{bounds?: boolean, horde?: boolean}} [options] bounds = Außengrenze
-   *   beachten; horde = Schlurfer laufen durch Hindernisse mit `hordeFree` und
-   *   dürfen auf den Wegen auch dort gehen, wo die Figur nicht hinkommt
+   * @param {{bounds?: boolean, horde?: boolean, climb?: boolean}} [options] bounds =
+   *   Außengrenze beachten; horde = Schlurfer laufen durch Hindernisse mit
+   *   `hordeFree` und dürfen auf den Wegen auch dort gehen, wo die Figur nicht
+   *   hinkommt; climb = die Figur klettert über Hindernisse mit `climb`
+   *   (eigene Barrikaden, m12-r1)
    */
-  resolve(pos, radius, { bounds = true, horde = false } = {}) {
+  resolve(pos, radius, { bounds = true, horde = false, climb = false } = {}) {
     for (let iteration = 0; iteration < 3; iteration++) {
       let moved = false;
       for (const c of this.near(pos.x, pos.z, radius + 1)) {
         if (horde && c.hordeFree) continue;
+        if (climb && c.climb) continue;
         if ('r' in c) {
           const dx = pos.x - c.x;
           const dz = pos.z - c.z;

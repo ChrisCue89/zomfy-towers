@@ -67,13 +67,15 @@ function buildTallGrass(seed) {
 function buildPebbles(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  m.box(-4, 0, -3, 3, 0, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -3 || z === 2) ? null : hash3(x, y, z, seed) < 0.5 ? P.e3 : P.e4));
-  const stones = [[-2, -1, 2], [1, 0, 2], [-1, 1, 1], [0, -2, 1], [2, 1, 1]];
+  // Dunkler Erdfleck, darauf ein Häufchen heller, runder Kiesel mit Glanz: sammelbar –
+  // anders als die grauen Felsen und die Tupfer im Weg (m12-r1: keiner fand den Stein)
+  m.box(-4, 0, -3, 3, 0, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -3 || z === 2) ? null : hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3));
+  const stones = [[-2, -1, 2], [1, 0, 2], [-1, 1, 2], [0, -2, 1], [2, 1, 1], [-3, 0, 1]];
   for (const [x, z, h] of stones) {
-    const c = rng.pick([P.s7, P.s8, P.s6]);
-    m.box(x, 1, z, x + 1, h, z + 1, (vx, vy) => (vy === h ? P.s9 : c));
+    const c = rng.pick([P.s8, P.s9, P.s8]);
+    m.box(x, 1, z, x + 1, h, z + 1, (vx, vy, vz) => (vy === h ? (vx === x && vz === z ? P.a4 : P.s9) : c));
   }
-  m.set(-1, 3, 0, P.s9);
+  m.set(-1, 3, 0, P.s9).set(0, 3, 1, P.a4);
   return m;
 }
 
@@ -109,6 +111,30 @@ function ribbon(m, y) {
   // Lose Enden flattern zur Kamera hin (Süden)
   const [fx, fz] = trunk.reduce((best, t) => (t[1] > best[1] ? t : best), trunk[0] || [0, 0]);
   m.set(fx + 1, y + 1, fz + 2, P.f2).set(fx + 1, y, fz + 2, P.s9).set(fx + 2, y, fz + 2, P.f2).set(fx + 2, y - 1, fz + 2, P.s9).set(fx + 2, y - 2, fz + 3, P.f3);
+}
+
+/**
+ * Markierpflock vor dem Baum (Süden, zur Kamera hin): Das Band am Stamm
+ * verdeckt oft die Krone, den Pflock sieht man immer (m12-r1: fällbare Bäume
+ * sahen aus wie Kulisse).
+ */
+function markerStake(m) {
+  let south = 2;
+  for (let y = 3; y <= 56; y++) {
+    for (let x = -3; x <= 3; x++) {
+      for (let z = 28; z > south; z--) {
+        if (m.has(x, y, z)) {
+          south = z;
+          break;
+        }
+      }
+    }
+  }
+  // Blau-weiß: Rot-Weiß tragen schon die Fliegenpilze unter den Bäumen, Blau sonst kaum etwas
+  const z = south + 2;
+  m.box(0, 0, z, 0, 4, z, P.e5); // Pfahl
+  m.set(0, 5, z, P.s9).set(0, 6, z, P.b4).set(0, 7, z, P.b4); // weiß-blaue Spitze
+  m.set(1, 7, z, P.b4).set(1, 6, z, P.b3).set(2, 7, z, P.b3).set(2, 6, z, P.b2); // Fähnchen
 }
 
 /** Frischer Trieb auf dem Stumpf: morgen steht hier wieder ein Baum. */
@@ -156,6 +182,7 @@ function treeModel(model, seed) {
       m = buildDeciduous(seed, 0.62, LEAVES.gelb);
   }
   ribbon(m, 5);
+  markerStake(m);
   return m;
 }
 
