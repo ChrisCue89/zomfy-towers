@@ -1718,9 +1718,12 @@ async function runToyChecks(browser, url) {
     for (const b of Z.game.world.buildings.list.filter((q) => !['wall3', 'wall4', 'tor'].includes(q.type))) Z.game.world.buildings.remove(b.id);
     Z.game.world.pathing.rebuild();
     Z.killAllZombies();
-    // Eine ganze Spalte voller Stachelbretter sperrt den Weg nicht
+    // Eine ganze Spalte voller Stachelbretter sperrt den Weg nicht (gebaut, dann gefragt:
+    // kommt die Horde von jedem Eingang noch nach Hause? – vorher fragte der Test mit den
+    // Feldern selbst als Sperre, das war immer »gesperrt«)
     const col = Z.pathColumn(-12);
-    const sperrt = Z.pathBlocked(col.map((j) => [-12, j]));
+    for (const j of col) Z.build('stachelbrett', -12, j);
+    const sperrt = Z.pathBlocked([]);
     const out = { sperrt, gesetzt: {} };
     const plan = { stachelbrett: -13, leimtopf: -15, klettenteppich: -17, knallerbsen: -19, oelspur: -21 };
     for (const [type, i] of Object.entries(plan)) {
@@ -4025,7 +4028,7 @@ async function runNightChecks(browser, url) {
   await z(() => window.zomfy.interact('bett'));
   for (let k = 0; k < 20 && (await z(() => window.zomfy.mode)) === 'sleep'; k++) await step(1000);
   const view = await z(() => window.zomfyView());
-  if (view.modus === 'report' && view.bericht?.length) note(`✓ Morgenbericht: ${view.bericht[0]}`);
+  if (view.modus === 'report' && view.bericht?.length) note(`✓ Morgenbericht: ${view.bericht.find((l) => !l.startsWith('Sterne:')) || view.bericht[0]}`); // ohne die Sternenzeile (M25)
   else fail(`Morgenbericht fehlt (Modus ${view.modus})`);
   await step(600);
   await page.screenshot({ path: join(SHOTS, 'bericht.png') });
@@ -6039,9 +6042,12 @@ async function runFinaleChecks(browser, url) {
     note(`✓ Nach dem Frost (M25): Schnee am Morgen, der Moder glimmt nicht mehr; der Bericht beginnt mit »${morgen.zeilen[0]}«, nach Enter läuft der Abspann (${abspann.lines.length} Zeilen), Esc führt zur Wahl – Enter nimmt »Hierbleiben«`);
   } else fail(`Nach dem Frost: ${JSON.stringify({ morgen, abspann, dialog, wahl })}`);
 
-  // Die verschneite Bucht am Vormittag
+  // Die verschneite Bucht am Vormittag (ohne die Bauplan-Wahl der gewonnenen Nacht davor)
   await z(() => {
     const Z = window.zomfy;
+    const g = Z.game;
+    for (let k = 0; k < 4 && g.state.blueprintChoice; k++) g.chooseBlueprint(g.state.blueprintChoice.options[0]);
+    g.mode = 'play';
     Z.setTime(10, 0);
     Z.teleport(-2, 3, 0);
   });
