@@ -11,7 +11,7 @@
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
-import { shade } from '../world/voxelKit.js';
+import { shade, sculpt, capsule, roundBox, blob, smoothUnion, roundTone } from '../world/voxelKit.js';
 
 const SPECS = {
   schlurfer: {
@@ -370,154 +370,266 @@ function fineParts(s, seed) {
 
 const U32 = 1 / 32;
 
-function buildLeg32(s, seed) {
+/** Leuchtstreifen der Warnweste (Brummer), eine Schicht vor Brust und Rücken. */
+function buildVestGlow32(s) {
+  const m = new VoxelModel();
+  const w = widthOf(s) * 2;
+  // N1: Die Streifen liegen eine Schicht vor der gerundeten Weste (Bauch vorn, Rücken hinten)
+  const shape = zombieTorsoShape(s);
+  for (const y of [18, 19, 22, 23]) {
+    for (let x = -13 - w; x <= 12 + w; x++) {
+      let front = null;
+      let back = null;
+      for (let z = 12; z >= -12; z--) if (front === null && shape(x + 0.5, y + 0.5, z + 0.5) <= 0) front = z;
+      for (let z = -12; z <= 12; z++) if (back === null && shape(x + 0.5, y + 0.5, z + 0.5) <= 0) back = z;
+      if (front === null) continue;
+      if (!(x >= -6 && x <= 5)) m.set(x, y, front + 1, REFLECT); // vorn sitzt die Blechplatte
+      m.set(x, y, back - 1, REFLECT);
+    }
+  }
+  return m;
+}
+
+// --- N1: Schlurfer aus Formen statt Kästen --------------------------------------
+// Größe, Gelenke und Merkmale wie im Maß 1/32 (M13g), aber geformt: runder,
+// etwas schiefer Kopf mit eingesunkenen Augenhöhlen, Nase und genähtem Mund,
+// gebeugter Rücken (der Brummer mit Bauch), Arme mit Ellbogen, die Hände hängen
+// – beim Flitzer angewinkelt wie beim Rennen –, Beine mit Knie und Schuhen.
+
+/** Kopfform: gerundeter Quader, zur linken Seite etwas tiefer, schmales Kinn. */
+function zombieHeadShape(x, y, z) {
+  const yy = y + (x + 0.5) * 0.05; // schief
+  const taper = Math.max(0, 31.5 - yy) * 0.7;
+  const r = 6;
+  const qx = Math.abs(x + 0.5) - (12 - taper) + r;
+  const qy = Math.abs(yy - 35.5) - 8 + r;
+  const qz = Math.abs(z + 2.5) - (10 - taper * 0.3) + r;
+  const ox = Math.max(qx, 0);
+  const oy = Math.max(qy, 0);
+  const oz = Math.max(qz, 0);
+  return Math.sqrt(ox * ox + oy * oy + oz * oz) + Math.min(Math.max(qx, qy, qz), 0) - r;
+}
+
+/** Vorderste und hinterste Voxelreihe des Kopfs je (x, y). */
+const ZHEAD = (() => {
+  const front = new Map();
+  const back = new Map();
+  for (let y = 27; y <= 44; y++) {
+    for (let x = -13; x <= 12; x++) {
+      for (let z = 9; z >= -13; z--) {
+        if (zombieHeadShape(x + 0.5, y + 0.5, z + 0.5) <= 0) {
+          front.set(x * 64 + y, z);
+          break;
+        }
+      }
+      for (let z = -13; z <= 9; z++) {
+        if (zombieHeadShape(x + 0.5, y + 0.5, z + 0.5) <= 0) {
+          back.set(x * 64 + y, z);
+          break;
+        }
+      }
+    }
+  }
+  return { front: (x, y) => front.get(x * 64 + y), back: (x, y) => back.get(x * 64 + y) };
+})();
+
+/** Augenhöhlen (Reihen 34–36), innen die leuchtenden Augen. */
+const eyeAt = (x) => (x >= -8 && x <= -5) || (x >= 4 && x <= 7);
+
+function sculptZombieLeg(s, seed) {
   const m = new VoxelModel();
   const runner = s.extra === 'kapuze';
-  // Schuhe: Laufschuhe beim Flitzer (hell mit rotem Streifen), sonst ausgelatscht
-  m.box(0, 0, 0, 7, 1, 9, (x, y, z) => {
-    if (runner) return y === 0 ? P.s6 : z >= 8 ? P.s9 : P.s8;
+  // Schuh: Sohle, runde Kappe; beim Flitzer ein heller Laufschuh mit rotem Streifen
+  sculpt(m, roundBox(4, 0.6, 5, 4, 0.7, 5.1, 0.8), -1, 0, -1, 8, 1, 10, (x, y, z) => (runner ? (y === 0 ? P.s6 : P.s8) : y === 0 ? shade(s.feet, -1) : s.feet));
+  const shoe = smoothUnion(capsule(4, 1.5, 3.8, 4, 3.5, 3.8, 3.5), blob(4, 2.2, 7, 3.3, 2.1, 2.8), 1.4);
+  sculpt(m, shoe, -1, 1, -1, 8, 4, 10, (x, y, z, n) => {
+    if (runner) return z >= 7 && y === 2 ? P.r3 : n.x < -0.6 && y <= 2 ? P.r3 : n.y > 0.5 ? P.s9 : P.s8;
     if (z >= 8 && x >= 5) return null; // aufgerissene Kappe …
-    return y === 0 ? shade(s.feet, -1) : s.feet;
+    if (n.z > 0.4 && x % 3 === 1 && y === 3) return P.e7; // Schnürung
+    return n.y > 0.5 ? shade(s.feet, 1) : s.feet;
   });
-  if (!runner) m.box(5, 0, 8, 6, 1, 9, (x, y) => (y === 1 ? s.skin : s.skinShade)); // … ein Zeh schaut heraus
-  m.box(0, 2, 0, 7, 3, 7, (x, y, z) => {
-    if (runner) return z === 7 && y === 3 ? P.r3 : x === 0 || z === 7 ? (y === 2 ? P.r3 : P.s8) : P.s8;
-    return z === 7 && x % 3 === 1 && y === 3 ? P.e7 : s.feet; // Schnürung
-  });
-  // Hose: ausgefranster Saum, Seitennaht, ein Riss am Knie
-  m.box(0, 4, 0, 7, 11, 7, (x, y, z) => {
+  if (!runner) m.box(5, 1, 8, 6, 1, 9, s.skin).set(5, 2, 8, s.skinShade); // … ein Zeh schaut heraus
+  // Schienbein und Oberschenkel, das Knie ein wenig vor
+  const leg = smoothUnion(capsule(4, 4, 4, 4, 7.6, 4.7, 3.2, 3.4), capsule(4, 7.6, 4.7, 4, 12.4, 4, 3.4, 3.9), 1.2);
+  sculpt(m, leg, -1, 4, -1, 8, 11, 9, (x, y, z, n) => {
     const h = hash3(x >> 1, y >> 1, z >> 1, seed);
-    if (y === 4 && h < 0.4 && !runner) return s.skin; // Knöchel unter dem Saum
+    if (y === 4 && h < 0.45 && !runner) return s.skin; // Knöchel unter dem ausgefransten Saum
     if (y === 11) return s.pantsDark;
-    if (runner && (x === 0 || x === 7) && z === 3) return P.s8; // Streifen an der Trainingshose
-    if (!runner && z === 7 && x >= 2 && x <= 4 && y >= 7 && y <= 8) return y === 7 ? s.skinShade : s.skin; // Riss am Knie
-    if (x === 0 || z === 0) return s.pantsDark;
+    if (runner && Math.abs(n.x) > 0.8) return P.s8; // Streifen der Trainingshose
+    if (!runner && n.z > 0.5 && x >= 2 && x <= 4 && y >= 7 && y <= 8) return y === 7 ? s.skinShade : s.skin; // Riss am Knie
+    if (n.z < -0.5 || n.x > 0.7) return s.pantsDark;
     return h < 0.18 ? s.pantsDark : s.pants;
   });
   return m;
 }
 
-function buildArm32(s) {
+function sculptZombieArm(s, seed) {
   const m = new VoxelModel();
-  // Hand mit Fingergliedern und dunklen Nägeln
-  m.box(0, 0, 0, 3, 1, 7, (x, y, z) => (y === 0 ? (z % 3 === 1 ? P.e6 : s.skinShade) : z % 3 === 2 ? s.skinShade : s.skin));
-  m.box(0, 2, 0, 3, 7, 7, (x, y, z) => (y === 6 && z % 3 === 1 ? s.skinShade : x === 3 && z === 0 ? s.skinShade : s.skin));
-  m.box(0, 8, 0, 3, 15, 7, (x, y, z) => {
-    if (s.armor && y >= 14) return y === 15 ? P.s6 : P.s5; // Schulterblech
-    if (y === 8) return (z + x) % 3 === 0 ? null : s.shirtDark; // ausgefranster Ärmel
-    if (y === 9) return s.shirtDark;
-    if (y === 15 && s.extra !== 'kapuze') return z % 3 ? s.moss : shade(s.moss, 1);
-    return y === 12 && x === 0 ? s.shirtDark : s.shirt; // Falte
+  const runner = s.extra === 'kapuze';
+  // Oberarm im Ärmel, unten ausgefranst; der Brummer hat ein Schulterblech
+  sculpt(m, capsule(2, 15.2, 4, 2, 8.6, 4, 2.5, 2.2), -1, 8, 1, 5, 15, 7, (x, y, z, n) => {
+    if (s.armor && y >= 13) return n.y > 0.4 ? P.s6 : P.s5; // Schulterblech
+    const h = hash3(x, y, z, seed + 5);
+    if (y === 8) return h < 0.4 ? null : s.shirtDark; // ausgefranster Ärmel
+    if (y === 15 && !runner && n.y > 0.6) return h < 0.5 ? s.moss : shade(s.moss, 1);
+    if (y === 11 && n.x < -0.5) return s.shirtDark; // Falte
+    return n.z < -0.5 ? s.shirtDark : s.shirt;
+  });
+  // Unterarm: hängt beim Schlurfer nach hinten weg (nach vorn gestreckt baumeln die
+  // Hände), beim Flitzer angewinkelt nach vorn wie beim Rennen
+  const bend = runner ? 3.2 : -1.8;
+  const wx = 2;
+  const wy = runner ? 4.8 : 3.4;
+  const wz = 4 + bend;
+  sculpt(m, capsule(2, 8.2, 4, wx, wy, wz, 2.0, 1.75), -2, 2, -3, 6, 8, 11, (x, y, z, n) => {
+    if (runner && y >= 6) return n.z < -0.4 ? s.shirtDark : s.shirt; // Ärmel bis zum Handgelenk
+    return n.y < -0.4 || n.z < -0.5 ? s.skinShade : s.skin;
+  });
+  // Hand: hängt weiter nach unten, Finger als Streifen, dunkle Nägel
+  const hx = wx;
+  const hy = wy - 2.2;
+  const hz = wz + (runner ? 0.6 : -0.9);
+  sculpt(m, blob(hx, hy, hz, 1.9, 2.3, 2.1), -2, -2, -4, 6, 6, 12, (x, y, z, n) => {
+    if (y === Math.floor(hy - 1.6)) return (x + z) % 2 ? P.e6 : s.skinShade; // Nägel
+    if (n.z > 0.5 && (x + y) % 2 === 0) return s.skinShade; // Fingerglieder
+    return n.y > 0.5 ? shade(s.skin, 1) : s.skin;
   });
   return m;
 }
 
-function buildTorso32(s, seed) {
+/** Rumpfform: runde Schultern, gebeugter Rücken (Buckel oben hinten), der Brummer mit Bauch. */
+function zombieTorsoShape(s) {
+  const w = widthOf(s) * 2;
+  let shape = roundBox(-0.5, 19.5, -0.5, 12 + w, 8, 8, 3.8);
+  if (s.extra !== 'kapuze') shape = smoothUnion(shape, blob(-0.5, 24, -5, 10 + w, 5.5, 4.5), 2.5);
+  if (s.armor) shape = smoothUnion(shape, blob(-0.5, 17.5, 3.5, 11 + w, 6.5, 5.5), 2.5);
+  return shape;
+}
+
+function sculptZombieTorso(s, seed) {
   const m = new VoxelModel();
   const w = widthOf(s) * 2;
-  const x0 = -12 - w;
-  const x1 = 11 + w;
-  m.box(x0, 12, -8, x1, 27, 7, (x, y, z) => {
+  const shape = zombieTorsoShape(s);
+  const front = new Map();
+  for (let y = 12; y <= 28; y++) {
+    for (let x = -13 - w; x <= 12 + w; x++) {
+      for (let z = 11; z >= -12; z--) {
+        if (shape(x + 0.5, y + 0.5, z + 0.5) <= 0) {
+          front.set(x * 64 + y, z);
+          break;
+        }
+      }
+    }
+  }
+  const isFront = (x, y, z) => front.get(x * 64 + y) === z;
+  sculpt(m, shape, -14 - w, 12, -12, 13 + w, 29, 11, (x, y, z, n) => {
     const h = hash3(x >> 1, y >> 1, z >> 1, seed);
-    const edge = x === x0 || x === x1;
+    const f = isFront(x, y, z);
     if (s.armor) {
       // Warnweste über dem Hemd, vernietete Blechplatte vorn
-      if (z === 7 && y >= 16 && y <= 23 && x >= -6 && x <= 5) {
+      if (f && y >= 16 && y <= 23 && x >= -6 && x <= 5) {
         if ((x === -6 || x === 5) && (y === 16 || y === 23)) return P.s8; // Nieten
         if (x === 1 && y === 20) return P.r3; // Rost
         return (x + (y >> 1)) % 3 ? P.s5 : P.s4;
       }
       if (y <= 13) return s.shirtDark;
-      return z === 7 && (x === -8 || x === 7) ? shade(VEST, -1) : VEST;
+      return f && (x === -8 || x === 7) ? shade(VEST, -1) : n.y > 0.6 ? shade(VEST, 1) : VEST;
     }
     if (s.extra === 'kapuze') {
       // Kapuzenpulli mit Bauchtasche und Bündchen
-      if (z === 7 && y >= 16 && y <= 19 && x >= -6 && x <= 5) return y === 19 || x === -6 || x === 5 ? shade(s.shirtDark, -1) : s.shirtDark;
-      if (y <= 13) return (x & 1) ? s.shirtDark : shade(s.shirtDark, -1); // Bündchen gerippt
-      return edge && h < 0.3 ? s.shirtDark : s.shirt;
+      if (f && y >= 16 && y <= 19 && x >= -6 && x <= 5) return y === 19 || x === -6 || x === 5 ? shade(s.shirtDark, -1) : s.shirtDark;
+      if (y <= 13) return x & 1 ? s.shirtDark : shade(s.shirtDark, -1); // Bündchen gerippt
+      return roundTone(s.shirt, n, { light: 0 });
     }
     if (y === 12) return h < 0.35 ? null : s.shirtDark; // ausgefranster Saum
     if (y === 13) return s.shirtDark;
-    if (z === 7 && h < 0.06) return s.skin; // Löcher
-    if (y === 27 && h < 0.45) return s.moss;
-    if (z === 7 && (x === -1 || x === 0)) return (y === 17 || y === 21 || y === 25) && x === 0 ? P.e8 : s.shirtDark; // Knopfleiste
-    if (z === 7 && y >= 25 && (x === -3 || x === 2 || x === -2 || x === 1)) return s.shirtDark; // Kragen
-    if (z === 7 && x >= 4 && x <= 8 && (y === 23 || (y >= 20 && y <= 23 && (x === 4 || x === 8)))) return s.shirtDark; // Brusttasche
-    return h < 0.14 ? s.shirtDark : s.shirt;
+    if (f && h < 0.06) return s.skin; // Löcher
+    if (y >= 26 && n.y > 0.5 && h < 0.45) return s.moss;
+    if (f && (x === -1 || x === 0)) return (y === 17 || y === 21 || y === 25) && x === 0 ? P.e8 : s.shirtDark; // Knopfleiste
+    if (f && y >= 25 && (x === -3 || x === 2 || x === -2 || x === 1)) return s.shirtDark; // Kragen
+    if (f && x >= 4 && x <= 8 && (y === 23 || (y >= 20 && y <= 23 && (x === 4 || x === 8)))) return s.shirtDark; // Brusttasche
+    if (h < 0.14) return s.shirtDark;
+    return roundTone(s.shirt, n, { light: 0 });
   });
   if (s.extra === 'kapuze') {
     // Kordeln der Kapuze
-    m.box(-4, 21, 8, -4, 26, 8, P.s9).box(3, 21, 8, 3, 26, 8, P.s9).set(-4, 20, 8, P.s7).set(3, 20, 8, P.s7);
+    for (const x of [-4, 3]) {
+      for (let y = 20; y <= 26; y++) {
+        const z = (front.get(x * 64 + y) ?? 7) + 1;
+        m.set(x, y, z, y === 20 ? P.s7 : P.s9);
+      }
+    }
   } else if (!s.armor) {
     // Moospolster auf der Schulter, mit einem Pilzchen
-    m.box(6, 27, -4, 11, 29, 1, (x, y, z) => (y === 29 && (x === 11 || z === -4) ? null : y === 29 ? shade(s.moss, 1) : s.moss));
+    sculpt(m, blob(8.5, 27.5, -2, 3.6, 2.2, 3.4), 4, 26, -6, 13, 30, 2, (x, y, z, n) => (n.y > 0.5 ? shade(s.moss, 1) : s.moss));
     m.set(8, 30, -2, P.e8).set(8, 31, -2, P.f5).set(7, 31, -2, P.f4).set(9, 31, -2, P.f4);
   }
   if (s.cape) {
-    // Moosumhang am Rücken, unten ausgefranst
-    m.box(-12, 10, -12, 11, 27, -9, (x, y, z) => {
+    // Moosumhang am Rücken, gewellt und unten ausgefranst
+    sculpt(m, roundBox(-0.5, 18.5, -12.5, 12, 9, 1.8, 1.5), -13, 9, -15, 12, 28, -10, (x, y, z) => {
       const h = hash3(x >> 1, y >> 1, z, seed + 3);
       if (y <= 11 && h < 0.5) return null;
+      if (Math.sin(x * 0.7) > 0.6 && z === -11) return null; // Falten
       return h < 0.3 ? P.g5 : h < 0.55 ? P.g4 : s.shirt;
     });
   }
   return m;
 }
 
-function buildHead32(s, seed) {
+function sculptZombieHead(s, seed) {
   const m = new VoxelModel();
   const hooded = s.extra === 'kapuze';
-  m.box(-12, 28, -12, 11, 43, 7, (x, y, z) => {
-    const front = z === 7;
+  sculpt(m, zombieHeadShape, -13, 27, -13, 12, 44, 9, (x, y, z, n) => {
     const h = hash3(x >> 1, y >> 1, z >> 1, seed);
-    if (front) {
-      if (y >= 34 && y <= 37 && ((x >= -9 && x <= -5) || (x >= 4 && x <= 8))) return y === 37 ? s.skinShade : P.n0; // Augenhöhlen
-      if (y === 38 && ((x >= -10 && x <= -4) || (x >= 3 && x <= 9))) return shade(s.skinShade, -1); // schwere Brauen
+    if (z === ZHEAD.front(x, y) && n.z > 0.3) {
+      if (y >= 34 && y <= 36 && eyeAt(x)) return y === 36 ? s.skinShade : P.n0; // Augenhöhlen
+      if (y === 37 && x >= -9 && x <= 8 && !(x >= -4 && x <= 3)) return shade(s.skinShade, -1); // schwere Brauen
       if (y === 30 && x >= -5 && x <= 4) return P.n1; // Mund
       if ((y === 29 || y === 31) && x >= -5 && x <= 4 && x % 2 === 0) return P.e8; // Stiche
-      if (y <= 29 && x >= -6 && x <= 5) return s.skinShade; // Kinn im Schatten
-      return h < 0.1 ? s.skinShade : s.skin;
+      if (y <= 29) return s.skinShade; // Kinn im Schatten
     }
-    if (y === 43 && h < 0.55 && !hooded) return s.moss;
-    if (z <= -8 && y >= 36) return (x + y) % 5 === 0 ? shade(s.hair, 1) : s.hair; // Haarsträhnen
-    return y <= 29 ? s.skinShade : s.skin;
+    if (y >= 42 && n.y > 0.5 && h < 0.55 && !hooded) return s.moss;
+    if (n.z < -0.55 && y >= 35) return (x + y) % 5 === 0 ? shade(s.hair, 1) : s.hair; // Haarsträhnen
+    if (h < 0.08) return s.skinShade; // Flecken
+    return roundTone(s.skin, n, { light: 0 });
   });
-  m.box(-1, 32, 8, 0, 33, 8, s.skinShade); // Nase
+  // Nase
+  for (const x of [-1, 0]) for (const y of [32, 33]) m.set(x, y, (ZHEAD.front(x, y) ?? 7) + 1, s.skinShade);
   // Ohren, das linke eingerissen
-  m.box(-14, 33, -3, -13, 36, -1, (x, y) => (y === 36 && x === -14 ? null : s.skinShade));
-  m.box(12, 33, -3, 13, 36, -1, s.skinShade);
+  sculpt(m, blob(-13, 34.5, -2, 1.3, 2.1, 1.6), -15, 32, -5, -11, 37, 1, (x, y) => (y >= 36 && x <= -14 ? null : s.skinShade));
+  sculpt(m, blob(12, 34.5, -2, 1.3, 2.1, 1.6), 10, 32, -5, 14, 37, 1, s.skinShade);
   switch (s.extra) {
     case 'blume':
       // Gänseblümchen mit gelber Mitte, ein Blatt am Stiel
-      m.box(4, 44, -4, 4, 47, -4, P.g5).set(5, 45, -4, P.g6).set(6, 46, -4, P.g6);
+      m.box(4, 43, -4, 4, 47, -4, P.g5).set(5, 45, -4, P.g6).set(6, 46, -4, P.g6);
       m.box(3, 48, -5, 5, 48, -3, P.f6);
       for (const [dx, dz] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, 2], [-2, 2], [2, -2]]) m.set(4 + dx, 48, -4 + dz, P.s9);
       m.set(4, 49, -4, P.f7);
       break;
-    case 'kapuze':
-      // Rote Kapuze: Schale um den Kopf, vorn offen, Saum etwas dunkler
-      m.box(-14, 30, -14, 13, 47, 9, (x, y, z) => {
-        const inside = x >= -12 && x <= 11 && y <= 43 && z >= -12 && z <= 7;
-        if (inside) return null;
-        if (z >= 8 && y <= 41 && x > -12 && x < 11) return null; // Gesicht frei
-        if (z >= 8 && y < 32) return null;
-        if (y >= 46 && (x <= -13 || x >= 12 || z <= -13 || z >= 8)) return null;
-        return z >= 8 || y >= 46 ? s.shirtDark : (x + y) % 6 === 0 ? shade(s.shirt, -1) : s.shirt;
+    case 'kapuze': {
+      // Rote Kapuze: Schale um den runden Kopf, vorn offen, Saum etwas dunkler
+      const hood = (x, y, z) => Math.max(zombieHeadShape(x, y - 1, z) - 2.2, -zombieHeadShape(x, y, z));
+      sculpt(m, hood, -16, 29, -16, 15, 47, 11, (x, y, z, n) => {
+        const f = ZHEAD.front(x, Math.min(44, y));
+        if (y <= 41 && f !== undefined && z >= f - 1 && x > -11 && x < 10) return null; // Gesicht frei
+        if (y < 31) return null;
+        return n.z > 0.5 || y >= 46 ? s.shirtDark : (x + y) % 6 === 0 ? shade(s.shirt, -1) : s.shirt;
       });
       break;
+    }
     case 'pilzchen':
       // Drei Fliegenpilze mit weißen Tupfen
       for (const [cx, cz, hh] of [[-6, -4, 4], [4, 0, 2], [0, -8, 6]]) {
-        m.box(cx, 44, cz, cx + 1, 43 + hh, cz + 1, P.e8);
+        m.box(cx, 43, cz, cx + 1, 43 + hh, cz + 1, P.e8);
         m.ellipsoid(cx + 1, 44 + hh, cz + 1, 3.2, 2.2, 3.2, (x, y, z, dx, dy) => (dy < -0.2 ? null : (x + z + y) % 4 === 0 ? P.s9 : P.a0));
       }
       break;
     case 'kegel': {
-      // Warnkegel als Helm (die weißen Streifen leuchten, siehe buildHeadGlow32)
-      m.box(-12, 44, -12, 11, 47, 7, (x, y) => (y === 47 ? P.f4 : P.f3));
+      // Warnkegel als Helm (die weißen Streifen leuchten, siehe sculptZombieGlow)
+      sculpt(m, roundBox(-0.5, 45.5, -2.5, 12, 2, 10, 1.5), -13, 44, -13, 12, 47, 8, (x, y) => (y === 47 ? P.f4 : P.f3));
       for (let y = 48; y <= 59; y++) {
         const r = 9 - Math.floor((y - 48) * 0.6);
-        m.box(-r, y, -r - 3, r - 1, y, r - 4, (x) => (x < -r + 2 ? P.f4 : P.f3));
+        m.cylinder(-0.5, -2.5, y, y, r, (x) => (x < -r + 2 ? P.f4 : P.f3));
       }
       break;
     }
@@ -525,13 +637,13 @@ function buildHead32(s, seed) {
       // Geweihkrone aus Ästen mit Gabeln und Blüten, ein Moosband darunter
       for (const side of [-1, 1]) {
         const bx = side < 0 ? -10 : 8;
-        m.box(bx, 44, -4, bx + 1, 55, -3, P.e5);
+        m.box(bx, 43, -4, bx + 1, 55, -3, P.e5);
         m.line(bx + side, 50, -4, bx + side * 5, 54, -4, P.e5, 1);
         m.line(bx - side, 54, -4, bx - side * 3, 58, -4, P.e6, 1);
         m.box(bx + side * 5, 55, -4, bx + side * 5 + 1, 57, -3, P.e6);
         m.set(bx + side * 5, 58, -4, P.a1).set(bx - side * 3, 59, -4, P.a0).set(bx, 56, -4, P.a1).set(bx + 1, 56, -4, P.a4);
       }
-      m.box(-8, 44, -6, 7, 45, 1, (x) => (x % 3 === 0 ? P.g5 : P.g4));
+      sculpt(m, roundBox(-0.5, 44, -2.5, 8.5, 1.2, 5, 1), -10, 43, -9, 9, 45, 4, (x) => (x % 3 === 0 ? P.g5 : P.g4));
       break;
     default:
       break;
@@ -540,18 +652,35 @@ function buildHead32(s, seed) {
 }
 
 /**
- * Leuchtende Teile am Kopf: Augen vorn, Moderpilzchen am Hinterkopf (man sieht
- * Schlurfer auch von hinten), Streifen am Warnkegel, der große Hut des Leuchtpilzes.
+ * Leuchtende Teile am Kopf (N1): Augen in den Höhlen, Moderpilzchen am
+ * Hinterkopf, Reflektorstreifen am Warnkegel, der große Hut des Leuchtpilzes.
  */
-function buildHeadGlow32(s) {
+function sculptZombieGlow(s) {
   const m = new VoxelModel();
-  for (const x0 of [-9, 5]) m.box(x0, 34, 8, x0 + 3, 36, 8, (x, y) => ((x === x0 + 1 || x === x0 + 2) && y === 35 ? 0xffffff : s.eyes));
-  if (s.extra !== 'kapuze') for (const [x, y] of [[-6, 36], [4, 34], [0, 40]]) m.box(x, y, -13, x + 1, y + 1, -13, (xx, yy) => (yy === y + 1 ? 0xd8ffa0 : 0xb6f07a));
+  for (let x = -8; x <= 7; x++) {
+    if (!eyeAt(x)) continue;
+    for (let y = 34; y <= 35; y++) {
+      const z = (ZHEAD.front(x, y) ?? 7) + 1;
+      const inner = (x === -7 || x === -6 || x === 5 || x === 6) && y === 35;
+      m.set(x, y, z, inner ? 0xffffff : s.eyes);
+    }
+  }
+  if (s.extra !== 'kapuze') {
+    for (const [x, y] of [[-6, 36], [4, 34], [0, 40]]) {
+      const z = (ZHEAD.back(x, y) ?? -12) - 1;
+      m.box(x, y, z, x + 1, y + 1, z, (xx, yy) => (yy === y + 1 ? 0xd8ffa0 : 0xb6f07a));
+    }
+  }
   if (s.extra === 'kegel') {
     // Reflektorring am Kegel (eine Voxelschicht außen)
     for (let y = 52; y <= 55; y++) {
-      const r = 9 - Math.floor((y - 48) * 0.6) + 1;
-      m.box(-r, y, -r - 3, r - 1, y, r - 4, (x, yy, z) => (x === -r || x === r - 1 || z === -r - 3 || z === r - 4 ? REFLECT : null));
+      const r = 9 - Math.floor((y - 48) * 0.6);
+      for (let x = -12; x <= 11; x++) {
+        for (let z = -14; z <= 9; z++) {
+          const d = Math.hypot(x + 0.5 + 0.5, z + 0.5 + 2.5);
+          if (d > r && d <= r + 1) m.set(x, y, z, REFLECT);
+        }
+      }
     }
   }
   if (s.extra === 'leuchthut') {
@@ -564,29 +693,16 @@ function buildHeadGlow32(s) {
   return m;
 }
 
-/** Leuchtstreifen der Warnweste (Brummer), eine Schicht vor Brust und Rücken. */
-function buildVestGlow32(s) {
-  const m = new VoxelModel();
-  const w = widthOf(s) * 2;
-  for (const y of [18, 19, 22, 23]) {
-    for (let x = -12 - w; x <= 11 + w; x++) {
-      if (!(x >= -6 && x <= 5)) m.set(x, y, 8, REFLECT); // vorn sitzt die Blechplatte
-      m.set(x, y, -9, REFLECT);
-    }
-  }
-  return m;
-}
-
 function fineParts32(s, seed) {
   const w = widthOf(s) * 2;
   const parts = [
-    { name: 'legL', model: buildLeg32(s, seed), joint: [-4, 12, 0], offset: [-8, 0, -4], parent: 'root', unit: U32 },
-    { name: 'legR', model: buildLeg32(s, seed + 1), joint: [4, 12, 0], offset: [0, 0, -4], parent: 'root', unit: U32 },
-    { name: 'torso', model: buildTorso32(s, seed), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 },
-    { name: 'head', model: buildHead32(s, seed), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'body', unit: U32 },
-    { name: 'glow', model: buildHeadGlow32(s), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'head', glow: true, unit: U32 },
-    { name: 'armL', model: buildArm32(s), joint: [-14 - w, 28, 0], offset: [-16 - w, 12, -4], parent: 'body', unit: U32 },
-    { name: 'armR', model: buildArm32(s), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'body', unit: U32 },
+    { name: 'legL', model: sculptZombieLeg(s, seed), joint: [-4, 12, 0], offset: [-8, 0, -4], parent: 'root', unit: U32 },
+    { name: 'legR', model: sculptZombieLeg(s, seed + 1), joint: [4, 12, 0], offset: [0, 0, -4], parent: 'root', unit: U32 },
+    { name: 'torso', model: sculptZombieTorso(s, seed), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'head', model: sculptZombieHead(s, seed), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'glow', model: sculptZombieGlow(s), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'head', glow: true, unit: U32 },
+    { name: 'armL', model: sculptZombieArm(s, seed), joint: [-14 - w, 28, 0], offset: [-16 - w, 12, -4], parent: 'body', unit: U32 },
+    { name: 'armR', model: sculptZombieArm(s, seed + 2), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'body', unit: U32 },
   ];
   if (s.armor) parts.push({ name: 'vest', model: buildVestGlow32(s), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', glow: true, unit: U32 });
   return parts;

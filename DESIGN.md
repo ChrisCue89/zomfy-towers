@@ -205,7 +205,10 @@ Wort gibt.
   und dagegen warmes Licht aus Fenstern, Kamin und Laternen.
 - **Figuren** knuffig mit großem Kopf und ausdrucksstarken Gesichtern
   (etwas Anime), **Formen** mit klaren Silhouetten und kräftigen Umrissen
-  (westlicher Comic).
+  (westlicher Comic). Seit N1 sind Figuren, Horde und Hund **geformt statt
+  gestapelt**: runde Köpfe, gewölbte Rümpfe mit Schultern, Glieder mit Knie
+  und Ellbogen, Mützen als Polster – im selben Voxelmaß, mit Licht auf den
+  Kuppen und Schatten darunter.
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
   **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
@@ -970,6 +973,26 @@ Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
   eines Dialogs; Radio Stillwald rät »bleibt auf festem Boden«; Hilde fährt
   nur auf festen Wegen, Bert erzählt von den geschotterten Holzfällerwegen,
   Dr. Yusuf, was der Moder ist, Balduin, warum auf den Inseln keiner wächst.
+
+### N1 – Figuren aus Formen statt Kästen ✓
+
+Wunsch des Auftraggebers: »Etwas mehr als nur Quadrate … nicht nur die
+Texturen, die 3D-Modelle selber!« (OFFENE-FRAGEN 115).
+
+- **Mika:** runder Kopf, zum Kinn schmaler, Mütze als Polster mit Umschlag
+  und Bommel, Rumpf mit runden Schultern und Taille, Rucksack mit runden
+  Kanten; Arme und Beine aus Kapseln mit **Ellbogen und Knie** – beim Gehen
+  beugen sich die Knie, die Laterne hält der angewinkelte Arm vor der Brust,
+  beim Schlag holt der Unterarm aus.
+- **Horde:** geneigte Köpfe, Buckel und hängende Schultern, nach vorn
+  greifende Arme mit hängenden Händen (der Flitzer mit Läuferarmen), der
+  Brummer mit Bauch; Kapuze, Kegel, Pilzhut und Geweih sitzen auf der Rundung,
+  Augen und Warnstreifen folgen der Wölbung.
+- **Überlebende und Balduin:** dieselben Formen wie Mika; Mützen, Bärte,
+  Brillen, Kopfhörer, Riemen und Taschen sitzen auf den Rundungen.
+- **Knopf:** runder Rumpf mit Brust, Kopf mit Schnauze und Schlappohren,
+  gebogener Schwanz mit heller Spitze, Pfoten, Zotteln als Büschel, der große
+  Knopf am roten Halsband ist von vorn zu sehen.
 
 ### Der Plan ab M16 – jetzt kommt der Spaß (28.09.2026)
 

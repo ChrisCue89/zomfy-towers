@@ -14,7 +14,8 @@
 
 import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
-import { shade } from '../world/voxelKit.js';
+import { shade, sculpt, capsule, roundBox, roundTone } from '../world/voxelKit.js';
+import { HEAD, TORSO, onFace, onChest, sculptHeadBase, facePlate, facLids, sculptEars, sculptTorsoBase, sculptCollar, sculptArm, sculptLeg } from './figureKit.js';
 
 /** Gesicht auf der Vorderseite (z = 3): Augen, Brauen, Wangen, Mund. */
 function face(spec, x, y, { glasses = false, beard = false } = {}) {
@@ -504,160 +505,172 @@ function faceColor32(spec, x, y, expr, { glasses = false, beard = false } = {}) 
   return spec.skinShade;
 }
 
-/** Gesichtsplatten normal und froh (M12) im Maß 1/32. */
+/** Gesichtsplatten normal und froh (M12) – N1: auf der Rundung des Kopfs. */
 function faceSet32(spec, options = {}) {
-  const plate = (expr) => {
-    const m = new VoxelModel();
-    for (let y = 28; y <= 39; y++) for (let x = -12; x <= 11; x++) m.set(x, y, 7, faceColor32(spec, x, y, expr, options));
-    return m;
-  };
+  const plate = (expr) => facePlate((x, y) => faceColor32(spec, x, y, expr, options));
   return { normal: plate('normal'), froh: plate('froh'), eyesClose: !options.glasses };
 }
 
-/** Kopf 24 × 16 × 20 wie bei Mika; die Vorderseite unter dem Pony kommt als Gesichtsplatte dazu. */
+/**
+ * Kopf (N1): runde Form aus dem Figuren-Baukasten. Haar oben und hinten mit
+ * Strähnen, Pony vorn, über den Ohren; mit `beard` Bart an den Wangen. Ohne
+ * `plate` wird das Gesicht gleich mitgemalt (Balduin grinst immer).
+ */
 function baseHead32(spec, { beard = false, plate = true } = {}) {
-  const m = new VoxelModel();
   const hairLight = shade(spec.hair, 1);
-  m.box(-12, 28, -12, 11, 43, 7, (x, y, z) => {
-    if (z === 7) {
-      if (y < 40) return plate ? null : faceColor32(spec, x, y, 'normal', { beard });
-      return (x + y) % 5 === 0 ? hairLight : spec.hair; // Pony mit Strähnen
-    }
-    if (z <= -4 || y >= 40) return (x * 3 + y) % 7 === 0 ? hairLight : spec.hair;
-    if ((x === -12 || x === 11) && y >= 34) return spec.hair;
-    if (beard && (x === -12 || x === 11) && y <= 33) return beard32(spec, z, y); // Bart an den Wangen
-    return y === 28 ? spec.skinShade : spec.skin;
-  });
-  for (const x of [-13, 12]) m.box(x, 32, -2, x, 34, 0, (xx, y) => (y === 34 ? spec.skin : spec.skinShade)); // Ohren
-  return m;
+  const m = sculptHeadBase(
+    (x, y, z, n) => {
+      if (n.z > 0.55 && y >= 40) {
+        if (y === 40 && (x + 12) % 5 === 2) return spec.skin; // Pony mit Strähnen
+        return (x + y) % 5 === 0 ? hairLight : spec.hair;
+      }
+      if (z <= -4 || y >= 40) return (x * 3 + y) % 7 === 0 ? hairLight : n.y < -0.4 ? shade(spec.hair, -1) : spec.hair;
+      if (Math.abs(n.x) > 0.6 && y >= 34) return spec.hair;
+      if (beard && Math.abs(n.x) > 0.6 && y <= 33) return beard32(spec, z, y); // Bart an den Wangen
+      if (y === 28) return spec.skinShade;
+      return roundTone(spec.skin, n, { light: 0 });
+    },
+    { face: plate ? null : (x, y) => faceColor32(spec, x, y, 'normal', { beard }) }
+  );
+  return sculptEars(m, spec.skin, spec.skinShade);
 }
 
-/** Lider zum Blinzeln (1/32): Haut über den Augen, darunter die Wimpernlinie. */
-function lids32(spec) {
-  const m = new VoxelModel();
-  for (const x of [-8, -7, -6, 5, 6, 7]) m.set(x, 36, 8, spec.skin).set(x, 35, 8, spec.skin).set(x, 34, 8, spec.eyes);
-  return m;
-}
+/** Lider zum Blinzeln (N1: auf der Rundung). */
+const lids32 = (spec) => facLids(spec.skin, spec.eyes);
 
-/** Beine (1/32): Schuhe mit heller Kappe, Strümpfe oder Hose, oben ggf. Rock. */
-function baseLeg32({ shoe, shoeLight, low, high, top = null }) {
-  const m = new VoxelModel();
-  m.box(0, 0, 0, 7, 1, 9, (x, y, z) => (y === 0 ? shade(shoe, -1) : z >= 8 ? shoeLight : shoe));
-  m.box(0, 2, 0, 7, 5, 7, (x, y, z) => (y <= 3 ? (z === 7 && x === 3 && y === 3 ? shoeLight : shoe) : low));
-  m.box(0, 6, 0, 7, 11, 7, (x, y, z) => {
-    if (top && y >= 8) return y === 8 ? shade(top, -1) : (x + y) % 5 === 0 ? shade(top, -1) : top;
-    if (y === 6) return high.dark; // Aufschlag
-    return x === 0 || z === 0 ? high.dark : x === 6 && z === 7 ? shade(high.light, 1) : high.light;
-  });
-  return m;
-}
+/** Beine (N1): Schuhe mit runder Kappe, Strümpfe oder Hose, oben ggf. Rock. */
+const baseLeg32 = (o) => sculptLeg(o);
 
-/** Arme (1/32): Hand mit Daumen, Bündchen, Ärmel mit Falten; `forearm` für hochgekrempelte Ärmel. */
-function baseArm32({ sleeve, sleeveDark, cuff, skin, skinShade, forearm = null }) {
-  const m = new VoxelModel();
-  m.box(0, 0, 1, 3, 3, 6, (x, y, z) => ((y === 0 && (z === 1 || z === 6)) ? null : z === 6 && y === 1 ? skinShade : y === 3 ? shade(skin, 1) : skin));
-  m.set(3, 2, 7, skin).set(3, 1, 7, skinShade); // Daumen
-  m.box(0, 4, 0, 3, 5, 7, (x, y) => (forearm ? forearm : y === 5 ? cuff : shade(cuff, -1)));
-  m.box(0, 6, 0, 3, 15, 7, (x, y, z) => {
-    if (forearm && y <= 7) return forearm;
-    if (forearm && y === 8) return sleeveDark; // Krempe
-    if (z === 0) return sleeveDark;
-    if ((y === 10 || y === 13) && z >= 4) return sleeveDark; // Falten
-    return y >= 14 ? shade(sleeve, 1) : sleeve;
+/** Arme (N1): Ärmel, Bündchen, Hand mit Daumen; `forearm` für hochgekrempelte Ärmel. */
+const baseArm32 = (o) => sculptArm(o);
+
+/** Kappe auf dem runden Kopf: Deckel (roundBox), Band unten, Schirm vorn auf der Rundung. */
+function capOnHead(m, { color, dark, light, height = 5, visor = 3, visorWidth = 10 }) {
+  sculpt(m, roundBox(-0.5, 44 + height / 2, -2.5, 12.2, height / 2 + 0.6, 10.2, 3.2), -13, 43, -13, 12, 44 + height, 8, (x, y, z, n) => {
+    if (y <= 45) return dark;
+    if (n.y > 0.7) return light;
+    return color;
   });
+  // Schirm: flach nach vorn, vorn etwas dunkler
+  for (let x = -visorWidth; x < visorWidth; x++) {
+    const z0 = (HEAD.front(Math.max(-11, Math.min(10, x)), 42) ?? 6) + 1;
+    for (let k = 0; k < visor; k++) m.box(x, 44, z0 + k, x, 45, z0 + k, k === visor - 1 ? shade(dark, -1) : dark);
+  }
   return m;
 }
 
 function hildeHead32(s) {
   const m = baseHead32(s);
   // Postmütze mit Band, Schirm und Abzeichen
-  m.box(-12, 44, -12, 11, 49, 7, (x, y, z) => ((x === -12 || x === 11) && (z === -12 || z === 7) && y === 49 ? null : y <= 45 ? s.capDark : y === 49 ? shade(s.cap, 1) : s.cap));
-  m.box(-10, 44, 8, 9, 45, 11, (x, y, z) => (z === 11 ? shade(s.capDark, -1) : s.capDark)); // Schirm
-  m.box(-2, 46, 8, 1, 48, 8, (x, y) => (y === 48 ? P.f7 : s.badge)).set(-1, 47, 9, P.f4).set(0, 47, 9, P.f4); // Abzeichen mit Posthorn
+  capOnHead(m, { color: s.cap, dark: s.capDark, light: shade(s.cap, 1), height: 6, visor: 4 });
+  const bz = (HEAD.front(0, 43) ?? 6) + 1;
+  m.box(-2, 46, bz, 1, 48, bz, (x, y) => (y === 48 ? P.f7 : s.badge)).set(-1, 47, bz + 1, P.f4).set(0, 47, bz + 1, P.f4); // Abzeichen mit Posthorn
   // Grauer Dutt hinten unter der Mütze, mit Haarnadel
-  m.ellipsoid(-0.5, 38, -15, 5, 5, 3.2, (x, y, z) => ((x + y) % 3 === 0 ? s.hairDark : s.hair));
+  m.ellipsoid(-0.5, 38, -15, 5, 5, 3.2, (x, y) => ((x + y) % 3 === 0 ? s.hairDark : s.hair));
   m.box(2, 40, -18, 5, 40, -18, P.s4);
   return m;
 }
 
 function hildeTorso32(s) {
-  const m = new VoxelModel();
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
-    if (z === 7 && (x === -1 || x === 0)) return y % 4 === 1 && x === 0 ? s.buttons : s.cardiganDark; // Knopfleiste
-    if (y <= 13 || y >= 26 || x === -12 || x === 11) return s.cardiganDark;
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && (x === -1 || x === 0)) return y % 4 === 1 && x === 0 ? s.buttons : s.cardiganDark; // Knopfleiste
+    if (y <= 13 || y >= 26) return s.cardiganDark;
     const cable = (x + 12) % 6;
-    if (cable === 2 || cable === 3) return (y + (cable === 2 ? 0 : 2)) % 4 < 2 ? s.cardiganDark : s.cardigan; // Zopfmuster
-    return s.cardigan;
+    if (front && (cable === 2 || cable === 3)) return (y + (cable === 2 ? 0 : 2)) % 4 < 2 ? s.cardiganDark : s.cardigan; // Zopfmuster
+    return roundTone(s.cardigan, n, { light: 0 });
   });
+  sculptCollar(m, s.cardiganDark, { r: 1.6 });
   // Posttasche am Riemen (rechte Schulter zur linken Hüfte)
-  for (let i = 0; i <= 13; i++) m.box(8 - Math.round(i * 1.4), 27 - i, 8, 9 - Math.round(i * 1.4), 27 - i, 8, s.bagDark);
-  m.box(-16, 12, -2, -13, 19, 7, (x, y, z) => (y >= 18 ? s.bagDark : z === 7 && y === 17 ? shade(s.bag, 1) : s.bag));
-  m.box(-16, 15, 7, -16, 16, 7, s.badge);
+  for (let i = 0; i <= 13; i++) {
+    const x = 8 - Math.round(i * 1.4);
+    onChest(m, x, 27 - i, 1, s.bagDark).set(x + 1, 27 - i, (TORSO.front(x + 1, 27 - i) ?? 7) + 1, s.bagDark);
+  }
+  sculpt(m, roundBox(-14.5, 15.5, 2.5, 2.2, 4, 5, 1.2), -17, 11, -3, -12, 20, 8, (x, y, z, n) => (y >= 18 ? s.bagDark : n.z > 0.6 && y === 17 ? shade(s.bag, 1) : s.bag));
+  m.box(-17, 15, 7, -17, 16, 7, s.badge);
   return m;
 }
 
 function bertHead32(s) {
   const m = baseHead32(s, { beard: true });
   // Rote Kappe mit Nähten, Knopf und langem Schirm
-  m.box(-12, 44, -12, 11, 49, 7, (x, y, z) => ((x === -12 || x === 11) && (z === -12 || z === 7) && y >= 48 ? null : y === 44 ? s.capDark : x === -1 || x === 0 ? s.capDark : s.cap));
+  capOnHead(m, { color: s.cap, dark: s.capDark, light: shade(s.cap, 1), height: 5, visor: 6 });
   m.box(-2, 50, -4, 1, 50, -1, s.capDark);
-  m.box(-10, 44, 8, 9, 45, 13, (x, y, z) => (z === 13 ? shade(s.capDark, -1) : s.capDark));
-  // Bart ragt unten vor, mit Strähnen
-  m.box(-8, 25, 7, 7, 29, 9, (x, y, z) => (y === 25 && (x + z) % 2 ? null : beard32(s, x, y)));
+  // Bart ragt unten vor und hängt unter das Kinn, mit Strähnen
+  for (let x = -8; x <= 7; x++) {
+    for (let y = 24; y <= 30; y++) {
+      const z0 = HEAD.front(x, Math.max(28, y));
+      if (z0 === undefined) continue;
+      const depth = y <= 26 ? 2 : 1;
+      for (let k = 1; k <= depth; k++) {
+        if (y === 24 && (x + k) % 2) continue;
+        m.set(x, y, z0 + k - (y < 28 ? 1 : 0), beard32(s, x, y));
+      }
+    }
+  }
   return m;
 }
 
 function bertTorso32(s) {
-  const m = new VoxelModel();
-  // Karohemd: breite Karos mit feinen Linien
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
+  const m = sculptTorsoBase((x, y, z, n) => {
+    // Karohemd: breite Karos mit feinen Linien
     const cx = Math.floor((x + 16) / 4) % 2;
     const cy = Math.floor(y / 4) % 2;
     if ((x + 16) % 4 === 0 || y % 4 === 0) return s.shirtDark;
     return cx ^ cy ? s.shirt : shade(s.shirt, 1);
   });
-  // Schürze vor dem Bauch mit Tasche, Bleistift und Trägern
-  m.box(-10, 12, 8, 9, 25, 10, (x, y, z) => {
-    if (y === 25) return s.apronDark;
-    if (z === 10 && y >= 16 && y <= 19 && x >= -6 && x <= 5) return y === 19 || x === -6 || x === 5 ? s.apronDark : shade(s.apron, 1); // Tasche
-    return x === -10 || x === 9 ? s.apronDark : s.apron;
-  });
-  m.box(2, 19, 11, 2, 24, 11, s.pencil).set(2, 25, 11, P.s7).set(2, 18, 11, P.e7);
-  m.box(-8, 24, 8, -7, 27, 8, s.apronDark).box(6, 24, 8, 7, 27, 8, s.apronDark);
+  // Schürze vor dem Bauch, auf der Rundung, mit Tasche, Bleistift und Trägern
+  for (let x = -10; x <= 9; x++) {
+    for (let y = 12; y <= 25; y++) {
+      const edge = x === -10 || x === 9;
+      const pocket = y >= 16 && y <= 19 && x >= -6 && x <= 5;
+      const c = y === 25 ? s.apronDark : pocket ? (y === 19 || x === -6 || x === 5 ? s.apronDark : shade(s.apron, 1)) : edge ? s.apronDark : s.apron;
+      onChest(m, x, y, 1, c);
+    }
+  }
+  for (let y = 19; y <= 24; y++) onChest(m, 2, y, 2, s.pencil);
+  onChest(m, 2, 25, 2, P.s7);
+  for (let y = 24; y <= 27; y++) for (const x of [-8, -7, 6, 7]) onChest(m, x, y, 1, s.apronDark);
   return m;
 }
 
 function junaHead32(s) {
   const m = baseHead32(s);
-  // Kurze, verwuschelte Haare mit Spange
-  m.box(-12, 44, -10, 11, 45, 5, (x, y, z) => ((x + z * 2) % 5 < 2 ? (y === 45 ? null : s.hair) : (x * 2 + z) % 4 === 0 ? s.hair : null));
-  m.box(8, 40, 8, 9, 43, 8, (x, y) => (y === 43 ? P.a1 : s.clip));
-  // Dicke Kopfhörer mit Bügel und Lichtring
-  for (const x0 of [-16, 12]) {
-    m.box(x0, 30, -6, x0 + 3, 39, 3, (x, y, z) => {
-      const outer = x0 < 0 ? x === x0 : x === x0 + 3;
-      if (outer && Math.hypot(y - 34.5, z + 1.5) < 3.5 && Math.hypot(y - 34.5, z + 1.5) > 2.2) return s.phonesLight;
+  // Kurze, verwuschelte Haare obenauf, mit Spange
+  sculpt(m, roundBox(-0.5, 42.5, -3, 12.4, 3.2, 10.4, 3.4), -13, 40, -14, 12, 46, 8, (x, y, z, n) => {
+    if (n.y < 0.3 && y <= 42) return null; // nur die Wuschel oben
+    if (y >= 45 && (x * 2 + z) % 4 !== 0) return null;
+    return (x + z * 2) % 5 < 2 ? shade(s.hair, 1) : s.hair;
+  });
+  onFace(m, 8, 42, 1, P.a1).set(9, 42, (HEAD.front(9, 42) ?? 5) + 1, s.clip);
+  // Dicke Kopfhörer: runde Muscheln mit Lichtring, Bügel über den Kopf
+  for (const [ax, bx] of [[-16.5, -13.2], [15.5, 12.2]]) {
+    sculpt(m, capsule(ax, 34.5, -1.5, bx, 34.5, -1.5, 4, 4), -18, 29, -7, 17, 40, 4, (x, y, z, n) => {
+      const outer = Math.abs(n.x) > 0.7;
+      const d = Math.hypot(y + 0.5 - 34.5, z + 0.5 + 1.5);
+      if (outer && d < 3.4 && d > 2.2) return s.phonesLight;
       return s.phones;
     });
   }
-  m.box(-14, 40, -4, -13, 45, -2, s.phones).box(12, 40, -4, 13, 45, -2, s.phones);
-  m.box(-12, 46, -4, 11, 47, -2, (x, y) => (y === 47 ? shade(s.phones, 1) : s.phones));
+  const band = (x, y, z) => Math.hypot(Math.hypot(x + 0.5, (y - 34.5) * 1.05) - 15, (z + 3) * 1.4) - 1.3;
+  sculpt(m, band, -17, 38, -6, 16, 51, 0, (x, y) => (y >= 48 ? shade(s.phones, 1) : s.phones));
   return m;
 }
 
 function junaTorso32(s) {
-  const m = new VoxelModel();
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
     if (y <= 13 || y >= 26) return s.coatShade;
-    if (z === 7 && (x === -1 || x === 0)) return y >= 22 ? s.coatShade : x === 0 ? P.s6 : s.coatDark; // Reißverschluss
-    if (z === 7 && y >= 14 && y <= 17 && x >= -8 && x <= 7) return y === 17 || x === -8 || x === 7 ? s.coatShade : s.coatDark; // Bauchtasche
-    if (x === -12 || x === 11) return s.coatDark;
-    return s.coat;
+    if (front && (x === -1 || x === 0)) return y >= 22 ? s.coatShade : x === 0 ? P.s6 : s.coatDark; // Reißverschluss
+    if (front && y >= 14 && y <= 17 && x >= -8 && x <= 7) return y === 17 || x === -8 || x === 7 ? s.coatShade : s.coatDark; // Bauchtasche
+    return roundTone(s.coat, n, { light: 0 });
   });
+  sculptCollar(m, s.coatShade, { r: 2.1 });
   // Kordeln der Kapuze
-  m.box(-4, 21, 8, -4, 25, 8, P.a4).box(3, 21, 8, 3, 25, 8, P.a4);
+  for (let y = 21; y <= 25; y++) {
+    onChest(m, -4, y, 1, P.a4);
+    onChest(m, 3, y, 1, P.a4);
+  }
   // Kleiner Rucksack mit Antenne
-  m.box(-6, 16, -12, 5, 25, -9, (x, y) => (y >= 24 ? P.s3 : x === -6 || x === 5 ? P.s3 : P.s4));
+  sculpt(m, roundBox(-0.5, 20.5, -10.5, 6, 5, 2, 1.5), -7, 15, -13, 6, 26, -8, (x, y) => (y >= 24 ? P.s3 : P.s4));
   for (let y = 26; y <= 40; y++) m.set(4, y, -12, y % 5 === 0 ? P.s4 : s.antenna);
   m.box(3, 41, -13, 5, 42, -11, P.f3);
   return m;
@@ -666,26 +679,32 @@ function junaTorso32(s) {
 function yusufHead32(s) {
   const m = baseHead32(s, { beard: true });
   // Graue Schläfen, welliges Haar oben
-  for (const x of [-12, 11]) m.box(x, 36, 1, x, 39, 3, P.s6);
-  m.box(-12, 44, -12, 11, 45, 5, (x, y, z) => ((x + z + (y === 45 ? 1 : 0)) % 3 === 0 ? null : (x + z) % 3 === 1 ? shade(s.hair, 1) : s.hair));
+  for (const x of [-12, 11]) for (let y = 36; y <= 39; y++) for (let z = 1; z <= 3; z++) if (m.has(x, y, z)) m.set(x, y, z, P.s6);
+  sculpt(m, roundBox(-0.5, 42.5, -3, 12.3, 2.6, 10.3, 3.2), -13, 41, -14, 12, 45, 8, (x, y, z, n) => {
+    if (n.y < 0.4 && y <= 42) return null;
+    if ((x + z + (y === 45 ? 1 : 0)) % 3 === 0) return null;
+    return (x + z) % 3 === 1 ? shade(s.hair, 1) : s.hair;
+  });
   return m;
 }
 
 function yusufTorso32(s) {
-  const m = new VoxelModel();
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
-    if (z === 7 && x >= -3 && x <= 2 && y >= 16) return (x === -3 || x === 2) ? s.coatDark : s.shirt; // offener Kittel
-    if (z === 7 && (x === -4 || x === 3) && y >= 16) return s.coatDark;
-    if (y <= 13 || x === -12 || x === 11) return s.coatDark;
-    return s.coat;
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && x >= -3 && x <= 2 && y >= 16) return x === -3 || x === 2 ? s.coatDark : s.shirt; // offener Kittel
+    if (front && (x === -4 || x === 3) && y >= 16) return s.coatDark;
+    if (y <= 13) return s.coatDark;
+    return n.y < -0.4 || n.z < -0.6 ? s.coatDark : s.coat;
   });
+  sculptCollar(m, s.coat, { r: 1.7 });
   // Stethoskop um den Hals, das Bruststück hängt links
-  m.box(-6, 24, 8, 5, 24, 8, (x) => (x === -6 || x === 5 ? s.scope : null));
-  m.box(-6, 17, 8, -6, 23, 8, s.scope).box(-7, 15, 8, -5, 16, 8, P.s8);
-  m.box(5, 21, 8, 5, 23, 8, s.scope);
+  for (let x = -6; x <= 5; x++) if (x === -6 || x === 5) onChest(m, x, 24, 1, s.scope);
+  for (let y = 17; y <= 23; y++) onChest(m, -6, y, 1, s.scope);
+  for (const x of [-7, -6, -5]) for (const y of [15, 16]) onChest(m, x, y, 1, P.s8);
+  for (let y = 21; y <= 23; y++) onChest(m, 5, y, 1, s.scope);
   // Brusttasche mit Stiften
-  m.box(5, 17, 8, 9, 20, 8, (x, y) => (y === 20 ? s.coatDark : s.coat));
-  m.box(6, 21, 8, 6, 22, 8, s.pens).box(8, 21, 8, 8, 22, 8, P.r3);
+  for (let x = 5; x <= 9; x++) for (let y = 17; y <= 20; y++) onChest(m, x, y, 1, y === 20 ? s.coatDark : s.coat);
+  onChest(m, 6, 21, 1, s.pens).set(6, 22, (TORSO.front(6, 22) ?? 7) + 1, s.pens);
+  onChest(m, 8, 21, 1, P.r3).set(8, 22, (TORSO.front(8, 22) ?? 7) + 1, P.r3);
   return m;
 }
 
@@ -693,67 +712,80 @@ function balduinHead32(s) {
   const m = baseHead32(s, { beard: true, plate: false });
   // Kräftiger Bart: steht vorn ab und reicht bis auf die Brust. Darin ein
   // breites Grinsen mit einem Goldzahn
-  m.box(-10, 22, 8, 9, 33, 9, (x, y, z) => {
-    if (y >= 32 && x >= -2 && x <= 1) return s.nose;
-    if (y === 30 && (x === -5 || x === 4)) return P.a0; // Mundwinkel oben
-    if (y === 29 && x >= -4 && x <= 3) return x === -1 || x === 0 ? s.goldTooth : x === -2 || x === 1 ? P.s9 : P.a0; // Zähne, einer aus Gold
-    if (y === 28 && x >= -3 && x <= 2) return P.a0; // Mund
-    if (y >= 32 && (x < -8 || x > 7)) return null;
-    if (y <= 23 && (x + z) % 2) return null; // ausgefranste Bartspitzen
-    return beard32(s, x, y);
-  });
-  m.box(-2, 34, 8, 1, 35, 9, (x, y) => (y === 35 && x === -2 ? P.s9 : x < 0 ? s.skin : s.nose)); // runde Nase
-  m.box(-11, 33, 7, -9, 34, 7, s.cheek).box(8, 33, 7, 10, 34, 7, s.cheek); // rote Wangen – der Wind auf dem See
+  for (let x = -10; x <= 9; x++) {
+    for (let y = 22; y <= 33; y++) {
+      if (y >= 32 && (x < -8 || x > 7)) continue;
+      const z0 = HEAD.front(x, Math.max(28, y));
+      if (z0 === undefined) continue;
+      for (let k = 1; k <= 2; k++) {
+        if (y <= 23 && (x + k) % 2) continue; // ausgefranste Bartspitzen
+        let c = beard32(s, x, y);
+        if (y >= 32 && x >= -2 && x <= 1) c = s.nose;
+        if (y === 30 && (x === -5 || x === 4)) c = P.a0; // Mundwinkel oben
+        if (y === 29 && x >= -4 && x <= 3) c = x === -1 || x === 0 ? s.goldTooth : x === -2 || x === 1 ? P.s9 : P.a0; // Zähne, einer aus Gold
+        if (y === 28 && x >= -3 && x <= 2) c = P.a0; // Mund
+        m.set(x, y, z0 + k - (y < 28 ? 1 : 0), c);
+      }
+    }
+  }
+  for (const x of [-2, -1, 0, 1]) for (const y of [34, 35]) onFace(m, x, y, 1, y === 35 && x === -2 ? P.s9 : x < 0 ? s.skin : s.nose); // runde Nase
+  for (const [x0, x1] of [[-11, -9], [8, 10]]) for (let x = x0; x <= x1; x++) for (const y of [33, 34]) onFace(m, x, y, 0, s.cheek); // rote Wangen
   // Buschige Brauen, außen hochgezogen
-  m.box(-10, 37, 7, -5, 38, 7, s.brow).box(4, 37, 7, 9, 38, 7, s.brow);
-  m.box(-11, 39, 7, -10, 39, 7, s.brow).box(9, 39, 7, 10, 39, 7, s.brow);
+  for (const [x0, x1] of [[-10, -5], [4, 9]]) for (let x = x0; x <= x1; x++) for (const y of [37, 38]) onFace(m, x, y, 1, s.brow);
+  for (const x of [-11, -10, 9, 10]) onFace(m, x, 39, 1, s.brow);
   // Schiebermütze: flach, leicht nach vorn gezogen, Fischgrätmuster, Schirm und Knopf
-  m.box(-14, 42, -14, 13, 43, 9, (x, y, z) => ((x + z) % 4 === 0 || (x - z) % 4 === 0 ? s.capLight : s.cap));
-  m.box(-12, 44, -12, 11, 45, 7, (x, y, z) => (y === 45 && (x === -12 || x === 11 || z === -12) ? null : (x + z) % 4 === 0 ? s.capLight : s.cap));
-  m.box(-12, 40, 8, 11, 41, 11, (x, y, z) => (z === 11 ? shade(s.capDark, -1) : s.capDark)); // Schirm
+  sculpt(m, roundBox(-0.5, 43.5, -2, 13.4, 2.3, 11.5, 2.4), -15, 41, -15, 14, 46, 10, (x, y, z) => ((x + z) % 4 === 0 || (x - z) % 4 === 0 ? s.capLight : s.cap));
+  for (let x = -12; x <= 11; x++) {
+    const z0 = (HEAD.front(Math.max(-11, Math.min(10, x)), 41) ?? 6) + 1;
+    for (let k = 0; k < 3; k++) m.box(x, 40, z0 + k, x, 41, z0 + k, k === 2 ? shade(s.capDark, -1) : s.capDark); // Schirm
+  }
   m.box(-2, 46, -3, 1, 47, 0, s.capDark); // Knopf oben
   return m;
 }
 
 function balduinTorso32(s) {
-  const m = new VoxelModel();
   // Dunkler Seemannsmantel mit zwei Reihen Messingknöpfen
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
-    if (z === 7 && (x === -5 || x === 4) && y % 5 === 2) return s.buttons;
-    if (z === 7 && (x === -1 || x === 0)) return s.coatDark;
-    if (y <= 13 || x === -12 || x === 11) return s.coatDark;
-    return s.coat;
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && (x === -5 || x === 4) && y % 5 === 2) return s.buttons;
+    if (front && (x === -1 || x === 0)) return s.coatDark;
+    if (y <= 13) return s.coatDark;
+    return n.y < -0.4 || n.z < -0.6 || Math.abs(n.x) > 0.8 ? s.coatDark : s.coat;
   });
   // Roter Schal um den Hals, ein Ende hängt vorn herunter, mit Fransen
-  m.box(-12, 26, -10, 11, 29, 9, (x, y, z) => (z >= 8 || z <= -9 || x <= -11 || x >= 10 ? ((x + y + z) % 3 ? s.scarf : s.scarfDark) : null));
-  m.box(-8, 15, 8, -5, 25, 9, (x, y) => (y <= 16 ? ((x & 1) ? s.scarfDark : null) : y % 4 === 0 ? s.scarfDark : s.scarf));
+  sculptCollar(m, (x, y, z) => ((x + y + z) % 3 ? s.scarf : s.scarfDark), { r: 2.4, ring: 8 });
+  for (let x = -8; x <= -5; x++) {
+    for (let y = 15; y <= 25; y++) {
+      if (y <= 16 && !(x & 1)) continue;
+      onChest(m, x, y, 1, y <= 16 ? s.scarfDark : y % 4 === 0 ? s.scarfDark : s.scarf);
+    }
+  }
   // Tragegurte über die Schultern
-  m.box(-10, 17, 8, -10, 25, 8, s.strap).box(9, 17, 8, 9, 25, 8, s.strap);
+  for (let y = 17; y <= 25; y++) {
+    onChest(m, -10, y, 1, s.strap);
+    onChest(m, 9, y, 1, s.strap);
+  }
   // Riesiger Rucksack hinten, mit Deckenrolle obenauf und einer Pfanne an der Seite
-  m.box(-12, 14, -20, 11, 39, -12, (x, y, z) => {
-    if (y <= 15 || x === -12 || x === 11 || z === -20) return s.packDark;
-    if ((y === 24 || y === 25) && z === -12) return s.strap; // Riemen
-    if (z === -20 && y >= 20 && y <= 30 && x >= -6 && x <= 5) return y === 30 || x === -6 || x === 5 ? s.strap : s.pack; // Deckel
-    return (x + y) % 9 === 0 ? s.packDark : s.pack;
+  sculpt(m, roundBox(-0.5, 26.5, -16, 12, 12.5, 4.5, 2.5), -13, 14, -21, 12, 39, -11, (x, y, z, n) => {
+    if (y <= 15) return s.packDark;
+    const back = n.z < -0.6;
+    if ((y === 24 || y === 25) && n.z > 0.5) return s.strap; // Riemen
+    if (back && y >= 20 && y <= 30 && x >= -6 && x <= 5) return y === 30 || x === -6 || x === 5 ? s.strap : s.pack; // Deckel
+    return (x + y) % 9 === 0 ? s.packDark : roundTone(s.pack, n, { light: 0 });
   });
   for (let x = -14; x <= 13; x++) {
-    for (let y = 40; y <= 43; y++) for (let z = -18; z <= -14; z++) {
-      if (Math.hypot(y - 41.5, z + 15.5) > 2.6) continue;
-      m.set(x, y, z, x === -14 || x === 13 ? (Math.floor(Math.hypot(y - 41.5, z + 15.5) * 1.5) % 2 ? s.roll : s.rollLight) : x % 6 === 0 ? s.strap : x % 3 === 0 ? s.rollLight : s.roll);
+    for (let y = 40; y <= 43; y++) {
+      for (let z = -18; z <= -14; z++) {
+        if (Math.hypot(y - 41.5, z + 15.5) > 2.6) continue;
+        m.set(x, y, z, x === -14 || x === 13 ? (Math.floor(Math.hypot(y - 41.5, z + 15.5) * 1.5) % 2 ? s.roll : s.rollLight) : x % 6 === 0 ? s.strap : x % 3 === 0 ? s.rollLight : s.roll);
+      }
     }
   }
   m.ellipsoid(12.5, 24, -16, 1.2, 4, 3.6, s.pan).box(12, 29, -16, 13, 33, -16, s.strap);
   return m;
 }
 
-function balduinLeg32(s) {
-  const m = new VoxelModel();
-  // Feste Stiefel mit Schnürung, dunkle Arbeitshose mit Flicken
-  m.box(0, 0, 0, 7, 1, 9, (x, y, z) => (y === 0 ? P.e1 : z >= 8 ? P.e2 : s.boots));
-  m.box(0, 2, 0, 7, 5, 7, (x, y, z) => (z === 7 && (x === 3 || x === 4) && y % 2 === 0 ? P.e5 : y === 5 ? s.pantsDark : s.boots));
-  m.box(0, 6, 0, 7, 11, 7, (x, y, z) => (x === 0 || z === 0 ? s.pantsDark : z === 7 && x >= 2 && x <= 4 && y >= 7 && y <= 9 ? P.e4 : s.pants));
-  return m;
-}
+/** Balduins Beine (N1): feste Stiefel mit Schnürung, dunkle Arbeitshose mit Flicken. */
+const balduinLeg32 = (s) => sculptLeg({ shoe: s.boots, shoeLight: P.e2, sole: P.e1, low: s.pantsDark, high: { light: s.pants, dark: s.pantsDark }, patch: P.e4, laces: P.e5 });
 
 /**
  * Teile einer Überlebenden-Figur im Maß 1/32 (für npcs.js).

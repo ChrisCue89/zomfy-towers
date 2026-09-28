@@ -1103,6 +1103,23 @@ Glimmen) und mit einzelnen Sätzen in der Welt: ein Gedanke am Waldrand
 Schlurfer heilbar sind, bleibt offen (Dr. Yusuf forscht an Moderkernen),
 ebenso, was Balduin mit den Teilen macht.
 
+### 115. Wie werden Figuren »mehr als Quadrate«? (N1, Wunsch des Auftraggebers)
+**Wunsch:** »3D-Modelle der Zombies und Figuren aufwändiger gestalten. Etwas
+mehr als nur Quadrate … nicht nur die Texturen, die 3D-Modelle selber!«
+**Möglichkeiten:** (a) noch feinere Voxel (1/64 m) – viermal so viele
+Dreiecke, und die Kästen blieben Kästen; (b) glatte Modelle statt Voxel –
+bricht den Look, die Umrisse und die ganze Bauweise; (c) im selben Maß
+**formen statt stapeln**.
+**Entscheidung: (c).** Köpfe, Rümpfe, Glieder, Mützen und der Hund entstehen
+aus Abstandsfeldern (Kapseln, gerundete Quader, Ellipsoide, weich
+verschmolzen), die im Maß 1/32 gefüllt werden; die Farbfunktion bekommt die
+Flächennormale, damit Kuppen Licht und Unterseiten Schatten tragen wie bei
+echten Rundungen. Gesichter, Bärte, Riemen und Taschen sitzen auf der
+vordersten Reihe der Rundung. Arme und Beine bekommen Ellbogen und Knie –
+das macht Haltung und Laufen lebendiger als jede Textur. Gelenke,
+Grundflächen und Kollision bleiben, die Bauzeit aller Figuren steigt um
+etwa eine Viertelsekunde beim Laden. Die Porträts bleiben im Maß 1/16.
+
 ### 116. Welche Elemente der Warcraft-3-Tower-Defense-Karten übernehmen wir? (Spaß-Plan)
 **Auftrag:** »Du prüfst, warum die Spielmechanik der Tower-Defense-Karten aus
 Warcraft 3 so spaßig und beliebt war und wie wir das noch besser auf unser

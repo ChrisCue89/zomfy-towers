@@ -139,6 +139,15 @@ gilt bis auf Weiteres:
   `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
   Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
   flackert das Gras beim Überblenden).
+- **Figuren sind geformt, nicht gestapelt (N1):** Köpfe, Rümpfe, Glieder, Mützen
+  und Hunde entstehen aus Abstandsfeldern (`capsule`, `roundBox`, `blob`,
+  `smoothUnion`, `subtract`, `sculpt` in `voxelKit.js`); die Farbfunktion
+  bekommt die Flächennormale, `roundTone` gibt Kuppen Licht und Unterseiten
+  Schatten. Gemeinsame Menschen-Formen, Glieder mit Knie und Ellbogen und die
+  Vorderkarten `HEAD`/`TORSO` liegen in `src/entities/figureKit.js`. Gesicht,
+  Bart, Brauen, Riemen und Taschen sitzen auf der vordersten Reihe der Rundung
+  (`onFace`, `onChest`, `facePlate`), nie als Brett davor. Neue Figuren und
+  Zombie-Arten so bauen – keine Kästen mehr.
 - Gesichter sind Platten je Ausdruck (M12), nie Überlagerungen vor dem Kopf.
   Alles, was vor Mikas Körper liegt (Gesicht, Lider, Laterne, Werkzeug),
   braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
@@ -200,7 +209,9 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       voxelKit (Baukasten für feine Modelle: Farbstufen,
                       Bretter, Rundholz, Steine, Quader im 1/16-Maß,
                       Kantenlicht; FINE, FINE32)
-src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
+src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
+                      für Menschen: Kopf, Rumpf, Glieder mit Knie/Ellbogen,
+                      Vorderkarten, N1), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
@@ -400,7 +411,11 @@ Grundprinzipien:
    Pilze stehen nie im Begehbaren; Mika denkt am Waldrand mit echter Taste
    einmal am Tag über den Moder nach (am nächsten Tag ein anderer Satz); E am
    Warnpfahl gibt einen Gedanken, keinen Dialog (Bilder: intro-wege,
-   moder-nacht).
+   moder-nacht); ab N1 (Abschnitt `figuren`): Köpfe und Rümpfe von Mika, allen
+   Schlurfer-Arten, den Überlebenden, Balduin und Knopf sind gewölbt (höchstens
+   rund die Hälfte einer Vorderseite in einer Ebene), Mika beugt beim Gehen mit
+   echter Taste die Knie und hält die Laterne (F) mit angewinkeltem Arm (Bild:
+   figuren).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

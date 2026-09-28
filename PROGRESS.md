@@ -5,6 +5,44 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N1 – Figuren aus Formen statt Kästen ✓
+
+**Auftrag:** »3D-Modelle der Zombies und Figuren aufwändiger gestalten. Etwas
+mehr als nur Quadrate. Ich will schönere, bessere Figuren. Nicht nur die
+Texturen, die 3D-Modelle selber!« (OFFENE-FRAGEN 115)
+
+- **Werkzeug:** `voxelKit.js` kann jetzt formen – Kapsel, gerundeter Quader,
+  Ellipsoid, weiche Vereinigung, Abziehen und `sculpt` (füllt eine Form im
+  Maß 1/32 und reicht der Farbfunktion die Flächennormale), `roundTone` gibt
+  Kuppen Licht und Unterseiten Schatten. `figureKit.js` (neu) hält die
+  Menschen-Formen: Kopf (zum Kinn schmaler), Rumpf (runde Schultern, Taille),
+  Arme und Beine mit Ellbogen und Knie, Kragen, Ohren, Lider und die
+  Vorderkarten, auf denen Gesicht, Bart, Riemen und Taschen sitzen.
+- **Mika:** Mütze als Polster mit Umschlag und Bommel, Rucksack mit runden
+  Kanten; beim Gehen beugen sich die Knie, die Laterne
+  hält der angewinkelte Arm vor der Brust, beim Schlag holt der Unterarm aus,
+  auch beim Durchsuchen, Ausruhen, Schaukeln und in der Rolle.
+- **Horde:** alle sechs Arten mit geneigtem Kopf, Buckel, hängenden
+  Schultern und nach vorn greifenden Armen mit hängenden Händen (Flitzer mit
+  Läuferarmen), der Brummer mit Bauch; Kapuze als Schale um den runden Kopf,
+  Warnstreifen und Augen folgen der Wölbung.
+- **Überlebende und Balduin:** Hilde, Bert, Juna, Dr. Yusuf und Balduin mit
+  denselben Formen; Mützen, Bärte, Brillen, Kopfhörer, Stethoskop und Taschen
+  sitzen auf der Rundung.
+- **Knopf:** runder Rumpf mit hellerer Brust und dunklem Sattel, Kopf mit
+  Schnauze, Nase mit Glanz und großen Augen, Schlappohren, gebogener Schwanz,
+  Beine mit Pfoten und Befiederung, Zotteln als Büschel, einzelne graue
+  Haare; der Knopf am Halsband hängt so, dass man ihn von vorn sieht.
+- Die alten Kasten-Bauteile im Maß 1/32 sind entfernt. Bauzeit aller
+  Figuren zusammen etwa +0,25 s beim Laden (Mika nach dem Aufwärmen ~80 ms,
+  das meiste ist das Vernetzen).
+- **Prüfung:** neuer Abschnitt `figuren` – Köpfe und Rümpfe aller 13
+  Figuren sind gewölbt (höchstens rund die Hälfte einer Vorderseite in einer
+  Ebene; die alten Kästen lagen bei 70–100 %), Knie beim Gehen und der
+  angewinkelte Laternenarm mit echten Tasten; Bild figuren.
+
+---
+
 ## Der große Plan ab M16
 
 **Auftrag:** »Lass uns jetzt den großen weiteren Plan bauen – auch mit den

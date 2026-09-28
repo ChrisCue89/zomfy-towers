@@ -8,6 +8,9 @@ import { buildCharacter, MIKA, OPEN_EYES } from './characters.js';
 import { createSilhouetteMaterial } from '../render/materials.js';
 
 const LANTERN_RAISE = -1.3;
+// N1: mit Ellbogen – Oberarm leicht vor, Unterarm angewinkelt
+const LANTERN_UPPER = -0.55;
+const LANTERN_FORE = -0.95;
 export const FLINCH = 0.28; // Dauer des Zusammenzuckens
 const SLIDE_LOOK = 0.7; // so weit schaut Mika seitlich voraus, wenn sie festhängt (m7-r1: 0,4 m – im Haus blieb man zu oft an Möbeln hängen)
 const SLIDE_TURN = 1.15; // Richtung des Ausweichschritts (Bogenmaß zur Wunschrichtung)
@@ -40,7 +43,8 @@ export class Player {
     // Mika hebt sich ab – aber nur halb gerastert: dicht gerastert verschmolz sie mit
     // Schlurfern und Stühlen davor zu einem gelben Klumpen (m12-r1)
     const silhouette = createSilhouetteMaterial(0xffc86a, 0.5);
-    for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
+    for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR', 'kneeL', 'kneeR', 'elbowL', 'elbowR']) {
+      if (!this.character.parts[name]) continue;
       const mesh = this.character.parts[name].children.find((c) => c.isMesh);
       if (!mesh) continue;
       mesh.renderOrder = 2;
@@ -293,6 +297,13 @@ export class Player {
 
     p.legL.rotation.x = s * 0.75 * amt;
     p.legR.rotation.x = -s * 0.75 * amt;
+    // N1: Das Knie beugt sich, wenn das Bein hinten ist (der Fuß hebt ab), die
+    // Ellbogen sind immer ein wenig gebeugt und schwingen mit
+    const knee = (hip) => Math.max(0, hip) * 1.25 + 0.08 * Math.min(1, amt);
+    if (p.kneeL) {
+      p.kneeL.rotation.x = knee(p.legL.rotation.x);
+      p.kneeR.rotation.x = knee(p.legR.rotation.x);
+    }
     p.body.position.y = Math.abs(Math.cos(this.phase)) * 0.035 * amt + Math.sin(this.time * 2.1) * 0.006 * idle;
     // Kopf: nickt im Schritt, schaut im Stehen langsam umher
     p.head.rotation.x = Math.sin(this.phase * 2) * 0.05 * Math.min(1, amt);
@@ -331,6 +342,10 @@ export class Player {
       p.body.position.y = -q * 0.12;
       p.legL.rotation.x = -q * 1.1;
       p.legR.rotation.x = -q * 0.8;
+      if (p.kneeL) {
+        p.kneeL.rotation.x = q * 1.6;
+        p.kneeR.rotation.x = q * 1.4;
+      }
     }
 
     // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl). Drinnen
@@ -350,14 +365,17 @@ export class Player {
       p.armR.rotation.x = angle;
       p.armR.rotation.z = 0.12;
       p.body.rotation.x = q > hit * 0.8 && q < hit + 0.15 ? 0.12 : 0;
+      if (p.elbowR) p.elbowR.rotation.x = q < hit * 0.8 ? -0.5 * easeOut(q / (hit * 0.8)) : lerp(-0.5, 0, Math.min(1, (q - hit * 0.8) / (hit * 0.2))); // ausholen, dann strecken
     } else if (a && a.kind === 'search') {
       const w = Math.sin(a.t * 14);
       p.armR.rotation.x = -0.9 + w * 0.35;
       p.armR.rotation.z = 0.1;
       p.body.rotation.x = 0.28;
+      if (p.elbowR) p.elbowR.rotation.x = -0.6 - w * 0.3;
     } else {
-      p.armR.rotation.x = (shownTool ? -0.35 : 0) + s * 0.6 * amt;
+      p.armR.rotation.x = (shownTool ? -0.25 : 0) + s * 0.6 * amt;
       p.armR.rotation.z = 0.05 + Math.sin(this.time * 2.1) * 0.03 * idle;
+      if (p.elbowR) p.elbowR.rotation.x = (shownTool ? -0.45 : -0.18) + Math.min(0, s * 0.6 * amt) * 0.6;
     }
     // Werkzeug in Ruhe schräg nach vorn getragen (sonst steckt es im Boden);
     // beim Schwung liegt es in der Verlängerung des Arms
@@ -371,6 +389,8 @@ export class Player {
       p.body.rotation.x = 0;
       p.armR.rotation.x = -2.8;
       p.armR.rotation.z = -0.18;
+      if (p.elbowR) p.elbowR.rotation.x = 0;
+      if (p.kneeL) p.kneeL.rotation.x = p.kneeR.rotation.x = 0;
       for (const mesh of Object.values(this.character.tools)) mesh.visible = false;
     }
 
@@ -379,20 +399,27 @@ export class Player {
     lantern.group.visible = this.holdingLantern;
     if (this.holdingLantern) {
       this.lanternSwing = damp(this.lanternSwing, s * 0.25 * amt, 6, dt);
-      p.armL.rotation.x = LANTERN_RAISE + s * 0.06 * amt;
+      // N1: Oberarm etwas vor, Unterarm hoch – die Laterne hängt vor der Brust
+      const upper = p.elbowL ? LANTERN_UPPER : LANTERN_RAISE;
+      const fore = p.elbowL ? LANTERN_FORE : 0;
+      p.armL.rotation.x = upper + s * 0.06 * amt;
       p.armL.rotation.z = -0.08;
-      lantern.group.rotation.x = -LANTERN_RAISE - s * 0.06 * amt + this.lanternSwing;
+      if (p.elbowL) p.elbowL.rotation.x = fore;
+      lantern.group.rotation.x = -upper - fore - s * 0.06 * amt + this.lanternSwing;
       lantern.group.rotation.z = Math.sin(this.time * 1.7) * 0.05;
     } else if (a && a.kind === 'search') {
       p.armL.rotation.x = -0.9 - Math.sin(a.t * 14) * 0.35;
       p.armL.rotation.z = -0.1;
+      if (p.elbowL) p.elbowL.rotation.x = -0.6 + Math.sin(a.t * 14) * 0.3;
     } else {
       p.armL.rotation.x = -s * 0.6 * amt;
       p.armL.rotation.z = -0.05 - Math.sin(this.time * 2.1) * 0.03 * idle;
+      if (p.elbowL) p.elbowL.rotation.x = -0.18 + Math.min(0, -s * 0.6 * amt) * 0.6;
     }
     if (this.riding !== null && !this.holdingLantern) {
       p.armL.rotation.x = -2.8;
       p.armL.rotation.z = 0.18;
+      if (p.elbowL) p.elbowL.rotation.x = 0;
     }
   }
 

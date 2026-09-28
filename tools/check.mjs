@@ -164,6 +164,9 @@ async function runBrowserChecks() {
     // --- 6f. Meilenstein 15: Moder im Wald, Gedanke am Waldrand, Warnpfahl -----------------
     if (want('geschichte')) await runStoryChecks(browser, url);
 
+    // --- 6g. N1: Figuren aus Formen statt Kästen, Knie und Ellbogen ------------------------
+    if (want('figuren')) await runFigureChecks(browser, url);
+
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
       const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
@@ -405,6 +408,150 @@ async function runStoryChecks(browser, url) {
   await step(1500);
   await page.screenshot({ path: join(SHOTS, 'moder-nacht.png') });
   note('  Screenshot: screenshots/moder-nacht.png');
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * N1: Figuren aus Formen statt Kästen. Die Vorderseiten von Kopf und Rumpf
+ * sind bei Mika, allen Schlurfer-Arten, den Überlebenden, Balduin und Knopf
+ * gewölbt: Je Spalte (x, y) liegt die vorderste Fläche höchstens zur Hälfte
+ * in derselben Ebene (Kästen: 70–100 %, geformt: 20–50 %). Mika beugt beim
+ * Gehen (echte Taste) die Knie und hält die Laterne (echte Taste F) mit
+ * angewinkeltem Arm. Bild: alle nebeneinander.
+ */
+async function runFigureChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Figuren (N1)', { viewport: { width: 1920, height: 1080 } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const PEOPLE = ['hilde', 'bert', 'juna', 'yusuf', 'balduin'];
+  await z((people) => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setWeather('klar');
+    window.zomfy.setTime(11, 0);
+    window.zomfy.game.applySettings({ view: 'nah' });
+    for (const id of ['knopf', ...people.filter((p) => p !== 'balduin')]) window.zomfy.setSurvivor(id, 2);
+  }, PEOPLE);
+  await page.waitForTimeout(500);
+  await step(300);
+
+  // Gewölbte Vorderseiten: Anteil der vordersten Flächen, die in einer Ebene liegen
+  const flat = await z((people) => {
+    const g = window.zomfy.game;
+    const share = (geo) => {
+      const p = geo.attributes.position;
+      const n = geo.attributes.normal;
+      const front = new Map();
+      for (let i = 0; i < p.count; i += 4) {
+        if (n.getZ(i) < 0.9) continue;
+        let x = Infinity;
+        let y = Infinity;
+        for (let k = 0; k < 4; k++) {
+          x = Math.min(x, p.getX(i + k));
+          y = Math.min(y, p.getY(i + k));
+        }
+        const key = Math.round(x * 32) * 1000 + Math.round(y * 32);
+        const zz = Math.round(p.getZ(i) * 32);
+        if (!front.has(key) || front.get(key) < zz) front.set(key, zz);
+      }
+      const count = new Map();
+      for (const v of front.values()) count.set(v, (count.get(v) || 0) + 1);
+      return Math.round((Math.max(...count.values()) / front.size) * 100);
+    };
+    const main = (part) => {
+      let best = null;
+      part.traverse((o) => {
+        if (o.isMesh && !o.userData.outline && (!best || o.geometry.attributes.position.count > best.geometry.attributes.position.count)) best = o;
+      });
+      return best.geometry;
+    };
+    const out = {};
+    const add = (name, head, body) => (out[name] = [share(head), share(body)]);
+    const mika = g.player.character.parts;
+    add('mika', main(mika.head), main(mika.torso));
+    for (const [type, kind] of Object.entries(g.horde.kinds)) add(type, kind.meshes.head.geometry, kind.meshes.torso.geometry);
+    const npcs = g.survivors.npcs;
+    for (const id of people) {
+      const parts = npcs.get(id).model.parts;
+      add(id, main(parts.head), main(parts.torso));
+    }
+    const dog = npcs.get('knopf', true).model.parts;
+    add('knopf', main(dog.head), main(dog.body));
+    return out;
+  }, PEOPLE);
+  const flach = Object.entries(flat).filter(([, [k, r]]) => k > 50 || r > 55);
+  const worst = Math.max(...Object.values(flat).flat());
+  if (Object.keys(flat).length >= 13 && !flach.length) note(`✓ Figuren (N1): ${Object.keys(flat).length} Figuren mit gewölbten Köpfen und Rümpfen (höchstens ${worst} % einer Vorderseite in einer Ebene; Kästen hatten bis 100 %)`);
+  else fail(`Figuren: zu flache Vorderseiten ${JSON.stringify(flat)}`);
+
+  // Knie beim Gehen (echte Taste), angewinkelter Arm mit der Laterne (echte Taste F)
+  await z(() => window.zomfy.teleport(0.5, 8.5, 0));
+  await step(200);
+  let knee = 0;
+  let hip = 0;
+  await page.keyboard.down('KeyD');
+  for (let k = 0; k < 10; k++) {
+    await step(60);
+    const j = await z(() => {
+      const p = window.zomfy.game.player.character.parts;
+      return { knee: Math.max(p.kneeL.rotation.x, p.kneeR.rotation.x), hip: Math.max(Math.abs(p.legL.rotation.x), Math.abs(p.legR.rotation.x)) };
+    });
+    knee = Math.max(knee, j.knee);
+    hip = Math.max(hip, j.hip);
+  }
+  await page.keyboard.up('KeyD');
+  await step(600);
+  await z(() => window.zomfy.setTime(21, 30));
+  await step(100);
+  await page.keyboard.press('KeyF');
+  await step(400);
+  const arm = await z(() => {
+    const p = window.zomfy.game.player.character.parts;
+    return { an: window.zomfy.game.player.lanternLit, upper: p.armL.rotation.x, fore: p.elbowL.rotation.x };
+  });
+  if (knee > 0.25 && hip > 0.3 && arm.an && arm.fore < -0.5) note(`✓ Gelenke (N1): beim Gehen beugt Mika die Knie (bis ${knee.toFixed(2)} rad), die Laterne hält der angewinkelte Arm (Ellbogen ${arm.fore.toFixed(2)} rad)`);
+  else fail(`Gelenke: ${JSON.stringify({ knee, hip, arm })}`);
+  await page.keyboard.press('KeyF');
+  await z(() => window.zomfy.setTime(11, 0));
+  await step(200);
+
+  // Bild: vorn Überlebende, Mika, Balduin und Knopf, dahinter alle Schlurfer-Arten
+  await z((people) => {
+    const zo = window.zomfy;
+    const g = zo.game;
+    document.querySelector('#ui').style.visibility = 'hidden';
+    zo.teleport(0.5, 6.0, 0);
+    const npcs = g.survivors.npcs;
+    const row = [...people.slice(0, 3), null, ...people.slice(3), 'knopf'];
+    row.forEach((id, i) => {
+      if (!id) return;
+      const n = npcs.get(id, id === 'knopf');
+      npcs.place(n, -3.4 + i * 1.3, 6.0, 0);
+      n.restFacing = 0;
+      n.model.root.visible = true;
+    });
+    ['schlurfer', 'flitzer', 'schwaermer', 'brummer', 'leuchtpilz', 'anfuehrer'].forEach((t, i) => {
+      const zb = g.horde.spawn(t, { x: -3.6 + i * 1.6, z: 3.4 });
+      zb.state = 'idle';
+      zb.facing = 0;
+    });
+  }, PEOPLE);
+  await page.waitForTimeout(400);
+  await step(300);
+  await z(() => {
+    const npcs = window.zomfy.game.survivors.npcs;
+    for (const n of npcs.list.values()) {
+      n.facing = 0;
+      npcs.sync(n);
+    }
+  });
+  await step(16);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: join(SHOTS, 'figuren.png') });
+  note('  Screenshot: screenshots/figuren.png');
   checkMessages(session);
   await session.context.close();
 }

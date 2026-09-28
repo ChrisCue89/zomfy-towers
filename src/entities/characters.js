@@ -10,7 +10,8 @@ import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial, createGlowMaterial } from '../render/materials.js';
 import { V } from '../world/layout.js';
 import { hash3 } from '../core/rng.js';
-import { shade, edgeLight } from '../world/voxelKit.js';
+import { shade, edgeLight, sculpt, roundBox, blob, roundTone } from '../world/voxelKit.js';
+import { HEAD, TORSO, headShape, torsoShape, facePlate, facLids, sculptArm, sculptLeg, sculptCollar } from './figureKit.js';
 
 /** Aussehen der Hauptfigur Mika. */
 export const MIKA = {
@@ -244,117 +245,6 @@ function buildHead16(spec) {
 // Richtung (gut 2 px je Voxel bei 80 px/m). Gelenke und Versätze sind die
 // Werte der 1/16-Figur mal zwei.
 
-function buildLeg32(spec) {
-  const m = new VoxelModel();
-  const boot = spec.boots;
-  const bootLight = spec.bootsLight;
-  // Sohle, vorn eine helle Kante
-  m.box(0, 0, 0, 7, 0, 9, (x, y, z) => (z === 9 ? P.e2 : P.e1));
-  // Stiefel: Schaft, Kappe vorn mit Glanzpunkt, Schnürung, Ferse dunkler
-  m.box(0, 1, 0, 7, 4, 8, (x, y, z) => {
-    if (z >= 7) {
-      if (y >= 3 && (x === 0 || x === 7)) return null; // Kappe abgerundet
-      if (x === 2 && y === 3) return P.e5; // Glanzpunkt
-      return bootLight;
-    }
-    if (z === 6 && (x === 3 || x === 4) && y >= 2) return (y + x) % 2 ? P.e8 : P.e7; // Schnürung
-    if (z <= 1) return shade(boot, -1); // Ferse
-    return x === 0 ? bootLight : boot;
-  });
-  m.box(0, 5, 0, 7, 5, 7, (x, y, z) => ((x + z) % 3 === 0 ? P.e3 : bootLight)); // umgeschlagener Rand
-  // Hose: Aufschlag, Seitennaht, Knieflicken mit Stichen, oben der Gürtelschatten
-  m.box(0, 6, 0, 7, 11, 7, (x, y, z) => {
-    if (y === 6) return spec.pantsDark;
-    if (y === 11) return spec.pantsDark;
-    if (z === 7 && x >= 2 && x <= 5 && y >= 7 && y <= 9) {
-      const edge = x === 2 || x === 5 || y === 7 || y === 9;
-      return edge && (x + y) % 2 === 0 ? P.s8 : P.b3; // Flicken mit Stichen
-    }
-    if (x === 7 || z === 0) return spec.pantsDark;
-    if (x === 1 && z === 7) return shade(spec.pants, 1); // Bügelfalte hell
-    return spec.pants;
-  });
-  return m;
-}
-
-function buildArm32(spec) {
-  const m = new VoxelModel();
-  // Hand: rundlich, Finger als dunkle Linie vorn, Daumen innen
-  m.box(0, 0, 1, 3, 3, 6, (x, y, z) => {
-    if ((y === 0) && (z === 1 || z === 6)) return null;
-    if (z === 6 && y === 1) return spec.skinShade;
-    if (y === 3) return shade(spec.skin, 1);
-    return spec.skin;
-  });
-  m.set(3, 2, 7, spec.skin).set(3, 1, 7, spec.skinShade); // Daumen
-  m.box(0, 4, 0, 3, 5, 7, (x, y) => (y === 5 ? spec.jacketDark : shade(spec.jacketDark, -1))); // Bündchen
-  // Ärmel: Falten, Schulter heller, Naht hinten
-  m.box(0, 6, 0, 3, 15, 7, (x, y, z) => {
-    if (y >= 14) return spec.jacketLight;
-    if (z === 0) return spec.jacketDark;
-    if ((y === 9 || y === 12) && z >= 4) return spec.jacketDark; // Falten
-    return spec.jacket;
-  });
-  return m;
-}
-
-function buildTorso32(spec) {
-  const m = new VoxelModel();
-  // Jacke
-  m.box(-12, 12, -8, 11, 27, 7, (x, y, z) => {
-    if (y <= 13) return y === 12 ? shade(spec.jacketDark, -1) : spec.jacketDark; // Saum
-    if (y >= 26) return spec.jacketDark; // Kragen
-    if (x === -12 || x === 11) return spec.jacketDark; // Seitennähte
-    if (z === 7) {
-      if (x === -1 || x === 0) return y % 2 ? P.s6 : P.s7; // Reißverschluss
-      if (x === -2) return spec.jacketDark;
-      // Taschen mit Klappe und Knopf
-      const pocket = (x >= -10 && x <= -5) || (x >= 4 && x <= 9);
-      if (pocket && y >= 15 && y <= 20) {
-        if (y === 20) return spec.jacketDark;
-        if (y === 19) return x === -8 || x === 6 ? P.s7 : spec.jacketDark;
-        if (x === -10 || x === 9 || y === 15) return spec.jacketDark;
-        return spec.jacketLight;
-      }
-      if (y === 25 && x > -10 && x < 9) return spec.jacketLight; // Licht unter dem Kragen
-    }
-    if (hash3(x, y, z, 5) > 0.94) return spec.jacketDark; // Stoff
-    return spec.jacket;
-  });
-  // Kragen vorn aufgestellt, Zipper
-  m.box(-6, 26, 8, 5, 27, 8, (x, y) => (y === 27 ? spec.jacketLight : spec.jacketDark));
-  m.box(-1, 23, 8, 0, 24, 8, spec.zipper);
-  // Riemen mit Schnallen
-  for (const sx of [-9, 7]) {
-    m.box(sx, 14, 8, sx + 1, 27, 8, (x, y) => (y % 4 === 0 ? shade(spec.strap, -1) : spec.strap));
-    m.box(sx, 19, 9, sx + 1, 20, 9, (x, y) => (y === 20 ? P.s8 : P.s6));
-  }
-  // Rucksack: Klappe, Riemen mit Schnalle, Seitentasche, Boden dunkler
-  m.box(-9, 13, -14, 8, 27, -9, (x, y, z) => {
-    if (y === 13) return spec.backpackDark;
-    if (y >= 23) return y === 23 ? shade(spec.backpackDark, -1) : spec.backpackDark;
-    if (z === -14 && (x === -1 || x === 0) && y >= 18) return spec.strap;
-    if (z === -14 && x >= -6 && x <= 5 && y >= 15 && y <= 18) return (x === -6 || x === 5 || y === 18) ? spec.backpackDark : spec.backpack; // Außentasche
-    if (x === -9 || x === 8) return spec.backpackDark;
-    return spec.backpack;
-  });
-  m.box(-1, 18, -15, 0, 19, -15, P.s7); // Schnalle
-  // Isomatte oben quer: gerollt, mit Spirale und zwei Riemen
-  for (let x = -13; x <= 12; x++) {
-    for (let y = 28; y <= 32; y++) {
-      for (let z = -18; z <= -13; z++) {
-        const d = Math.hypot(y + 0.5 - 30.5, z + 0.5 - (-15.5));
-        if (d > 2.8) continue;
-        let c = Math.floor(d * 1.6 + x * 0.0) % 2 ? spec.bedroll : P.b2;
-        if (x === -13 || x === 12) c = Math.floor(d) % 2 ? P.b2 : spec.bedroll; // Stirnseite: Spirale
-        if (x === -8 || x === 7) c = P.e3; // Riemen
-        m.set(x, y, z, c);
-      }
-    }
-  }
-  return m;
-}
-
 /** Brauenhöhe außen/innen je Ausdruck (Reihen 37–39). */
 const BROWS32 = {
   normal: [38, 38],
@@ -446,45 +336,106 @@ function faceColor32(spec, x, y, expr) {
   return shadeS;
 }
 
-/** Gesichtsplatte eines Ausdrucks (1/32 m, nur die Voxel der Vorderseite). */
-export function buildFacePlate32(spec, expr) {
+// --- N1: Figuren aus Formen statt Kästen ---------------------------------------
+// Gleiche Größe und Gelenke wie die Figur im Maß 1/32 (M13g), aber aus
+// Abstandsfeldern geformt (voxelKit.sculpt): runder Kopf mit schmalerem Kinn,
+// Mütze als Kuppel mit Rippenbund, Rumpf mit runden Schultern und Rollkragen,
+// Arme mit Ellbogen und Händen mit Daumen, Beine mit Knien und Stiefeln mit
+// runder Kappe. Rundungen bekommen oben und zur Lichtseite eine Stufe Licht,
+// unten Schatten (roundTone). Koordinaten wie oben: absolut für Rumpf und
+// Kopf, je Glied lokal (Arm x 0..3, Bein x 0..7, jeweils y von unten).
+
+/** Glieder im Stil der Figur (figureKit): Mikas Jacke, Hose mit Flicken, Stiefel mit Schnürung. */
+const mikaArm = (spec) => ({ sleeve: spec.jacket, sleeveDark: spec.jacketDark, sleeveLight: spec.jacketLight, cuff: spec.jacketDark, skin: spec.skin, skinShade: spec.skinShade });
+const mikaLeg = (spec) => ({ shoe: spec.boots, shoeLight: spec.bootsLight, sole: P.e1, low: spec.pantsDark, high: { light: spec.pants, dark: spec.pantsDark }, patch: P.b3, laces: P.e8, cuff: spec.bootsLight });
+
+/** Rumpf: Jacke mit runden Schultern, Rollkragen, Taschen, Riemen; Rucksack und Isomatte. */
+function sculptTorso(spec) {
   const m = new VoxelModel();
-  for (let y = 28; y <= 39; y++) for (let x = -12; x <= 11; x++) m.set(x, y, 7, faceColor32(spec, x, y, expr));
+  const front = TORSO.front;
+  sculpt(m, torsoShape, -13, 12, -9, 12, 27, 8, (x, y, z, n) => {
+    if (y <= 13) return y === 12 ? shade(spec.jacketDark, -1) : spec.jacketDark; // Saum
+    const isFront = z === front(x, y);
+    if (isFront) {
+      if (x === -1 || x === 0) return y % 2 ? P.s6 : P.s7; // Reißverschluss
+      if (x === -2) return spec.jacketDark;
+      // Taschen mit Klappe und Knopf
+      const pocket = (x >= -10 && x <= -5) || (x >= 4 && x <= 9);
+      if (pocket && y >= 15 && y <= 20) {
+        if (y === 20) return spec.jacketDark;
+        if (y === 19) return x === -8 || x === 6 ? P.s7 : spec.jacketDark;
+        if (x === -10 || x === 9 || y === 15) return spec.jacketDark;
+        return spec.jacketLight;
+      }
+      // Riemen des Rucksacks über die Brust, mit Schnalle
+      if (x === -9 || x === -8 || x === 7 || x === 8) {
+        if (y === 19 || y === 20) return y === 20 ? P.s8 : P.s6;
+        return y % 4 === 0 ? shade(spec.strap, -1) : spec.strap;
+      }
+    }
+    if (hash3(x >> 1, y >> 1, z >> 1, 5) > 0.93) return spec.jacketDark; // Stoff
+    return roundTone(spec.jacket, n);
+  });
+  // Rollkragen um den Hals
+  sculptCollar(m, (x, y, z, n) => (n.y > 0.4 ? spec.jacketLight : spec.jacketDark));
+  m.box(-1, 25, 7, 0, 26, 7, spec.zipper); // Zipper am Kragen
+  // Rucksack: runde Kanten, Klappe, Außentasche, Riemen mit Schnalle
+  sculpt(m, roundBox(-0.5, 20, -11.5, 9, 7.2, 3.2, 2.2), -10, 12, -15, 9, 28, -8, (x, y, z, n) => {
+    if (y <= 13) return spec.backpackDark;
+    if (y >= 23) return y === 23 ? shade(spec.backpackDark, -1) : spec.backpackDark; // Klappe
+    const back = n.z < -0.6;
+    if (back && (x === -1 || x === 0) && y >= 18) return spec.strap;
+    if (back && x >= -6 && x <= 5 && y >= 15 && y <= 18) return x === -6 || x === 5 || y === 18 ? spec.backpackDark : spec.backpack; // Außentasche
+    return roundTone(spec.backpack, n);
+  });
+  m.box(-1, 18, -15, 0, 19, -15, P.s7); // Schnalle
+  // Isomatte oben quer: gerollt, mit Spirale an den Stirnseiten und zwei Riemen
+  for (let x = -13; x <= 12; x++) {
+    for (let y = 28; y <= 32; y++) {
+      for (let z = -18; z <= -13; z++) {
+        const d = Math.hypot(y + 0.5 - 30.5, z + 0.5 - -15.5);
+        if (d > 2.8) continue;
+        let c = Math.floor(d * 1.6) % 2 ? spec.bedroll : P.b2;
+        if (x === -13 || x === 12) c = Math.floor(d) % 2 ? P.b2 : spec.bedroll;
+        if (x === -8 || x === 7) c = P.e3;
+        m.set(x, y, z, c);
+      }
+    }
+  }
   return m;
 }
 
-function buildHead32(spec) {
+/** Kopf: Rundung aus headShape, Haar hinten und seitlich, Pony mit Strähnen, Ohren, Mütze. */
+function sculptHead(spec) {
   const m = new VoxelModel();
   const hairLight = shade(spec.hair, 1);
-  // Kopf 24 × 16 × 20; die Vorderseite unter dem Pony kommt als Gesichtsplatte dazu
-  m.box(-12, 28, -12, 11, 43, 7, (x, y, z) => {
-    if (z === 7) {
-      if (y < 40) return null; // Gesichtsplatte
-      // Pony mit Strähnen
-      if (y === 40 && (x + 12) % 5 === 2) return null;
+  sculpt(m, headShape, -13, 28, -13, 12, 43, 9, (x, y, z, n) => {
+    if (y <= 39 && z === HEAD.front(x, y)) return null; // Gesichtsplatte
+    const isFront = n.z > 0.55;
+    if (isFront && y >= 40) {
+      if (y === 40 && (x + 12) % 5 === 2) return null; // Pony mit Strähnen
       return (x + y) % 5 === 0 ? hairLight : spec.hair;
     }
-    if (z <= -4 || y >= 38) return (x * 3 + y) % 7 === 0 ? hairLight : spec.hair;
-    if ((x === -12 || x === 11) && y >= 32) return spec.hair; // über den Ohren
-    return y === 28 ? spec.skinShade : spec.skin;
+    if (z <= -4 || y >= 38) return (x * 3 + y) % 7 === 0 ? hairLight : n.y < -0.4 ? shade(spec.hair, -1) : spec.hair;
+    if (Math.abs(n.x) > 0.6 && y >= 32) return spec.hair; // über den Ohren
+    if (y === 28) return spec.skinShade;
+    return roundTone(spec.skin, n, { light: 0 });
   });
   // Ohren
-  for (const x of [-13, 12]) m.box(x, 32, -2, x, 34, 0, (xx, y) => (y === 34 ? spec.skin : spec.skinShade));
-  // Mütze: gerippter Umschlag, Kappe mit Streifen, Bommel
-  const rib = (x) => ((x & 1) === 0 ? spec.hatDark : spec.hat);
-  m.box(-14, 44, -14, 13, 47, 9, (x, y, z) => {
-    const cx = x === -14 || x === 13;
-    const cz = z === -14 || z === 9;
-    if (cx && cz) return null;
-    return y === 47 ? spec.hatLight : rib(x + (z === 9 ? 0 : z));
+  for (const ex of [-13.2, 12.2]) sculpt(m, blob(ex, 33.5, -1.2, 1.3, 1.9, 1.5), -15, 31, -4, 14, 36, 1, (x, y) => (y >= 35 ? spec.skin : spec.skinShade));
+  // Mütze: gerippter Bund, Kuppel mit hellem Streifen, Knubbel, flauschiger Bommel
+  sculpt(m, roundBox(-0.5, 45.6, -2.5, 13.6, 2.1, 11.6, 2.6), -15, 44, -15, 14, 47, 10, (x, y, z, n) => {
+    if (y === 47 && n.y > 0.3) return spec.hatLight;
+    const rib = Math.abs(n.x) > 0.7 ? z : x;
+    return (rib & 1) === 0 ? spec.hatDark : spec.hat;
   });
-  m.box(-12, 48, -12, 11, 53, 7, (x, y, z) => {
-    if ((x === -12 || x === 11) && (z === -12 || z === 7)) return null;
-    if (y === 50 || y === 51) return spec.hatLight;
-    return (x + y) % 2 ? spec.hat : shade(spec.hat, -1);
+  // Kuppel als weiches Kissen (ein Ellipsoid zerfiel in Voxeln zu Stufen wie eine Torte)
+  sculpt(m, roundBox(-0.5, 51.5, -2.5, 12.3, 4.6, 10.3, 4.2), -13, 48, -13, 12, 56, 8, (x, y, z, n) => {
+    if (y === 50 && n.y < 0.5) return spec.hatLight; // ein heller Streifen rundum
+    if (n.y > 0.7) return (x + z) % 2 ? shade(spec.hat, 1) : spec.hat; // gestrickte Kuppe
+    return (x + y + z) % 2 ? spec.hat : shade(spec.hat, -1);
   });
-  m.box(-9, 54, -9, 8, 55, 4, (x, y, z) => ((x === -9 || x === 8) && (z === -9 || z === 4) ? null : spec.hat));
-  m.box(-6, 56, -6, 5, 57, 1, (x, y) => (y === 57 ? spec.hatDark : spec.hat));
+  m.cylinder(-0.5, -2.5, 56, 57, 2.4, (x, y) => (y === 57 ? spec.hatDark : spec.hat));
   m.ellipsoid(-0.5, 60, -2.5, 4.2, 3.6, 4.2, (x, y, z, dx, dy) => {
     const h = hash3(x, y, z, 11);
     if (dx * dx + dy * dy > 0.7 && h < 0.3) return null; // flauschig
@@ -493,15 +444,8 @@ function buildHead32(spec) {
   return m;
 }
 
-/** Lider zum Blinzeln (1/32 m): Haut über den Augen, darunter die Wimpernlinie. */
-function buildLids32(spec) {
-  const m = new VoxelModel();
-  for (const x of [-8, -7, -6, 5, 6, 7]) {
-    m.set(x, 36, 8, spec.skin).set(x, 35, 8, spec.skin);
-    m.set(x, 34, 8, spec.eyes);
-  }
-  return m;
-}
+/** Gesichtsplatte (N1): folgt der Rundung des Kopfs (figureKit.facePlate). */
+const sculptFacePlate = (spec, expr) => facePlate((x, y) => faceColor32(spec, x, y, expr));
 
 /** Laterne im feinen Maß (M12): Boden, vier Streben, Dach mit Bügel; dazwischen das Glas. */
 function buildLantern() {
@@ -586,15 +530,46 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
   const body = new THREE.Group(); // alles oberhalb der Hüfte
   root.add(body);
   const J = (v) => v.map((n) => n * k);
-  const leg = d32 ? buildLeg32 : buildLeg16;
-  const arm = d32 ? buildArm32 : buildArm16;
-  const legL = fine ? part(leg(spec), J([-2, 6, 0]), J([-4, 0, -2])) : part(buildLeg(spec), [-1, 3, 0], [-2, 0, -1]);
-  const legR = fine ? part(leg(spec), J([2, 6, 0]), J([0, 0, -2])) : part(buildLeg(spec), [1, 3, 0], [0, 0, -1]);
+  /** Teil an einem Untergelenk (N1: Ellbogen, Knie) – Lage relativ zum Elterngelenk. */
+  const sub = (parent, parentJoint, model, joint, offset) => {
+    const pivot = part(model, joint, offset);
+    pivot.position.set((joint[0] - parentJoint[0]) * U, (joint[1] - parentJoint[1]) * U, (joint[2] - parentJoint[2]) * U);
+    parent.add(pivot);
+    return pivot;
+  };
+  let legL;
+  let legR;
+  let torso;
+  let head;
+  let armL;
+  let armR;
+  let kneeL = null;
+  let kneeR = null;
+  let elbowL = null;
+  let elbowR = null;
+  if (d32) {
+    // N1: geformte Glieder mit Knie und Ellbogen (Gelenke wie im Maß 1/32)
+    legL = part(sculptLeg(mikaLeg(spec), 'oben'), [-4, 12, 0], [-8, 0, -4]);
+    legR = part(sculptLeg(mikaLeg(spec), 'oben'), [4, 12, 0], [0, 0, -4]);
+    kneeL = sub(legL, [-4, 12, 0], sculptLeg(mikaLeg(spec), 'unten'), [-4, 7, 0], [-8, 0, -4]);
+    kneeR = sub(legR, [4, 12, 0], sculptLeg(mikaLeg(spec), 'unten'), [4, 7, 0], [0, 0, -4]);
+    torso = part(sculptTorso(spec), [0, 12, 0]);
+    head = part(sculptHead(spec), [0, 28, -4]);
+    armL = part(sculptArm(mikaArm(spec), 'oben'), [-14, 28, 0], [-16, 12, -4]);
+    armR = part(sculptArm(mikaArm(spec), 'oben'), [14, 28, 0], [12, 12, -4]);
+    elbowL = sub(armL, [-14, 28, 0], sculptArm(mikaArm(spec), 'unten'), [-14, 20, 0], [-16, 12, -4]);
+    elbowR = sub(armR, [14, 28, 0], sculptArm(mikaArm(spec), 'unten'), [14, 20, 0], [12, 12, -4]);
+  } else {
+    const leg = buildLeg16;
+    const arm = buildArm16;
+    legL = fine ? part(leg(spec), J([-2, 6, 0]), J([-4, 0, -2])) : part(buildLeg(spec), [-1, 3, 0], [-2, 0, -1]);
+    legR = fine ? part(leg(spec), J([2, 6, 0]), J([0, 0, -2])) : part(buildLeg(spec), [1, 3, 0], [0, 0, -1]);
+    torso = fine ? part(buildTorso16(spec), J([0, 6, 0])) : part(buildTorso(spec), [0, 3, 0]);
+    head = fine ? part(buildHead16(spec), J([0, 14, -2])) : part(buildHead(spec), [0, 7, -1]);
+    armL = fine ? part(arm(spec), J([-7, 14, 0]), J([-8, 6, -2])) : part(buildArm(spec), [-3.5, 7, 0], [-4, 3, -1]);
+    armR = fine ? part(arm(spec), J([7, 14, 0]), J([6, 6, -2])) : part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
+  }
   root.add(legL, legR);
-  const torso = fine ? part(d32 ? buildTorso32(spec) : buildTorso16(spec), J([0, 6, 0])) : part(buildTorso(spec), [0, 3, 0]);
-  const head = fine ? part(d32 ? buildHead32(spec) : buildHead16(spec), J([0, 14, -2])) : part(buildHead(spec), [0, 7, -1]);
-  const armL = fine ? part(arm(spec), J([-7, 14, 0]), J([-8, 6, -2])) : part(buildArm(spec), [-3.5, 7, 0], [-4, 3, -1]);
-  const armR = fine ? part(arm(spec), J([7, 14, 0]), J([6, 6, -2])) : part(buildArm(spec), [3.5, 7, 0], [3, 3, -1]);
   body.add(torso, head, armL, armR);
 
   // Gesichter (M12): je Ausdruck eine Platte vorn am Kopf, sichtbar ist nur eine
@@ -602,7 +577,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
   if (fine) {
     faces = {};
     for (const expr of EXPRESSIONS) {
-      const plate = new THREE.Mesh(geo(d32 ? buildFacePlate32(spec, expr) : buildFacePlate16(spec, expr)), material);
+      const plate = new THREE.Mesh(geo(d32 ? sculptFacePlate(spec, expr) : buildFacePlate16(spec, expr)), material);
       plate.position.set(0, -14 * k * U, 2 * k * U);
       plate.castShadow = true;
       plate.receiveShadow = true;
@@ -618,7 +593,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
   let eyelids = null;
   if (fine) {
     let lids = new VoxelModel();
-    if (d32) lids = buildLids32(spec);
+    if (d32) lids = facLids(spec.skin, spec.eyes);
     else {
       for (const x of [-4, -3, 2, 3]) {
         lids.set(x, 18, 4, spec.skin);
@@ -632,13 +607,13 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     head.add(eyelids);
   }
 
-  // Hände: Anker am unteren Ende der Arme. Rechts Werkzeuge/Waffen, links die Laterne.
+  // Hände: Anker am unteren Ende der Arme (N1: am Unterarm). Rechts Werkzeuge/Waffen, links die Laterne.
   const hand = new THREE.Group();
-  hand.position.set(0, -4 * V, 0);
-  armR.add(hand);
+  hand.position.set(0, (elbowR ? -2 : -4) * V, 0);
+  (elbowR || armR).add(hand);
   const handL = new THREE.Group();
-  handL.position.set(0, -4 * V, 0);
-  armL.add(handL);
+  handL.position.set(0, (elbowL ? -2 : -4) * V, 0);
+  (elbowL || armL).add(handL);
 
   // Laterne (zunächst versteckt) in der linken Hand – im Maß der Figur (M13g: 1/32 m)
   const lanternParts = d32 ? buildLantern32() : buildLantern();
@@ -671,7 +646,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
   return {
     root,
     material,
-    parts: { body, torso, head, armL, armR, legL, legR, hand, handL, eyelids, faces },
+    parts: { body, torso, head, armL, armR, legL, legR, elbowL, elbowR, kneeL, kneeR, hand, handL, eyelids, faces },
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
     tools,
   };

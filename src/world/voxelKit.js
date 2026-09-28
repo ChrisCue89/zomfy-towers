@@ -155,3 +155,123 @@ export function edgeLight(m, { up = 1, down = -1, only = null } = {}) {
   for (const [x, y, z, c] of changes) m.set(x, y, z, c);
   return m;
 }
+
+// --- Formen aus Abstandsfeldern (N1): runde Köpfe, Glieder mit Gelenken ------
+// Jede Form ist eine Funktion (x, y, z) → Abstand zur Oberfläche in Voxeln
+// (≤ 0 innen). `sculpt` füllt die Voxel, deren Mitte innen liegt, und reicht
+// der Farbfunktion die Flächennormale weiter – so bekommen Kuppen Licht und
+// Unterseiten Schatten wie bei echten Rundungen, statt Kästen mit Muster.
+
+/** Kapsel von a nach b, Radius ra bei a bis rb bei b (gerundeter Kegelstumpf). */
+export function capsule(ax, ay, az, bx, by, bz, ra, rb = ra) {
+  const ex = bx - ax;
+  const ey = by - ay;
+  const ez = bz - az;
+  const len2 = ex * ex + ey * ey + ez * ez || 1;
+  return (x, y, z) => {
+    const px = x - ax;
+    const py = y - ay;
+    const pz = z - az;
+    const t = Math.max(0, Math.min(1, (px * ex + py * ey + pz * ez) / len2));
+    const dx = px - ex * t;
+    const dy = py - ey * t;
+    const dz = pz - ez * t;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz) - (ra + (rb - ra) * t);
+  };
+}
+
+/** Abgerundeter Quader um (cx, cy, cz) mit halben Kantenlängen h und Rundung r. */
+export function roundBox(cx, cy, cz, hx, hy, hz, r) {
+  return (x, y, z) => {
+    const qx = Math.abs(x - cx) - hx + r;
+    const qy = Math.abs(y - cy) - hy + r;
+    const qz = Math.abs(z - cz) - hz + r;
+    const ox = Math.max(qx, 0);
+    const oy = Math.max(qy, 0);
+    const oz = Math.max(qz, 0);
+    return Math.sqrt(ox * ox + oy * oy + oz * oz) + Math.min(Math.max(qx, qy, qz), 0) - r;
+  };
+}
+
+/** Ellipsoid (angenäherter Abstand, genau genug für Voxel). */
+export function blob(cx, cy, cz, rx, ry, rz) {
+  const m = Math.min(rx, ry, rz);
+  return (x, y, z) => {
+    const dx = (x - cx) / rx;
+    const dy = (y - cy) / ry;
+    const dz = (z - cz) / rz;
+    return (Math.sqrt(dx * dx + dy * dy + dz * dz) - 1) * m;
+  };
+}
+
+/** Vereinigung, weich verschmolzen (k Voxel Übergang) – Schultern, Hüften, Wangen. */
+export function smoothUnion(a, b, k = 2) {
+  return (x, y, z) => {
+    const da = a(x, y, z);
+    const db = b(x, y, z);
+    const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (db - da)) / k));
+    return db + (da - db) * h - k * h * (1 - h);
+  };
+}
+
+/** Vereinigung ohne Übergang. */
+export function union(...fs) {
+  return (x, y, z) => {
+    let d = Infinity;
+    for (const f of fs) d = Math.min(d, f(x, y, z));
+    return d;
+  };
+}
+
+/** a ohne b (Kerben, Mundhöhlen, Risse). */
+export function subtract(a, b) {
+  return (x, y, z) => Math.max(a(x, y, z), -b(x, y, z));
+}
+
+const NORMAL = { x: 0, y: 0, z: 0 };
+
+/**
+ * Füllt im Bereich [x0..x1, y0..y1, z0..z1] alle Voxel, deren Mitte innen
+ * liegt. `color(x, y, z, n, d)` bekommt die Normale n (Einheitsvektor aus dem
+ * Gefälle) und den Abstand d; `null` lässt den Voxel frei.
+ */
+export function sculpt(m, f, x0, y0, z0, x1, y1, z1, color) {
+  const fn = typeof color === 'function';
+  for (let x = x0; x <= x1; x++) {
+    for (let y = y0; y <= y1; y++) {
+      for (let z = z0; z <= z1; z++) {
+        const cx = x + 0.5;
+        const cy = y + 0.5;
+        const cz = z + 0.5;
+        const d = f(cx, cy, cz);
+        if (d > 0) continue;
+        if (!fn) {
+          m.set(x, y, z, color);
+          continue;
+        }
+        const e = 0.5;
+        const gx = f(cx + e, cy, cz) - f(cx - e, cy, cz);
+        const gy = f(cx, cy + e, cz) - f(cx, cy - e, cz);
+        const gz = f(cx, cy, cz + e) - f(cx, cy, cz - e);
+        const len = Math.hypot(gx, gy, gz) || 1;
+        NORMAL.x = gx / len;
+        NORMAL.y = gy / len;
+        NORMAL.z = gz / len;
+        const c = color(x, y, z, NORMAL, d);
+        if (c !== null && c !== undefined) m.set(x, y, z, c);
+      }
+    }
+  }
+  return m;
+}
+
+/**
+ * Tönung einer Rundung wie im gezeichneten Pixel-Look: Kuppe und die dem
+ * Licht (Westen, oben) zugewandte Seite eine Stufe heller, Unterseite und
+ * Rückseite eine Stufe dunkler. `rim` hebt die Silhouette zur Kamera leicht an.
+ */
+export function roundTone(base, n, { light = 1, dark = -1 } = {}) {
+  if (n.y > 0.62 || (n.y > 0.25 && n.x < -0.45)) return shade(base, light);
+  if (n.y < -0.5 || n.z < -0.75) return shade(base, dark);
+  return base;
+}
