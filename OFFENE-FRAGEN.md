@@ -1019,6 +1019,16 @@ Goldenes Gras bräuchte eine eigene Oliv-/Goldrampe in der Palette – das
 verändert den ganzen Look und gehört in eine eigene Runde mit dem
 Auftraggeber.
 
+### 111. Doch alles im feinen Maß? (M13, zu Nr. 104)
+**Entscheidung:** Ja. Nr. 104 ließ Gelände, Bäume, Felsen und Gebäude bei
+1/8 m, weil man dort keinen Unterschied sähe. Auf den Bildern sieht man ihn
+aber: Der Sessel am Feuer ist ein oranger Klotz, am Haus sind Bretter,
+Fenster und Dach nur angedeutet, und der Auftraggeber fragte erneut nach
+mehr Details. Deshalb kommen in M13 alle Modelle draußen ins feine Maß
+(1/16 m, 5 px); nur der Boden selbst bleibt ein Raster. Weil die Kamera nur
+Ober- und Südseiten sieht und viele Modelle als Instanzen gezeichnet werden,
+bleibt die Dreieckszahl beherrschbar – sie wird vorher und nachher gemessen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

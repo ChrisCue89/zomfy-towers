@@ -5,6 +5,17 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 13 – Detailgrad (begonnen)
+
+**Neu im Plan (Frage des Auftraggebers):** Der Detailgrad bekommt einen
+eigenen Meilenstein vor der Balance. Drinnen (M11) und alles Kleine und
+Lebendige (M9.1, M12) sind schon im feinen Maß; draußen sind Haus, Hof,
+Requisiten und Natur noch grob. Die werden jetzt Schritt für Schritt aus
+1/16-m-Voxeln neu gebaut (OFFENE-FRAGEN 111). Die Balance wird M14, an den
+Vorschlägen dafür ändert sich nichts.
+
+---
+
 ## Feinschliff nach m12-r1
 
 Was die Testrunde als Feinschliff fand und ohne Balance zu lösen war:

@@ -869,10 +869,32 @@ etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
   besorgt, entschlossen, normal), die Überlebenden lächeln, wenn Mika bei
   ihnen steht (Nr. 103). Laterne und Turmgeschosse im feinen Maß (Nr. 104).
 
-### Meilenstein 13 – Balance und Testrunden
+### Meilenstein 13 – Detailgrad: alles im feinen Maß
 
-- Balance über zehn und mehr Nächte an den Wegen, Testrunden mit allen
-  Personas, Feinschliff.
+Wunsch des Auftraggebers (nach M8 und erneut nach M12): Man soll erkennen,
+was was ist, statt es zu raten oder zu lesen. M11 und M12 haben das drinnen
+und für alles Kleine und Lebendige gelöst; draußen sind Haus, Hof,
+Requisiten und Natur noch aus groben 1/8-m-Klötzen (OFFENE-FRAGEN 111).
+
+- **Zuhause und Hof:** das Haus von außen in allen fünf Stufen (Bretter,
+  Schindeln, Fensterrahmen mit Sprossen, Tür mit Klinke, Kamin), Veranda,
+  Feuerstelle, Sessel, Bänke, Hackklotz, Wäscheleine, Wegweiser, Briefkasten,
+  Regentonne, Beete, Schaukel-Eiche; alles Gebaute (Werkbank, Lampe, Bank,
+  Beet, Zelte, Holzlager, Funkturm).
+- **Wege und Wasser:** Steg mit Pfählen und Pollern, Wrack, Leuchtmast,
+  Warnpfähle, Schrotthaufen, Steinbrocken, Kiesel, Äste, Stümpfe, Kisten,
+  Treibholz, Laubhaufen.
+- **Natur:** Bäume mit Rinde, Ästen und Laub in Büscheln, Büsche, Felsen,
+  Grasbüschel; ein ruhigerer Boden, damit sich die Dinge abheben.
+- **Horde und Türme:** Schlurfer-Arten auf einen Blick unterscheidbar
+  (Kleidung, Haltung, Merkmale), Türme mit mehr Teilen je Stufe.
+- Grundflächen und Kollision bleiben, wie sie sind; die Bildzeit wird vorher
+  und nachher gemessen. Testrunde mit der Frage »Erkennt man, was was ist?«.
+
+### Meilenstein 14 – Balance und Testrunden
+
+- Balance über zehn und mehr Nächte an den Wegen (Vorschläge liegen beim
+  Auftraggeber), Testrunden mit allen Personas, Feinschliff.
 
 ## 9. Ideen-Parkplatz
 
