@@ -120,7 +120,7 @@ export class Combat {
     const arc = Math.cos((w.arc * Math.PI) / 180);
     let best = null;
     for (const z of this.game.horde.list) {
-      if (z.state === 'dying') continue;
+      if (z.state === 'dying' || z.y < -0.5) continue; // M22: nicht unter der Erde
       const dx = z.x - p.x;
       const dz = z.z - p.z;
       const d = Math.hypot(dx, dz);
@@ -144,13 +144,21 @@ export class Combat {
     const found = [];
     for (const z of g.horde.list) {
       // Auch Schlurfer, die noch aus dem Wald kommen: was Mika erreicht, trifft sie (m3-r2)
-      if (z.state === 'dying') continue;
+      if (z.state === 'dying' || z.y < -0.5) continue; // M22: der Gräber unter der Erde nicht
       const dx = z.x - p.x;
       const dz = z.z - p.z;
       const d = Math.hypot(dx, dz);
       if (d > w.reach + z.def.radius) continue;
       if (d > 0.3 && (dx * fx + dz * fz) / d < arc) continue;
       found.push({ z, d });
+    }
+    // Sporenkapseln der Brüter (M22): ein Schlag zertritt sie
+    for (const pod of g.horde.podsNear(p.x, p.z, w.reach + 0.35)) {
+      const dx = pod.x - p.x;
+      const dz = pod.z - p.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 0.3 && (dx * fx + dz * fz) / d < arc) continue;
+      g.horde.hitPod(pod, 99);
     }
     if (!found.length) {
       this.combo = 0;

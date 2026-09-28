@@ -6,6 +6,9 @@
 
 import * as THREE from 'three';
 
+const _m = new THREE.Matrix4();
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+
 const VERT = /* glsl */ `
 varying vec2 vUv;
 void main() {
@@ -60,6 +63,8 @@ export class LightPools {
     this.geometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     this.group = new THREE.Group();
     this.group.name = 'Lichtinseln';
+    // Wo es nachts hell ist (M22: Nebelwelle – nur im Licht sieht man die Horde)
+    this.spots = [];
     this.group.renderOrder = 2;
     scene.add(this.group);
   }
@@ -73,11 +78,15 @@ export class LightPools {
     glow.renderOrder = 3;
     mesh.add(glow);
     this.group.add(mesh);
+    this.spots.push({ x, z, r: radius, mesh });
     return mesh;
   }
 
-  /** Viele gleiche Lichtinseln auf einmal (Fackeln an den Wegen): zwei Zeichenaufrufe für alle. */
-  addMany(points, radius) {
+  /**
+   * Viele gleiche Lichtinseln auf einmal (Fackeln an den Wegen): zwei Zeichenaufrufe für alle.
+   * @param {THREE.InstancedMesh} [flames] die Flammen dazu (gleiche Reihenfolge) – erlöschen mit (M22)
+   */
+  addMany(points, radius, flames = null) {
     const make = (material, order) => {
       const mesh = new THREE.InstancedMesh(this.geometry, material, points.length);
       const m = new THREE.Matrix4();
@@ -90,11 +99,66 @@ export class LightPools {
     const mesh = make(this.material, 2);
     mesh.add(make(this.addMaterial, 3));
     this.group.add(mesh);
+    points.forEach((p, i) => this.spots.push({ x: p.x, z: p.z, r: radius, mesh, i, flames }));
     return mesh;
   }
 
   remove(mesh) {
     this.group.remove(mesh);
+    this.spots = this.spots.filter((s) => s.mesh !== mesh);
+  }
+
+  /** Liegt die Stelle in einer Lichtinsel? (M22) */
+  litAt(x, z) {
+    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= s.r * s.r) return true;
+    return false;
+  }
+
+  /** Brennt im Umkreis `r` noch ein Licht? (Die Laternenhexe greift nur danach, M22.) */
+  litNear(x, z, r) {
+    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= r * r) return true;
+    return false;
+  }
+
+  /** Lichtraub (M22): Jede Lichtinsel im Umkreis erlischt bis `until` (Spieluhr in s). Gibt zurück, wie viele. */
+  steal(x, z, r, until) {
+    let n = 0;
+    for (const s of this.spots) {
+      if (s.off || (x - s.x) ** 2 + (z - s.z) ** 2 > r * r) continue;
+      s.off = until;
+      this.show(s, false);
+      n++;
+    }
+    return n;
+  }
+
+  /** Gestohlenes Licht kehrt zurück, sobald seine Zeit um ist (oder alles auf einmal: now = Infinity). */
+  restore(now) {
+    for (const s of this.spots) {
+      if (!s.off || s.off > now) continue;
+      s.off = 0;
+      this.show(s, true);
+    }
+  }
+
+  show(s, on) {
+    if (s.i === undefined) {
+      s.mesh.visible = on;
+      return;
+    }
+    // Instanzen (Fackeln): auf null schrumpfen bzw. zurück an ihren Platz, die Flamme mit
+    const pool = on ? _m.makeScale(s.r * 2, 1, s.r * 2).setPosition(s.x, 0.02, s.z) : ZERO;
+    s.mesh.setMatrixAt(s.i, pool);
+    s.mesh.instanceMatrix.needsUpdate = true;
+    const glow = s.mesh.children[0];
+    if (glow) {
+      glow.setMatrixAt(s.i, pool);
+      glow.instanceMatrix.needsUpdate = true;
+    }
+    if (s.flames) {
+      s.flames.setMatrixAt(s.i, on ? _m.makeTranslation(s.x, 0, s.z) : ZERO);
+      s.flames.instanceMatrix.needsUpdate = true;
+    }
   }
 
   update(lampLevel) {

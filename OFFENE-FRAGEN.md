@@ -1406,6 +1406,42 @@ der Morgenbericht erinnert an eine liegende Kiste. **Warum:** »Nachts einen
 goldenen Schlurfer jagen, morgens die Kiste öffnen« (DESIGN M21) – das Öffnen
 ist ein eigener kleiner Gang, kein Nebenbei-Aufsammeln.
 
+### 143. Wie unsichtbar ist die Nebelwelle? (M22)
+**Entscheidung:** Außerhalb von Licht sieht man nur die leuchtenden Augen;
+Türme zielen nicht auf sie, Flächenschaden (Kürbis, Glocke, Fallen) trifft
+trotzdem. Licht sind alle Lichtinseln (Lampen, Laternen am Tor und an
+Barrikaden, Fackeln am Weg, Laternentürme, Leuchtmast) und Mikas Laterne im
+Umkreis von 3,5 m; wer im Licht war, bleibt noch eine Sekunde sichtbar, der
+Laternenblitz holt alle ringsum für vier Sekunden heraus. **Warum:** Die Frage
+lautet »Wo ist es bei dir hell?« – die Antwort (Laternen an den Weg) soll man
+am Abend noch bauen können, und die Augen zeigen, dass dort etwas ist.
+
+### 144. Ab wann kommen die neuen Arten, und was können sie? (M22)
+**Entscheidung:** Schildträger ab Nacht 4 (Tür fängt von vorn drei Viertel
+ab, bis sie nach 140 Schaden bricht), Moderfalter ab 6 (fliegt über
+Barrikaden, Fallen und Flächen am Boden treffen ihn nicht), Gräber ab 7
+(buddelt unter Barrikaden durch, Wall und Tor muss er einschlagen),
+Lichtfresser ab 8 (löscht Lichter bis zum Morgen, auch Mikas Laterne),
+Brüter ab 9 (Sporenkapseln, aus denen nach 5 s drei Schwärmer schlüpfen –
+ein Schlag oder der Laternenblitz zerstört sie). Sie ersetzen mit eigenem
+Zufall einen Teil der Schlurfer und Flitzer (10 % ab Nacht 4, bis 30 %).
+**Warum:** Jede Art stellt eine Frage, auf die ein anderer Turm, eine andere
+Stelle oder Mika selbst die Antwort ist; die ersten Nächte bleiben, wie sie
+waren.
+
+### 145. Wie kämpfen die Bosse? (M22)
+**Entscheidung:** Jede fünfte Nacht führt ein Boss die letzte Welle an (5
+Holzfäller, 10 Pilzmutter, 15 Laternenhexe, 20 Moosriese, dann von vorn mit
+60 % mehr Leben je Runde). Angriffe kommen alle 9–12 s, aber nur, wenn sie
+etwas treffen (sonst wartet der Boss höchstens ein paar Sekunden): 1,2–1,5 s
+Ankündigung mit blinkendem Warnkreis und Wort, dann der Schlag. Holzfäller:
+Hieb auf Barrikaden und Mika, danach stürmt er; Pilzmutter: Sporenwolke heilt
+die Horde, Schwärmer schlüpfen; Laternenhexe: stiehlt Licht für 25 s und
+heilt sich daran; Moosriese: Stampfer, zerfällt in drei. Ein eigener Balken
+oben im Bild, ein eigenes Musikstück. **Warum:** Wie in den Hero-Defense-Karten
+soll man den Schlag kommen sehen und ausweichen können – ein Boss ist ein
+Kampf, kein dicker Schlurfer.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

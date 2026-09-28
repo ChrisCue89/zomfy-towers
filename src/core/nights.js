@@ -6,6 +6,7 @@
 
 import { T } from '../data/texts.js';
 import { planNight, planDay, NIGHT_START, NIGHT_END, MUT_BONUS } from '../data/waves.js';
+import { bossOfNight, BOSS_ORDER as BOSS_TYPES } from '../data/bosses.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
 import { towerStatsOf } from '../data/towers.js';
@@ -18,7 +19,7 @@ const PLAN_AHEAD = 60;
 const CALL_AHEAD = 60;
 const PLAN_ROWS = 4;
 /** Arten, die der Nachtplan mit Juna nennt (die übrigen sind der Normalfall). */
-const HEAVY = ['anfuehrer', 'brummer', 'leuchtpilz'];
+const HEAVY = ['anfuehrer', 'brummer', 'leuchtpilz', 'moderfalter', 'graeber', 'schildtraeger', 'lichtfresser', 'brueter', 'holzfaeller', 'pilzmutter', 'laternenhexe', 'moosriese'];
 
 export class Nights {
   /** @param {import('./game.js').Game} game */
@@ -155,6 +156,8 @@ export class Nights {
       at: w.at,
       entries: w.entries,
       heavy: juna ? HEAVY.filter((t) => w.spawns.some((s) => s.type === t)) : [],
+      trait: w.trait || null, // M22: Wellenmerkmal (Nebelwelle …) – immer angekündigt
+      boss: w.spawns.find((s) => BOSS_TYPES.includes(s.type))?.type || null, // … und der Boss
     }));
     return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.canCall(), evening: !this.active, juna };
   }
@@ -216,10 +219,15 @@ export class Nights {
       while (night.wave < plan.waves.length && minute >= plan.waves[night.wave].at) {
         const wave = plan.waves[night.wave];
         night.wave++;
-        for (const s of wave.spawns) this.queue.push({ ...s, bonus: Boolean(wave.called) });
+        for (const s of wave.spawns) this.queue.push({ ...s, bonus: Boolean(wave.called), trait: wave.trait || null });
         // Das Banner sagt es groß (Welle und Richtung), die Nachtleiste behält es –
         // eine zusätzliche Meldung lag nur darüber (m3-r2)
-        g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
+        g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}${wave.trait ? ` · ${T.wellen.merkmale[wave.trait][0]}` : ''}`);
+        // M22: Beim ersten Mal erklärt Mika das Merkmal
+        if (wave.trait && !st.flags[`merkmal-${wave.trait}`]) {
+          st.flags[`merkmal-${wave.trait}`] = true;
+          g.hud.toast(T.wellen.merkmale[wave.trait][1], 'warnung', 7);
+        }
         g.sound.play('welle');
         g.player.express('staunen', 1.4); // da kommen sie (M12)
         // Die erste Welle überhaupt: Mikas Laternenblitz vorstellen (M16)
@@ -251,7 +259,7 @@ export class Nights {
       if (s.delay > 0) continue;
       this.queue.splice(i, 1);
       const p = this.plan;
-      this.spawnGroup(s.type, s.entry, 1, { hpFactor: p ? p.hpFactor : 1, speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1), champion: s.champion || null });
+      this.spawnGroup(s.type, s.entry, 1, { hpFactor: (p ? p.hpFactor : 1) * (s.hp || 1), speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1), champion: s.champion || null, trait: s.trait || null });
     }
 
     // Geschafft?
@@ -273,14 +281,20 @@ export class Nights {
     return null;
   }
 
-  spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1, champion = null } = {}) {
+  spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1, champion = null, trait = null } = {}) {
     const g = this.game;
     const entry = g.world.pathing.entries[entryName];
     for (let k = 0; k < count; k++) {
       const jitter = (k - (count - 1) / 2) * 0.7;
       const from = { x: entry.from.x + jitter, z: entry.from.z + jitter * 0.5 };
-      const z = g.horde.spawn(type, { from, entry, hpFactor, speedFactor, lootFactor, day, champion });
+      const z = g.horde.spawn(type, { from, entry, hpFactor, speedFactor, lootFactor, day, champion, trait });
       if (z.champion) g.onChampion(z); // M21: ein Champion kommt – groß ansagen
+      if (z.def.boss) g.onBoss(z); // M22: der Boss der Nacht
+      else if (T.arten.neu[type] && !g.state.flags[`art-${type}`]) {
+        // M22: Eine neue Art erklärt Mika beim ersten Auftritt
+        g.state.flags[`art-${type}`] = true;
+        g.hud.toast(T.arten.neu[type], 'warnung', 7);
+      }
     }
   }
 
@@ -292,7 +306,10 @@ export class Nights {
     const preLoss = st.world.dayEvents?.day === n ? Math.round(st.world.dayEvents.lost || 0) : 0;
     st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false, shift: 0, called: 0, towers: {} };
     this.game.hud.toast(T.horde.nachtBeginnt(n), 'mond', 4);
-    if (n % 5 === 0) this.game.hud.toast(T.horde.anfuehrerNacht, 'warnung', 5);
+    // Jede fünfte Nacht: der Boss (M22) – schon beim Einbruch der Nacht angesagt
+    const boss = bossOfNight(n);
+    if (boss) this.game.hud.toast(T.bosse.heuteNacht(T.bosse[boss].name), 'warnung', 6);
+    else if (n % 5 === 0) this.game.hud.toast(T.horde.anfuehrerNacht, 'warnung', 5);
   }
 
   /** Nacht beenden: gewonnen (letzte Welle besiegt, Morgengrauen) oder verloren. */
@@ -345,7 +362,7 @@ export class Nights {
 
   /** Zum Speichern: noch ausstehende Schlurfer der laufenden Welle. */
   toState() {
-    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1), ...(s.bonus ? { bonus: true } : {}), ...(s.champion ? { champion: s.champion } : {}) }));
+    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1), ...(s.bonus ? { bonus: true } : {}), ...(s.champion ? { champion: s.champion } : {}), ...(s.trait ? { trait: s.trait } : {}), ...(s.hp && s.hp !== 1 ? { hp: s.hp } : {}) }));
   }
 
   load(queue) {

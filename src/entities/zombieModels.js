@@ -38,6 +38,53 @@ const SPECS = {
     skin: P.t2, skinShade: P.t1, shirt: P.g3, shirtDark: P.g2, pants: P.e2, pantsDark: P.e1, feet: P.t1,
     moss: P.g4, eyes: 0xff9a4a, hair: P.e2, extra: 'krone', cape: true,
   },
+  // --- Neue Arten (M22) ---
+  // Moderfalter: eine pflaumenfarbene Motte mit Augenflecken auf den Flügeln (eigener Bauplan)
+  moderfalter: {
+    skin: P.d3, skinShade: P.d2, shirt: P.d3, shirtDark: P.d2, pants: P.d1, pantsDark: P.d0, feet: P.d1,
+    moss: P.g5, eyes: 0xf7e0a0, hair: P.d4, extra: null, moth: true,
+  },
+  // Gräber: Latzhose voller Erde, Schiebermütze, eine Schaufel in der Hand
+  graeber: {
+    skin: P.t4, skinShade: P.t3, shirt: P.e5, shirtDark: P.e4, pants: P.e3, pantsDark: P.e2, feet: P.e2,
+    moss: P.g5, eyes: 0xffe08a, hair: P.e2, extra: 'kappe', dirt: true, tool: 'schaufel',
+  },
+  // Schildträger: ein Kochtopf als Helm, vor sich eine alte Tür mit Knauf
+  schildtraeger: {
+    skin: P.t3, skinShade: P.t2, shirt: P.s4, shirtDark: P.s3, pants: P.e3, pantsDark: P.e2, feet: P.s2,
+    moss: P.g5, eyes: 0xffd070, hair: P.e1, extra: 'topf', door: true,
+  },
+  // Lichtfresser: graublaue Kutte mit Ruß, bleiche Augen, ein Kerzenlöscher an langem Stiel
+  lichtfresser: {
+    skin: P.n6, skinShade: P.n5, shirt: P.n3, shirtDark: P.n2, pants: P.n2, pantsDark: P.n1, feet: P.n1,
+    moss: P.g4, eyes: 0xe8f8ff, hair: P.n1, extra: 'kutte', soot: true, tool: 'loescher',
+  },
+  // Brüter: aufgedunsen, mit violett glimmenden Sporensäcken auf dem Rücken
+  brueter: {
+    skin: P.g4, skinShade: P.g3, shirt: P.d3, shirtDark: P.d2, pants: P.d1, pantsDark: P.d0, feet: P.g2,
+    moss: P.g6, eyes: 0xd8ffa0, hair: P.g4, extra: 'sporen', wide: true, sacs: true,
+  },
+  // --- Bosse (M22): je eine eigene Silhouette ---
+  // Der Holzfäller: rot-schwarz kariertes Hemd, Bart, Pudelmütze, die Axt erhoben
+  holzfaeller: {
+    skin: P.t3, skinShade: P.t2, shirt: P.r3, shirtDark: P.r2, pants: P.b1, pantsDark: P.b0, feet: P.e2,
+    moss: P.g4, eyes: 0xffb050, hair: P.e2, extra: 'muetze', plaid: true, beard: true, tool: 'axt', wide: true,
+  },
+  // Die Pilzmutter: pflaumenfarbenes Kleid, Moosumhang, ein riesiger leuchtender Pilzhut
+  pilzmutter: {
+    skin: P.g4, skinShade: P.g3, shirt: P.d2, shirtDark: P.d1, pants: P.d1, pantsDark: P.d0, feet: P.g2,
+    moss: P.g5, eyes: 0xd8ffa0, hair: P.g3, extra: 'mutterhut', cape: true, dress: true,
+  },
+  // Die Laternenhexe: dunkle Kutte mit Sternen, spitzer Hut, der Laternenstab
+  laternenhexe: {
+    skin: P.t4, skinShade: P.t3, shirt: P.d1, shirtDark: P.d0, pants: P.d0, pantsDark: P.n1, feet: P.n1,
+    moss: P.g4, eyes: 0xfff2c4, hair: P.s7, extra: 'hexenhut', robe: true, tool: 'stab',
+  },
+  // Der Moosriese: Stein und Moos, Farne auf dem Kopf, breit wie ein Tor
+  moosriese: {
+    skin: P.g3, skinShade: P.g2, shirt: P.g4, shirtDark: P.g3, pants: P.s4, pantsDark: P.s3, feet: P.s3,
+    moss: P.g6, eyes: 0xb6f07a, hair: P.g4, extra: 'farn', stone: true, wide: true,
+  },
 };
 
 function buildLeg(s, seed) {
@@ -141,6 +188,14 @@ function buildHeadGlow(s) {
     // Reflektorstreifen am Warnkegel: nachts erkennt man den Brummer sofort
     m.box(-2, 12, -2, 1, 12, 0, (x, y, z) => (z === 0 || x === -2 || x === 1 ? 0xf4f0e0 : null));
   }
+  if (s.extra === 'mutterhut') {
+    // Pilzmutter (M22): ein riesiger, violett leuchtender Hut mit hellen Tupfen
+    m.ellipsoid(-0.5, 45, -2.5, 20, 14, 18, (x, y, z, dx, dy) => {
+      if (y < 45) return null;
+      if ((x * 3 + z * 5 + y) % 11 === 0 && dy > 0.2) return 0xf7f3ea; // helle Tupfen
+      return dy > 0.7 ? 0xc4a8f0 : dy > 0.35 ? 0xa88fd0 : 0x8a6cc0;
+    });
+  }
   if (s.extra === 'leuchthut') {
     m.box(-4, 11, -4, 3, 11, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -4 || z === 2) ? null : 0x6cc0ae));
     m.box(-3, 12, -3, 2, 12, 1, (x, y, z) => ((x + z) % 3 === 0 ? 0xf7f3ea : 0x8ee0cc));
@@ -163,7 +218,7 @@ const VEST = 0xf2b632; // Warnweste
 const REFLECT = 0xf4f0e0; // Leuchtstreifen (Glüh-Material)
 
 /** Wie breit ist die Art (Voxel links/rechts zusätzlich)? */
-const widthOf = (s) => (s.armor ? 2 : s.extra === 'kapuze' ? -1 : 0);
+const widthOf = (s) => (s.armor || s.wide ? 2 : s.extra === 'kapuze' ? -1 : 0);
 
 function buildLeg16(s, seed) {
   const m = new VoxelModel();
@@ -463,9 +518,10 @@ function sculptZombieLeg(s, seed) {
   return m;
 }
 
-function sculptZombieArm(s, seed) {
+function sculptZombieArm(s, seed, right = false) {
   const m = new VoxelModel();
   const runner = s.extra === 'kapuze';
+  if (right && s.tool) addTool(m, s.tool); // M22: Axt bzw. Laternenstab in der rechten Hand
   // Oberarm im Ärmel, unten ausgefranst; der Brummer hat ein Schulterblech
   sculpt(m, capsule(2, 15.2, 4, 2, 8.6, 4, 2.5, 2.2), -1, 8, 1, 5, 15, 7, (x, y, z, n) => {
     if (s.armor && y >= 13) return n.y > 0.4 ? P.s6 : P.s5; // Schulterblech
@@ -494,6 +550,52 @@ function sculptZombieArm(s, seed) {
     if (n.z > 0.5 && (x + y) % 2 === 0) return s.skinShade; // Fingerglieder
     return n.y > 0.5 ? shade(s.skin, 1) : s.skin;
   });
+  return m;
+}
+
+/**
+ * Werkzeug in der Hand (M22), im Maß des Arms: Die Hand liegt bei (2, 1, 1); der
+ * Stiel zeigt nach +z – bei nach vorn gestreckten Armen also nach oben.
+ * - Axt: Stiel aus Esche, Blatt aus Stahl mit blanker Schneide (zeigt nach vorn)
+ * - Stab: knorriger Stab, oben der Käfig der Laterne (das Licht ist ein eigenes Glühteil)
+ */
+function addTool(m, tool) {
+  if (tool === 'axt') {
+    m.box(1, 0, -3, 2, 1, 17, (x, y, z) => (z % 5 === 0 ? P.e4 : x === 1 ? P.e6 : P.e5));
+    m.box(1, -7, 12, 2, -1, 17, (x, y, z) => (y === -7 ? P.s9 : y === -6 ? P.s8 : z === 12 || z === 17 ? P.s5 : x === 1 ? P.s7 : P.s6));
+    m.box(1, 2, 13, 2, 3, 16, P.s5); // Nacken der Axt
+    return;
+  }
+  if (tool === 'schaufel') {
+    // Spaten: Stiel mit Griff, das Blatt vorn voller Erde
+    m.box(1, 0, -6, 2, 1, 14, (x, y, z) => (z === -6 ? P.e3 : x === 1 ? P.e6 : P.e5));
+    m.box(0, -1, -8, 3, 2, -7, P.e4); // Griff
+    m.box(0, -6, 14, 3, 1, 19, (x, y, z) => (y <= -5 ? P.e3 : z === 19 ? P.s8 : x === 0 ? P.s6 : P.s5));
+    return;
+  }
+  if (tool === 'loescher') {
+    // Kerzenlöscher: langer Stiel, oben ein Messinghütchen, verrußt
+    m.box(1, 0, -6, 2, 1, 22, (x, y, z) => (z % 7 === 0 ? P.e3 : P.e4));
+    for (let z = 23; z <= 27; z++) {
+      const r = Math.max(0, (27 - z) * 0.7) + 0.6;
+      for (let y = -3; y <= 4; y++) for (let x = -2; x <= 5; x++) if (Math.hypot(x - 1.5, y - 0.5) <= r && Math.hypot(x - 1.5, y - 0.5) > r - 1.2) m.set(x, y, z, z >= 26 ? P.n1 : P.f4);
+    }
+    return;
+  }
+  if (tool === 'stab') {
+    m.box(1, 0, -8, 2, 1, 23, (x, y, z) => (z % 6 === 0 ? P.e3 : (x + z) % 4 === 0 ? P.e5 : P.e4));
+    m.set(0, 0, 4, P.e4).set(3, 1, 12, P.e4); // Knorren
+    // Käfig: vier Stäbe, Deckel und Boden
+    for (const [x, y] of [[-1, -1], [4, -1], [-1, 2], [4, 2]]) m.box(x, y, 24, x, y, 29, P.s3);
+    m.box(-1, -1, 30, 4, 2, 30, P.s4).box(-1, -1, 23, 4, 2, 23, P.s4);
+    m.box(1, 0, 31, 2, 1, 32, P.s5); // Ring oben
+  }
+}
+
+/** Leuchten der Hexenlaterne (M22): eigenes Glühteil am rechten Arm, im Maß des Arms. */
+function buildLanternGlow32() {
+  const m = new VoxelModel();
+  m.box(0, 0, 24, 3, 1, 29, (x, y, z) => (z >= 26 && z <= 27 && x >= 1 && x <= 2 ? 0xfff2c4 : 0xffc860));
   return m;
 }
 
@@ -534,6 +636,46 @@ function sculptZombieTorso(s, seed) {
       }
       if (y <= 13) return s.shirtDark;
       return f && (x === -8 || x === 7) ? shade(VEST, -1) : n.y > 0.6 ? shade(VEST, 1) : VEST;
+    }
+    if (s.dirt) {
+      // Gräber (M22): Latzhose über dem Hemd, voller Erdflecken
+      if (f && y >= 16 && y <= 24 && x >= -6 && x <= 5) return (x === -6 || x === 5) && y === 24 ? P.s7 : h < 0.3 ? P.e2 : P.b2; // Latz
+      if (f && (x === -7 || x === 6) && y >= 22) return P.b1; // Träger
+      if (h < 0.18) return P.e3;
+      return roundTone(s.shirt, n, { light: 0 });
+    }
+    if (s.soot) {
+      // Lichtfresser (M22): Kutte voller Ruß, ein Strick als Gürtel
+      if (y === 17) return x % 3 ? P.e6 : P.e5;
+      if (h < 0.3) return P.n1;
+      return roundTone(s.shirt, n, { light: 0 });
+    }
+    if (s.plaid) {
+      // Holzfällerhemd (M22): rot-schwarz kariert, Knopfleiste, Hosenträger
+      if (f && (x === -7 || x === 6) && y >= 14) return P.e2;
+      if (f && (x === -1 || x === 0)) return (y === 17 || y === 21 || y === 25) && x === 0 ? P.e8 : P.r1;
+      const lx = ((x + 64) >> 2) % 2;
+      const ly = (y >> 2) % 2;
+      return roundTone(lx && ly ? P.n1 : lx || ly ? s.shirtDark : s.shirt, n, { light: 0 });
+    }
+    if (s.dress) {
+      // Kleid der Pilzmutter (M22): Moosflecken, kleine Pilze, ein Gürtel aus Wurzeln
+      if (y === 18 || y === 19) return (x & 1) ? P.e3 : P.e4;
+      if (h < 0.22) return (x + y) % 3 ? s.moss : shade(s.moss, 1);
+      return roundTone(s.shirt, n, { light: 0 });
+    }
+    if (s.robe) {
+      // Kutte der Hexe (M22): dunkel, mit gestickten Sternen, ein Strick als Gürtel
+      if (y === 17) return x % 3 ? P.e6 : P.e5;
+      if (f && (x * 7 + y * 3) % 23 === 0) return P.f6;
+      return roundTone(s.shirt, n, { light: 0 });
+    }
+    if (s.stone) {
+      // Moosriese (M22): Steinplatten im Moos, dazwischen Farn
+      const st = hash3(x >> 2, y >> 2, z >> 2, seed + 11);
+      if (st < 0.38) return n.y > 0.5 ? P.s6 : st < 0.2 ? P.s5 : P.s4;
+      if (h < 0.1) return P.g7;
+      return roundTone(h < 0.5 ? s.shirt : s.moss, n, { light: 0 });
     }
     if (s.extra === 'kapuze') {
       // Kapuzenpulli mit Bauchtasche und Bündchen
@@ -633,6 +775,65 @@ function sculptZombieHead(s, seed) {
       }
       break;
     }
+    case 'muetze': {
+      // Holzfäller (M22): Pudelmütze, rot mit schwarzem Rand, und ein buschiger Bart ums Kinn
+      sculpt(m, roundBox(-0.5, 45, -2.5, 12.5, 3.5, 10.5, 3), -14, 42, -14, 13, 49, 9, (x, y) => (y <= 42 ? P.n1 : (x + y) % 4 === 0 ? P.r2 : P.r3));
+      sculpt(m, blob(-0.5, 51, -2.5, 3.2, 2.6, 3.2), -5, 48, -7, 4, 54, 2, (x, y, z, n) => (n.y > 0.4 ? P.s9 : P.s8));
+      const beard = (x, y, z) => Math.max(blob(-0.5, 29, 5.5, 10, 5.5, 4.5)(x, y, z), -zombieHeadShape(x, y, z) - 0.5);
+      sculpt(m, beard, -12, 23, 0, 11, 34, 11, (x, y, z, n) => {
+        if (y >= 30 && x >= -5 && x <= 4) return null; // der Mund bleibt frei
+        return (x + y) % 3 === 0 ? P.e2 : n.y < -0.4 ? P.e2 : P.e3;
+      });
+      break;
+    }
+    case 'kappe':
+      // Gräber (M22): flache Schiebermütze mit Schirm nach vorn
+      sculpt(m, roundBox(-0.5, 44.5, -3, 12.5, 2.2, 10.5, 2), -14, 42, -14, 13, 47, 8, (x, y) => (y === 42 ? P.e2 : (x + y) % 3 ? P.e4 : P.e3));
+      m.box(-8, 43, 8, 7, 43, 11, P.e3);
+      break;
+    case 'topf':
+      // Schildträger (M22): Kochtopf als Helm, mit Henkeln
+      sculpt(m, roundBox(-0.5, 46, -2.5, 12.5, 4, 10.5, 1.5), -14, 42, -14, 13, 50, 9, (x, y, z, n) => (y === 42 ? P.s3 : n.y > 0.6 ? P.s6 : x < -8 ? P.s4 : P.s5));
+      m.box(-15, 47, -3, -14, 48, -1, P.s3).box(13, 47, -3, 14, 48, -1, P.s3);
+      break;
+    case 'kutte': {
+      // Lichtfresser (M22): tiefe Kapuze der Kutte, das Gesicht im Schatten
+      const hood = (x, y, z) => Math.max(zombieHeadShape(x, y - 1, z) - 2.4, -zombieHeadShape(x, y, z));
+      sculpt(m, hood, -16, 29, -16, 15, 48, 11, (x, y, z, n) => {
+        const f = ZHEAD.front(x, Math.min(44, y));
+        if (y <= 40 && f !== undefined && z >= f - 1 && x > -10 && x < 9) return null; // Gesicht frei
+        if (y < 31) return null;
+        return n.z > 0.5 ? s.shirtDark : (x + y) % 7 === 0 ? P.n1 : s.shirt;
+      });
+      break;
+    }
+    case 'sporen':
+      // Brüter (M22): Sporenhöcker auf dem Kopf, mit hellen Spitzen
+      for (const [x, z, r] of [[-5, -4, 3], [4, -2, 2.5], [0, -9, 2.2]]) sculpt(m, blob(x, 44.5, z, r, r * 0.9, r), x - 4, 42, z - 4, x + 4, 48, z + 4, (xx, y, zz, n) => (n.y > 0.6 ? P.a3 : P.d3));
+      break;
+    case 'mutterhut':
+      // Pilzmutter (M22): Lamellen unter dem großen Hut (der Hut selbst leuchtet, siehe Glühteil)
+      sculpt(m, roundBox(-0.5, 44.5, -2.5, 14, 1.5, 12, 1.2), -15, 43, -15, 14, 46, 10, (x, y) => (y === 43 ? P.d3 : (x & 1) ? P.d3 : P.d4));
+      break;
+    case 'hexenhut': {
+      // Laternenhexe (M22): breite Krempe, hohe Spitze, die oben abknickt, ein Band mit Schnalle
+      sculpt(m, roundBox(-0.5, 44.5, -2.5, 16, 1, 14, 0.8), -17, 43, -17, 16, 46, 12, (x, y) => (y === 44 ? P.n1 : P.d0));
+      for (let y = 46; y <= 64; y++) {
+        const r = Math.max(1.5, 9.5 - (y - 46) * 0.45);
+        const lean = y > 58 ? (y - 58) * 1.1 : 0; // die Spitze knickt nach hinten
+        m.cylinder(-0.5, -2.5 - lean, y, y, r, (x) => (y === 48 || y === 49 ? (x === 0 ? P.f6 : P.f4) : x < -r + 2 ? P.d1 : P.d0));
+      }
+      break;
+    }
+    case 'farn':
+      // Moosriese (M22): Moospolster, drei Steine und Farnwedel auf dem Kopf
+      sculpt(m, roundBox(-0.5, 44, -2.5, 11, 2, 9, 1.8), -12, 42, -12, 11, 47, 7, (x, y, z) => (hash3(x, y, z, seed) < 0.5 ? P.g5 : P.g4));
+      for (const [x, z] of [[-7, -5], [5, 0], [0, -9]]) m.box(x, 46, z, x + 2, 48, z + 2, (xx, yy) => (yy === 48 ? P.s6 : P.s5));
+      for (const side of [-1, 1]) {
+        m.line(side * 3, 46, -2, side * 11, 57, -4, P.g6, 1);
+        m.line(side * 5, 49, -3, side * 9, 53, 1, P.g7);
+      }
+      break;
     case 'krone':
       // Geweihkrone aus Ästen mit Gabeln und Blüten, ein Moosband darunter
       for (const side of [-1, 1]) {
@@ -693,7 +894,84 @@ function sculptZombieGlow(s) {
   return m;
 }
 
+/** Alte Tür (M22, Schildträger): Bretter, Z-Riegel, Knauf – vor dem Bauch, von den Händen gehalten. */
+function buildDoor32(seed) {
+  const m = new VoxelModel();
+  m.box(-10, 6, 13, 9, 36, 14, (x, y, z) => {
+    if (z === 13) return P.e3; // Rückseite
+    const plank = (x + 10) % 5 === 0;
+    const h = hash3(x >> 1, y >> 2, 0, seed + 40);
+    if ((y === 10 || y === 31) || Math.abs(y - 10 - ((x + 10) * 21) / 19) < 1) return P.e4; // Riegel und Strebe
+    return plank ? P.e5 : h < 0.2 ? P.e6 : P.e7;
+  });
+  m.box(6, 20, 15, 7, 21, 15, P.f5).set(6, 21, 15, P.f7); // Knauf
+  return m;
+}
+
+/** Sporensäcke des Brüters (M22): drei violett glimmende Beulen auf dem Rücken. */
+function buildSacsGlow32() {
+  const m = new VoxelModel();
+  for (const [x, y, r] of [[-6, 24, 4], [5, 23, 4.5], [0, 18, 3.5]]) {
+    m.ellipsoid(x, y, -11, r, r, r * 0.8, (xx, yy, zz, dx, dy) => (zz > -11 ? null : dy > 0.4 ? 0xd8b8ff : (xx + yy) % 3 === 0 ? 0xf2e4ff : 0xa88fd0));
+  }
+  return m;
+}
+
+/**
+ * Moderfalter (M22): eine Motte statt eines Menschen, aber mit denselben
+ * Gelenknamen (die Flügel sind die »Arme«, damit Horde und Gerüst gleich bleiben).
+ */
+function mothParts32(s, seed) {
+  const leg = () => {
+    const m = new VoxelModel();
+    m.line(0, 0, 0, 0, 5, -1, P.d1).line(0, 5, -1, 0, 8, 1, P.d1);
+    return m;
+  };
+  const body = new VoxelModel();
+  sculpt(body, smoothUnion(blob(0, 17, -3, 5.5, 5, 9), blob(0, 19, 4, 5, 5, 4.5), 2), -7, 11, -13, 7, 25, 10, (x, y, z, n) => {
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed);
+    if (z < -4 && (z & 3) === 0) return s.shirtDark; // Ringe am Hinterleib
+    if (n.y > 0.5 && h < 0.4) return shade(s.skin, 1); // Pelz
+    return roundTone(s.skin, n, { light: 0 });
+  });
+  const head = new VoxelModel();
+  sculpt(head, blob(0, 21, 10, 3.6, 3.4, 3.2), -5, 17, 6, 5, 25, 14, (x, y, z, n) => roundTone(s.skinShade, n, { light: 0 }));
+  for (const side of [-1, 1]) {
+    head.line(side * 1, 24, 11, side * 5, 30, 14, P.d4);
+    for (let k = 1; k <= 4; k++) head.set(side * (1 + k), 24 + k + 1, 12 + k * 0.6 | 0, P.d4); // gefiederte Fühler
+  }
+  const glow = new VoxelModel();
+  for (const side of [-1, 1]) glow.box(side < 0 ? -3 : 2, 21, 13, side < 0 ? -2 : 3, 22, 13, s.eyes);
+  const wing = (side) => {
+    const m = new VoxelModel();
+    // Vorder- und Hinterflügel: flach, zum Rand heller, ein Augenfleck
+    for (let x = 0; x <= 26; x++) {
+      for (let z = -14; z <= 12; z++) {
+        const fx = x / 26;
+        const front = z >= 0 && z <= 12 - fx * 6 && Math.hypot(x - 13, (z - 5) * 1.4) <= 15;
+        const back = z < 0 && z >= -14 + fx * 5 && Math.hypot(x - 10, (z + 6) * 1.3) <= 12;
+        if (!front && !back) continue;
+        const spot = Math.hypot(x - 16, z - 4) <= 3.2;
+        const rim = Math.hypot(x - 13, (z - 5) * 1.4) > 13 || Math.hypot(x - 10, (z + 6) * 1.3) > 10.5;
+        const c = spot ? (Math.hypot(x - 16, z - 4) <= 1.5 ? P.n1 : P.f6) : rim ? P.d4 : (x + z) % 7 === 0 ? P.d2 : P.d3;
+        m.set(side * x, 0, z, c);
+      }
+    }
+    return m;
+  };
+  return [
+    { name: 'legL', model: leg(), joint: [-2, 12, 1], offset: [-2, 4, 1], parent: 'root', unit: U32 },
+    { name: 'legR', model: leg(), joint: [2, 12, 1], offset: [2, 4, 1], parent: 'root', unit: U32 },
+    { name: 'torso', model: body, joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'head', model: head, joint: [0, 20, 8], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'glow', model: glow, joint: [0, 20, 8], offset: [0, 0, 0], parent: 'head', glow: true, unit: U32 },
+    { name: 'armL', model: wing(-1), joint: [-4, 21, 0], offset: [-4, 21, 0], parent: 'body', unit: U32 },
+    { name: 'armR', model: wing(1), joint: [4, 21, 0], offset: [4, 21, 0], parent: 'body', unit: U32 },
+  ];
+}
+
 function fineParts32(s, seed) {
+  if (s.moth) return mothParts32(s, seed);
   const w = widthOf(s) * 2;
   const parts = [
     { name: 'legL', model: sculptZombieLeg(s, seed), joint: [-4, 12, 0], offset: [-8, 0, -4], parent: 'root', unit: U32 },
@@ -702,9 +980,14 @@ function fineParts32(s, seed) {
     { name: 'head', model: sculptZombieHead(s, seed), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'body', unit: U32 },
     { name: 'glow', model: sculptZombieGlow(s), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'head', glow: true, unit: U32 },
     { name: 'armL', model: sculptZombieArm(s, seed), joint: [-14 - w, 28, 0], offset: [-16 - w, 12, -4], parent: 'body', unit: U32 },
-    { name: 'armR', model: sculptZombieArm(s, seed + 2), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'body', unit: U32 },
+    { name: 'armR', model: sculptZombieArm(s, seed + 2, true), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'body', unit: U32 },
   ];
   if (s.armor) parts.push({ name: 'vest', model: buildVestGlow32(s), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', glow: true, unit: U32 });
+  // M22: die Tür des Schildträgers vor dem Bauch, die Sporensäcke des Brüters auf dem Rücken
+  if (s.door) parts.push({ name: 'door', model: buildDoor32(seed), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 });
+  if (s.sacs) parts.push({ name: 'sacs', model: buildSacsGlow32(), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', glow: true, unit: U32 });
+  // M22: Das Licht der Hexenlaterne hängt am rechten Arm (im Maß des Arms)
+  if (s.tool === 'stab') parts.push({ name: 'lantern', model: buildLanternGlow32(), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'armR', glow: true, unit: U32 });
   return parts;
 }
 
@@ -729,3 +1012,11 @@ export function zombieParts(type, seed = 11) {
 }
 
 export const ZOMBIE_TYPES = Object.keys(SPECS);
+
+/** Sporenkapsel des Brüters (M22): ein violett glimmender Sack mit hellen Adern (Glüh-Material). */
+export function podModel() {
+  const m = new VoxelModel();
+  m.ellipsoid(0, 5, 0, 5.5, 5, 5.5, (x, y, z, dx, dy) => (y < 0 ? null : (x * 3 + z * 5 + y) % 7 === 0 ? 0xf2e4ff : dy > 0.5 ? 0xd8b8ff : 0xa88fd0));
+  m.box(-1, 10, -1, 0, 11, 0, 0xf2e4ff);
+  return m;
+}

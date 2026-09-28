@@ -10,6 +10,13 @@
 //   aggro     ab dieser Nähe (m) gehen sie nachts auf Mika los (M8: vorher 3,2 für alle)
 //   smash     Faktor auf `hit` gegen Barrikaden (M9: alle schlagen Barrikaden ein,
 //             Brummer und Anführer besonders hart)
+//   heavy     schwer: Rückstoß, Frost, Betäubung und Locken wirken nur halb (M22)
+//   boss      Boss (M22): Name und Lebensbalken oben, eigene Musik, Angriffe aus
+//             data/bosses.js (`attacks`); `split`: zerfällt beim Tod in so viele
+//   flying    fliegt über Barrikaden (Fallen und Flächen am Boden treffen ihn nicht)
+//   digger    buddelt sich unter Barrikaden durch      door  Tür vorn: fängt ab, bis sie bricht
+//   lightproof  Licht schreckt ihn nicht               snuff löscht Lichter im Umkreis (m)
+//   brood     legt Sporenkapseln (alle `every` s, schlüpfen nach `hatch` s: `count` Schwärmer)
 
 export const ZOMBIES = {
   schlurfer: {
@@ -62,6 +69,7 @@ export const ZOMBIES = {
     scale: 1.4,
     radius: 0.42,
     smash: 2,
+    heavy: true,
     loot: { teile: [4, 6], zahnraeder: 0.3 },
     xp: 4,
   },
@@ -91,10 +99,160 @@ export const ZOMBIES = {
     scale: 1.65,
     radius: 0.5,
     smash: 2,
+    heavy: true,
     summon: { type: 'schlurfer', count: 3, every: 9 },
     loot: { teile: [18, 24], zahnraeder: [2, 3], moderkerne: 1 },
     partsAlways: true, // sein Haufen Teile hängt nicht an einem Münzwurf
     xp: 20,
+  },
+  // --- Neue Arten (M22): jede stellt eine eigene Frage ---
+  // Moderfalter: fliegt über dem Weg, über Barrikaden hinweg – nur Türme und Mika treffen ihn
+  moderfalter: {
+    hp: 22,
+    speed: 1.45,
+    armor: 0,
+    hit: 3,
+    bite: 4,
+    aggro: 3,
+    hitRate: 0.8,
+    scale: 0.85,
+    radius: 0.22,
+    flying: true,
+    loot: { teile: [1, 1], zahnraeder: 0.03 },
+    xp: 1,
+  },
+  // Gräber: buddelt sich unter Barrikaden durch (Wall und Tor muss er einschlagen)
+  graeber: {
+    hp: 46,
+    speed: 0.95,
+    armor: 1,
+    hit: 4,
+    bite: 7,
+    hitRate: 0.6,
+    scale: 1,
+    radius: 0.28,
+    digger: true,
+    loot: { teile: [1, 2], zahnraeder: 0.08 },
+    xp: 2,
+  },
+  // Schildträger: trägt eine alte Tür vor sich – von vorn fängt sie drei Viertel ab, bis sie bricht
+  schildtraeger: {
+    hp: 60,
+    speed: 0.9,
+    armor: 0,
+    hit: 5,
+    bite: 7,
+    hitRate: 0.55,
+    scale: 1.1,
+    radius: 0.32,
+    door: { hp: 140, front: 0.25, angle: 70 },
+    loot: { teile: [2, 3], zahnraeder: 0.1 },
+    xp: 2,
+  },
+  // Lichtfresser: löscht Fackeln und Laternen am Weg (bis zum Morgen), Licht schreckt ihn nicht
+  lichtfresser: {
+    hp: 40,
+    speed: 1,
+    armor: 0,
+    hit: 3,
+    bite: 5,
+    hitRate: 0.7,
+    scale: 1,
+    radius: 0.28,
+    lightproof: true,
+    snuff: 1.7, // so nah löscht er ein Licht (m)
+    loot: { teile: [1, 2], zahnraeder: 0.06 },
+    xp: 2,
+  },
+  // Brüter: legt Sporenkapseln, aus denen Schwärmer schlüpfen – Mika kann sie zertreten
+  brueter: {
+    hp: 75,
+    speed: 0.72,
+    armor: 2,
+    hit: 5,
+    bite: 7,
+    hitRate: 0.5,
+    scale: 1.2,
+    radius: 0.36,
+    brood: { every: 7, hatch: 5, count: 3, hp: 12 },
+    loot: { teile: [2, 4], zahnraeder: 0.12 },
+    xp: 3,
+  },
+  // --- Bosse (M22): statt des Anführers in jeder fünften Nacht (data/bosses.js) ---
+  // Der Holzfäller (Nacht 5): zerschlägt Barrikaden mit einem Hieb und stürmt
+  holzfaeller: {
+    hp: 950,
+    speed: 0.8,
+    armor: 4,
+    hit: 20,
+    bite: 18,
+    hitRate: 0.6,
+    scale: 1.75,
+    radius: 0.5,
+    smash: 2.5,
+    heavy: true,
+    boss: true,
+    attacks: ['hieb'],
+    loot: { teile: [20, 26], zahnraeder: [2, 3], moderkerne: 1 },
+    partsAlways: true,
+    xp: 25,
+  },
+  // Die Pilzmutter (Nacht 10): Sporenwolken heilen die Horde, aus ihnen schlüpfen Schwärmer
+  pilzmutter: {
+    hp: 1300,
+    speed: 0.6,
+    armor: 2,
+    hit: 14,
+    bite: 14,
+    hitRate: 0.5,
+    scale: 1.8,
+    radius: 0.55,
+    smash: 2,
+    heavy: true,
+    boss: true,
+    immuneSlow: true,
+    attacks: ['sporen'],
+    loot: { teile: [22, 28], zahnraeder: [2, 4], moderkerne: 1 },
+    partsAlways: true,
+    xp: 30,
+  },
+  // Die Laternenhexe (Nacht 15): stiehlt das Licht ringsum und heilt sich daran
+  laternenhexe: {
+    hp: 1150,
+    speed: 0.95,
+    armor: 2,
+    hit: 14,
+    bite: 16,
+    hitRate: 0.7,
+    scale: 1.6,
+    radius: 0.45,
+    smash: 2,
+    heavy: true,
+    boss: true,
+    lightproof: true,
+    attacks: ['lichtraub'],
+    loot: { teile: [22, 28], zahnraeder: [3, 4], moderkerne: 1 },
+    partsAlways: true,
+    xp: 30,
+  },
+  // Der Moosriese (Nacht 20): stampft Barrikaden und Mika um, zerfällt in drei
+  moosriese: {
+    hp: 2200,
+    speed: 0.55,
+    armor: 8,
+    hit: 26,
+    bite: 22,
+    hitRate: 0.45,
+    scale: 2.1,
+    radius: 0.62,
+    smash: 3,
+    heavy: true,
+    boss: true,
+    attacks: ['stampfer'],
+    split: 3,
+    loot: { teile: [26, 32], zahnraeder: [3, 5], moderkerne: 2 },
+    partsAlways: true,
+    xp: 40,
   },
 };
 

@@ -104,6 +104,7 @@ export class Hud {
     this.words = []; // Worte der Reaktionen über dem Kopf (M18)
     this.swooshes = []; // Schwung-Bögen im Nahkampf
     this.rings = []; // Ringe der Fähigkeiten (M16)
+    this.warns = []; // Warnkreise der Bosse (M22)
     this.skillTiles = [];
     this.skillPanel = null;
     this.prompt = null; // { text, x, y }
@@ -166,6 +167,35 @@ export class Hud {
         const a = w.angle - w.arc + 2 * w.arc * f;
         const p = this.game.worldToUi(w.x + Math.sin(a) * w.reach, 0.85, w.z + Math.cos(a) * w.reach);
         ui.rect(Math.round(p.x), Math.round(p.y), 2, 2, f > q - 0.15 ? COLORS.text : COLORS.textDim);
+      }
+    }
+  }
+
+  /**
+   * Warnkreis am Boden (M22): Hier schlägt gleich ein Boss zu. Der Rand blinkt,
+   * ein innerer Ring wächst bis zum Rand – dann kommt der Schlag.
+   */
+  warn(x, z, radius, time) {
+    this.warns.push({ x, z, r: radius, t: 0, time });
+  }
+
+  drawWarns(ui) {
+    const g = this.game;
+    const outer = hexToCss(P.r4);
+    const inner = hexToCss(P.f6);
+    for (const w of this.warns) {
+      const q = Math.min(1, w.t / w.time);
+      const blink = Math.floor(w.t * 8) % 2 === 0;
+      for (const [r, color, gap] of [[w.r, outer, blink ? 1 : 2], [w.r * q, inner, 1]]) {
+        if (r < 0.2) continue;
+        const c = g.worldToUi(w.x, 0.08, w.z);
+        const e = g.worldToUi(w.x + r, 0.08, w.z);
+        const n = Math.max(16, Math.round((Math.PI * 2 * Math.abs(e.x - c.x)) / 3));
+        for (let k = 0; k < n; k += gap) {
+          const a = (k / n) * Math.PI * 2;
+          const p = g.worldToUi(w.x + Math.sin(a) * r, 0.08, w.z + Math.cos(a) * r);
+          ui.rect(Math.round(p.x), Math.round(p.y), 2, 2, color);
+        }
       }
     }
   }
@@ -249,6 +279,8 @@ export class Hud {
     this.swooshes = this.swooshes.filter((w) => w.t < SWOOSH_TIME);
     for (const r of this.rings) r.t += dt;
     this.rings = this.rings.filter((r) => r.t < RING_TIME);
+    for (const w of this.warns) w.t += dt;
+    this.warns = this.warns.filter((w) => w.t < w.time);
     if (this.banner) {
       this.banner.time += dt;
       if (this.banner.time > 2.4) this.banner = null;
@@ -270,6 +302,7 @@ export class Hud {
       this.drawStatus(ui);
       this.drawChampions(ui);
       this.drawRings(ui);
+      this.drawWarns(ui);
       this.drawSwooshes(ui);
       this.drawNumbers(ui);
       this.drawWords(ui);
@@ -278,6 +311,7 @@ export class Hud {
     this.drawGoal(ui);
     this.drawResources(ui);
     this.drawNightBar(ui);
+    this.drawBossBar(ui);
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
     if (show.prompt && !this.game.viewInside) this.drawGoalMarker(ui);
@@ -393,6 +427,37 @@ export class Hud {
   }
 
   /** Oben Mitte: Nacht, Welle und Standfestigkeit des Zuhauses. */
+  /**
+   * Boss (M22): Name und breiter Lebensbalken unter der Nachtleiste – solange er
+   * lebt, auch wenn er gerade nicht im Bild ist. Holt er aus, blinkt die Warnung.
+   */
+  drawBossBar(ui) {
+    const g = this.game;
+    this.bossShown = null;
+    let boss = null;
+    let hp = 0;
+    let max = 0;
+    for (const z of g.horde.list) {
+      if (!z.def.boss || z.state === 'dying') continue;
+      if (!boss) boss = z;
+      hp += z.hp; // der zerfallene Moosriese: alle drei zusammen
+      max += z.maxHp;
+    }
+    if (!boss) return;
+    const B = T.bosse[boss.type];
+    const w = 220;
+    const x = Math.round(ui.width / 2 - w / 2);
+    const y = this.nightBarBottom + 3;
+    ui.panel(x, y, w, 24, { frame: COLORS.gold });
+    ui.textCentered(B.titel, ui.width / 2, y + 2, COLORS.gold);
+    const q = Math.max(0, Math.min(1, hp / Math.max(1, max)));
+    ui.rect(x + 6, y + 15, w - 12, 5, COLORS.outline);
+    ui.rect(x + 7, y + 16, Math.max(0, Math.round((w - 14) * q)), 3, COLORS.buildBad);
+    if (boss.boss?.windup > 0 && Math.floor(g.clock * 6) % 2 === 0) ui.text(B.warnung, x + w - 6 - measure(B.warnung), y + 2, COLORS.red);
+    this.bossShown = { name: B.titel, hp: Math.round(hp), max: Math.round(max) };
+    this.nightBarBottom = y + 24;
+  }
+
   drawNightBar(ui) {
     const g = this.game;
     const st = g.state;
@@ -467,7 +532,8 @@ export class Hud {
     const lines = view.rows.map((r) => {
       const wege = r.entries.map((e) => T.horde.richtungKurz[e]).join(' + ');
       const schwer = r.heavy.length ? ` · ${T.nacht.mit(r.heavy.map((t) => T.horde.arten[t][1]).join(', '))}` : '';
-      return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${schwer}`;
+      const merkmal = `${r.trait ? ` · ${T.wellen.merkmale[r.trait][0]}` : ''}${r.boss ? ` · ${T.bosse.plan(T.bosse[r.boss].titel)}` : ''}`; // M22: immer angekündigt
+      return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${merkmal}${schwer}`;
     });
     if (view.more) lines.push(T.nacht.weitere(view.more));
     const title = view.evening ? T.nacht.planAbend(view.total) : T.nacht.planPause;
@@ -572,7 +638,7 @@ export class Hud {
     const g = this.game;
     this.championsShown = 0;
     for (const z of g.horde.list) {
-      if (!z.champion || z.state === 'dying') continue;
+      if (!z.champion || z.state === 'dying' || g.horde.isHidden(z)) continue;
       const p = g.worldToUi(z.x, 2.05 * z.def.scale * (z.size || 1), z.z);
       if (p.x < -40 || p.y < -30 || p.x > ui.width + 40 || p.y > ui.height + 30) continue;
       this.championsShown++;
@@ -595,7 +661,7 @@ export class Hud {
   drawZombieBars(ui) {
     const g = this.game;
     for (const z of g.horde.list) {
-      if (z.state === 'dying' || z.hp >= z.maxHp || z.champion) continue; // Champions: eigener Balken (M21)
+      if (z.state === 'dying' || z.hp >= z.maxHp || z.champion || z.def.boss || g.horde.isHidden(z)) continue; // Champions und Bosse: eigener Balken (M21, M22); im Nebel nichts
       const p = g.worldToUi(z.x, 2.05 * z.def.scale, z.z);
       const w = z.type === 'anfuehrer' ? 30 : z.type === 'brummer' ? 20 : 12;
       const x = Math.round(p.x - w / 2);
@@ -610,7 +676,7 @@ export class Hud {
     const g = this.game;
     this.statusShown = 0;
     for (const z of g.horde.list) {
-      if (z.state === 'dying') continue;
+      if (z.state === 'dying' || g.horde.isHidden(z)) continue;
       const shown = [];
       for (const s of STATUS_PIX) {
         if (z[s.key] > 0) shown.push(s);
@@ -800,7 +866,7 @@ export class Hud {
       this.edgeMarks.push({ art: 'beute', richtung: where(ux, uy), anzahl: s.n });
     }
     for (const z of g.horde.list) {
-      if (z.state === 'dying') continue;
+      if (z.state === 'dying' || g.horde.isHidden(z)) continue; // im Nebel verborgen (M22)
       const p = g.worldToUi(z.x, 0.8, z.z);
       if (p.x >= 0 && p.x < ui.width && p.y >= 0 && p.y < ui.height) continue;
       this.edgeCount++;
@@ -810,7 +876,7 @@ export class Hud {
       s.dx += p.x - cx;
       s.dy += p.y - cy;
       s.n++;
-      s.leader = s.leader || z.type === 'anfuehrer';
+      s.leader = s.leader || z.type === 'anfuehrer' || Boolean(z.def.boss);
       sectors.set(key, s);
     }
     const blink = Math.floor(this.game.clock * 3) % 2 === 0;

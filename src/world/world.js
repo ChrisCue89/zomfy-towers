@@ -112,7 +112,7 @@ export class World {
     this.interiorPools = [];
     this.addInteriorPools();
     for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2); // Kürbislaternen (M12)
-    if (this.props.torches.length) this.lightPools.addMany(this.props.torches, 2.4); // Fackeln an den Wegen
+    if (this.props.torches.length) this.lightPools.addMany(this.props.torches, 2.4, this.props.torchFlames); // Fackeln an den Wegen
     this.buildings = new Buildings({
       scene,
       grid: this.grid,

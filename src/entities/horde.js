@@ -27,7 +27,9 @@ import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { BUILDINGS, RAID } from '../data/buildings.js';
 import { STATUS, REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { CHAMPION, TRAITS, cleanChampion } from '../data/champions.js';
-import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
+import { WAVE_TRAITS, FOG_SEEN } from '../data/waves.js';
+import { BOSS_ATTACKS } from '../data/bosses.js';
+import { zombieParts, ZOMBIE_TYPES, podModel } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
 /** Jagd hinter einem Hindernis: nach so vielen Sekunden ohne Durchkommen aufgeben … */
@@ -47,6 +49,12 @@ const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurüc
 const WINDUP = 0.38; // so lange holt ein Schlurfer aus, bevor er beißt
 const BITE_LUNGE = 0.45; // M16: so weit reicht der Biss über die Reichweite hinaus (Ausfallschritt)
 const HORDE_MOVE = { bounds: true, horde: true }; // durch Balduins Wagen hindurch (steht nicht im Flussfeld)
+const FLY_MOVE = { bounds: true, horde: true, climb: true }; // M22: Moderfalter fliegen über Barrikaden
+/** Flughöhe der Moderfalter (m) und wie lange ein Gräber braucht, um abzutauchen bzw. aufzutauchen (s). */
+const FLY_HEIGHT = 1.05;
+const DIG_DOWN = 0.6;
+const DIG_UP = 0.45;
+const DIG_DEPTH = 1.2;
 /** Zustände (M18) und ihre Uhren am Schlurfer. */
 const STATUS_KEY = { nass: 'wetT', frostig: 'frostT', matschig: 'mudT', geblendet: 'blindT' };
 /** Nach einer Reaktion kann derselbe Schlurfer sie so lange nicht noch einmal auslösen (s). */
@@ -65,6 +73,8 @@ const TINT = {
   championDim: new THREE.Color(1.25, 1.05, 0.55),
 };
 const championTint = new THREE.Color();
+/** Nebelwelle (M22): Wer nicht im Licht steht, von dem sieht man nur die Augen. */
+const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
 /** Unsichtbares Gerüst einer Art: Gelenke als Object3D, Teile als Anker. */
 class Rig {
@@ -74,9 +84,10 @@ class Rig {
     this.root.add(this.body);
     this.pivots = {};
     this.anchors = {};
-    const headJoint = parts.find((p) => p.name === 'head').joint;
+    // Teile an einem anderen Teil (Kopf, Arm – M22: die Laterne der Hexe) hängen an dessen Gelenk
+    const attached = (p) => p.parent !== 'root' && p.parent !== 'body';
     for (const p of parts) {
-      if (p.parent === 'head') continue;
+      if (attached(p)) continue;
       const pivot = new THREE.Object3D();
       const U = p.unit || V;
       pivot.position.set(p.joint[0] * U, p.joint[1] * U, p.joint[2] * U);
@@ -88,11 +99,12 @@ class Rig {
       this.anchors[p.name] = anchor;
     }
     for (const p of parts) {
-      if (p.parent !== 'head') continue;
+      if (!attached(p)) continue;
       const anchor = new THREE.Object3D();
       const U = p.unit || V;
-      anchor.position.set((p.offset[0] - headJoint[0]) * U, (p.offset[1] - headJoint[1]) * U, (p.offset[2] - headJoint[2]) * U);
-      this.pivots.head.add(anchor);
+      const joint = parts.find((q) => q.name === p.parent).joint;
+      anchor.position.set((p.offset[0] - joint[0]) * U, (p.offset[1] - joint[1]) * U, (p.offset[2] - joint[2]) * U);
+      this.pivots[p.parent].add(anchor);
       this.anchors[p.name] = anchor;
     }
   }
@@ -109,6 +121,8 @@ export class Horde {
     this.cb = callbacks;
     this.list = [];
     this.nextId = 1;
+    this.pods = []; // Sporenkapseln der Brüter (M22)
+    this.nextPod = 1;
     this.time = 0;
     this.material = createWorldMaterial({ selfLight: 0.2 }); // nachts erkennbar, nicht nur die Augen
     this.glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -169,8 +183,16 @@ export class Horde {
           silhouettes.push({ type, mesh: sil });
         }
       }
-      this.kinds[type] = { rig: new Rig(parts), meshes, parts: parts.map((p) => p.name) };
+      this.kinds[type] = { rig: new Rig(parts), meshes, parts: parts.map((p) => p.name), glow: new Set(parts.filter((p) => p.glow).map((p) => p.name)) };
     }
+    // Sporenkapseln (M22): glimmen violett, pulsieren, bis Schwärmer schlüpfen
+    this.podMesh = new THREE.InstancedMesh(podModel().toGeometry({ jitter: 0, ao: false, size: 1 / 32 }), this.glowMaterial, 64);
+    this.podMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.podMesh.frustumCulled = false;
+    this.podMesh.count = 0;
+    this.podMesh.visible = false;
+    this.group.add(this.podMesh);
+    this._podDummy = new THREE.Object3D();
     this._dir = { x: 0, z: 0 };
     this._pt = { x: 0, z: 0 };
     this._pos = new THREE.Vector3();
@@ -185,7 +207,7 @@ export class Horde {
   /**
    * Schlurfer anlegen.
    * @param {string} type
-   * @param {{from?:{x,z}, entry?:{x,z}, x?:number, z?:number, hpFactor?:number, day?:boolean, champion?:{name:number, traits:string[]}|null}} o
+   * @param {{from?:{x,z}, entry?:{x,z}, x?:number, z?:number, hpFactor?:number, day?:boolean, champion?:{name:number, traits:string[]}|null, trait?:string|null}} o
    */
   spawn(type, o = {}) {
     const def = ZOMBIES[type];
@@ -256,8 +278,45 @@ export class Horde {
     };
     if (o.entry) z.facing = Math.atan2(o.entry.x - start.x, o.entry.z - start.z);
     if (o.champion && !day) this.makeChampion(z, o.champion);
+    if (o.trait && !day) this.applyTrait(z, o.trait);
+    // Boss (M22): angekündigte Angriffe; lichtfressend wie die Hexe
+    if (def.boss) z.boss = { kind: null, next: BOSS_ATTACKS[def.attacks[0]].first, windup: 0, charge: 0, wait: 0 };
+    if (def.lightproof) z.lightproof = true;
+    // Neue Arten (M22)
+    if (def.flying) z.y = FLY_HEIGHT;
+    if (def.door) z.doorHp = def.door.hp;
+    if (def.brood) z.broodT = def.brood.every * (0.5 + this.rng.next() * 0.5);
+    if (def.snuff) z.snuffT = 0;
     this.list.push(z);
     return z;
+  }
+
+  /** Wellenmerkmal (M22, data/waves.js): flink, gepanzert, im Nebel, heilend (Moderflut steckt im Plan). */
+  applyTrait(z, trait) {
+    const t = WAVE_TRAITS[trait];
+    if (!t) return;
+    z.trait = trait;
+    if (t.speed) z.speed *= t.speed;
+    if (t.armor) z.armor = (z.armor ?? z.def.armor) + t.armor;
+    if (t.fog) {
+      z.fog = true;
+      z.seenT = 0;
+    }
+    if (t.regen && !(z.regen >= t.regen)) {
+      z.regen = t.regen;
+      z.calm = t.calm;
+      z.calmT = 0;
+    }
+  }
+
+  /** Nebelwelle (M22): außerhalb von Licht unsichtbar – Türme treffen ihn nicht, man sieht nur die Augen. */
+  isHidden(z) {
+    return (Boolean(z.fog) && !(z.seenT > 0)) || z.y < -0.5; // M22: auch der Gräber unter der Erde
+  }
+
+  /** Ins Licht geholt (Laternenblitz): eine Weile sichtbar, auch im Nebel. */
+  reveal(z, time) {
+    if (z.fog) z.seenT = Math.max(z.seenT || 0, time);
   }
 
   /**
@@ -271,6 +330,7 @@ export class Horde {
     z.size = CHAMPION.scale;
     z.maxHp = z.hp = Math.round(z.maxHp * CHAMPION.hp);
     z.calmT = 0; // seit wann ihn nichts getroffen hat (moosig)
+    z.calm = TRAITS.moosig.calm;
     for (const t of c.traits) {
       const tr = TRAITS[t];
       if (tr.armor) z.armor = (z.def.armor || 0) + tr.armor;
@@ -284,6 +344,38 @@ export class Horde {
 
   clear() {
     this.list.length = 0;
+    this.pods.length = 0;
+  }
+
+  /** Sporenkapseln (M22): reifen, bis Schwärmer schlüpfen. */
+  updatePods(dt) {
+    for (let i = this.pods.length - 1; i >= 0; i--) {
+      const p = this.pods[i];
+      p.t -= dt;
+      if (p.t > 0) continue;
+      this.pods.splice(i, 1);
+      for (let k = 0; k < p.count; k++) {
+        const a = (k / p.count) * Math.PI * 2;
+        const o = this.spawn('schwaermer', { x: p.x + Math.cos(a) * 0.4, z: p.z + Math.sin(a) * 0.4, hpFactor: p.hpFactor });
+        o.state = 'walk';
+      }
+      this.cb.onHatch?.(p);
+    }
+  }
+
+  /** Eine Sporenkapsel zertreten oder zerschlagen (Mika, Laternenblitz). */
+  hitPod(p, amount) {
+    p.hp -= amount;
+    if (p.hp > 0) return false;
+    const i = this.pods.indexOf(p);
+    if (i >= 0) this.pods.splice(i, 1);
+    this.cb.onPodBurst?.(p);
+    return true;
+  }
+
+  /** Kapseln im Umkreis. */
+  podsNear(x, z, r) {
+    return this.pods.filter((p) => (p.x - x) ** 2 + (p.z - z) ** 2 <= r * r);
   }
 
   /** Schaden austeilen. Gibt true zurück, wenn der Schlurfer daran stirbt. */
@@ -305,6 +397,22 @@ export class Horde {
     // Markiert (M20, Leuchtpfeil): Türme treffen härter
     if (z.markT > 0 && source === 'turm') amount *= 1 + z.markBonus;
     z.calmT = 0;
+    // Schildträger (M22): Die Tür fängt von vorn drei Viertel ab, bis sie bricht (Brand und Fallen kommen von unten)
+    if (z.doorHp > 0 && source !== 'feuer' && kind !== 'falle') {
+      const from = fromX !== null ? { x: fromX, z: fromZ } : this.cb.sourceOf?.(source, by) || null;
+      if (from) {
+        const dx = from.x - z.x;
+        const dz = from.z - z.z;
+        const d = Math.hypot(dx, dz) || 1;
+        if ((Math.sin(z.facing) * dx + Math.cos(z.facing) * dz) / d > Math.cos((z.def.door.angle * Math.PI) / 180)) {
+          const caught = amount * (1 - z.def.door.front);
+          z.doorHp -= caught;
+          amount -= caught;
+          z.flash = 0.1;
+          if (z.doorHp <= 0) this.cb.onDoorBreak?.(z);
+        }
+      }
+    }
     // Schild eines Champions (M21): fängt zuerst ab, dann bricht er
     if (z.shield > 0) {
       const caught = Math.min(z.shield, amount);
@@ -322,7 +430,7 @@ export class Horde {
       const dx = z.x - fromX;
       const dz = z.z - fromZ;
       const d = Math.hypot(dx, dz) || 1;
-      const resist = z.type === 'brummer' || z.type === 'anfuehrer' ? 0.35 : 1;
+      const resist = z.def.heavy ? 0.35 : 1;
       z.kx += (dx / d) * push * 6 * resist;
       z.kz += (dz / d) * push * 6 * resist;
     }
@@ -351,7 +459,7 @@ export class Horde {
 
   freeze(z, time) {
     if (z.def.immuneSlow || z.state === 'dying') return;
-    z.freezeT = Math.max(z.freezeT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.freezeT = Math.max(z.freezeT, time * (z.def.heavy ? 0.5 : 1));
     z.windup = 0;
   }
 
@@ -361,14 +469,14 @@ export class Horde {
    */
   stun(z, time, light = false) {
     if (z.state === 'dying' || (light && z.lightproof)) return;
-    z.stunT = Math.max(z.stunT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.stunT = Math.max(z.stunT, time * (z.def.heavy ? 0.5 : 1));
     z.windup = 0;
   }
 
   /** Ablenken (Pfiff, M16): bleibt stehen und starrt auf (x, zz). Zähe nur halb so lange. */
   lure(z, x, zz, time) {
     if (z.state === 'dying' || z.state === 'enter') return;
-    z.lureT = Math.max(z.lureT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.lureT = Math.max(z.lureT, time * (z.def.heavy ? 0.5 : 1));
     z.lureX = x;
     z.lureZ = zz;
     z.windup = 0;
@@ -441,7 +549,7 @@ export class Horde {
     z.target = b.id;
     z.raidT = 0;
     z.lureBy = b.id;
-    z.lureUntil = this.time + time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1);
+    z.lureUntil = this.time + time * (z.def.heavy ? 0.5 : 1);
   }
 
   /** Genug gelockt: zurück auf den Weg, eine Weile lässt er sich nicht wieder locken. */
@@ -456,7 +564,7 @@ export class Horde {
     if (z.state === 'dying' || z.state === 'enter') return;
     const dir = this.world.pathing.direction(z.x, z.z, true, this._dir);
     if (!dir) return;
-    const resist = z.type === 'brummer' || z.type === 'anfuehrer' ? 0.4 : 1;
+    const resist = z.def.heavy ? 0.4 : 1;
     z.kx -= dir.x * dist * 6 * resist;
     z.kz -= dir.z * dist * 6 * resist;
   }
@@ -469,9 +577,43 @@ export class Horde {
   }
 
   /** Alle Lebenden im Umkreis (neue Liste). */
+  /**
+   * Boss (M22): Angriffe mit Ankündigung. Ist einer fällig und lohnt er sich
+   * (`cb.bossReady`), steht der Boss `telegraph` Sekunden still und holt aus
+   * (`onBossTelegraph`: Ring und Wort), dann folgt der Schlag (`onBossAttack`).
+   */
+  bossStep(z, dt, ctx) {
+    const b = z.boss;
+    if (b.charge > 0) b.charge -= dt;
+    if (b.windup > 0) {
+      b.windup -= dt;
+      if (b.windup > 0) return;
+      const a = BOSS_ATTACKS[b.kind];
+      this.cb.onBossAttack?.(z, b.kind);
+      if (a.charge) b.charge = a.charge;
+      b.next = a.every;
+      b.kind = null;
+      return;
+    }
+    b.next -= dt;
+    if (b.next > 0 || z.freezeT > 0 || z.stunT > 0) return;
+    const kind = z.def.attacks[0];
+    // Lohnt es sich gerade nicht, wartet er – aber nie ewig (sonst sähe man es nie)
+    b.wait += 1;
+    if (!(this.cb.bossReady?.(z, kind) ?? true) && b.wait < 12) {
+      b.next = 1;
+      return;
+    }
+    b.wait = 0;
+    b.kind = kind;
+    b.windup = BOSS_ATTACKS[kind].telegraph;
+    z.windup = 0;
+    this.cb.onBossTelegraph?.(z, kind);
+  }
+
   inRange(x, z, r) {
     const out = [];
-    for (const zo of this.list) if (zo.state !== 'dying' && zo.state !== 'enter' && (zo.x - x) ** 2 + (zo.z - z) ** 2 <= r * r) out.push(zo);
+    for (const zo of this.list) if (zo.state !== 'dying' && zo.state !== 'enter' && !(zo.y < -0.5) && (zo.x - x) ** 2 + (zo.z - z) ** 2 <= r * r) out.push(zo); // M22: nicht unter der Erde
     return out;
   }
 
@@ -505,6 +647,8 @@ export class Horde {
       const z = this.list[idx];
       if (z.state === 'dying') {
         z.deathT += dt;
+        if (z.y > 0) z.y = Math.max(0, z.y - dt * 3); // M22: der Moderfalter fällt herunter
+        if (z.y < 0) z.y = Math.min(0, z.y + dt * 3); // … der Gräber kommt noch einmal hoch
         if (z.deathT > 1.1) this.list.splice(idx, 1);
         continue;
       }
@@ -534,6 +678,16 @@ export class Horde {
           if (this.damage(z, n, { pierce: true, source: 'feuer', by: z.burnBy ?? null })) continue;
         }
       }
+      // Nebelwelle (M22): im Licht sichtbar, danach noch einen Moment; ringsum zieht Nebel
+      if (z.fog) {
+        if (ctx.lit && ctx.lit(z.x, z.z)) z.seenT = FOG_SEEN;
+        else z.seenT = Math.max(0, (z.seenT || 0) - dt);
+        z.mistT = (z.mistT || 0) - dt;
+        if (z.mistT <= 0) {
+          z.mistT = 0.5;
+          this.cb.onMist?.(z);
+        }
+      }
       // Champions (M21): goldenes Glitzern ringsum
       if (z.champion) {
         z.sparkT = (z.sparkT || 0) - dt;
@@ -545,7 +699,19 @@ export class Horde {
       // Moosig (M21): Wen eine Weile nichts trifft, der wächst wieder zu
       if (z.regen) {
         z.calmT += dt;
-        if (z.calmT >= TRAITS.moosig.calm && z.hp < z.maxHp) z.hp = Math.min(z.maxHp, z.hp + z.maxHp * z.regen * dt);
+        if (z.calmT >= (z.calm ?? TRAITS.moosig.calm) && z.hp < z.maxHp) z.hp = Math.min(z.maxHp, z.hp + z.maxHp * z.regen * dt);
+      }
+      if (z.boss && z.state !== 'enter') this.bossStep(z, dt, ctx);
+      // Neue Arten (M22): Flughöhe, Lichter löschen, Sporenkapseln legen
+      if (z.def.flying) z.y = FLY_HEIGHT + Math.sin(this.time * 3 + z.id) * 0.12;
+      if (z.def.snuff && z.state !== 'enter' && (z.snuffT -= dt) <= 0) {
+        z.snuffT = 0.4;
+        this.cb.onSnuff?.(z);
+      }
+      if (z.def.brood && z.state !== 'enter' && z.state !== 'dig' && (z.broodT -= dt) <= 0) {
+        z.broodT = z.def.brood.every;
+        this.pods.push({ x: z.x, z: z.z, t: z.def.brood.hatch, hp: z.def.brood.hp, count: z.def.brood.count, hpFactor: z.maxHp / z.def.hp, id: this.nextPod++ });
+        this.cb.onPod?.(z);
       }
       if (z.def.summon && z.state !== 'enter') {
         z.summonT -= dt;
@@ -561,11 +727,12 @@ export class Horde {
       }
 
       const lured = z.lureT > 0;
-      const frozen = z.freezeT > 0 || z.stunT > 0 || lured;
+      const frozen = z.freezeT > 0 || z.stunT > 0 || lured || z.boss?.windup > 0; // M22: der Boss holt aus
       const light = ctx.lightSlow && !z.lightproof ? ctx.lightSlow(z.x, z.z) : 0; // Licht macht den Moder müde (nicht den lichtfressenden Champion, M21)
       if (light > 0) z.blindT = Math.max(z.blindT, STATUS.geblendet.light); // … und blendet (M18)
       this.react(z);
       let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - light);
+      if (z.boss?.charge > 0) speed = z.speed * BOSS_ATTACKS.hieb.chargeSpeed; // M22: der Holzfäller stürmt
       if (frozen) speed = 0;
       z.cooldown = Math.max(0, z.cooldown - dt);
       z.attackAnim = Math.max(0, z.attackAnim - dt);
@@ -626,7 +793,7 @@ export class Horde {
           break;
         }
         case 'walk': {
-          const dir = pathing.direction(z.x, z.z, true, this._dir);
+          const dir = pathing.direction(z.x, z.z, z.def.flying ? 'free' : true, this._dir); // M22: Flieger über Barrikaden
           if (!dir) {
             // Am Haus (auch auf der Fläche künftiger Anbauten, die das Raster sperrt): angreifen
             if (pathing.atHome(z.x, z.z) || pathing.distanceToHome(z.x, z.z) < 2.6) z.state = 'approach';
@@ -646,10 +813,52 @@ export class Horde {
           // Barrikade oder Tor voraus: stehen bleiben und einschlagen (Trümmer sind kein Hindernis)
           const ahead = world.buildings.atCell(Math.floor(z.x + dir.x * 0.55), Math.floor(z.z + dir.z * 0.55));
           if (ahead && BUILDINGS[ahead.type].smash && !ahead.broken) {
+            const camp = BUILDINGS[ahead.type].camp;
+            if (z.def.flying && !camp) break; // M22: der Moderfalter fliegt drüber
+            if (z.def.digger && !camp) {
+              // M22: der Gräber buddelt sich drunter durch
+              z.state = 'dig';
+              z.digT = 0;
+              z.digPhase = 'down';
+              z.digUnder = false; // schon unter der Barrikade gewesen?
+              this.cb.onDig?.(z, true);
+              break;
+            }
             z.state = 'smash';
             z.target = ahead.id;
             vx = 0;
             vz = 0;
+          }
+          break;
+        }
+        case 'dig': {
+          // M22: abtauchen, unter der Barrikade durch (freies Feld), wieder auftauchen
+          z.digT += dt;
+          if (z.digPhase === 'down') {
+            z.y = -Math.min(1, z.digT / DIG_DOWN) * DIG_DEPTH;
+            if (z.digT >= DIG_DOWN) z.digPhase = 'tunnel';
+            break;
+          }
+          if (z.digPhase === 'tunnel') {
+            const under = world.buildings.atCell(Math.floor(z.x), Math.floor(z.z));
+            const blocked = Boolean(under && BUILDINGS[under.type].smash && !under.broken);
+            if (blocked) z.digUnder = true;
+            // Unter der Erde weiter, bis er unter der Barrikade durch ist (höchstens 8 s)
+            if ((blocked || !z.digUnder) && z.digT < 8) {
+              const dir = pathing.direction(z.x, z.z, 'free', this._dir);
+              if (dir) {
+                vx = dir.x * speed * 0.9;
+                vz = dir.z * speed * 0.9;
+              }
+              break;
+            }
+            z.digPhase = 'up';
+          }
+          z.y = Math.min(0, z.y + (dt / DIG_UP) * DIG_DEPTH);
+          if (z.y >= 0) {
+            z.state = 'walk';
+            z.digPhase = null;
+            this.cb.onDig?.(z, false);
           }
           break;
         }
@@ -794,12 +1003,12 @@ export class Horde {
 
       if (vx || vz) {
         const moving = Math.hypot(vx, vz);
-        if (z.state === 'enter') {
+        if (z.state === 'enter' || z.state === 'dig') {
           z.x += vx * dt;
           z.z += vz * dt;
         } else {
           this._pos.set(z.x, 0, z.z);
-          world.colliders.move(this._pos, vx * dt, vz * dt, z.def.radius * 0.9, HORDE_MOVE);
+          world.colliders.move(this._pos, vx * dt, vz * dt, z.def.radius * 0.9, z.def.flying ? FLY_MOVE : HORDE_MOVE);
           z.x = this._pos.x;
           z.z = this._pos.z;
         }
@@ -849,6 +1058,7 @@ export class Horde {
       z.lastZ = z.z;
     }
 
+    this.updatePods(dt);
     this.separate(dt);
     if (player.alive && !player.inside) this.keepOffPlayer(player, dt);
   }
@@ -943,8 +1153,8 @@ export class Horde {
         if (d2 >= min * min || d2 < 1e-6) continue;
         const d = Math.sqrt(d2);
         const push = ((min - d) / d) * 0.5 * Math.min(1, dt * 12);
-        const wa = A.type === 'brummer' || A.type === 'anfuehrer' ? 0.25 : 1;
-        const wb = B.type === 'brummer' || B.type === 'anfuehrer' ? 0.25 : 1;
+        const wa = A.def.heavy ? 0.25 : 1;
+        const wb = B.def.heavy ? 0.25 : 1;
         A.x -= dx * push * wa;
         A.z -= dz * push * wa;
         B.x += dx * push * wb;
@@ -975,9 +1185,12 @@ export class Horde {
       kind.rig.root.updateMatrixWorld(true);
       let tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
       if (z.champion && tint === TINT.normal) tint = championTint.copy(TINT.championDim).lerp(TINT.champion, 0.5 + 0.5 * Math.sin(this.time * 3 + z.id)); // M21
+      const hidden = this.isHidden(z) && z.state !== 'dying'; // Nebelwelle (M22): nur die Augen
+      const buried = z.y < -0.5; // Gräber unter der Erde: gar nichts
       for (const name of kind.parts) {
         const mesh = kind.meshes[name];
-        mesh.setMatrixAt(k, kind.rig.anchors[name].matrixWorld);
+        const gone = buried || (hidden && !kind.glow.has(name)) || (name === 'door' && !(z.doorHp > 0));
+        mesh.setMatrixAt(k, gone ? HIDDEN : kind.rig.anchors[name].matrixWorld);
         if (mesh.instanceColor) mesh.setColorAt(k, tint);
       }
     }
@@ -999,6 +1212,20 @@ export class Horde {
       s.mesh.count = counts[s.type];
       s.mesh.visible = counts[s.type] > 0;
     }
+    // Sporenkapseln (M22): pulsieren schneller, je näher das Schlüpfen
+    const d = this._podDummy;
+    let n = 0;
+    for (const p of this.pods) {
+      if (n >= 64) break;
+      const pulse = 1 + Math.sin(this.time * (4 + (5 - Math.max(0, p.t)) * 2) + p.id) * 0.12;
+      d.position.set(p.x, 0, p.z);
+      d.scale.set(pulse, pulse, pulse);
+      d.updateMatrix();
+      this.podMesh.setMatrixAt(n++, d.matrix);
+    }
+    this.podMesh.count = n;
+    this.podMesh.visible = n > 0;
+    this.podMesh.instanceMatrix.needsUpdate = true;
   }
 
   pose(rig, z) {
@@ -1009,7 +1236,7 @@ export class Horde {
     const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
-    const heavy = z.type === 'brummer' || z.type === 'anfuehrer';
+    const heavy = z.def.heavy;
     let lean = run ? 0.32 : heavy ? 0.06 : 0.14;
     // Getroffen: kurz nach hinten geworfen
     const hit = z.recoil > 0 ? Math.sin((z.recoil / RECOIL) * Math.PI) : 0;
@@ -1024,6 +1251,19 @@ export class Horde {
     rig.root.position.set(z.x, z.y - sink, z.z);
     rig.root.rotation.set(0, z.facing, 0);
     rig.root.scale.set(s, s, s);
+    if (z.def.flying) {
+      // Moderfalter (M22): Flügel schlagen, die Beinchen hängen, der Leib wiegt sich
+      const flap = z.state === 'dying' ? 0.2 : Math.sin(t * 17 + z.id) * 0.75;
+      p.armL.rotation.set(0, 0, -flap - 0.15);
+      p.armR.rotation.set(0, 0, flap + 0.15);
+      p.legL.rotation.set(0.5, 0, 0);
+      p.legR.rotation.set(0.5, 0, 0);
+      p.head.rotation.set(Math.sin(t * 2 + z.id) * 0.1, 0, 0);
+      rig.body.position.y = 0;
+      rig.body.rotation.set(0.12 - hit * 0.3, 0, Math.sin(t * 2.3 + z.id) * 0.1);
+      if (fall) rig.root.rotation.set(-fall, z.facing, 0, 'YXZ');
+      return;
+    }
     // Schwere stampfen (tiefer Tritt, breites Wanken), Schwärmer trippeln
     const bob = heavy ? Math.pow(Math.abs(Math.cos(z.phase)), 3) * 0.06 : Math.abs(Math.cos(z.phase)) * 0.03;
     const sway = heavy ? 0.12 : z.type === 'schwaermer' ? 0.1 : 0.06;
@@ -1041,6 +1281,8 @@ export class Horde {
     if (z.attackAnim > 0) {
       const q = 1 - z.attackAnim / 0.45;
       arm = q < 0.45 ? -1.4 - q * 2.4 : -2.5 + (q - 0.45) * 3.4;
+    } else if (z.boss?.windup > 0) {
+      arm = -2.9 + Math.sin(t * 20) * 0.05; // M22: der Boss holt weit aus (zittert vor Kraft)
     } else if (z.windup > 0) {
       arm = -2.2;
     }
@@ -1056,14 +1298,14 @@ export class Horde {
   toState() {
     return this.list
       .filter((z) => z.state !== 'dying')
-      .map((z) => ({ type: z.type, x: +z.x.toFixed(2), z: +z.z.toFixed(2), hp: Math.round(z.hp), max: z.maxHp, day: z.day || undefined, champion: z.champion || undefined, shield: z.shield > 0 ? Math.round(z.shield) : undefined }));
+      .map((z) => ({ type: z.type, x: +z.x.toFixed(2), z: +z.z.toFixed(2), hp: Math.round(z.hp), max: z.maxHp, day: z.day || undefined, champion: z.champion || undefined, shield: z.shield > 0 ? Math.round(z.shield) : undefined, trait: z.trait || undefined }));
   }
 
   load(entries) {
     this.clear();
     for (const e of entries || []) {
       if (!ZOMBIES[e.type]) continue;
-      const z = this.spawn(e.type, { x: e.x, z: e.z, day: e.day, champion: e.champion || null });
+      const z = this.spawn(e.type, { x: e.x, z: e.z, day: e.day, champion: e.champion || null, trait: typeof e.trait === 'string' ? e.trait : null });
       z.maxHp = e.max || z.maxHp;
       z.hp = Math.min(z.maxHp, e.hp || z.maxHp);
       if (z.shieldMax) z.shield = Math.max(0, Math.min(z.shieldMax, Number.isFinite(e.shield) ? e.shield : 0)); // Schild eines Champions (M21)

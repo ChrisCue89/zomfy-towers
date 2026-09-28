@@ -5,6 +5,31 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 22 – Die Horde stellt Fragen: Arten, Merkmale, Bosse ✓
+
+**Ziel (DESIGN 8):** Der Nachtplan kündigt eine Nebelwelle an, und man stellt
+schnell noch Laternen an den Nordweg.
+
+- **Wellenmerkmale** (`waves.js`): ab Nacht 4 eine Welle je Nacht, ab Nacht 8
+  zwei – Nebelwelle, flinke Welle, gepanzerter Trupp, heilende Welle,
+  Moderflut. Nachtplan und Banner sagen sie an, beim ersten Mal erklärt Mika.
+  Die Nebelwelle zeigt außerhalb von Licht nur die Augen, Türme treffen sie nur
+  im Licht; Nebelbänke ziehen über die Wege.
+- **Neue Arten:** Schildträger (Tür vorn), Moderfalter (fliegt über
+  Barrikaden), Gräber (buddelt darunter durch), Lichtfresser (löscht Fackeln
+  und Laternen bis zum Morgen), Brüter (Sporenkapseln, aus denen Schwärmer
+  schlüpfen). Eigene Modelle – die Motte mit Augenflecken auf den Flügeln.
+- **Bosse:** Holzfäller (Nacht 5), Pilzmutter (10), Laternenhexe (15),
+  Moosriese (20), danach zäher von vorn. Angekündigte Angriffe (Warnkreis,
+  Wort), Balken oben im Bild, eigenes Musikstück »Der Boss kommt«.
+- **Technik:** drittes Flussfeld (`pathing.free`), Lichtinseln wissen, wo es
+  hell ist (`lightPools.spots`, `steal`, `restore`), Teile können an Armen
+  hängen (Rig), `def.heavy` statt Typvergleichen.
+- **Prüfung:** neuer Abschnitt `fragen` (nur der Kern); die Musikprüfung
+  rechnet auch das Boss-Stück.
+
+---
+
 ## Meilenstein 21 – Beute mit Glanz: Turmteile, Seltenheit, Champions ✓
 
 **Ziel (DESIGN 8):** Nachts einen goldenen Schlurfer jagen, morgens die Kiste

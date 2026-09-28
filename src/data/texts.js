@@ -338,6 +338,16 @@ export const T = {
       brummer: ['ein Brummer', 'Brummer'],
       leuchtpilz: ['ein Leuchtpilz', 'Leuchtpilze'],
       anfuehrer: ['ein Anführer', 'Anführer'],
+      // M22: neue Arten und die Bosse
+      moderfalter: ['ein Moderfalter', 'Moderfalter'],
+      graeber: ['ein Gräber', 'Gräber'],
+      schildtraeger: ['ein Schildträger', 'Schildträger'],
+      lichtfresser: ['ein Lichtfresser', 'Lichtfresser'],
+      brueter: ['ein Brüter', 'Brüter'],
+      holzfaeller: ['der Holzfäller', 'der Holzfäller'],
+      pilzmutter: ['die Pilzmutter', 'die Pilzmutter'],
+      laternenhexe: ['die Laternenhexe', 'die Laternenhexe'],
+      moosriese: ['der Moosriese', 'der Moosriese'],
     },
     und: ' und ',
     welle: (n, von, woher) => `Welle ${n} von ${von} – ${woher}!`,
@@ -768,6 +778,68 @@ export const T = {
   },
   // Barrikaden auf den Wegen (Meilenstein 9): Stufen, Trümmer, Wiederaufbau
   // Besondere Turmteile von Balduin (Meilenstein 10)
+  // Neue Arten (M22): Worte über dem Kopf und Mikas Gedanken
+  arten: {
+    tuerBricht: 'Die Tür bricht!',
+    ausgeloescht: 'gelöscht!',
+    laterneAus: 'He! Er hat meine Laterne ausgepustet!',
+    zertreten: 'zertreten!',
+    neu: {
+      moderfalter: 'Moderfalter! Sie fliegen über Barrikaden und Fallen – nur Türme und ich treffen sie.',
+      graeber: 'Ein Gräber! Er buddelt sich unter Barrikaden durch – erst Wall und Tor halten ihn auf.',
+      schildtraeger: 'Ein Schildträger! Seine Tür fängt von vorn fast alles ab – Türme hinter der Kurve treffen ihn in den Rücken.',
+      lichtfresser: 'Ein Lichtfresser! Er löscht Fackeln und Laternen am Weg – bis zum Morgen bleibt es dort dunkel.',
+      brueter: 'Ein Brüter! Er legt Sporenkapseln, aus denen Schwärmer schlüpfen – zertreten oder mit dem Blitz platzen lassen.',
+    },
+  },
+  // Bosse (M22): Name, Ankündigung (Wort über dem Kopf), Schlag, Hinweis beim Auftritt
+  bosse: {
+    heuteNacht: (name) => `Heute Nacht kommt ${name}!`,
+    kommt: (titel) => `${titel} kommt!`,
+    faellt: (titel) => `${titel} ist gefallen!`,
+    sturm: 'stürmt!',
+    plan: (titel) => `Boss: ${titel}`,
+    holzfaeller: {
+      name: 'der Holzfäller',
+      titel: 'Der Holzfäller',
+      warnung: 'holt aus!',
+      angriff: 'Hieb!',
+      hinweis: 'Der Holzfäller! Holt er aus, zerschlägt er die Barrikade vor sich und stürmt los – weg aus dem roten Kreis!',
+    },
+    pilzmutter: {
+      name: 'die Pilzmutter',
+      titel: 'Die Pilzmutter',
+      warnung: 'bläht sich auf!',
+      angriff: 'Sporen!',
+      hinweis: 'Die Pilzmutter! Ihre Sporenwolken heilen die Horde ringsum, Schwärmer schlüpfen – erwisch sie, bevor sie ankommt.',
+    },
+    laternenhexe: {
+      name: 'die Laternenhexe',
+      titel: 'Die Laternenhexe',
+      warnung: 'greift nach dem Licht!',
+      angriff: 'Licht weg!',
+      hinweis: 'Die Laternenhexe! Sie stiehlt jedes Licht ringsum und heilt sich daran – Blitz und Licht schrecken sie nicht.',
+      laterne: 'Meine Laterne ist aus!',
+    },
+    moosriese: {
+      name: 'der Moosriese',
+      titel: 'Der Moosriese',
+      warnung: 'hebt den Fuß!',
+      angriff: 'Stampf!',
+      hinweis: 'Der Moosriese! Er stampft alles um, was vor ihm steht – und fällt er, zerfällt er in drei.',
+      zerfaellt: 'zerfällt in drei!',
+    },
+  },
+  // Wellenmerkmale (M22): Name im Nachtplan und Banner, Erklärung beim ersten Mal
+  wellen: {
+    merkmale: {
+      nebel: ['Nebelwelle', 'Nebelwelle! Außerhalb von Licht sieht man nur ihre Augen – Türme treffen sie nur im Licht. Laternen an den Weg!'],
+      flink: ['flinke Welle', 'Eine flinke Welle: Sie laufen ein gutes Stück schneller als sonst.'],
+      gepanzert: ['gepanzerter Trupp', 'Ein gepanzerter Trupp: Jeder Treffer richtet weniger aus – der Scharfschütze geht durch.'],
+      heilend: ['heilende Welle', 'Eine heilende Welle: Wen eine Weile nichts trifft, der wächst wieder zu. Dranbleiben!'],
+      moderflut: ['Moderflut', 'Moderflut! Dazu kommen ganze Pulks Schwärmer – Flächenschaden hilft.'],
+    },
+  },
   // Champions (M21): Schlurfer mit goldenem Schimmer, Namen und Merkmalen
   champions: {
     namen: [

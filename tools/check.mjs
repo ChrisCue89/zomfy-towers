@@ -196,6 +196,8 @@ async function runBrowserChecks() {
     if (want('misch')) await runMixChecks(browser, url);
     // --- 6m. M21: Turmteile mit Seltenheit, Champions, Fundkiste, Basteln, Wundertüte ------
     if (want('glanz')) await runShineChecks(browser, url);
+    // --- 6n. M22: Wellenmerkmale, neue Arten, Bosse -----------------------------------
+    if (want('fragen')) await runQuestionChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -2248,6 +2250,247 @@ async function runShineChecks(browser, url) {
 }
 
 /**
+ * M22 (nur der Kern, CLAUDE.md »Keine Testspieler-Agenten mehr«): Der Nachtplan
+ * kündigt in Nacht 4 eine Nebelwelle an, in Nacht 5 kommt der Holzfäller. Ein
+ * Schlurfer der Nebelwelle ist im Dunkeln unsichtbar und der Turm schießt nicht –
+ * Mikas Laterne holt ihn ins Licht, dann trifft der Turm. Der Holzfäller holt vor
+ * einer Barrikade aus (Warnkreis, Balken oben) und zerschlägt sie. Der Moderfalter
+ * fliegt über eine Barrikade, der Gräber buddelt sich darunter durch; die Tür des
+ * Schildträgers fängt von vorn ab; der Lichtfresser löscht eine Fackel; aus der
+ * Kapsel des Brüters schlüpfen Schwärmer; der Moosriese zerfällt in drei. Eine
+ * Nebelwelle bleibt nach dem Neuladen eine (Bilder: nebelwelle, boss).
+ */
+async function runQuestionChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Die Horde stellt Fragen (M22)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m22')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m22', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  await z(() => {
+    window.__zomfyHold = true;
+    const flags = ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut', 'championHinweis', 'turmteilHinweis'];
+    for (const f of flags) window.zomfy.setFlag(f);
+    for (const t of ['moderfalter', 'graeber', 'schildtraeger', 'lichtfresser', 'brueter']) window.zomfy.setFlag(`art-${t}`);
+    window.zomfy.setWeather('klar', true);
+    window.zomfy.setHorde(false);
+    window.zomfy.setDay(4);
+    window.zomfy.setTime(19, 50);
+    window.zomfy.give({ holz: 300, stein: 80, schrott: 600, zahnraeder: 30 });
+  });
+
+  // 1) Nachtplan: Nacht 4 mit Nebelwelle, Nacht 5 mit dem Holzfäller, Nacht 3 ohne Merkmal
+  await step(200);
+  const plan = await z(() => {
+    const Z = window.zomfy;
+    const view = Z.planView();
+    const tafel = Z.game.hud.planRect ? true : false;
+    return { n3: Z.waveTraits(3).filter((w) => w.trait).length, n4: Z.waveTraits(4).filter((w) => w.trait).map((w) => w.trait), row: view?.rows.find((r) => r.trait) || null, n5boss: Z.game.nights.planFor(5).waves.at(-1).spawns.some((s) => s.type === 'holzfaeller'), tafel };
+  });
+  if (plan.n3 === 0 && plan.n4.join() === 'nebel' && plan.row?.trait === 'nebel' && plan.n5boss && plan.tafel) note(`✓ Nachtplan (M22): Nacht 4 kündigt eine Nebelwelle an (Welle ${plan.row.n}), in Nacht 5 führt der Holzfäller die letzte Welle an`);
+  else fail(`Nachtplan M22: ${JSON.stringify(plan)}`);
+
+  // 2) Nebelwelle: im Dunkeln unsichtbar, der Turm schießt nicht – Mikas Laterne holt ihn ins Licht
+  const nebel = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    Z.setTime(21, 30);
+    // eine dunkle Stelle am Weg (weit weg von jeder Fackel) mit Platz für einen Turm
+    for (let i = -30; i <= -8; i++) {
+      const col = Z.pathColumn(i);
+      if (!col.length) continue;
+      const zc = col[Math.floor(col.length / 2)] + 0.5;
+      if (Z.litAt(i + 0.5, zc) || Z.litAt(i - 2, zc) || Z.litAt(i + 3, zc)) continue;
+      const j = Math.min(...col) - 1;
+      if (!Z.placeCheck('bolzen', i, j).ok || Z.build('bolzen', i, j) !== 'ok') continue;
+      const id = Z.spawnZombie('schlurfer', i + 0.5, zc, null, 'nebel');
+      const q = g.horde.list.find((o) => o.id === id);
+      q.stunT = 999; // steht still vor dem Turm
+      Z.teleport(i + 6, zc, 0);
+      if (g.state.player.lantern) Z.toggleLantern();
+      return { id, i, zc, hp: q.hp };
+    }
+    return null;
+  });
+  await step(2500);
+  const dunkel = await z((id) => {
+    const Z = window.zomfy;
+    const q = Z.game.horde.list.find((o) => o.id === id);
+    return q ? { hp: q.hp, hidden: Z.game.horde.isHidden(q) } : null;
+  }, nebel?.id);
+  await page.screenshot({ path: join(SHOTS, 'nebelwelle.png') });
+  note('  Screenshot: screenshots/nebelwelle.png');
+  await z((n) => {
+    const Z = window.zomfy;
+    Z.teleport(n.i + 2, n.zc, 0);
+    if (!Z.game.state.player.lantern) Z.toggleLantern();
+  }, nebel);
+  await step(2500);
+  const hell = await z((id) => {
+    const Z = window.zomfy;
+    const q = Z.game.horde.list.find((o) => o.id === id);
+    return q ? { hp: q.hp, hidden: Z.game.horde.isHidden(q), dying: q.state === 'dying' } : { hp: 0, hidden: false, dying: true };
+  }, nebel?.id);
+  if (nebel && dunkel?.hidden && dunkel.hp === nebel.hp && !hell.hidden && hell.hp < nebel.hp) note(`✓ Nebelwelle (M22): im Dunkeln nur die Augen, der Bolzenwerfer schießt nicht – Mikas Laterne holt den Schlurfer ins Licht, dann trifft er (Leben ${nebel.hp} → ${Math.max(0, Math.round(hell.hp))})`);
+  else fail(`Nebelwelle: ${JSON.stringify({ nebel, dunkel, hell })}`);
+  // Wegräumen ohne Erfahrung (sonst öffnet ein Stufenaufstieg die Perk-Wahl und alles steht)
+  await z(() => {
+    window.zomfy.game.horde.clear();
+    if (window.zomfy.game.state.player.lantern) window.zomfy.toggleLantern();
+  });
+  await step(1500);
+
+  // Eine Barrikadenreihe quer über den Weg (für Boss, Flieger und Gräber)
+  const reihe = async (x) =>
+    z((x) => {
+      const Z = window.zomfy;
+      const col = Z.pathColumn(x);
+      const ids = [];
+      for (const j of col) {
+        if (Z.build('barrikade', x, j) !== 'ok') continue;
+        ids.push(Z.buildings().find((b) => b.type === 'barrikade' && b.i === x && b.j === j)?.id);
+      }
+      return { x, col, ids };
+    }, x);
+
+  // 3) Der Holzfäller: holt vor der Barrikade aus (Warnkreis, Balken oben) und zerschlägt sie
+  const r1 = await reihe(-14);
+  await z((r) => {
+    const Z = window.zomfy;
+    const id = Z.spawnZombie('holzfaeller', r.x - 1.6, r.col[Math.floor(r.col.length / 2)] + 0.5);
+    const q = Z.game.horde.list.find((o) => o.id === id);
+    q.boss.next = 0.3;
+    Z.teleport(r.x + 3.4, r.col[Math.floor(r.col.length / 2)] + 1.5, 0); // nah genug fürs Bild, außer Reichweite des Hiebs
+  }, r1);
+  let boss = null;
+  let bild = false;
+  for (let k = 0; k < 40; k++) {
+    await step(150);
+    boss = await z((r) => {
+      const g = window.zomfy.game;
+      const q = g.horde.list.find((o) => o.type === 'holzfaeller');
+      return { stats: { ...g.bossStats }, bar: g.hud.bossShown, windup: q?.boss?.windup || 0, broken: r.ids.filter((id) => g.world.buildings.get(id)?.broken).length, warns: g.hud.warns.length };
+    }, r1);
+    if (!bild && boss.windup > 0) {
+      await page.screenshot({ path: join(SHOTS, 'boss.png') });
+      note('  Screenshot: screenshots/boss.png');
+      bild = true;
+    }
+    if (boss.stats.attacks > 0 && boss.broken > 0) break;
+  }
+  if (bild && boss.stats.telegraphs >= 1 && boss.stats.attacks >= 1 && boss.broken >= 1 && boss.bar?.name === 'Der Holzfäller') note(`✓ Boss (M22): Der Holzfäller holt vor der Barrikade aus (Warnkreis, Balken »${boss.bar.name}« oben) und zerschlägt ${boss.broken} Barrikade(n) mit einem Hieb`);
+  else fail(`Holzfäller: ${JSON.stringify({ bild, boss })}`);
+  await z(() => window.zomfy.game.horde.clear());
+  await step(300);
+
+  // 4) Moderfalter und Gräber: über bzw. unter einer frischen Barrikadenreihe durch
+  const r2 = await reihe(-20);
+  const start = await z((r) => {
+    const Z = window.zomfy;
+    const mid = r.col[Math.floor(r.col.length / 2)] + 0.5;
+    const falter = Z.spawnZombie('moderfalter', r.x - 2.5, mid);
+    const graeber = Z.spawnZombie('graeber', r.x - 2.5, mid - 0.4);
+    Z.teleport(r.x + 14, r.col[0] - 4, 0);
+    return { falter, graeber };
+  }, r2);
+  let durch = null;
+  for (let k = 0; k < 60; k++) {
+    await step(250);
+    durch = await z(([r, s]) => {
+      const g = window.zomfy.game;
+      const f = g.horde.list.find((o) => o.id === s.falter);
+      const gr = g.horde.list.find((o) => o.id === s.graeber);
+      return { falter: f ? f.x : null, graeber: gr ? gr.x : null, flying: f ? f.y : 0, digs: g.bossStats.digs, heil: r.ids.every((id) => !g.world.buildings.get(id)?.broken) };
+    }, [r2, start]);
+    if (durch.falter > r2.x + 1.5 && durch.graeber > r2.x + 1.5) break;
+  }
+  if (durch.falter > r2.x + 1.5 && durch.flying > 0.8 && durch.graeber > r2.x + 1.5 && durch.digs >= 1 && durch.heil) note('✓ Neue Arten (M22): Der Moderfalter fliegt über die Barrikadenreihe, der Gräber buddelt sich darunter durch – die Reihe bleibt heil');
+  else fail(`Falter/Gräber: ${JSON.stringify({ r2: r2.x, durch })}`);
+  await z(() => window.zomfy.game.horde.clear());
+  await step(300);
+
+  // 5) Schildträger, Lichtfresser, Brüter, Moosriese
+  const rest = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const h = g.horde;
+    // Schildträger: derselbe Treffer von vorn und von hinten
+    const col = Z.pathColumn(-26);
+    const mid = col[Math.floor(col.length / 2)] + 0.5;
+    const sid = Z.spawnZombie('schildtraeger', -26, mid);
+    const s = h.list.find((o) => o.id === sid);
+    s.stunT = 999;
+    const f = s.facing;
+    const hp0 = s.hp;
+    h.damage(s, 40, { fromX: s.x + Math.sin(f) * 3, fromZ: s.z + Math.cos(f) * 3, source: 'turm' });
+    const vorn = hp0 - s.hp;
+    const hp1 = s.hp;
+    h.damage(s, 40, { fromX: s.x - Math.sin(f) * 3, fromZ: s.z - Math.cos(f) * 3, source: 'turm' });
+    const hinten = hp1 - s.hp;
+    // Lichtfresser an einer Fackel
+    const t = g.world.props.torches.find((q) => q.x < -8 && q.x > -40);
+    const vorher = Z.litAt(t.x, t.z);
+    const lid = Z.spawnZombie('lichtfresser', t.x, t.z);
+    const lf = h.list.find((o) => o.id === lid);
+    lf.stunT = 999;
+    // Brüter: die nächste Kapsel gleich
+    const bid = Z.spawnZombie('brueter', -28, mid);
+    const b = h.list.find((o) => o.id === bid);
+    b.stunT = 999;
+    b.broodT = 0.1;
+    return { vorn, hinten, torch: t, vorher };
+  });
+  await step(800);
+  const nach = await z((t) => {
+    const g = window.zomfy.game;
+    return { hell: window.zomfy.litAt(t.x, t.z), snuffed: g.bossStats.snuffed, pods: g.horde.pods.length };
+  }, rest.torch);
+  const vorSchwarm = await z(() => window.zomfy.zombies().filter((q) => q.type === 'schwaermer').length);
+  await z(() => {
+    for (const p of window.zomfy.game.horde.pods) p.t = 0.05;
+  });
+  await step(300);
+  const schwarm = await z(() => window.zomfy.zombies().filter((q) => q.type === 'schwaermer' && q.state !== 'dying').length);
+  // Moosriese: zerfällt in drei
+  const riese = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    const col = Z.pathColumn(-30);
+    const id = Z.spawnZombie('moosriese', -30, col[Math.floor(col.length / 2)] + 0.5);
+    Z.killZombie(id, 'turm');
+    return g.horde.list.filter((o) => o.type === 'moosriese' && o.state !== 'dying').map((o) => ({ size: o.size, hp: o.maxHp }));
+  });
+  if (rest.vorn <= 12 && rest.hinten >= 38 && rest.vorher && !nach.hell && nach.snuffed >= 1 && nach.pods >= 1 && schwarm >= vorSchwarm + 3 && riese.length === 3 && riese.every((r) => r.size < 1)) {
+    note(`✓ Neue Arten (M22): Die Tür fängt von vorn ab (${rest.vorn} statt ${rest.hinten} Schaden), der Lichtfresser löscht die Fackel, aus der Kapsel des Brüters schlüpfen Schwärmer, der Moosriese zerfällt in drei`);
+  } else fail(`Arten M22: ${JSON.stringify({ rest, nach, vorSchwarm, schwarm, riese })}`);
+
+  // 6) Speichern: ein Schlurfer der Nebelwelle bleibt einer
+  await z(() => {
+    const Z = window.zomfy;
+    Z.game.horde.clear();
+    const col = Z.pathColumn(-40);
+    Z.spawnZombie('schlurfer', -40, col[Math.floor(col.length / 2)] + 0.5, null, 'nebel');
+    Z.save();
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  const geladen = await z(() => {
+    window.__zomfyHold = true;
+    return { v: window.zomfy.state().version, fog: window.zomfy.fogged().length };
+  });
+  if (geladen.fog === 1) note(`✓ Speichern v${geladen.v}: Ein Schlurfer der Nebelwelle bleibt nach dem Neuladen im Nebel`);
+  else fail(`Speichern (Nebel): ${JSON.stringify(geladen)}`);
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
  * M15: Der Moder wächst im Unterholz (Boden, Pilze, Glühen), Mika denkt einmal
  * am Tag am Waldrand darüber nach (echte Taste), der Warnpfahl gibt einen
  * Gedanken statt eines Dialogs (echtes E), nachts glimmt der Wald.
@@ -3785,7 +4028,7 @@ async function runNightChecks(browser, url) {
   // Soundtrack (M10d): tagsüber gemütlich, bei der Welle treibend; jedes Stück ohne
   // Lautsprecher berechnet – keine Übersteuerung, keine kaputten Samples, nicht stumm
   const pegel = {};
-  for (const [id, threat] of [['tag', 0], ['abend', 0], ['nacht', 2], ['titel', 0], ['jingle', 0]]) pegel[id] = await z(([id, threat]) => window.zomfy.renderMusic(id, 8, threat), [id, threat]);
+  for (const [id, threat] of [['tag', 0], ['abend', 0], ['nacht', 2], ['boss', 2], ['titel', 0], ['jingle', 0]]) pegel[id] = await z(([id, threat]) => window.zomfy.renderMusic(id, 8, threat), [id, threat]);
   const pegelOk = Object.values(pegel).every((p) => p.bad === 0 && p.peak < 0.95 && p.rms > 0.01);
   if (musikTag.music === 'tag' && musikNacht.music === 'nacht' && pegelOk) {
     note(`✓ Musik: tagsüber »Morgen am See«, während der Welle »Die Horde kommt«, dazu Titelstück und Spieluhr (N2); Spitzen ${Object.entries(pegel).map(([id, p]) => `${id} ${p.peak.toFixed(2)}`).join(', ')}`);

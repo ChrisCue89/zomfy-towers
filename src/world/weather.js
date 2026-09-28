@@ -76,6 +76,8 @@ class FogBanks {
     const material = new THREE.ShaderMaterial({ vertexShader: FOG_VERT, fragmentShader: FOG_FRAG, uniforms: this.uniforms, depthWrite: false });
     this.landUniforms = { ...this.uniforms, uAmount: { value: 0 } };
     const landMaterial = new THREE.ShaderMaterial({ vertexShader: FOG_VERT, fragmentShader: FOG_FRAG, uniforms: this.landUniforms, depthWrite: false });
+    this.waveUniforms = { ...this.uniforms, uAmount: { value: 0 } };
+    const waveMaterial = new THREE.ShaderMaterial({ vertexShader: FOG_VERT, fragmentShader: FOG_FRAG, uniforms: this.waveUniforms, depthWrite: false });
     const rng = new Rng(seed + 31);
     this.group = new THREE.Group();
     this.group.name = 'Nebel';
@@ -112,6 +114,17 @@ class FogBanks {
       x0: -12,
       x1: 14,
     }));
+    // Nebelwelle (M22): über den Wegen im Westen, nur solange die Horde im Nebel kommt
+    this.wave = layer(waveMaterial, 14, () => ({
+      x: rng.range(-58, -6),
+      y: rng.range(0.3, 0.9),
+      z: rng.range(-22, 16),
+      w: rng.range(7, 11),
+      d: rng.range(3.5, 5.5),
+      speed: rng.range(0.06, 0.12),
+      x0: -62,
+      x1: -4,
+    }));
     this._m = new THREE.Matrix4();
     this.move(0);
     scene.add(this.group);
@@ -121,6 +134,7 @@ class FogBanks {
   move(dt) {
     this.moveLayer(this.water, dt);
     this.moveLayer(this.land, dt);
+    this.moveLayer(this.wave, dt);
   }
 
   moveLayer({ mesh, banks }, dt) {
@@ -135,13 +149,15 @@ class FogBanks {
     mesh.instanceMatrix.needsUpdate = true;
   }
 
-  update(dt, water, land, night, time, sky) {
+  update(dt, water, land, night, time, sky, wave = 0) {
     this.uniforms.uTime.value = time;
     this.uniforms.uAmount.value = water;
     this.landUniforms.uAmount.value = land;
-    this.group.visible = water > 0.01 || land > 0.01;
+    this.waveUniforms.uAmount.value = wave;
+    this.group.visible = water > 0.01 || land > 0.01 || wave > 0.01;
     this.water.mesh.visible = water > 0.01;
     this.land.mesh.visible = land > 0.01;
+    this.wave.mesh.visible = wave > 0.01;
     // Im Licht des Himmels: morgens rosig, mittags hell, nachts blaugrau
     this.uniforms.uColor.value.copy(sky).lerp(WHITE, 0.62).multiplyScalar(0.95 - 0.4 * night);
     if (this.group.visible) this.move(dt);
@@ -158,6 +174,8 @@ export class Weather {
     this.rng = new Rng(seed + 77);
     this.kind = 'klar';
     this.forced = null; // Prüfung: ein Wetter erzwingen
+    this.waveFog = 0; // Nebelwelle unterwegs (M22, vom Spiel gesetzt) …
+    this.waveFogMix = 0; // … und wie dicht ihr Nebel gerade ist
     const base = WEATHER.klar;
     this.mix = { ...base, tint: new THREE.Vector3(...base.tint) };
     this.fog = new FogBanks(scene, seed);
@@ -221,7 +239,8 @@ export class Weather {
     const morning = smoothstep(F.from, F.full, hours) * (1 - smoothstep(until - 1.5, until, hours));
     const water = morning * (F.water + (F.waterFogDay - F.water) * fogDay) + fogDay * 0.25 * dn.night;
     const land = morning * fogDay * 0.4;
-    this.fog.update(dt, inside ? 0 : water, inside ? 0 : land, dn.night, this.time, dn.hemi.color);
+    this.waveFogMix += (this.waveFog - this.waveFogMix) * (1 - Math.exp(-dt * 0.5));
+    this.fog.update(dt, inside ? 0 : water, inside ? 0 : land, dn.night, this.time, dn.hemi.color, inside ? 0 : this.waveFogMix * 0.55);
 
     if (inside || !player) return;
     // Fallendes Laub rund um den Blickpunkt: trudelt, pendelt, bleibt kurz liegen

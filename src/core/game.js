@@ -67,6 +67,7 @@ import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
 import { towerInvested, towerStatsOf, TOWER_PARTS, PART_RARITIES, TINKER_COUNT, partsOfRarity, hasPart } from '../data/towers.js';
 import { CHAMPION, CHEST_RARITY, CHEST_LOOT } from '../data/champions.js';
+import { BOSS_ATTACKS, SPLIT } from '../data/bosses.js';
 import { BAG_RARITY } from '../data/trader.js';
 import { GOALS } from '../data/goals.js';
 import { RECIPES } from '../data/recipes.js';
@@ -92,6 +93,8 @@ const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es i
 // Kamerafahrt der Einleitung (M15): Die Fahrt selbst ist weich geführt, die Kamera folgt ihr straff
 const TOUR = { sharpness: 30, minTime: 0.9, maxTime: 3.2, metersPerSecond: 18 };
 /** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
+/** Nebelwelle (M22): So weit holt Mikas Laterne die Horde aus dem Nebel (m). */
+const LANTERN_REVEAL = 3.5;
 const LOOT_PITCH = { schrott: 700, teile: 560, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
 // Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
 const PERK_NEAR = 6;
@@ -233,6 +236,42 @@ export class Game {
           if (source === 'turm' && kind !== 'funke') this.partsOnHit(z, amount, by); // M21: Turmteile mit Wirkung
         }
       },
+      // Nebelwelle (M22): Nebel zieht um die Schlurfer
+      onMist: (z) => this.effects.splat(z.x, 0.5, z.z, 'nebel', 2, 0.25),
+      // Neue Arten (M22): woher ein Treffer kam (Tür des Schildträgers), Tür bricht,
+      // Lichter löschen, Sporenkapseln, Gräber taucht ab und auf
+      sourceOf: (source, by) => {
+        if (by !== null && by !== undefined) {
+          const t = this.world.buildings.get(by);
+          if (t) return this.world.buildings.bounds(t);
+        }
+        return source === 'spieler' ? this.player.position : null;
+      },
+      onDoorBreak: (z) => {
+        this.effects.chips(z.x, 0.9, z.z, 'holz', 14);
+        this.sound.play('abriss', { x: z.x, z: z.z, volume: 0.6 });
+        this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.arten.tuerBricht, hexToCss(P.e7));
+      },
+      onSnuff: (z) => this.snuffAround(z),
+      onPod: (z) => this.sound.play('platsch', { x: z.x, z: z.z, volume: 0.5 }),
+      onHatch: (p) => {
+        this.effects.splat(p.x, 0.4, p.z, 'moos', 10, 0.8);
+        this.sound.play('platsch', { x: p.x, z: p.z });
+      },
+      onPodBurst: (p) => {
+        this.effects.splat(p.x, 0.3, p.z, 'moos', 14, 1);
+        this.hud.popWord(p.x, 0.8, p.z, T.arten.zertreten, hexToCss(P.g6));
+        this.bossStats.pods++;
+      },
+      onDig: (z, down) => {
+        this.effects.dust(z.x, z.z, 0.7, 16);
+        this.effects.splat(z.x, 0.3, z.z, 'schlamm', 10, 0.8);
+        if (down) this.bossStats.digs++;
+      },
+      // Bosse (M22): lohnt der Angriff, Ankündigung, Schlag
+      bossReady: (z, kind) => this.bossReady(z, kind),
+      onBossTelegraph: (z, kind) => this.onBossTelegraph(z, kind),
+      onBossAttack: (z, kind) => this.onBossAttack(z, kind),
       // Champions (M21): goldenes Glitzern, der Schild bricht
       onSparkle: (z) => this.effects.splat(z.x + (this.world.particles.rng.next() - 0.5) * 0.5, 1.2 * z.def.scale * (z.size || 1), z.z, 'licht', 2, 0.35),
       onShieldBreak: (z) => {
@@ -242,6 +281,7 @@ export class Game {
       },
     });
     this.bellStats = { rings: 0, healed: 0 }; // Glockenschläge und geflickte Bauten (M19, Prüfung)
+    this.bossStats = { telegraphs: 0, attacks: 0, smashed: 0, healed: 0, stolen: 0, snuffed: 0, pods: 0, digs: 0 }; // Bosse und neue Arten (M22, Prüfung)
     this.towers = new TowerSystem(
       { scene: this.scene, world: this.world, horde: this.horde, effects: this.effects },
       {
@@ -1149,6 +1189,7 @@ export class Game {
 
   /** Alles, was ein neuer Tag mit sich bringt (Nachwachsen …). */
   onNewDay() {
+    this.world.lightPools.restore(Infinity); // M22: der Morgen zündet alle Lichter wieder an
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
     this.milled = this.grindMills(); // M19
@@ -1234,6 +1275,151 @@ export class Game {
     // Erfahrung: im Nahkampf doppelt, Tagesschlurfer halb, Champions vierfach (M21)
     this.combat.gainXp(z.def.xp * (source === 'spieler' ? 2 : 1) * (z.day ? 0.5 : 1) * (z.champion ? CHAMPION.xp : 1));
     if (z.champion) this.championDown(z);
+    if (z.def.boss) this.bossDown(z);
+  }
+
+  // --- Bosse (M22) ---------------------------------------------------------------------
+
+  /** Der Boss der Nacht erscheint: Banner, Hörner, beim ersten Mal erklärt Mika die Leiste. */
+  onBoss(z) {
+    const B = T.bosse[z.type];
+    this.hud.showBanner(T.bosse.kommt(B.titel));
+    this.sound.play('champion');
+    this.hud.toast(B.hinweis, 'warnung', 7);
+  }
+
+  /** Lichtfresser (M22): löscht Lichter in seiner Nähe – bis zum Morgen –, auch Mikas Laterne. */
+  snuffAround(z) {
+    const n = this.world.lightPools.steal(z.x, z.z, z.def.snuff, Infinity);
+    const p = this.player.position;
+    const mika = this.state.player.lantern && !this.viewInside && Math.hypot(p.x - z.x, p.z - z.z) <= z.def.snuff;
+    if (!n && !mika) return;
+    if (mika) {
+      this.toggleLantern();
+      this.hud.say(T.arten.laterneAus, 3);
+    }
+    this.bossStats.snuffed += n;
+    this.effects.splat(z.x, 1.6, z.z, 'nebel', 8, 0.5);
+    this.sound.play('pech', { x: z.x, z: z.z, volume: 0.6 });
+    this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.arten.ausgeloescht, hexToCss(P.n7));
+  }
+
+  /** Lohnt sich der Angriff gerade? (Sonst wartet der Boss noch – höchstens ein paar Sekunden.) */
+  bossReady(z, kind) {
+    const a = BOSS_ATTACKS[kind];
+    const p = this.player.position;
+    const nearMika = !this.viewInside && (p.x - z.x) ** 2 + (p.z - z.z) ** 2 <= (a.radius + 1) ** 2;
+    if (kind === 'hieb' || kind === 'stampfer') return nearMika || this.bossTargets(z.x, z.z, a.radius).length > 0;
+    if (kind === 'lichtraub') return this.world.lightPools.litNear(z.x, z.z, a.radius) || (this.state.player.lantern && nearMika);
+    return true; // Sporen: immer
+  }
+
+  /** Barrikaden, Wall und Tor im Umkreis (für Hieb und Stampfer). */
+  bossTargets(x, z, r) {
+    const out = [];
+    for (const b of this.world.buildings.list) {
+      if (b.broken || !(b.hp > 0) || !(b.type === 'barrikade' || BUILDINGS[b.type].camp)) continue;
+      const c = this.world.buildings.bounds(b);
+      if (Math.hypot(c.x - x, c.z - z) - Math.max(c.w, c.d) / 2 <= r) out.push(b);
+    }
+    return out;
+  }
+
+  /** Ankündigung: Ring am Boden, Wort über dem Kopf, ein tiefer Ton. */
+  onBossTelegraph(z, kind) {
+    const a = BOSS_ATTACKS[kind];
+    this.hud.warn(z.x, z.z, a.radius, a.telegraph);
+    this.hud.popWord(z.x, 2.2 * z.def.scale, z.z, T.bosse[z.type].warnung, hexToCss(P.f5));
+    this.sound.play('stoehnen', { x: z.x, z: z.z, volume: 1, pitch: 55 });
+    this.bossStats.telegraphs++;
+  }
+
+  /** Der Schlag (nach der Ankündigung). */
+  onBossAttack(z, kind) {
+    const a = BOSS_ATTACKS[kind];
+    const B = T.bosse[z.type];
+    const p = this.player.position;
+    const nearMika = !this.viewInside && Math.hypot(p.x - z.x, p.z - z.z) <= a.radius + 0.3;
+    this.bossStats.attacks++;
+    this.hud.popWord(z.x, 2.2 * z.def.scale, z.z, B.angriff, hexToCss(P.f7));
+    if (kind === 'hieb' || kind === 'stampfer') {
+      for (const b of this.bossTargets(z.x, z.z, a.radius)) {
+        this.onBarricadeHit(b, a.damage, z);
+        const c = this.world.buildings.bounds(b);
+        this.effects.chips(c.x, 0.8, c.z, 'holz', 10);
+        this.bossStats.smashed++;
+      }
+      if (nearMika) this.combat.hurt(a.bite, z);
+      this.effects.dust(z.x, z.z, a.radius, 24);
+      this.rig.shake = Math.max(this.rig.shake || 0, 0.3);
+      this.sound.play(kind === 'hieb' ? 'abriss' : 'knall', { x: z.x, z: z.z });
+      if (kind === 'hieb') this.hud.popWord(z.x, 2.6 * z.def.scale, z.z, T.bosse.sturm, hexToCss(P.r4));
+      return;
+    }
+    if (kind === 'sporen') {
+      // Die Sporenwolke heilt die Horde ringsum, und Schwärmer schlüpfen
+      for (const o of this.horde.inRange(z.x, z.z, a.radius)) {
+        if (o === z) continue;
+        o.hp = Math.min(o.maxHp, o.hp + o.maxHp * a.heal);
+        this.bossStats.healed++;
+      }
+      z.hp = Math.min(z.maxHp, z.hp + z.maxHp * a.heal * 0.4);
+      for (let k = 0; k < a.spawn; k++) {
+        const ang = (k / a.spawn) * Math.PI * 2;
+        const o = this.horde.spawn('schwaermer', { x: z.x + Math.cos(ang) * 0.8, z: z.z + Math.sin(ang) * 0.8, hpFactor: this.nights.plan?.hpFactor || 1 });
+        o.state = 'walk';
+      }
+      for (let k = 0; k < 16; k++) this.effects.spray(z.x, 1.2, z.z, (k / 16) * Math.PI * 2, a.radius * 0.7, 'moos');
+      this.effects.splat(z.x, 1.4, z.z, 'moos', 20, 1.2);
+      this.sound.play('nebel', { x: z.x, z: z.z });
+      return;
+    }
+    if (kind === 'lichtraub') {
+      // Alles Licht ringsum erlischt – die Hexe heilt sich an jedem gestohlenen Licht
+      const stolen = this.world.lightPools.steal(z.x, z.z, a.radius, this.clock + a.time);
+      if (this.state.player.lantern && nearMika) {
+        this.toggleLantern();
+        this.hud.say(T.bosse.laternenhexe.laterne, 3);
+      }
+      z.hp = Math.min(z.maxHp, z.hp + z.maxHp * a.healPer * stolen);
+      this.bossStats.stolen += stolen;
+      this.effects.splat(z.x, 2.4, z.z, 'licht', 14 + stolen * 2, 1.2);
+      this.sound.play('pech', { x: z.x, z: z.z });
+    }
+  }
+
+  /** Der Boss fällt (M22): Banner, Jubel – der Moosriese zerfällt in drei. */
+  bossDown(z) {
+    const st = this.state;
+    st.stats.bosses = (st.stats.bosses || 0) + 1;
+    const B = T.bosse[z.type];
+    if (z.def.split && !z.splitChild) {
+      this.hud.popWord(z.x, 2.2 * z.def.scale, z.z, B.zerfaellt, hexToCss(P.g6));
+      for (let k = 0; k < z.def.split; k++) {
+        const ang = (k / z.def.split) * Math.PI * 2;
+        const o = this.horde.spawn(z.type, { x: z.x + Math.cos(ang) * 0.9, z: z.z + Math.sin(ang) * 0.9, lootFactor: 0.3 });
+        o.maxHp = o.hp = Math.max(40, Math.round(z.maxHp * SPLIT.hp));
+        o.size = SPLIT.size;
+        o.splitChild = true;
+        o.boss.next = 4 + k; // die Kleinen stampfen versetzt
+        o.state = 'walk';
+      }
+      this.effects.splat(z.x, 1.2, z.z, 'moos', 30, 1.4);
+      return;
+    }
+    if (z.splitChild && this.horde.list.some((o) => o !== z && o.type === z.type && o.state !== 'dying')) return; // erst der letzte zählt
+    this.hud.showBanner(T.bosse.faellt(B.titel));
+    this.sound.play('jubel');
+  }
+
+  /**
+   * Liegt die Stelle im Licht? (M22, Nebelwelle) – die Lichtinseln aller Lampen,
+   * Fackeln, Laternen und Laternentürme, dazu Mikas Laterne.
+   */
+  litAt(x, z) {
+    const p = this.player.position;
+    if (this.state.player.lantern && (x - p.x) ** 2 + (z - p.z) ** 2 <= LANTERN_REVEAL * LANTERN_REVEAL) return true;
+    return this.world.lightPools.litAt(x, z);
   }
 
   /** Ein Champion betritt die Wege (M21): groß ansagen, beim ersten Mal erklären. */
@@ -2132,10 +2318,16 @@ export class Game {
     this.horde.update(dt, {
       player: { x: p.x, z: p.z, inside, alive: this.state.player.hp > 0 },
       lightSlow: (x, z) => Math.max(this.towers.lightSlow(x, z), this.survivors.beaconSlow(x, z), this.world.buildings.gearSlow(x, z)),
+      lit: (x, z) => this.litAt(x, z), // M22: Nebelwelle
       // Das Wetter wirkt (M18): Regen macht alle nass und dämpft jeden Brand
       wet: this.world.weather.kind === 'regen',
       burnFactor: this.world.weather.kind === 'regen' ? WEATHER_EFFECTS.regen.burn : 1,
     });
+    // Nebelwelle (M22): Nebelbänke über den Wegen, solange sie unterwegs ist
+    this.world.weather.waveFog = this.horde.list.some((z) => z.fog && z.state !== 'dying') ? 1 : 0;
+    // Von der Laternenhexe gestohlenes Licht kehrt nach seiner Zeit zurück (M22; was der
+    // Lichtfresser gelöscht hat, erst am Morgen – siehe onNewDay)
+    this.world.lightPools.restore(this.clock);
     this.towers.update(dt);
     this.traps.update(dt); // Fallen (M19)
     this.combat.update(dt);
@@ -2300,6 +2492,7 @@ export class Game {
     info.wind = this.world.weather.mix.wind;
     // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
     info.threat = atHome > 0 || near >= 3 ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0;
+    info.boss = info.fight && this.horde.list.some((z) => z.def.boss && z.state !== 'dying'); // M22: eigene Musik
     this.sound.update(dt, info);
     // Schritte: bei jedem halben Laufzyklus, drinnen auf Holz
     const stepIndex = Math.floor(this.player.phase / Math.PI);
@@ -2797,9 +2990,9 @@ export class Game {
         return { ok: c.ok, reason: c.reason || null, why: c.why || null };
       },
       buildings: () => game.world.buildings.toState(),
-      /** @param {{name:number, traits:string[]}} [champion] als Champion (M21) */
-      spawnZombie(type, x, z, champion = null) {
-        const zo = game.horde.spawn(type, { x, z, champion });
+      /** @param {{name:number, traits:string[]}} [champion] als Champion (M21); trait: Wellenmerkmal (M22) */
+      spawnZombie(type, x, z, champion = null, trait = null) {
+        const zo = game.horde.spawn(type, { x, z, champion, trait });
         zo.state = 'walk';
         if (zo.champion) game.onChampion(zo);
         return zo.id;
@@ -2808,6 +3001,11 @@ export class Game {
       champions: () => game.horde.list.filter((q) => q.champion && q.state !== 'dying').map((q) => ({ id: q.id, type: q.type, name: T.champions.namen[q.champion.name], traits: [...q.champion.traits], hp: q.hp, maxHp: q.maxHp, shield: q.shield || 0, size: q.size, armor: q.armor ?? q.def.armor, speed: q.speed, x: q.x, z: q.z, shown: game.hud.championsShown })),
       championPlan: (n) => game.nights.planFor(n).waves.flatMap((w, k) => w.spawns.filter((q) => q.champion).map((q) => ({ wave: k + 1, type: q.type, name: T.champions.namen[q.champion.name], traits: q.champion.traits }))),
       lastChest: () => game.lastChest || null,
+      // M22: Wellenmerkmale und Nebelwelle
+      waveTraits: (n) => game.nights.planFor(n).waves.map((w, k) => ({ wave: k + 1, trait: w.trait || null, count: w.spawns.length })),
+      fogged: () => game.horde.list.filter((q) => q.fog && q.state !== 'dying').map((q) => ({ id: q.id, hidden: game.horde.isHidden(q), seen: q.seenT, x: q.x, z: q.z })),
+      litAt: (x, z) => game.litAt(x, z),
+      planView: () => game.nights.planView(),
       mountPart(id, part) {
         const b = game.world.buildings.get(id);
         if (!b) return false;

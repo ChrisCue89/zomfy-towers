@@ -41,7 +41,7 @@ export class TrapSystem {
         continue;
       }
       for (const z of this.horde.list) {
-        if (z.state === 'dying' || z.state === 'enter') continue;
+        if (z.state === 'dying' || z.state === 'enter' || z.def.flying || z.y < -0.5) continue; // M22: Flieger drüber, Gräber drunter
         if (Math.abs(z.x - cx) > ON_TRAP || Math.abs(z.z - cz) > ON_TRAP) continue;
         if (this.step(b, t, z, cx, cz, dt)) break; // verbraucht
       }
@@ -78,6 +78,7 @@ export class TrapSystem {
       case 'knallerbsen': {
         this.stats.pops++;
         for (const o of h.inRange(cx, cz, t.radius)) {
+          if (o.def.flying) continue; // M22: der Moderfalter fliegt drüber
           if (h.damage(o, t.damage, { push: 0.3, fromX: cx, fromZ: cz, source: 'turm', kind: 'falle' })) continue;
           h.stun(o, t.stun);
         }

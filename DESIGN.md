@@ -1349,7 +1349,20 @@ Vampire Survivors.
 *Spielbar heißt:* Nachts einen goldenen Schlurfer jagen, morgens die Kiste
 öffnen und die Kupferspule in den Lieblingsturm bauen.
 
-#### M22 – Die Horde stellt Fragen: Arten, Merkmale, Bosse
+#### M22 – Die Horde stellt Fragen: Arten, Merkmale, Bosse ✓
+
+*Umgesetzt (28.09.2026):* Wellenmerkmale ab Nacht 4 (eine Welle, ab Nacht 8
+zwei; das erste ist immer die Nebelwelle), im Nachtplan und Banner angesagt:
+Nebelwelle (außerhalb von Licht nur die Augen, Türme treffen nur im Licht –
+Lichtinseln von Lampen, Fackeln, Laternentürmen und Mikas Laterne; dazu
+Nebelbänke über den Wegen), flinke Welle, gepanzerter Trupp, heilende Welle,
+Moderflut (zusätzliche Pulks Schwärmer). Neue Arten mit eigener Nacht:
+Schildträger (4), Moderfalter (6), Gräber (7), Lichtfresser (8), Brüter (9) –
+beim ersten Auftritt erklärt Mika sie. Bosse statt des Anführers: der
+Holzfäller (Nacht 5), die Pilzmutter (10), die Laternenhexe (15), der
+Moosriese (20), danach von vorn und zäher – mit Balken oben im Bild, eigenem
+Musikstück (»Der Boss kommt«, c-Moll) und Angriffen, die ein blinkender
+Warnkreis und ein Wort über dem Kopf ankündigen.
 
 *Vorbild:* Green TD (fliegende, immune, unsichtbare Wellen, alle paar Wellen
 ein Boss), die Bosse der Hero-Defense-Karten.

@@ -274,7 +274,7 @@ export class TowerSystem {
     const pathing = this.world.pathing;
     const list = [];
     for (const z of this.horde.list) {
-      if (z.state === 'dying' || z.state === 'enter') continue;
+      if (z.state === 'dying' || z.state === 'enter' || this.horde.isHidden(z)) continue; // M22: im Nebel nur im Licht
       const d2 = (z.x - o.x) ** 2 + (z.z - o.z) ** 2;
       if (d2 > range * range || d2 < minRange * minRange) continue;
       list.push(z);
@@ -1004,7 +1004,7 @@ export class TowerSystem {
         continue;
       }
       if (Math.random() < dt * 6) this.effects.splat(s.x + (Math.random() - 0.5) * s.r, 0.1, s.z + (Math.random() - 0.5) * s.r, 'schlamm', 2, 0.3);
-      for (const z of this.horde.inRange(s.x, s.z, s.r)) this.horde.slow(z, s.slow, 0.3);
+      for (const z of this.horde.inRange(s.x, s.z, s.r)) if (!z.def.flying) this.horde.slow(z, s.slow, 0.3); // M22: nicht in der Luft
     }
   }
 
@@ -1017,7 +1017,7 @@ export class TowerSystem {
         continue;
       }
       if (Math.random() < dt * 30) this.effects.flames(f.x, f.z, f.r);
-      for (const z of this.horde.inRange(f.x, f.z, f.r)) this.horde.ignite(z, f.dps, 1, f.by ?? null);
+      for (const z of this.horde.inRange(f.x, f.z, f.r)) if (!z.def.flying) this.horde.ignite(z, f.dps, 1, f.by ?? null); // M22: nicht in der Luft
     }
   }
 

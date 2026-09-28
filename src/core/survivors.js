@@ -25,7 +25,7 @@ const BARK_AHEAD = 12; // Spielminuten vor einer Welle bellt Knopf
 export function nightMix(plan) {
   const counts = {};
   for (const wave of plan.waves) for (const s of wave.spawns) counts[s.type] = (counts[s.type] || 0) + (s.type === 'schwaermer' ? 0.25 : 1);
-  const order = ['schlurfer', 'flitzer', 'schwaermer', 'leuchtpilz', 'brummer', 'anfuehrer'];
+  const order = ['schlurfer', 'flitzer', 'schwaermer', 'leuchtpilz', 'brummer', 'moderfalter', 'graeber', 'schildtraeger', 'lichtfresser', 'brueter', 'anfuehrer', 'holzfaeller', 'pilzmutter', 'laternenhexe', 'moosriese'];
   const parts = order.filter((t) => counts[t]).map((t) => (counts[t] <= 1 ? T.horde.arten[t][0] : T.horde.arten[t][1]));
   if (parts.length <= 1) return parts[0] || T.horde.arten.schlurfer[1];
   return `${parts.slice(0, -1).join(', ')}${T.horde.und}${parts[parts.length - 1]}`;

@@ -251,7 +251,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       traps (Werte der Fallen, M19),
                       mixes (Mischtürme: Rezepte, Werte, Kosten, M20),
                       champions (Champions: Anzahl je Nacht, Merkmale,
-                      Fundkiste, M21),
+                      Fundkiste, M21), bosses (Bosse: Reihenfolge,
+                      angekündigte Angriffe, Zerfallen, M22),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -395,6 +396,19 @@ Grundprinzipien:
   Warteschlange und Horde speichern `champion`. Die Fundkiste ist Beute
   (`res: 'kiste'`), die nicht fliegt; `game.openChest` würfelt das Teil
   (`randomPart` mit Gewichten je Seltenheit).
+- **Die Horde stellt Fragen (M22):** Wellenmerkmale (`WAVE_TRAITS` in
+  `waves.js`) tragen die Wellen im Plan (`wave.trait`), die Warteschlange gibt
+  sie an `horde.applyTrait`. Die Nebelwelle fragt `game.litAt` (Lichtinseln aus
+  `lightPools.spots`, Mikas Laterne); verborgen (`horde.isHidden`) heißt: nur
+  die Glühteile werden gezeichnet, Türme zielen nicht. Neue Arten stehen in
+  `zombies.js` mit Schaltern (`flying`, `digger`, `door`, `snuff`, `brood`);
+  Flieger und Gräber laufen im dritten Flussfeld `pathing.free` (Barrikaden
+  kosten nichts, Wall und Tor schon). Bosse (`boss: true`, `data/bosses.js`)
+  haben einen Angriffsablauf in `horde.bossStep` (bereit? → Ankündigung →
+  Schlag), die Wirkung steht in `game.onBossAttack`. Gestohlenes Licht
+  (`lightPools.steal`) kehrt nach Ablauf bzw. am Morgen zurück (`restore`).
+  Teile können an einem anderen Teil hängen (`parent: 'armR'` – die Laterne
+  der Hexe).
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -561,7 +575,17 @@ Grundprinzipien:
    Schild zeigt Name und Merkmale, fällt und lässt eine Fundkiste liegen, die
    mit echter Taste aufplatzt; Basteln (drei Hufeisen → ein seltenes Teil);
    Balduins Wundertüte; Speichern v16 (auch ein lebender Champion) und
-   Migration v15 → v16 (Bilder: champion, fundkiste).
+   Migration v15 → v16 (Bilder: champion, fundkiste); ab M22 (Abschnitt
+   `fragen`, nur der Kern): Nacht 4 kündigt eine Nebelwelle an, Nacht 5 den
+   Holzfäller; ein Schlurfer der Nebelwelle ist im Dunkeln verborgen und der
+   Turm schießt nicht, Mikas Laterne holt ihn ins Licht; der Holzfäller holt
+   vor einer Barrikade aus (Warnkreis, Balken oben) und zerschlägt sie; der
+   Moderfalter fliegt über eine Barrikadenreihe, der Gräber buddelt sich
+   darunter durch; die Tür des Schildträgers fängt von vorn ab; der
+   Lichtfresser löscht eine Fackel; aus der Kapsel des Brüters schlüpfen
+   Schwärmer; der Moosriese zerfällt in drei; eine Nebelwelle bleibt nach dem
+   Neuladen eine; die Boss-Musik rechnet offline ohne Übersteuerung (Bilder:
+   nebelwelle, boss).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -651,7 +675,11 @@ champion)` auch einen Champion (`{ name, traits }`), `champions()` nennt die
 lebenden (Name, Merkmale, Leben, Schild, Rüstung, ob die Anzeige steht),
 `championPlan(n)` die Champions im Plan einer Nacht, `lastChest()` das Teil
 der zuletzt geöffneten Fundkiste, `mountPart(id, teil)` baut ein Teil ein,
-`tinker(teil)` bastelt, `tinkerRows()` zeigt die Basteln-Zeilen der Werkbank.
+`tinker(teil)` bastelt, `tinkerRows()` zeigt die Basteln-Zeilen der Werkbank;
+ab M22 nimmt `spawnZombie` als fünften Wert ein Wellenmerkmal, `waveTraits(n)`
+zeigt die Merkmale einer Nacht, `fogged()` die Schlurfer im Nebel (verborgen
+oder nicht), `litAt(x, z)`, ob eine Stelle im Licht liegt, `planView()` den
+Nachtplan.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

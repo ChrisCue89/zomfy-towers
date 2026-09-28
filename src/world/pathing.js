@@ -40,6 +40,7 @@ export class Pathing {
     const n = grid.width * grid.height;
     this.walk = new Float32Array(n);
     this.brute = new Float32Array(n);
+    this.free = new Float32Array(n); // M22: Flieger und Gräber – Barrikaden kosten nichts (Wall und Tor schon)
     this.back = new Float32Array(n); // Schritte bis zum nächsten Weg- oder Hoffeld (abseits)
     this.targets = [];
     this.home = null; // Rechteck des Zuhauses (Wände)
@@ -124,6 +125,7 @@ export class Pathing {
     if (b && BUILDINGS[b.type].trap) return g.pathCost[k]; // Fallen (M19): begehbar
     if (!b || !BUILDINGS[b.type].smash) return INF;
     if (b.broken) return g.pathCost[k];
+    if (brute === 'free') return BUILDINGS[b.type].camp ? GATE_COST : g.pathCost[k]; // M22: drüber bzw. drunter durch
     return brute ? (BUILDINGS[b.type].camp ? GATE_COST : BARRICADE_COST) : INF;
   }
 
@@ -138,6 +140,7 @@ export class Pathing {
     }
     this.fill(this.walk, false, null);
     this.fill(this.brute, true, null);
+    this.fill(this.free, 'free', null);
     this.fillBack();
     this.version++;
   }
@@ -232,7 +235,7 @@ export class Pathing {
     const cj = Math.floor(z) - g.minZ;
     if (ci < 0 || cj < 0 || ci >= g.width || cj >= g.height) return null;
     const k = cj * g.width + ci;
-    let field = brute ? this.brute : this.walk;
+    let field = brute === 'free' ? this.free : brute ? this.brute : this.walk;
     // Abseits der Wege: erst zurück auf den nächsten Weg
     if (field[k] >= INF && this.back[k] < INF) field = this.back;
     let best = field[k];

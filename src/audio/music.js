@@ -18,6 +18,9 @@
 //          läuft. Stufe 0: Achtel-Bass, Kick, Hi-Hat. Stufe 1 (viele unterwegs,
 //          Barrikaden unter Schlägen): Snare, Staccato-Streicher, tiefe Fläche.
 //          Stufe 2 (am Haus oder hinter Mika her): Hörner, Becken, Tom-Wirbel.
+//   boss   »Der Boss kommt« (M22) – c-Moll, 138 Schläge pro Minute, solange ein
+//          Boss lebt: wie die Nacht auf Stufe 2, dazu eine Pauke und eine
+//          eigene Hörnermelodie.
 //
 // Die Stücke sind Daten: Akkorde je Takt (»Gm7|C7« = je ein halber Takt) und
 // Melodien als »Ton:Länge« in Sechzehnteln (»-« ist eine Pause). Gespielt wird
@@ -70,6 +73,12 @@ const CHORDS = {
   Cn: { bass: 'C2', ep: 'C3 E3 G3', str: 'C3 E3 G3 C4 E4 G4' },
   Gm: { bass: 'G1', ep: 'D3 G3 Bb3', str: 'D3 G3 Bb3 D4 G4 Bb4' },
   A: { bass: 'A1', ep: 'C#3 E3 A3', str: 'C#3 E3 A3 C#4 E4 A4' },
+  // Boss (M22): c-Moll
+  Cm: { bass: 'C2', ep: 'C3 Eb3 G3', str: 'C3 Eb3 G3 C4 Eb4 G4' },
+  Ab: { bass: 'Ab1', ep: 'C3 Eb3 Ab3', str: 'C3 Eb3 Ab3 C4 Eb4 Ab4' },
+  Eb: { bass: 'Eb2', ep: 'Eb3 G3 Bb3', str: 'Eb3 G3 Bb3 Eb4 G4 Bb4' },
+  Fm: { bass: 'F1', ep: 'C3 F3 Ab3', str: 'C3 F3 Ab3 C4 F4 Ab4' },
+  G: { bass: 'G1', ep: 'B2 D3 G3', str: 'B2 D3 G3 B3 D4 G4' },
 };
 for (const ch of Object.values(CHORDS)) {
   ch.bass = hz(ch.bass);
@@ -145,6 +154,16 @@ const SONGS = {
       { chords: ['Dm', 'Bb', 'F', 'Cn', 'Dm', 'Bb', 'Gm', 'A'], mel: ['D4:6 F4:2 A4:8', 'Bb4:6 A4:2 F4:8', 'C5:6 A4:2 F4:4 A4:4', 'G4:12 -:4', 'D5:6 C5:2 A4:8', 'Bb4:6 C5:2 D5:8', 'D5:4 Bb4:4 G4:8', 'A4:8 C#5:4 E5:4'] },
     ],
   },
+  // Boss (M22): acht Takte über i – VI – III – VII – i – VI – iv – V
+  boss: {
+    bpm: 138,
+    verb: 0.16,
+    night: true,
+    boss: true,
+    sections: [
+      { chords: ['Cm', 'Ab', 'Eb', 'Bb', 'Cm', 'Ab', 'Fm', 'G'], mel: ['C4:4 Eb4:4 G4:8', 'Ab4:6 G4:2 Eb4:8', 'G4:4 Bb4:4 Eb5:8', 'D5:6 C5:2 Bb4:8', 'C5:6 Eb5:2 G5:8', 'F5:4 Eb5:4 C5:8', 'Ab4:4 C5:4 F5:4 Eb5:4', 'D5:8 B4:4 G4:4'] },
+    ],
+  },
 };
 
 /** »C5:6 A4:2 -:4« → 16 Plätze je Takt: [Hz, Länge] oder null. */
@@ -194,7 +213,7 @@ export class Music {
     this.restUntil = 0;
     this.duckUntil = 0;
     this.level = 1;
-    this.passes = { tag: 0, abend: 0, nacht: 0, titel: 0 };
+    this.passes = { tag: 0, abend: 0, nacht: 0, titel: 0, boss: 0 };
     this.plucks = new Map();
   }
 
@@ -215,7 +234,7 @@ export class Music {
   update(dt, s) {
     const t = this.ctx.currentTime;
     // Startbild: noch keine Musik (nur die Spieluhr); Titelbild: das Titelstück (N2)
-    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? 'nacht' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
+    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? (s.boss ? 'boss' : 'nacht') : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
     const level = t < this.duckUntil ? 0.15 : 1;
     if (level !== this.level) {
       this.level = level;
@@ -225,9 +244,12 @@ export class Music {
     // Nacht kommt sofort, sonst darf ein Durchgang zu Ende spielen – nur das
     // Titelstück wechselt gleich (ins Spiel hinein oder zurück zum Titelbild)
     const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel');
-    if (cur && (titleSwitch || (want === 'nacht' ? cur.id !== 'nacht' : cur.id === 'nacht' || !want))) this.stop(t, cur.id === 'nacht' ? 2.5 : titleSwitch ? 2 : 1.5);
-    if (!this.cur && want && (want === 'nacht' || t >= this.restUntil)) this.begin(want, t + 0.08);
-    if (this.cur) this.schedule(t + LOOKAHEAD, s.threat || 0, t);
+    // Nacht und Boss (M22) kommen sofort und wechseln gleich
+    const fightWant = want === 'nacht' || want === 'boss';
+    const fightCur = cur && SONGS[cur.id].night;
+    if (cur && (titleSwitch || (fightWant ? cur.id !== want : fightCur || !want))) this.stop(t, fightCur ? 2.5 : titleSwitch ? 2 : 1.5);
+    if (!this.cur && want && (fightWant || t >= this.restUntil)) this.begin(want, t + 0.08);
+    if (this.cur) this.schedule(t + LOOKAHEAD, this.cur.song.boss ? 2 : s.threat || 0, t);
     for (let k = this.old.length - 1; k >= 0; k--) {
       const o = this.old[k];
       if (t < o.until) continue;
@@ -431,6 +453,8 @@ export class Music {
       this.note('sawtooth', chord.str[OSTINATO[k]], t, 0.12, 0.022, cur.fx.strings, 0.005, k % 2 ? 5 : -5);
       if (k === 0) this.pad(chord.ep, t, cur.stepDur * 16, 0.013, 700, out);
     }
+    // Boss (M22): eine Pauke auf der Eins und vor der Drei
+    if (cur.song.boss && (k === 0 || k === 6)) this.s.tone('sine', k === 0 ? 82 : 98, t, 0.45, { freqEnd: 52, peak: 0.24, attack: 0.003, out });
     // Hörner mit der Melodie
     const n = L >= 2 && sec.mel ? sec.mel[barNo][k] : null;
     if (n) this.s.brass(n[0], t, n[1] * cur.stepDur * 0.92, 0.05, out);
