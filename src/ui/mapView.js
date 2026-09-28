@@ -191,7 +191,7 @@ export class MapView {
               ? b.broken
                 ? COLORS.buildBad
                 : hexToCss(P.a3)
-              : def.lure // Moderlocke (M24): pflaumenviolett wie der Moder
+              : def.bait // Moderlocke (M24): pflaumenviolett wie der Moder
                 ? hexToCss(P.d2)
                 : COLORS.textDim;
       ui.rect(p.x - 1, p.y - 1, w + 2, h + 2, COLORS.outline);

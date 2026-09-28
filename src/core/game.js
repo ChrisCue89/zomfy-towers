@@ -66,7 +66,7 @@ import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from 
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
-import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
+import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, BENCH, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
 import { towerInvested, towerStatsOf, TOWER_PARTS, PART_RARITIES, TINKER_COUNT, partsOfRarity, hasPart } from '../data/towers.js';
 import { CHAMPION, CHEST_RARITY, CHEST_LOOT } from '../data/champions.js';
 import { LURE } from '../data/risk.js';
@@ -145,6 +145,7 @@ export class Game {
     this.goal = null; // { id, text }
     this.hitstop = 0; // Trefferstopp: Simulation hält kurz an
     this.benchReady = 0; // ab wann die Bank wieder heilt (this.clock)
+    this.benchBuff = 0; // bis wann Mika frisch verschnauft kräftiger zuschlägt (M24)
     this.treeHintUntil = 0; // Absage am Waldbaum nicht bei jedem Tastendruck
     this.attackHeld = false; // Maustaste nach einem Schlag in die Welt gehalten
     this.attackQueued = false; // Klick mitten im Schwung: gleich noch einmal
@@ -1106,15 +1107,17 @@ export class Game {
   useBench() {
     const st = this.state;
     const hurt = st.player.hp < this.combat.maxHp - 0.5;
-    if (hurt && this.clock >= this.benchReady) {
+    // M24: Verschnaufen heilt voll und gibt kurz mehr Schlagkraft – auch ohne Wunde
+    if (this.clock >= this.benchReady) {
       st.player.hp = this.combat.maxHp;
-      this.benchReady = this.clock + 30;
+      this.benchReady = this.clock + BENCH.cooldown;
+      this.benchBuff = this.clock + BENCH.buff;
+      this.player.express('froh', 1.2);
       this.hud.toast(T.meldungen.verschnauft, 'herz', 2.2);
     } else if (hurt) {
       this.hud.say(T.meldungen.ausserPuste, 2.5);
     }
     if (!this.nights.active) this.startDialog('bank');
-    else if (!hurt) this.hud.say(T.meldungen.keineZeit, 2.5);
   }
 
   requestSleep() {
@@ -1205,6 +1208,8 @@ export class Game {
     if (bitte) extra.push({ text: bitte });
     // M19: was die Mühlen gemahlen haben, und ob ein Bauplan wartet
     if (this.milled) extra.push({ text: T.muehle.gemahlen(this.milled) });
+    const rebuilt = this.woodpileRebuild(); // M24: das Holzlager baut Barrikaden wieder auf
+    if (rebuilt) extra.push({ text: T.meldungen.holzlagerFlickt(rebuilt) });
     if (st.blueprintChoice) extra.push({ text: T.bauplaene.bericht });
     // M21: Eine Fundkiste wartet draußen (morgens öffnen)
     if (this.loot.items.some((it) => it.res === 'kiste')) extra.push({ text: T.fundkiste.bericht });
@@ -1223,6 +1228,22 @@ export class Game {
     this.survivors.arrive(true);
     this.milled = this.grindMills(); // M19
     this.events.emit('newDay', this.state.time.day);
+  }
+
+  /** Holzlager (M24): Jedes baut morgens bis zu `rebuild` zerschlagene Barrikaden aus seinem Vorrat wieder auf. */
+  woodpileRebuild() {
+    const bs = this.world.buildings;
+    let left = bs.list.filter((b) => b.type === 'holzlager' && !b.broken).length * (BUILDINGS.holzlager.rebuild || 0);
+    let n = 0;
+    for (const b of bs.list) {
+      if (left <= 0) break;
+      if (b.type !== 'barrikade' || !b.broken) continue;
+      bs.rebuildBarricade(b);
+      left--;
+      n++;
+    }
+    if (n) this.state.world.buildings = bs.toState();
+    return n;
   }
 
   /** Mühlen (M19): Jedes Windrad mit Richtung Mühle hat über Tag Schrott gemahlen. */
@@ -2367,6 +2388,12 @@ export class Game {
     // Nachts erst, wenn keine Welle mehr unterwegs ist (m12-r1: die Wahl ging mitten in Welle 3 auf)
     // Bauplan (M19): erst, wenn der Morgenbericht gelesen ist, und nie in der Nacht
     const bc = this.state.blueprintChoice && !this.state.report && !this.nights.active ? this.state.blueprintChoice : null;
+    // Prüfhilfe (Test-Modus): Perk und Fähigkeit still mit der ersten Karte nehmen – sonst
+    // hält eine Stufe, die ein Aufräumen der Horde bringt, das Spiel mitten in einer Prüfung an
+    if (this.quietChoices) {
+      if (this.state.perkChoice?.length) this.combat.choosePerk(this.state.perkChoice[0]);
+      if (this.state.skillChoice?.options?.length) this.skills.choose(this.state.skillChoice.options[0]);
+    }
     if ((this.state.perkChoice || this.state.skillChoice || bc) && !this.perkChoice.isOpen) {
       // m16-r1: Nachts wurde es nie »ruhig« (die Wellen überlappen) – jetzt genügt es,
       // dass keine Horde in der Nähe ist (nachts etwas weiter weg als am Tag)
@@ -3085,6 +3112,10 @@ export class Game {
       fogged: () => game.horde.list.filter((q) => q.fog && q.state !== 'dying').map((q) => ({ id: q.id, hidden: game.horde.isHidden(q), seen: q.seenT, x: q.x, z: q.z })),
       litAt: (x, z) => game.litAt(x, z),
       planView: () => game.nights.planView(),
+      /** Prüfhilfe: Perk- und Fähigkeiten-Wahlen still mit der ersten Karte entscheiden (an/aus). */
+      quietChoices(on = true) {
+        game.quietChoices = on;
+      },
       // M24: Wagnis und Vorrat
       risk: () => ({ ...game.state.risk, lure: game.lureEntry(), unlocked: game.builder.lureUnlocked() }),
       lureEntryAt: (x, z) => game.lureEntryAt(x, z),

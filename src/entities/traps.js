@@ -63,7 +63,9 @@ export class TrapSystem {
         h.damage(z, t.damage, { pierce: true, source: 'turm', kind: 'falle' });
         return false;
       case 'leimtopf':
-        if (z.slowT <= 0) this.stats.glued++;
+        // gezählt wird jeder neue Tritt hinein – auch wenn ihn gerade etwas anderes bremst (Kletten davor)
+        if (!(z.glueT > this.time)) this.stats.glued++;
+        z.glueT = this.time + t.slowTime;
         h.slow(z, t.slow, t.slowTime);
         b.hp -= t.wear * dt;
         if (Math.random() < dt * 4) this.effects.splat(z.x, 0.15, z.z, 'honig', 2, 0.3);

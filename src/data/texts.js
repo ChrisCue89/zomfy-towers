@@ -131,7 +131,7 @@ export const T = {
     oelspur: 'Auf den Weg: rutschig. Kommt Feuer dazu, brennt sie lichterloh.',
     laternenpfahl: 'Warmes Licht für lange Abende.',
     beet: 'Blüht blau – jeden Tag Fasern zum Ernten.',
-    bank: 'Hinsetzen heilt Mika sofort (alle 30 Sekunden).',
+    bank: 'Hinsetzen: voll geheilt und kurz kräftigere Schläge (alle 25 Sekunden).',
     huette: 'Mehr Platz, mehr Wärme, stabilere Wände.',
     ausbau: [
       null,
@@ -145,7 +145,7 @@ export const T = {
     abrissTurm: 'Gibt 70 % der Kosten zurück.',
     abrissBewohnt: (name) => `Hier schläft ${name}. Gibt das ganze Material zurück.`,
     zelt: 'Ein Schlafplatz für eine Überlebende oder einen Überlebenden.',
-    holzlager: 'Gespaltene Scheite unterm Dach – jeden Tag 2 Holz zum Mitnehmen.',
+    holzlager: 'Scheite unterm Dach: jeden Tag 3 Holz – und morgens baut es zwei zerschlagene Barrikaden wieder auf.',
     hochsitz: 'Neben den Weg: Nachts bezieht jemand hier Posten – auswählen, wer.', // M23
   },
   rezepte: {
@@ -161,7 +161,7 @@ export const T = {
   rezeptInfo: {
     spitzhacke: 'Damit lassen sich große Felsen abbauen.',
     schaufel: 'Waffe: ausgewogen, guter Rückstoß.',
-    pfanne: 'Waffe: langsam und wuchtig, betäubt.',
+    pfanne: 'Waffe: wuchtig, betäubt und durchschlägt Panzer.',
     rechen: 'Waffe: große Reichweite, trifft viele.',
     faeustlinge: 'Waffe: schnelle Schläge, jeder dritte doppelt.',
     schrottAusHolz: '3 Holz werden zu 1 Schrott.',
@@ -742,7 +742,8 @@ export const T = {
     ruheHinweis: 'Wenn alles erledigt ist: Im Ohrensessel am Feuer kann ich bis zum Abend ausruhen.',
     waldbaum: 'Der ist mir zu mächtig. Fällen kann ich die Bäume mit dem rot-weißen Band.',
     gestruepp: 'Nur Gestrüpp. Holz gibt es an den Bäumen mit dem rot-weißen Band.',
-    verschnauft: 'Kurz verschnauft – wieder bei Kräften',
+    verschnauft: 'Kurz verschnauft – die nächsten Schläge sitzen fester.',
+    holzlagerFlickt: (n) => (n === 1 ? 'Aus dem Holzlager steht eine Barrikade wieder.' : `Aus dem Holzlager stehen ${n} Barrikaden wieder.`), // M24
     waffeGebaut: (name, plural) => `${name} gebaut – ${plural ? 'liegen' : 'liegt'} in der Schnellleiste`,
     waffeAufgewertet: (name, stufe, plural) => `${name} ${plural ? 'sind' : 'ist'} jetzt Stufe ${stufe}`,
     ausweichen: 'Leertaste: ausweichen',

@@ -8,6 +8,7 @@
 //   targets   höchstens so viele Schlurfer pro Schlag
 //   push      Rückstoß (Meter)             stun    Betäubung (Sekunden)
 //   combo     jeder n-te Schlag einer schnellen Folge trifft doppelt
+//   pierce    durchschlägt Panzer (M24: die Pfanne)
 //   cost      Rezept an der Werkbank       upgrades Preise für Stufe 2 und 3
 
 export const WEAPONS = {
@@ -29,12 +30,13 @@ export const WEAPONS = {
   pfanne: {
     icon: 'pfanne',
     damage: 30,
-    rate: 1.0,
+    rate: 1.1, // M24: etwas flotter
     reach: 1.45,
     arc: 60,
     targets: 2,
     push: 1.2,
-    stun: 0.9,
+    stun: 1.1,
+    pierce: true, // M24: durchschlägt Panzer (Brummer, Schildträger) – die Waffe gegen die Zähen
     cost: { schrott: 8, stein: 3 },
     upgrades: [{ schrott: 12 }, { schrott: 20, zahnraeder: 1 }],
   },

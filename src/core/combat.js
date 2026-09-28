@@ -10,7 +10,7 @@ import { T } from '../data/texts.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { WEAPONS, weaponStats } from '../data/weapons.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
-import { BUILDINGS, SOUP, maxHpOf } from '../data/buildings.js';
+import { BUILDINGS, SOUP, BENCH, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
 
 const REGEN_RATE = 4;
@@ -179,10 +179,11 @@ export class Combat {
       const c = g.world.buildings.bounds(t);
       return Math.hypot(c.x - p.x, c.z - p.z) < TOWER_NEAR;
     })) factor *= perkValue(st, 'turmfreund');
+    if (g.benchBuff > g.clock) factor *= BENCH.damage; // M24: frisch verschnauft (Sitzbank)
     const targets = found.slice(0, w.targets);
     for (const { z } of targets) {
       g.sound.play('treffer', { x: z.x, z: z.z });
-      const killed = g.horde.damage(z, w.damage * factor, { push: w.push * (comboHit ? 1.6 : 1), fromX: p.x, fromZ: p.z, source: 'spieler' });
+      const killed = g.horde.damage(z, w.damage * factor, { pierce: Boolean(w.pierce), push: w.push * (comboHit ? 1.6 : 1), fromX: p.x, fromZ: p.z, source: 'spieler' });
       if (w.stun && !killed) g.horde.stun(z, w.stun);
       g.effects.splat(z.x, 0.8, z.z, 'moos', comboHit ? 12 : 6, comboHit ? 1.1 : 0.7);
     }

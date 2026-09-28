@@ -460,6 +460,7 @@ const ICONS = {
   mini_stoff: { legend: { a: P.b4, b: P.b3 }, rows: ['aaaa', 'abab', 'aaaa', 'bbbb'] },
   mini_schrott: { legend: { a: P.s8, b: P.s6, r: P.r3 }, rows: ['abba', 'brbb', 'bbrb', 'abba'] },
   mini_zahnraeder: { legend: { a: P.f6, b: P.f4 }, rows: ['a.a.', '.bb.', '.bb.', 'a..a'] },
+  mini_teile: { legend: { a: P.t4, b: P.t3, g: P.g5 }, rows: ['a.a.', 'aaaa', 'agab', '.bb.'] }, // M24: die Moderlocke kostet Zombieteile
   mini_moderkerne: { legend: { a: P.a3, b: P.a2, c: P.a6 }, rows: ['.ab.', 'acca', 'bccb', '.bb.'] },
   laterne: {
     legend: { k: P.s1, M: P.s5, y: P.f5, Y: P.f6, W: P.f8 },

@@ -539,7 +539,15 @@ async function runNight16Checks(browser, url) {
     window.zomfy.learnSkill('kuerbiswurf');
     window.zomfy.readySkills();
   });
-  const wurfZ = await z((p) => [[0, 0], [0.5, 0.3], [-0.4, 0.4]].map(([dx, dz]) => window.zomfy.spawnZombie('schlurfer', p.x - 3 + dx, p.z + dz)), { x: bx, z: bz });
+  // Die drei stehen still (betäubt) und halten etwas aus – sonst läuft der vorderste während
+  // des Flugs aus dem Kreis, oder die Türme ringsum erledigen sie vor dem Aufprall
+  const wurfZ = await z((p) => [[0, 0], [0.5, 0.3], [-0.4, 0.4]].map(([dx, dz]) => {
+    const id = window.zomfy.spawnZombie('schlurfer', p.x - 3 + dx, p.z + dz);
+    const q = window.zomfy.game.horde.list.find((o) => o.id === id);
+    q.stunT = 999;
+    q.maxHp = q.hp = 400; // die Türme ringsum räumen sie sonst vor dem Aufprall ab
+    return id;
+  }), { x: bx, z: bz });
   const wurfZiel = await z((p) => window.zomfy.screenOf(p.x - 3, 0, p.z + 0.2), { x: bx, z: bz });
   await page.mouse.move(wurfZiel.x, wurfZiel.y);
   await step(40);
@@ -1329,6 +1337,7 @@ async function runReactionChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
+    window.zomfy.quietChoices(); // Stufen vom Aufräumen: Perk und Fähigkeit still wählen (sonst hält die Wahl alles an)
     for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut']) window.zomfy.setFlag(f);
     window.zomfy.setWeather('klar', true);
     window.zomfy.setHorde(false);
@@ -1367,7 +1376,7 @@ async function runReactionChecks(browser, url) {
     }, { i, typen });
     const worte = new Set();
     let zeichen = 0;
-    for (let k = 0; k < 36; k++) {
+    for (let k = 0; k < 44; k++) {
       await step(500);
       for (const w of await z(() => window.zomfy.words())) worte.add(w);
       zeichen = Math.max(zeichen, await z(() => window.zomfy.game.hud.statusShown || 0));
@@ -1382,7 +1391,7 @@ async function runReactionChecks(browser, url) {
     return { setup, worte: [...worte], zeichen };
   };
   const plan = {
-    eisblock: [-11, [['sprenger', 2], ['sprenger', 3, 'A'], ['bolzen', 2]]], // der Bolzen lässt ihn zerspringen
+    eisblock: [-12, [['sprenger', 2], ['sprenger', 3, 'A'], ['bolzen', 2]]], // der Bolzen lässt ihn zerspringen (bei −8 steht der Wall)
     dampf: [-14, [['sprenger', 2], ['katapult', 3, 'A']]],
     glut: [-17, [['sprenger', 3, 'B'], ['katapult', 3, 'A']]],
     schwachstelle: [-20, [['laternenturm', 1], ['bolzen', 2]]],
@@ -1508,6 +1517,7 @@ async function runToyChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
+    window.zomfy.quietChoices(); // Stufen vom Aufräumen: Perk und Fähigkeit still wählen (sonst hält die Wahl alles an)
     for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut']) window.zomfy.setFlag(f);
     window.zomfy.setWeather('klar', true);
     window.zomfy.setHorde(false);
@@ -1633,18 +1643,20 @@ async function runToyChecks(browser, url) {
   if (nachFlick.healed > vorFlick && nachFlick.hp > flick.hp) note(`✓ Friedensglocke: Beim Schlag flickt sie die Barrikade daneben (${flick.hp} → ${Math.round(nachFlick.hp)})`);
   else fail(`Friedensglocke: ${JSON.stringify({ flick, vorFlick, nachFlick })}`);
 
-  // 3c) Windrad: ein Stoß schiebt den Schlurfer den Weg zurück
+  // 3c) Windrad: ein Stoß schiebt den Schlurfer den Weg zurück – gemessen an x (der Weg führt
+  // hier nach Osten; die Restlänge des Flussfelds zählt nur ganze Felder und verschluckt kurze Stöße)
   const wind = await aufstellen(-18, 'windrad', 1, null, [['schlurfer', 1]]);
   let zurueck = 0;
-  let last = null;
-  for (let k = 0; k < 40; k++) {
+  let weitest = null;
+  for (let k = 0; k < 100 && zurueck <= 0.15; k++) {
     await step(100);
-    const rest = await z((id) => {
+    const x = await z((id) => {
       const q = window.zomfy.game.horde.list.find((o) => o.id === id);
-      return q && q.state !== 'dying' ? window.zomfy.game.world.pathing.remaining(q.x, q.z) : null;
+      return q && q.state !== 'dying' ? q.x : null;
     }, wind?.ids[0]);
-    if (rest !== null && last !== null) zurueck = Math.max(zurueck, rest - last);
-    last = rest;
+    if (x === null) continue;
+    weitest = weitest === null ? x : Math.max(weitest, x);
+    zurueck = Math.max(zurueck, weitest - x);
   }
   if (wind && zurueck > 0.15) note(`✓ Windrad (M19): Ein Windstoß schiebt den Schlurfer ${zurueck.toFixed(2)} m den Weg zurück`);
   else fail(`Windrad: ${JSON.stringify({ wind, zurueck })}`);
@@ -1855,6 +1867,7 @@ async function runMixChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
+    window.zomfy.quietChoices(); // Stufen vom Aufräumen: Perk und Fähigkeit still wählen (sonst hält die Wahl alles an)
     for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut']) window.zomfy.setFlag(f);
     window.zomfy.setWeather('klar', true);
     window.zomfy.setHorde(false);
@@ -2070,6 +2083,7 @@ async function runShineChecks(browser, url) {
   };
   await z(() => {
     window.__zomfyHold = true;
+    window.zomfy.quietChoices(); // Stufen vom Aufräumen: Perk und Fähigkeit still wählen (sonst hält die Wahl alles an)
     for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut', 'turmteilHinweis']) window.zomfy.setFlag(f);
     window.zomfy.setWeather('klar', true);
     window.zomfy.setHorde(false);
@@ -3395,7 +3409,7 @@ async function runBuildChecks(browser, url) {
     const r = window.zomfy.interior().rooms.find((q) => q.id === 'schlafzimmer');
     window.zomfy.teleport((r.minX + r.maxX) / 2, 3.2, Math.PI);
   });
-  // Holzlager draußen: am nächsten Tag 2 Holz zum Mitnehmen
+  // Holzlager draußen: am nächsten Tag 3 Holz zum Mitnehmen (M24: vorher 2)
   const holzlager = await z(() => {
     window.zomfy.setTime(10, 0);
     window.zomfy.give({ holz: 6, stein: 2 });
@@ -3418,7 +3432,7 @@ async function runBuildChecks(browser, url) {
     await settle(page, 8);
     holzNach = (await state()).inventory.holz;
   }
-  if (holzlager === 'ok' && holzNach === holzVor + 2) note(`✓ Holzlager: gebaut, am nächsten Tag gibt E 2 Holz (${holzVor} → ${holzNach})`);
+  if (holzlager === 'ok' && holzNach === holzVor + 3) note(`✓ Holzlager: gebaut, am nächsten Tag gibt E 3 Holz (${holzVor} → ${holzNach})`);
   else fail(`Holzlager: ${JSON.stringify({ holzlager, holzVor, holzNach })}`);
   checkMessages(session);
   await session.context.close();
@@ -5673,6 +5687,7 @@ async function runRiskChecks(browser, url) {
     const neben = Z.placeCheck('moderlocke', -44, Math.min(...col) - 2).reason;
     const bau = j !== undefined ? Z.build('moderlocke', -44, j) : 'kein Feld';
     Z.teleport(-42.5, (j ?? 0) + 2, 0);
+    g.buildbar.tabId = 'fallen'; // die Kachel wird gezeichnet (Kosten in Zombieteilen)
     return { vorher, nachher, j, hinten, neben, bau, lure: Z.risk().lure };
   });
   await step(200);
@@ -5775,7 +5790,65 @@ async function runRiskChecks(browser, url) {
     note('✓ Serie (M24): drei makellose Nächte – Balduins Schatz (14 Zombieteile, ein einzigartiges Turmteil); ein Treffer am Zuhause bricht die Serie, nach einem Durchbruch wächst kein Schrott');
   } else fail(`Serie, Schatz, Durchbruch: ${JSON.stringify(schatz)}`);
 
-  // 5) Speichern v18: Serie und Schatz bleiben
+  // 5) Tote Optionen belebt (M24): Pfanne durchschlägt Panzer, Bank gibt Schlagkraft, Holzlager baut morgens auf
+  const optionen = await z(async () => {
+    const { weaponStats } = await import('./src/data/weapons.js');
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    Z.setTime(22, 0);
+    g.nights.beginNight(g.state.time.day);
+    const p = g.player.position;
+    const hit = (weapon) => {
+      Z.giveWeapon(weapon);
+      g.selectSlot(g.state.hotbar.slots.indexOf(weapon), false);
+      const id = Z.spawnZombie('brummer', p.x + 1.0, p.z);
+      const q = g.horde.list.find((o) => o.id === id);
+      q.stunT = 99;
+      const before = q.hp;
+      g.player.facing = Math.PI / 2;
+      g.combat.hit(weapon, weaponStats(weapon, g.state));
+      const dealt = before - q.hp;
+      g.horde.clear();
+      return dealt;
+    };
+    const out = {};
+    out.pfanne = hit('pfanne');
+    out.schaufel = hit('schaufel');
+    g.benchReady = 0;
+    g.useBench();
+    out.schaufelBank = hit('schaufel');
+    out.buff = g.benchBuff > g.clock;
+    Z.endNight(true);
+    // Holzlager: eine zerschlagene Barrikade steht am nächsten Morgen wieder
+    let lager = 'kein Platz';
+    for (const [i, j] of [[6, 5], [8, 5], [6, 7], [2, 7]]) {
+      if (Z.placeCheck('holzlager', i, j).ok) {
+        lager = Z.build('holzlager', i, j);
+        break;
+      }
+    }
+    const col = Z.pathColumn(-12);
+    Z.build('barrikade', -12, col[1]);
+    const bar = Z.buildings().find((b) => b.type === 'barrikade' && b.i === -12 && b.j === col[1]);
+    Z.hitBarricade(bar.id, 999);
+    g.advanceToMorning();
+    const nachher = g.world.buildings.get(bar.id);
+    out.lager = lager;
+    out.wieder = nachher ? !nachher.broken : false;
+    out.zeile = (g.state.report?.extra || []).map((l) => l.text).find((t) => t.startsWith('Aus dem Holzlager')) || null;
+    g.report.report = null;
+    g.state.report = null;
+    const bc = g.state.blueprintChoice;
+    if (bc) g.chooseBlueprint(bc.options[0]);
+    g.mode = 'play';
+    return out;
+  });
+  if (optionen.pfanne >= 30 && optionen.schaufel < 16 && optionen.schaufelBank > optionen.schaufel && optionen.buff && optionen.lager === 'ok' && optionen.wieder && optionen.zeile) {
+    note(`✓ Tote Optionen (M24): Die Pfanne durchschlägt den Panzer des Brummers (${optionen.pfanne} statt ${optionen.schaufel} mit der Schaufel), nach der Bank schlägt Mika fester (${optionen.schaufelBank}); das Holzlager baut morgens eine Barrikade wieder auf – »${optionen.zeile}«`);
+  } else fail(`Tote Optionen: ${JSON.stringify(optionen)}`);
+
+  // 6) Speichern v18: Serie und Schatz bleiben
   await z(() => {
     const Z = window.zomfy;
     Z.game.state.risk = { streak: 2, treasure: true };

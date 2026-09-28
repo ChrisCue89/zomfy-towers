@@ -39,12 +39,13 @@ export const BUILDINGS = {
   hochsitz: { w: 1, d: 1, cost: { holz: 10, schrott: 3 }, icon: 'hochsitz', post: true, max: 4, height: 2.4 },
   // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
-  holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4, raid: 45 },
+  // M24 (Balance): 3 statt 2 Holz, und jeden Morgen baut es aus seinem Vorrat bis zu `rebuild` zerschlagene Barrikaden wieder auf
+  holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 3 }, rebuild: 2, max: 2, height: 1.4, raid: 45 },
   zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4, raid: 50 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
   // M19: Fallen auf den Wegen (begehbar; hp = wie lange sie halten, Werte in traps.js)
   stachelbrett: { w: 1, d: 1, cost: { holz: 2, schrott: 2 }, icon: 'stachelbrett', trap: true, onPath: true, repeat: true, hp: 30, height: 0.2 },
   // M24: Moderlocke – auf den Weg nahe einem Spawn: dort in der Nacht mehr Horde und Beute (data/risk.js)
-  moderlocke: { w: 1, d: 1, cost: { teile: 8, fasern: 3 }, icon: 'moderlocke', lure: true, onPath: true, max: 1, height: 0.9 },
+  moderlocke: { w: 1, d: 1, cost: { teile: 8, fasern: 3 }, icon: 'moderlocke', bait: true, onPath: true, max: 1, height: 0.9 },
   leimtopf: { w: 1, d: 1, cost: { holz: 1, schrott: 1, fasern: 2 }, icon: 'leimtopf', trap: true, onPath: true, repeat: true, hp: 25, height: 0.4 },
   klettenteppich: { w: 1, d: 1, cost: { holz: 1, fasern: 4 }, icon: 'klettenteppich', trap: true, onPath: true, repeat: true, hp: 30, height: 0.15 },
   knallerbsen: { w: 1, d: 1, cost: { holz: 1, schrott: 3 }, icon: 'knallerbsen', trap: true, onPath: true, repeat: true, hp: 1, height: 0.2 },
@@ -86,6 +87,12 @@ export const CAMP_REBUILD = 0.5;
  * rebuild: Umgeworfenes wieder aufstellen kostet diesen Anteil der Baukosten.
  */
 export const RAID = { reach: 3.2, scan: 0.5, giveUp: 3, rebuild: 0.5 };
+
+/**
+ * Sitzbank (M24, Balance): Hinsetzen heilt Mika voll und gibt ihr `buff` Sekunden
+ * lang `damage` mal so viel Schlagkraft – danach `cooldown` Sekunden Pause.
+ */
+export const BENCH = { cooldown: 25, buff: 20, damage: 1.25 };
 /** Tagsüber nagen Streuner Wall und Tor höchstens bis auf diesen Anteil ab (wie am Haus). */
 export const CAMP_DAY_FLOOR = 0.75;
 
