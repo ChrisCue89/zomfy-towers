@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial } from '../render/materials.js';
+import { shade } from '../world/voxelKit.js';
 
 /** So viele Spieltage bleiben Überreste liegen (M9: vorher 90 Sekunden). */
 export const LOOT_DAYS = 3;
@@ -43,65 +44,66 @@ function coreModel() {
   return m;
 }
 
-// --- Feiner Detailgrad (1/16 m, Meilenstein 5) -------------------------------------
+// --- Doppelt fein (1/32 m, M13g; vorher 1/16 m seit Meilenstein 5) -------------------
 
-const FINE = 1 / 16;
+const FINE32 = 1 / 32;
 
-/** Schrottbrocken: verbogenes Blech mit Schrauben und Rost. */
-function scrapFine() {
+/** Schrottbrocken: verbogenes Blech mit aufgebogener Kante, Nieten und Rostflecken. */
+function scrap32() {
   const m = new VoxelModel();
-  m.box(-3, 0, -3, 2, 0, 2, (x, y, z) => ((x + z) % 3 === 0 ? P.s6 : (x * z) % 4 === 1 ? P.s4 : P.s5));
-  m.box(-2, 1, -2, 1, 1, 0, (x, z) => (x === -2 ? P.s7 : P.s6));
-  m.set(-1, 2, -1, P.s8).set(0, 2, -1, P.s7); // aufgebogene Kante
-  m.set(1, 1, 1, P.r3).set(-3, 1, 2, P.r4).set(2, 1, -3, P.r3); // Rost
-  m.set(-2, 1, 1, P.s9).set(1, 2, -2, P.s9); // blanke Schrauben
+  m.box(-6, 0, -6, 5, 1, 5, (x, y, z) => (y === 0 ? P.s4 : (x + z) % 5 === 0 ? P.s6 : (x - z) % 7 === 0 ? P.s4 : P.s5));
+  m.box(-5, 2, -5, 2, 3, 0, (x, y, z) => (y === 3 && x === -5 ? P.s8 : y === 3 ? P.s7 : P.s6)); // aufgebogene Platte
+  m.box(-3, 4, -4, 1, 4, -3, P.s8); // blanke Kante
+  for (const [x, z] of [[-4, 3], [3, -4], [4, 3]]) m.box(x, 2, z, x + 1, 2, z + 1, (xx, y, zz) => ((xx + zz) % 2 ? P.r3 : P.r4)); // Rost
+  for (const [x, y, z] of [[-4, 4, -1], [1, 4, -4], [3, 2, 1], [-5, 2, 4]]) m.set(x, y, z, P.s9); // Nieten
   return m;
 }
 
-/** Zahnrad: Kranz mit acht Zähnen, Nabe mit Loch – aufrecht, goldgelb. */
-function gearFine() {
+/** Zahnrad: Kranz mit acht Zähnen, Speichen, Nabe mit Loch – aufrecht, goldgelb, zwei Voxel stark. */
+function gear32() {
   const m = new VoxelModel();
-  for (let x = -5; x <= 5; x++) {
-    for (let y = -5; y <= 5; y++) {
-      const r = Math.hypot(x, y);
-      const a = Math.atan2(y, x);
+  for (let x = -11; x <= 10; x++) {
+    for (let y = -11; y <= 10; y++) {
+      const r = Math.hypot(x + 0.5, y + 0.5);
+      const a = Math.atan2(y + 0.5, x + 0.5);
       const tooth = Math.cos(a * 8) > 0.35;
-      if ((r >= 2.4 && r <= 3.6) || (tooth && r > 3.6 && r <= 5.1)) m.set(x, y + 5, 0, r > 3.6 ? P.f5 : P.f6);
-      else if (r < 1.6 && r >= 0.9) m.set(x, y + 5, 0, P.f4);
+      const spoke = Math.cos(a * 4) > 0.92 && r < 5.2;
+      let c = null;
+      if ((r >= 5.0 && r <= 7.4) || (tooth && r > 7.4 && r <= 10.4)) c = r > 7.4 ? P.f5 : r > 6.6 ? P.f6 : P.f5;
+      else if (spoke || (r < 3.4 && r >= 1.6)) c = P.f4;
+      if (!c) continue;
+      m.set(x, y + 11, 0, x + y < -6 && r > 5 ? P.f7 : c).set(x, y + 11, 1, shade(c, -1));
     }
   }
-  m.set(-1, 6, 0, P.f7).set(1, 8, 0, P.f7); // Glanzlichter
   return m;
 }
 
-/** Moderkern: leuchtender, facettierter Klumpen. */
-function coreFine() {
+/** Moderkern: leuchtender, facettierter Klumpen mit hellem Kern. */
+function core32() {
   const m = new VoxelModel();
-  m.ellipsoid(0, 3, 0, 3.2, 3.2, 3.2, (x, y, z) => {
-    if (x === 0 && z === 0) return 0xf2e4ff;
-    return (x + y + z) % 3 === 0 ? 0xd8b8ff : (x + y) % 2 ? 0xa88fd0 : 0x7b5aa6;
+  m.ellipsoid(0, 6, 0, 6.4, 6.4, 6.4, (x, y, z, dx, dy) => {
+    if (Math.abs(x + 0.5) < 1 && Math.abs(z + 0.5) < 1) return 0xf2e4ff;
+    const facet = (Math.floor((x + 8) / 3) + Math.floor(y / 3) + Math.floor((z + 8) / 3)) % 3;
+    if (dy > 0.6) return 0xd8b8ff;
+    return facet === 0 ? 0xd8b8ff : facet === 1 ? 0xa88fd0 : 0x7b5aa6;
   });
   return m;
 }
 
 /**
  * Zombieteil (Meilenstein 8): eine grünlich-graue Hand, flach auf dem Boden,
- * mit Ärmelrest und Moosfleck – kein Blut, eher traurig als eklig.
+ * mit Fingergliedern, dunklen Nägeln, Ärmelrest und Moosfleck mit Blümchen –
+ * kein Blut, eher traurig als eklig.
  */
-function partFine() {
+function part32() {
   const m = new VoxelModel();
-  // Handrücken
-  m.box(-3, 0, -2, 2, 1, 2, (x, y, z) => (y === 0 ? P.t2 : (x + z) % 3 === 0 ? P.t3 : P.t4));
-  // Drei Finger nach vorn, etwas gespreizt, Knöchel dunkler
-  for (const [fx, len] of [[-3, 5], [-1, 6], [1, 5]]) {
-    m.box(fx, 0, 3, fx, 1, len, (x, y, z) => (y === 0 ? P.t2 : z === 4 ? P.t3 : P.t4));
+  m.box(-6, 0, -4, 5, 3, 5, (x, y, z) => (y === 0 ? P.t2 : y === 3 && (x + z) % 5 === 0 ? P.t3 : P.t4)); // Handrücken
+  for (const [fx, len] of [[-6, 11], [-2, 12], [2, 11]]) {
+    m.box(fx, 0, 6, fx + 2, 2, len, (x, y, z) => (z === len ? (y === 2 ? P.n2 : P.t2) : y === 0 ? P.t2 : z === 8 ? P.t3 : P.t4));
   }
-  // Daumen zur Seite
-  m.box(3, 0, 0, 4, 1, 1, (x, y) => (y === 0 ? P.t2 : P.t4));
-  // Moosfleck auf dem Handrücken
-  m.set(-2, 2, -1, P.g5).set(-1, 2, 0, P.g4).set(-2, 2, 0, P.g6);
-  // Ärmelrest am Handgelenk (ausgefranster Stoff)
-  m.box(-3, 0, -4, 2, 2, -3, (x, y, z) => (y === 2 && (x + z) % 2 ? null : (x + y) % 2 ? P.b2 : P.b1));
+  m.box(6, 0, 0, 9, 2, 3, (x, y, z) => (x === 9 && y === 2 ? P.n2 : y === 0 ? P.t2 : P.t4)); // Daumen zur Seite
+  m.box(-4, 4, -2, -1, 4, 1, (x, y, z) => ((x + z) % 2 ? P.g5 : P.g4)).set(-3, 5, -1, P.g6).set(-2, 5, 0, P.a4).set(-2, 6, 0, P.f6); // Moos mit Blümchen
+  m.box(-6, 0, -8, 5, 4, -5, (x, y, z) => (y === 4 && (x + z) % 2 ? null : (x + y) % 2 ? P.b2 : P.b1)); // Ärmelrest
   return m;
 }
 
@@ -114,7 +116,7 @@ function partModel() {
 }
 
 const MODELS = { schrott: scrapModel, teile: partModel, zahnraeder: gearModel, moderkerne: coreModel };
-const FINE_MODELS = { schrott: scrapFine, teile: partFine, zahnraeder: gearFine, moderkerne: coreFine };
+const FINE32_MODELS = { schrott: scrap32, teile: part32, zahnraeder: gear32, moderkerne: core32 };
 
 /** Funkeln über liegender Beute: ein kleines helles Kreuz (zum Finden, auch nachts). */
 function glintModel() {
@@ -134,8 +136,8 @@ export class Loot {
     this.glow = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {};
     this.dummy = new THREE.Object3D();
-    for (const [res, build] of Object.entries(FINE_MODELS)) {
-      const geo = build().toGeometry({ jitter: 0.02, seed: 3, size: FINE });
+    for (const [res, build] of Object.entries(FINE32_MODELS)) {
+      const geo = build().toGeometry({ jitter: 0.02, seed: 3, size: FINE32 });
       const mesh = new THREE.InstancedMesh(geo, res === 'moderkerne' ? this.glow : this.material, MAX);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;

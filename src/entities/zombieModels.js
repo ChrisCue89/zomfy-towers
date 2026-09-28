@@ -4,12 +4,14 @@
 // leuchtender Pilzhut des Leuchtpilzes, Geweihkrone des Anführers …).
 //
 // Aufbau wie bei Mika (characters.js): Beine, Rumpf, Kopf, Arme an Gelenken.
-// Koordinaten in Voxeln (1/8 m), Blickrichtung +z, Ursprung zwischen den Füßen.
+// Koordinaten in Voxeln (grob 1/8 m, fein 1/16 m, seit M13g doppelt fein 1/32 m),
+// Blickrichtung +z, Ursprung zwischen den Füßen.
 // `glow` sind leuchtende Teile am Kopf (Augen, Pilzhut), eigenes Material.
 
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
+import { shade } from '../world/voxelKit.js';
 
 const SPECS = {
   schlurfer: {
@@ -155,8 +157,8 @@ function buildHeadGlow(s) {
 // leuchtender Pilzhut, Geweihkrone mit Moosumhang.
 
 const U16 = 1 / 16;
-/** Feiner Detailgrad an (Meilenstein 5); die groben Modelle bleiben als Rückfall. */
-const FINE = true;
+/** Detailgrad: 32 = doppelt fein (M13g), 16 = fein (M5), 8 = die groben Modelle als Rückfall. */
+const DETAIL = 32;
 const VEST = 0xf2b632; // Warnweste
 const REFLECT = 0xf4f0e0; // Leuchtstreifen (Glüh-Material)
 
@@ -360,13 +362,244 @@ function fineParts(s, seed) {
   return parts;
 }
 
+// --- Doppelt fein (1/32 m, M13g) ------------------------------------------------------
+// Gleiche Maße in Metern wie die 1/16-Modelle, doppelt so viele Voxel je Richtung.
+// Gelenke und Versätze sind die Werte der 1/16-Schlurfer mal zwei. Die Feinheit
+// steckt in den Merkmalen: ein Zeh schaut aus dem Schuh, Finger einzeln,
+// Knopfleiste und Taschen, genähter Mund, schwere Brauen, ein eingerissenes Ohr.
+
+const U32 = 1 / 32;
+
+function buildLeg32(s, seed) {
+  const m = new VoxelModel();
+  const runner = s.extra === 'kapuze';
+  // Schuhe: Laufschuhe beim Flitzer (hell mit rotem Streifen), sonst ausgelatscht
+  m.box(0, 0, 0, 7, 1, 9, (x, y, z) => {
+    if (runner) return y === 0 ? P.s6 : z >= 8 ? P.s9 : P.s8;
+    if (z >= 8 && x >= 5) return null; // aufgerissene Kappe …
+    return y === 0 ? shade(s.feet, -1) : s.feet;
+  });
+  if (!runner) m.box(5, 0, 8, 6, 1, 9, (x, y) => (y === 1 ? s.skin : s.skinShade)); // … ein Zeh schaut heraus
+  m.box(0, 2, 0, 7, 3, 7, (x, y, z) => {
+    if (runner) return z === 7 && y === 3 ? P.r3 : x === 0 || z === 7 ? (y === 2 ? P.r3 : P.s8) : P.s8;
+    return z === 7 && x % 3 === 1 && y === 3 ? P.e7 : s.feet; // Schnürung
+  });
+  // Hose: ausgefranster Saum, Seitennaht, ein Riss am Knie
+  m.box(0, 4, 0, 7, 11, 7, (x, y, z) => {
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed);
+    if (y === 4 && h < 0.4 && !runner) return s.skin; // Knöchel unter dem Saum
+    if (y === 11) return s.pantsDark;
+    if (runner && (x === 0 || x === 7) && z === 3) return P.s8; // Streifen an der Trainingshose
+    if (!runner && z === 7 && x >= 2 && x <= 4 && y >= 7 && y <= 8) return y === 7 ? s.skinShade : s.skin; // Riss am Knie
+    if (x === 0 || z === 0) return s.pantsDark;
+    return h < 0.18 ? s.pantsDark : s.pants;
+  });
+  return m;
+}
+
+function buildArm32(s) {
+  const m = new VoxelModel();
+  // Hand mit Fingergliedern und dunklen Nägeln
+  m.box(0, 0, 0, 3, 1, 7, (x, y, z) => (y === 0 ? (z % 3 === 1 ? P.e6 : s.skinShade) : z % 3 === 2 ? s.skinShade : s.skin));
+  m.box(0, 2, 0, 3, 7, 7, (x, y, z) => (y === 6 && z % 3 === 1 ? s.skinShade : x === 3 && z === 0 ? s.skinShade : s.skin));
+  m.box(0, 8, 0, 3, 15, 7, (x, y, z) => {
+    if (s.armor && y >= 14) return y === 15 ? P.s6 : P.s5; // Schulterblech
+    if (y === 8) return (z + x) % 3 === 0 ? null : s.shirtDark; // ausgefranster Ärmel
+    if (y === 9) return s.shirtDark;
+    if (y === 15 && s.extra !== 'kapuze') return z % 3 ? s.moss : shade(s.moss, 1);
+    return y === 12 && x === 0 ? s.shirtDark : s.shirt; // Falte
+  });
+  return m;
+}
+
+function buildTorso32(s, seed) {
+  const m = new VoxelModel();
+  const w = widthOf(s) * 2;
+  const x0 = -12 - w;
+  const x1 = 11 + w;
+  m.box(x0, 12, -8, x1, 27, 7, (x, y, z) => {
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed);
+    const edge = x === x0 || x === x1;
+    if (s.armor) {
+      // Warnweste über dem Hemd, vernietete Blechplatte vorn
+      if (z === 7 && y >= 16 && y <= 23 && x >= -6 && x <= 5) {
+        if ((x === -6 || x === 5) && (y === 16 || y === 23)) return P.s8; // Nieten
+        if (x === 1 && y === 20) return P.r3; // Rost
+        return (x + (y >> 1)) % 3 ? P.s5 : P.s4;
+      }
+      if (y <= 13) return s.shirtDark;
+      return z === 7 && (x === -8 || x === 7) ? shade(VEST, -1) : VEST;
+    }
+    if (s.extra === 'kapuze') {
+      // Kapuzenpulli mit Bauchtasche und Bündchen
+      if (z === 7 && y >= 16 && y <= 19 && x >= -6 && x <= 5) return y === 19 || x === -6 || x === 5 ? shade(s.shirtDark, -1) : s.shirtDark;
+      if (y <= 13) return (x & 1) ? s.shirtDark : shade(s.shirtDark, -1); // Bündchen gerippt
+      return edge && h < 0.3 ? s.shirtDark : s.shirt;
+    }
+    if (y === 12) return h < 0.35 ? null : s.shirtDark; // ausgefranster Saum
+    if (y === 13) return s.shirtDark;
+    if (z === 7 && h < 0.06) return s.skin; // Löcher
+    if (y === 27 && h < 0.45) return s.moss;
+    if (z === 7 && (x === -1 || x === 0)) return (y === 17 || y === 21 || y === 25) && x === 0 ? P.e8 : s.shirtDark; // Knopfleiste
+    if (z === 7 && y >= 25 && (x === -3 || x === 2 || x === -2 || x === 1)) return s.shirtDark; // Kragen
+    if (z === 7 && x >= 4 && x <= 8 && (y === 23 || (y >= 20 && y <= 23 && (x === 4 || x === 8)))) return s.shirtDark; // Brusttasche
+    return h < 0.14 ? s.shirtDark : s.shirt;
+  });
+  if (s.extra === 'kapuze') {
+    // Kordeln der Kapuze
+    m.box(-4, 21, 8, -4, 26, 8, P.s9).box(3, 21, 8, 3, 26, 8, P.s9).set(-4, 20, 8, P.s7).set(3, 20, 8, P.s7);
+  } else if (!s.armor) {
+    // Moospolster auf der Schulter, mit einem Pilzchen
+    m.box(6, 27, -4, 11, 29, 1, (x, y, z) => (y === 29 && (x === 11 || z === -4) ? null : y === 29 ? shade(s.moss, 1) : s.moss));
+    m.set(8, 30, -2, P.e8).set(8, 31, -2, P.f5).set(7, 31, -2, P.f4).set(9, 31, -2, P.f4);
+  }
+  if (s.cape) {
+    // Moosumhang am Rücken, unten ausgefranst
+    m.box(-12, 10, -12, 11, 27, -9, (x, y, z) => {
+      const h = hash3(x >> 1, y >> 1, z, seed + 3);
+      if (y <= 11 && h < 0.5) return null;
+      return h < 0.3 ? P.g5 : h < 0.55 ? P.g4 : s.shirt;
+    });
+  }
+  return m;
+}
+
+function buildHead32(s, seed) {
+  const m = new VoxelModel();
+  const hooded = s.extra === 'kapuze';
+  m.box(-12, 28, -12, 11, 43, 7, (x, y, z) => {
+    const front = z === 7;
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed);
+    if (front) {
+      if (y >= 34 && y <= 37 && ((x >= -9 && x <= -5) || (x >= 4 && x <= 8))) return y === 37 ? s.skinShade : P.n0; // Augenhöhlen
+      if (y === 38 && ((x >= -10 && x <= -4) || (x >= 3 && x <= 9))) return shade(s.skinShade, -1); // schwere Brauen
+      if (y === 30 && x >= -5 && x <= 4) return P.n1; // Mund
+      if ((y === 29 || y === 31) && x >= -5 && x <= 4 && x % 2 === 0) return P.e8; // Stiche
+      if (y <= 29 && x >= -6 && x <= 5) return s.skinShade; // Kinn im Schatten
+      return h < 0.1 ? s.skinShade : s.skin;
+    }
+    if (y === 43 && h < 0.55 && !hooded) return s.moss;
+    if (z <= -8 && y >= 36) return (x + y) % 5 === 0 ? shade(s.hair, 1) : s.hair; // Haarsträhnen
+    return y <= 29 ? s.skinShade : s.skin;
+  });
+  m.box(-1, 32, 8, 0, 33, 8, s.skinShade); // Nase
+  // Ohren, das linke eingerissen
+  m.box(-14, 33, -3, -13, 36, -1, (x, y) => (y === 36 && x === -14 ? null : s.skinShade));
+  m.box(12, 33, -3, 13, 36, -1, s.skinShade);
+  switch (s.extra) {
+    case 'blume':
+      // Gänseblümchen mit gelber Mitte, ein Blatt am Stiel
+      m.box(4, 44, -4, 4, 47, -4, P.g5).set(5, 45, -4, P.g6).set(6, 46, -4, P.g6);
+      m.box(3, 48, -5, 5, 48, -3, P.f6);
+      for (const [dx, dz] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, 2], [-2, 2], [2, -2]]) m.set(4 + dx, 48, -4 + dz, P.s9);
+      m.set(4, 49, -4, P.f7);
+      break;
+    case 'kapuze':
+      // Rote Kapuze: Schale um den Kopf, vorn offen, Saum etwas dunkler
+      m.box(-14, 30, -14, 13, 47, 9, (x, y, z) => {
+        const inside = x >= -12 && x <= 11 && y <= 43 && z >= -12 && z <= 7;
+        if (inside) return null;
+        if (z >= 8 && y <= 41 && x > -12 && x < 11) return null; // Gesicht frei
+        if (z >= 8 && y < 32) return null;
+        if (y >= 46 && (x <= -13 || x >= 12 || z <= -13 || z >= 8)) return null;
+        return z >= 8 || y >= 46 ? s.shirtDark : (x + y) % 6 === 0 ? shade(s.shirt, -1) : s.shirt;
+      });
+      break;
+    case 'pilzchen':
+      // Drei Fliegenpilze mit weißen Tupfen
+      for (const [cx, cz, hh] of [[-6, -4, 4], [4, 0, 2], [0, -8, 6]]) {
+        m.box(cx, 44, cz, cx + 1, 43 + hh, cz + 1, P.e8);
+        m.ellipsoid(cx + 1, 44 + hh, cz + 1, 3.2, 2.2, 3.2, (x, y, z, dx, dy) => (dy < -0.2 ? null : (x + z + y) % 4 === 0 ? P.s9 : P.a0));
+      }
+      break;
+    case 'kegel': {
+      // Warnkegel als Helm (die weißen Streifen leuchten, siehe buildHeadGlow32)
+      m.box(-12, 44, -12, 11, 47, 7, (x, y) => (y === 47 ? P.f4 : P.f3));
+      for (let y = 48; y <= 59; y++) {
+        const r = 9 - Math.floor((y - 48) * 0.6);
+        m.box(-r, y, -r - 3, r - 1, y, r - 4, (x) => (x < -r + 2 ? P.f4 : P.f3));
+      }
+      break;
+    }
+    case 'krone':
+      // Geweihkrone aus Ästen mit Gabeln und Blüten, ein Moosband darunter
+      for (const side of [-1, 1]) {
+        const bx = side < 0 ? -10 : 8;
+        m.box(bx, 44, -4, bx + 1, 55, -3, P.e5);
+        m.line(bx + side, 50, -4, bx + side * 5, 54, -4, P.e5, 1);
+        m.line(bx - side, 54, -4, bx - side * 3, 58, -4, P.e6, 1);
+        m.box(bx + side * 5, 55, -4, bx + side * 5 + 1, 57, -3, P.e6);
+        m.set(bx + side * 5, 58, -4, P.a1).set(bx - side * 3, 59, -4, P.a0).set(bx, 56, -4, P.a1).set(bx + 1, 56, -4, P.a4);
+      }
+      m.box(-8, 44, -6, 7, 45, 1, (x) => (x % 3 === 0 ? P.g5 : P.g4));
+      break;
+    default:
+      break;
+  }
+  return m;
+}
+
+/**
+ * Leuchtende Teile am Kopf: Augen vorn, Moderpilzchen am Hinterkopf (man sieht
+ * Schlurfer auch von hinten), Streifen am Warnkegel, der große Hut des Leuchtpilzes.
+ */
+function buildHeadGlow32(s) {
+  const m = new VoxelModel();
+  for (const x0 of [-9, 5]) m.box(x0, 34, 8, x0 + 3, 36, 8, (x, y) => ((x === x0 + 1 || x === x0 + 2) && y === 35 ? 0xffffff : s.eyes));
+  if (s.extra !== 'kapuze') for (const [x, y] of [[-6, 36], [4, 34], [0, 40]]) m.box(x, y, -13, x + 1, y + 1, -13, (xx, yy) => (yy === y + 1 ? 0xd8ffa0 : 0xb6f07a));
+  if (s.extra === 'kegel') {
+    // Reflektorring am Kegel (eine Voxelschicht außen)
+    for (let y = 52; y <= 55; y++) {
+      const r = 9 - Math.floor((y - 48) * 0.6) + 1;
+      m.box(-r, y, -r - 3, r - 1, y, r - 4, (x, yy, z) => (x === -r || x === r - 1 || z === -r - 3 || z === r - 4 ? REFLECT : null));
+    }
+  }
+  if (s.extra === 'leuchthut') {
+    m.ellipsoid(-0.5, 44, -2.5, 16, 6, 14, (x, y, z, dx, dy) => {
+      if (y < 44) return null;
+      if ((x * 3 + z * 5 + y) % 11 === 0 && dy > 0.3) return 0xf7f3ea; // helle Tupfen
+      return dy > 0.6 ? 0x8ee0cc : 0x6cc0ae;
+    });
+  }
+  return m;
+}
+
+/** Leuchtstreifen der Warnweste (Brummer), eine Schicht vor Brust und Rücken. */
+function buildVestGlow32(s) {
+  const m = new VoxelModel();
+  const w = widthOf(s) * 2;
+  for (const y of [18, 19, 22, 23]) {
+    for (let x = -12 - w; x <= 11 + w; x++) {
+      if (!(x >= -6 && x <= 5)) m.set(x, y, 8, REFLECT); // vorn sitzt die Blechplatte
+      m.set(x, y, -9, REFLECT);
+    }
+  }
+  return m;
+}
+
+function fineParts32(s, seed) {
+  const w = widthOf(s) * 2;
+  const parts = [
+    { name: 'legL', model: buildLeg32(s, seed), joint: [-4, 12, 0], offset: [-8, 0, -4], parent: 'root', unit: U32 },
+    { name: 'legR', model: buildLeg32(s, seed + 1), joint: [4, 12, 0], offset: [0, 0, -4], parent: 'root', unit: U32 },
+    { name: 'torso', model: buildTorso32(s, seed), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'head', model: buildHead32(s, seed), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'glow', model: buildHeadGlow32(s), joint: [0, 28, -4], offset: [0, 0, 0], parent: 'head', glow: true, unit: U32 },
+    { name: 'armL', model: buildArm32(s), joint: [-14 - w, 28, 0], offset: [-16 - w, 12, -4], parent: 'body', unit: U32 },
+    { name: 'armR', model: buildArm32(s), joint: [14 + w, 28, 0], offset: [12 + w, 12, -4], parent: 'body', unit: U32 },
+  ];
+  if (s.armor) parts.push({ name: 'vest', model: buildVestGlow32(s), joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', glow: true, unit: U32 });
+  return parts;
+}
+
 /**
  * Teile einer Art mit ihren Gelenken (wie in characters.js).
  * @returns {Array<{name:string, model:VoxelModel, joint:number[], offset:number[], parent:'root'|'body'|'head', glow?:boolean}>}
  */
 export function zombieParts(type, seed = 11) {
   const s = SPECS[type];
-  if (FINE) return fineParts(s, seed);
+  if (DETAIL === 32) return fineParts32(s, seed);
+  if (DETAIL === 16) return fineParts(s, seed);
   const wide = s.armor ? 1 : 0;
   return [
     { name: 'legL', model: buildLeg(s, seed), joint: [-1, 3, 0], offset: [-2, 0, -1], parent: 'root' },

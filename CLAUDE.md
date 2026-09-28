@@ -98,14 +98,22 @@ gilt bis auf Weiteres:
   mit `pxPerMeter / 40` skalieren.
 - Kamera: orthografisch, **Gier immer 0** (Blick nach Norden, −Z), Neigung
   sin = 0,6 / cos = 0,8.
-- **Voxelgrößen (seit M13):** alle Modelle im feinen Maß, 1/16 m = 5 px –
-  Figuren, Horde, Türme, Bauten, Haus, Requisiten, Quellen und Natur
-  (`size: FINE` aus `src/world/voxelKit.js`, `unit` an den Teilen der Horde).
-  Nur die Bodentextur hat 1/8 m je Texel. Schatten-Stellvertreter bleiben grob
-  (`shadow: 'coarse'`, Bäume `'rough'` = 1/4 m). Statische Objekte auf
-  1/8-m-Positionen und nur in 90°-Drehungen – dann liegen alle Kanten exakt
-  auf dem Pixelraster. Bausteine für feine Modelle (Bretter, Rundholz, Steine,
-  Blüten, `shade`) liegen in `voxelKit.js`.
+- **Voxelgrößen (M13g, doppelt fein):** 1/32 m = 2,5 px (`size: FINE32` aus
+  `src/world/voxelKit.js`, `unit` an den Teilen) für Mika samt Laterne und
+  Werkzeug, Überlebende, Balduin und sein Boot, Knopf, Krähen, Horde, Türme,
+  Bauten, Barrikaden, Haus, Requisiten, Quellen (außer Bäumen) und Beute.
+  1/16 m (`FINE`) für die Natur (Bäume, Büsche, Felsen, Gras, Blumen, Pilze,
+  Schilf – wegen der Menge), den Innenraum (bei 160 px/m) und die Porträts.
+  Die Bodentextur hat 1/16 m je Texel und darin eine Feinzeichnung im Maß
+  1/32. Farbrauschen im Maß 1/32 grob halten (Hash über `x >> 1` …), die
+  Feinheit gehört in Kanten, Fugen, Nägel, Maserung, Zeichen und Rundungen –
+  sonst wird es Gries. `box2` (Quader in 1/16-Koordinaten) und `edgeLight`
+  (Kantenlicht) helfen. Schatten-Stellvertreter bleiben grob: statische
+  1/32-Modelle `shadow: 'coarse4'` (1/8 m), Bäume `'rough'` (1/4 m); Horde und
+  Türme zeichnen Schatten und Umriss hinter Verdeckungen aus einer groben
+  1/16-Fassung. Türme gleicher Art und Stufe teilen ihre Geometrie
+  (`userData.shared` – nie freigeben). Statische Objekte auf 1/8-m-Positionen
+  und nur in 90°-Drehungen – dann liegen alle Kanten exakt auf dem Pixelraster.
 - Farben aus der Palette `src/render/palette.js` (`P.g5`, `P.e3` …).
 - Keine Unschärfe, kein Bloom. Transparenz nur als gerasterte Durchsicht
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.
@@ -113,7 +121,7 @@ gilt bis auf Weiteres:
   Lichtquellen bleiben warm.
 - **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, Schlurfer, Turm, Loot)
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
-  und im feinen Maß (1/16 m) bauen, wenn sie klein oder lebendig sind.
+  und im Maß 1/32 bauen (Natur 1/16).
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
   `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
   Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
@@ -171,7 +179,10 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Stufe/Spezialisierung), buildPreview (Geistermodell,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
-                      furnitureModels (Möbel im Wohnraum des Innenraums)
+                      furnitureModels (Möbel im Wohnraum des Innenraums),
+                      voxelKit (Baukasten für feine Modelle: Farbstufen,
+                      Bretter, Rundholz, Steine, Quader im 1/16-Maß,
+                      Kantenlicht; FINE, FINE32)
 src/entities/         player, characters (Figuren-Bauer), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
                       (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
@@ -357,7 +368,9 @@ Grundprinzipien:
    weit mit 80 px/m als Standard, Z und Y gehen nah heran (160 px/m) und
    zurück, die Wahl bleibt gespeichert, drinnen ändert Z nichts, Platzieren
    mit der Maus trifft auch nah das richtige Feld (Bilder: nah-tag, nah-haus,
-   nah-nacht).
+   nah-nacht); ab M13g: alle Modellfamilien draußen (außer der Natur) sind an
+   ihrer Geometrie gemessen im Maß 1/32, und die Bildlast im Hof bleibt unter
+   1,5 Mio. Dreiecken.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -422,7 +435,8 @@ Mika drinnen ist, `wakeSpot()` liegt im Innenraum; ab M12 zeigt `weather()`
 Art, Regen, Wind, Tropfen und Nebel, `setWeather(art, sofort)` erzwingt ein
 Wetter (`null` = wie der Tag), `crows()` nennt Zustand und Sitzplatz der
 Krähen und wie oft sie krächzend aufgeflogen sind, `settleCrows()` setzt sie
-auf ihre Plätze.
+auf ihre Plätze; ab M13g misst `detail()` je Modellfamilie die kleinste
+Kantenlänge der Geometrie (»Voxel je Meter«, 32 = doppelt fein).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

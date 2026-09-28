@@ -1052,6 +1052,16 @@ das Muster aus 2 und 3 px fest in der Welt und flimmert nicht. Bäume bleiben
 bei 1/16 m (im Maß 1/32 wären es etwa 17 Mio. Dreiecke); der Boden bekommt
 innerhalb jedes Texels eine Feinzeichnung (Halme, Blattspitzen, Körner).
 Schatten bleiben bei 1/8 m. Umsetzung in M13g.
+**Umgesetzt (M13g):** alles Gebaute, Bewohnte und Lebendige draußen – Mika
+mit Laterne und Werkzeug, Überlebende, Balduin und sein Boot, Knopf,
+Krähen, Horde, Türme mit Turmteilen, Bauten, Barrikaden, Haus, Requisiten,
+Quellen (ohne Bäume) und Beute; die Prüfung misst das an der Geometrie. Die
+Natur bleibt 1/16 m, ebenso Innenraum und Porträts. Kosten: Im Hof zeichnet
+das Bild gut doppelt so viele Dreiecke (auf Stufe 5 etwa 1 Mio.), die
+softwaregerenderte Bildzeit im Prüfbrowser blieb bei 40–45 ms. Umriss und
+Schatten der Horde und der Türme kommen aus einer groben 1/16-Fassung, Türme
+gleicher Art und Stufe teilen ihre Geometrie – 24 Türme auf Stufe 5 bauen
+sich damit sogar schneller als vorher.
 
 ## Technik mit Auswirkung aufs Design
 

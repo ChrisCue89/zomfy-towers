@@ -15,10 +15,10 @@
 import { T } from '../data/texts.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
-import { buildBoat, buildRope, BOAT, CLEAT } from '../entities/traderModels.js';
+import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 
-const U = 1 / 16;
+const U = BOAT_UNIT;
 const DECK_Y = (BOAT.deck + 1) * U; // hier steht Balduin im Boot
 const FAREWELL = 5; // Spielminuten (2 s) zwischen »Tschüss« und Ablegen
 const STERN = BOAT.halfLength * U; // vom Mittelpunkt bis zum Heck (m)
@@ -254,7 +254,7 @@ export class Trader {
       const p = this.pose;
       const lx = CLEAT.x * U;
       const lz = CLEAT.z * U;
-      const cleat = { x: p.x + lx * c + lz * s, y: DECK_Y + bob + U * 1.5, z: p.z - lx * s + lz * c };
+      const cleat = { x: p.x + lx * c + lz * s, y: DECK_Y + bob + U * 3, z: p.z - lx * s + lz * c };
       this.rope.set(cleat, post, 0.14, 1);
     } else this.rope.hide();
   }

@@ -3,18 +3,17 @@
 // wo jemand steht und ob er zu sehen ist, entscheidet core/survivors.js.
 
 import * as THREE from 'three';
-import { survivorParts } from './survivorModels.js';
+import { survivorParts32 } from './survivorModels.js';
 import { buildDog, poseDog } from './dogModel.js';
 import { createWorldMaterial } from '../render/materials.js';
-import { VoxelModel } from '../render/voxel.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
 
-const U = 1 / 16;
+const U = 1 / 32; // M13g: doppelt fein wie Mika – Gelenke der 1/16-Figur mal zwei
 const WALK_SPEED = 1.6;
 
 /** Menschliche Figur aus Teilen – Gelenke wie bei Mika (characters.js). */
 function buildSurvivor(id, seed) {
-  const parts = survivorParts(id);
+  const parts = survivorParts32(id);
   const material = createWorldMaterial({ selfLight: 0.3 });
   const geo = (model) => model.toGeometry({ jitter: 0.03, seed, size: U });
   const part = (model, joint, offset = [0, 0, 0]) => {
@@ -31,19 +30,17 @@ function buildSurvivor(id, seed) {
   root.name = id;
   const body = new THREE.Group();
   root.add(body);
-  const legL = part(parts.leg, [-2, 6, 0], [-4, 0, -2]);
-  const legR = part(parts.leg, [2, 6, 0], [0, 0, -2]);
+  const legL = part(parts.leg, [-4, 12, 0], [-8, 0, -4]);
+  const legR = part(parts.leg, [4, 12, 0], [0, 0, -4]);
   root.add(legL, legR);
-  const torso = part(parts.torso, [0, 6, 0]);
-  const head = part(parts.faces ? parts.faces.bare : parts.head, [0, 14, -2]);
-  const armL = part(parts.arm, [-7, 14, 0], [-8, 6, -2]);
-  const armR = part(parts.arm, [7, 14, 0], [6, 6, -2]);
+  const torso = part(parts.torso, [0, 12, 0]);
+  const head = part(parts.head, [0, 28, -4]);
+  const armL = part(parts.arm, [-14, 28, 0], [-16, 12, -4]);
+  const armR = part(parts.arm, [14, 28, 0], [12, 12, -4]);
   body.add(torso, head, armL, armR);
-  // Lider: eine Hautreihe vor den Augen, meist versteckt
-  const lids = new VoxelModel();
-  for (const x of [-4, -3, 2, 3]) lids.set(x, 17, 4, parts.skin);
-  const eyelids = new THREE.Mesh(geo(lids), material);
-  eyelids.position.set(0, -14 * U, 2 * U);
+  // Lider: Haut vor den Augen, meist versteckt
+  const eyelids = new THREE.Mesh(geo(parts.lids), material);
+  eyelids.position.set(0, -28 * U, 4 * U);
   eyelids.visible = false;
   head.add(eyelids);
   // Gesichtsplatten (M12): normal und lächelnd – Balduin grinst ohnehin immer
@@ -52,7 +49,7 @@ function buildSurvivor(id, seed) {
     faces = {};
     for (const expr of ['normal', 'froh']) {
       const plate = new THREE.Mesh(geo(parts.faces[expr]), material);
-      plate.position.set(0, -14 * U, 2 * U);
+      plate.position.set(0, -28 * U, 4 * U);
       plate.castShadow = true;
       plate.receiveShadow = true;
       plate.visible = expr === 'normal';

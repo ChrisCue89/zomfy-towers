@@ -7,10 +7,10 @@ import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
-import { hash3, Rng } from '../core/rng.js';
+import { hash3, Rng, valueNoise } from '../core/rng.js';
 import { BAY_NODES } from './layout.js';
-import { buildBirch, buildDeciduous, buildFir, buildRock, LEAVES } from './nature.js';
-import { FINE, stoneBlob } from './voxelKit.js';
+import { buildBirch, buildDeciduous, buildFir, LEAVES } from './nature.js';
+import { FINE, FINE32, shade, stoneBlob } from './voxelKit.js';
 
 /**
  * Regeln je Art. yield = pro Treffer, bonus = beim letzten Treffer.
@@ -38,91 +38,109 @@ export const SEARCH_REGROW_DAYS = 2;
 
 // --- Modelle ------------------------------------------------------------------
 
-// Seit M13 im feinen Maß (1/16 m, Koordinaten verdoppelt): Stumpf, Faserbusch,
-// Kiesel, Äste, Trieb und Schrotthaufen.
+// Seit M13g doppelt fein (1/32 m): Stumpf, Faserbusch, Kiesel, Äste, Trieb,
+// Schrotthaufen und Fels. Nur die Bäume bleiben im Maß 1/16 (wie im Wald).
 
+/** Baumstumpf (M13g, 1/32 m): Rindenplatten, oben feine Jahresringe mit Trockenriss, vier Wurzelansätze, etwas Moos. */
 function buildStump(seed, radius = 2) {
   const m = new VoxelModel();
-  const r = radius * 2 + 0.8;
-  m.cylinder(0, 0, 0, 3, r, (x, y, z) => {
+  const r = radius * 4 + 1.6;
+  m.cylinder(0, 0, 0, 7, r, (x, y, z) => {
     const d = Math.hypot(x + 0.5, z + 0.5);
-    if (y === 3) {
-      if (d > r - 1.1) return P.e3; // Rinde
-      if (d < 1) return P.e6;
-      return Math.floor(d * 1.3) % 2 ? P.e7 : P.e8; // Jahresringe
-    }
     const a = Math.atan2(z + 0.5, x + 0.5);
-    return Math.floor((a / Math.PI) * 8 + 16) % 2 ? P.e3 : hash3(x, y, z, seed) < 0.4 ? P.e2 : P.e3;
+    if (y === 7) {
+      if (d > r - 1.3) return P.e3; // Rinde
+      if (d > r - 2.2) return P.e6; // Splint
+      if (Math.abs(a - 0.8) < 0.1 && d > 1.5) return P.e4; // Trockenriss
+      if (d < 1.2) return P.e5;
+      return d % 2.4 < 0.8 ? P.e7 : P.e8; // Jahresringe
+    }
+    const u = (a / Math.PI) * 10 + 20;
+    const f = u - Math.floor(u);
+    if (f < 0.2) return P.e1;
+    if (z + 0.5 < -r * 0.5 && y < 4 && hash3(x >> 1, y, z >> 1, seed + 1) < 0.5) return P.g4; // Moos im Norden
+    return x + 0.5 < -r * 0.4 ? P.e4 : hash3(Math.floor(u), y >> 1, 0, seed) < 0.35 ? P.e2 : P.e3;
   });
-  // Wurzelansätze
-  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    const x = Math.round(dx * (r + 0.6));
-    const z = Math.round(dz * (r + 0.6));
-    m.box(Math.min(x, x - dx), 0, Math.min(z, z - dz), Math.max(x, x - dx), 0, Math.max(z, z - dz), P.e3);
+  // Wurzelansätze, nach außen flacher
+  for (const [dx, dz] of [[1, 0.2], [-1, -0.3], [0.2, 1], [-0.3, -1]]) {
+    for (let t = 0; t <= 4; t++) {
+      const x = Math.round(dx * (r - 1 + t));
+      const z = Math.round(dz * (r - 1 + t));
+      const h = Math.max(0, 3 - t);
+      m.box(x - 1, 0, z - 1, x + 1, h, z + 1, (xx, y) => (y === h ? P.e4 : P.e3));
+    }
   }
   return m;
 }
 
-/** Faserbusch: dichter Horst langer, gebogener Halme mit hellen Spitzen und goldenen Samenrispen. */
+/** Faserbusch (M13g, 1/32 m): dichter Horst feiner, gebogener Halme mit hellen Spitzen und goldenen Samenrispen. */
 function buildTallGrass(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 70; i++) {
-    const x0 = rng.int(-6, 5);
-    const z0 = rng.int(-4, 4);
-    const h = rng.int(7, 13);
+  for (let i = 0; i < 150; i++) {
+    const x0 = rng.int(-12, 11);
+    const z0 = rng.int(-8, 8);
+    const h = rng.int(14, 26);
     const lean = rng.range(-0.35, 0.35);
     for (let y = 0; y < h; y++) {
-      const x = Math.round(x0 + lean * (y * y) / h);
-      const c = y === h - 1 ? (rng.chance(0.5) ? P.g9 : P.g8) : y < 2 ? P.g4 : y < h * 0.6 ? P.g5 : P.g6;
+      const x = Math.round(x0 + (lean * (y * y)) / h);
+      const c = y >= h - 2 ? (rng.chance(0.5) ? P.g9 : P.g8) : y < 3 ? P.g4 : y < h * 0.6 ? P.g5 : P.g6;
       m.set(x, y, z0, c);
     }
     if (rng.chance(0.3)) {
+      // Samenrispe: kleine Körner an einem gebogenen Stiel
       const x = Math.round(x0 + lean * h);
-      m.set(x, h, z0, P.f6).set(x, h + 1, z0, P.e8).set(x + (lean > 0 ? 1 : -1), h, z0, P.f6);
+      const s = lean > 0 ? 1 : -1;
+      m.set(x, h, z0, P.e8).set(x, h + 1, z0, P.f6).set(x + s, h + 1, z0, P.f6).set(x + s, h + 2, z0, P.e8).set(x, h + 2, z0, P.f7).set(x + 2 * s, h, z0, P.f6);
     }
   }
   return m;
 }
 
-/** Lose Steine: ein Häufchen heller, runder Kiesel mit Glanzpunkt auf einem Fleck Erde – hebt sich vom Gras ab. */
+/** Lose Steine (M13g, 1/32 m): ein Häufchen heller, runder Kiesel mit Glanzpunkt auf einem Fleck Erde – hebt sich vom Gras ab. */
 function buildPebbles(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
   // Dunkler Erdfleck, darauf ein Häufchen heller, runder Kiesel mit Glanz: sammelbar –
   // anders als die grauen Felsen und die Tupfer im Weg (m12-r1: keiner fand den Stein)
-  m.ellipsoid(-0.5, 0, -0.5, 8, 1, 6.5, (x, y, z) => (y !== 0 ? null : hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3));
-  const stones = [[-4, -2, 2.6], [2, 0, 2.4], [-2, 2, 2.2], [0, -4, 2.0], [4, 3, 1.8], [-6, 1, 1.6], [5, -3, 1.5], [1, 4, 1.4]];
+  m.ellipsoid(-1, 0, -1, 16, 1, 13, (x, y, z) => (y !== 0 ? null : hash3(x >> 1, y, z >> 1, seed) < 0.5 ? P.e2 : P.e3));
+  const stones = [[-8, -4, 5.2], [4, 0, 4.8], [-4, 4, 4.4], [0, -8, 4.0], [8, 6, 3.6], [-12, 2, 3.2], [10, -6, 3.0], [2, 8, 2.8], [-6, 10, 2.0], [12, 1, 1.8]];
   for (const [x, z, r] of stones) {
     const tones = rng.chance(0.5) ? [P.s6, P.s7, P.s8, P.s9, P.s9] : [P.s5, P.s6, P.s7, P.s8, P.s9];
-    const pebble = stoneBlob(new VoxelModel(), 0, 0, r, r * 0.8, r * 0.85, seed + x * 7 + z, tones);
+    const pebble = stoneBlob(new VoxelModel(), 0, 0, r, r * 0.8, r * 0.85, seed + x * 7 + z, tones, { grain: 2 });
     let top = null;
     pebble.forEach((px, py, pz) => {
       if (!top || py > top[1] || (py === top[1] && px + pz < top[0] + top[2])) top = [px, py, pz];
     });
     m.merge(pebble, x, 1, z);
-    if (top) m.set(x + top[0], 1 + top[1], z + top[2], P.a4); // Glanz
+    if (top) m.set(x + top[0], 1 + top[1], z + top[2], P.a4).set(x + top[0] + 1, 1 + top[1], z + top[2], P.s9); // Glanz
   }
+  for (let k = 0; k < 10; k++) m.set(rng.int(-15, 14), 1, rng.int(-11, 11), rng.pick([P.s6, P.s7, P.s8])); // Körnchen
   return m;
 }
 
-/** Äste: ein zusammengeschnürtes Bündel mit Zweigen und ein paar Blättern, das man im Gras sieht. */
+/** Äste (M13g, 1/32 m): ein zusammengeschnürtes Bündel mit Rinde, Zweigen, Schnur und ein paar Herbstblättern. */
 function buildBranches(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 6; i++) {
-    const z0 = rng.int(-4, 2);
-    const y = i < 3 ? 0 : i < 5 ? 1 : 2;
-    const z1 = z0 + rng.int(-2, 2);
-    const c = i % 2 ? P.e4 : P.e5;
-    m.line(-8, y, z0, 7, y, z1, c);
-    m.line(-8, y, z0 + 1, 7, y, z1 + 1, i % 2 ? P.e3 : P.e4);
-    // ein Zweig schräg ab
-    const fx = rng.int(-4, 4);
-    m.line(fx, y, z0 + 1, fx + 3, y, z0 + 3 + rng.int(0, 1), P.e4);
+  for (let i = 0; i < 7; i++) {
+    const z0 = rng.int(-8, 4);
+    const y = i < 3 ? 0 : i < 6 ? 2 : 4;
+    const z1 = z0 + rng.int(-4, 4);
+    const light = i % 2 ? P.e5 : P.e6;
+    // Ast: zwei Voxel stark, oben heller, unten Rinde
+    m.line(-16, y + 1, z0, 15, y + 1, z1, light).line(-16, y, z0, 15, y, z1, P.e3);
+    m.line(-16, y + 1, z0 + 1, 15, y + 1, z1 + 1, i % 2 ? P.e4 : P.e5).line(-16, y, z0 + 1, 15, y, z1 + 1, P.e2);
+    m.set(-16, y + 1, z0, P.e8).set(15, y + 1, z1, P.e8); // Schnittflächen
+    // ein Zweig schräg ab, mit einer Gabel
+    const fx = rng.int(-8, 8);
+    m.line(fx, y + 1, z0 + 2, fx + 6, y + 1, z0 + 7 + rng.int(0, 2), P.e4);
+    m.line(fx + 4, y + 1, z0 + 5, fx + 8, y + 1, z0 + 6, P.e4);
   }
-  m.box(-2, 0, -5, -1, 3, 3, (x, y) => (y === 3 ? P.e9 : P.e8)); // Schnur
-  m.set(5, 2, 0, P.g6).set(6, 2, 1, P.g7).set(-6, 1, -2, P.f5).set(-5, 2, -2, P.f6);
+  // Schnur zweimal herum
+  for (const x of [-5, -3]) m.box(x, 0, -10, x, 7, 7, (xx, y, z) => (y === 7 || z === 7 ? P.e9 : P.e8));
+  // Herbstblätter
+  for (const [x, y, z, c] of [[10, 5, 0, P.f5], [11, 5, 1, P.f6], [12, 4, 2, P.f5], [-12, 3, -4, P.r3], [-11, 4, -4, P.r4], [4, 7, 2, P.f4]]) m.set(x, y, z, c);
   return m;
 }
 
@@ -171,49 +189,98 @@ function markerStake(m) {
   m.box(2, 12, z, 5, 15, z, (x, y) => ((x + y) % 3 === 0 ? P.b3 : x > 3 ? P.b3 : P.b4)); // Fähnchen
 }
 
-/** Frischer Trieb auf dem Stumpf: morgen steht hier wieder ein Baum. */
+/** Frischer Trieb auf dem Stumpf (M13g, 1/32 m): morgen steht hier wieder ein Baum. */
 function buildSprout() {
   const m = new VoxelModel();
-  m.box(0, 4, 0, 0, 9, 0, P.g4);
-  m.set(-1, 7, 0, P.g6).set(-2, 8, 0, P.g7).set(-1, 8, 0, P.g6);
-  m.set(1, 9, 0, P.g6).set(2, 10, 0, P.g7).set(1, 10, 0, P.g8);
-  m.set(0, 10, 0, P.g8).set(0, 11, 0, P.g9).set(0, 8, 1, P.g6);
+  m.box(0, 8, 0, 0, 19, 0, P.g4);
+  m.box(-1, 14, 0, -3, 15, 0, P.g6).set(-4, 16, 0, P.g7).set(-2, 16, 0, P.g5);
+  m.box(1, 17, 0, 3, 18, 0, P.g6).set(4, 19, 0, P.g7).set(2, 19, 0, P.g5);
+  m.set(0, 20, 0, P.g8).set(0, 21, 0, P.g9).set(-1, 21, 0, P.g7).set(0, 16, 1, P.g6).set(0, 16, 2, P.g7);
   return m;
 }
 
-/** Schrotthaufen: angelehnter Reifen, blaue Öltonne, ein schräges Wellblech, Rohre, Dosen und Kleinkram. */
+/** Schrotthaufen (M13g, 1/32 m): angelehnter Reifen mit Profil, blaue Öltonne, Wellblech, Rohre, Dose, Radkappe und Kleinkram. */
 function buildScrapPile(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  // Reifen, schräg angelehnt (Ring in der x-y-Ebene)
-  for (let x = -10; x <= -1; x++) {
-    for (let y = 0; y <= 9; y++) {
-      const d = Math.hypot(x + 0.5 + 5.5, y + 0.5 - 4.5);
-      if (d > 4.8 || d < 2.4) continue;
-      for (let z = 1; z <= 3; z++) m.set(x, y, z + (y > 5 ? -1 : 0), d > 4 && (x + y) % 2 ? P.s2 : P.s1);
+  // Reifen, schräg angelehnt (Ring in der x-y-Ebene), mit Profil und Flanke
+  for (let x = -20; x <= -1; x++) {
+    for (let y = 0; y <= 19; y++) {
+      const d = Math.hypot(x + 0.5 + 11, y + 0.5 - 9);
+      if (d > 9.6 || d < 4.8) continue;
+      for (let z = 2; z <= 7; z++) {
+        const zz = z + (y > 11 ? -2 : y > 7 ? -1 : 0);
+        const tread = d > 8.2 && ((x >> 1) + (y >> 1) + z) % 3 === 0;
+        m.set(x, y, zz, z === 7 && d > 6 && d < 7.2 ? P.s2 : tread ? P.s2 : P.s1);
+      }
     }
   }
   // Wellblech schräg über dem Haufen
-  for (let x = -3; x <= 8; x++) {
-    for (let z = -7; z <= -1; z++) {
-      const y = Math.max(0, 6 - Math.abs(z + 4) - (x > 5 ? 2 : 0));
-      const rust = hash3(x, 0, z, seed) > 0.72;
-      m.set(x, y, z, rust ? P.r2 : x % 3 === 0 ? P.s4 : P.s5);
+  for (let x = -6; x <= 17; x++) {
+    for (let z = -14; z <= -2; z++) {
+      const y = Math.max(0, 12 - Math.abs(z + 8) * 2 - (x > 11 ? 4 : 0));
+      const rust = hash3(x >> 1, 0, z >> 1, seed) > 0.72;
+      m.set(x, y, z, rust ? (hash3(x, 1, z, seed) > 0.5 ? P.r2 : P.r1) : [P.s4, P.s5, P.s6][(x + 6) % 3]);
     }
   }
-  // Blaue Öltonne mit Sicken und Rostflecken (nicht rund wie ein Kürbis: gerade Wand, flacher Deckel)
-  m.cylinder(5, 4, 0, 9, 2.8, (x, y, z) => {
-    if (y === 3 || y === 6) return P.s4;
-    if (hash3(x, y, z, seed) > 0.82) return P.r2;
-    return x < 5 ? P.b3 : P.b2;
+  // Blaue Öltonne mit Sicken und Rostflecken (gerade Wand, flacher Deckel mit Spund)
+  m.cylinder(10, 8, 0, 19, 5.6, (x, y, z) => {
+    if (y === 6 || y === 7 || y === 12 || y === 13) return y % 2 ? P.s5 : P.s4;
+    if (hash3(x >> 1, y >> 1, z >> 1, seed) > 0.84) return P.r2;
+    return x < 8 ? P.b4 : x < 11 ? P.b3 : P.b2;
   });
-  m.cylinder(5, 4, 9, 9, 2.8, (x, y, z) => (Math.hypot(x + 0.5 - 5, z + 0.5 - 4) > 2 ? P.s5 : P.b2));
-  m.set(6, 10, 4, P.s6);
+  m.cylinder(10, 8, 19, 19, 5.6, (x, y, z) => (Math.hypot(x + 0.5 - 10, z + 0.5 - 8) > 4.4 ? P.s5 : P.b2));
+  m.box(11, 20, 7, 12, 20, 8, P.s6).set(8, 20, 10, P.s4);
   // Rohre und Kram
-  m.line(-8, 0, 6, 7, 1, 7, P.s4).line(-8, 1, 6, 7, 2, 7, P.s6);
-  m.cylinder(-4, -4, 0, 2, 1.2, (x, y) => (y === 2 ? P.s6 : P.r3)); // Dose
-  m.cylinder(1, 6, 0, 0, 1.8, (x, z) => ((x + z) % 2 ? P.s7 : P.s6)); // Radkappe
-  for (let i = 0; i < 12; i++) m.set(rng.int(-9, 9), 0, rng.int(-7, 8), rng.pick([P.s3, P.s6, P.r2, P.e4, P.b3, P.s7]));
+  m.line(-16, 0, 12, 14, 2, 14, P.s4, 1).line(-16, 2, 12, 14, 4, 14, P.s6);
+  m.cylinder(-8, -8, 0, 5, 2.4, (x, y) => (y === 5 ? P.s6 : y === 2 ? P.s8 : P.r3)); // Dose mit Etikett
+  m.cylinder(2, 12, 0, 1, 3.6, (x, y, z) => (y === 0 ? P.s5 : (x + z) % 3 === 0 ? P.s6 : P.s7)); // Radkappe
+  for (let i = 0; i < 24; i++) {
+    const x = rng.int(-18, 18);
+    const z = rng.int(-14, 16);
+    const c = rng.pick([P.s3, P.s6, P.r2, P.e4, P.b3, P.s7]);
+    m.set(x, 0, z, c);
+    if (rng.chance(0.4)) m.set(x + 1, 0, z, c);
+  }
+  return m;
+}
+
+/**
+ * Fels als Quelle (M13g, 1/32 m): kantige Bänder aus Grautönen, oben Moos,
+ * ein feiner Riss, Flechten und helle Kanten, am Fuß ein paar Brocken.
+ */
+function buildBoulder(seed, size = 1) {
+  const m = new VoxelModel();
+  const rng = new Rng(seed);
+  const rx = rng.range(12, 20) * size;
+  const ry = rng.range(8, 14) * size;
+  const rz = rng.range(10, 16) * size;
+  const crack = rng.range(-rx * 0.4, rx * 0.4);
+  m.ellipsoid(0, ry * 0.45, 0, rx, ry, rz, (x, y, z, dx, dy, dz) => {
+    if (y < 0) return null;
+    const g = hash3(x >> 1, y >> 1, z >> 1, seed);
+    const n = valueNoise(x * 0.12, z * 0.12 + y * 0.1, seed);
+    if (dx * dx + dz * dz > 0.85 && g < 0.15) return null; // kantiger Rand
+    const facet = Math.floor(n * 3 + y * 0.08);
+    let c = [P.s4, P.s5, P.s6][((facet % 3) + 3) % 3];
+    if (dy > 0.3 && x < 0) c = shade(c, 1); // Lichtseite
+    if (dy < -0.3) c = shade(c, -1);
+    if (Math.abs(x - crack - y * 0.3 - Math.sin(y * 0.5) * 1.2) < 0.55 && dy > -0.3) c = P.s2; // Riss
+    if (dy > 0.55 && n > 0.45) c = g < 0.5 ? P.g4 : P.g5; // Moos
+    if (hash3(x, y, z, seed + 3) > 0.985) c = P.e8; // Flechte
+    return c;
+  });
+  // helle Oberkanten
+  const lit = [];
+  m.forEach((x, y, z, c) => {
+    if (!m.has(x, y + 1, z) && !m.has(x, y, z + 1) && c !== P.g4 && c !== P.g5) lit.push([x, y, z, shade(c, 1)]);
+  });
+  for (const [x, y, z, c] of lit) m.set(x, y, z, c);
+  // Brocken am Fuß
+  for (let k = 0; k < 3; k++) {
+    const a = rng.range(0, Math.PI * 2);
+    stoneBlob(m, Math.round(Math.cos(a) * (rx + 3)), Math.round(Math.sin(a) * (rz + 3)), 2.4, 2, 2.2, seed + k, [P.s3, P.s4, P.s5, P.s6, P.s6], { grain: 2 });
+  }
   return m;
 }
 
@@ -316,11 +383,11 @@ export class ResourceNodes {
         case 'baum':
           model = treeModel(def.model, Math.floor(s));
           radius = def.model.startsWith('jung') ? 0.25 : 0.32;
-          node.stump = createStaticVoxelObject(buildStump(Math.floor(s), def.model.startsWith('jung') ? 1.4 : 2), materials.world, { seed, size: FINE, shadow: 'coarse' });
-          node.sprout = createStaticVoxelObject(buildSprout(), materials.world, { seed, shadow: 'none', size: FINE });
+          node.stump = createStaticVoxelObject(buildStump(Math.floor(s), def.model.startsWith('jung') ? 1.4 : 2), materials.world, { seed, size: FINE32, shadow: 'coarse4' });
+          node.sprout = createStaticVoxelObject(buildSprout(), materials.world, { seed, shadow: 'none', size: FINE32 });
           break;
         case 'felsen':
-          model = buildRock(Math.floor(s), def.model === 'gross' ? 1.4 : 1.0);
+          model = buildBoulder(Math.floor(s), def.model === 'gross' ? 1.4 : 1.0);
           radius = def.model === 'gross' ? 0.75 : 0.5;
           break;
         case 'kiesel':
@@ -343,8 +410,9 @@ export class ResourceNodes {
           continue;
       }
       const material = def.kind === 'baum' ? materials.occluder : materials.world;
-      // Seit M13 alle im feinen Maß; Bäume werfen grobe Schatten (1/4 m)
-      node.object = createStaticVoxelObject(model, material, { seed, shadow: def.kind === 'baum' ? 'rough' : 'coarse', size: FINE });
+      // Bäume im Maß 1/16 mit groben Schatten (1/4 m), alles andere doppelt fein (M13g)
+      const tree = def.kind === 'baum';
+      node.object = createStaticVoxelObject(model, material, { seed, shadow: tree ? 'rough' : 'coarse4', size: tree ? FINE : FINE32 });
       node.object.position.set(def.x, 0, def.z);
       this.group.add(node.object);
       if (node.stump) {

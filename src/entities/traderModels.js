@@ -1,4 +1,4 @@
-// Balduins Boot (Meilenstein 9, einfache Fassung) im feinen Maß (1/16 m).
+// Balduins Boot (Meilenstein 9), seit M13g doppelt fein (1/32 m).
 // Seit M9 kommt Balduin nur noch übers Wasser – der Bollerwagen aus M8 ist
 // fort. Ein kleines Fischerboot: dunkelblauer Rumpf mit weißem Streifen,
 // Holzreling, hinten ein Steuerhaus mit rotem Dach und einem lila-gelben
@@ -11,85 +11,107 @@ import * as THREE from 'three';
 import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
 
-const U = 1 / 16;
+/** Voxelgröße des Boots (M13g: 1/32 m). */
+export const BOAT_UNIT = 1 / 32;
+const U = BOAT_UNIT;
+const ROPE_UNIT = 1 / 16; // die Leine bleibt kräftig genug, um sie zu sehen
 
 /** Lila-gelbe Streifen (Balduins Farben, am Wimpel). */
-const stripe = (x) => (Math.floor((x + 12) / 3) % 2 ? P.f6 : P.d3);
+const stripe = (x) => (Math.floor((x + 24) / 6) % 2 ? P.f6 : P.d3);
 
-/** Bootsmaße in Voxeln (1/16 m). */
+/** Bootsmaße in Voxeln (1/32 m). */
 export const BOAT = {
-  halfLength: 30, // Rumpf x -30..29
-  halfWidth: 11, // z -11..11
-  deck: 7, // Oberkante Deck (Balduin steht darauf)
+  halfLength: 60, // Rumpf x -60..59
+  halfWidth: 22, // z -22..22
+  deck: 15, // Oberkante Deck (Balduin steht darauf)
 };
 
 function boatModel() {
   const m = new VoxelModel();
   const L = BOAT.halfLength;
   const W = BOAT.halfWidth;
-  // Rumpf: am Heck (+x) breit, zum Bug (−x) spitz
+  const D = BOAT.deck;
+  // Rumpf: am Heck (+x) breit, zum Bug (−x) spitz; Planken mit Fugen, weißer
+  // Streifen, rotes Unterwasserschiff an der Wasserlinie, Nieten
   for (let x = -L; x < L; x++) {
     const t = (x + L) / (2 * L); // 0 am Bug, 1 am Heck
-    const half = t > 0.35 ? W : W * Math.sqrt(Math.max(0, t / 0.35)) + 1;
+    const half = t > 0.35 ? W : W * Math.sqrt(Math.max(0, t / 0.35)) + 2;
     for (let z = -W; z <= W; z++) {
       const d = Math.abs(z) / half;
       if (d > 1) continue;
-      const shell = d > 0.82 || x === -L || x === L - 1 || (d > 0.7 && half < 4);
-      for (let y = 0; y <= BOAT.deck; y++) {
-        if (y === BOAT.deck) {
-          // Reling oben am Rand, sonst Deck
-          m.set(x, y, z, shell ? P.e5 : (x + 60) % 4 === 0 ? P.e4 : P.e6);
-          if (shell) m.set(x, y + 1, z, P.e4);
+      const shell = d > 0.9 || x === -L || x === L - 1 || x === L - 2 || (d > 0.75 && half < 6);
+      for (let y = 0; y <= D; y++) {
+        if (y === D) {
+          // Reling oben am Rand, sonst Deck aus Planken
+          if (shell) {
+            m.set(x, y, z, P.e5).set(x, y + 1, z, P.e4);
+            if ((x + L) % 10 === 0) m.set(x, y + 2, z, P.e4).set(x, y + 3, z, P.e5); // Stützen
+          } else m.set(x, y, z, (x + 2 * L) % 8 === 0 ? P.e4 : (z + x) % 11 === 0 ? P.e7 : P.e6);
           continue;
         }
         if (!shell) continue;
-        m.set(x, y, z, y === 1 ? P.r2 : y === 4 ? P.s8 : (x + z) % 5 === 0 ? P.b1 : P.b2);
+        let c = (y >> 2) % 2 ? P.b2 : P.b1; // Planken
+        if (y % 4 === 0) c = P.b0;
+        if (y <= 3) c = y === 3 ? P.r3 : P.r2; // Unterwasserschiff
+        if (y === 8 || y === 9) c = P.s8; // weißer Streifen
+        if (y === 11 && (x + L) % 6 === 3) c = P.s6; // Nieten
+        m.set(x, y, z, c);
       }
     }
   }
-  // Name am Heck? Lieber ein Rettungsring an der Seite (zur Kamera hin)
-  for (let a = 0; a < 12; a++) {
-    const t = (a / 12) * Math.PI * 2;
-    m.set(12 + Math.round(Math.cos(t) * 2.2), 4 + Math.round(Math.sin(t) * 2.2), W + 1, a % 3 === 0 ? P.s9 : P.f3);
+  // Rettungsring an der Seite (zur Kamera hin), rot-weiß mit Leine
+  for (let a = -6; a <= 6; a++) {
+    for (let b = -6; b <= 6; b++) {
+      const r = Math.hypot(a + 0.5, b + 0.5);
+      if (r > 5.2 || r < 2.6) continue;
+      const seg = Math.floor(((Math.atan2(b + 0.5, a + 0.5) + Math.PI) / (Math.PI * 2)) * 8);
+      m.set(24 + a, 9 + b, W + 1, seg % 2 ? P.s9 : P.f3).set(24 + a, 9 + b, W + 2, r > 4.4 ? (seg % 2 ? P.s8 : P.f2) : null);
+    }
   }
-  // Steuerhaus hinten
-  const d = BOAT.deck + 1;
-  m.box(14, d, -7, 25, d + 13, 7, (x, y, z) => {
-    const wall = x === 14 || x === 25 || z === -7 || z === 7;
+  // Steuerhaus hinten: Bretter, Fenster mit weißem Rahmen und Spiegelung, Tür
+  const d = D + 1;
+  m.box(28, d, -14, 51, d + 27, 15, (x, y, z) => {
+    const wall = x === 28 || x === 51 || z === -14 || z === 15;
     if (!wall) return null;
-    const window = y >= d + 6 && y <= d + 9 && ((z === 7 && x > 16 && x < 23) || (x === 14 && Math.abs(z) < 4));
-    if (window) return y === d + 9 ? P.n4 : P.n3;
-    return (x + y) % 6 === 0 ? P.e6 : P.e7;
+    const winS = z === 15 && x >= 33 && x <= 45 && y >= d + 12 && y <= d + 19;
+    const winW = x === 28 && Math.abs(z + 0.5) < 8 && y >= d + 12 && y <= d + 19;
+    if (winS || winW) {
+      const edge = y === d + 12 || y === d + 19 || (winS && (x === 33 || x === 45 || x === 39)) || (winW && (z === -7 || z === 7));
+      if (edge) return P.s8;
+      return (x + y + z) % 7 === 0 ? P.n4 : P.n3;
+    }
+    if (z === 15 && x >= 47 && x <= 50 && y <= d + 18) return y === d + 9 && x === 48 ? P.f6 : P.e5; // Tür mit Knauf
+    return (y - d) % 5 === 0 ? P.e5 : (x + y) % 9 === 0 ? P.e6 : P.e7;
   });
-  m.box(13, d + 14, -8, 26, d + 14, 8, (x) => (x % 2 ? P.r2 : P.r3)); // Dach
-  m.box(14, d + 15, -6, 25, d + 15, 6, P.r3);
+  m.box(26, d + 28, -16, 53, d + 29, 17, (x, y) => (y === d + 29 ? (x % 4 === 0 ? P.r2 : P.r3) : P.r1)); // Dach
+  m.box(28, d + 30, -12, 51, d + 30, 13, P.r3);
   // Mast mit Wimpel
-  m.box(22, d + 16, 0, 22, d + 26, 0, P.e3);
-  for (let k = 0; k < 6; k++) for (let y = 0; y < 3 - Math.floor(k / 3); y++) m.set(21 - k, d + 24 - y, 0, stripe(k * 3));
+  m.box(44, d + 31, 0, 45, d + 53, 1, (x) => (x === 44 ? P.e4 : P.e3));
+  for (let k = 0; k < 12; k++) for (let y = 0; y < 6 - Math.floor(k / 2); y++) m.set(43 - k, d + 49 - y, 0, stripe(k * 3 + (y >> 1)));
   // Ladung vorn: Kisten, Fass, Einmachgläser auf einem Brett
-  m.box(-12, d, -8, -5, d + 5, -2, (x, y, z) => (x === -12 || x === -5 || y === d + 5 || z === -8 || z === -2 ? P.e4 : P.e6));
-  m.box(-10, d + 6, -7, -7, d + 8, -4, (x, y, z) => (x === -10 || x === -7 || y === d + 8 ? P.e4 : P.e7));
-  m.box(2, d, -8, 6, d + 6, -4, (x, y, z) => {
-    if ((x === 2 || x === 6) && (z === -8 || z === -4)) return null;
-    if (y === d + 1 || y === d + 5) return P.s3;
-    return y === d + 6 ? P.e4 : x % 2 ? P.e5 : P.e4;
-  });
-  m.box(-4, d, 2, 8, d, 5, P.e3);
-  for (const [x0, h] of [[-3, 4], [0, 3], [3, 4], [6, 3]]) {
-    m.box(x0, d + 1, 3, x0 + 1, d + h, 4, (x, y) => (y === d + h ? P.b5 : (x + y) % 3 ? P.g5 : P.g6));
-    m.box(x0, d + h + 1, 3, x0 + 1, d + h + 1, 4, P.s3);
+  m.box(-24, d, -16, -9, d + 11, -3, (x, y, z) => (x <= -23 || x >= -10 || y >= d + 10 || z <= -15 || z >= -4 ? P.e4 : y % 4 === 0 ? P.e5 : P.e6));
+  m.box(-20, d + 12, -14, -13, d + 17, -7, (x, y, z) => (x === -20 || x === -13 || y === d + 17 || z === -14 ? P.e4 : P.e7));
+  m.cylinder(8.5, -11.5, d, d + 13, 4.8, (x, y) => (y === d + 2 || y === d + 3 || y === d + 10 || y === d + 11 ? P.s3 : y === d + 13 ? P.e4 : x < 7 ? P.e6 : x % 3 ? P.e5 : P.e4));
+  m.box(-8, d, 4, 17, d + 1, 11, (x, y) => (y === d + 1 ? P.e4 : P.e3));
+  for (const [x0, h] of [[-6, 8], [0, 6], [6, 8], [12, 6]]) {
+    m.box(x0, d + 2, 6, x0 + 3, d + 1 + h, 9, (x, y, z) => {
+      if (x === x0 && z === 9 && y > d + 3) return P.b5; // Glanz auf dem Glas
+      if (y === d + 1 + h) return P.b5;
+      return (x + y + z) % 5 === 0 ? P.g6 : P.g5; // trübe Brühe mit Bläschen
+    });
+    m.box(x0, d + 2 + h, 6, x0 + 3, d + 3 + h, 9, (x, y) => (y === d + 3 + h ? P.s4 : P.s3)); // Deckel
   }
-  m.set(0, d + 2, 4, P.s9).set(1, d + 2, 4, P.n1); // das Auge
+  m.box(1, d + 4, 9, 2, d + 5, 9, P.s9).set(2, d + 4, 10, P.b3).set(1, d + 5, 10, P.n1); // das Auge
   // Laterne am Bug
-  m.box(-L + 3, d + 1, 0, -L + 3, d + 5, 0, P.e3);
-  m.box(-L + 2, d + 6, -1, -L + 4, d + 7, 1, P.f6);
+  m.box(-54, d, 0, -53, d + 11, 1, P.e3);
+  m.box(-56, d + 12, -2, -51, d + 15, 3, (x, y, z) => (y === d + 15 ? P.s3 : (x === -56 || x === -51) && (z === -2 || z === 3) ? P.s2 : P.f6));
   // Klampe an der Stegseite (Norden): hier hängt die Leine (M10)
-  m.box(CLEAT.x - 1, d, CLEAT.z, CLEAT.x + 1, d, CLEAT.z, P.s3).set(CLEAT.x, d + 1, CLEAT.z, P.s4);
+  m.box(CLEAT.x - 2, d, CLEAT.z, CLEAT.x + 3, d + 1, CLEAT.z + 1, P.s3).box(CLEAT.x, d + 2, CLEAT.z, CLEAT.x + 1, d + 3, CLEAT.z + 1, P.s4);
   return m;
 }
 
-/** Klampe am Bug in Voxeln (Bug zeigt nach −x, der Steg liegt nördlich, also −z). */
-export const CLEAT = { x: -24, z: -8 };
+/** Klampe am Bug in Voxeln (1/32 m; Bug zeigt nach −x, der Steg liegt nördlich, also −z). */
+export const CLEAT = { x: -48, z: -16 };
 
 /**
  * Balduins Leine (M10): kleine Würfel entlang einer Kurve – beim Anlegen
@@ -98,7 +120,7 @@ export const CLEAT = { x: -24, z: -8 };
  */
 export function buildRope(material, count = 20) {
   const cube = new VoxelModel().set(0, 0, 0, P.e7);
-  const mesh = new THREE.InstancedMesh(cube.toGeometry({ jitter: 0, ao: false, size: U }), material, count);
+  const mesh = new THREE.InstancedMesh(cube.toGeometry({ jitter: 0, ao: false, size: ROPE_UNIT }), material, count);
   mesh.name = 'Leine';
   mesh.count = 0;
   mesh.frustumCulled = false;
@@ -121,7 +143,7 @@ export function buildRope(material, count = 20) {
         const w0 = (1 - s) * (1 - s);
         const w1 = 2 * (1 - s) * s;
         const w2 = s * s;
-        dummy.position.set(w0 * a.x + w1 * cx + w2 * b.x - U / 2, w0 * a.y + w1 * cy + w2 * b.y - U / 2, w0 * a.z + w1 * cz + w2 * b.z - U / 2);
+        dummy.position.set(w0 * a.x + w1 * cx + w2 * b.x - ROPE_UNIT / 2, w0 * a.y + w1 * cy + w2 * b.y - ROPE_UNIT / 2, w0 * a.z + w1 * cz + w2 * b.z - ROPE_UNIT / 2);
         dummy.updateMatrix();
         mesh.setMatrixAt(k, dummy.matrix);
       }

@@ -7,7 +7,7 @@
 // ihre Wege neu (pathing.rebuild).
 
 import * as THREE from 'three';
-import { createStaticVoxelObject, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
+import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { P } from '../render/palette.js';
 import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
@@ -15,6 +15,7 @@ import { towerStatsOf } from '../data/towers.js';
 import { BUILDING_MODELS, buildBarricade, buildRubble, BUILDING_UNIT } from './buildingModels.js';
 import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { V } from './layout.js';
+import { edgeLight } from './voxelKit.js';
 
 export class Buildings {
   /**
@@ -109,9 +110,9 @@ export class Buildings {
       this.models.set(key, { model, glow: s.glow ? s.glow() : null });
     }
     const { model, glow } = this.models.get(key);
-    // Alle Bauten im feinen Maß (Barrikaden seit M9.1, der Rest seit M13), Schatten grob
+    // Alle Bauten doppelt fein (M13g, 1/32 m), Schatten grob wie im Maß 1/8
     const size = BUILDING_UNIT;
-    const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow: shadow === 'full' ? 'coarse' : shadow, size });
+    const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow: shadow === 'full' ? 'coarse4' : shadow, size });
     if (glow) group.add(createStaticVoxelObject(glow, glowMaterial, { turns, shadow: 'none', jitter: 0, size }));
     return group;
   }
@@ -121,12 +122,22 @@ export class Buildings {
     if (!this.models.has(key)) this.models.set(key, fineTowerModels(type, level, spec, this.seed));
     const m = this.models.get(key);
     const U = m.unit || V;
-    const group = createStaticVoxelObject(m.base, material, { seed: this.seed, shadow, size: U });
-    const head = new THREE.Group();
-    head.rotation.order = 'YXZ'; // erst zielen (y), dann nicken (Wurfarm)
-    head.position.y = m.headY * U;
-    const headMesh = new THREE.Mesh(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U }), material);
-    if (m.headTop === undefined) {
+    if (!m.geo) {
+      // Geometrien einmal je Art, Stufe und Spezialisierung – alle Türme teilen sie
+      // (M13g: im Maß 1/32 wäre das Bauen sonst spürbar langsamer). Der Umriss hinter
+      // Verdeckungen nimmt eine gröbere Fassung (1/16 m): Er ist nur ein Schattenriss.
+      const shared = (g) => {
+        g.userData.shared = true;
+        return g;
+      };
+      m.geo = {
+        base: shared(m.base.toGeometry({ jitter: 0.05, seed: this.seed, visibleOnly: true, size: U })),
+        baseShadow: shared(shadowGeometry(m.base, U < 1 / 16 ? 'coarse' : 'full', U)),
+        baseOutline: shared(m.base.downsampled(2, 1).toGeometry({ jitter: 0, ao: false, visibleOnly: true, size: U * 2 })),
+        head: shared(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U })),
+        headOutline: shared(m.head.downsampled(2, 1).toGeometry({ jitter: 0, ao: false, size: U * 2 })),
+        glow: m.glow ? shared(m.glow.toGeometry({ jitter: 0, ao: false, size: U })) : null,
+      };
       // Oberkante des Kopfs (für das Fernrohr, M10)
       let top = 0;
       m.head.forEach((x, y) => {
@@ -134,13 +145,30 @@ export class Buildings {
       });
       m.headTop = top * U;
     }
+    const group = new THREE.Group();
+    const visual = new THREE.Mesh(m.geo.base, material);
+    visual.receiveShadow = true;
+    visual.userData.outlineGeometry = m.geo.baseOutline;
+    group.add(visual);
+    group.userData.visual = visual;
+    if (shadow !== 'none') {
+      const proxy = new THREE.Mesh(m.geo.baseShadow, SHADOW_PROXY_MATERIAL);
+      proxy.castShadow = true;
+      proxy.layers.set(SHADOW_LAYER);
+      group.add(proxy);
+    }
+    const head = new THREE.Group();
+    head.rotation.order = 'YXZ'; // erst zielen (y), dann nicken (Wurfarm)
+    head.position.y = m.headY * U;
+    const headMesh = new THREE.Mesh(m.geo.head, material);
+    headMesh.userData.outlineGeometry = m.geo.headOutline;
     group.userData.headTop = m.headTop;
     headMesh.castShadow = shadow !== 'none';
     headMesh.receiveShadow = true;
     head.add(headMesh);
     group.add(head);
-    if (m.glow) {
-      const glow = new THREE.Mesh(m.glow.toGeometry({ jitter: 0, ao: false, size: U }), glowMaterial);
+    if (m.geo.glow) {
+      const glow = new THREE.Mesh(m.geo.glow, glowMaterial);
       if (m.glowOnHead) head.add(glow);
       else group.add(glow);
     }
@@ -195,7 +223,7 @@ export class Buildings {
     const cz = b.j + d / 2;
     if (b.object) {
       this.group.remove(b.object);
-      b.object.traverse((o) => o.geometry?.dispose());
+      b.object.traverse((o) => o.geometry && !o.geometry.userData.shared && o.geometry.dispose());
     }
     if (b.pool) {
       this.lightPools.remove(b.pool);
@@ -216,9 +244,9 @@ export class Buildings {
 
   /** Das Turmteil sichtbar am Turm (M10): Fernrohr auf dem Kopf, Ölkanne am Fuß, Münze vorn. */
   addPart(b) {
-    const F = 1 / 16; // Turmteile sind im feinen Maß gebaut
-    const model = towerPartModel(b.part);
-    const mesh = new THREE.Mesh(model.toGeometry({ jitter: 0.03, seed: this.seed, size: F }), this.materials.building || this.materials.occluder);
+    const F = 1 / 16; // Turmteile sind im Maß 1/16 gebaut (Lage und Mitte in diesem Maß) …
+    const model = edgeLight(towerPartModel(b.part).upsampled(2)); // … und werden wie die Türme doppelt fein gezeichnet (M13g)
+    const mesh = new THREE.Mesh(model.toGeometry({ jitter: 0.03, seed: this.seed, size: F / 2 }), this.materials.building || this.materials.occluder);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.name = b.part;
@@ -245,7 +273,7 @@ export class Buildings {
     });
     for (const mesh of parts) {
       mesh.renderOrder = 1.2;
-      const outline = new THREE.Mesh(mesh.geometry, this.towerSilhouette);
+      const outline = new THREE.Mesh(mesh.userData.outlineGeometry || mesh.geometry, this.towerSilhouette);
       outline.renderOrder = 1;
       mesh.add(outline);
     }
@@ -301,7 +329,7 @@ export class Buildings {
     if (index < 0) return null;
     const [building] = this.list.splice(index, 1);
     this.group.remove(building.object);
-    building.object.traverse((o) => o.geometry?.dispose());
+    building.object.traverse((o) => o.geometry && !o.geometry.userData.shared && o.geometry.dispose());
     this.colliders.remove(building.collider);
     this.grid.release(building.id);
     if (building.pool) this.lightPools.remove(building.pool);

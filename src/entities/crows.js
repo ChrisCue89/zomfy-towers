@@ -2,7 +2,7 @@
 // Pfosten und im Gras der Bucht, picken und schauen sich um. Kommt Mika (oder
 // ein Schlurfer) zu nahe, flattern sie krächzend auf – die Nachbarn gleich mit –
 // und verschwinden über dem Wald; nach einer Weile kommt eine zurück. Abends
-// ziehen sie in den Wald. Feines Maß (1/16 m), die Flügel sind eigene Teile.
+// ziehen sie in den Wald. Doppelt fein (1/32 m, M13g), die Flügel sind eigene Teile.
 
 import * as THREE from 'three';
 import { VoxelModel } from '../render/voxel.js';
@@ -10,7 +10,7 @@ import { P } from '../render/palette.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { Rng } from '../core/rng.js';
 
-const U = 1 / 16;
+const U = 1 / 32;
 const COUNT = 5;
 const SHY = 2.6; // so nah darf Mika kommen (m), rennend das Anderthalbfache
 const ZOMBIE_SHY = 2.4;
@@ -19,22 +19,34 @@ const DAY = [6.5, 18.6]; // Stunden, in denen Krähen in der Bucht sind
 
 function buildBody() {
   const m = new VoxelModel();
-  // Blick nach +z: Rumpf, Kopf mit hellem Auge, grauer Schnabel, gefächerter Schwanz
-  m.box(-1, 1, -2, 1, 3, 2, (x, y, z) => (y === 3 ? P.n2 : P.n1));
-  m.box(-1, 3, 2, 1, 5, 4, (x, y) => (y === 5 ? P.n3 : P.n1));
-  m.set(-1, 4, 3, P.s8).set(1, 4, 3, P.s8);
-  m.box(0, 3, 5, 0, 4, 6, (x, y, z) => (y === 4 && z === 6 ? null : y === 4 ? P.s6 : P.s5));
-  m.box(-1, 2, -4, 1, 2, -3, (x, y, z) => (x === 0 && z === -4 ? P.n2 : P.n0));
-  m.set(-1, 0, 0, P.s2).set(1, 0, 0, P.s2);
+  // Blick nach +z: runder Rumpf mit Federkanten, Kopf mit hellem Auge, grauer
+  // Schnabel, gefächerter Schwanz mit Kerbe, Füße mit Zehen
+  m.box(-3, 2, -4, 2, 7, 5, (x, y, z) => {
+    const corner = (x === -3 || x === 2) && (y === 2 || y === 7) ;
+    if (corner && (z === -4 || z === 5)) return null;
+    if (y === 7) return (x + z) % 3 === 0 ? P.n3 : P.n2;
+    if ((x === -3 || x === 2) && y >= 4 && (z + y) % 3 === 0) return P.n0; // Federkanten
+    return y <= 3 ? P.n0 : P.n1;
+  });
+  m.box(-2, 7, 5, 1, 11, 9, (x, y, z) => ((x === -2 || x === 1) && y === 11 && (z === 5 || z === 9) ? null : y === 11 ? P.n3 : P.n1));
+  m.set(-2, 9, 8, P.s8).set(1, 9, 8, P.s8); // Augen
+  m.box(-1, 7, 10, 0, 8, 11, (x, y) => (y === 8 ? P.s6 : P.s5)).box(-1, 7, 12, 0, 7, 13, P.s5).set(-1, 8, 12, P.s6);
+  m.box(-3, 4, -9, 2, 5, -5, (x, y, z) => ((x === -1 || x === 0) && z === -9 ? null : y === 5 && (x === -1 || x === 0) ? P.n2 : P.n0));
+  for (const x of [-2, 1]) m.box(x, 0, 0, x, 1, 1, P.s2).set(x, 0, 2, P.s2).set(x, 0, -1, P.s2);
   return m;
 }
 
-/** Flügel als flache Platte nach außen (side = +1 rechts, -1 links). */
+/** Flügel als flache Platte nach außen (side = +1 rechts, -1 links): Deckfedern und gefingerte Schwungfedern. */
 function buildWing(side) {
   const m = new VoxelModel();
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < 8; k++) {
     const x = side > 0 ? k : -1 - k;
-    m.box(x, 0, -2, x, 0, 2 - (k === 3 ? 1 : 0), (xx, y, z) => (k === 3 || z === -2 ? P.n0 : P.n1));
+    const primary = k >= 5;
+    const z1 = primary ? 5 - (k === 7 ? 2 : 0) : 5;
+    for (let z = -4; z <= z1; z++) {
+      if (primary && z === z1 && k % 2) continue; // gefingerte Spitzen
+      m.set(x, 0, z, primary || z <= -3 ? P.n0 : z === 2 && k < 4 ? P.n2 : P.n1);
+    }
   }
   return m;
 }
@@ -63,12 +75,11 @@ export class Crows {
       const pose = new THREE.Group(); // picken, wippen
       root.add(pose);
       const bodyMesh = new THREE.Mesh(body, this.material);
-      bodyMesh.position.x = -0.5 * U; // Rumpf ist drei Voxel breit: auf die Mitte schieben
       bodyMesh.castShadow = true;
       pose.add(bodyMesh);
       const makeWing = (geo, side) => {
         const pivot = new THREE.Group();
-        pivot.position.set(side > 0 ? 1.5 * U : -1.5 * U, 3 * U, 0);
+        pivot.position.set(side > 0 ? 3 * U : -3 * U, 6 * U, 0);
         const mesh = new THREE.Mesh(geo, this.material);
         mesh.castShadow = true;
         pivot.add(mesh);

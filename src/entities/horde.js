@@ -19,6 +19,7 @@
 
 import * as THREE from 'three';
 import { createWorldMaterial, createSilhouetteMaterial } from '../render/materials.js';
+import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { V } from '../world/layout.js';
 import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
@@ -102,18 +103,34 @@ export class Horde {
     scene.add(this.group);
     const silhouettes = [];
     this.silhouettes = silhouettes;
+    this.shadowProxies = [];
     for (const type of ZOMBIE_TYPES) {
       const parts = zombieParts(type, 11 + type.length);
       const meshes = {};
       for (const p of parts) {
-        const geo = p.model.toGeometry({ jitter: p.glow ? 0 : 0.03, seed: 7, ao: !p.glow, size: p.unit || V });
+        const U = p.unit || V;
+        const geo = p.model.toGeometry({ jitter: p.glow ? 0 : 0.03, seed: 7, ao: !p.glow, size: U });
+        // Umriss und Schatten aus einer gröberen Fassung (M13g: im Maß 1/32 kostete
+        // jeder Schlurfer sonst dreimal die volle Zahl an Dreiecken)
+        const coarse = !p.glow && U < 1 / 16 ? p.model.downsampled(2, 1).toGeometry({ jitter: 0, ao: false, size: U * 2 }) : geo;
         const mesh = new THREE.InstancedMesh(geo, p.glow ? this.glowMaterial : this.material, MAX_PER_TYPE);
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         if (!p.glow) {
           mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAX_PER_TYPE * 3).fill(1), 3);
           mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
-          mesh.castShadow = true;
           mesh.receiveShadow = true;
+          if (coarse === geo) mesh.castShadow = true;
+          else {
+            const proxy = new THREE.InstancedMesh(coarse, SHADOW_PROXY_MATERIAL, MAX_PER_TYPE);
+            proxy.instanceMatrix = mesh.instanceMatrix; // dieselben Matrizen, nur für den Schattenpass
+            proxy.castShadow = true;
+            proxy.layers.set(SHADOW_LAYER);
+            proxy.frustumCulled = false;
+            proxy.count = 0;
+            proxy.visible = false;
+            this.group.add(proxy);
+            this.shadowProxies.push({ type, mesh: proxy });
+          }
         }
         mesh.frustumCulled = false;
         mesh.count = 0;
@@ -122,7 +139,7 @@ export class Horde {
         this.group.add(mesh);
         meshes[p.name] = mesh;
         if (!p.glow) {
-          const sil = new THREE.InstancedMesh(geo, this.silhouetteMaterial, MAX_PER_TYPE);
+          const sil = new THREE.InstancedMesh(coarse, this.silhouetteMaterial, MAX_PER_TYPE);
           sil.instanceMatrix = mesh.instanceMatrix; // dieselben Matrizen, nur anders gezeichnet
           sil.frustumCulled = false;
           sil.count = 0;
@@ -623,6 +640,10 @@ export class Horde {
     for (const s of this.silhouettes) {
       s.mesh.count = living[s.type];
       s.mesh.visible = living[s.type] > 0;
+    }
+    for (const s of this.shadowProxies) {
+      s.mesh.count = counts[s.type];
+      s.mesh.visible = counts[s.type] > 0;
     }
   }
 

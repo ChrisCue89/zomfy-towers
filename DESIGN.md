@@ -203,15 +203,21 @@ Wort gibt.
 - **Der Pixel-Look ist kein Selbstzweck mehr.** Er bleibt als Stilmittel –
   niedrig gerendert und scharf hochskaliert, dunkle farbige Umrisse,
   begrenzte Palette mit Dithering, Kamera auf dem Pixelraster –, aber
-  **Lesbarkeit und Stimmung gehen vor**: alle Modelle im feinen Maß
-  (1/16 m), und wo feinere Auflösung oder weichere Übergänge helfen, werden
-  sie genutzt.
+  **Lesbarkeit und Stimmung gehen vor**: alle Modelle mindestens im feinen
+  Maß (1/16 m), alles Gebaute, Bewohnte und Lebendige draußen seit M13g
+  doppelt fein (1/32 m), und wo feinere Auflösung oder weichere Übergänge
+  helfen, werden sie genutzt.
 - Maße seit Meilenstein 5: 80 Spielpixel pro Meter, etwa 900 Bildzeilen
   (Full HD 1 : 1, 1440p ×2, 720p ×1). Ein 1/16-m-Voxel ist genau 5 px breit,
   3 px tief und 4 px hoch (Neigung 3 : 4). Die Größe bleibt so (Wunsch des
   Auftraggebers); mehr Einzelheiten kommen aus feineren Modellen, nicht aus
-  einem größeren Maßstab. Z geht auf Wunsch nah heran (160 px/m wie drinnen,
-  M13). Der Boden hat 1/16 m je Texel. Die Oberfläche hat eine eigene,
+  einem größeren Maßstab: Seit M13g sind Figuren, Horde, Türme, Bauten,
+  Haus, Hof, Quellen, Beute, Hund, Krähen und Balduins Boot aus 1/32-m-Voxeln
+  (2,5 px breit, 1,5 px tief, 2 px hoch – die Kamera rastet auf ganze Pixel,
+  das Muster aus 2 und 3 px liegt fest in der Welt). Die Natur bleibt wegen
+  ihrer Menge bei 1/16 m. Z geht auf Wunsch nah heran (160 px/m wie drinnen,
+  M13). Der Boden hat 1/16 m je Texel, darin eine Feinzeichnung im Maß 1/32
+  (Halme, Blattspitzen, Körner). Die Oberfläche hat eine eigene,
   gröbere Leinwand (etwa 360 Zeilen), damit Schrift und Leisten kräftig
   bleiben.
 
@@ -897,6 +903,14 @@ Requisiten und Natur noch aus groben 1/8-m-Klötzen (OFFENE-FRAGEN 111).
   Modelle werden noch einmal doppelt so fein – 1/32 m, gut 2 px je Voxel,
   so dicht wie im Vorbild des Auftraggebers (OFFENE-FRAGEN 112, 113). Die
   Bodentextur ist doppelt so fein; Z geht auf Wunsch nah heran (160 px/m).
+  **M13g:** Mika mit Laterne und Werkzeug, Überlebende, Balduin und sein
+  Boot, Knopf, Krähen, alle sechs Schlurfer-Arten, alle Türme in allen
+  Stufen, Bauten und Barrikaden, das Haus in allen Stufen, alle Requisiten
+  von Feuerstelle bis Leuchtmast, die Quellen und die Beute sind neu im Maß
+  1/32 gezeichnet – mit Fugen, Nägeln, Maserung, Zeichen und Rundungen statt
+  bloß verdoppelter Klötze (ein gemalter Fisch am Wegweiser, ein Brief im
+  Briefkasten, Knöpfe am Hemd, ein Zeh im Schuh der Schlurfer, das Auge im
+  Einmachglas). Die Natur bleibt 1/16 m.
 - Grundflächen und Kollision bleiben, wie sie sind; die Bildzeit wird vorher
   und nachher gemessen. Testrunde mit der Frage »Erkennt man, was was ist?«.
 

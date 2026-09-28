@@ -86,9 +86,58 @@ die Ladezeit steigt dadurch um knapp eine Sekunde. Neuer Prüfabschnitt
 `ansicht` (OFFENE-FRAGEN 112). Mehr Einzelheiten je Ding kommen als
 Nächstes aus noch feineren Modellen (1/32 m, Nr. 113).
 
+**M13g – doppelt fein (1/32 m, gut 2 px je Voxel; Vorbild des
+Auftraggebers: »Da siehst du, wie viele Pixel wir wirklich brauchen!«):**
+Alles Gebaute, Bewohnte und Lebendige draußen ist neu gezeichnet, nicht bloß
+verdoppelt (OFFENE-FRAGEN 113):
+- **Mika** mit Gesichtsplatten, Knopfleiste, Rucksack und Isomatte; Laterne
+  mit dünnen Streben und Bügel, Werkzeug mit Maserung und blanken Schneiden.
+- **Hof:** Feldsteine rund, Scheite mit glühenden Rissen, Sessel im Tartan
+  mit Paspel, Hackklotz mit Rindenplatten, Trockenriss und Axtkerben, die Axt
+  mit Lederwicklung; Wegweiser mit gemaltem Fisch und Häuschen, das Brett
+  nach Moosbach rot durchgestrichen; Briefkasten mit Namensschild und einem
+  Brief im Schlitz; Wäsche mit Kragen, Knopfleiste, Brusttasche, Ringelsocke
+  mit Ferse und Arbeitshose mit Knieflicken; Holzstapel aus runden, halben
+  und geviertelten Scheiten mit Jahresringen; Kürbisse mit feinen Furchen,
+  Laternen mit hellen Schnittkanten.
+- **Haus:** Bretter mit Lichtkante, Wellblech mit Licht, Flanke und Tal,
+  Schrauben mit Rostfahnen, Solarzellen mit Leiterbahnen, Tür mit Z-Strebe,
+  Nägeln, Bullauge mit verschraubtem Messingring, Gardinen mit Falten,
+  Blumenkasten mit fünfblättrigen Blüten, Vordach mit Naht und Bögen,
+  Lichterkette mit richtigen Lämpchen; Veranda, Anbau und Stufen 3–5 ebenso.
+- **Steg, Wrack, Leuchtmast:** Planken mit Fugen und Nägeln über den
+  Balken, ausgetretene Mitte, dünne Kreuzstreben am Mast, Warnschild mit
+  Blitz am Schaltkasten.
+- **Bauten und Barrikaden:** Werkbank mit Lochwand, Schraubstock mit Knebel
+  und Hobel; Laterne, Bank, Flachsbeet, Zelt mit gestepptem Schlafsack,
+  Holzlager mit Schindeln; der Spanische Reiter mit Maserung und runden
+  Balken, der Stahligel mit Nieten.
+- **Türme:** Sockelsteine mit heller Oberkante, Armbrust mit Bolzen und
+  Federkiel, Fernrohr mit Linse, Katapult mit geflochtenem Korb,
+  Rasensprenger mit Dauben und Nieten, Laternenturm mit Stufendach; Fahnen
+  mit Schwalbenschwanz.
+- **Horde:** ein Zeh schaut aus dem Schuh, Finger mit dunklen Nägeln,
+  Knopfleiste, Brusttasche, genähter Mund, schwere Brauen, ein eingerissenes
+  Ohr; runde Fliegenpilze, runder Leuchthut, Geweihkrone mit Gabeln.
+- **Überlebende und Balduin:** Gesichter im Maß 1/32 (Brillenränder, Bärte in
+  Strähnen), Postmütze mit Posthorn, Karohemd, Kopfhörer mit Lichtring,
+  Stethoskop; Balduins Bart mit Goldzahn, Boot mit Rettungsring,
+  Einmachgläsern (das Auge!), Steuerhaus mit Fenstern.
+- **Knopf, Krähen, Beute:** Hund mit Glanz in den Augen und dem großen Knopf
+  mit vier Löchern; Krähen mit gefingerten Schwungfedern; Zombiehand mit
+  Moos und Blümchen, Zahnrad mit Speichen, facettierter Moderkern.
+- Die Natur bleibt 1/16 m (Menge), der Boden bekam eine Feinzeichnung im
+  Maß 1/32 (Halme, Blattspitzen, Körner).
+- **Prüfung:** `detail()` misst je Modellfamilie die kleinste Kantenlänge
+  der Geometrie – alle 1/32; die Bildlast im Hof bleibt unter 1,5 Mio.
+  Dreiecken.
+
 **Leistung:** Im Bild steigen die Dreiecke je nach Stelle auf etwa das
 Doppelte (Hof 190 000 → 270 000, Weg 320 000 → 520 000); die Natur macht den
-größten Teil aus. Schatten bleiben grob (Bäume 1/4 m). Die softwaregerenderte
+größten Teil aus. Mit M13g noch einmal: Hof 310 000 → 535 000 (Stufe 5 mit
+allen Überlebenden etwa 1 Mio.), Weg 520 000 → 740 000; 24 Türme auf Stufe 5
+von 120 000 auf 310 000 Dreiecke (mit geteilter Geometrie und grobem Umriss
+statt 480 000). Schatten bleiben grob (Bäume 1/4 m). Die softwaregerenderte
 Bildzeit im Prüfbrowser änderte sich kaum (35–45 → 40–46 ms).
 
 ---

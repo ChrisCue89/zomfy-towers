@@ -2031,6 +2031,40 @@ export class Game {
         game.world.weather.forced = kind;
         if (instant) game.world.weather.snap(game.state.time.day);
       },
+      /**
+       * Detailgrad (M13g): kleinste Kantenlänge in der sichtbaren Geometrie je
+       * Modellfamilie, als »Voxel je Meter« (32 = doppelt fein, 16 = fein).
+       * Schatten-Stellvertreter zählen nicht; fehlt etwas im Bild, steht null da.
+       */
+      detail: () => {
+        const step = (...objects) => {
+          let best = Infinity;
+          for (const obj of objects) {
+            obj?.traverse((o) => {
+              if (!o.isMesh || !o.geometry || o.layers.mask === 2) return;
+              const p = o.geometry.attributes.position.array;
+              const xs = new Set();
+              for (let i = 0; i < Math.min(p.length, 60000); i += 3) xs.add(Math.round(p[i] * 1e5));
+              const v = [...xs].sort((a, b) => a - b);
+              for (let i = 1; i < v.length; i++) if (v[i] > v[i - 1]) best = Math.min(best, v[i] - v[i - 1]);
+            });
+          }
+          return best === Infinity ? null : Math.round(1e5 / best);
+        };
+        const w = game.world;
+        return {
+          mika: step(game.player.character.root),
+          haus: step(w.shelter.group),
+          hof: step(w.props.group),
+          quellen: step(w.resources.group),
+          bauten: step(w.buildings.group),
+          horde: step(game.horde.group),
+          leute: step(game.survivors.npcs.group),
+          kraehen: step(w.crows.group),
+          beute: step(...Object.values(game.loot.meshes)),
+          boot: step(game.trader.boat.root),
+        };
+      },
       /** Innenraum (M11): Eingang, Tür nach draußen, Grenzen, Räume; drinnen? */
       interior: () => {
         const i = game.world.interior;

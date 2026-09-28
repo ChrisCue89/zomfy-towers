@@ -19,11 +19,11 @@ const V = 1 / 8;
  * @param {THREE.Material} material
  * @param {object} [options]
  * @param {number} [options.turns] 90°-Drehungen um y
- * @param {'full'|'coarse'|'rough'|'none'} [options.shadow]
+ * @param {'full'|'coarse'|'coarse4'|'rough'|'none'} [options.shadow]
  * @param {number} [options.jitter]
  * @param {number} [options.seed]
  * @param {boolean} [options.skipBottom]
- * @param {number} [options.size] Kantenlänge eines Voxels (1/8 m, fein 1/16 m)
+ * @param {number} [options.size] Kantenlänge eines Voxels (1/8 m, fein 1/16 m, doppelt fein 1/32 m)
  */
 export function createStaticVoxelObject(model, material, options = {}) {
   const { turns = 0, shadow = 'full', jitter = 0.05, seed = 7, size = V } = options;
@@ -44,9 +44,15 @@ export function createStaticVoxelObject(model, material, options = {}) {
   return group;
 }
 
-/** Geometrie für einen Schatten-Stellvertreter ('coarse' halb so fein, 'rough' ein Viertel – für feine Bäume). */
+/**
+ * Geometrie für einen Schatten-Stellvertreter: 'coarse' halb so fein, 'coarse4'
+ * ein Viertel mit niedriger Schwelle (Modelle im Maß 1/32: Schatten wie 1/8 m,
+ * auch dünne Stiele und Seile werfen noch einen), 'rough' ein Viertel mit hoher
+ * Schwelle (feine Bäume: kein Gesprenkel).
+ */
 export function shadowGeometry(model, mode = 'full', size = V) {
   if (mode === 'coarse') return model.downsampled(2, 2).toGeometry({ size: size * 2, jitter: 0, ao: false });
+  if (mode === 'coarse4') return model.downsampled(4, 6).toGeometry({ size: size * 4, jitter: 0, ao: false });
   if (mode === 'rough') return model.downsampled(4, 12).toGeometry({ size: size * 4, jitter: 0, ao: false });
   return model.toGeometry({ jitter: 0, ao: false, size });
 }

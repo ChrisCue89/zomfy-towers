@@ -4,11 +4,12 @@
 // in die Tür geht, ist drinnen; das Haus selbst bleibt von außen geschlossen,
 // nachts leuchten die Fenster.
 //
-// Seit M13 im feinen Maß (1/16 m). Die Modelle rechnen in feinen Voxeln:
-// Ursprung Südwest-Ecke am Boden, x nach Osten (0..79), z nach Süden (0..55,
-// Vorderseite bei z = 55), y nach oben. Kollision, Grundfläche und Tür
-// bleiben in 1/8 m (W, D, DOOR). Die Kamera sieht nur Dach, Vorderseite und
-// alles davor – dort sitzen die Einzelheiten; Seitenwände tragen nur Schatten.
+// Seit M13g doppelt fein (1/32 m, gut 2 px je Voxel). Die Modelle rechnen in
+// diesen Voxeln: Ursprung Südwest-Ecke am Boden, x nach Osten (0..159), z nach
+// Süden (0..111, Vorderseite bei z = 111), y nach oben. Kollision, Grundfläche
+// und Tür bleiben in 1/8 m (W, D, DOOR). Die Kamera sieht nur Dach,
+// Vorderseite und alles davor – dort sitzen die Einzelheiten (Fugen, Nägel,
+// Maserung, Schrauben, Rost); Seitenwände tragen nur Schatten.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
@@ -17,7 +18,7 @@ import { createWorldMaterial, createGlowMaterial } from '../render/materials.js'
 import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL, shadowGeometry } from '../render/staticMesh.js';
 import { hash3 } from '../core/rng.js';
 import { LAYOUT, V } from './layout.js';
-import { FINE, shade, boardColor, deckColor, flower } from './voxelKit.js';
+import { FINE32, shade, boardColor, deckColor } from './voxelKit.js';
 
 // Grobe Maße (1/8 m): Kollision, Grundfläche, Tür
 const W = 40; // Breite in Voxeln (x)
@@ -25,66 +26,79 @@ const D = 28; // Tiefe in Voxeln (z)
 const FLOOR = 3; // Oberkante Fußboden (erste freie Voxelschicht)
 const DOOR = { x0: 9, x1: 15, y1: 18 }; // Türöffnung inkl. Grenzen
 
-// Feine Maße (1/16 m): die Modelle
-const FW = W * 2; // 80
-const FD = D * 2; // 56
+// Feine Maße (1/32 m): die Modelle
+const FW = W * 4; // 160
+const FD = D * 4; // 112
 const FZ = FD - 1; // Außenhaut der Vorderwand
-const FFLOOR = FLOOR * 2;
-const FTOP = 45; // oberste Wandschicht
-const FDOOR = { x0: 18, x1: 31, y1: 37 };
-const FWIN = { x0: 50, x1: 63, y0: 18, y1: 31, mx: 56, my: 24 }; // Glas, Sprossen bei mx/my (je zwei breit)
-const BATTENS = [10, 38]; // Querlatten, je zwei Schichten hoch
+const FFLOOR = FLOOR * 4; // 12
+const FTOP = 91; // oberste Wandschicht
+const FDOOR = { x0: 36, x1: 63, y1: 75 };
+const FWIN = { x0: 100, x1: 127, y0: 36, y1: 63, mx: 113, my: 49 }; // Glas, Sprossen bei mx/my (je zwei breit)
+const BATTENS = [20, 76]; // Querlatten, je drei Schichten hoch
 const FRAME = [P.s8, P.s7]; // weiß gestrichene Rahmen (hell, Schattenkante)
 
 /** Höhe der Dachoberfläche über Spalte x (Satteldach, First in Nord-Süd-Richtung). */
 function roofHeight(x) {
-  return 46 + Math.floor(Math.min(x + 4, 83 - x) / 2);
+  return 92 + Math.floor(Math.min(x + 8, 167 - x) / 2);
 }
 
-/** Bretterwand: unten dunkler (Spritzwasser). */
+/** Bretterwand: Bretter 25 cm breit mit feiner Fuge und Lichtkante, unten dunkler (Spritzwasser). */
 function wallColor(u, y, seed) {
-  const c = boardColor(u, y, seed);
-  return y <= FFLOOR + 1 ? shade(c, -1) : c;
+  const c = boardColor(u, y, seed, { width: 8, grain: 10, edge: true });
+  return y <= FFLOOR + 3 ? shade(c, -1) : c;
 }
 
-/** Stülpschalung im Giebel: liegende Bretter mit Schattenkante. */
+/** Stülpschalung im Giebel: liegende Bretter mit Schattenfuge und heller Unterkante. */
 function sidingColor(x, y, seed) {
-  const v = (y - 46) % 3;
+  const v = (y - 92) % 6;
   if (v === 0) return P.e3;
-  const r = hash3(Math.floor(x / 18), Math.floor((y - 46) / 3), 0, seed);
+  const r = hash3(Math.floor(x / 36), Math.floor((y - 92) / 6), 0, seed);
   const c = r < 0.4 ? P.e5 : P.e4;
-  return v === 2 ? shade(c, 1) : c;
+  if (v === 1) return shade(c, 1);
+  if (v === 5) return shade(c, -1);
+  return hash3(x, Math.floor(y / 6), 3, seed) > 0.9 ? shade(c, -1) : c;
 }
 
 /** Rahmen (Tür, Fenster): hell gestrichen, unten und rechts eine Stufe dunkler, abgeplatzte Stellen. */
 function frameColor(x, y, seed, shadowSide) {
-  if (hash3(x, y, 3, seed) > 0.94) return P.e6;
+  if (hash3(x, y, 3, seed) > 0.96) return P.e6;
   return shadowSide ? FRAME[1] : FRAME[0];
+}
+
+/** Kleine Blüte im Maß 1/32: Stiel, fünf Blütenblätter um eine Mitte, der Kamera zugewandt. */
+function bloom(m, x, y, z, petal, center, stem) {
+  for (let k = 0; k < stem; k++) m.set(x, y + k, z, P.g4);
+  const t = y + stem + 1;
+  m.set(x, t, z, center).set(x - 1, t, z, petal).set(x + 1, t, z, petal).set(x, t + 1, z, petal).set(x - 1, t - 1, z, petal).set(x + 1, t - 1, z, petal);
+  m.set(x + 1, y + 1, z, P.g5); // Blatt
+  return m;
 }
 
 function buildBase(seed, level = 1) {
   const m = new VoxelModel();
   // Unterbau aus Paletten: unten Bretter, Klötze mit dunklen Lücken, oben Deckbretter
-  m.box(0, 0, 0, FW - 1, 3, FD - 1, (x, y) => {
-    if (y === 0) return P.e3;
-    if (y === 3) return x % 16 === 15 ? P.e3 : P.e4;
-    const k = x % 16;
-    return k < 3 || (k >= 7 && k <= 8) || k > 12 ? (y === 2 ? P.e4 : P.e3) : P.e1;
+  m.box(0, 0, 0, FW - 1, 7, FD - 1, (x, y) => {
+    if (y <= 1) return P.e3;
+    const k = x % 32;
+    if (y >= 6) return k === 31 ? P.e2 : y === 7 ? (k === 0 ? P.e5 : P.e4) : P.e3;
+    const block = k < 6 || (k >= 13 && k <= 18) || k > 25;
+    return block ? (y === 5 ? P.e4 : k === 0 || k === 13 || k === 26 ? P.e4 : P.e3) : P.e1;
   });
   // Dielen (Kante unter der Tür)
-  m.box(0, 4, 0, FW - 1, 5, FD - 1, (x, y) => (y === 5 ? (Math.floor(x / 20) % 2 ? P.e5 : P.e6) : P.e4));
+  m.box(0, 8, 0, FW - 1, 11, FD - 1, (x, y) => (y === 11 ? (Math.floor(x / 40) % 2 ? P.e5 : P.e6) : y === 8 ? P.e3 : P.e4));
   // Seiten- und Rückwand (von der Kamera nie zu sehen – nur für den Schatten)
   m.box(0, FFLOOR, 0, 1, FTOP, FD - 1, P.e4);
   m.box(FW - 2, FFLOOR, 0, FW - 1, FTOP, FD - 1, P.e4);
   m.box(2, FFLOOR, 0, FW - 3, FTOP, 1, P.e4);
 
   if (level < 2) {
-    // Stufe vor der Tür mit Fußmatte (ab Stufe 2 ersetzt die Veranda sie)
-    m.box(16, 0, FD, 33, 3, FD + 5, (x, y, z) => {
-      if (y < 3) return z === FD + 5 ? (y === 0 ? P.e3 : P.e4) : P.e3;
-      return deckColor(x, z - FD, seed + 4, { width: 3, run: 18 });
+    // Stufe vor der Tür mit Fußmatte aus Kokos (ab Stufe 2 ersetzt die Veranda sie)
+    m.box(32, 0, FD, 67, 7, FD + 11, (x, y, z) => {
+      if (y < 7) return z === FD + 11 ? (y <= 1 ? P.e3 : P.e4) : P.e3;
+      return deckColor(x, z - FD, seed + 4, { width: 6, run: 36 });
     });
-    m.box(20, 4, FD, 29, 4, FD + 2, (x, y, z) => (x === 20 || x === 29 || z === FD + 2 ? P.e6 : (x + z) % 2 ? P.e7 : P.e8));
+    m.box(40, 8, FD, 59, 8, FD + 5, (x, y, z) => (x === 40 || x === 59 || z === FD + 5 ? P.e6 : (x + z) % 2 ? P.e7 : P.e8));
+    for (let x = 41; x <= 58; x += 2) m.set(x, 8, FD + 6, P.e7); // Fransen
   }
   return m;
 }
@@ -99,57 +113,67 @@ function buildFront(seed) {
       m.set(x, y, FZ - 1, P.e3).set(x, y, FZ, wallColor(x, y, seed + 3));
     }
   }
-  // Querlatten eine Schicht vor der Wand – oben ein heller Streifen, je Brett ein Nagel
+  // Querlatten eine Schicht vor der Wand – unten Schatten, oben Licht, je Brett ein Nagel
   for (const by of BATTENS) {
     for (let x = 0; x < FW; x++) {
-      if (x >= FDOOR.x0 - 2 && x <= FDOOR.x1 + 2 && by <= FDOOR.y1 + 2) continue;
-      m.set(x, by, FZ + 1, P.e3).set(x, by + 1, FZ + 1, x % 4 === 2 ? P.s5 : P.e5);
+      if (x >= FDOOR.x0 - 4 && x <= FDOOR.x1 + 4 && by <= FDOOR.y1 + 4) continue;
+      m.set(x, by, FZ + 1, P.e3).set(x, by + 1, FZ + 1, x % 8 === 4 ? P.s5 : P.e5).set(x, by + 2, FZ + 1, P.e6);
     }
   }
-  // Türrahmen, weiß gestrichen, eine Schicht vorstehend
-  for (let y = FFLOOR; y <= FDOOR.y1 + 2; y++) {
-    for (const x of [FDOOR.x0 - 2, FDOOR.x0 - 1, FDOOR.x1 + 1, FDOOR.x1 + 2]) {
-      m.set(x, y, FZ, frameColor(x, y, seed, x > FDOOR.x1)).set(x, y, FZ + 1, frameColor(x, y, seed + 1, x > FDOOR.x1));
+  // Türrahmen, weiß gestrichen, eine Schicht vorstehend, innen eine Schattenkante
+  for (let y = FFLOOR; y <= FDOOR.y1 + 3; y++) {
+    for (const x of [FDOOR.x0 - 3, FDOOR.x0 - 2, FDOOR.x0 - 1, FDOOR.x1 + 1, FDOOR.x1 + 2, FDOOR.x1 + 3]) {
+      const inner = x === FDOOR.x0 - 1 || x === FDOOR.x1 + 1;
+      m.set(x, y, FZ, FRAME[1]).set(x, y, FZ + 1, inner ? FRAME[1] : frameColor(x, y, seed + 1, x > FDOOR.x1));
     }
   }
-  for (let x = FDOOR.x0 - 2; x <= FDOOR.x1 + 2; x++) {
-    m.set(x, FDOOR.y1 + 1, FZ + 1, frameColor(x, 0, seed + 2, true)).set(x, FDOOR.y1 + 2, FZ + 1, frameColor(x, 1, seed + 2, false));
-    m.set(x, FDOOR.y1 + 1, FZ, FRAME[1]).set(x, FDOOR.y1 + 2, FZ, FRAME[0]);
+  for (let x = FDOOR.x0 - 3; x <= FDOOR.x1 + 3; x++) {
+    for (let k = 1; k <= 3; k++) m.set(x, FDOOR.y1 + k, FZ, FRAME[1]).set(x, FDOOR.y1 + k, FZ + 1, k === 1 ? FRAME[1] : k === 3 ? P.s9 : frameColor(x, k, seed + 2, false));
   }
-  // Fensterrahmen mit Sprossenkreuz, Gardinen mit Raffband, Fensterbank, Blumenkasten
-  for (let y = FWIN.y0 - 2; y <= FWIN.y1 + 2; y++) {
-    for (let x = FWIN.x0 - 2; x <= FWIN.x1 + 2; x++) {
+  // Fensterrahmen mit Sprossenkreuz, Gardinen mit Falten und Raffband, Fensterbank, Blumenkasten
+  for (let y = FWIN.y0 - 3; y <= FWIN.y1 + 3; y++) {
+    for (let x = FWIN.x0 - 3; x <= FWIN.x1 + 3; x++) {
       const border = x < FWIN.x0 || x > FWIN.x1 || y < FWIN.y0 || y > FWIN.y1;
       const bar = x === FWIN.mx || x === FWIN.mx + 1 || y === FWIN.my || y === FWIN.my + 1;
-      if (border) m.set(x, y, FZ + 1, frameColor(x, y, seed + 5, x > FWIN.x1 || y < FWIN.y0)).set(x, y, FZ, FRAME[1]);
-      else if (bar) m.set(x, y, FZ, x === FWIN.mx + 1 || y === FWIN.my ? FRAME[1] : FRAME[0]);
+      if (border) {
+        const inner = x === FWIN.x0 - 1 || x === FWIN.x1 + 1 || y === FWIN.y0 - 1 || y === FWIN.y1 + 1;
+        m.set(x, y, FZ + 1, inner ? FRAME[1] : y === FWIN.y1 + 3 ? P.s9 : frameColor(x, y, seed + 5, x > FWIN.x1 || y < FWIN.y0)).set(x, y, FZ, FRAME[1]);
+      } else if (bar) m.set(x, y, FZ, x === FWIN.mx + 1 || y === FWIN.my ? FRAME[1] : FRAME[0]);
     }
   }
-  for (const [x, y] of curtainCells()) m.set(x, y, FZ, (x + (y >> 1)) % 3 === 0 ? P.a0 : P.a1);
-  for (const x of [FWIN.x0, FWIN.x0 + 1, FWIN.x1 - 1, FWIN.x1]) m.set(x, 23, FZ, P.f6); // Raffband
-  m.box(FWIN.x0 - 3, FWIN.y0 - 3, FZ + 1, FWIN.x1 + 3, FWIN.y0 - 3, FZ + 2, (x, y, z) => (z === FZ + 2 ? P.e6 : P.e5)); // Fensterbank
-  m.box(FWIN.x0 - 2, FWIN.y0 - 7, FZ + 2, FWIN.x1 + 2, FWIN.y0 - 4, FZ + 4, (x, y, z) => {
-    if (y === FWIN.y0 - 4) return z === FZ + 4 ? P.e6 : P.e2; // Rand, dahinter Erde
-    return y === FWIN.y0 - 7 ? P.e3 : x % 6 === 0 ? P.e3 : P.e4;
+  for (const [x, y] of curtainCells()) {
+    const i = Math.min(x - FWIN.x0, FWIN.x1 - x);
+    m.set(x, y, FZ, i % 3 === 1 ? P.a0 : y === FWIN.y1 ? P.a4 : P.a1);
+  }
+  for (const x of [FWIN.x0, FWIN.x0 + 1, FWIN.x0 + 2, FWIN.x0 + 3, FWIN.x1 - 3, FWIN.x1 - 2, FWIN.x1 - 1, FWIN.x1]) m.set(x, 45, FZ, P.f6).set(x, 46, FZ, P.f5); // Raffband
+  m.box(FWIN.x0 - 5, FWIN.y0 - 5, FZ + 1, FWIN.x1 + 5, FWIN.y0 - 4, FZ + 4, (x, y, z) => (z === FZ + 4 ? (y === FWIN.y0 - 4 ? P.e7 : P.e6) : P.e5)); // Fensterbank
+  m.box(FWIN.x0 - 4, FWIN.y0 - 14, FZ + 3, FWIN.x1 + 4, FWIN.y0 - 7, FZ + 8, (x, y, z) => {
+    if (y === FWIN.y0 - 7) return z === FZ + 8 ? P.e6 : P.e2; // Rand, dahinter Erde
+    if (y === FWIN.y0 - 14) return P.e3;
+    return (x - FWIN.x0 + 4) % 12 === 0 ? P.e3 : y === FWIN.y0 - 8 ? P.e5 : P.e4;
   });
-  const blooms = [P.r4, P.a0, P.f6, P.a4, P.r3, P.a1];
-  for (let x = FWIN.x0 - 1; x <= FWIN.x1 + 1; x++) {
-    const h = hash3(x, 0, 0, seed + 9);
-    m.set(x, FWIN.y0 - 3, FZ + 3, h < 0.5 ? P.g4 : P.g5);
-    if (h > 0.45) m.set(x, FWIN.y0 - 2, FZ + 3, h > 0.8 ? P.g6 : P.g5);
-    if (h < 0.18) m.set(x, FWIN.y0 - 5, FZ + 5, P.g5).set(x, FWIN.y0 - 6, FZ + 5, P.g4); // Ranke über den Rand
+  const blooms = [P.r4, P.a0, P.f6, P.a4, P.r3, P.a1, P.a3, P.f5];
+  for (let x = FWIN.x0 - 3; x <= FWIN.x1 + 3; x++) {
+    const h = hash3(x >> 1, 0, 0, seed + 9);
+    m.set(x, FWIN.y0 - 6, FZ + 6, h < 0.5 ? P.g4 : P.g5);
+    if (h > 0.4) m.set(x, FWIN.y0 - 5, FZ + 6, h > 0.8 ? P.g6 : P.g5);
+    if (h < 0.15) m.set(x, FWIN.y0 - 9, FZ + 9, P.g5).set(x, FWIN.y0 - 10, FZ + 9, P.g4).set(x, FWIN.y0 - 11, FZ + 9, P.g5); // Ranke über den Rand
   }
-  for (let k = 0; k < 6; k++) {
-    const x = FWIN.x0 + k * 3;
-    flower(m, x, FWIN.y0 - 3, FZ + 3, blooms[k], k % 2 ? P.f6 : P.f7, 1 + (k % 2));
+  for (let k = 0; k < 8; k++) {
+    const x = FWIN.x0 - 1 + k * 4;
+    bloom(m, x, FWIN.y0 - 6, FZ + 6, blooms[k], k % 2 ? P.f6 : P.f7, 1 + (k % 3));
   }
-  // Hufeisen über dem Vordach (Öffnung nach oben), zwei Nägel
-  const hx = 22;
-  const shoe = ['#....#', '#....#', '#....#', '.#..#.', '..##..'];
+  // Hufeisen über dem Vordach (Öffnung nach oben), Nagellöcher, zwei Nägel
+  const hx = 44;
+  const shoe = ['##......##', '##......##', '##......##', '##......##', '.##....##.', '.##....##.', '..######..', '...####...'];
   shoe.forEach((row, r) => {
-    for (let i = 0; i < row.length; i++) if (row[i] === '#') m.set(hx + i, 52 - r, FZ + 2, i < 3 ? P.s7 : P.s6);
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] !== '#') continue;
+      const hole = (r === 2 || r === 4) && (i === 0 || i === 9);
+      m.set(hx + i, 105 - r, FZ + 3, hole ? P.s3 : i < 5 ? P.s7 : P.s6);
+    }
   });
-  m.set(hx, 52, FZ + 3, P.s3).set(hx + 5, 52, FZ + 3, P.s3);
+  m.set(hx, 105, FZ + 4, P.s3).set(hx + 9, 105, FZ + 4, P.s3);
   return m;
 }
 
@@ -157,7 +181,7 @@ function buildFront(seed) {
 function curtainCells() {
   const cells = [];
   for (let y = FWIN.y0; y <= FWIN.y1; y++) {
-    const w = y >= 28 ? 4 : y >= 24 ? 3 : y >= 22 ? 2 : 3;
+    const w = y >= 56 ? 8 : y >= 51 ? 7 : y >= 48 ? 5 : y >= 43 ? 4 : y >= 39 ? 5 : 6;
     for (let i = 0; i < w; i++) {
       cells.push([FWIN.x0 + i, y]);
       cells.push([FWIN.x1 - i, y]);
@@ -179,46 +203,54 @@ function buildWindowGlass() {
   return m;
 }
 
-/** Die Tür: blaugrün gestrichene Bretter mit Z-Strebe, Bullauge und Messingknauf. */
+/** Die Tür: vier blaugrün gestrichene Bretter mit Z-Strebe und Nägeln, Bullauge mit Messingring, Knauf mit Schild. */
 function buildDoor(seed) {
   const m = new VoxelModel();
-  const width = FDOOR.x1 - FDOOR.x0 + 1; // 14
-  const height = FDOOR.y1 - FFLOOR + 1; // 32
-  m.box(0, 0, 0, width - 1, height - 1, 1, (x, y, z) => {
-    if (z === 0) return P.t2;
-    if (x === 4 || x === 9) return P.t3; // Fugen
-    if (hash3(x, y, 0, seed) > 0.975) return P.e5; // abgeplatzte Farbe
-    return x === 0 || x === 5 || x === 10 ? P.a6 : P.a5; // Lichtkante je Brett
+  const width = FDOOR.x1 - FDOOR.x0 + 1; // 28
+  const height = FDOOR.y1 - FFLOOR + 1; // 64
+  m.box(0, 0, 0, width - 1, height - 1, 3, (x, y, z) => {
+    if (z < 3) return P.t2;
+    const b = x % 7;
+    if (b === 6) return P.t3; // Fuge
+    if (hash3(x, y >> 1, 0, seed) > 0.985) return P.e5; // abgeplatzte Farbe
+    return b === 0 ? P.a6 : P.a5; // Lichtkante je Brett
   });
-  // Querriegel und Strebe, eine Schicht vorstehend
-  const brace = (x, y) => m.set(x, y, 2, P.a6);
-  for (let x = 0; x < width; x++) for (const y of [2, 3, 14, 15]) brace(x, y);
-  for (let t = 0; t <= 10; t++) {
-    const x = Math.round(1 + t * 1.15);
-    brace(x, 4 + t);
-    brace(x + 1, 4 + t);
+  // Querriegel und Strebe, eine Schicht vorstehend, darunter ein Schattenstrich
+  const brace = (x, y) => {
+    m.set(x, y, 4, P.a6);
+    if (!m.has(x, y - 1, 4) && y > 0) m.set(x, y - 1, 3, P.t3);
+  };
+  for (let x = 0; x < width; x++) for (const y of [4, 5, 6, 7, 28, 29, 30, 31]) brace(x, y);
+  for (let t = 0; t <= 20; t++) {
+    const x = Math.round(2 + t * 1.1);
+    for (let k = 0; k < 4; k++) brace(x + k, 8 + t);
   }
-  // Bullauge: Messingring, dunkles Glas mit einem Lichtpunkt
+  for (let x = 3; x < width; x += 7) for (const y of [5, 29]) m.set(x, y, 5, P.s5); // Nägel
+  // Bullauge: Messingring mit Schrauben, dunkles Glas mit Glanz
   const cx = width / 2;
-  const cy = 21.5;
+  const cy = 45.5;
   for (let x = 0; x < width; x++) {
-    for (let y = 16; y < height; y++) {
+    for (let y = 33; y < height; y++) {
       const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
-      if (d <= 2.6) m.set(x, y, 1, d < 1.2 && x < cx && y > cy ? P.b4 : P.b1);
-      else if (d <= 4.0) m.set(x, y, 2, x + y < cx + cy ? P.f6 : P.f5);
+      if (d <= 5.2) m.set(x, y, 2, d < 2.4 && x < cx - 0.5 && y > cy + 0.5 ? P.b4 : d < 3.2 && x > cx && y < cy ? P.b2 : P.b1).set(x, y, 3, null);
+      else if (d <= 8.0) {
+        const lit = x + y < cx + cy;
+        m.set(x, y, 4, d > 7.2 ? P.f4 : lit ? P.f6 : P.f5);
+        if (d > 6.2 && d < 7.0 && Math.abs(Math.abs(x + 0.5 - cx) - Math.abs(y + 0.5 - cy)) < 0.8) m.set(x, y, 5, P.s4); // Schrauben
+      }
     }
   }
-  // Knauf mit Schild
-  m.box(11, 11, 2, 12, 13, 2, P.s3);
-  m.set(11, 12, 3, P.f6).set(12, 12, 3, P.f5);
+  // Knauf mit Schild und Schlüsselloch
+  m.box(21, 20, 4, 24, 27, 4, (x, y) => (x === 22 && (y === 22 || y === 23) ? P.s1 : x === 21 ? P.s4 : P.s3));
+  m.box(21, 24, 5, 24, 25, 6, (x, y, z) => (z === 6 ? (x < 23 ? P.f7 : P.f6) : P.f5));
   return m;
 }
 
 function buildRoof(seed) {
   const m = new VoxelModel();
-  // Wellblech in Tafeln (1 m breit): Rillen den Hang hinab, Tafeln verschieden
-  // gefärbt, Schrauben in Reihen, Rost an einzelnen Stellen
-  const SHEET = 16;
+  // Wellblech in Tafeln (1 m breit): Rillen den Hang hinab (Licht, Flanke,
+  // Tal), Tafeln verschieden gefärbt, Schrauben in Reihen, Rostfahnen darunter
+  const SHEET = 32;
   // je Hang: Rille oben, Rille unten, Unterseite, Vorderkante – der Westhang
   // liegt eine Stufe heller, damit man den First sieht
   const COLORS = [
@@ -229,26 +261,44 @@ function buildRoof(seed) {
     const r = hash3(side, sheet, 0, seed + 2);
     return r < 0.25 ? 'grau' : r < 0.4 ? 'rost' : 'rot';
   };
-  for (let x = -4; x <= FW + 3; x++) {
+  const ridge = FW / 2;
+  const PROFILE = [1, 0, 0, -1, 0, -1]; // Licht, Kuppe, Kuppe, Flanke, Tal, Flanke
+  for (let x = -8; x <= FW + 7; x++) {
     const h = roofHeight(x);
-    const side = x < FW / 2 ? 0 : 1;
-    for (let z = -4; z <= FD + 5; z++) {
-      const sheet = Math.floor((z + 4) / SHEET);
+    const side = x < ridge ? 0 : 1;
+    const down = side ? x - ridge : ridge - 1 - x; // Abstand vom First den Hang hinab
+    const q = (x + 8) % 32;
+    const col = Math.floor((x + 8) / 32);
+    for (let z = -8; z <= FD + 11; z++) {
+      const sheet = Math.floor((z + 8) / SHEET);
       const [crest, valley, under, edge] = COLORS[side][tone(side, sheet)];
-      const u = (z + 4) % SHEET;
-      let c = u % 3 === 2 ? valley : crest;
+      const u = (z + 8) % SHEET;
+      const p = u % 6;
+      let c = p === 4 ? valley : shade(crest, PROFILE[p]);
       if (u === SHEET - 1) c = under; // Stoß zur nächsten Tafel
-      if (hash3(x, h, z, seed) > 0.975) c = shade(c, -1);
-      if (u % 6 === 1 && (x + 4) % 16 === 8) c = P.s7; // Schrauben
-      if (hash3(Math.floor(x / 3), 0, Math.floor(z / 2), seed + 8) > 0.965) c = P.r1; // Rost
-      if (z === FD + 5) c = edge; // Vorderkante
+      if (hash3(x >> 1, h, z >> 1, seed) > 0.985) c = shade(c, -1);
+      // Schrauben in Reihen, unter manchen eine Rostfahne den Hang hinab
+      if (u % 12 === 2) {
+        if (q === 16) c = P.s7;
+        else {
+          const run = side ? q - 16 : 16 - q;
+          const len = 2 + Math.floor(6 * hash3(col, 0, z, seed + 4));
+          if (run > 0 && run <= len && hash3(col, 1, z, seed + 5) > 0.55) c = run < 3 ? P.r2 : P.r1;
+        }
+      }
+      if (hash3(Math.floor(x / 6), 0, Math.floor(z / 4), seed + 8) > 0.965) c = P.r1; // Rost
+      if (z === FD + 11) c = down % 4 === 0 ? shade(edge, -1) : edge; // Vorderkante, gewellt
       m.set(x, h, z, c);
-      m.set(x, h - 1, z, z === FD + 5 ? P.e3 : under);
+      m.set(x, h - 1, z, z === FD + 11 ? P.e3 : under);
     }
   }
-  // Firstkappe mit Stößen
-  for (let z = -4; z <= FD + 5; z++) {
-    for (let x = 38; x <= 41; x++) m.set(x, 68, z, (z + 4) % 16 === 0 ? P.s3 : x < 40 ? P.s6 : P.s5);
+  // Firstkappe mit Stößen und Schrauben (darunter lückenlos bis aufs Blech)
+  for (let z = -8; z <= FD + 11; z++) {
+    for (let x = 76; x <= 83; x++) {
+      const y = x === 76 || x === 83 ? 136 : 137;
+      m.set(x, y, z, (z + 8) % 32 === 0 ? P.s3 : (z + 8) % 16 === 8 && (x === 78 || x === 81) ? P.s8 : x < 80 ? P.s6 : P.s5);
+      for (let yy = roofHeight(x) + 1; yy < y; yy++) m.set(x, yy, z, P.s3);
+    }
   }
   // Giebeldreiecke vorn und hinten (Stülpschalung), vorn mit Lüftung und Holzfisch
   for (const gz of [0, 1, FZ - 1, FZ]) {
@@ -256,66 +306,86 @@ function buildRoof(seed) {
       for (let y = FTOP + 1; y <= roofHeight(x) - 2; y++) m.set(x, y, gz, gz === FZ ? sidingColor(x, y, seed) : P.e4);
     }
   }
-  m.box(37, 56, FZ, 42, 60, FZ, (x, y) => (x === 37 || x === 42 || y === 56 || y === 60 ? P.e3 : y % 2 ? P.e1 : P.e4));
-  const fish = ['...####...#', '.########.#', '#.#########', '.########.#', '...####...#'];
+  m.box(74, 112, FZ, 85, 121, FZ, (x, y) => (x === 74 || x === 85 || y === 112 || y === 121 ? P.e3 : y % 3 === 0 ? P.e1 : y % 3 === 1 ? P.e5 : P.e4));
+  const fish = [
+    '.....######.......##',
+    '...##########....###',
+    '..############..####',
+    '.##.##############..',
+    '###############.##..',
+    '.##############.....',
+    '..############..####',
+    '...##########....###',
+    '.....######.......##',
+  ];
   fish.forEach((row, r) => {
-    for (let i = 0; i < row.length; i++) if (row[i] === '#') m.set(34 + i, 53 - r, FZ + 1, r === 0 || (r === 1 && i > 2) ? P.e8 : P.e7);
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] !== '#') continue;
+      const scale = (i + r) % 4 === 0 && i > 4 && i < 15;
+      m.set(68 + i, 108 - r, FZ + 1, r <= 1 ? P.e8 : scale ? P.e6 : i >= 16 ? P.e6 : P.e7);
+    }
   });
-  m.set(36, 51, FZ + 2, P.e2); // Auge
-  // Plane mit zwei Reifen auf der Westseite
-  for (let x = 8; x <= 27; x++) {
-    for (let z = 28; z <= 49; z++) {
-      const rim = x === 8 || x === 27 || z === 28 || z === 49;
+  m.set(71, 105, FZ + 2, P.e1); // Auge
+  // Plane mit zwei Reifen auf der Westseite: Falten als feine Linien, ausgefranster Rand
+  for (let x = 16; x <= 55; x++) {
+    for (let z = 56; z <= 99; z++) {
+      const rim = x <= 17 || x >= 54 || z <= 57 || z >= 98;
       if (rim && hash3(x, 1, z, seed) < 0.3) continue;
-      const fold = (x + z * 2) % 9 === 0;
-      m.set(x, roofHeight(x) + 1, z, fold ? P.b1 : (x + z) % 13 === 0 ? P.b3 : P.b2);
+      const f = (x + z * 2) % 18;
+      m.set(x, roofHeight(x) + 1, z, f === 0 ? P.b1 : f === 1 ? P.b3 : (x + z) % 26 === 0 ? P.b3 : P.b2);
     }
   }
-  for (const [cx, cz] of [[14, 34], [21, 43]]) {
-    for (let x = cx - 5; x <= cx + 5; x++) {
-      for (let z = cz - 5; z <= cz + 5; z++) {
+  for (const [cx, cz] of [[28, 68], [42, 86]]) {
+    for (let x = cx - 10; x <= cx + 10; x++) {
+      for (let z = cz - 10; z <= cz + 10; z++) {
         const d = Math.hypot(x + 0.5 - cx, z + 0.5 - cz);
-        if (d > 4.6 || d < 2.2) continue;
+        if (d > 9.2 || d < 4.4) continue;
         const y = roofHeight(x) + 2;
-        m.set(x, y, z, P.s1);
-        if (d < 3.9) m.set(x, y + 1, z, z < cz ? P.s3 : (x + z) % 2 ? P.s2 : P.s1);
+        m.set(x, y, z, P.s1).set(x, y + 1, z, P.s1);
+        if (d < 8.4 && d > 5.0) m.set(x, y + 2, z, d < 5.8 ? P.s3 : ((x >> 1) + (z >> 1)) % 2 ? P.s2 : P.s1);
       }
     }
   }
-  // Solarpaneel auf der Ostseite: Rahmen, Zellen mit Gitter, ein Lichtstreif
-  for (let x = 50; x <= 67; x++) {
-    for (let z = 10; z <= 29; z++) {
-      const frame = x === 50 || x === 67 || z === 10 || z === 29;
-      const grid = (x - 50) % 4 === 0 || (z - 10) % 5 === 0;
-      const glint = Math.abs(x - 50 - (z - 10) * 0.8 - 4) < 1.2;
-      m.set(x, roofHeight(x) + 1, z, frame ? P.s6 : grid ? P.b0 : glint ? P.b3 : P.b1);
+  // Solarpaneel auf der Ostseite: erhöhter Rahmen, Zellen mit Gitter und Leiterbahnen, ein Lichtstreif
+  for (let x = 100; x <= 135; x++) {
+    for (let z = 20; z <= 59; z++) {
+      const frame = x === 100 || x === 135 || z === 20 || z === 59;
+      const grid = (x - 100) % 6 === 0 || (z - 20) % 5 === 0;
+      const glint = Math.abs(x - 100 - (z - 20) * 0.8 - 8) < 2.2;
+      const bus = (z - 20) % 5 === 2 && (x - 100) % 2 === 0;
+      const y = roofHeight(x) + 1;
+      m.set(x, y, z, frame ? P.s6 : grid ? P.b0 : glint ? (Math.abs(x - 100 - (z - 20) * 0.8 - 8) < 0.9 ? P.b4 : P.b3) : bus ? P.b2 : P.b1);
+      if (frame) m.set(x, y + 1, z, x === 100 || z === 59 ? P.s7 : P.s6);
     }
   }
   // Ofenrohr mit Bändern, Ruß und Regenhut
-  const cx = 64;
-  const cz = 8;
+  const cx = 128;
+  const cz = 16;
   const base = roofHeight(cx) + 1;
-  m.cylinder(cx, cz, base - 2, 71, 2.3, (x, y) => (y >= 70 ? P.s1 : y % 5 === 0 ? P.s5 : x < cx ? P.s4 : P.s3));
-  for (const [dx, dz] of [[-2, -2], [1, -2], [-2, 1], [1, 1]]) m.set(cx + dx, 72, cz + dz, P.s2);
-  m.cylinder(cx, cz, 73, 73, 3.4, P.s3);
-  m.cylinder(cx, cz, 74, 74, 2.4, P.s5);
-  m.set(cx - 1, 75, cz - 1, P.s6).set(cx, 75, cz - 1, P.s6).set(cx - 1, 75, cz, P.s6).set(cx, 75, cz, P.s6);
+  m.cylinder(cx, cz, base - 4, 143, 4.6, (x, y) => (y >= 139 ? (hash3(x, y, 0, seed) < 0.5 ? P.s1 : P.s2) : y % 10 === 0 ? P.s6 : y % 10 === 1 ? P.s3 : x < cx - 1 ? P.s5 : x < cx + 2 ? P.s4 : P.s3));
+  for (const [dx, dz] of [[-4, -4], [3, -4], [-4, 3], [3, 3]]) m.box(cx + dx, 144, cz + dz, cx + dx, 145, cz + dz, P.s2);
+  m.cylinder(cx, cz, 146, 147, 6.8, (x, y) => (y === 147 ? (x < cx ? P.s5 : P.s4) : P.s2));
+  m.cylinder(cx, cz, 148, 149, 4.8, (x) => (x < cx ? P.s6 : P.s5));
+  m.cylinder(cx, cz, 150, 150, 2.2, P.s7);
   // Rauch steigt über dem Hut auf (grobe Einheiten für toWorld)
-  return { model: m, chimneyTop: { x: cx / 2, y: 76 / 2, z: cz / 2 } };
+  return { model: m, chimneyTop: { x: cx / 4, y: 152 / 4, z: cz / 4 } };
 }
 
 /** Lichterkette unter der vorderen Dachkante: Draht in Bögen, Lämpchen darunter. */
 function wireY(x) {
-  const k = ((x % 12) + 12) % 12;
-  return roofHeight(x) - 3 - Math.round(Math.sin((k / 12) * Math.PI) * 2);
+  const k = ((x % 24) + 24) % 24;
+  return roofHeight(x) - 6 - Math.round(Math.sin((k / 24) * Math.PI) * 4);
 }
 
 function buildFairyLights() {
   const m = new VoxelModel();
   const colors = [P.f7, P.f6, P.a1, P.a6, P.f5];
   let i = 0;
-  for (let x = -2; x <= FW + 1; x += 4) {
-    m.set(x, wireY(x) - 1, FD + 6, colors[i % colors.length]);
+  for (let x = -4; x <= FW + 3; x += 8) {
+    // Lämpchen: Fassung am Draht, darunter ein runder Kolben mit Spitze
+    const c = colors[i % colors.length];
+    const y = wireY(x);
+    m.set(x, y - 1, FD + 12, shade(c, -2)).box(x - 1, y - 3, FD + 12, x, y - 2, FD + 12, c).set(x - 1, y - 4, FD + 12, shade(c, -1)).set(x, y - 2, FD + 12, shade(c, 1));
     i++;
   }
   return m;
@@ -323,9 +393,9 @@ function buildFairyLights() {
 
 function buildFairyWire() {
   const m = new VoxelModel();
-  for (let x = -3; x <= FW + 2; x++) {
-    m.set(x, wireY(x), FD + 6, P.e2);
-    if (((x % 12) + 12) % 12 === 0) m.set(x, wireY(x) + 1, FD + 6, P.s3); // Haken
+  for (let x = -6; x <= FW + 5; x++) {
+    m.set(x, wireY(x), FD + 12, P.e2);
+    if (((x % 24) + 24) % 24 === 0) m.set(x, wireY(x) + 1, FD + 12, P.s3).set(x, wireY(x) + 2, FD + 12, P.s3); // Haken
   }
   return m;
 }
@@ -333,45 +403,47 @@ function buildFairyWire() {
 /**
  * Vordach über der Tür: kurz und hoch genug, dass man Tür und Bullauge
  * darunter sieht (M13); zwei Streben halten es an der Wand, keine Stangen.
+ * Stoff in grün-cremefarbenen Bahnen mit Naht, vorn ein Saum mit Bögen.
  */
 function buildAwning() {
   const m = new VoxelModel();
-  const x0 = 8;
-  const x1 = 43;
-  const z0 = FZ + 2;
-  const zFront = FZ + 14;
-  const fabricY = (z) => 45 - Math.floor((z - z0) / 4);
+  const x0 = 16;
+  const x1 = 87;
+  const z0 = FZ + 3;
+  const zFront = FZ + 28;
+  const fabricY = (z) => 91 - Math.floor((z - z0) / 4);
   // Leiste an der Wand und zwei Streben
-  m.box(x0, 46, FZ + 1, x1, 46, FZ + 1, P.e3);
-  for (const x of [x0 + 1, x1 - 1]) m.line(x, 33, FZ + 1, x, fabricY(zFront - 1) - 1, zFront - 1, P.e3);
-  // Stoffbahn: Streifen grün und creme, zur Wand hin im Schatten, vorn gewellter Saum
+  m.box(x0, 92, FZ + 1, x1, 93, FZ + 2, (x, y) => (y === 93 ? P.e4 : P.e3));
+  for (const x of [x0 + 2, x1 - 3]) m.line(x, 66, FZ + 1, x, fabricY(zFront - 2) - 1, zFront - 2, P.e3, 1);
   for (let z = z0; z <= zFront; z++) {
     const y = fabricY(z);
     for (let x = x0; x <= x1; x++) {
-      const green = Math.floor((x - x0) / 4) % 2 === 0;
+      const k = (x - x0) % 8;
+      const green = Math.floor((x - x0) / 8) % 2 === 0;
       let c = green ? P.g5 : P.e9;
-      if (z < z0 + 2) c = green ? P.g4 : P.e8;
+      if (k === 0) c = green ? P.g4 : P.e8; // Naht
+      if (z < z0 + 4) c = shade(c, -1);
       m.set(x, y, z, c);
       if (z === zFront) {
-        const k = (x - x0) % 4;
-        m.set(x, y - 1, z, c);
-        if (k === 1 || k === 2) m.set(x, y - 2, z, green ? P.g4 : P.e8);
+        // Saum mit Bögen
+        m.set(x, y - 1, z, c).set(x, y - 2, z, green ? P.g4 : P.e8);
+        if (k >= 2 && k <= 5) m.set(x, y - 3, z, green ? P.g4 : P.e8);
+        if (k === 3 || k === 4) m.set(x, y - 4, z, green ? P.g3 : P.e7);
       }
     }
   }
   // Wandlaterne rechts neben der Tür (das Glas leuchtet separat)
-  m.box(36, 34, FZ + 1, 37, 34, FZ + 3, P.s2); // Arm
-  m.box(35, 32, FZ + 2, 38, 33, FZ + 5, (x, y) => (y === 33 ? P.s3 : P.s2)); // Dach
-  m.set(36, 34, FZ + 3, P.s4).set(37, 34, FZ + 3, P.s4);
-  m.box(35, 26, FZ + 2, 38, 26, FZ + 5, P.s1); // Boden
-  for (const [x, z] of [[35, FZ + 2], [38, FZ + 2], [35, FZ + 5], [38, FZ + 5]]) m.box(x, 27, z, x, 31, z, P.s2);
+  m.box(73, 67, FZ + 1, 74, 68, FZ + 5, P.s2); // Arm
+  m.box(70, 64, FZ + 3, 77, 66, FZ + 10, (x, y) => (y === 66 ? P.s3 : P.s2)); // Dach
+  m.box(72, 67, FZ + 5, 75, 68, FZ + 8, (x, y) => (y === 68 ? P.s4 : P.s3));
+  m.box(70, 52, FZ + 3, 77, 53, FZ + 10, (x, y) => (y === 53 ? P.s2 : P.s1)); // Boden
+  for (const [x, z] of [[70, FZ + 3], [77, FZ + 3], [70, FZ + 10], [77, FZ + 10]]) m.box(x, 54, z, x, 63, z, P.s2);
   return m;
 }
 
 function buildLanternGlass() {
   const m = new VoxelModel();
-  m.box(36, 27, FZ + 3, 37, 31, FZ + 5, 0xffffff);
-  m.box(35, 27, FZ + 3, 35, 31, FZ + 4, 0xffffff).box(38, 27, FZ + 3, 38, 31, FZ + 4, 0xffffff);
+  m.box(71, 54, FZ + 4, 76, 63, FZ + 9, 0xffffff);
   return m;
 }
 
@@ -380,60 +452,68 @@ function buildLanternGlass() {
 
 const AX0 = W;
 const AX1 = W + 17;
-const FAX0 = AX0 * 2; // 80
-const FAX1 = AX1 * 2 + 1; // 115
-const FAZ0 = 12;
-const AWIN = { x0: 92, x1: 105, y0: 16, y1: 27, mx: 98 };
+const FAX0 = AX0 * 4; // 160
+const FAX1 = AX1 * 4 + 3; // 231
+const FAZ0 = 24;
+const AWIN = { x0: 184, x1: 211, y0: 32, y1: 55, mx: 197 };
 
 function annexRoofHeight(x) {
-  return 43 - Math.floor((x - FAX0) / 4);
+  return 87 - Math.floor((x - FAX0) / 4);
 }
 
 function buildAnnexBase(seed) {
   const m = new VoxelModel();
-  m.box(FAX0, 0, FAZ0, FAX1, 3, FD - 1, (x, y) => {
-    if (y === 0) return P.e3;
-    if (y === 3) return x % 16 === 15 ? P.e3 : P.e4;
-    const k = x % 16;
-    return k < 3 || (k >= 7 && k <= 8) || k > 12 ? P.e3 : P.e1;
+  m.box(FAX0, 0, FAZ0, FAX1, 7, FD - 1, (x, y) => {
+    if (y <= 1) return P.e3;
+    const k = x % 32;
+    if (y >= 6) return k === 31 ? P.e2 : y === 7 ? P.e4 : P.e3;
+    return k < 6 || (k >= 13 && k <= 18) || k > 25 ? P.e3 : P.e1;
   });
-  m.box(FAX0, 4, FAZ0, FAX1, 5, FD - 1, (x, y) => (y === 5 ? P.e5 : P.e4));
+  m.box(FAX0, 8, FAZ0, FAX1, 11, FD - 1, (x, y) => (y === 11 ? P.e5 : y === 8 ? P.e3 : P.e4));
   // Nord- und Ostwand (nur Schatten)
-  m.box(FAX0, FFLOOR, FAZ0, FAX1, 39, FAZ0 + 1, P.e4);
-  m.box(FAX1 - 1, FFLOOR, FAZ0, FAX1, 39, FD - 1, P.e4);
+  m.box(FAX0, FFLOOR, FAZ0, FAX1, 79, FAZ0 + 1, P.e4);
+  m.box(FAX1 - 1, FFLOOR, FAZ0, FAX1, 79, FD - 1, P.e4);
   return m;
 }
 
 function buildAnnexFront(seed) {
   const m = new VoxelModel();
   const inWindow = (x, y) => x >= AWIN.x0 && x <= AWIN.x1 && y >= AWIN.y0 && y <= AWIN.y1;
-  for (let y = FFLOOR; y <= 39; y++) {
+  for (let y = FFLOOR; y <= 79; y++) {
     for (let x = FAX0; x <= FAX1; x++) {
       if (inWindow(x, y)) continue;
       m.set(x, y, FZ - 1, P.e3).set(x, y, FZ, wallColor(x, y, seed + 9));
     }
   }
   for (let x = FAX0; x <= FAX1; x++) {
-    if (x >= AWIN.x0 - 2 && x <= AWIN.x1 + 2) continue;
-    m.set(x, 10, FZ + 1, P.e3).set(x, 11, FZ + 1, x % 4 === 2 ? P.s5 : P.e5);
+    if (x >= AWIN.x0 - 4 && x <= AWIN.x1 + 4) continue;
+    m.set(x, 20, FZ + 1, P.e3).set(x, 21, FZ + 1, x % 8 === 4 ? P.s5 : P.e5).set(x, 22, FZ + 1, P.e6);
   }
-  for (let y = AWIN.y0 - 2; y <= AWIN.y1 + 2; y++) {
-    for (let x = AWIN.x0 - 2; x <= AWIN.x1 + 2; x++) {
+  for (let y = AWIN.y0 - 3; y <= AWIN.y1 + 3; y++) {
+    for (let x = AWIN.x0 - 3; x <= AWIN.x1 + 3; x++) {
       const border = x < AWIN.x0 || x > AWIN.x1 || y < AWIN.y0 || y > AWIN.y1;
-      if (border) m.set(x, y, FZ + 1, frameColor(x, y, seed + 6, x > AWIN.x1 || y < AWIN.y0)).set(x, y, FZ, FRAME[1]);
-      else if (x === AWIN.mx || x === AWIN.mx + 1) m.set(x, y, FZ, x === AWIN.mx ? FRAME[0] : FRAME[1]);
+      if (border) {
+        const inner = x === AWIN.x0 - 1 || x === AWIN.x1 + 1 || y === AWIN.y0 - 1 || y === AWIN.y1 + 1;
+        m.set(x, y, FZ + 1, inner ? FRAME[1] : y === AWIN.y1 + 3 ? P.s9 : frameColor(x, y, seed + 6, x > AWIN.x1 || y < AWIN.y0)).set(x, y, FZ, FRAME[1]);
+      } else if (x === AWIN.mx || x === AWIN.mx + 1) m.set(x, y, FZ, x === AWIN.mx ? FRAME[0] : FRAME[1]);
     }
   }
-  // Fensterbank und Kräuterkasten
-  m.box(AWIN.x0 - 3, AWIN.y0 - 3, FZ + 1, AWIN.x1 + 3, AWIN.y0 - 3, FZ + 2, (x, y, z) => (z === FZ + 2 ? P.e6 : P.e5));
-  m.box(AWIN.x0 - 2, AWIN.y0 - 7, FZ + 2, AWIN.x1 + 2, AWIN.y0 - 4, FZ + 4, (x, y, z) => (y === AWIN.y0 - 4 ? (z === FZ + 4 ? P.e6 : P.e2) : y === AWIN.y0 - 7 ? P.e3 : P.e4));
-  for (let x = AWIN.x0 - 1; x <= AWIN.x1 + 1; x++) {
-    const k = Math.floor((x - AWIN.x0 + 1) / 4) % 3; // Schnittlauch, Lavendel, Petersilie
+  // Fensterbank und Kräuterkasten: Schnittlauch mit Blüten, Lavendel, Petersilie
+  m.box(AWIN.x0 - 5, AWIN.y0 - 5, FZ + 1, AWIN.x1 + 5, AWIN.y0 - 4, FZ + 4, (x, y, z) => (z === FZ + 4 ? (y === AWIN.y0 - 4 ? P.e7 : P.e6) : P.e5));
+  m.box(AWIN.x0 - 4, AWIN.y0 - 14, FZ + 3, AWIN.x1 + 4, AWIN.y0 - 7, FZ + 8, (x, y, z) => (y === AWIN.y0 - 7 ? (z === FZ + 8 ? P.e6 : P.e2) : y === AWIN.y0 - 14 ? P.e3 : (x - AWIN.x0) % 12 === 0 ? P.e3 : P.e4));
+  for (let x = AWIN.x0 - 3; x <= AWIN.x1 + 3; x++) {
+    const k = Math.floor((x - AWIN.x0 + 3) / 12) % 3;
     const h = hash3(x, 5, 0, seed);
-    const y0 = AWIN.y0 - 3;
-    if (k === 0) m.box(x, y0, FZ + 3, x, y0 + 2 + (h > 0.5 ? 1 : 0), FZ + 3, P.g6).set(x, y0 + 3 + (h > 0.5 ? 1 : 0), FZ + 3, h > 0.7 ? P.a3 : P.g7);
-    else if (k === 1) m.box(x, y0, FZ + 3, x, y0 + 1, FZ + 3, P.g4).set(x, y0 + 2, FZ + 3, h > 0.4 ? P.a2 : P.a3);
-    else m.set(x, y0, FZ + 3, P.g5).set(x, y0 + 1, FZ + 3, h > 0.5 ? P.g6 : P.g5);
+    const y0 = AWIN.y0 - 6;
+    const z = FZ + 5 + (x % 2);
+    if (k === 0) {
+      const top = y0 + 3 + Math.floor(h * 3);
+      m.box(x, y0, z, x, top, z, x % 2 ? P.g6 : P.g5);
+      if (h > 0.6) m.set(x, top + 1, z, P.a3).set(x, top + 2, z, P.a2);
+    } else if (k === 1) {
+      if (x % 2) m.box(x, y0, z, x, y0 + 3, z, P.g4).box(x, y0 + 4, z, x, y0 + 6, z, h > 0.4 ? P.a2 : P.a3);
+      else m.set(x, y0, z, P.g5).set(x, y0 + 1, z, P.g4);
+    } else m.set(x, y0, z, P.g5).set(x, y0 + 1, z, h > 0.5 ? P.g6 : P.g5).set(x, y0 + 2, z, h > 0.7 ? P.g7 : P.g6);
   }
   return m;
 }
@@ -448,81 +528,88 @@ function buildAnnexGlass() {
 
 function buildAnnexRoof(seed) {
   const m = new VoxelModel();
-  for (let x = FAX0; x <= FAX1 + 4; x++) {
+  for (let x = FAX0; x <= FAX1 + 8; x++) {
     const h = annexRoofHeight(x);
-    for (let z = FAZ0 - 4; z <= FD + 3; z++) {
-      const sheet = Math.floor((z - FAZ0 + 4) / 16);
+    for (let z = FAZ0 - 8; z <= FD + 7; z++) {
+      const sheet = Math.floor((z - FAZ0 + 8) / 32);
       const grey = sheet % 3 === 1;
-      const u = (z - FAZ0 + 4) % 16;
-      let c = grey ? (u % 3 === 2 ? P.s4 : P.s5) : u % 3 === 2 ? P.r2 : P.r3;
-      if (u === 15) c = grey ? P.s3 : P.r1;
-      if (u % 3 === 1 && (x - FAX0) % 12 === 6) c = P.s7;
-      if (z === FD + 3) c = grey ? P.s6 : P.r4;
+      const u = (z - FAZ0 + 8) % 32;
+      const p = u % 6;
+      let c = grey ? (p === 0 ? P.s6 : p === 4 ? P.s4 : P.s5) : p === 0 ? P.r4 : p === 4 ? P.r2 : P.r3;
+      if (u === 31) c = grey ? P.s3 : P.r1;
+      if (u % 12 === 2 && (x - FAX0) % 24 === 12) c = P.s7;
+      if (z === FD + 7) c = grey ? P.s6 : P.r4;
       m.set(x, h, z, c);
-      m.set(x, h - 1, z, z === FD + 3 ? P.e3 : grey ? P.s3 : P.r1);
+      m.set(x, h - 1, z, z === FD + 7 ? P.e3 : grey ? P.s3 : P.r1);
     }
   }
   // Giebelwand zwischen Anbauwand und Dach
   for (let x = FAX0; x <= FAX1; x++) {
-    for (let y = 40; y < annexRoofHeight(x) - 1; y++) {
-      m.set(x, y, FZ, sidingColor(x, y + 6, seed + 3)).set(x, y, FZ - 1, P.e3);
+    for (let y = 80; y < annexRoofHeight(x) - 1; y++) {
+      m.set(x, y, FZ, sidingColor(x, y + 12, seed + 3)).set(x, y, FZ - 1, P.e3);
       m.set(x, y, FAZ0, P.e4);
     }
   }
-  // Regenrinne mit Fallrohr an der Vorderecke
-  const gy = annexRoofHeight(FAX1 + 4) - 1;
-  for (let z = FAZ0 - 4; z <= FD + 3; z++) m.set(FAX1 + 5, gy, z, z % 8 === 0 ? P.s4 : P.s5).set(FAX1 + 6, gy + 1, z, P.s6);
-  m.box(FAX1 + 5, 1, FD + 3, FAX1 + 5, gy - 1, FD + 3, (x, y) => (y % 8 === 0 ? P.s3 : P.s4));
-  m.set(FAX1 + 5, 0, FD + 4, P.s4).set(FAX1 + 5, 0, FD + 5, P.s5);
+  // Regenrinne mit Fallrohr und Schellen an der Vorderecke
+  const gy = annexRoofHeight(FAX1 + 8) - 1;
+  for (let z = FAZ0 - 8; z <= FD + 7; z++) {
+    m.set(FAX1 + 9, gy, z, z % 16 === 0 ? P.s4 : P.s5).set(FAX1 + 10, gy, z, P.s4).set(FAX1 + 11, gy + 1, z, P.s6).set(FAX1 + 9, gy - 1, z, P.s3);
+  }
+  m.box(FAX1 + 9, 2, FD + 7, FAX1 + 10, gy - 2, FD + 7, (x, y) => (y % 16 === 0 ? P.s3 : x === FAX1 + 9 ? P.s5 : P.s4));
+  m.box(FAX1 + 9, 0, FD + 8, FAX1 + 10, 1, FD + 11, (x, y, z) => (z === FD + 11 ? P.s5 : P.s4));
   return m;
 }
 
 function buildDeck(seed) {
   const m = new VoxelModel();
-  const x0 = -4;
-  const x1 = FAX1 + 2;
+  const x0 = -8;
+  const x1 = FAX1 + 4;
   const z0 = FD;
-  const z1 = FD + 11;
-  m.box(x0, 0, z0, x1, 3, z1, (x, y, z) => {
-    if (y === 3) return deckColor(x, z - z0, seed + 11);
-    if (z === z1) return y === 0 ? P.e2 : x % 12 < 2 ? P.e3 : P.e4; // Balkenköpfe
+  const z1 = FD + 23;
+  m.box(x0, 0, z0, x1, 7, z1, (x, y, z) => {
+    if (y === 7) return deckColor(x, z - z0, seed + 11, { width: 6, run: 44 });
+    if (z === z1) return y <= 1 ? P.e2 : x % 24 < 4 ? P.e3 : y === 6 ? P.e5 : P.e4; // Balkenköpfe
     return P.e3;
   });
   // Geländer vorn mit Lücke für die Treppe: Pfosten mit Kappe, Handlauf, Stäbe
-  const gap0 = (DOOR.x0 - 1) * 2;
-  const gap1 = (DOOR.x1 + 1) * 2 + 1;
-  const posts = [-4, 8, 14, 34, 44, 56, 68, 80, 92, 104, 116];
+  const gap0 = (DOOR.x0 - 1) * 4;
+  const gap1 = (DOOR.x1 + 1) * 4 + 3;
+  const posts = [-8, 16, 28, 68, 88, 112, 136, 160, 184, 208, 232];
   const rail = (x) => {
-    m.set(x, 13, z1 - 1, P.e4).set(x, 13, z1, P.e5).set(x, 14, z1 - 1, P.e6).set(x, 14, z1, P.e6); // Handlauf
-    m.set(x, 5, z1, P.e4); // unterer Riegel
-    if (x % 3 === 0) m.box(x, 6, z1, x, 12, z1, P.e5); // Stäbe
+    m.set(x, 26, z1 - 1, P.e4).set(x, 27, z1 - 1, P.e4).set(x, 26, z1, P.e4).set(x, 27, z1, P.e5).set(x, 28, z1 - 1, P.e6).set(x, 29, z1 - 1, P.e7).set(x, 28, z1, P.e6).set(x, 29, z1, P.e7); // Handlauf
+    m.set(x, 10, z1, P.e4).set(x, 11, z1, P.e5); // unterer Riegel
+    if (x % 6 < 2) m.box(x, 12, z1, x, 25, z1, x % 6 === 0 ? P.e6 : P.e5); // Stäbe
   };
   for (let x = x0; x <= x1; x++) if (x < gap0 || x > gap1) rail(x);
   for (const px of posts) {
-    m.box(px, 4, z1 - 1, px + 1, 15, z1, (x, y) => (y === 15 ? P.e6 : x === px ? P.e4 : P.e3));
-    m.box(px, 16, z1 - 1, px + 1, 16, z1, P.e7);
+    m.box(px, 8, z1 - 3, px + 3, 31, z1, (x, y) => (y === 31 ? P.e6 : x === px ? P.e5 : x === px + 3 ? P.e3 : P.e4));
+    m.box(px - 1, 32, z1 - 4, px + 4, 33, z1 + 1, (x, y) => (y === 33 ? P.e7 : P.e5));
   }
   // Seitengeländer (von vorn nur Handlauf und Pfosten zu sehen)
   for (let z = z0; z <= z1; z++) {
-    for (const x of [x0, x0 + 1, x1 - 1, x1]) m.set(x, 14, z, P.e6).set(x, 13, z, P.e4);
+    for (const x of [x0, x0 + 1, x0 + 2, x0 + 3, x1 - 3, x1 - 2, x1 - 1, x1]) m.set(x, 29, z, P.e7).set(x, 28, z, P.e6).set(x, 27, z, P.e4);
   }
-  for (const x of [x0, x1 - 1]) m.box(x, 4, z0, x + 1, 15, z0 + 1, (xx, y) => (y === 15 ? P.e6 : P.e3));
+  for (const x of [x0, x1 - 3]) m.box(x, 8, z0, x + 3, 31, z0 + 3, (xx, y) => (y === 31 ? P.e6 : P.e3));
   // Treppe
-  m.box(gap0, 0, z1 + 1, gap1, 1, z1 + 4, (x, y, z) => (y === 1 ? deckColor(x, z - z1 - 1, seed + 12, { width: 4 }) : z === z1 + 4 ? P.e3 : P.e4));
+  m.box(gap0, 0, z1 + 1, gap1, 3, z1 + 8, (x, y, z) => (y === 3 ? deckColor(x, z - z1 - 1, seed + 12, { width: 8, run: 40 }) : z === z1 + 8 ? (y === 2 ? P.e5 : P.e3) : P.e4));
   // Blumentöpfe auf der Veranda: Terrakotta mit Rand, Geranie, Lavendel, Heidekraut
   const plants = [
-    [48, [P.r4, P.r3]],
-    [68, [P.a0, P.a1]],
-    [88, [P.a2, P.a3]],
+    [96, [P.r4, P.r3]],
+    [136, [P.a0, P.a1]],
+    [176, [P.a2, P.a3]],
   ];
   for (const [px, [c1, c2]] of plants) {
-    m.cylinder(px + 1.5, z1 - 4.5, 4, 8, 2.3, (x, y) => (y === 8 ? P.r4 : y === 4 ? P.r1 : x < px + 1 ? P.r3 : P.r2));
-    m.cylinder(px + 1.5, z1 - 4.5, 8, 8, 1.4, P.e2);
-    for (let k = 0; k < 9; k++) {
-      const x = px + (k % 3);
-      const z = z1 - 6 + Math.floor(k / 3);
-      const top = 9 + ((k * 7) % 3);
-      m.box(x, 9, z, x, top, z, P.g4).set(x, top + 1, z, k % 2 ? c1 : k % 3 ? c2 : P.g5);
+    const cx = px + 3;
+    const cz = z1 - 9;
+    m.cylinder(cx, cz, 8, 17, 4.6, (x, y) => (y >= 16 ? (y === 17 ? P.r4 : P.r3) : y === 8 ? P.r1 : x < cx - 1 ? P.r3 : P.r2));
+    m.cylinder(cx, cz, 17, 17, 3.0, P.e2);
+    for (let k = 0; k < 16; k++) {
+      const x = cx - 3 + (k % 4) * 2;
+      const z = cz - 3 + Math.floor(k / 4) * 2;
+      const top = 19 + ((k * 7) % 4);
+      m.box(x, 18, z, x, top, z, k % 3 ? P.g4 : P.g5).set(x + 1, top - 1, z, P.g5);
+      m.set(x, top + 1, z, k % 2 ? c1 : k % 3 ? c2 : P.g6);
+      if (k % 2) m.set(x, top + 2, z, c2);
     }
   }
   return m;
@@ -534,14 +621,14 @@ function buildDeck(seed) {
 function buildRoofWindow() {
   const m = new VoxelModel();
   const glass = new VoxelModel();
-  // Neben der Plane (z 28..49): weiter nördlich, damit sich nichts überlagert
-  for (let x = 10; x <= 23; x++) {
-    for (let z = 6; z <= 21; z++) {
-      const frame = x <= 11 || x >= 22 || z <= 7 || z >= 20;
-      const bar = z === 13 || z === 14;
+  // Neben der Plane (z 56..99): weiter nördlich, damit sich nichts überlagert
+  for (let x = 20; x <= 47; x++) {
+    for (let z = 12; z <= 43; z++) {
+      const frame = x <= 23 || x >= 44 || z <= 15 || z >= 40;
+      const bar = z === 27 || z === 28;
       const y = roofHeight(x) + 1;
-      if (frame) m.set(x, y, z, x <= 11 || z <= 7 ? P.e3 : P.e2).set(x, y + 1, z, z === 20 || z === 21 ? P.e4 : P.e3);
-      else if (bar) m.set(x, y, z, P.e3);
+      if (frame) m.set(x, y, z, x <= 23 || z <= 15 ? P.e3 : P.e2).set(x, y + 1, z, z >= 40 ? P.e5 : x <= 21 || z <= 13 ? P.e5 : P.e4);
+      else if (bar) m.set(x, y, z, P.e3).set(x, y + 1, z, P.e4);
       else glass.set(x, y, z, 0xffffff);
     }
   }
@@ -553,26 +640,35 @@ function buildToolBoard() {
   const m = new VoxelModel();
   const z = FD;
   // Lochwand
-  m.box(2, 14, z, 13, 33, z, (x, y) => (x === 2 || x === 13 || y === 14 || y === 33 ? P.e4 : (x % 3 === 1 && y % 3 === 1 ? P.e3 : P.e6)));
+  m.box(4, 28, z, 27, 67, z + 1, (x, y, zz) => (zz === z ? P.e3 : x <= 5 || x >= 26 || y <= 29 || y >= 66 ? P.e4 : x % 4 === 2 && y % 4 === 2 ? P.e3 : P.e6));
   // Säge: Blatt mit Zähnen, Griff
-  for (let y = 17; y <= 29; y++) {
-    const x = 4 + Math.floor((29 - y) / 6);
-    m.set(x, y, z + 1, P.s7).set(x + 1, y, z + 1, y % 2 ? P.s5 : P.s8);
+  for (let y = 34; y <= 59; y++) {
+    const x = 8 + Math.floor((59 - y) / 8);
+    m.set(x, y, z + 2, P.s7).set(x + 1, y, z + 2, P.s7).set(x + 2, y, z + 2, y % 2 ? P.s5 : P.s8);
   }
-  m.box(4, 30, z + 1, 6, 32, z + 1, (x, y) => (x === 5 && y === 31 ? P.e6 : P.e3));
+  m.box(8, 60, z + 2, 13, 65, z + 2, (x, y) => (x >= 10 && x <= 11 && y >= 62 && y <= 63 ? P.e6 : P.e3));
   // Axt: Stiel und Kopf
-  m.box(10, 17, z + 1, 10, 29, z + 1, P.e5);
-  m.box(8, 27, z + 1, 12, 30, z + 1, (x, y) => (x === 8 ? P.s8 : y === 30 ? P.s6 : P.s5));
+  m.box(20, 34, z + 2, 21, 59, z + 2, (x) => (x === 20 ? P.e6 : P.e5));
+  m.box(16, 54, z + 2, 25, 61, z + 2, (x, y) => (x <= 17 ? P.s8 : y === 61 ? P.s6 : x >= 20 && x <= 21 ? P.s4 : P.s5));
   // Hammer
-  m.box(7, 18, z + 1, 7, 24, z + 1, P.e4).box(6, 24, z + 1, 8, 25, z + 1, P.s4);
+  m.box(14, 36, z + 2, 15, 49, z + 2, P.e4).box(12, 48, z + 2, 17, 51, z + 2, (x) => (x === 12 ? P.s6 : P.s4));
   // Sägebock auf der Veranda mit einem Stamm
-  for (const lx of [1, 12]) {
-    m.box(lx, 4, z + 4, lx + 1, 12, z + 4, P.e3);
-    m.box(lx, 4, z + 8, lx + 1, 12, z + 8, P.e3);
-    m.box(lx, 9, z + 5, lx + 1, 9, z + 7, P.e4);
+  for (const lx of [2, 24]) {
+    m.box(lx, 8, z + 8, lx + 3, 25, z + 9, P.e3);
+    m.box(lx, 8, z + 16, lx + 3, 25, z + 17, P.e3);
+    m.box(lx, 18, z + 10, lx + 3, 19, z + 15, P.e4);
   }
-  m.box(0, 13, z + 4, 15, 14, z + 8, (x, y) => (y === 14 ? P.e6 : P.e4));
-  m.box(2, 15, z + 5, 12, 17, z + 7, (x, y, zz) => (x === 12 ? (y === 16 && zz === z + 6 ? P.e6 : P.e8) : y === 17 ? P.e4 : P.e3));
+  m.box(0, 26, z + 8, 31, 29, z + 17, (x, y) => (y === 29 ? P.e6 : y === 26 ? P.e3 : P.e4));
+  for (let x = 4; x <= 24; x++) {
+    for (let y = 30; y <= 35; y++) {
+      for (let zz = z + 10; zz <= z + 15; zz++) {
+        const d = Math.hypot(y + 0.5 - 32.5, zz + 0.5 - (z + 12.5));
+        if (d > 3.2) continue;
+        if (x === 24) m.set(x, y, zz, d < 1 ? P.e6 : Math.floor(d * 1.2) % 2 ? P.e7 : P.e8);
+        else m.set(x, y, zz, d > 2.4 ? (y > 32 ? P.e4 : P.e3) : P.e6);
+      }
+    }
+  }
   return m;
 }
 
@@ -580,22 +676,23 @@ function buildToolBoard() {
 function buildVerandaCrates() {
   const m = new VoxelModel();
   const crate = (x0, y0, z0, mark) =>
-    m.box(x0, y0, z0, x0 + 7, y0 + 7, z0 + 7, (x, y, z) => {
-      const edge = (x === x0 || x === x0 + 7) + (y === y0 || y === y0 + 7) + (z === z0 || z === z0 + 7) >= 2;
+    m.box(x0, y0, z0, x0 + 15, y0 + 15, z0 + 15, (x, y, z) => {
+      const edge = (x <= x0 + 1 || x >= x0 + 14) + (y <= y0 + 1 || y >= y0 + 14) + (z <= z0 + 1 || z >= z0 + 14) >= 2;
       if (edge) return P.e3;
-      if ((y - y0) % 3 === 0 && z === z0 + 7) return P.e3; // Fugen vorn
-      if (mark && z === z0 + 7 && y === y0 + 4 && x > x0 + 1 && x < x0 + 6) return P.r3;
-      return hash3(x, y, z, 5) < 0.3 ? P.e6 : P.e5;
+      if ((y - y0) % 5 === 0 && z === z0 + 15) return P.e3; // Fugen vorn
+      if (mark && z === z0 + 15 && (y === y0 + 8 || y === y0 + 9) && x > x0 + 3 && x < x0 + 12) return P.r3;
+      if (mark && z === z0 + 15 && x === x0 + 11 && y >= y0 + 6 && y <= y0 + 11) return P.r3; // Pfeil
+      return hash3(x >> 1, y >> 1, z >> 1, 5) < 0.3 ? P.e6 : P.e5;
     });
-  crate(100, 4, FD, true);
-  crate(108, 4, FD, false);
-  crate(104, 12, FD, false);
+  crate(200, 8, FD, true);
+  crate(216, 8, FD, false);
+  crate(208, 24, FD, false);
   // Sack oben auf den Kisten
-  m.ellipsoid(106, 21, FD + 4, 3, 2.2, 2.5, (x, y) => (y > 21 ? P.e9 : P.e8));
-  m.set(106, 23, FD + 4, P.e6);
+  m.ellipsoid(212, 43, FD + 8, 6, 4.4, 5, (x, y, z, dx, dy) => (y > 44 ? P.e9 : dy < -0.4 ? P.e7 : P.e8));
+  m.box(211, 47, FD + 7, 213, 48, FD + 9, P.e6).set(212, 49, FD + 8, P.e5);
   // Fass mit Reifen
-  m.cylinder(95, FD + 5, 4, 13, 3.6, (x, y) => (y === 6 || y === 11 ? P.s3 : x < 95 ? P.e5 : P.e4));
-  m.cylinder(95, FD + 5, 13, 13, 2.8, P.e3);
+  m.cylinder(190, FD + 10, 8, 27, 7.2, (x, y) => (y === 12 || y === 13 || y === 22 || y === 23 ? (y % 2 ? P.s4 : P.s3) : x < 188 ? P.e5 : (x + y) % 9 === 0 ? P.e3 : P.e4));
+  m.cylinder(190, FD + 10, 27, 27, 5.6, (x, y, z) => ((x + z) % 4 === 0 ? P.e4 : P.e3));
   return m;
 }
 
@@ -641,14 +738,14 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
   const { baseMat, glow } = materials;
   const ownColliders = [];
 
-  // Sichtbare Flächen für die Kamera (feines Maß), Schatten über einen groben
-  // Stellvertreter – feiner zeichnet die Schattenkarte ohnehin nicht.
-  const mesh = (model, material, { shadow = 'coarse', jitter = 0.04 } = {}) => {
-    const visual = new THREE.Mesh(model.toGeometry({ jitter, seed, visibleOnly: true, size: FINE }), material);
+  // Sichtbare Flächen für die Kamera (Maß 1/32), Schatten über einen groben
+  // Stellvertreter (1/8 m) – feiner zeichnet die Schattenkarte ohnehin nicht.
+  const mesh = (model, material, { shadow = 'coarse4', jitter = 0.04 } = {}) => {
+    const visual = new THREE.Mesh(model.toGeometry({ jitter, seed, visibleOnly: true, size: FINE32 }), material);
     visual.castShadow = false;
     visual.receiveShadow = true;
     if (shadow !== 'none') {
-      const proxy = new THREE.Mesh(shadowGeometry(model, shadow, FINE), SHADOW_PROXY_MATERIAL);
+      const proxy = new THREE.Mesh(shadowGeometry(model, shadow, FINE32), SHADOW_PROXY_MATERIAL);
       proxy.castShadow = true;
       proxy.layers.set(SHADOW_LAYER);
       visual.add(proxy);
@@ -670,7 +767,7 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
   const doorPivot = new THREE.Group();
   doorPivot.position.set(DOOR.x0 * V, FLOOR * V, (D - 1) * V);
   // Die Tür dreht sich: alle Flächen, wirft selbst Schatten.
-  const door = new THREE.Mesh(buildDoor(seed).toGeometry({ jitter: 0.04, seed, size: FINE }), baseMat);
+  const door = new THREE.Mesh(buildDoor(seed).toGeometry({ jitter: 0.04, seed, size: FINE32 }), baseMat);
   door.castShadow = true;
   door.receiveShadow = true;
   doorPivot.add(door);
@@ -724,7 +821,7 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
     door: { pivot: doorPivot, hinge: toWorld(DOOR.x0, 0, D), center: toWorld((DOOR.x0 + DOOR.x1 + 1) / 2, 0, D), angle: 0 },
     glow,
     lights: {
-      porch: toWorld(18.5, 14.75, 29.75), // Wandlaterne neben der Tür (feine Mitte 37, 29,5, 59,5)
+      porch: toWorld(18.5, 14.75, 29.75), // Wandlaterne neben der Tür (Mitte im Maß 1/32: 74, 59, 119)
     },
     chimney: toWorld(roofParts.chimneyTop.x, roofParts.chimneyTop.y, roofParts.chimneyTop.z),
     level,

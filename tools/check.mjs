@@ -277,6 +277,27 @@ async function runViewChecks(browser, url) {
     window.zomfy.setTime(22, 0);
     window.zomfy.teleport(2.0, -2.5, 0);
   });
+
+  // Detailgrad (M13g): alle Modellfamilien draußen doppelt fein (1/32 m) – gemessen an der Geometrie
+  const detail = await z(() => {
+    for (const id of ['juna', 'bert', 'hilde', 'yusuf', 'knopf']) window.zomfy.setSurvivor(id, 2);
+    window.zomfy.game.survivors.npcs.get('balduin');
+    window.zomfy.game.loot.spawn('teile', 3, 6);
+    return window.zomfy.detail();
+  });
+  const grob = Object.entries(detail).filter(([, v]) => v !== 32);
+  if (!grob.length) note(`✓ Detailgrad: ${Object.keys(detail).join(', ')} im Maß 1/32 (gut 2 px je Voxel bei 80 px/m)`);
+  else fail(`Detailgrad: nicht im Maß 1/32 – ${JSON.stringify(Object.fromEntries(grob))}`);
+  // … und die Bildlast bleibt im Rahmen (weite Ansicht, Hof am Mittag)
+  await z(() => {
+    window.zomfy.game.applySettings({ view: 'weit' });
+    window.zomfy.setTime(11, 0);
+    window.zomfy.teleport(2.0, -2.5, 0);
+  });
+  await settle(page, 10);
+  const last = await z(() => window.zomfy.stats());
+  if (last.triangles > 0 && last.triangles < 1500000) note(`✓ Bildlast im Maß 1/32: Hof mit ${Math.round(last.triangles / 1000)}k Dreiecken in ${last.calls} Zeichenaufrufen`);
+  else fail(`Bildlast im Hof: ${last.triangles} Dreiecke`);
   checkMessages(session);
   await session.context.close();
 }

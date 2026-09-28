@@ -11,6 +11,7 @@ import { createWorldMaterial } from '../render/materials.js';
 import { fbm, hash2, valueNoise } from '../core/rng.js';
 import { LAYOUT, V } from './layout.js';
 import { MAP, shoreX, ISLANDS } from './map.js';
+import { shade } from './voxelKit.js';
 
 export const AREA = MAP;
 const TEXEL = 1 / 16; // Kantenlänge eines Bodentexels
@@ -53,6 +54,7 @@ function forestFloor(h, h2, patch, clump) {
 /** Farbe eines Bodentexels an der Weltposition (x, z); `out.path` sagt, ob er zum Weg gehört. */
 function groundColor(map, x, z, i, j, seed, out) {
   out.path = false;
+  out.kind = 'see';
   const h = hash2(i, j, seed);
   const h2 = hash2(i, j, seed + 17);
   const patch = fbm(x * 0.16, z * 0.16, 3, seed);
@@ -69,6 +71,7 @@ function groundColor(map, x, z, i, j, seed, out) {
     if (s < 3.2) return h < 0.08 ? P.b3 : P.b2;
     return h < 0.05 ? P.b2 : pick(patch, P.b1, P.n4, 0.5);
   }
+  out.kind = 'sand';
   for (const isl of ISLANDS) {
     const d = Math.hypot(x - isl.x, (z - isl.z) * 1.25) + (map.noise(x, z, 0.9, 71) - 0.5) * 0.8;
     if (d < isl.r) return d > isl.r - 0.45 ? pick(h, P.s5, P.s4, 0.5) : d > isl.r - 1 ? pick(h, P.e8, P.s6, 0.6) : forestFloor(h, h2, patch, clump);
@@ -86,6 +89,7 @@ function groundColor(map, x, z, i, j, seed, out) {
   const wild = Math.max(0, Math.min(1, (edge + 3) / 3));
   const drift = valueNoise(x * 0.45, z * 0.45, seed + 31);
   let color = edge > 0.15 ? forestFloor(h, h2, patch, clump) : meadow(h, h2, patch, clump, wild, drift);
+  out.kind = edge > 0.15 ? 'wald' : 'wiese';
   // Waldsaum: dunkler, mit Laub
   if (edge > -0.6 && edge <= 0.15 && h < (edge + 0.6) * 0.9) color = h2 < 0.3 ? P.e4 : P.g3;
 
@@ -93,6 +97,7 @@ function groundColor(map, x, z, i, j, seed, out) {
   const dPath = map.sampleLinear(map.pathField, x, z) + (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.45;
   if (dPath < -0.1) {
     out.path = true;
+    out.kind = 'weg';
     // Seit M13 ruhiger: Fahrspuren und helle Flecken als Flächen, wenig Einzelpunkte
     const rut = valueNoise(x * 0.7, z * 0.7, seed + 21);
     const blot = valueNoise(x * 2.2, z * 2.2, seed + 41);
@@ -139,32 +144,88 @@ function groundColor(map, x, z, i, j, seed, out) {
   return color;
 }
 
+/**
+ * Feinzeichnung (M13g): Jeder Bodentexel (1/16 m) wird in 2 × 2 Unterfelder
+ * zu 1/32 m geteilt – Grashalme mit heller Spitze und Schatten, Laub als
+ * kleines Blatt, Körnung im Weg, Kiesel mit Licht und Schatten, Sandkörner.
+ * So hat der Boden die Detaildichte der Modelle, ohne mehr Rauschen zu
+ * rechnen. Unterfeld (a, b): a nach Osten, b nach Süden.
+ */
+function detail(c, kind, i, j, a, b, seed) {
+  const h = hash2(i, j, seed + 77);
+  const q = hash2(i * 2 + a, j * 2 + b, seed + 91);
+  switch (kind) {
+    case 'wiese':
+    case 'wald': {
+      const leaf = c === P.f4 || c === P.r3 || c === P.f5 || c === P.e6 || c === P.r2 || c === P.f3 || c === P.e5;
+      if (leaf) {
+        // Blatt: drei Viertel, eine Ecke Gras, eine Hälfte heller
+        const gap = Math.floor(h * 4);
+        if (a + b * 2 === gap) return kind === 'wald' ? P.t1 : P.g4;
+        return a === 0 ? shade(c, 1) : c;
+      }
+      const blade = kind === 'wald' ? 0.2 : 0.32;
+      if (h < blade) {
+        // Halm: oben hell, unten Schatten (Richtung je Texel verschieden)
+        const flip = h < blade / 2;
+        if (b === 0 && a === (flip ? 0 : 1)) return shade(c, 1);
+        if (b === 1 && a === (flip ? 1 : 0)) return shade(c, -1);
+      } else if (q < 0.05) return shade(c, -1);
+      return c;
+    }
+    case 'weg': {
+      if (c === P.s5 || c === P.s6) {
+        // Kiesel: oben links Licht, unten rechts Schatten
+        if (a === 0 && b === 0) return shade(c, 1);
+        if (a === 1 && b === 1) return shade(c, -2);
+        return c;
+      }
+      if (q < 0.1) return shade(c, -1);
+      if (q > 0.93) return shade(c, 1);
+      return c;
+    }
+    case 'sand':
+      if (q < 0.1) return shade(c, -1);
+      if (q > 0.95) return P.s7;
+      return c;
+    default:
+      return c;
+  }
+}
+
 export function createTerrain(seed, map) {
   const width = Math.round((AREA.x1 - AREA.x0) / TEXEL);
   const height = Math.round((AREA.z1 - AREA.z0) / TEXEL);
-  const data = new Uint8Array(width * height * 4);
-  const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6)
-  const out = { path: false };
+  const W2 = width * 2; // Feinzeichnung: 1/32 m je Unterfeld
+  const data = new Uint8Array(W2 * height * 2 * 4);
+  const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6), 1/16 m genügt
+  const out = { path: false, kind: 'wiese' };
   for (let j = 0; j < height; j++) {
     const z = AREA.z0 + (j + 0.5) * TEXEL;
     for (let i = 0; i < width; i++) {
       const x = AREA.x0 + (i + 0.5) * TEXEL;
       const c = groundColor(map, x, z, i, j, seed, out);
+      for (let b = 0; b < 2; b++) {
+        for (let a = 0; a < 2; a++) {
+          const f = detail(c, out.kind, i, j, a, b, seed);
+          const k = ((j * 2 + b) * W2 + i * 2 + a) * 4;
+          data[k] = (f >> 16) & 255;
+          data[k + 1] = (f >> 8) & 255;
+          data[k + 2] = f & 255;
+          data[k + 3] = 255;
+        }
+      }
       const k = (j * width + i) * 4;
-      data[k] = (c >> 16) & 255;
-      data[k + 1] = (c >> 8) & 255;
-      data[k + 2] = c & 255;
-      data[k + 3] = 255;
       if (out.path) {
-        glowData[k] = data[k];
-        glowData[k + 1] = data[k + 1];
-        glowData[k + 2] = data[k + 2];
+        glowData[k] = (c >> 16) & 255;
+        glowData[k + 1] = (c >> 8) & 255;
+        glowData[k + 2] = c & 255;
       }
       glowData[k + 3] = 255;
     }
   }
-  const makeTexture = (pixels) => {
-    const t = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+  const makeTexture = (pixels, w = width, hgt = height) => {
+    const t = new THREE.DataTexture(pixels, w, hgt, THREE.RGBAFormat, THREE.UnsignedByteType);
     t.colorSpace = THREE.SRGBColorSpace;
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
@@ -172,7 +233,7 @@ export function createTerrain(seed, map) {
     t.needsUpdate = true;
     return t;
   };
-  const texture = makeTexture(data);
+  const texture = makeTexture(data, W2, height * 2);
 
   const { x0, x1, z0, z1 } = AREA;
   const geometry = new THREE.BufferGeometry();
