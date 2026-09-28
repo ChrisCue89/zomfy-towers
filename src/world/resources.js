@@ -10,6 +10,9 @@ import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { hash3, Rng } from '../core/rng.js';
 import { BAY_NODES } from './layout.js';
 import { buildBirch, buildDeciduous, buildFir, buildRock, LEAVES } from './nature.js';
+import { FINE, stoneBlob } from './voxelKit.js';
+
+const V = 1 / 8; // grobes Maß (Bäume und Felsen bis M13c)
 
 /**
  * Regeln je Art. yield = pro Treffer, bonus = beim letzten Treffer.
@@ -37,59 +40,91 @@ export const SEARCH_REGROW_DAYS = 2;
 
 // --- Modelle ------------------------------------------------------------------
 
+// Seit M13 im feinen Maß (1/16 m, Koordinaten verdoppelt): Stumpf, Faserbusch,
+// Kiesel, Äste, Trieb und Schrotthaufen.
+
 function buildStump(seed, radius = 2) {
   const m = new VoxelModel();
-  m.cylinder(0, 0, 0, 1, radius + 0.4, (x, y, z) => {
-    if (y === 1) {
-      const d = Math.hypot(x + 0.5, z + 0.5);
-      return d < 0.9 ? P.e6 : d < radius - 0.4 ? P.e8 : P.e7;
+  const r = radius * 2 + 0.8;
+  m.cylinder(0, 0, 0, 3, r, (x, y, z) => {
+    const d = Math.hypot(x + 0.5, z + 0.5);
+    if (y === 3) {
+      if (d > r - 1.1) return P.e3; // Rinde
+      if (d < 1) return P.e6;
+      return Math.floor(d * 1.3) % 2 ? P.e7 : P.e8; // Jahresringe
     }
-    return hash3(x, y, z, seed) < 0.4 ? P.e3 : P.e2;
+    const a = Math.atan2(z + 0.5, x + 0.5);
+    return Math.floor((a / Math.PI) * 8 + 16) % 2 ? P.e3 : hash3(x, y, z, seed) < 0.4 ? P.e2 : P.e3;
   });
-  return m;
-}
-
-/** Faserbusch: dichter Horst mit hellen Spitzen und goldenen Samenrispen. */
-function buildTallGrass(seed) {
-  const m = new VoxelModel();
-  const rng = new Rng(seed);
-  for (let i = 0; i < 26; i++) {
-    const x = rng.int(-3, 2);
-    const z = rng.int(-2, 2);
-    const h = rng.int(3, 6);
-    for (let y = 0; y < h; y++) m.set(x, y, z, y === h - 1 ? (rng.chance(0.5) ? P.g9 : P.g8) : y === 0 ? P.g4 : P.g6);
-    if (rng.chance(0.35)) m.set(x, h, z, P.f6);
+  // Wurzelansätze
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const x = Math.round(dx * (r + 0.6));
+    const z = Math.round(dz * (r + 0.6));
+    m.box(Math.min(x, x - dx), 0, Math.min(z, z - dz), Math.max(x, x - dx), 0, Math.max(z, z - dz), P.e3);
   }
   return m;
 }
 
-/** Lose Steine: ein kleiner Haufen heller Brocken auf einem Fleck Erde – hebt sich vom Gras ab. */
+/** Faserbusch: dichter Horst langer, gebogener Halme mit hellen Spitzen und goldenen Samenrispen. */
+function buildTallGrass(seed) {
+  const m = new VoxelModel();
+  const rng = new Rng(seed);
+  for (let i = 0; i < 70; i++) {
+    const x0 = rng.int(-6, 5);
+    const z0 = rng.int(-4, 4);
+    const h = rng.int(7, 13);
+    const lean = rng.range(-0.35, 0.35);
+    for (let y = 0; y < h; y++) {
+      const x = Math.round(x0 + lean * (y * y) / h);
+      const c = y === h - 1 ? (rng.chance(0.5) ? P.g9 : P.g8) : y < 2 ? P.g4 : y < h * 0.6 ? P.g5 : P.g6;
+      m.set(x, y, z0, c);
+    }
+    if (rng.chance(0.3)) {
+      const x = Math.round(x0 + lean * h);
+      m.set(x, h, z0, P.f6).set(x, h + 1, z0, P.e8).set(x + (lean > 0 ? 1 : -1), h, z0, P.f6);
+    }
+  }
+  return m;
+}
+
+/** Lose Steine: ein Häufchen heller, runder Kiesel mit Glanzpunkt auf einem Fleck Erde – hebt sich vom Gras ab. */
 function buildPebbles(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
   // Dunkler Erdfleck, darauf ein Häufchen heller, runder Kiesel mit Glanz: sammelbar –
   // anders als die grauen Felsen und die Tupfer im Weg (m12-r1: keiner fand den Stein)
-  m.box(-4, 0, -3, 3, 0, 2, (x, y, z) => ((x === -4 || x === 3) && (z === -3 || z === 2) ? null : hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3));
-  const stones = [[-2, -1, 2], [1, 0, 2], [-1, 1, 2], [0, -2, 1], [2, 1, 1], [-3, 0, 1]];
-  for (const [x, z, h] of stones) {
-    const c = rng.pick([P.s8, P.s9, P.s8]);
-    m.box(x, 1, z, x + 1, h, z + 1, (vx, vy, vz) => (vy === h ? (vx === x && vz === z ? P.a4 : P.s9) : c));
+  m.ellipsoid(-0.5, 0, -0.5, 8, 1, 6.5, (x, y, z) => (y !== 0 ? null : hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3));
+  const stones = [[-4, -2, 2.6], [2, 0, 2.4], [-2, 2, 2.2], [0, -4, 2.0], [4, 3, 1.8], [-6, 1, 1.6], [5, -3, 1.5], [1, 4, 1.4]];
+  for (const [x, z, r] of stones) {
+    const tones = rng.chance(0.5) ? [P.s6, P.s7, P.s8, P.s9, P.s9] : [P.s5, P.s6, P.s7, P.s8, P.s9];
+    const pebble = stoneBlob(new VoxelModel(), 0, 0, r, r * 0.8, r * 0.85, seed + x * 7 + z, tones);
+    let top = null;
+    pebble.forEach((px, py, pz) => {
+      if (!top || py > top[1] || (py === top[1] && px + pz < top[0] + top[2])) top = [px, py, pz];
+    });
+    m.merge(pebble, x, 1, z);
+    if (top) m.set(x + top[0], 1 + top[1], z + top[2], P.a4); // Glanz
   }
-  m.set(-1, 3, 0, P.s9).set(0, 3, 1, P.a4);
   return m;
 }
 
-/** Äste: ein zusammengeschnürtes Bündel, das man im Gras sieht. */
+/** Äste: ein zusammengeschnürtes Bündel mit Zweigen und ein paar Blättern, das man im Gras sieht. */
 function buildBranches(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  for (let i = 0; i < 5; i++) {
-    const z0 = rng.int(-2, 1);
-    const y = i < 3 ? 0 : 1;
-    m.line(-4, y, z0, 3, y, z0 + rng.int(-1, 1), i % 2 ? P.e4 : P.e6);
+  for (let i = 0; i < 6; i++) {
+    const z0 = rng.int(-4, 2);
+    const y = i < 3 ? 0 : i < 5 ? 1 : 2;
+    const z1 = z0 + rng.int(-2, 2);
+    const c = i % 2 ? P.e4 : P.e5;
+    m.line(-8, y, z0, 7, y, z1, c);
+    m.line(-8, y, z0 + 1, 7, y, z1 + 1, i % 2 ? P.e3 : P.e4);
+    // ein Zweig schräg ab
+    const fx = rng.int(-4, 4);
+    m.line(fx, y, z0 + 1, fx + 3, y, z0 + 3 + rng.int(0, 1), P.e4);
   }
-  m.box(-1, 0, -2, -1, 2, 1, P.e8); // Schnur
-  m.set(2, 2, 0, P.g6).set(-3, 1, -1, P.g5);
+  m.box(-2, 0, -5, -1, 3, 3, (x, y) => (y === 3 ? P.e9 : P.e8)); // Schnur
+  m.set(5, 2, 0, P.g6).set(6, 2, 1, P.g7).set(-6, 1, -2, P.f5).set(-5, 2, -2, P.f6);
   return m;
 }
 
@@ -140,26 +175,46 @@ function markerStake(m) {
 /** Frischer Trieb auf dem Stumpf: morgen steht hier wieder ein Baum. */
 function buildSprout() {
   const m = new VoxelModel();
-  m.set(0, 2, 0, P.g5).set(0, 3, 0, P.g6).set(0, 4, 0, P.g7).set(-1, 4, 0, P.g8).set(1, 5, 0, P.g8).set(-1, 3, 1, P.g7).set(1, 4, -1, P.g6).set(0, 5, 0, P.g9);
+  m.box(0, 4, 0, 0, 9, 0, P.g4);
+  m.set(-1, 7, 0, P.g6).set(-2, 8, 0, P.g7).set(-1, 8, 0, P.g6);
+  m.set(1, 9, 0, P.g6).set(2, 10, 0, P.g7).set(1, 10, 0, P.g8);
+  m.set(0, 10, 0, P.g8).set(0, 11, 0, P.g9).set(0, 8, 1, P.g6);
   return m;
 }
 
+/** Schrotthaufen: angelehnter Reifen, blaue Öltonne, ein schräges Wellblech, Rohre, Dosen und Kleinkram. */
 function buildScrapPile(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  // Reifen
-  for (let a = 0; a < 16; a++) {
-    const t = (a / 16) * Math.PI * 2;
-    m.set(Math.round(Math.cos(t) * 2.4) - 3, 0, Math.round(Math.sin(t) * 2.4), P.s1);
-    m.set(Math.round(Math.cos(t) * 2.4) - 3, 1, Math.round(Math.sin(t) * 2.4), P.s1);
+  // Reifen, schräg angelehnt (Ring in der x-y-Ebene)
+  for (let x = -10; x <= -1; x++) {
+    for (let y = 0; y <= 9; y++) {
+      const d = Math.hypot(x + 0.5 + 5.5, y + 0.5 - 4.5);
+      if (d > 4.8 || d < 2.4) continue;
+      for (let z = 1; z <= 3; z++) m.set(x, y, z + (y > 5 ? -1 : 0), d > 4 && (x + y) % 2 ? P.s2 : P.s1);
+    }
   }
-  // Blechplatte schräg
-  for (let x = -1; x <= 4; x++) for (let z = -3; z <= 0; z++) m.set(x, Math.max(0, 3 - Math.abs(z + 1) - (x > 2 ? 1 : 0)), z, (x + z) % 3 ? P.s5 : P.r3);
-  // Fass
-  m.cylinder(2, 2, 0, 3, 1.4, (x, y) => (y === 1 ? P.s4 : P.b2));
+  // Wellblech schräg über dem Haufen
+  for (let x = -3; x <= 8; x++) {
+    for (let z = -7; z <= -1; z++) {
+      const y = Math.max(0, 6 - Math.abs(z + 4) - (x > 5 ? 2 : 0));
+      const rust = hash3(x, 0, z, seed) > 0.72;
+      m.set(x, y, z, rust ? P.r2 : x % 3 === 0 ? P.s4 : P.s5);
+    }
+  }
+  // Blaue Öltonne mit Sicken und Rostflecken (nicht rund wie ein Kürbis: gerade Wand, flacher Deckel)
+  m.cylinder(5, 4, 0, 9, 2.8, (x, y, z) => {
+    if (y === 3 || y === 6) return P.s4;
+    if (hash3(x, y, z, seed) > 0.82) return P.r2;
+    return x < 5 ? P.b3 : P.b2;
+  });
+  m.cylinder(5, 4, 9, 9, 2.8, (x, y, z) => (Math.hypot(x + 0.5 - 5, z + 0.5 - 4) > 2 ? P.s5 : P.b2));
+  m.set(6, 10, 4, P.s6);
   // Rohre und Kram
-  m.line(-4, 0, 3, 3, 1, 3, P.s4);
-  for (let i = 0; i < 8; i++) m.set(rng.int(-4, 4), 0, rng.int(-3, 3), rng.pick([P.s3, P.s6, P.r2, P.e4, P.b3]));
+  m.line(-8, 0, 6, 7, 1, 7, P.s4).line(-8, 1, 6, 7, 2, 7, P.s6);
+  m.cylinder(-4, -4, 0, 2, 1.2, (x, y) => (y === 2 ? P.s6 : P.r3)); // Dose
+  m.cylinder(1, 6, 0, 0, 1.8, (x, z) => ((x + z) % 2 ? P.s7 : P.s6)); // Radkappe
+  for (let i = 0; i < 12; i++) m.set(rng.int(-9, 9), 0, rng.int(-7, 8), rng.pick([P.s3, P.s6, P.r2, P.e4, P.b3, P.s7]));
   return m;
 }
 
@@ -262,8 +317,8 @@ export class ResourceNodes {
         case 'baum':
           model = treeModel(def.model, Math.floor(s));
           radius = def.model.startsWith('jung') ? 0.25 : 0.32;
-          node.stump = createStaticVoxelObject(buildStump(Math.floor(s), def.model.startsWith('jung') ? 1.4 : 2), materials.world, { seed });
-          node.sprout = createStaticVoxelObject(buildSprout(), materials.world, { seed, shadow: 'none' });
+          node.stump = createStaticVoxelObject(buildStump(Math.floor(s), def.model.startsWith('jung') ? 1.4 : 2), materials.world, { seed, size: FINE, shadow: 'coarse' });
+          node.sprout = createStaticVoxelObject(buildSprout(), materials.world, { seed, shadow: 'none', size: FINE });
           break;
         case 'felsen':
           model = buildRock(Math.floor(s), def.model === 'gross' ? 1.4 : 1.0);
@@ -289,7 +344,9 @@ export class ResourceNodes {
           continue;
       }
       const material = def.kind === 'baum' ? materials.occluder : materials.world;
-      node.object = createStaticVoxelObject(model, material, { seed, shadow: def.kind === 'baum' ? 'coarse' : 'full' });
+      // Bäume und Felsen kommen mit der Natur ins feine Maß (M13c), der Rest schon jetzt
+      const coarse = def.kind === 'baum' || def.kind === 'felsen';
+      node.object = createStaticVoxelObject(model, material, { seed, shadow: def.kind === 'baum' || !coarse ? 'coarse' : 'full', size: coarse ? V : FINE });
       node.object.position.set(def.x, 0, def.z);
       this.group.add(node.object);
       if (node.stump) {

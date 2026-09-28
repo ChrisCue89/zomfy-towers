@@ -1,37 +1,59 @@
 // Voxel-Modelle der Bauten. Alle Modelle sind um die Mitte ihres Grundrisses
 // gebaut (x ∈ [−W/2, W/2), z ∈ [−D/2, D/2) in Voxeln), damit sie sich in
-// 90°-Schritten drehen lassen, ohne vom Raster zu rutschen.
+// 90°-Schritten drehen lassen, ohne vom Raster zu rutschen. Seit M13 sind alle
+// im feinen Maß (1/16 m, BUILDING_UNIT): ein Feld sind 16 × 16 Voxel.
 
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
+import { stoneBlob } from './voxelKit.js';
 
+/** Alle Bauten sind im feinen Maß gebaut (M13; Barrikaden schon seit M9.1). */
+export const BUILDING_UNIT = 1 / 16;
+
+/**
+ * Werkbank (M13 im feinen Maß, 2 × 1 Felder: x −16..15, z −8..7): kräftige
+ * Beine, Platte aus Bohlen mit heller Vorderkante, Ablage mit Brettern,
+ * Schraubstock vorn rechts, hinten eine Lochwand mit Säge, Hammer, Schlüssel
+ * und Zange, vorn links ein Laternchen.
+ */
 export function buildWorkbench(seed) {
   const m = new VoxelModel();
-  for (const [x, z] of [[-7, -3], [6, -3], [-7, 2], [6, 2]]) m.box(x, 0, z, x, 5, z, P.e3);
-  m.box(-7, 6, -3, 6, 6, 2, (x, y, z) => (z === 2 ? P.e5 : hash3(x, y, z, seed) > 0.9 ? P.e5 : P.e6));
-  m.box(-6, 2, -2, 5, 2, 1, P.e4);
-  m.box(-5, 3, -2, 1, 3, 0, (x) => (x % 2 ? P.e7 : P.e8)); // Bretterstapel
-  // Schraubstock
-  m.box(4, 7, 0, 6, 8, 2, P.s4);
-  m.box(5, 9, 1, 5, 9, 1, P.s6);
-  // Werkzeugwand mit Säge, Hammer, Schlüssel
-  m.box(-7, 7, -3, 2, 12, -3, (x, y) => ((x + y) % 4 === 0 ? P.e3 : P.e4));
-  m.box(-6, 9, -2, -3, 9, -2, P.s6).box(-2, 9, -2, -2, 9, -2, P.e5);
-  m.box(-1, 8, -2, -1, 11, -2, P.e5).box(-2, 11, -2, 0, 11, -2, P.s3);
-  m.box(1, 8, -2, 1, 10, -2, P.s5);
-  // kleine Laterne
-  m.set(-6, 7, 1, P.s2).set(-6, 8, 1, P.f6);
+  for (const [x, z] of [[-14, -6], [12, -6], [-14, 4], [12, 4]]) m.box(x, 0, z, x + 1, 11, z + 1, (xx) => (xx === x ? P.e4 : P.e3));
+  m.box(-15, 12, -7, 14, 13, 6, (x, y, z) => {
+    if (z === 6) return y === 13 ? P.e7 : P.e5; // Vorderkante
+    if (y === 12) return P.e4;
+    return z % 4 === 1 ? P.e5 : hash3(x, y, z, seed) > 0.93 ? P.e5 : P.e6; // Bohlen
+  });
+  m.box(-13, 4, -5, 11, 4, 4, P.e4); // Ablage
+  m.box(-11, 5, -4, 1, 6, 1, (x, y) => (x % 3 === 0 ? P.e6 : y === 6 ? P.e8 : P.e7)); // Bretterstapel
+  // Schraubstock mit Spindel und Knebel
+  m.box(8, 14, 1, 13, 16, 5, (x, y) => (y === 16 ? P.s5 : x === 8 ? P.s3 : P.s4));
+  m.box(10, 14, 6, 11, 15, 8, P.s5);
+  m.box(9, 15, 9, 12, 15, 9, P.s6);
+  // Hobel und Späne auf der Platte
+  m.box(-4, 14, 0, 1, 15, 2, (x, y) => (y === 15 ? P.e5 : P.e4)).set(-2, 16, 1, P.e3);
+  for (const [x, z] of [[3, 3], [4, 1], [-6, 3], [5, 4]]) m.set(x, 14, z, P.e8);
+  // Lochwand hinten mit Werkzeug
+  m.box(-15, 14, -8, 5, 27, -8, (x, y) => (x === -15 || x === 5 || y === 27 ? P.e3 : x % 3 === 0 && y % 3 === 0 ? P.e3 : P.e5));
+  for (let y = 17; y <= 25; y++) m.set(-12 + Math.floor((25 - y) / 4), y, -7, y % 2 ? P.s7 : P.s6); // Säge
+  m.box(-13, 25, -7, -11, 26, -7, P.e3);
+  m.box(-7, 17, -7, -7, 23, -7, P.e4).box(-8, 23, -7, -6, 24, -7, P.s4); // Hammer
+  m.box(-3, 18, -7, -3, 24, -7, P.s6).box(-4, 24, -7, -2, 25, -7, P.s6).set(-3, 25, -7, null); // Schlüssel
+  m.box(1, 18, -7, 1, 22, -7, P.r3).box(2, 18, -7, 2, 22, -7, P.r3).box(1, 23, -7, 2, 24, -7, P.s5); // Zange
+  // Laternchen vorn links (das Glas leuchtet separat)
+  m.box(-14, 14, 2, -11, 14, 5, P.s2).box(-14, 19, 2, -11, 19, 5, P.s3);
+  for (const [x, z] of [[-14, 2], [-11, 2], [-14, 5], [-11, 5]]) m.box(x, 15, z, x, 18, z, P.s2);
   return m;
 }
 
 /** Leuchtende Teile der Werkbank (das Laternchen). */
 export function buildWorkbenchGlow() {
-  return new VoxelModel().set(-6, 8, 1, 0xffffff);
+  return new VoxelModel().box(-13, 15, 3, -12, 18, 4, 0xffffff);
 }
 
 /** Barrikaden und ihre Trümmer sind im feinen Maß gebaut (M9.1). */
-export const BARRICADE_UNIT = 1 / 16;
+export const BARRICADE_UNIT = BUILDING_UNIT;
 
 /**
  * Barrikaden (Meilenstein 9, DESIGN.md 6.10; M9.1 neu gebaut – der Auftraggeber
@@ -150,112 +172,151 @@ export function buildRubble(seed, level = 1) {
   return m;
 }
 
+/** Laternenpfahl: Steinfuß, Pfahl mit Kappe, Ausleger, daran eine Laterne mit Dach. */
 export function buildLampPost(seed) {
   const m = new VoxelModel();
-  m.box(-2, 0, -2, 1, 0, 1, (x, y, z) => (hash3(x, y, z, seed) < 0.5 ? P.s4 : P.s5));
-  m.box(-1, 1, -1, 0, 15, 0, (x, y) => (y % 6 === 0 ? P.e2 : P.e3));
-  m.box(-1, 15, 1, 0, 15, 3, P.e3);
-  m.box(-1, 13, 2, 0, 14, 2, P.s3); // Haken
-  m.box(-2, 12, 1, 1, 12, 4, P.s2); // Dach der Laterne
-  m.box(-2, 8, 1, 1, 8, 4, P.s2); // Boden der Laterne
-  for (const [x, z] of [[-2, 1], [1, 1], [-2, 4], [1, 4]]) m.box(x, 9, z, x, 11, z, P.s3);
+  for (const [x, z, r] of [[-3, -3, 2.2], [2, -2, 1.8], [-2, 2, 1.9], [2, 2, 1.6]]) stoneBlob(m, x, z, r, 1.8, r, seed + x * 3 + z);
+  m.box(-2, 0, -2, 0, 31, 0, (x, y) => (y % 10 === 0 ? P.e2 : x === -2 ? P.e4 : P.e3));
+  m.box(-3, 32, -3, 1, 32, 1, P.e3).box(-2, 33, -2, 0, 33, 0, P.e4);
+  m.box(-2, 29, 1, -1, 30, 6, (x, y) => (y === 30 ? P.e4 : P.e3)); // Ausleger
+  m.box(-2, 26, 5, -1, 28, 5, P.s3); // Haken
+  // Laterne: Dach mit Spitze, Boden, vier Streben
+  m.box(-4, 24, 2, 1, 24, 8, P.s2).box(-3, 25, 3, 0, 25, 7, P.s3).box(-2, 26, 4, -1, 26, 6, P.s4);
+  m.box(-4, 16, 2, 1, 16, 8, P.s1).box(-3, 15, 4, 0, 15, 6, P.s2);
+  for (const [x, z] of [[-4, 2], [1, 2], [-4, 8], [1, 8]]) m.box(x, 17, z, x, 23, z, P.s2);
   return m;
 }
 
 export function buildLampPostGlow() {
   const m = new VoxelModel();
-  m.box(-1, 9, 2, 0, 11, 3, 0xffffff);
+  m.box(-3, 17, 3, 0, 23, 7, 0xffffff);
   return m;
 }
 
-/** Flachsbeet: Holzrahmen, dunkle Erde, Reihen aus Flachs mit blauen Blüten. */
+/** Flachsbeet: Bretterrahmen, dunkle Erde, drei Reihen Flachs mit blauen Blüten. */
 export function buildGardenPlot(seed) {
   const m = new VoxelModel();
-  m.box(-7, 0, -3, 6, 1, 2, (x, y, z) => (x === -7 || x === 6 || z === -3 || z === 2 ? P.e4 : y === 1 ? P.e2 : P.e3));
-  for (let x = -6; x <= 5; x += 2) {
-    for (const z of [-2, 0, 1]) {
-      const h = hash3(x, 0, z, seed) < 0.5 ? 3 : 4;
+  m.box(-14, 0, -6, 13, 3, 5, (x, y, z) => {
+    const frame = x <= -13 || x >= 12 || z <= -5 || z >= 4;
+    if (frame) return y === 3 ? (x % 7 === 0 ? P.e4 : P.e6) : z >= 4 && y === 1 ? P.e3 : P.e4;
+    return y === 3 ? (hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3) : P.e2;
+  });
+  for (const z of [-3, 0, 2]) {
+    for (let x = -11; x <= 10; x += 2) {
       const ox = hash3(x, 1, z, seed) < 0.3 ? 1 : 0;
-      for (let y = 2; y < 2 + h; y++) m.set(x + ox, y, z, y < 3 ? P.g5 : P.g6);
+      const h = 5 + Math.floor(hash3(x, 0, z, seed) * 4);
+      for (let y = 4; y < 4 + h; y++) m.set(x + ox, y, z, y < 6 ? P.g5 : P.g6);
+      m.set(x + ox + 1, 6 + (x % 3), z, P.g6); // Blättchen
       const bloom = hash3(x, 2, z, seed);
-      m.set(x + ox, 2 + h, z, bloom < 0.6 ? P.b4 : bloom < 0.85 ? P.b5 : P.a4);
+      const top = 4 + h;
+      const c = bloom < 0.6 ? P.b4 : bloom < 0.85 ? P.b5 : P.a4;
+      m.set(x + ox, top, z, c).set(x + ox - 1, top, z, c).set(x + ox, top + 1, z, P.f6);
     }
   }
   return m;
 }
 
+/** Gartenbank mit Lehne: Seitenteile, drei Sitzlatten, zwei Lehnenlatten, Armlehnen. */
 export function buildBench(seed) {
   const m = new VoxelModel();
-  for (const x of [-6, 5]) {
-    m.box(x, 0, -1, x, 2, -1, P.e3);
-    m.box(x, 0, 1, x, 2, 1, P.e3);
-    m.box(x, 4, -2, x, 6, -2, P.e3);
+  for (const x of [-13, 11]) {
+    m.box(x, 0, 2, x + 1, 5, 3, P.e3); // Vorderbein
+    m.box(x, 0, -4, x + 1, 15, -3, P.e3); // Hinterbein bis zur Lehne
+    m.box(x, 6, -4, x + 1, 6, 3, P.e3); // Zarge
+    m.box(x, 9, -3, x + 1, 9, 3, P.e4).box(x, 7, 3, x + 1, 8, 3, P.e3); // Armlehne
   }
-  m.box(-7, 3, -1, 6, 3, 1, (x, y, z) => (z === 1 ? P.e5 : hash3(x, y, z, seed) > 0.85 ? P.e5 : P.e6));
-  m.box(-7, 5, -2, 6, 6, -2, (x, y) => (y === 6 ? P.e5 : P.e4));
+  for (const [z0, z1] of [[-3, -2], [-1, 0], [1, 2]]) {
+    m.box(-14, 7, z0, 13, 7, z1, (x, y, z) => (z === z1 ? P.e5 : hash3(x, y, z, seed) > 0.9 ? P.e5 : P.e6));
+  }
+  for (const y0 of [10, 13]) m.box(-14, y0, -4, 13, y0 + 1, -4, (x, y) => (y === y0 + 1 ? P.e6 : P.e5));
   return m;
 }
 
 /**
- * Schlafzelt für Überlebende (Meilenstein 6): Giebelzelt aus geflickter Plane,
- * First von Nord nach Süd, der Eingang zeigt zur Kamera. Nachts leuchtet drin
- * ein Laternchen durch die offene Klappe.
+ * Schlafzelt für Überlebende (Meilenstein 6, M13 im feinen Maß): Giebelzelt
+ * aus geflickter Plane mit Nähten, First von Nord nach Süd, vorn ein Eingang
+ * mit aufgerollten, festgebundenen Klappen; drinnen ein Schlafsack und nachts
+ * ein Laternchen. Spannleinen zu den Heringen.
  */
 export function buildTent(seed) {
   const m = new VoxelModel();
   const canvas = (x, y, z) => {
-    if (hash3(Math.floor(x / 3), y, Math.floor(z / 4), seed) > 0.86) return P.b3; // Flicken
-    if (y === 4 || y === 5) return P.r3; // Streifen
-    return (x + z) % 5 === 0 ? P.e7 : P.e8;
+    if (hash3(Math.floor(x / 5), Math.floor(y / 4), Math.floor(z / 6), seed) > 0.88) return (x + y) % 4 === 0 ? P.b2 : P.b3; // Flicken
+    if (y === 7 || y === 8) return y === 7 ? P.r2 : P.r3; // Streifen
+    if (z % 7 === 0) return P.e6; // Nähte
+    return (x + z) % 6 === 0 ? P.e7 : P.e8;
   };
-  for (let y = 0; y <= 10; y++) {
-    const half = 7 - Math.floor(y * 0.68);
-    m.box(-half - 1, y, -7, half, y, 5, canvas);
+  for (let y = 0; y <= 21; y++) {
+    const half = 14 - Math.floor(y * 0.68);
+    m.box(-half - 1, y, -14, half, y, 11, canvas);
   }
-  // Eingang vorn: eine echte Öffnung, dahinter Dunkel (und nachts das Laternchen)
-  m.box(-8, 0, 6, 7, 0, 6, P.e3);
-  for (let y = 0; y <= 5; y++) {
-    const half = 3 - Math.floor(y / 2);
-    m.remove(-half - 1, y, 4, half, y, 5);
-    for (let x = -half - 1; x <= half; x++) m.set(x, y, 3, y === 0 ? P.e2 : P.e1);
+  // Eingang vorn: eine echte Öffnung, dahinter Dunkel, ein Schlafsack
+  m.box(-16, 0, 12, 15, 0, 13, P.e3);
+  for (let y = 0; y <= 11; y++) {
+    const half = 6 - Math.floor(y / 2);
+    m.remove(-half - 1, y, 6, half, y, 11);
+    for (let x = -half - 1; x <= half; x++) m.set(x, y, 5, y === 0 ? P.e2 : P.e1);
   }
-  m.box(-6, 1, 6, -4, 5, 6, (x, y) => (y === 4 || y === 5 ? P.r3 : P.e7));
-  m.box(3, 1, 6, 5, 5, 6, (x, y) => (y === 4 || y === 5 ? P.r3 : P.e7));
-  // Firststange, Heringe mit Spannleinen
-  m.box(-1, 11, -8, 0, 11, 6, P.e3);
-  for (const [x, z] of [[-8, -8], [7, -8], [-8, 7], [7, 7]]) m.set(x, 0, z, P.e3);
+  m.box(-4, 0, 6, 3, 1, 10, (x, y) => (y === 1 ? (x % 3 === 0 ? P.b3 : P.b4) : P.b2)); // Schlafsack
+  m.box(-4, 2, 6, -1, 2, 7, P.a4); // Kissen
+  // Aufgerollte Klappen mit Bändern
+  for (const x0 of [-12, 7]) {
+    m.box(x0, 2, 12, x0 + 4, 10, 12, (x, y) => (y === 8 ? P.r3 : x === x0 || x === x0 + 4 ? P.e6 : P.e7));
+  }
+  // Firststange, Heringe, Spannleinen
+  m.box(-1, 22, -16, 0, 22, 12, P.e3);
+  for (const [x, z] of [[-16, -16], [15, -16], [-16, 15], [15, 15]]) m.box(x, 0, z, x, 1, z, P.e3);
+  m.line(-1, 21, 12, -1, 1, 15, P.e8);
+  m.line(0, 21, -15, 0, 1, -16, P.e8);
   return m;
 }
 
 export function buildTentGlow() {
   const m = new VoxelModel();
-  m.box(-1, 1, 4, 0, 2, 4, 0xffffff);
+  m.box(1, 2, 7, 2, 4, 8, 0xffffff);
   return m;
 }
 
 /**
- * Holzlager (M11, DESIGN.md 6.8): Scheite unter einem Pultdach, die hellen
- * Stirnseiten zeigen zur Kamera. Ab 2 × 1 Feldern, wie das Beet zum Ernten.
+ * Holzlager (M11, DESIGN.md 6.8; M13 im feinen Maß): Scheite unter einem
+ * Pultdach aus Schindeln, die hellen Stirnseiten mit Jahresringen zeigen zur
+ * Kamera. Ab 2 × 1 Feldern, wie das Beet zum Ernten.
  */
 export function buildWoodpile(seed) {
   const m = new VoxelModel();
-  for (const [x, z, h] of [[-8, -4, 11], [7, -4, 11], [-8, 3, 9], [7, 3, 9]]) m.box(x, 0, z, x, h, z, P.e3); // Pfosten
-  m.box(-7, 0, -3, 6, 0, 2, P.e3);
+  for (const [x, z, h] of [[-16, -8, 23], [14, -8, 23], [-16, 6, 19], [14, 6, 19]]) m.box(x, 0, z, x + 1, h, z + 1, (xx) => (xx === x ? P.e4 : P.e3)); // Pfosten
+  m.box(-14, 0, -6, 13, 1, 5, (x, y) => (y === 1 && x % 6 === 0 ? P.e3 : P.e4)); // Unterlage
   for (let row = 0; row < 4; row++) {
-    for (let k = 0; k < 6; k++) {
-      const cx = -7 + k * 2 + (row % 2);
-      if (cx > 5) continue;
-      const y = 1 + row * 2;
-      const bark = hash3(cx, row, 0, seed) < 0.5 ? P.e4 : P.e3;
-      m.box(cx, y, -3, cx + 1, y + 1, 2, (x, yy, z) => (z === 2 ? ((x + yy + row) % 2 ? P.e7 : P.e8) : bark));
+    const shift = row % 2 ? 2 : 0;
+    for (let k = 0; k < 7; k++) {
+      const x0 = -14 + shift + k * 4;
+      if (x0 + 3 > 13) continue;
+      const y0 = 2 + row * 4;
+      const zEnd = 5 - (hash3(k, row, 1, seed) < 0.35 ? 1 : 0);
+      for (let z = -6; z <= zEnd; z++) {
+        for (let dx = 0; dx < 4; dx++) {
+          for (let dy = 0; dy < 4; dy++) {
+            if ((dx === 0 || dx === 3) && (dy === 0 || dy === 3)) continue;
+            const bark = dx === 0 || dx === 3 || dy === 0 || dy === 3;
+            let c;
+            if (z === zEnd) c = bark ? P.e4 : (dx + dy + row) % 3 === 0 ? P.e7 : P.e8;
+            else c = bark ? (hash3(x0 + dx, y0 + dy, z, seed) < 0.4 ? P.e2 : P.e3) : P.e6;
+            m.set(x0 + dx, y0 + dy, z, c);
+          }
+        }
+      }
     }
   }
-  // Pultdach, nach Süden geneigt
-  for (let z = -5; z <= 4; z++) {
-    const y = 12 - Math.floor((z + 5) / 3);
-    m.box(-9, y, z, 8, y, z, (x) => (x % 2 ? P.e5 : P.e6));
+  // Pultdach aus Schindeln, nach Süden geneigt
+  for (let z = -10; z <= 9; z++) {
+    const y = 24 - Math.floor((z + 10) / 4);
+    m.box(-18, y, z, 17, y, z, (x) => {
+      const row = Math.floor((z + 10) / 4);
+      const shingle = Math.floor((x + (row % 2) * 3) / 6);
+      if ((x + (row % 2) * 3) % 6 === 0) return P.e3;
+      return (z + 10) % 4 === 3 ? P.e4 : hash3(shingle, row, 0, seed) < 0.4 ? P.e5 : P.e6;
+    });
   }
-  m.box(-6, 1, 3, -5, 2, 4, P.e6); // Hackklotz daneben
   return m;
 }
 

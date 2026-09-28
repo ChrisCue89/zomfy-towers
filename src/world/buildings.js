@@ -12,7 +12,7 @@ import { createGlowMaterial, createSilhouetteMaterial } from '../render/material
 import { P } from '../render/palette.js';
 import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
 import { towerStatsOf } from '../data/towers.js';
-import { BUILDING_MODELS, buildBarricade, buildRubble, BARRICADE_UNIT } from './buildingModels.js';
+import { BUILDING_MODELS, buildBarricade, buildRubble, BUILDING_UNIT } from './buildingModels.js';
 import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { V } from './layout.js';
 
@@ -109,9 +109,10 @@ export class Buildings {
       this.models.set(key, { model, glow: s.glow ? s.glow() : null });
     }
     const { model, glow } = this.models.get(key);
-    const size = type === 'barrikade' ? BARRICADE_UNIT : V; // Barrikaden im feinen Maß (M9.1)
-    const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow, size });
-    if (glow) group.add(createStaticVoxelObject(glow, glowMaterial, { turns, shadow: 'none', jitter: 0 }));
+    // Alle Bauten im feinen Maß (Barrikaden seit M9.1, der Rest seit M13), Schatten grob
+    const size = BUILDING_UNIT;
+    const group = createStaticVoxelObject(model, material, { turns, seed: this.seed, shadow: shadow === 'full' ? 'coarse' : shadow, size });
+    if (glow) group.add(createStaticVoxelObject(glow, glowMaterial, { turns, shadow: 'none', jitter: 0, size }));
     return group;
   }
 

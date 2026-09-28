@@ -10,381 +10,463 @@ import { LAYOUT, V } from './layout.js';
 import { buildDeciduous } from './nature.js';
 import { BAY } from './map.js';
 import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
-
-// --- Bausteine ----------------------------------------------------------------
-
-/** Liegender Baumstamm entlang der x-Achse (Mittelachse auf Höhe r). */
-function log(m, x0, x1, cy, cz, r, seed, { ends = true, moss = false } = {}) {
-  for (let x = x0; x <= x1; x++) {
-    for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
-      for (let z = Math.floor(cz - r); z <= Math.ceil(cz + r); z++) {
-        const dy = y + 0.5 - cy;
-        const dz = z + 0.5 - cz;
-        const d = Math.sqrt(dy * dy + dz * dz);
-        if (d > r) continue;
-        let c;
-        if (ends && (x === x0 || x === x1)) c = d < r * 0.35 ? P.e6 : d < r * 0.7 ? P.e8 : P.e7;
-        else {
-          const h = hash3(x, y, z, seed);
-          c = dy > r * 0.4 ? (h < 0.4 ? P.e4 : P.e3) : h < 0.3 ? P.e3 : P.e2;
-          if (moss && dy > r * 0.5 && h > 0.55) c = h > 0.8 ? P.g5 : P.g4;
-        }
-        m.set(x, y, z, c);
-      }
-    }
-  }
-}
-
-/** Liegender Stamm entlang der z-Achse. */
-function logZ(m, z0, z1, cx, cy, r, seed, options) {
-  const tmp = new VoxelModel();
-  log(tmp, z0, z1, cy, 0, r, seed, options);
-  tmp.forEach((x, y, z, c) => m.set(cx + z, y, x, c));
-}
-
-function stone(m, cx, cz, seed, size = 1) {
-  const rng = new Rng(seed);
-  const w = Math.round(rng.range(1, 2) * size);
-  const d = Math.round(rng.range(1, 2) * size);
-  const h = Math.round(rng.range(1, 2) * size);
-  m.box(cx, 0, cz, cx + w, h, cz + d, (x, y, z) => {
-    const r = hash3(x, y, z, seed);
-    if (y === h && (x === cx || x === cx + w) && (z === cz || z === cz + d) && r < 0.6) return null;
-    return y === h ? (r < 0.5 ? P.s6 : P.s7) : r < 0.5 ? P.s4 : P.s5;
-  });
-}
+import { FINE, shade, logX, logZ, stoneBlob } from './voxelKit.js';
 
 // --- Modelle --------------------------------------------------------------------
 
+// Seit M13 sind die Hof-Requisiten im feinen Maß (1/16 m): gleiche Maße wie
+// vorher, Koordinaten verdoppelt, dazu Einzelheiten.
+
 function buildCampfire(seed) {
   const m = new VoxelModel();
-  // Steinkreis
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2;
-    stone(m, Math.round(Math.cos(a) * 6) - 1, Math.round(Math.sin(a) * 5) - 1, seed + i);
+  // Steinkreis aus runden Feldsteinen, innen verrußt
+  const rng = new Rng(seed);
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + rng.range(-0.12, 0.12);
+    const cx = Math.cos(a) * 12;
+    const cz = Math.sin(a) * 10.5;
+    stoneBlob(m, cx, cz, rng.range(3.0, 4.0), rng.range(2.6, 3.6), rng.range(2.6, 3.4), seed + i);
   }
-  // Asche und Glut
-  m.box(-3, 0, -3, 2, 0, 2, (x, y, z) => (hash3(x, y, z, seed) < 0.4 ? P.s3 : P.s2));
-  // Gekreuzte Scheite
-  log(m, -4, 3, 1.5, 0, 1.3, seed + 3);
-  logZ(m, -4, 3, -1, 2.6, 1.2, seed + 4);
+  m.forEach((x, y, z, c) => {
+    if (x * x + z * z < 95 && y > 0 && hash3(x, y, z, seed + 1) < 0.7) m.set(x, y, z, shade(c, -2));
+  });
+  // Asche mit Glutnestern
+  m.ellipsoid(0, 0, 0, 8.5, 1.5, 7.5, (x, y, z) => {
+    if (y !== 0) return null;
+    const h = hash3(x, y, z, seed + 2);
+    return h < 0.08 ? P.f3 : h < 0.45 ? P.s3 : P.s2;
+  });
+  // Gekreuzte Scheite, zur Mitte hin verkohlt
+  const logs = new VoxelModel();
+  logX(logs, -8, 7, 3, 0, 2.6, seed + 3);
+  logZ(logs, -8, 7, -2, 5.2, 2.4, seed + 4);
+  logs.forEach((x, y, z, c) => {
+    const d = Math.hypot(x + 0.5, z + 0.5);
+    m.set(x, y, z, d < 3.5 ? (hash3(x, y, z, seed) < 0.3 ? P.f2 : P.s1) : d < 5 ? P.e1 : c);
+  });
   return m;
 }
 
 function buildFlameFrame(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const columns = [
-    [0, 0, rng.int(5, 8)],
-    [-1, 0, rng.int(3, 6)],
-    [0, -1, rng.int(3, 6)],
-    [-1, -1, rng.int(4, 7)],
-    [1, 0, rng.int(1, 4)],
-    [-2, -1, rng.int(1, 3)],
-    [0, 1, rng.int(1, 3)],
-    [-1, -2, rng.int(1, 3)],
-  ];
-  for (const [x, z, h] of columns) {
+  const FLAME = [P.f8, P.f7, P.f6, P.f5, P.f4];
+  const best = new Map();
+  // Drei bis fünf Zungen, unten hell, oben orange-rot, jede leicht geneigt
+  const tongues = rng.int(3, 5);
+  for (let t = 0; t < tongues; t++) {
+    const bx = rng.range(-3, 2);
+    const bz = rng.range(-3, 2);
+    const h = rng.int(8, 17);
+    const lean = rng.range(-0.25, 0.25);
+    const w = rng.range(1.6, 2.6);
     for (let y = 0; y < h; y++) {
-      const t = y / Math.max(1, h - 1);
-      const c = t < 0.3 ? P.f7 : t < 0.6 ? P.f6 : t < 0.85 ? P.f5 : P.f3;
-      m.set(x, y + 3, z, c);
+      const t01 = y / h;
+      const r = w * (1 - t01 * 0.85);
+      const cx = bx + lean * y;
+      for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+        for (let z = Math.floor(bz - r); z <= Math.ceil(bz + r); z++) {
+          if ((x + 0.5 - cx) ** 2 + (z + 0.5 - bz) ** 2 > r * r) continue;
+          const rank = t01 < 0.25 ? 0 : t01 < 0.5 ? 1 : t01 < 0.75 ? 2 : t01 < 0.9 ? 3 : 4;
+          const k = `${x},${y},${z}`;
+          if (best.has(k) && best.get(k) <= rank) continue;
+          best.set(k, rank);
+          m.set(x, y + 6, z, FLAME[rank]);
+        }
+      }
     }
   }
-  if (rng.chance(0.6)) m.set(rng.int(-1, 0), rng.int(9, 11), rng.int(-1, 0), P.f4);
+  // Funken darüber
+  for (let k = 0; k < 3; k++) if (rng.chance(0.6)) m.set(rng.int(-3, 2), rng.int(20, 26), rng.int(-3, 2), rng.chance(0.5) ? P.f6 : P.f4);
   return m;
 }
 
+/** Sitzstamm: halbierter Stamm, die helle Sitzfläche oben, Moos an der Rinde. */
 function buildLogBench(seed, length = 14) {
   const m = new VoxelModel();
-  log(m, 0, length - 1, 2, 0, 2.2, seed, { moss: true });
+  logX(m, 0, length * 2 - 1, 4, 0, 4.4, seed, { moss: true });
+  m.forEach((x, y, z) => {
+    if (y > 7) m.set(x, y, z, null);
+  });
+  m.forEach((x, y, z, c) => {
+    if (y !== 7 || x === 0 || x === length * 2 - 1) return;
+    const h = hash3(x, 0, z, seed + 5);
+    m.set(x, y, z, Math.abs(z + 0.5) > 2.6 ? P.e5 : h > 0.92 ? P.e6 : (x + Math.abs(z) * 3) % 11 === 0 ? P.e7 : P.e8);
+  });
   return m;
 }
 
+/**
+ * Ohrensessel mit Karomuster, Blick nach Westen zum Feuer: Die Kamera sieht
+ * ihn von der Seite – hohe Lehne mit Ohr, runde Armlehne, Kissen, Füße.
+ */
 function buildArmchair(seed) {
   const m = new VoxelModel();
-  const fabric = (x, y, z) => (hash3(x, y, z, seed) < 0.15 ? P.e7 : P.f5);
+  const plaid = (x, y, z) => {
+    const u = x + z;
+    const lineU = u % 5 === 0;
+    const lineY = y % 5 === 0;
+    if (lineU && lineY) return P.r1;
+    if (lineU || lineY) return P.r2;
+    return hash3(x, y, z, seed) < 0.06 ? P.f3 : P.r3;
+  };
   // Füße
-  for (const [x, z] of [[0, 0], [6, 0], [0, 6], [6, 6]]) m.set(x, 0, z, P.e3);
-  m.box(0, 1, 0, 6, 3, 6, fabric); // Sitzkasten
-  m.box(1, 4, 1, 5, 4, 5, (x, y, z) => (x === 3 && z === 3 ? P.a1 : P.e7)); // Polster
-  m.box(6, 4, 0, 7, 11, 6, fabric); // Rückenlehne (Osten)
-  m.box(0, 4, 0, 5, 6, 0, fabric); // Armlehnen
-  m.box(0, 4, 6, 5, 6, 6, fabric);
-  m.box(6, 12, 1, 7, 12, 5, fabric);
+  for (const [x, z] of [[1, 1], [12, 1], [1, 12], [12, 12]]) m.box(x, 0, z, x + 1, 1, z + 1, P.e2);
+  m.box(0, 2, 0, 13, 7, 13, plaid); // Sitzkasten
+  m.box(1, 8, 2, 11, 9, 11, (x, y) => (y === 9 ? P.e9 : P.e8)); // Sitzkissen
+  m.box(2, 10, 3, 9, 10, 10, P.e9);
+  m.box(12, 8, 0, 15, 24, 13, plaid); // Rückenlehne (Osten)
+  m.box(12, 25, 1, 15, 25, 12, plaid);
+  for (const z of [0, 1, 12, 13]) {
+    m.box(0, 8, z, 11, 12, z, plaid); // Armlehnen
+    m.box(0, 13, z, 9, 13, z, plaid);
+    m.box(9, 16, z, 11, 23, z, plaid); // Ohren
+    m.box(10, 24, z, 11, 24, z, plaid);
+  }
+  // Armlehnen vorn gerollt
+  for (const z of [0, 1, 12, 13]) {
+    m.set(0, 13, z, null).set(10, 13, z, P.r2).set(11, 13, z, P.r2);
+    m.box(0, 10, z, 1, 12, z, P.r4);
+  }
+  // Kissen an der Lehne und eine Decke über der Armlehne
+  m.box(10, 10, 4, 11, 15, 9, (x, y) => (y === 15 ? P.a4 : P.e9));
+  m.box(3, 11, 12, 7, 13, 14, (x, y, z) => (z === 14 ? (y % 2 ? P.b3 : P.b4) : P.b3));
+  m.box(4, 7, 14, 6, 10, 14, (x, y) => (y % 2 ? P.b3 : P.b4));
   return m;
 }
 
+/**
+ * Leuchtmast am Stegende (früher Funkturm), M13 im feinen Maß: vier Beine aus
+ * rot-weißen Bändern laufen nach oben zusammen, dazwischen Kreuzstreben, auf
+ * halber Höhe eine Gitterplattform; unten Betonsockel mit Schrauben, eine Ranke
+ * und der Schaltkasten mit Warnschild.
+ */
 function buildTower(seed) {
   const m = new VoxelModel();
-  const legTops = [44, 40, 42, 37];
-  const corners = [[-12, -12], [11, -12], [-12, 11], [11, 11]];
-  const topCorners = [[-6, -6], [5, -6], [-6, 5], [5, 5]];
-  const band = (y) => (Math.floor(y / 6) % 2 === 0 ? P.r3 : P.s8);
-  const leg = (i, y) => {
-    const t = y / 46;
-    const [x0, z0] = corners[i];
-    const [x1, z1] = topCorners[i];
-    return [Math.round(x0 + (x1 - x0) * t), Math.round(z0 + (z1 - z0) * t)];
-  };
+  const legTops = [88, 80, 84, 74];
+  const band = (y) => (Math.floor(y / 12) % 2 === 0 ? P.r3 : P.s8);
   for (let i = 0; i < 4; i++) {
     for (let y = 0; y <= legTops[i]; y++) {
-      const [x, z] = leg(i, y);
+      const [x, z] = towerLeg(i, y);
       const h = hash3(x, y, z, seed);
-      const c = h < 0.15 ? P.r2 : band(y);
-      m.box(x, y, z, x + 1, y, z + 1, c);
+      const c = h < 0.12 ? P.r2 : band(y);
+      m.box(x, y, z, x + 2, y, z + 2, (xx) => (xx === x ? shade(c, 1) : c));
     }
     // verbogene Spitze
-    const [tx, tz] = leg(i, legTops[i]);
-    m.set(tx + (i % 2 ? 2 : -1), legTops[i] + 1, tz, P.r2);
+    const [tx, tz] = towerLeg(i, legTops[i]);
+    m.box(tx + (i % 2 ? 3 : -2), legTops[i] + 1, tz, tx + (i % 2 ? 4 : -1), legTops[i] + 2, tz + 1, P.r2);
   }
-  // Querstreben (X-Muster) je Seite
+  // Kreuzstreben (X-Muster) je Seite
   const faces = [[0, 1], [2, 3], [0, 2], [1, 3]];
   for (const [a, b] of faces) {
-    for (let y0 = 3; y0 < 34; y0 += 10) {
-      const y1 = y0 + 10;
-      const [ax0, az0] = leg(a, y0);
-      const [bx1, bz1] = leg(b, y1);
-      const [bx0, bz0] = leg(b, y0);
-      const [ax1, az1] = leg(a, y1);
-      m.line(ax0, y0, az0, bx1, y1, bz1, P.s3);
-      m.line(bx0, y0, bz0, ax1, y1, az1, P.s3);
+    for (let y0 = 6; y0 < 68; y0 += 20) {
+      const y1 = y0 + 20;
+      const [ax0, az0] = towerLeg(a, y0);
+      const [bx1, bz1] = towerLeg(b, y1);
+      const [bx0, bz0] = towerLeg(b, y0);
+      const [ax1, az1] = towerLeg(a, y1);
+      m.line(ax0 + 1, y0, az0 + 1, bx1 + 1, y1, bz1 + 1, P.s3);
+      m.line(bx0 + 1, y0, bz0 + 1, ax1 + 1, y1, az1 + 1, P.s4);
     }
   }
-  // Plattform
-  const [px0, pz0] = leg(0, 24);
-  const [px1, pz1] = leg(3, 24);
-  m.box(px0, 24, pz0, px1 + 1, 24, pz1 + 1, (x, y, z) => ((x + z) % 2 ? P.s4 : P.s3));
-  // Fundamente
-  for (const [x, z] of corners) m.box(x - 1, 0, z - 1, x + 2, 1, z + 2, (xx, y) => (y === 1 ? P.s7 : P.s6));
-  // Ranke an einem Bein
-  for (let y = 0; y < 30; y++) {
-    const [x, z] = leg(2, y);
-    if (hash3(0, y, 0, seed + 5) < 0.55) m.set(x - 1, y, z + (y % 3 === 0 ? 1 : 0), y % 4 === 0 ? P.g6 : P.g5);
+  // Plattform: Gitterrost
+  const [px0, pz0] = towerLeg(0, 48);
+  const [px1, pz1] = towerLeg(3, 48);
+  m.box(px0, 48, pz0, px1 + 2, 48, pz1 + 2, (x, y, z) => ((x % 3 === 0 || z % 3 === 0) ? P.s3 : P.s5));
+  // Betonsockel mit Schrauben
+  for (const [x, z] of [[-24, -24], [22, -24], [-24, 22], [22, 22]]) {
+    m.box(x - 2, 0, z - 2, x + 4, 3, z + 4, (xx, y, zz) => (y === 3 ? ((xx === x - 1 || xx === x + 3) && (zz === z - 1 || zz === z + 3) ? P.s4 : P.s7) : P.s6));
   }
-  // Schaltkasten
-  m.box(13, 0, 2, 16, 7, 6, (x, y, z) => (y === 7 ? P.s5 : z === 6 && x > 13 && x < 16 && y > 2 && y < 6 ? P.b2 : P.s4));
-  m.set(14, 5, 7, P.f6);
+  // Ranke an einem Bein
+  for (let y = 0; y < 60; y++) {
+    const [x, z] = towerLeg(2, y);
+    if (hash3(0, y, 0, seed + 5) < 0.55) m.set(x - 1, y, z + (y % 5 < 2 ? 2 : 1), y % 7 === 0 ? P.g6 : P.g5);
+    if (y % 9 === 4) m.set(x - 2, y, z + 2, P.g6).set(x - 2, y + 1, z + 2, P.g7);
+  }
+  // Schaltkasten mit Tür, Griff und gelbem Warnschild
+  m.box(26, 0, 4, 33, 15, 12, (x, y, z) => (y === 15 ? P.s5 : z === 12 ? (x === 26 || x === 33 || y === 0 ? P.s3 : P.s4) : P.s3));
+  m.box(28, 5, 13, 31, 7, 13, (x, y) => (y === 7 || x === 28 ? P.f6 : x === 30 && y === 6 ? P.s1 : P.f6));
+  m.box(32, 9, 13, 32, 11, 13, P.s6);
+  m.box(29, 16, 6, 30, 17, 10, P.s2);
   return m;
 }
 
 // --- Funkturm-Ausbau (Meilenstein 6, Juna) -------------------------------------------
-// Gleiches Raster wie buildTower (Beine von den Ecken ±12 unten zu ±6 oben).
+// Gleiches Raster wie buildTower, fein (M13): Beine drei Voxel stark, von den
+// Ecken ±1,5 m unten zu ±0,75 m oben (Höhe 92 feine Voxel).
 
 const towerLeg = (i, y) => {
-  const corners = [[-12, -12], [11, -12], [-12, 11], [11, 11]];
-  const top = [[-6, -6], [5, -6], [-6, 5], [5, 5]];
-  const t = y / 46;
+  const corners = [[-24, -24], [21, -24], [-24, 21], [21, 21]];
+  const top = [[-12, -12], [9, -12], [-12, 9], [9, 9]];
+  const t = y / 92;
   return [Math.round(corners[i][0] + (top[i][0] - corners[i][0]) * t), Math.round(corners[i][1] + (top[i][1] - corners[i][1]) * t)];
 };
 
-/** Stufe 1: Beine gerichtet, Leiter an der Südseite, Plattform oben. */
+/** Stufe 1: Beine gerichtet, Leiter an der Südseite, Plattform oben mit Geländer. */
 function buildTowerRepair(seed) {
   const m = new VoxelModel();
-  const band = (y) => (Math.floor(y / 6) % 2 === 0 ? P.r4 : P.s9);
+  const band = (y) => (Math.floor(y / 12) % 2 === 0 ? P.r4 : P.s9);
   for (let i = 0; i < 4; i++) {
-    for (let y = 36; y <= 46; y++) {
+    for (let y = 72; y <= 93; y++) {
       const [x, z] = towerLeg(i, y);
-      m.box(x, y, z, x + 1, y, z + 1, band(y));
+      m.box(x, y, z, x + 2, y, z + 2, band(y));
     }
   }
-  // Leiter vor der Südseite
-  for (let y = 1; y <= 46; y++) {
-    const z = Math.round(11 + (5 - 11) * (y / 46)) + 2;
-    m.set(-2, y, z, P.e4).set(1, y, z, P.e4);
-    if (y % 3 === 0) m.set(-1, y, z, P.e6).set(0, y, z, P.e6);
+  // Leiter vor der Südseite: Holme und Sprossen
+  for (let y = 2; y <= 93; y++) {
+    const z = Math.round(22 + (10 - 22) * (y / 92)) + 5;
+    m.set(-4, y, z, P.e4).set(3, y, z, P.e4);
+    if (y % 5 === 0) m.box(-3, y, z, 2, y, z, P.e6);
   }
   // Plattform mit Geländer
-  m.box(-6, 47, -6, 6, 47, 6, (x, y, z) => ((x + z) % 2 ? P.s5 : P.s4));
-  for (const [x, z] of [[-6, -6], [6, -6], [-6, 6], [6, 6]]) m.box(x, 48, z, x, 50, z, P.s3);
-  m.box(-6, 50, 6, 6, 50, 6, P.s3).box(-6, 50, -6, -6, 50, 6, P.s3).box(6, 50, -6, 6, 50, 6, P.s3);
+  m.box(-12, 94, -12, 12, 94, 12, (x, y, z) => ((x + z) % 3 === 0 ? P.s4 : P.s5));
+  for (const [x, z] of [[-12, -12], [12, -12], [-12, 12], [12, 12]]) m.box(x, 95, z, x, 100, z, P.s3);
+  m.box(-12, 100, 12, 12, 100, 12, P.s4).box(-12, 100, -12, -12, 100, 12, P.s3).box(12, 100, -12, 12, 100, 12, P.s3);
+  m.box(-12, 97, 12, 12, 97, 12, P.s3);
   // frische Flicken am Fuß
-  m.box(-2, 0, 12, 1, 0, 13, P.e5);
+  m.box(-4, 0, 24, 3, 1, 27, (x) => (x % 3 === 0 ? P.e4 : P.e5));
   return m;
 }
 
 /** Stufe 2: Antennenmast mit Querstreben, Schüssel und Kabel zum Schaltkasten. */
 function buildTowerAntenna() {
   const m = new VoxelModel();
-  m.box(-1, 48, -1, 0, 66, 0, (x, y) => (y % 4 === 0 ? P.r3 : P.s7));
-  for (const y of [54, 60]) m.box(-5, y, -1, 4, y, -1, P.s6);
-  m.box(2, 56, 1, 4, 59, 1, P.s8); // Schüssel
-  m.set(3, 57, 2, P.s5);
-  m.line(5, 47, 5, 14, 8, 4, P.s1); // Kabel hinunter zum Schaltkasten
-  m.line(-6, 47, 5, 13, 7, 5, P.s2);
-  m.set(-1, 67, -1, P.r4);
+  m.box(-2, 96, -2, 1, 132, 1, (x, y) => (y % 8 < 4 ? P.r3 : P.s7));
+  for (const y of [108, 120]) m.box(-10, y, -1, 9, y, 0, (x) => (x === -10 || x === 9 ? P.s4 : P.s6));
+  // Schüssel mit Empfänger
+  m.ellipsoid(6, 115, 3, 3.5, 3.5, 1.2, (x, y, z) => (z >= 3 ? P.s8 : P.s6));
+  m.box(6, 115, 4, 6, 115, 6, P.s4).set(6, 115, 7, P.s3);
+  m.line(10, 94, 10, 28, 16, 8, P.s1); // Kabel hinunter zum Schaltkasten
+  m.line(-12, 94, 10, 26, 14, 10, P.s2);
+  m.box(-2, 133, -2, 1, 134, 1, P.r4);
   return m;
 }
 
 /** Stufe 3: Leuchtfeuer oben auf dem Mast (Gehäuse; das Glas leuchtet separat). */
 function buildTowerBeacon() {
   const m = new VoxelModel();
-  m.box(-3, 67, -3, 2, 67, 2, P.s3); // Sockel
-  for (const [x, z] of [[-3, -3], [2, -3], [-3, 2], [2, 2]]) m.box(x, 68, z, x, 71, z, P.s2);
-  m.box(-3, 72, -3, 2, 72, 2, P.r3); // Dach
-  m.box(-2, 73, -2, 1, 73, 1, P.r2);
-  m.set(-1, 74, -1, P.f6);
+  m.box(-6, 135, -6, 5, 135, 5, P.s3); // Sockel
+  for (const [x, z] of [[-6, -6], [5, -6], [-6, 5], [5, 5]]) m.box(x, 136, z, x, 143, z, P.s2);
+  m.box(-6, 144, -6, 5, 144, 5, P.r3); // Dach
+  m.box(-5, 145, -5, 4, 145, 4, P.r2);
+  m.box(-3, 146, -3, 2, 146, 2, P.r3);
+  m.box(-1, 147, -1, 0, 148, 0, P.f6);
   return m;
 }
 
 function buildTowerBeaconGlass() {
   const m = new VoxelModel();
-  m.box(-2, 68, -2, 1, 71, 1, 0xffffff);
+  m.box(-5, 136, -5, 4, 143, 4, 0xffffff);
   return m;
 }
 
+/** Liegendes Turmstück: zwei rot-weiße Holme mit Streben, halb eingewachsen. */
 function buildTowerDebris(seed) {
   const m = new VoxelModel();
-  // liegendes Turmstück: zwei Holme mit Streben
-  for (let x = 0; x <= 20; x++) {
-    m.set(x, 0, 0, x % 6 < 3 ? P.r3 : P.s8);
-    m.set(x, 0, 6, x % 6 < 3 ? P.r3 : P.s8);
+  for (let x = 0; x <= 41; x++) {
+    const c = x % 12 < 6 ? P.r3 : P.s8;
+    m.box(x, 0, 0, x, 1, 1, c).box(x, 0, 12, x, 1, 13, c);
   }
-  for (let x = 0; x <= 18; x += 6) {
-    m.line(x, 0, 0, x + 6, 0, 6, P.s3);
-    m.line(x + 6, 0, 0, x, 0, 6, P.s3);
+  for (let x = 0; x <= 36; x += 12) {
+    m.line(x, 1, 1, x + 12, 1, 12, P.s3);
+    m.line(x + 12, 1, 1, x, 1, 12, P.s4);
   }
   m.forEach((x, y, z) => {
-    if (hash3(x, 1, z, seed) < 0.25) m.set(x, 1, z, P.g5);
+    if (y === 1 && hash3(x, 2, z, seed) < 0.3) m.set(x, 2, z, hash3(x, 3, z, seed) < 0.5 ? P.g5 : P.g6);
   });
   return m;
 }
 
+/** Wegweiser: Pfosten mit Spitze, drei Pfeilbretter mit geschnitzter Schrift und Nägeln. */
 function buildSign(seed) {
   const m = new VoxelModel();
-  m.box(0, 0, 0, 1, 18, 1, (x, y) => (y % 5 === 0 ? P.e3 : P.e4));
+  m.box(0, 0, 0, 3, 37, 3, (x, y, z) => (y % 9 === 0 ? P.e3 : x === 0 ? P.e5 : P.e4));
+  m.box(1, 38, 1, 2, 39, 2, P.e4);
   const board = (y, dir, length) => {
     for (let i = 0; i < length; i++) {
-      const x = dir > 0 ? 2 + i : -1 - i;
-      const tip = i === length - 1;
-      for (let yy = y; yy <= y + 2; yy++) {
-        if (tip && yy !== y + 1) continue;
-        const text = !tip && yy === y + 1 && i > 0 && i < length - 2 && hash3(i, yy, dir, seed) < 0.55;
-        m.set(x, yy, 1, text ? P.e2 : yy === y + 2 ? P.e8 : P.e7);
+      const x = dir > 0 ? 4 + i : -1 - i;
+      const tip = length - 1 - i; // 0 = Spitze
+      for (let yy = y; yy <= y + 5; yy++) {
+        const v = yy - y;
+        if (tip < 3 && (v < 3 - tip || v > 2 + tip)) continue; // Pfeilspitze
+        const text = tip > 3 && i > 2 && (v === 2 || v === 3) && hash3(i, yy, dir, seed) < 0.6;
+        const c = text ? P.e3 : v === 5 ? P.e8 : v === 0 ? P.e6 : P.e7;
+        m.set(x, yy, 2, c).set(x, yy, 3, c);
       }
     }
+    const nx = dir > 0 ? 5 : -2;
+    m.set(nx, y + 2, 4, P.s5).set(nx, y + 3, 4, P.s5);
   };
-  board(15, 1, 9);
-  board(11, -1, 8);
-  board(7, 1, 6);
-  m.set(0, 19, 0, P.e3).set(1, 19, 1, P.e3);
+  board(30, 1, 18);
+  board(22, -1, 16);
+  board(14, 1, 12);
   return m;
 }
 
+/** Briefkasten: blau, runder Deckel, Klappe vorn, rotes Fähnchen. */
 function buildMailbox() {
   const m = new VoxelModel();
-  m.box(0, 0, 0, 0, 7, 0, P.e4);
-  m.box(-1, 8, -2, 1, 10, 1, (x, y, z) => (y === 10 && (x === -1 || x === 1) ? null : z === 1 && y === 9 ? P.b1 : P.b3));
-  m.set(0, 11, -1, P.b3).set(0, 11, 0, P.b3);
-  m.box(2, 9, -1, 2, 12, -1, P.s5);
-  m.box(2, 12, -1, 2, 12, 0, P.f6);
+  m.box(0, 0, -1, 1, 16, 0, (x) => (x === 0 ? P.e5 : P.e4));
+  m.box(-2, 17, -4, 3, 22, 3, (x, y, z) => (z === 3 ? (y === 17 ? P.b1 : P.b2) : x === -2 ? P.b4 : P.b3));
+  m.box(-1, 23, -4, 2, 23, 3, (x) => (x < 1 ? P.b4 : P.b3));
+  m.box(-1, 19, 4, 2, 20, 4, P.s6); // Griff der Klappe
+  m.box(4, 18, -1, 4, 26, -1, P.s5); // Fähnchen
+  m.box(4, 23, 0, 4, 26, 2, (x, y) => (y === 26 ? P.r4 : P.r3));
   return m;
 }
 
 function buildClothesline(seed, spanVoxels) {
   const m = new VoxelModel();
+  const span = spanVoxels * 2;
   const pole = (x) => {
-    m.box(x, 0, 0, x, 14, 0, P.e4);
-    m.box(x, 14, -1, x, 14, 1, P.e4);
+    m.box(x, 0, 0, x + 1, 29, 1, (xx) => (xx === x ? P.e5 : P.e4));
+    m.box(x, 28, -2, x + 1, 29, 3, (xx, y) => (y === 29 ? P.e5 : P.e4));
   };
   pole(0);
-  pole(spanVoxels);
-  const sag = (x) => 13 - Math.round(Math.sin((x / spanVoxels) * Math.PI) * 1.5);
-  for (let x = 1; x < spanVoxels; x++) m.set(x, sag(x), 0, P.s7);
+  pole(span);
+  const sag = (x) => 27 - Math.round(Math.sin((x / span) * Math.PI) * 3);
+  for (let x = 2; x < span; x++) m.set(x, sag(x), 0, P.s7);
   const cloths = [];
-  const cloth = (x0, w, h, c, c2) => {
+  // Ein Stück Wäsche als Bild (Zeilen von oben): Buchstaben -> Farben
+  const cloth = (x0, rows, colors) => {
     const piece = new VoxelModel();
     const anchor = sag(x0);
-    for (let x = x0; x < x0 + w; x++) {
-      const top = sag(x) - 1;
-      for (let y = top; y > top - h; y--) piece.set(x - x0, y - anchor, 0, (x + y) % 3 === 0 && c2 ? c2 : c);
-    }
+    rows.forEach((row, r) => {
+      for (let i = 0; i < row.length; i++) {
+        const c = colors[row[i]];
+        if (!c) continue;
+        const x = x0 + i;
+        piece.set(i, sag(x) - 1 - r - anchor, 0, c);
+      }
+    });
+    // Klammern
+    piece.set(1, sag(x0 + 1) - anchor, 1, P.e7).set(rows[0].length - 2, sag(x0 + rows[0].length - 2) - anchor, 1, P.e7);
     cloths.push({ model: piece, x: x0, y: anchor });
   };
-  cloth(3, 5, 5, P.b3, P.b4); // Hemd
-  cloth(10, 2, 3, P.r3); // Socke
-  cloth(13, 2, 3, P.f6); // Socke
-  cloth(17, 5, 6, P.a1, P.a4); // Handtuch
-  cloth(24, 4, 5, P.e7, P.e6); // Hose
+  cloth(6, ['SSBBBWWBBBSS', 'SSBBBBBBBBSS', 'SSBBBBwBBBSS', 'SS.BBBBBB.SS', 'SS.BBBwBB.SS', 'ss.BBBBBB.ss', '...BBBwBB...', '...BBBBBB...', '...bbbbbb...'], { B: P.b3, b: P.b2, S: P.b4, s: P.b3, W: P.s9, w: P.s9 }); // Hemd mit Kragen und Knöpfen
+  cloth(20, ['rr', 'rr', 'ww', 'rr', 'rr', 'rrr', 'rrr'], { r: P.r3, w: P.s9 }); // Ringelsocke
+  cloth(24, ['oo', 'oo', 'yy', 'oo', 'oo', 'ooo', 'ooo'], { o: P.f5, y: P.f6 }); // Socke
+  cloth(30, ['aaaaaaaaaa', 'aaaaaaaaaa', 'wwwwwwwwww', 'pppppppppp', 'aaaaaaaaaa', 'aaaaaaaaaa', 'aaaaaaaaaa', 'pppppppppp', 'wwwwwwwwww', 'aaaaaaaaaa', 'f.f.f.f.f.'], { a: P.a1, p: P.a0, w: P.a4, f: P.a4 }); // Handtuch mit Fransen
+  cloth(44, ['dddddddd', 'eeeeeeee', 'eeeeeeee', 'eeeeeeee', 'eee..eee', 'eee..eee', 'eee..eee', 'eee..eee', 'eee..eee', 'ddd..ddd'], { e: P.e6, d: P.e4 }); // Hose
   return { line: m, cloths };
 }
 
+/** Holzstapel an der Hauswand: Scheite mit Hirnholz nach Süden, darüber ein Blechdach. */
 function buildWoodpile(seed) {
   const m = new VoxelModel();
-  for (let y = 0; y <= 8; y += 2) {
-    const shift = (y / 2) % 2;
-    for (let x = shift; x <= 7; x += 2) {
-      for (let z = 0; z <= 18; z++) {
-        const end = z === 18;
-        const h = hash3(x, y, z, seed);
-        const c = end ? (h < 0.5 ? P.e7 : P.e8) : h < 0.5 ? P.e3 : P.e4;
-        m.box(x, y, z, x + 1, y + 1, z, end && (x + y) % 4 === 0 ? P.e6 : c);
+  const L = 37; // Scheite laufen entlang z, die Stirnseiten zeigen nach Süden
+  for (let row = 0; row < 5; row++) {
+    const y0 = row * 4;
+    const shift = row % 2 ? 2 : 0;
+    for (let k = 0; k < 4; k++) {
+      const x0 = shift + k * 4;
+      if (x0 + 3 > 16) continue;
+      const len = L - (hash3(k, row, 0, seed) < 0.4 ? 1 : 0);
+      for (let z = 0; z <= len; z++) {
+        for (let dx = 0; dx < 4; dx++) {
+          for (let dy = 0; dy < 4; dy++) {
+            const corner = (dx === 0 || dx === 3) && (dy === 0 || dy === 3);
+            if (corner) continue;
+            const end = z === len;
+            const bark = dx === 0 || dx === 3 || dy === 0 || dy === 3;
+            let c;
+            if (end) c = bark ? P.e4 : (dx + dy) % 3 === 0 ? P.e7 : P.e8;
+            else c = bark ? (hash3(x0 + dx, y0 + dy, z, seed) < 0.4 ? P.e2 : P.e3) : P.e6;
+            m.set(x0 + dx, y0 + dy, z, c);
+          }
+        }
       }
     }
   }
-  // kleines Blechdach darüber
-  m.box(-1, 11, -1, 8, 11, 19, (x, y, z) => (x % 2 ? P.s4 : P.s5));
-  m.box(8, 0, 19, 8, 10, 19, P.e3);
-  m.box(8, 0, -1, 8, 10, -1, P.e3);
+  // Blechdach auf zwei Pfosten
+  m.box(-2, 22, -2, 17, 23, 39, (x, y, z) => (y === 22 ? P.s3 : z === 39 ? P.s6 : x % 3 === 2 ? P.s4 : P.s5));
+  for (const z of [-2, 38]) m.box(16, 0, z, 17, 21, z + 1, (x) => (x === 16 ? P.e4 : P.e3));
   return m;
 }
 
+/** Hackklotz: Stammstück mit Rinde, oben Jahresringe und Kerben von der Axt. */
 function buildChoppingBlock(seed) {
   const m = new VoxelModel();
-  m.cylinder(0, 0, 0, 3, 3, (x, y, z) => {
+  m.cylinder(0, 0, 0, 7, 6.2, (x, y, z) => {
     const d = Math.hypot(x + 0.5, z + 0.5);
-    if (y === 3) return d < 1.2 ? P.e6 : d < 2.2 ? P.e8 : P.e7;
-    return hash3(x, y, z, seed) < 0.4 ? P.e3 : P.e2;
+    if (y === 7) {
+      if (d > 5.3) return P.e3;
+      if ((x === z || x === z + 1) && d > 1.5) return P.e5; // Kerbe
+      const ring = Math.floor(d * 1.2) % 2;
+      return d < 1 ? P.e6 : ring ? P.e7 : P.e8;
+    }
+    const a = Math.atan2(z + 0.5, x + 0.5);
+    const groove = Math.floor((a / Math.PI) * 9 + 20) % 2 === 0;
+    return groove ? P.e2 : hash3(x, y, z, seed) < 0.3 ? P.e4 : P.e3;
   });
+  // Späne am Fuß
+  for (const [x, z] of [[-7, 2], [6, -3], [4, 6], [-5, -6]]) m.set(x, 0, z, P.e8);
   return m;
 }
 
 /** Die Axt im Hackklotz – eigenes Modell, damit man sie herausnehmen kann. */
 function buildStuckAxe() {
   const m = new VoxelModel();
-  m.line(1, 4, 0, 4, 9, 0, P.e5);
-  m.box(-1, 4, 0, 1, 4, 0, P.s7);
-  m.set(0, 5, 0, P.s6).set(-1, 5, 0, P.s6);
+  for (let t = 0; t <= 10; t++) {
+    const x = 1 + Math.round(t * 0.62);
+    m.box(x, 8 + t, 0, x, 8 + t, 1, t > 8 ? P.e4 : P.e6);
+  }
+  m.box(-3, 7, -1, 1, 9, 2, (x, y) => (x === -3 ? P.s8 : y === 9 ? P.s6 : P.s5)); // Kopf, Schneide im Holz
+  m.box(-2, 10, 0, 0, 10, 1, P.s4);
   return m;
 }
 
+/** Regentonne: blaue Dauben, zwei Reifen, oben Wasser, unten ein Hahn. */
 function buildRainBarrel(seed) {
   const m = new VoxelModel();
-  m.cylinder(0, 0, 0, 6, 2.8, (x, y, z) => {
-    if (y === 1 || y === 5) return P.s5;
-    return hash3(x, y, z, seed) < 0.2 ? P.b3 : P.b2;
+  m.cylinder(0, 0, 0, 13, 5.6, (x, y, z) => {
+    if (y === 2 || y === 3 || y === 10 || y === 11) return y % 2 ? P.s5 : P.s4;
+    const a = Math.atan2(z + 0.5, x + 0.5);
+    const stave = Math.floor((a / Math.PI) * 8 + 16);
+    if (Math.floor((a / Math.PI) * 8 * 3 + 48) % 3 === 0) return P.b1;
+    return stave % 2 ? P.b3 : hash3(x, y, z, seed) < 0.15 ? P.b2 : P.b3;
   });
-  m.cylinder(0, 0, 6, 6, 2.2, P.b4);
+  m.cylinder(0, 0, 13, 13, 4.6, (x, y, z) => ((x + z) % 5 === 0 ? P.b5 : P.b4));
+  m.box(-1, 3, 5, 0, 4, 6, P.s6); // Hahn
   return m;
 }
 
+/** Hochbeet: Bretterrahmen, Erde in Reihen, Kürbisse mit Ranken, Kohl und Möhrenkraut. */
 function buildGardenBed(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  m.box(0, 0, 0, 15, 2, 11, (x, y, z) => {
-    const frame = x === 0 || x === 15 || z === 0 || z === 11;
-    if (frame) return y === 2 ? P.e5 : P.e4;
-    return y === 2 ? (hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3) : P.e2;
+  m.box(0, 0, 0, 31, 5, 23, (x, y, z) => {
+    const frame = x <= 1 || x >= 30 || z <= 1 || z >= 22;
+    if (frame) {
+      if (y === 5) return (x + z) % 9 === 0 ? P.e4 : P.e6;
+      return y === 2 ? P.e3 : z >= 22 ? (y < 2 ? P.e4 : P.e5) : P.e4;
+    }
+    if (y < 4) return P.e2;
+    return z % 4 === 1 ? P.e1 : hash3(x, y, z, seed) < 0.5 ? P.e2 : P.e3; // Furchen
   });
-  // Kürbisse
-  for (const [x, z] of [[4, 4], [10, 7], [12, 3]]) {
-    m.ellipsoid(x, 4, z, 2.2, 1.6, 2, (xx, y, zz) => ((xx + zz) % 2 ? P.f4 : P.f3));
-    m.set(Math.floor(x), 6, Math.floor(z), P.g4);
+  // Kürbisse mit Ranken und Blättern
+  for (const [x, z, s] of [[8, 9, 0.8], [20, 15, 0.95], [25, 6, 0.7]]) {
+    m.merge(buildPumpkin(seed + x, s), x, 5, z);
   }
-  // Blattgemüse und Unkraut
-  for (let i = 0; i < 18; i++) {
-    const x = rng.int(1, 14);
-    const z = rng.int(1, 10);
-    if (m.has(x, 3, z)) continue;
-    const h = rng.int(1, 3);
-    for (let y = 3; y < 3 + h; y++) m.set(x, y, z, y === 2 + h ? P.g7 : P.g5);
+  for (let x = 4; x <= 27; x++) {
+    const z = 12 + Math.round(Math.sin(x * 0.5) * 2);
+    if (!m.has(x, 5, z)) m.set(x, 5, z, P.g4);
+    if (x % 4 === 0) m.box(x, 5, z + 1, x + 1, 5, z + 2, P.g5).set(x, 6, z + 1, P.g6);
+  }
+  // Kohlköpfe und Möhrenkraut
+  for (const [x, z] of [[5, 18], [12, 19]]) {
+    m.ellipsoid(x, 7, z, 2.6, 2, 2.4, (xx, y, zz, dx, dy) => (dy > 0.5 ? P.g7 : (xx + zz) % 3 === 0 ? P.g4 : P.g5));
+  }
+  for (let i = 0; i < 7; i++) {
+    const x = 16 + i * 2;
+    const z = 19 + (i % 2);
+    const h = rng.int(2, 3);
+    m.box(x, 5, z, x, 5 + h, z, P.g6).set(x, 6 + h, z, P.g8).set(x + 1, 5 + h, z, P.g7);
   }
   return m;
 }
 
 // --- Herbst (Meilenstein 12): im feinen Maß (1/16 m) --------------------------
-
-const FINE = 1 / 16;
 
 /** Gerippter Kürbis mit Stiel und Ranke. size ~ 0.7 (klein) … 1.2 (groß). */
 function buildPumpkin(seed, size = 1) {
@@ -495,98 +577,141 @@ function buildOakWithSwing(seed) {
   return m;
 }
 
-/** Seile und Reifen der Schaukel, in denselben Koordinaten wie die Eiche (Aufhängung bei 10, 20, 0). */
+/** Seile und Reifen der Schaukel, in denselben Koordinaten wie die Eiche (Aufhängung bei 20, 40, 0). */
 function buildSwingTire() {
   const m = new VoxelModel();
-  m.box(10, 7, -1, 10, 20, -1, P.e8);
-  m.box(10, 7, 1, 10, 20, 1, P.e8);
-  for (let a = 0; a < 24; a++) {
-    const t = (a / 24) * Math.PI * 2;
-    const y = Math.round(5 + Math.sin(t) * 2.6);
-    const x = Math.round(10 + Math.cos(t) * 2.6);
-    m.box(x, y, -1, x, y, 1, P.s1);
+  for (const z of [-2, 2]) {
+    for (let y = 15; y <= 41; y++) m.set(20, y, z, y % 3 === 0 ? P.e7 : P.e8).set(21, y, z, y % 3 === 1 ? P.e7 : P.e8);
+  }
+  // Reifen: stehender Ring, Lauffläche mit Profil, oben ein heller Rand
+  for (let x = 14; x <= 28; x++) {
+    for (let y = 4; y <= 16; y++) {
+      const d = Math.hypot(x + 0.5 - 21, y + 0.5 - 10);
+      if (d > 5.6 || d < 3.2) continue;
+      for (let z = -2; z <= 3; z++) {
+        const tread = d > 4.8 && (x + y + z) % 3 === 0;
+        m.set(x, y, z, y > 12 && d > 4.6 ? P.s3 : tread ? P.s2 : P.s1);
+      }
+    }
   }
   return m;
 }
 
 function buildCrate(seed) {
   const m = new VoxelModel();
-  m.box(0, 0, 0, 4, 4, 4, (x, y, z) => {
-    const edge = (x === 0 || x === 4) + (y === 0 || y === 4) + (z === 0 || z === 4) >= 2;
-    return edge ? P.e3 : hash3(x, y, z, seed) < 0.3 ? P.e6 : P.e5;
+  m.box(0, 0, 0, 9, 9, 9, (x, y, z) => {
+    const edge = (x <= 0 || x >= 9) + (y <= 0 || y >= 9) + (z <= 0 || z >= 9) >= 2;
+    if (edge) return P.e3;
+    if (z === 9 && y % 3 === 0) return P.e3; // Fugen vorn
+    if (y === 9 && x % 3 === 0) return P.e4; // Fugen oben
+    return hash3(x, y, z, seed) < 0.3 ? P.e6 : P.e5;
   });
+  m.line(1, 1, 10, 8, 8, 10, P.e4); // Querstrebe vorn
   return m;
 }
 
 /**
- * Schiefer Warnpfahl am Spawn: helles Brett mit rotem Kreuz, ein Fetzen Stoff,
- * oben eine alte Laterne (ihr Glas leuchtet nachts fahlgrün, siehe buildWarnLight).
+ * Schiefer Warnpfahl am Spawn (M13 im feinen Maß): Pfahl mit Maserung, helles
+ * Brett mit rot gemaltem Kreuz und Nägeln, ein flatternder Fetzen, oben eine
+ * alte Laterne am Haken (ihr Glas leuchtet nachts fahlgrün, buildWarnLight),
+ * ein paar Steine am Fuß.
  */
 function buildWarnPost(seed, side) {
   const m = new VoxelModel();
   const lean = side > 0 ? 1 : -1;
-  for (let y = 0; y <= 17; y++) m.box(y > 11 ? lean : 0, y, 0, (y > 11 ? lean : 0) + 1, y, 0, hash3(0, y, 0, seed) < 0.3 ? P.e2 : P.e3);
+  const off = (y) => (y > 22 ? lean * 2 : y > 16 ? lean : 0);
+  for (let y = 0; y <= 35; y++) {
+    const o = off(y);
+    m.box(o, y, 0, o + 2, y, 1, (x) => (hash3(x, y, 0, seed) < 0.25 ? P.e2 : x === o ? P.e4 : P.e3));
+  }
   // Brett mit rotem Kreuz
-  for (let x = -3; x <= 4; x++) {
-    for (let y = 11; y <= 16; y++) {
-      const u = x - 0.5;
-      const v = y - 13.5;
-      const cross = Math.abs(u - v * 1.3) < 0.9 || Math.abs(u + v * 1.3) < 0.9;
-      const edge = x === -3 || x === 4 || y === 11 || y === 16;
-      m.set(x + lean, y, 1, cross ? (hash3(x, y, 2, seed) < 0.2 ? P.r2 : P.r3) : edge ? P.e5 : hash3(x, y, 1, seed) < 0.3 ? P.e7 : P.e8);
+  for (let x = -6; x <= 9; x++) {
+    for (let y = 22; y <= 33; y++) {
+      const u = x - 1.5;
+      const v = y - 27.5;
+      const cross = Math.abs(u - v * 1.3) < 1.7 || Math.abs(u + v * 1.3) < 1.7;
+      const edge = x === -6 || x === 9 || y === 22 || y === 33;
+      let c = cross ? (hash3(x, y, 2, seed) < 0.2 ? P.r2 : P.r3) : edge ? P.e5 : hash3(x, y, 1, seed) < 0.3 ? P.e7 : P.e8;
+      if (!cross && !edge && (y === 25 || y === 30) && hash3(x, 0, 3, seed) > 0.8) c = P.e6; // Maserung
+      m.set(x + lean * 2, y, 2, c);
     }
   }
+  m.set(-5 + lean * 2, 32, 3, P.s5).set(8 + lean * 2, 32, 3, P.s5).set(-5 + lean * 2, 23, 3, P.s5).set(8 + lean * 2, 23, 3, P.s5);
   // Laterne an einem Haken
-  m.box(lean * 2, 18, 0, lean * 2 + 1, 18, 0, P.s3);
-  m.box(lean * 2, 15, -1, lean * 2 + 1, 15, 0, P.s2);
-  m.box(lean * 2, 19, -1, lean * 2 + 1, 19, 0, P.s2);
+  const lx = lean * 5;
+  m.box(lx, 38, 0, lx + 3, 38, 0, P.s3); // Haken
+  m.box(lx, 30, -2, lx + 3, 31, 1, P.s2); // Boden
+  m.box(lx, 38, -2, lx + 3, 39, 1, (x, y) => (y === 39 ? P.s3 : P.s2)); // Dach
+  for (const [x, z] of [[lx, -2], [lx + 3, -2], [lx, 1], [lx + 3, 1]]) m.box(x, 32, z, x, 37, z, P.s2);
   // Fetzen und ein paar Steine am Fuß
-  m.set(-lean, 10, 1, P.r2).set(-lean, 9, 1, P.r1).set(-lean * 2, 8, 1, P.r2).set(-lean * 2, 7, 1, P.r1);
-  m.set(1, 0, 1, P.s5).set(-1, 0, -1, P.s4).set(0, 0, 2, P.s6).set(2, 0, 0, P.s5);
+  for (let y = 14; y <= 21; y++) m.set(-lean * (2 + Math.floor((21 - y) / 3)), y, 2, y % 2 ? P.r2 : P.r1);
+  for (const [x, z, r] of [[3, 3, 1.4], [-2, -2, 1.2], [0, 4, 1.1], [4, -1, 1.3]]) stoneBlob(m, x, z, r, 1.2, r, seed + x + z * 3);
   return m;
 }
 
 /** Glas der Laterne am Warnpfahl. */
 function buildWarnLight(side) {
   const lean = side > 0 ? 1 : -1;
-  return new VoxelModel().box(lean * 2, 16, -1, lean * 2 + 1, 18, 0, 0xffffff);
+  const lx = lean * 5;
+  return new VoxelModel().box(lx, 32, -2, lx + 3, 37, 1, 0xffffff);
 }
 
 /**
- * Steg in den See: Bretter quer, Pfähle an beiden Seiten, am Ende ein Poller
- * (dort macht Balduin fest). Länge in Voxeln entlang x, Breite entlang z.
+ * Steg in den See (M13 im feinen Maß): Bretter quer mit Fugen und Nägeln,
+ * eines fehlt; Pfähle alle 2 m mit Algen, am Ende ein Poller mit einer
+ * aufgeschossenen Leine. Länge und Breite kommen in groben Voxeln (1/8 m).
  */
 function buildDock(seed, length, width, bollards = []) {
   const m = new VoxelModel();
-  const deck = 2; // Oberkante der Bretter (y)
-  for (let x = 0; x < length; x++) {
-    const gap = x % 5 === 4;
-    for (let z = 0; z < width; z++) {
-      const h = hash3(x, 0, z, seed);
-      if (gap && h < 0.7) continue; // Fugen zwischen den Brettern
-      const plank = hash3(x - (x % 5), 0, 0, seed + 3);
-      if (plank > 0.93 && x > 8 && z > 2 && z < width - 3) continue; // ein fehlendes Brett
-      m.set(x, deck, z, h < 0.12 ? P.e4 : plank < 0.5 ? P.e6 : P.e5);
-      m.set(x, deck - 1, z, P.e3);
+  const L = length * 2;
+  const Wd = width * 2;
+  const deck = 5; // Oberkante der Bretter (y): Oberfläche bei 6/16 = 0,375 m
+  for (let x = 0; x < L; x++) {
+    const plank = Math.floor(x / 5);
+    const u = x % 5;
+    const missing = plank > 4 && hash3(plank, 0, 0, seed + 3) > 0.95;
+    for (let z = 0; z < Wd; z++) {
+      if (u === 4) continue; // Fuge (darunter das Wasser)
+      if (missing && z > 4 && z < Wd - 5) continue;
+      const r = hash3(plank, 1, 0, seed);
+      let c = r < 0.3 ? P.e5 : r < 0.8 ? P.e6 : P.e7;
+      if (hash3(x, 0, z, seed) > 0.94) c = shade(c, -1);
+      if ((z === 2 || z === Wd - 3) && u === 1) c = P.s5; // Nägel über den Tragbalken
+      m.set(x, deck, z, c);
+      m.set(x, deck - 1, z, z === Wd - 1 ? P.e4 : P.e3);
+    }
+    // Tragbalken längs, vorn sichtbar
+    m.set(x, deck - 2, Wd - 1, P.e2).set(x, deck - 2, 0, P.e2);
+  }
+  // Pfähle alle 2 m auf beiden Seiten, mit Algen am Wasser
+  for (let x = 4; x < L; x += 32) {
+    for (const z of [-2, Wd]) {
+      m.box(x, -4, z, x + 2, deck + 4, z + 1, (xx, y) => {
+        if (y > deck + 3) return P.e5;
+        if (y <= 1) return hash3(xx, y, z, seed) < 0.5 ? P.g3 : P.t2;
+        return xx === x ? P.e4 : hash3(xx, y, z, seed) < 0.4 ? P.e2 : P.e3;
+      });
     }
   }
-  // Pfähle alle 2 m, auf beiden Seiten
-  for (let x = 2; x < length; x += 16) {
-    for (const z of [-1, width]) {
-      m.box(x, -2, z, x + 1, deck + 2, z, (xx, y) => (y > deck ? P.e4 : hash3(xx, y, z, seed) < 0.4 ? P.e2 : P.e3));
-      m.set(x, deck + 3, z, P.e5);
+  // Poller am Ende und eine aufgeschossene Leine
+  const px = L - 6;
+  m.box(px, deck + 1, 2, px + 3, deck + 5, 5, (x) => (x === px ? P.s4 : P.s3));
+  m.box(px - 1, deck + 6, 1, px + 4, deck + 6, 6, P.s4);
+  m.box(px, deck + 7, 2, px + 3, deck + 7, 5, P.s5);
+  for (let x = px - 11; x <= px - 3; x++) {
+    for (let z = Wd - 9; z <= Wd - 2; z++) {
+      const d = Math.hypot(x + 0.5 - (px - 7), z + 0.5 - (Wd - 5.5));
+      if (d > 3.8 || d < 1.4) continue;
+      m.set(x, deck + 1, z, Math.floor(d * 2) % 2 ? P.e7 : P.e8);
     }
   }
-  // Poller am Ende und ein Seil
-  const px = length - 3;
-  m.box(px, deck + 1, 1, px + 1, deck + 3, 2, P.s3);
-  m.box(px - 1, deck + 3, 1, px + 2, deck + 3, 2, P.s4);
-  m.box(px - 4, deck + 1, width - 3, px - 2, deck + 1, width - 2, P.e7);
-  m.set(px - 3, deck + 2, width - 3, P.e8);
   // Weitere Poller an der Kante (M10: dort fliegt Balduins Leine hin)
-  for (const [bx, bz] of bollards) {
-    m.box(bx, deck + 1, bz, bx + 1, deck + 3, bz + 1, (x, y) => (y === deck + 1 ? P.s2 : P.s3));
-    m.box(bx - 1, deck + 3, bz, bx + 2, deck + 3, bz + 1, P.s4);
+  for (const [cbx, cbz] of bollards) {
+    const bx = cbx * 2;
+    const bz = cbz * 2;
+    m.box(bx, deck + 1, bz, bx + 3, deck + 5, bz + 3, (x, y) => (y === deck + 1 ? P.s2 : x === bx ? P.s4 : P.s3));
+    m.box(bx - 1, deck + 6, bz - 1, bx + 4, deck + 6, bz + 4, P.s4);
+    m.box(bx, deck + 7, bz, bx + 3, deck + 7, bz + 3, P.s5);
   }
   return m;
 }
@@ -594,49 +719,49 @@ function buildDock(seed, length, width, bollards = []) {
 /** Altes Ruderboot, kieloben am Strand angespült – mit Löchern im Rumpf (einmal Schrott). */
 function buildWreck(seed) {
   const m = new VoxelModel();
-  const L = 30;
-  const W = 12;
+  const L = 60;
+  const W = 24;
   const rng = new Rng(seed);
   for (let x = 0; x < L; x++) {
     const t = x / (L - 1);
     // Bootsform von oben: schmales Heck (x = 0), breiteste Stelle vorn im ersten
     // Drittel, zum Bug lang und spitz – wie ein Ruderboot, nicht wie eine Kiste (m12-r1)
     const half = (W / 2) * (t < 0.35 ? 0.7 + 0.3 * Math.sin((t / 0.35) * (Math.PI / 2)) : Math.sqrt(Math.max(0, 1 - ((t - 0.35) / 0.65) ** 2)));
-    if (half < 0.5) continue;
+    if (half < 1) continue;
     for (let z = -Math.ceil(half); z < Math.ceil(half); z++) {
       const dz = Math.abs(z + 0.5) / half;
       if (dz > 1) continue;
       // Kieloben: die Rundung des Rumpfs zeigt nach oben
-      const top = Math.round(5 - dz * dz * 3.2);
+      const top = Math.round(10 - dz * dz * 6.4);
       // Planken längs des Rumpfs, abwechselnd hell und dunkel gestrichen, damit man
-      // von oben das Boot erkennt (m12-r1: ein gesprenkeltes Rechteck hielt man für
-      // eine Plane); die Farbe ist stellenweise abgeblättert (blankes Holz)
-      const plank = Math.floor(Math.abs(z + 0.5));
-      const keel = z === -1 && x > 1 && x < L - 4; // eine schmale Leiste auf dem Rücken
-      for (let y = 0; y <= top + (keel ? 1 : 0); y++) {
-        const outer = y >= top || dz > 0.82;
+      // von oben das Boot erkennt; die Farbe ist stellenweise abgeblättert (blankes Holz)
+      const plank = Math.floor(Math.abs(z + 0.5) / 2);
+      const keel = (z === -1 || z === 0) && x > 3 && x < L - 8; // schmale Leiste auf dem Rücken
+      for (let y = 0; y <= top + (keel ? 2 : 0); y++) {
+        const outer = y >= top || dz > 0.86;
         if (!outer) continue;
         const h = hash3(x, y, z, seed);
-        const bare = hash3(Math.floor(x / 5), 0, plank, seed + 5) > 0.86;
+        const bare = hash3(Math.floor(x / 10), 0, plank, seed + 5) > 0.86;
         let c = bare ? P.e6 : plank % 2 ? P.b3 : P.b4;
         if (keel) c = y > top ? P.e3 : P.e4; // Kiel: dunkle Leiste vom Heck zum Bug
-        if (x === 0) c = P.e4; // flaches Heck
-        if (y === 0 && dz > 0.82) c = P.s9; // weiß gestrichene Kante am Boden
-        if (h > 0.985 && !keel) c = P.r2; // Rost an den Nägeln
-        m.set(x + 1, y, z + W / 2, c);
+        if (x <= 1) c = P.e4; // flaches Heck
+        if (y <= 1 && dz > 0.86) c = P.s9; // weiß gestrichene Kante am Boden
+        if (h > 0.99 && !keel) c = P.r2; // Rost an den Nägeln
+        m.set(x + 2, y, z + W / 2, c);
       }
     }
   }
   // Löcher im Rumpf (dort sieht man hinein)
   for (let k = 0; k < 4; k++) {
-    const hx = rng.int(4, L - 8);
-    const hz = rng.int(2, W - 4);
-    m.remove(hx, 1, hz, hx + rng.int(1, 3), 6, hz + 1);
+    const hx = rng.int(8, L - 16);
+    const hz = rng.int(4, W - 8);
+    m.remove(hx, 2, hz, hx + rng.int(2, 5), 12, hz + 2);
   }
   // Ein Ruder und Tang
-  m.line(-3, 0, W + 1, 8, 1, W + 2, P.e6);
-  m.box(-4, 0, W + 1, -2, 0, W + 3, P.e7);
-  for (let k = 0; k < 10; k++) m.set(rng.int(0, L), 0, rng.chance(0.5) ? -1 : W, rng.chance(0.5) ? P.g3 : P.t2);
+  m.line(-6, 0, W + 2, 16, 1, W + 4, P.e6);
+  m.line(-6, 0, W + 3, 16, 1, W + 5, P.e5);
+  m.box(-9, 0, W + 2, -5, 0, W + 6, P.e7);
+  for (let k = 0; k < 20; k++) m.set(rng.int(0, L), 0, rng.chance(0.5) ? -1 : W, rng.chance(0.5) ? P.g3 : P.t2);
   return m;
 }
 
@@ -653,8 +778,10 @@ export function createProps({ seed, materials, colliders, map }) {
   const interactions = [];
   const blockers = []; // Flächen, auf denen kein Gras wachsen soll
 
-  const add = (model, x, z, { turns = 0, occluder = false, name = '' } = {}) => {
-    const object = createStaticVoxelObject(model, occluder ? materials.occluder : materials.world, { turns, seed });
+  // Seit M13 sind die Modelle im feinen Maß (Schatten grob); was noch grob ist, sagt size: V
+  const add = (model, x, z, { turns = 0, occluder = false, name = '', size = FINE } = {}) => {
+    const shadow = size === FINE ? 'coarse' : 'full';
+    const object = createStaticVoxelObject(model, occluder ? materials.occluder : materials.world, { turns, seed, size, shadow });
     object.position.set(x, 0, z);
     object.name = name;
     group.add(object);
@@ -671,7 +798,7 @@ export function createProps({ seed, materials, colliders, map }) {
   const flameGroup = new THREE.Group();
   flameGroup.position.set(fire.x, 0, fire.z);
   for (let i = 0; i < 6; i++) {
-    const frame = new THREE.Mesh(buildFlameFrame(seed + 100 + i).toGeometry({ jitter: 0, ao: false, visibleOnly: true }), materials.flame);
+    const frame = new THREE.Mesh(buildFlameFrame(seed + 100 + i).toGeometry({ jitter: 0, ao: false, visibleOnly: true, size: FINE }), materials.flame);
     frame.visible = i === 0;
     flameFrames.push(frame);
     flameGroup.add(frame);
@@ -715,7 +842,7 @@ export function createProps({ seed, materials, colliders, map }) {
   // Ausbaustufen (Juna, Meilenstein 6): anfangs versteckt, siehe setTowerStage
   const towerStages = [add(buildTowerRepair(seed + 7), tower.x, tower.z, { occluder: true, name: 'Funkturm-Leiter' }), add(buildTowerAntenna(), tower.x, tower.z, { occluder: true, name: 'Funkturm-Antenne' })];
   const beacon = add(buildTowerBeacon(), tower.x, tower.z, { occluder: true, name: 'Leuchtfeuer' });
-  if (materials.beacon) beacon.add(createStaticVoxelObject(buildTowerBeaconGlass(), materials.beacon, { shadow: 'none', jitter: 0 }));
+  if (materials.beacon) beacon.add(createStaticVoxelObject(buildTowerBeaconGlass(), materials.beacon, { shadow: 'none', jitter: 0, size: FINE }));
   towerStages.push(beacon);
   for (const o of towerStages) o.visible = false;
   const debris = LAYOUT.towerDebris;
@@ -731,7 +858,7 @@ export function createProps({ seed, materials, colliders, map }) {
     for (const side of [-1, 1]) {
       const z = Math.round((at.z + side * (path.width / 2 + 0.75)) * 8) / 8;
       const post = add(buildWarnPost(seed + 30 + side, side), x, z, { name: 'Warnpfahl' });
-      if (materials.spawnGlow) post.add(createStaticVoxelObject(buildWarnLight(side), materials.spawnGlow, { shadow: 'none', jitter: 0 }));
+      if (materials.spawnGlow) post.add(createStaticVoxelObject(buildWarnLight(side), materials.spawnGlow, { shadow: 'none', jitter: 0, size: FINE }));
       colliders.addCircle(x + 0.0625, z, 0.2, 'warnpfahl');
     }
   }
@@ -791,8 +918,8 @@ export function createProps({ seed, materials, colliders, map }) {
   const laundry = buildClothesline(seed + 11, span);
   add(laundry.line, cl.x0, cl.z, { occluder: true, name: 'Wäscheleine' });
   for (const c of laundry.cloths) {
-    const piece = createStaticVoxelObject(c.model, materials.laundry || materials.world, { seed });
-    piece.position.set(cl.x0 + c.x * V, c.y * V, cl.z);
+    const piece = createStaticVoxelObject(c.model, materials.laundry || materials.world, { seed, size: FINE });
+    piece.position.set(cl.x0 + c.x * FINE, c.y * FINE, cl.z);
     piece.name = 'Wäsche';
     group.add(piece);
   }
@@ -823,7 +950,7 @@ export function createProps({ seed, materials, colliders, map }) {
 
   // Alte Eiche mit Reifenschaukel
   const oak = LAYOUT.oak;
-  add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche' });
+  add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche', size: V });
   colliders.addCircle(oak.x, oak.z, 0.45);
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
   interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', action: 'swing', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
@@ -833,9 +960,9 @@ export function createProps({ seed, materials, colliders, map }) {
   const swingPivot = new THREE.Group();
   swingPivot.name = 'Schaukel';
   swingPivot.position.set(oak.x + 10 * V, 20 * V, oak.z);
-  const tire = new THREE.Mesh(tireModel.toGeometry({ seed }), materials.world);
+  const tire = new THREE.Mesh(tireModel.toGeometry({ seed, size: FINE }), materials.world);
   tire.receiveShadow = true;
-  const tireShadow = new THREE.Mesh(shadowGeometry(tireModel), SHADOW_PROXY_MATERIAL);
+  const tireShadow = new THREE.Mesh(shadowGeometry(tireModel, 'full', FINE), SHADOW_PROXY_MATERIAL);
   tireShadow.castShadow = true;
   tireShadow.layers.set(SHADOW_LAYER);
   for (const o of [tire, tireShadow]) {
