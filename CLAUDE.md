@@ -94,11 +94,14 @@ gilt bis auf Weiteres:
   mit `pxPerMeter / 40` skalieren.
 - Kamera: orthografisch, **Gier immer 0** (Blick nach Norden, −Z), Neigung
   sin = 0,6 / cos = 0,8.
-- **Voxelgrößen:** 1/16 m für Figur, Schlurfer, Türme, Werkzeuge, Waffen und
-  Loot (`size: 1/16` bzw. `unit` an den Teilen der Horde), 1/8 m für Gelände,
-  Natur, Gebäude und große Requisiten. Statische Objekte auf 1/8-m-Positionen
-  und nur in 90°-Drehungen – dann liegen alle Kanten exakt auf dem
-  Pixelraster.
+- **Voxelgrößen (seit M13):** alle Modelle im feinen Maß, 1/16 m = 5 px –
+  Figuren, Horde, Türme, Bauten, Haus, Requisiten, Quellen und Natur
+  (`size: FINE` aus `src/world/voxelKit.js`, `unit` an den Teilen der Horde).
+  Nur die Bodentextur hat 1/8 m je Texel. Schatten-Stellvertreter bleiben grob
+  (`shadow: 'coarse'`, Bäume `'rough'` = 1/4 m). Statische Objekte auf
+  1/8-m-Positionen und nur in 90°-Drehungen – dann liegen alle Kanten exakt
+  auf dem Pixelraster. Bausteine für feine Modelle (Bretter, Rundholz, Steine,
+  Blüten, `shade`) liegen in `voxelKit.js`.
 - Farben aus der Palette `src/render/palette.js` (`P.g5`, `P.e3` …).
 - Keine Unschärfe, kein Bloom. Transparenz nur als gerasterte Durchsicht
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.

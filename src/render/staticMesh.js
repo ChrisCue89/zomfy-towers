@@ -19,7 +19,7 @@ const V = 1 / 8;
  * @param {THREE.Material} material
  * @param {object} [options]
  * @param {number} [options.turns] 90°-Drehungen um y
- * @param {'full'|'coarse'|'none'} [options.shadow]
+ * @param {'full'|'coarse'|'rough'|'none'} [options.shadow]
  * @param {number} [options.jitter]
  * @param {number} [options.seed]
  * @param {boolean} [options.skipBottom]
@@ -44,8 +44,9 @@ export function createStaticVoxelObject(model, material, options = {}) {
   return group;
 }
 
-/** Geometrie für einen Schatten-Stellvertreter. */
+/** Geometrie für einen Schatten-Stellvertreter ('coarse' halb so fein, 'rough' ein Viertel – für feine Bäume). */
 export function shadowGeometry(model, mode = 'full', size = V) {
   if (mode === 'coarse') return model.downsampled(2, 2).toGeometry({ size: size * 2, jitter: 0, ao: false });
+  if (mode === 'rough') return model.downsampled(4, 12).toGeometry({ size: size * 4, jitter: 0, ao: false });
   return model.toGeometry({ jitter: 0, ao: false, size });
 }

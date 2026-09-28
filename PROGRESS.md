@@ -5,14 +5,80 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
-## Meilenstein 13 – Detailgrad (begonnen)
+## Meilenstein 13 – Detailgrad
 
 **Neu im Plan (Frage des Auftraggebers):** Der Detailgrad bekommt einen
 eigenen Meilenstein vor der Balance. Drinnen (M11) und alles Kleine und
-Lebendige (M9.1, M12) sind schon im feinen Maß; draußen sind Haus, Hof,
-Requisiten und Natur noch grob. Die werden jetzt Schritt für Schritt aus
-1/16-m-Voxeln neu gebaut (OFFENE-FRAGEN 111). Die Balance wird M14, an den
-Vorschlägen dafür ändert sich nichts.
+Lebendige (M9.1, M12) waren schon im feinen Maß; draußen waren Haus, Hof,
+Requisiten und Natur noch grob. Jetzt ist alles aus 1/16-m-Voxeln gebaut
+(OFFENE-FRAGEN 111). Die Balance wird M14, an den Vorschlägen dafür ändert
+sich nichts.
+
+**M13a – Zuhause und Hof:**
+- **Das Fischerhaus** sieht man nur von vorn und von oben – dort sitzen die
+  Einzelheiten: senkrechte Bretter mit Fugen und Astlöchern, vorstehende
+  Querlatten mit Nägeln, weiß gestrichene Fensterrahmen mit Sprossenkreuz,
+  Gardinen mit Raffband, Fensterbank und Blumenkasten mit Blüten; eine
+  blaugrün gestrichene Brettertür mit Z-Strebe, Bullauge und Messingknauf;
+  im Giebel Stülpschalung, eine Lüftung, ein geschnitzter Holzfisch und das
+  Hufeisen. Das Wellblechdach besteht aus Tafeln (rot, grau, rostig) mit
+  Rillen, Schrauben und Roststellen, der Westhang liegt heller (man sieht den
+  First); Plane mit zwei Reifen, Solarpaneel mit Zellen, Ofenrohr mit
+  Regenhut. Die Veranda hat Dielen mit versetzten Stößen, ein Geländer mit
+  Pfosten, Handlauf und Stäben, Terrakottatöpfe mit Geranie, Heide und
+  Lavendel; der Anbau ein zweites Fenster mit Kräuterkasten und ein
+  Fallrohr. Dachfenster, Werkzeugbrett mit Sägebock und die Kisten zeigen
+  die Stufen 3–5.
+- **Vordach kürzer:** Das alte, tiefe Vordach verdeckte die Tür fast ganz.
+  Jetzt hängt ein kurzes Vordach an zwei Streben (keine Stangen mehr im Weg),
+  die Laterne sitzt als Wandlampe neben der Tür (Lichtquelle mitgewandert).
+- **Hof:** Feuerstelle aus runden Feldsteinen mit verkohlten Scheiten und
+  züngelnden Flammen; Sitzstämme mit heller Sitzfläche; ein karierter
+  Ohrensessel mit Kissen und Decke (vorher ein oranger Klotz); Wegweiser mit
+  Pfeilbrettern und geschnitzter Schrift; runder Briefkasten mit Fähnchen;
+  Wäsche mit Hemd (Kragen, Knöpfe), Ringelsocken, Handtuch mit Fransen und
+  Hose; Holzstapel mit Hirnholz unter Blech; Hackklotz mit Jahresringen,
+  Kerben und einer echten Axt; Regentonne mit Dauben und Hahn; Hochbeet mit
+  Kürbissen, Kohl und Möhrenkraut; Schaukelreifen mit Profil.
+- **Bauten:** Werkbank mit Lochwand (Säge, Hammer, Schlüssel, Zange),
+  Schraubstock, Hobel und Laternchen; Laternenpfahl mit Steinfuß und Laterne
+  mit Dach; Flachsbeet mit blauen Blüten; Gartenbank mit Lehne und
+  Armlehnen; Zelt mit Nähten, Flicken, aufgerollten Klappen, Schlafsack und
+  Spannleinen; Holzlager mit Schindeldach.
+
+**M13b – Wege und Wasser:** Steg mit Fugen (darunter das Wasser), Nägeln,
+einem fehlenden Brett, Pfählen mit Algen, Pollern und einer aufgeschossenen
+Leine; der Leuchtmast als Gitterturm mit rot-weißen Beinen, Kreuzstreben,
+Gitterrost, Betonsockeln und Schaltkasten mit Warnschild, alle drei
+Ausbaustufen (Leiter, Antenne mit Schüssel, Leuchtfeuer) fein; Wrack,
+Turmteil, Warnpfähle mit gemaltem Kreuz, Laterne und Fetzen; Kiesel mit
+Glanzpunkt, Faserbusch mit Samenrispen, Astbündel mit Schnur, Schrotthaufen
+mit Reifen, blauer Öltonne und Wellblech, Stümpfe mit Jahresringen.
+
+**M13c – Natur und Boden:** Tannen aus Zweiglagen mit hängenden Spitzen,
+Laubbäume und Birken mit Kronen aus vielen Laubbüscheln (oben hell, unten
+dunkel – vorher wirkten sie im feinen Maß wie Bälle), Rindenfurchen und
+Wurzelansatz; Büsche, Felsen mit Riss, Moos und Flechte, Gras und Blumen
+fein. Der Boden ist ruhiger: Laub liegt in Verwehungen statt überall als
+Einzelpunkt, trockene Stellen und Hofflecken sind zusammenhängend, Wege
+haben Flächen statt Rauschen und einen dunklen Rand – die Dinge heben sich
+ab. Markierband und Markierpflock der fällbaren Bäume sind mitgewandert.
+
+**M13d – Türme:** von Grund auf fein gebaut statt verdoppelt: Sockel aus
+behauenen Steinen; Bolzenwerfer als Holzgerüst mit Armbrust auf Drehteller
+(Scharfschütze mit langem Lauf und Fernrohr, Repetierer mit Trommel und
+zweitem Bogen); Katapult mit Lafette, Böcken, Wurfarm, Korb und
+Kürbisvorrat (Feuerkürbis mit geschnitztem, glimmendem Gesicht, Streukürbis
+mit kleinen Kürbissen); Rasensprenger mit Daubentank, Spannbändern,
+Schlauch und gebogenen Düsenarmen (Frost weiß mit Eis, Schlamm braun);
+Laternenturm mit Pfahl, Trittsprossen, Streben und Laterne mit Spitzdach
+(Leuchtfeuer mit Blendring und zweitem Licht, Glücksklee mit Messing und
+Kleeblättern). Die Horde war seit M5 fein und bleibt, wie sie ist.
+
+**Leistung:** Im Bild steigen die Dreiecke je nach Stelle auf etwa das
+Doppelte (Hof 190 000 → 270 000, Weg 320 000 → 520 000); die Natur macht den
+größten Teil aus. Schatten bleiben grob (Bäume 1/4 m). Die softwaregerenderte
+Bildzeit im Prüfbrowser änderte sich kaum (35–45 → 40–46 ms).
 
 ---
 

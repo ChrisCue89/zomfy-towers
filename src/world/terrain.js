@@ -16,18 +16,22 @@ function pick(h, a, b, threshold) {
   return h < threshold ? a : b;
 }
 
-/** Herbstwiese: Grün mit Gelb und Braun, dazwischen Laub. */
-function meadow(h, h2, patch, clump, wild) {
+/**
+ * Herbstwiese: Grün mit Gelb und Braun, dazwischen Laub. Seit M13 ruhiger:
+ * trockene Stellen und Laub liegen in zusammenhängenden Flecken (drift),
+ * nicht mehr als einzelne Punkte überall – so heben sich die Dinge ab.
+ */
+function meadow(h, h2, patch, clump, wild, drift) {
   const ramp = [P.g3, P.g4, P.g5, P.g5, P.g6];
   let k = patch < 0.34 ? 0 : patch < 0.48 ? 1 : patch < 0.62 ? 2 : patch < 0.74 ? 3 : 4;
   if (clump > 0.74) k = Math.min(4, k + 1);
   else if (clump < 0.22) k = Math.max(0, k - 1);
   let color = ramp[k];
   // Trockene, gelbliche Flecken (Herbst)
-  if (patch > 0.66 && h2 < 0.35) color = h < 0.5 ? P.g7 : P.e7;
-  if (h < 0.03) color = k >= 2 ? P.g7 : P.g6;
-  // Gefallenes Laub: mehr, je wilder
-  const leaf = 0.018 + wild * 0.05;
+  if (patch > 0.66 && clump > 0.5) color = h < 0.7 ? P.g7 : P.e7;
+  if (h < 0.012) color = k >= 2 ? P.g7 : P.g6;
+  // Gefallenes Laub in Verwehungen: dort dicht, dazwischen fast keins
+  const leaf = (0.018 + wild * 0.05) * (drift > 0.58 ? 2.4 : 0.25);
   if (h > 1 - leaf) color = h2 < 0.35 ? P.f4 : h2 < 0.6 ? P.r3 : h2 < 0.85 ? P.f5 : P.e6;
   return color;
 }
@@ -37,9 +41,9 @@ function forestFloor(h, h2, patch, clump) {
   const k = patch < 0.42 ? 0 : patch < 0.6 ? 1 : 2;
   let color = [P.t1, P.g3, P.e3][k];
   if (clump > 0.7) color = P.g3;
-  if (h < 0.07) color = P.e2;
-  else if (h < 0.1) color = P.e4;
-  else if (h > 0.93) color = h2 < 0.4 ? P.r2 : h2 < 0.7 ? P.f3 : P.e5; // Laub
+  if (h < 0.035) color = P.e2;
+  else if (h < 0.05) color = P.e4;
+  else if (h > 0.955) color = h2 < 0.4 ? P.r2 : h2 < 0.7 ? P.f3 : P.e5; // Laub
   return color;
 }
 
@@ -77,25 +81,28 @@ function groundColor(map, x, z, i, j, seed, out) {
   // --- Land ----------------------------------------------------------------
   const edge = map.edgeDistance(x, z); // < 0: begehbar
   const wild = Math.max(0, Math.min(1, (edge + 3) / 3));
-  let color = edge > 0.15 ? forestFloor(h, h2, patch, clump) : meadow(h, h2, patch, clump, wild);
+  const drift = valueNoise(x * 0.45, z * 0.45, seed + 31);
+  let color = edge > 0.15 ? forestFloor(h, h2, patch, clump) : meadow(h, h2, patch, clump, wild, drift);
   // Waldsaum: dunkler, mit Laub
-  if (edge > -0.6 && edge <= 0.15 && h < (edge + 0.6) * 1.2) color = h2 < 0.3 ? P.e4 : P.g3;
+  if (edge > -0.6 && edge <= 0.15 && h < (edge + 0.6) * 0.9) color = h2 < 0.3 ? P.e4 : P.g3;
 
   // --- Wege der Horde ------------------------------------------------------
   const dPath = map.sampleLinear(map.pathField, x, z) + (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.45;
   if (dPath < -0.1) {
     out.path = true;
+    // Seit M13 ruhiger: Fahrspuren und helle Flecken als Flächen, wenig Einzelpunkte
     const rut = valueNoise(x * 0.7, z * 0.7, seed + 21);
-    color = rut > 0.62 ? pick(h, P.e4, P.e3, 0.7) : pick(h, P.e5, P.e6, 0.58);
-    if (dPath > -0.35 && h < 0.5) color = P.e4; // Rand: festgetreten, dunkler
-    if (h2 > 0.965) color = pick(h, P.s5, P.s6, 0.5); // Kiesel
-    else if (h2 < 0.02) color = P.f4; // ein Blatt
-  } else if (dPath < 0.25 && h < 0.5) {
+    const blot = valueNoise(x * 2.2, z * 2.2, seed + 41);
+    color = rut > 0.62 ? pick(h, P.e4, P.e3, 0.85) : blot > 0.72 ? P.e6 : pick(h, P.e5, P.e6, 0.86);
+    if (dPath > -0.3) color = P.e4; // Rand: festgetreten, dunkler
+    if (h2 > 0.975) color = pick(h, P.s5, P.s6, 0.5); // Kiesel
+    else if (h2 < 0.02 && drift > 0.5) color = P.f4; // ein Blatt
+  } else if (dPath < 0.2 && clump < 0.55) {
     color = h2 < 0.5 ? P.e4 : P.g3; // abgetretener Saum
   }
 
   // --- Hof: festgetretene Stellen ------------------------------------------
-  if (map.inYard(x, z) && patch > 0.58 && h < 0.3) color = pick(h2, P.e5, P.e4, 0.5);
+  if (map.inYard(x, z) && patch > 0.58 && clump < 0.4) color = pick(h2, P.e5, P.e4, 0.75);
 
   // --- Feuerstelle ----------------------------------------------------------
   const fire = LAYOUT.campfire;

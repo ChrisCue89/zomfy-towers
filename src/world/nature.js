@@ -20,142 +20,190 @@ export const LEAVES = {
   gelb: [P.e6, P.e7, P.f5, P.f6, P.f7],
 };
 import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL, shadowGeometry } from '../render/staticMesh.js';
+import { FINE, shade } from './voxelKit.js';
 
 // --- Modelle ---------------------------------------------------------------
 
+/**
+ * Tanne im feinen Maß (M13): runder Stamm, fünf Etagen aus Zweiglagen mit
+ * hängenden Spitzen am Saum, heller Wipfel. Maße wie vorher (Koordinaten ×2).
+ */
 export function buildFir(seed, scale = 1) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const trunkTop = Math.round(6 * scale);
-  m.box(-1, 0, -1, 0, trunkTop + 3, 0, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? P.e3 : P.e2));
+  const trunkTop = Math.round(12 * scale);
+  m.cylinder(0, 0, 0, trunkTop + 6, 1.9, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? P.e3 : x < 0 ? P.e3 : P.e2));
   const tiers = [
-    [12, 8, 8],
-    [10, 6, 8],
-    [8, 4, 7],
-    [6, 2, 7],
-    [3, 0, 5],
-  ].map(([r0, r1, h]) => [r0 * scale, r1 * scale, Math.max(3, Math.round(h * scale))]);
+    [24, 16, 16],
+    [20, 12, 16],
+    [16, 8, 14],
+    [12, 4, 14],
+    [6, 0, 10],
+  ].map(([r0, r1, h]) => [r0 * scale, r1 * scale, Math.max(6, Math.round(h * scale))]);
   let y = trunkTop;
   for (const [r0, r1, h] of tiers) {
-    const wobble = rng.range(-0.6, 0.6);
+    const wobble = rng.range(-1.2, 1.2);
     for (let k = 0; k < h; k++) {
       const t = h > 1 ? k / (h - 1) : 1;
-      const r = Math.max(0.6, r0 + (r1 - r0) * t + (k === 0 ? wobble : 0));
+      const r = Math.max(1.2, r0 + (r1 - r0) * t + (k < 2 ? wobble : 0));
       const yy = y + k;
       for (let x = Math.floor(-r); x <= Math.ceil(r); x++) {
         for (let z = Math.floor(-r); z <= Math.ceil(r); z++) {
-          const dx = x + 0.5;
-          const dz = z + 0.5;
-          const d = Math.sqrt(dx * dx + dz * dz);
+          const d = Math.hypot(x + 0.5, z + 0.5);
           if (d > r) continue;
           const hsh = hash3(x, yy, z, seed);
-          // Ausgefranster Rand
-          if (d > r - 1 && hsh < 0.28) continue;
+          if (k === 0 && d > r - 1.5 && hsh < 0.18) continue; // ausgefranster Saum
           let c = t < 0.3 ? P.t1 : t < 0.7 ? P.t2 : P.t3;
-          if (d > r - 1.5 && t > 0.5) c = P.t3;
-          if (hsh > 0.9) c = P.t4;
-          else if (hsh < 0.08) c = P.t0;
+          if (d > r - 2.5 && t > 0.4) c = P.t3;
+          if ((Math.floor(d) + k) % 5 === 0 && d < r - 2) c = P.t1; // Zweiglagen
+          if (hsh > 0.93) c = P.t4;
+          else if (hsh < 0.06) c = P.t0;
           m.set(x, yy, z, c);
+          // hängende Zweigspitzen unter dem Saum
+          if (k === 0 && d > r - 2 && hsh > 0.55) m.set(x, yy - 1, z, hsh > 0.8 ? P.t3 : P.t2);
         }
       }
     }
-    y += h - 3;
+    y += h - 6;
   }
-  m.box(-1, y + 2, -1, 0, y + 3, 0, P.t3);
+  m.box(-1, y + 4, -1, 0, y + 8, 0, P.t3);
+  m.set(-1, y + 9, -1, P.t4);
   return m;
 }
 
+/**
+ * Laubbaum im feinen Maß (M13): Stamm mit Rindenfurchen und Wurzelansatz,
+ * drei Äste, die Krone aus einem Kern und vielen Laubbüscheln – jedes Büschel
+ * oben hell und unten dunkel, die ganze Krone oben heller als unten. So liest
+ * sie sich als Blattwerk und nicht als Ball.
+ */
 export function buildDeciduous(seed, scale = 1, leaves = LEAVES.gruen) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const trunkH = Math.round(11 * scale);
-  // Stamm mit Wurzelansatz
-  m.box(-1, 0, -1, 1, trunkH, 1, (x, y, z) => (hash3(x, y, z, seed) < 0.25 ? P.e3 : P.e2));
-  m.set(-2, 0, 0, P.e2).set(2, 0, -1, P.e2).set(0, 0, 2, P.e3).set(-1, 0, -2, P.e2);
+  const trunkH = Math.round(22 * scale);
+  const bark = (x, y, z) => {
+    const a = Math.atan2(z + 0.5, x + 0.5);
+    const groove = Math.floor((a / Math.PI) * 7 + 14 + (y % 9 < 4 ? 0.5 : 0)) % 2 === 0;
+    if (hash3(x, y, z, seed) > 0.94) return P.e4;
+    return groove ? P.e2 : x < 0 ? P.e4 : P.e3;
+  };
+  m.cylinder(0, 0, 0, trunkH, 2.7, bark);
+  m.cylinder(0, 0, 0, 1, 3.6, (x, y) => (y === 1 ? P.e3 : P.e2)); // Wurzelhals
+  for (const [dx, dz] of [[1, 0.3], [-1, -0.2], [0.2, 1], [-0.3, -1]]) m.line(0, 0, 0, Math.round(dx * 5), 0, Math.round(dz * 5), P.e2, 1);
   // Äste
-  m.line(0, trunkH - 3, 0, -5, trunkH + 2, 1, P.e2);
-  m.line(0, trunkH - 2, 0, 5, trunkH + 3, -2, P.e2);
-  // Krone aus mehreren Blobs
-  const cy = trunkH + 7 * scale;
-  const blobs = [
-    [0, cy, 0, 10, 7.5, 10],
-    [rng.range(-7, -5), cy - 2, rng.range(-3, 3), 7, 6, 7],
-    [rng.range(5, 7), cy - 1, rng.range(-3, 3), 7, 6, 7],
-    [rng.range(-2, 2), cy + 4, rng.range(-2, 3), 7, 5, 7],
-  ];
-  for (const [bx, by, bz, rx, ry, rz] of blobs) {
+  m.line(0, trunkH - 6, 0, -10, trunkH + 4, 2, P.e2, 1);
+  m.line(0, trunkH - 4, 0, 10, trunkH + 6, -4, P.e2, 1);
+  m.line(0, trunkH - 2, 0, -2, trunkH + 10, -6, P.e3, 1);
+  // Krone: Kern plus Büschel ringsum und obenauf
+  const cy = trunkH + 14 * scale;
+  const top = cy + 15 * scale;
+  const bottom = cy - 13 * scale;
+  const clumps = [[0, cy, 0, 16, 12, 16]];
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rng.range(-0.3, 0.3);
+    const up = rng.range(-0.3, 0.9);
+    const r = rng.range(7, 10);
+    clumps.push([Math.cos(a) * 14 * scale, cy + up * 9 * scale, Math.sin(a) * 12 * scale, r, r * 0.8, r]);
+  }
+  for (let i = 0; i < 3; i++) clumps.push([rng.range(-6, 6) * scale, cy + 10 * scale, rng.range(-5, 5) * scale, rng.range(7, 9), 6, rng.range(7, 9)]);
+  for (const [bx, by, bz, rx, ry, rz] of clumps) {
     m.ellipsoid(bx, by, bz, rx * scale, ry * scale, rz * scale, (x, y, z, dx, dy) => {
       const hsh = hash3(x, y, z, seed + 1);
-      const edge = dx * dx + dy * dy > 0.7;
-      if (edge && hsh < 0.3) return null;
-      let c = dy > 0.45 ? leaves[3] : dy > 0 ? leaves[2] : dy > -0.45 ? leaves[1] : leaves[0];
-      if (hsh > 0.93) c = dy > 0.2 ? leaves[4] : leaves[2];
-      else if (hsh < 0.06) c = leaves[0];
+      const global = (y - bottom) / (top - bottom); // 0 unten … 1 oben
+      let k = dy > 0.45 ? 3 : dy > -0.05 ? 2 : 1;
+      if (global < 0.3) k -= 1;
+      else if (global > 0.75 && dy > 0) k += 1;
+      if (hsh > 0.95) k += 1;
+      else if (hsh < 0.04) k = 0;
+      const prev = m.get(x, y, z);
+      const c = leaves[Math.max(0, Math.min(4, k))];
+      // Wo Büschel sich überlappen, gewinnt das hellere (oben liegende) Laub
+      if (prev !== null && leaves.indexOf(prev) > leaves.indexOf(c)) return prev;
       return c;
     });
   }
   return m;
 }
 
+/** Birke im feinen Maß (M13): weißer Stamm mit schwarzen Querstrichen, lockere Krone aus goldenen Büscheln. */
 export function buildBirch(seed, scale = 1, leaves = [P.g5, P.g6, P.g7, P.g8]) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const trunkH = Math.round(20 * scale);
-  m.box(-1, 0, -1, 0, trunkH, 0, (x, y, z) => {
-    const hsh = hash3(0, y, 0, seed);
-    if (hsh < 0.18) return P.s1;
-    return hash3(x, y, z, seed) < 0.3 ? P.s8 : P.s9;
+  const trunkH = Math.round(40 * scale);
+  m.cylinder(0, 0, 0, trunkH, 1.9, (x, y, z) => {
+    const mark = hash3(0, y, 0, seed);
+    if (mark < 0.14 && hash3(x, y, z, seed + 2) < 0.8) return P.s1; // Querstriche
+    if (y < 3) return P.s5;
+    return x < 0 ? P.s9 : P.s8;
   });
-  const blobs = [
-    [0, trunkH + 1, 0, 6, 5, 6],
-    [rng.range(-4, -3), trunkH - 4, rng.range(-2, 2), 4.5, 4, 4.5],
-    [rng.range(3, 4), trunkH - 3, rng.range(-2, 2), 4.5, 4, 4.5],
-    [0, trunkH + 5, 0, 4, 3.5, 4],
-  ];
-  for (const [bx, by, bz, rx, ry, rz] of blobs) {
+  m.line(0, trunkH - 10, 0, -7, trunkH - 2, 1, P.s7);
+  m.line(0, trunkH - 8, 0, 7, trunkH - 1, -1, P.s7);
+  const cy = trunkH + 2;
+  const clumps = [[0, cy, 0, 9, 8, 9]];
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + rng.range(-0.3, 0.3);
+    const r = rng.range(5, 7);
+    clumps.push([Math.cos(a) * 8, cy + rng.range(-6, 9), Math.sin(a) * 7, r, r * 0.85, r]);
+  }
+  for (const [bx, by, bz, rx, ry, rz] of clumps) {
     m.ellipsoid(bx, by, bz, rx * scale, ry * scale, rz * scale, (x, y, z, dx, dy) => {
       const hsh = hash3(x, y, z, seed + 3);
-      if (dx * dx + dy * dy > 0.6 && hsh < 0.35) return null;
-      let c = dy > 0.3 ? leaves[2] : dy > -0.3 ? leaves[1] : leaves[0];
-      if (hsh > 0.9) c = leaves[3];
+      if (dx * dx + dy * dy > 0.7 && hsh < 0.15) return null;
+      let k = dy > 0.35 ? 2 : dy > -0.2 ? 1 : 0;
+      if (y > cy + 6) k += 1;
+      if (hsh > 0.93) k += 1;
+      const c = leaves[Math.max(0, Math.min(3, k))];
+      const prev = m.get(x, y, z);
+      if (prev !== null && leaves.indexOf(prev) > leaves.indexOf(c)) return prev;
       return c;
     });
   }
   return m;
 }
 
+/** Busch im feinen Maß (M13): ein Hauptbüschel und kleinere obendrauf, Beeren als Tupfen. */
 export function buildBush(seed, size = 1, berries = false, leaves = [P.g4, P.g5, P.g6, P.g7]) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const rx = rng.range(4.5, 6.5) * size;
-  const ry = rng.range(3, 4.5) * size;
-  const rz = rng.range(4, 5.5) * size;
-  m.ellipsoid(0, ry * 0.75, 0, rx, ry, rz, (x, y, z, dx, dy) => {
+  const rx = rng.range(9, 13) * size;
+  const ry = rng.range(6, 9) * size;
+  const rz = rng.range(8, 11) * size;
+  const color = (x, y, z, dx, dy) => {
     const hsh = hash3(x, y, z, seed);
-    if (dx * dx + dy * dy > 0.55 && hsh < 0.3) return null;
     if (y < 0) return null;
-    let c = dy > 0.35 ? leaves[2] : dy > -0.2 ? leaves[1] : leaves[0];
-    if (hsh > 0.92) c = leaves[3];
-    if (berries && dy > -0.2 && hsh > 0.86 && hsh < 0.9) c = rng.chance(0.5) ? P.r3 : P.a0;
-    return c;
-  });
+    let k = dy > 0.35 ? 2 : dy > -0.2 ? 1 : 0;
+    if (valueNoise(x * 0.4, y * 0.4 + z * 0.3, seed + 5) > 0.66) k = Math.min(3, k + 1);
+    if (hsh > 0.94) k = 3;
+    if (berries && dy > -0.3 && hsh > 0.86 && hsh < 0.9) return hsh < 0.88 ? P.r3 : P.a0;
+    return leaves[k];
+  };
+  m.ellipsoid(0, ry * 0.75, 0, rx, ry, rz, color);
+  for (let i = 0; i < 3; i++) {
+    const a = rng.range(0, Math.PI * 2);
+    m.ellipsoid(Math.cos(a) * rx * 0.45, ry * 1.2, Math.sin(a) * rz * 0.4, rx * 0.45, ry * 0.5, rz * 0.45, color);
+  }
   return m;
 }
 
+/** Fels im feinen Maß (M13): kantige Bänder aus Grautönen, oben Moos, ein Riss, Flechtenflecken. */
 export function buildRock(seed, size = 1) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const rx = rng.range(3, 5) * size;
-  const ry = rng.range(2, 3.5) * size;
-  const rz = rng.range(2.5, 4) * size;
+  const rx = rng.range(6, 10) * size;
+  const ry = rng.range(4, 7) * size;
+  const rz = rng.range(5, 8) * size;
+  const crack = rng.range(-rx * 0.4, rx * 0.4);
   m.ellipsoid(0, ry * 0.45, 0, rx, ry, rz, (x, y, z, dx, dy, dz) => {
     if (y < 0) return null;
     const hsh = hash3(x, y, z, seed);
-    const n = valueNoise(x * 0.4, z * 0.4 + y * 0.3, seed);
-    if (dx * dx + dz * dz > 0.8 && hsh < 0.25) return null;
+    const n = valueNoise(x * 0.25, z * 0.25 + y * 0.2, seed);
+    if (dx * dx + dz * dz > 0.85 && hsh < 0.15) return null;
     let c = n < 0.35 ? P.s4 : n < 0.7 ? P.s5 : P.s6;
-    if (dy > 0.5 && n > 0.45) c = hsh < 0.5 ? P.g4 : P.g5; // Moos
-    if (hsh > 0.95) c = P.s7;
+    if (dy > 0.3 && x < 0) c = shade(c, 1); // Lichtseite
+    if (Math.abs(x - crack - y * 0.3) < 0.6 && dy > -0.2) c = P.s3; // Riss
+    if (dy > 0.55 && n > 0.45) c = hsh < 0.5 ? P.g4 : P.g5; // Moos
+    if (hsh > 0.97) c = P.e8; // Flechte
     return c;
   });
   return m;
@@ -164,13 +212,14 @@ export function buildRock(seed, size = 1) {
 function buildTuft(seed) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
-  const blades = rng.int(2, 4);
+  const blades = rng.int(3, 6);
   for (let i = 0; i < blades; i++) {
-    const x = rng.int(-1, 1);
-    const z = rng.int(-1, 0);
-    const h = rng.chance(0.25) ? 2 : 1;
+    const x = rng.int(-2, 2);
+    const z = rng.int(-1, 1);
+    const h = rng.int(2, 5);
+    const bend = rng.int(-1, 1);
     // Herbst: viele Spitzen schon gelb
-    for (let y = 0; y < h; y++) m.set(x, y, z, y === h - 1 && rng.chance(0.5) ? (rng.chance(0.5) ? P.e7 : P.g7) : P.g6);
+    for (let y = 0; y < h; y++) m.set(x + (y >= h - 1 ? bend : 0), y, z, y === h - 1 && rng.chance(0.5) ? (rng.chance(0.5) ? P.e7 : P.g7) : y === 0 ? P.g5 : P.g6);
   }
   return m;
 }
@@ -179,21 +228,22 @@ function buildFlower(seed, blossom) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
   const stems = rng.int(1, 3);
-  m.set(0, 0, 0, P.g5).set(1, 0, 0, P.g4);
+  m.set(0, 0, 0, P.g5).set(1, 0, 0, P.g4).set(-1, 0, 1, P.g4);
   for (let i = 0; i < stems; i++) {
-    const x = i === 0 ? 0 : rng.int(-1, 1);
-    const z = i === 0 ? 0 : rng.int(-1, 1);
-    const h = rng.int(1, 2);
+    const x = i === 0 ? 0 : rng.int(-2, 2);
+    const z = i === 0 ? 0 : rng.int(-2, 1);
+    const h = rng.int(2, 4);
     for (let y = 0; y < h; y++) m.set(x, y, z, P.g4);
-    m.set(x, h, z, blossom);
+    m.set(x + 1, 1, z, P.g5); // Blatt
+    m.set(x, h, z, P.f6).set(x - 1, h, z, blossom).set(x + 1, h, z, blossom).set(x, h, z + 1, blossom).set(x, h + 1, z, blossom);
   }
   return m;
 }
 
 function buildMushroom(seed) {
   const m = new VoxelModel();
-  m.set(0, 0, 0, P.s8);
-  m.box(-1, 1, -1, 0, 1, 0, (x, y, z) => (hash3(x, y, z, seed) < 0.3 ? P.a4 : P.r3));
+  m.box(0, 0, 0, 1, 2, 1, P.s8);
+  m.ellipsoid(1, 3, 1, 2.4, 1.4, 2.4, (x, y, z, dx, dy) => (dy < -0.3 ? null : hash3(x, y, z, seed) < 0.2 ? P.a4 : P.r3));
   return m;
 }
 
@@ -400,20 +450,21 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   const flowerColors = [P.a2, P.a3, P.f6, P.a3, P.a1];
   const flowers = flowerColors.map((c, i) => buildFlower(seed + 61 + i, c));
   const mushrooms = [buildMushroom(seed + 71), buildMushroom(seed + 72)];
-  // Herbst (M12): Pilzgruppen und Schilf im feinen Maß
-  const FINE = 1 / 16;
+  // Herbst (M12): Pilzgruppen und Schilf im feinen Maß (seit M13 ist alles fein)
   const groups = ['fliegenpilz', 'steinpilz', 'pfifferling'].flatMap((kind, k) => [buildMushroomGroup(seed + 81 + k * 2, kind), buildMushroomGroup(seed + 82 + k * 2, kind)]);
   const reeds = [0, 1, 2, 3].map((i) => buildReeds(seed + 91 + i));
 
-  firs.forEach((m, i) => scatter.addModel(`fir${i}`, m, occluder));
-  oaks.forEach((m, i) => scatter.addModel(`oak${i}`, m, occluder));
-  birches.forEach((m, i) => scatter.addModel(`birch${i}`, m, occluder));
-  smalls.forEach((m, i) => scatter.addModel(`small${i}`, m, occluder));
-  bushes.forEach((m, i) => scatter.addModel(`bush${i}`, m, occluder));
-  rocks.forEach((m, i) => scatter.addModel(`rock${i}`, m, world));
-  tufts.forEach((m, i) => scatter.addModel(`tuft${i}`, m, windy, { shadow: 'none', jitter: 0.03 }));
-  flowers.forEach((m, i) => scatter.addModel(`flower${i}`, m, windy, { shadow: 'none', jitter: 0 }));
-  mushrooms.forEach((m, i) => scatter.addModel(`mushroom${i}`, m, world, { shadow: 'none' }));
+  // M13: alle Modelle im feinen Maß; Bäume und Büsche werfen grobe Schatten (1/4 m wie vorher)
+  const tree = { shadow: 'rough', size: FINE, jitter: 0.04 };
+  firs.forEach((m, i) => scatter.addModel(`fir${i}`, m, occluder, tree));
+  oaks.forEach((m, i) => scatter.addModel(`oak${i}`, m, occluder, tree));
+  birches.forEach((m, i) => scatter.addModel(`birch${i}`, m, occluder, tree));
+  smalls.forEach((m, i) => scatter.addModel(`small${i}`, m, occluder, tree));
+  bushes.forEach((m, i) => scatter.addModel(`bush${i}`, m, occluder, tree));
+  rocks.forEach((m, i) => scatter.addModel(`rock${i}`, m, world, { shadow: 'coarse', size: FINE }));
+  tufts.forEach((m, i) => scatter.addModel(`tuft${i}`, m, windy, { shadow: 'none', jitter: 0.03, size: FINE }));
+  flowers.forEach((m, i) => scatter.addModel(`flower${i}`, m, windy, { shadow: 'none', jitter: 0, size: FINE }));
+  mushrooms.forEach((m, i) => scatter.addModel(`mushroom${i}`, m, world, { shadow: 'none', size: FINE }));
   groups.forEach((m, i) => scatter.addModel(`pilze${i}`, m, world, { shadow: 'none', jitter: 0.03, size: FINE }));
   reeds.forEach((m, i) => scatter.addModel(`schilf${i}`, m, windy, { shadow: 'none', jitter: 0.02, size: FINE }));
   /** Eine Pilzgruppe der Art 0 (Fliegenpilz), 1 (Steinpilz) oder 2 (Pfifferling). */

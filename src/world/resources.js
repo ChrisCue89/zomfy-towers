@@ -12,8 +12,6 @@ import { BAY_NODES } from './layout.js';
 import { buildBirch, buildDeciduous, buildFir, buildRock, LEAVES } from './nature.js';
 import { FINE, stoneBlob } from './voxelKit.js';
 
-const V = 1 / 8; // grobes Maß (Bäume und Felsen bis M13c)
-
 /**
  * Regeln je Art. yield = pro Treffer, bonus = beim letzten Treffer.
  * tool: nötiges Werkzeug oder null (mit der Hand).
@@ -128,12 +126,12 @@ function buildBranches(seed) {
   return m;
 }
 
-/** Rotes Stoffband um den Stamm: Diesen Baum darf man fällen. */
+/** Rot-weißes Stoffband um den Stamm: Diesen Baum darf man fällen (feines Maß, M13). */
 function ribbon(m, y) {
   const trunk = [];
-  for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) if (m.has(x, y, z)) trunk.push([x, z]);
-  // Rot-weißes Markierband wie im Forst, drei Voxel hoch – auch im Augenwinkel erkennbar
-  const stripes = [P.f2, P.s9, P.f2];
+  for (let x = -4; x <= 4; x++) for (let z = -4; z <= 4; z++) if (m.has(x, y, z)) trunk.push([x, z]);
+  // Rot-weißes Markierband wie im Forst, sechs Voxel hoch – auch im Augenwinkel erkennbar
+  const stripes = [P.f2, P.f2, P.s9, P.s9, P.f2, P.f2];
   for (const [x, z] of trunk) {
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nx = x + dx;
@@ -145,7 +143,8 @@ function ribbon(m, y) {
   }
   // Lose Enden flattern zur Kamera hin (Süden)
   const [fx, fz] = trunk.reduce((best, t) => (t[1] > best[1] ? t : best), trunk[0] || [0, 0]);
-  m.set(fx + 1, y + 1, fz + 2, P.f2).set(fx + 1, y, fz + 2, P.s9).set(fx + 2, y, fz + 2, P.f2).set(fx + 2, y - 1, fz + 2, P.s9).set(fx + 2, y - 2, fz + 3, P.f3);
+  m.box(fx + 1, y + 2, fz + 2, fx + 2, y + 3, fz + 3, P.f2).box(fx + 2, y, fz + 3, fx + 3, y + 1, fz + 4, P.s9);
+  m.box(fx + 3, y - 2, fz + 4, fx + 4, y - 1, fz + 5, P.f2).set(fx + 4, y - 3, fz + 5, P.f3);
 }
 
 /**
@@ -154,10 +153,10 @@ function ribbon(m, y) {
  * sahen aus wie Kulisse).
  */
 function markerStake(m) {
-  let south = 2;
-  for (let y = 3; y <= 56; y++) {
-    for (let x = -3; x <= 3; x++) {
-      for (let z = 28; z > south; z--) {
+  let south = 4;
+  for (let y = 6; y <= 112; y++) {
+    for (let x = -6; x <= 6; x++) {
+      for (let z = 60; z > south; z--) {
         if (m.has(x, y, z)) {
           south = z;
           break;
@@ -166,10 +165,10 @@ function markerStake(m) {
     }
   }
   // Blau-weiß: Rot-Weiß tragen schon die Fliegenpilze unter den Bäumen, Blau sonst kaum etwas
-  const z = south + 2;
-  m.box(0, 0, z, 0, 4, z, P.e5); // Pfahl
-  m.set(0, 5, z, P.s9).set(0, 6, z, P.b4).set(0, 7, z, P.b4); // weiß-blaue Spitze
-  m.set(1, 7, z, P.b4).set(1, 6, z, P.b3).set(2, 7, z, P.b3).set(2, 6, z, P.b2); // Fähnchen
+  const z = south + 4;
+  m.box(0, 0, z, 1, 9, z + 1, (x) => (x === 0 ? P.e6 : P.e5)); // Pfahl
+  m.box(0, 10, z, 1, 11, z + 1, P.s9).box(0, 12, z, 1, 15, z + 1, P.b4); // weiß-blaue Spitze
+  m.box(2, 12, z, 5, 15, z, (x, y) => ((x + y) % 3 === 0 ? P.b3 : x > 3 ? P.b3 : P.b4)); // Fähnchen
 }
 
 /** Frischer Trieb auf dem Stumpf: morgen steht hier wieder ein Baum. */
@@ -236,7 +235,7 @@ function treeModel(model, seed) {
     default:
       m = buildDeciduous(seed, 0.62, LEAVES.gelb);
   }
-  ribbon(m, 5);
+  ribbon(m, 10);
   markerStake(m);
   return m;
 }
@@ -344,9 +343,8 @@ export class ResourceNodes {
           continue;
       }
       const material = def.kind === 'baum' ? materials.occluder : materials.world;
-      // Bäume und Felsen kommen mit der Natur ins feine Maß (M13c), der Rest schon jetzt
-      const coarse = def.kind === 'baum' || def.kind === 'felsen';
-      node.object = createStaticVoxelObject(model, material, { seed, shadow: def.kind === 'baum' || !coarse ? 'coarse' : 'full', size: coarse ? V : FINE });
+      // Seit M13 alle im feinen Maß; Bäume werfen grobe Schatten (1/4 m)
+      node.object = createStaticVoxelObject(model, material, { seed, shadow: def.kind === 'baum' ? 'rough' : 'coarse', size: FINE });
       node.object.position.set(def.x, 0, def.z);
       this.group.add(node.object);
       if (node.stump) {

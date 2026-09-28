@@ -573,7 +573,8 @@ function buildTorchFlame() {
 function buildOakWithSwing(seed) {
   const m = buildDeciduous(seed, 1.3);
   // Starker Ast nach Osten – die Schaukel hängt als eigenes Teil daran (buildSwingTire)
-  m.line(1, 16, 0, 12, 21, 0, P.e2, 1);
+  m.line(2, 32, -2, 26, 44, -2, P.e2, 4);
+  m.line(2, 33, -1, 26, 45, -1, P.e3, 2);
   return m;
 }
 
@@ -778,7 +779,7 @@ export function createProps({ seed, materials, colliders, map }) {
   const interactions = [];
   const blockers = []; // Flächen, auf denen kein Gras wachsen soll
 
-  // Seit M13 sind die Modelle im feinen Maß (Schatten grob); was noch grob ist, sagt size: V
+  // Seit M13 sind die Modelle im feinen Maß (Schatten grob)
   const add = (model, x, z, { turns = 0, occluder = false, name = '', size = FINE } = {}) => {
     const shadow = size === FINE ? 'coarse' : 'full';
     const object = createStaticVoxelObject(model, occluder ? materials.occluder : materials.world, { turns, seed, size, shadow });
@@ -950,7 +951,7 @@ export function createProps({ seed, materials, colliders, map }) {
 
   // Alte Eiche mit Reifenschaukel
   const oak = LAYOUT.oak;
-  add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche', size: V });
+  add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche' });
   colliders.addCircle(oak.x, oak.z, 0.45);
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
   interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', action: 'swing', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
