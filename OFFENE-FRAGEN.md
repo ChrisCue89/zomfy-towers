@@ -656,6 +656,20 @@ geblieben, reicht aber nur noch über Weg und Hof. Das Wegenetz ist ein Baum
 Zweig, auf den eine Barrikade umlenken könnte: Die Horde weicht innerhalb
 der Wegbreite aus oder schlägt sich durch. Die Wegvorschau beim Bauen ist
 geblieben (rote Punkte vom Spawn bis ans Haus, Pfeile am Bildrand).
+*Vorschlag mit dem Spaß-Plan (28.09.2026, DESIGN 8 M22 und 10):* Mit festen
+Wegen gibt es drei Möglichkeiten.
+(A) **Kein Umlenken** – das Wegenetz bleibt ein Baum, Barrikaden stauen nur.
+Einfach und immer lesbar; die Meisterschaft liegt in Platzierung,
+Kreuzfeuer und Zeitpunkt.
+(B) **Schlagbäume an Schleifen** (Empfehlung) – das Wegenetz bekommt ein bis
+zwei Schleifen; am Abzweig schickt ein Schlagbaum die Horde auf den langen
+Zweig, und umgelegt mitten in der Welle kehren Gruppen um (Jonglieren wie in
+Wintermaul, mit kurzer Sperrzeit). Gewollt, sichtbar und lesbar.
+(C) **Freies Umlenken** – auf Schleifen wählt die Horde selbst den billigsten
+Weg, Barrikadenreihen auf einem Zweig lenken sie auf den anderen. Am nächsten
+am Labyrinth-Bauen, aber schwerer zu lesen.
+Die Wegvorschau bleibt in jedem Fall (m12-r1: die rote Punktlinie erklärt
+Türme und Barrikaden von selbst). **Entscheidung des Auftraggebers steht aus.**
 
 ### 67. Gibt es tagsüber noch Schlurfer?
 **Festgelegt: ja, aber nur sehr wenige.** Der Tag ist ruhig und deutlich
@@ -1083,6 +1097,48 @@ Glimmen) und mit einzelnen Sätzen in der Welt: ein Gedanke am Waldrand
 (einmal am Tag), der Warnpfahl, Radio Stillwald, die Überlebenden. Ob die
 Schlurfer heilbar sind, bleibt offen (Dr. Yusuf forscht an Moderkernen),
 ebenso, was Balduin mit den Teilen macht.
+
+### 116. Welche Elemente der Warcraft-3-Tower-Defense-Karten übernehmen wir? (Spaß-Plan)
+**Auftrag:** »Du prüfst, warum die Spielmechanik der Tower-Defense-Karten aus
+Warcraft 3 so spaßig und beliebt war und wie wir das noch besser auf unser
+Spiel übertragen« – und nach M15: »Jetzt steht der Rumpf des Spiels, jetzt
+muss der Spaß rein.«
+**Entscheidung (Annahme, Rückmeldung willkommen):** Analyse in DESIGN 10,
+Plan in DESIGN 8 (M16–M25). Übernommen werden Held mit Fähigkeiten, Zustände
+und Reaktionen, Baupläne zur Wahl, Mischtürme, Türme mit Erfahrung und
+Namen, Turmteile mit Seltenheit, Champions mit Fundkisten, Wellenmerkmale,
+neue Arten und Bosse, ein Nachtplan, Wagnis (früher rufen, Moderlocke,
+makellose Nächte, Vorratskammer), Posten der Überlebenden,
+Schwierigkeitsgrade und ein Finale. **Verworfen:** Gegeneinander und Senden
+(Zomfy ist ein Spiel für eine Person), ein Labyrinth aus Türmen (Grundregel
+2), Hunderte Türme (lieber acht bis zehn Familien mit Charakter), Hektik als
+Pflicht. **Reihenfolge:** M16 zuerst, weil es genau die Schwächen der letzten
+Testrunde trifft – leere Wartezeit, Nahkampf ohne Risiko, »alles gehört auf
+den letzten Abschnitt«, zu hart für Mira und zu leicht für Theo – und alles
+Weitere darauf aufbaut.
+
+### 117. Hat ein Spiel ein Ende? (Spaß-Plan)
+**Annahme:** Ja. Ein Herbst dauert 30 Tage; in der Nacht des ersten Frosts
+(Nacht 30) kommt das Moderherz – ein Finale über alle Wege. Danach fällt
+Schnee, und es geht mit endlosen Mondnächten weiter oder mit einem neuen
+Herbst an einer neuen Bucht. **Warum:** Jede TD-Karte lebt von der letzten
+Welle als Ziel; der Herbst ist unser Thema, und Frost ist ein natürliches Ende
+für einen Pilz (»erster Schnee« stand schon im Ideen-Parkplatz). Das Zuhause
+und der Spielstand bleiben – verlieren kostet weiter nur Material.
+
+### 118. Soll man die Schwierigkeit wählen können? (Spaß-Plan)
+**Annahme:** Ja, drei Stufen beim Spielstart und jederzeit in den
+Einstellungen: **Gemütlich** (weniger Horde, mehr Beute), **Ausgewogen**,
+**Wild** (mehr und zähere Horde, Champions früher, mehr Sterne). **Warum:**
+m12-r1 – für Mira zu hart, für Theo zu leicht; eine Zahl für alle trifft
+niemanden.
+
+### 119. Nachts Tempo machen? (Spaß-Plan)
+**Annahme:** Ja. In der Pause ruft eine Taste die nächste Welle sofort (mit
+Mutbonus, wie das frühe Rufen in den TD-Karten), und nachts gibt es einen
+Zeitraffer (doppelt so schnell). Beides ist ein Angebot, nie Pflicht; bauen
+geht weiter jederzeit. **Warum:** m3-r1 und m12-r1 – das Warten zwischen den
+Wellen zog sich, und wer sich sicher ist, soll schneller spielen dürfen.
 
 ## Technik mit Auswirkung aufs Design
 

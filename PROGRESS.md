@@ -5,6 +5,28 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Der große Plan ab M16 (Vorschlag)
+
+**Auftrag:** »Lass uns jetzt den großen weiteren Plan bauen – auch mit den
+Elementen aus den Tower-Defense-Karten von Warcraft 3. Jetzt steht der Rumpf
+des Spiels, jetzt muss der Spaß rein.«
+
+- **Analyse** (DESIGN 10): Wintermaul, Element TD, Gem TD, YouTD, Green TD,
+  Legion TD und Line Tower Wars, Hero-Defense-Karten – acht Gründe, warum sie
+  Spaß machten, und was wir davon übernehmen oder bewusst nicht.
+- **Plan** (DESIGN 8): zehn Spaß-Meilensteine – M16 Die Nacht in der Hand,
+  M17 Zustände und Reaktionen, M18 neue Türme, Fallen und Baupläne, M19
+  Mischtürme, M20 Turmteile, Seltenheit und Champions, M21 neue Arten,
+  Merkmale und Bosse, M22 Schlagbäume an Schleifen (nur nach Entscheidung),
+  M23 Posten der Überlebenden, M24 Wagnis, Vorrat und die große Balance, M25
+  ein Herbst mit Finale. Davor N1, N2 und eine Testrunde zur Frage »Wo macht
+  es Spaß, wo langweilt es?«.
+- **Entscheidungen:** OFFENE-FRAGEN 116–119 (Annahmen); zu Nr. 66 (Umlenken)
+  drei Möglichkeiten mit Empfehlung – die Entscheidung trifft der
+  Auftraggeber.
+
+---
+
 ## Meilenstein 15 – Geschichte und Einleitung ✓
 
 **Auftrag:** »Wir wissen aktuell nicht, warum die Zombies nicht durch den

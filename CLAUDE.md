@@ -4,7 +4,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 
 | Datei | Inhalt |
 |---|---|
-| `DESIGN.md` | Vision, Look, alle Systeme, Meilensteinplan – **vor jeder Arbeit lesen** |
+| `DESIGN.md` | Vision, Look, alle Systeme, Meilensteinplan, Spaß-Leitlinien (Abschnitt 10) – **vor jeder Arbeit lesen** |
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `playtests/` | Testspieler-Personas, Berichte je Runde, Zusammenfassungen |
@@ -476,6 +476,9 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 
 - Meilensteine der Reihe nach, jeder in sich spielbar. Lieber wenig und
   richtig gut als viel und halbfertig.
+- **Spaß-Meilensteine (ab M16, DESIGN.md 8 und 10):** Jede neue Mechanik wirkt
+  in der ersten Nacht, in der sie auftaucht, sichtbar; jede Wahl hat eine
+  Gegenseite; Werte stehen in `src/data/`; jede Mechanik bekommt Prüfpunkte.
 - Nach jedem Meilenstein und jeder Nachbesserung: Prüfablauf, `PROGRESS.md`,
   committen und pushen.
 - Offene Designfragen mit der Annahme entscheiden, die am meisten Spielspaß

@@ -149,7 +149,8 @@ zeigt sich an den Wegen aus dem Wald, ob Türme und Barrikaden halten.*
 - **Leichter Roguelike-Charakter:** Jedes neue Spiel legt das Wegenetz ein
   Stück anders an.
 - **Türme hochleveln und spezialisieren** wie in klassischen
-  Warcraft-3-Custom-Maps.
+  Warcraft-3-Custom-Maps. Was wir von diesen Karten sonst noch lernen – Held
+  mit Fähigkeiten, Kombinieren, Bosse, Wagnis –, steht in Abschnitt 10.
 - **Einsammeln wie in Vampire Survivors:** Beute fliegt im Sammelradius von
   selbst zur Figur.
 - **Bauleiste wie in den alten Command-&-Conquer-Spielen:** Symbol und Preis,
@@ -960,6 +961,214 @@ Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
   nur auf festen Wegen, Bert erzählt von den geschotterten Holzfällerwegen,
   Dr. Yusuf, was der Moder ist, Balduin, warum auf den Inseln keiner wächst.
 
+### Der Plan ab M16 – jetzt kommt der Spaß (Vorschlag vom 28.09.2026)
+
+Auftrag: »Jetzt steht der Rumpf des Spiels, jetzt muss der Spaß rein« – mit
+den Elementen der Tower-Defense-Karten aus Warcraft 3 (Analyse in Abschnitt
+10, Entscheidungen in OFFENE-FRAGEN 66 und 116–119). Reihenfolge: N1 (Figuren
+aus Formen) und N2 (Startbild und Menümusik) fertigstellen → Testrunde mit
+der Frage »Wo macht es Spaß, wo langweilt es?« → M16 bis M25. Die Balance
+aus M14 geht in diesen Meilensteinen auf: Jede neue Mechanik kommt mit ihren
+Zahlen, die große Balance-Runde ist M24.
+
+#### M16 – Die Nacht in der Hand
+
+*Ziel:* In jeder Welle gibt es etwas zu entscheiden, Warten ist freiwillig,
+das ganze Wegenetz zählt.
+
+- **Nachtplan:** Ab der Dämmerung zeigt eine Leiste, was kommt – Wellen,
+  Arten, Merkmale und über welche Wege; Juna am Funk macht ihn genauer. Die
+  Randmarken zeigen die Spawns der nächsten Welle.
+- **Mehrere Wege je Nacht:** ab Nacht 2 Wellen über zwei, ab Nacht 4 manchmal
+  über alle drei Zuführungen. Verteidigung draußen an den Zweigen lohnt sich
+  (m12-r1: »alles gehört auf den letzten Abschnitt«).
+- **Welle rufen und Zeitraffer:** In der Pause ruft eine Taste die nächste
+  Welle sofort (Mutbonus: mehr Teile); nachts läuft das Spiel auf Wunsch
+  doppelt so schnell.
+- **Mika-Fähigkeiten:** zwei Fähigkeiten mit Abklingzeit, gewählt über die
+  Perk-Stufen – Laternenblitz (blendet und lähmt kurz), Kürbiswurf (Fläche,
+  setzt in Brand), Pfiff (Knopf lenkt eine Gruppe ab), Notbrett (flickt eine
+  Barrikade mitten in der Welle), Anfeuern (Türme in der Nähe schneller),
+  Wirbel (Rundumschlag). Der Nahkampf bekommt wieder Risiko (m12-r1: das
+  Ausholen bricht nicht mehr durch Rückstoß ab).
+- **Türme mit Geschichte:** Türme sammeln Erfahrung aus Schaden und
+  Abschüssen, steigen in vier Ränge auf (kleine Wimpel am Turm, je ein
+  wenig stärker), tragen einen Namen (»Gertrud, Kürbiskatapult«) und
+  zählen ihre Abschüsse; der Morgenbericht kürt den Turm der Nacht.
+- **Schwierigkeit:** beim Spielstart wählbar – Gemütlich, Ausgewogen, Wild –
+  und jederzeit in den Einstellungen änderbar (m12-r1: Mira gegen Theo).
+
+*Spielbar heißt:* Eine Nacht über drei Wege, auf die man sich vorbereitet,
+Wellen früher rufen, mit dem Laternenblitz eine Barrikade retten – und
+morgens lesen, dass Gertrud 23 Schlurfer erledigt hat.
+
+#### M17 – Zusammenspiel: Zustände und Reaktionen
+
+*Vorbild:* Element TD (Elemente, die einander schlagen), Verlangsamen plus
+Flächenschaden in allen TD-Karten.
+
+- **Zustände** an Schlurfern, als kleine Zeichen über dem Kopf: nass
+  (Sprenger, Regen), frostig (Frost), brennend (Feuerkürbis, Kürbiswurf),
+  matschig (Schlamm), geblendet (Laterne, Laternenblitz), betäubt (Pfanne).
+- **Reaktionen** mit eigenem Effekt und einem Wort, das kurz aufpoppt:
+  nass + frostig = **Eisblock** (eingefroren, der nächste Treffer zerspringt
+  doppelt), nass + brennend = **Dampf** (die Horde verliert die Orientierung),
+  brennend + matschig = **Glut** (Brand doppelt so lang), geblendet +
+  Bolzen = **Schwachstelle** (doppelter Schaden), frostig + Streukürbis =
+  **Splitter**, matschig + Katapult = **Klebekürbis** (die Fläche bremst).
+- **Das Wetter wirkt** (bisher nur Stimmung, OFFENE-FRAGEN 99): Regen macht
+  alle nass (Frost stärker, Feuer schwächer), Nebel kürzt Reichweiten
+  (Laternen heben es auf), Wind trägt Streukürbisse weiter – Juna sagt es
+  morgens an.
+- **Notizbuch:** Jede entdeckte Reaktion kommt mit einer Notiz von Dr. Yusuf
+  ins Buch.
+
+*Spielbar heißt:* Wer einen Sprenger neben den Frostnebel stellt, sieht
+Eisblöcke zerspringen – und hat das selbst herausgefunden.
+
+#### M18 – Mehr Spielzeug: neue Türme, Fallen und Baupläne
+
+*Vorbild:* Green TD (Vielfalt), Element TD (Wahl der Elemente), Gem TD
+(Zufall mit Wahl).
+
+- **Vier neue Turmfamilien,** je fünf Stufen und zwei Richtungen, geformt
+  wie die Figuren: **Bienenkorb** (ein Schwarm folgt einem Ziel, Schaden über
+  Zeit, geht durch Panzer; Königin oder Honig), **Glockenturm** (ein Schlag
+  betäubt alles in Reichweite; Sturmglocke oder Friedensglocke, die
+  Barrikaden heilt), **Vogelscheuche** (lockt Schlurfer vom Weg auf sich und
+  muss geflickt werden; Strohmann oder Krähenscheuche), **Windrad** (bläst
+  die Horde zurück, verweht Dampf und Nebel; Sturm oder Mühle, die tagsüber
+  Schrott mahlt).
+- **Fallen auf den Wegen** – begehbar, anders als Barrikaden: Stachelbrett,
+  Leimtopf, Knallerbsen, Klettenteppich, Ölspur (mit Feuer eine Flammenwand).
+- **Baupläne:** Am Anfang gibt es die vier Türme und die Holzbarriere. Nach
+  jeder gewonnenen Nacht wählt man einen von drei Bauplänen (neue Familie,
+  Falle, Richtung, Barrikadenart) – jedes Spiel bekommt seinen eigenen
+  Bau-Weg. Baupläne finden sich auch im Wrack, am Waldrand und bei Balduin
+  (Inhalt für die Tage, m12-r1).
+
+*Spielbar heißt:* Zwei Spiele nebeneinander verteidigen sich verschieden –
+einmal mit Bienen und Glocken, einmal mit Windrad und Knallerbsen.
+
+#### M19 – Mischtürme
+
+*Vorbild:* Element TD (Doppel- und Dreifachtürme), Gem TD (Rezepte).
+
+- Zwei **benachbarte Türme verschiedener Familien** ab Stufe 3 lassen sich mit
+  einem Moderkern zu einem Mischturm verbinden. Er steht auf beiden Feldern
+  und kämpft auf eigene Art.
+- Mit den ersten vier Familien sechs Rezepte: **Kürbisballiste** (Bolzen +
+  Katapult: durchschlägt eine Reihe, platzt am Ende), **Eiszapfenschleuder**
+  (Bolzen + Sprenger), **Leuchtpfeil** (Bolzen + Laterne: markiert das Ziel,
+  alle Türme treffen härter), **Matschkessel** (Katapult + Sprenger),
+  **Feuerwerk** (Katapult + Laterne: Kettenexplosionen, erhellt den Weg),
+  **Nebelleuchte** (Sprenger + Laterne: Schlurfer laufen kurz zurück). Mit den
+  Familien aus M18 kommen weitere dazu.
+- **Werkstattbuch:** Unentdeckte Rezepte stehen als Schattenriss darin; Bert
+  und Juna geben Hinweise.
+
+*Spielbar heißt:* Man entdeckt ein Rezept, baut es, und der Abend sieht
+anders aus.
+
+#### M20 – Beute mit Glanz: Turmteile, Seltenheit, Champions
+
+*Vorbild:* YouTD (Gegenstände in Türmen), Gem TD (Kombinieren), Truhen wie in
+Vampire Survivors.
+
+- **Turmteile** in vier Seltenheiten (gewöhnlich, selten, besonders,
+  einzigartig) mit Wirkung und Witz – Schleifstein, Kupferspule (jeder fünfte
+  Schuss springt weiter), Brennglas (setzt in Brand), Uhrwerk (Doppelschuss),
+  Hufeisen, Omas Stricknadel … Türme haben ein Fach, ab Stufe 4 zwei.
+- **Champions:** ab Nacht 3 einzelne Schlurfer mit goldenem Rand, einem Namen
+  und Merkmalen (moosig, gepanzert, flink, schildtragend, teilend,
+  lichtfressend). Sie lassen eine **Fundkiste** fallen, die in Beute
+  aufplatzt.
+- **Werkbank:** Drei gleiche Teile ergeben eines der nächsten Seltenheit –
+  Basteln für ruhige Tage. **Balduin** verkauft eine Wundertüte.
+
+*Spielbar heißt:* Nachts einen goldenen Schlurfer jagen, morgens die Kiste
+öffnen und die Kupferspule in den Lieblingsturm bauen.
+
+#### M21 – Die Horde stellt Fragen: Arten, Merkmale, Bosse
+
+*Vorbild:* Green TD (fliegende, immune, unsichtbare Wellen, alle paar Wellen
+ein Boss), die Bosse der Hero-Defense-Karten.
+
+- **Neue Arten:** Moderfalter (fliegen über dem Weg, über Barrikaden hinweg –
+  nur Türme und Mika treffen sie), Gräber (buddelt sich unter Barrikaden
+  durch), Schildträger (trägt eine alte Tür, vorn gepanzert), Lichtfresser
+  (löscht Laternen und Fackeln am Weg), Brüter (legt Sporenkapseln, aus
+  denen Schwärmer schlüpfen).
+- **Wellenmerkmale:** flinke Nacht, gepanzerter Trupp, Nebelwelle (außerhalb
+  von Licht unsichtbar – Laternen werden wichtig), heilende Welle, Moderflut.
+- **Anführer als Bosskämpfe** mit Namen, Lebensbalken, eigener Musik und
+  angekündigten Angriffen: der Holzfäller (Nacht 5: zerschlägt Barrikaden mit
+  einem Hieb und stürmt), die Pilzmutter (Nacht 10: Sporenwolken heilen die
+  Horde), die Laternenhexe (Nacht 15: stiehlt Licht), der Moosriese (Nacht
+  20: zerfällt in drei) – und weitere bis zum Finale.
+
+*Spielbar heißt:* Der Nachtplan kündigt eine Nebelwelle an, und man stellt
+schnell noch Laternen an den Nordweg.
+
+#### M22 – Weichen und Schleifen (nur, wenn OFFENE-FRAGEN 66 so entschieden wird)
+
+*Vorbild:* Wintermaul (Labyrinth und Jonglieren), übertragen auf feste Wege.
+
+- Das Wegenetz bekommt ein bis zwei **Schleifen:** Ein Weg teilt sich und
+  trifft wieder zusammen, ein Zweig ist länger.
+- Am Abzweig steht ein **Schlagbaum.** Zu, und die Horde nimmt den langen
+  Zweig an den Türmen vorbei; mitten in der Welle umgelegt, kehren Gruppen
+  um (Jonglieren) – mit kurzer Sperrzeit, damit es ein Kniff bleibt und kein
+  Trick. Sind beide Zweige zu, schlägt sich die Horde durch.
+- Wegvorschau und Nachtplan zeigen den offenen Weg.
+
+*Spielbar heißt:* Man legt den Schlagbaum im richtigen Moment um und schickt
+den Brummer eine Extrarunde an den Katapulten vorbei.
+
+#### M23 – Gemeinsam durch die Nacht
+
+*Vorbild:* die Mitspieler der Teamkarten, Legion TD (Einheiten statt Türme).
+
+- Eingezogene Überlebende beziehen nachts einen **Posten** (ein Hochsitz
+  neben dem Weg): Bert flickt Barrikaden in der Nähe, Hilde wirft
+  Einmachgläser (bremsen), Juna bedient das Leuchtfeuer (ein heller Stoß auf
+  Tastendruck), Dr. Yusuf verarztet Mika und Türme am Hof, Knopf hütet den
+  Hof und scheucht einzelne Schwärmer.
+- Niemand wird besiegt: Wer zu viel abbekommt, zieht sich ins Haus zurück.
+- Nach einer gehaltenen Anführernacht gibt es morgens ein **Fest** am Feuer.
+
+*Spielbar heißt:* Man stellt Bert an den Nordweg und Hilde an den Engpass –
+und morgens erzählen sie davon.
+
+#### M24 – Wagnis, Vorrat und die große Balance
+
+*Vorbild:* Element TD (Zinsen, die beim Durchbruch verfallen), Line Tower Wars
+(mehr Einkommen nur durch Risiko).
+
+- **Moderlocke:** vor der Nacht an einem Spawn ausgelegt – dort mehr Horde,
+  mehr Beute und eine sichere Fundkiste.
+- **Makellose Nacht:** Erreicht kein Schlurfer den Hof, gibt es einen Bonus;
+  nach drei in Folge bringt Balduin ein seltenes Angebot.
+- **Vorratskammer:** Gespartes Schrott wächst über Nacht um einen kleinen,
+  gedeckelten Anteil – nach einer Nacht mit Durchbruch nicht.
+- **Die große Balance** (war M14): Tage mit Inhalt, Kosten von Barrikaden
+  und Ausbau, tote Optionen (Holzlager, Bank, Pfanne), Nahkampf – über zehn
+  und mehr Nächte in allen drei Schwierigkeitsgraden.
+
+#### M25 – Ein Herbst mit Ende
+
+*Vorbild:* die letzte Welle jeder TD-Karte, Schwierigkeitsgrade, Bestwerte.
+
+- **Ein Herbst hat 30 Tage.** In jeder fünften Nacht kommt ein Anführer; in
+  der **Nacht des ersten Frosts** (Nacht 30) wächst das **Moderherz** aus dem
+  Wald – ein Finale über alle Wege in mehreren Phasen. Danach fällt Schnee,
+  der Moder schläft, die Bucht feiert (Abspann).
+- Danach **endlose Mondnächte** mit Bestwert – oder ein neuer Herbst an einer
+  neuen Bucht mit dem, was man freigespielt hat (Baupläne, Aussehen).
+- **Sterne je Nacht** (niemand auf dem Hof, Haus heil, Wellen früh gerufen),
+  **Herbstbuch** (Erfolge mit Deko als Belohnung), **Schlurferkunde** mit
+  Dr. Yusufs Notizen, **Turmalbum.**
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg, Kochen am Kamin mit kleinen Boni.
@@ -969,3 +1178,84 @@ Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte.
 - Fotomodus.
+
+## 10. Der Spaß – was die Warcraft-3-Karten so gut machten
+
+Auftrag des Auftraggebers: »Du prüfst, warum die Spielmechanik der
+Tower-Defense-Karten aus Warcraft 3 so spaßig und beliebt war und wie wir
+das noch besser auf unser Spiel übertragen.« Nach M15: »Jetzt steht der Rumpf
+des Spiels, jetzt muss der Spaß rein.« Der Plan dazu steht in Abschnitt 8
+(M16–M25).
+
+### 10.1 Die Karten und ihr Kniff
+
+| Karte | Der Kniff | Was daran Spaß machte |
+|---|---|---|
+| **Wintermaul** (auch Wintermaul Wars) | Türme sind die Wände: Man baut ein Labyrinth, die Horde läuft es ab; wer Durchgänge öffnet und schließt (»Jonglieren«), lässt sie umkehren | Raumdenken, eigene Lösungen, Meisterschaft |
+| **Element TD** | Sechs Elemente, jedes schlägt ein anderes; zwei oder drei Elemente ergeben Doppel- und Dreifachtürme; Zinsen auf gespartes Gold, die bei einem Durchbruch verfallen | Kombinationen entdecken, ein eigener Bau-Weg je Spiel, Sparen gegen Ausgeben |
+| **Gem TD** | Jede Runde fünf zufällige Edelsteine; einer bleibt Turm, der Rest wird Mauer; Rezepte machen aus passenden Steinen Spezialtürme | Glücksmomente, Rezepte suchen, jedes Spiel anders |
+| **YouTD** | Hunderte Türme in Familien, Zufallsangebote, Türme sammeln Erfahrung, Gegenstände von besiegten Gegnern stecken in Türmen; eine Wellenliste zeigt, was kommt | Sammeln, an Türmen basteln, mit Vorwissen planen |
+| **Green TD** | Viele Turmarten, besondere Wellen (fliegend, immun, unsichtbar) und alle paar Wellen ein Boss | Abwechslung – jede Welle stellt eine eigene Frage |
+| **Legion TD, Line Tower Wars** | Einkommen wächst nur durch Wagnis (Söldner schicken), Einheiten statt Türme, ein König am Ende | Wagnis gegen Sicherheit, Spannung in jeder Runde |
+| **Hero-Defense-Karten** (z. B. Enfo’s Team Survival) | Ein eigener Held mit Fähigkeiten und Gegenständen hält Wellen auf | Handeln statt Zusehen, Heldenmomente |
+
+### 10.2 Acht Gründe, warum das Spaß machte
+
+1. **Kurze Schleife, sichtbare Wirkung.** Bauen, Welle, Ergebnis – alle 30 bis
+   60 Sekunden. Jede Entscheidung wird sofort geprüft; man sieht Geschosse,
+   Treffer und Abschüsse.
+2. **Kombinieren und Entdecken.** Eins und eins ergibt drei: Elemente,
+   Rezepte, Auren, Gegenstände. Wer eine Kombination selbst findet, fühlt
+   sich klug.
+3. **Überraschung, die sich fair anfühlt.** Zufällige Steine, Angebote und
+   Funde – aber immer mit einer Wahl. Jedes Spiel wird anders.
+4. **Wachsen, das man sieht.** Türme steigen auf, sammeln Erfahrung, tragen
+   Gegenstände; das Bild füllt sich mit Wirkung. Man hängt an »seinem« Turm.
+5. **Jede Welle stellt eine Frage.** Fliegend, gepanzert, unsichtbar,
+   heilend, Boss – kein Turm löst alles; man mischt und plant voraus.
+6. **Wagnis gegen Sicherheit.** Zinsen, Einkommen, Wellen früher rufen: Wer
+   sich etwas traut, wird belohnt – und kann scheitern.
+7. **Meisterschaft.** Labyrinthe, Jonglieren, Schwierigkeitsgrade, Bestwerte:
+   leicht zu lernen, schwer zu meistern.
+8. **Ein Held und Mitspieler.** Ein Held mit Fähigkeiten, Teams, die
+   gemeinsam halten; wer die Lücke schließt, ist der Held des Abends.
+
+Dazu kam, was Warcraft 3 selbst mitbrachte: klare Anzeigen (Reichweiten,
+Schaden, Beschreibungen), kurze Partien und ein Ende – die letzte Welle.
+
+### 10.3 Was wir übernehmen – und was nicht
+
+**Übernehmen,** angepasst an Bucht, Wege und cozy Herbst:
+
+- Held mit Fähigkeiten → Mika bekommt aktive Fähigkeiten (M16).
+- Kombinieren → Zustände und Reaktionen (M17), Mischtürme (M19).
+- Überraschung mit Wahl → Baupläne nach gewonnenen Nächten (M18),
+  Fundkisten von Champions (M20).
+- Wachsen → Türme mit Erfahrung, Rang und Namen (M16), Turmteile
+  verschiedener Seltenheit (M20).
+- Wellen mit Fragen → Nachtplan (M16), Wellenmerkmale, neue Arten und
+  Bosse (M21).
+- Wagnis → Wellen früher rufen (M16), Moderlocke, makellose Nächte,
+  Vorratskammer (M24).
+- Meisterschaft → Schwierigkeitsgrade (M16), Sterne, Finale, endlose Nächte
+  (M25); vielleicht Schlagbäume an Schleifen (M22, OFFENE-FRAGEN 66).
+- Mitspieler → Posten der Überlebenden (M23).
+
+**Nicht übernehmen:**
+
+- Kein Gegeneinander: Zomfy bleibt ein Spiel für eine Person; das Wagnis
+  wählt man selbst.
+- Kein Labyrinth aus Türmen: Türme stehen nie auf Wegen (Grundregel 2).
+- Keine Hunderte Türme: lieber wenige Familien mit Charakter (acht bis
+  zehn), die sich spürbar unterscheiden.
+- Keine Hektik ohne Ausweg: Bauen geht jederzeit, Tempo ist ein Angebot,
+  keine Pflicht.
+
+### 10.4 Leitlinien für jeden Spaß-Meilenstein
+
+- Jede neue Mechanik wirkt in der ersten Nacht, in der sie auftaucht,
+  **sichtbar** (Anzeige, Effekt, ein Wort über dem Schlurfer).
+- Jede Wahl hat eine Gegenseite – kein »immer besser«.
+- Werte stehen in `src/data/`, nie im Code; jede Mechanik bekommt Prüfpunkte.
+- Cozy bleibt: kein Blut, keine Häme, Bosse mit Namen und Witz, die Welt
+  bleibt warm und die Wege bleiben lesbar.
