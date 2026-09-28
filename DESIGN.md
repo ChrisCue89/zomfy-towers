@@ -299,7 +299,7 @@ Wort gibt.
   Schlurfer, Türme, Barrikaden, Loot.
 - Verdeckte Figuren scheinen als gerasterter Umriss durch; Randmarken
   zeigen Schlurfer auf den Wegen außerhalb des Bildes.
-- Testspieler prüfen in jeder Runde: »Erkennt man, was was ist, und sieht
+- Leitfrage für jeden neuen Inhalt: »Erkennt man, was was ist, und sieht
   man, wo die Horde langläuft?«
 
 ## 4. Welt und Geschichte
@@ -825,8 +825,9 @@ der Klang startet mit der ersten Eingabe.
 ## 8. Meilensteinplan
 
 Jeder Meilenstein ergibt eine in sich spielbare Version. Nach jedem
-Meilenstein folgen Playtests mit Testspieler-Agenten (siehe `CLAUDE.md`),
-Nachbesserung, Prüfablauf, Commit.
+Meilenstein folgen Prüfablauf und Commit; seit dem 28.09.2026 testet der
+Auftraggeber selbst, Testspieler-Agenten gibt es nicht mehr (siehe
+`CLAUDE.md`).
 
 ### Erledigt: Meilenstein 1–8 (auf der Waldlichtung)
 

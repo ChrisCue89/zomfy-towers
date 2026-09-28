@@ -7,7 +7,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `DESIGN.md` | Vision, Look, alle Systeme, Meilensteinplan, Spaß-Leitlinien (Abschnitt 10) – **vor jeder Arbeit lesen** |
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
-| `playtests/` | Testspieler-Personas, Berichte je Runde, Zusammenfassungen |
+| `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
 
@@ -244,7 +244,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
-tools/playtest.mjs    Playtest-Brücke für Testspieler-Agenten
+tools/playtest.mjs    Playtest-Brücke (früher für Testspieler-Agenten)
 screenshots/          Ergebnisse der letzten Prüfung
 playtests/            Personas, Berichte, Zusammenfassungen
 ```
@@ -450,25 +450,18 @@ Grundprinzipien:
 3. **Screenshots ehrlich ansehen** und mit DESIGN.md vergleichen.
 4. Screenshots mit committen.
 
-Neue Systeme bekommen im Prüfskript eigene Prüfpunkte (z. B. Turm bauen,
-Welle besiegen, Loot einsammeln), sobald sie existieren.
+Neue Systeme bekommen im Prüfskript eigene Prüfpunkte – nur für ihren Kern
+(z. B. Turm bauen, Welle besiegen, Loot einsammeln), sobald sie existieren.
 
-## Playtests mit Testspieler-Agenten
+## Keine Testspieler-Agenten mehr
 
-Nach jedem Meilenstein (höchstens drei Runden, weniger wenn keine Blocker
-und keine Spielfluss-Probleme mehr auftauchen):
-
-1. Stand einfrieren: `node tools/playtest.mjs snapshot /tmp/zomfy-<runde>`.
-2. Vier Testspieler-Agenten (Personas in `playtests/PERSONAS.md`) parallel
-   starten, jeder mit eigener Sitzung der Playtest-Brücke und einem klaren
-   Rundenziel. Sie kennen den Code nicht und spielen nur per Tastatur/Maus.
-3. Berichte in `playtests/<runde>/<name>.md`, Auswertung in
-   `playtests/<runde>/ZUSAMMENFASSUNG.md` nach Schwere: **Blocker**, **stört
-   den Spielfluss**, **Feinschliff**. Blocker zuerst beheben.
-4. Prüfablauf, `PROGRESS.md` aktualisieren, committen, pushen.
-
-Testspieler liefern Hinweise, keine neue Richtung: Vision und Look aus
-DESIGN.md bleiben verbindlich.
+**Wunsch des Auftraggebers (28.09.2026):** Es werden keine Testspieler-Agenten
+mehr gestartet – sie verbrauchen zu viele Tokens. Gebaut wird; geprüft wird
+nur das Wichtigste mit dem Prüfskript (siehe Prüfablauf), den Rest testet der
+Auftraggeber selbst. Seine Rückmeldungen werden wie früher die Befunde der
+Testspieler nach Schwere behandelt (Blocker zuerst). `tools/playtest.mjs`,
+`playtests/PERSONAS.md` und die alten Berichte bleiben als Werkzeug und
+Archiv liegen, werden aber nicht mehr von selbst genutzt.
 
 ## URL-Parameter
 
