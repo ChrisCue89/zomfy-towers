@@ -287,7 +287,7 @@ export function createTerrain(seed, map) {
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 0, 1, 1, 1, 1, 0], 2));
   geometry.setIndex([0, 1, 2, 0, 2, 3]);
 
-  const material = createWorldMaterial({ map: texture, vertexColors: false });
+  const material = createWorldMaterial({ map: texture, vertexColors: false, snow: 0.5 }); // M25: nur bestäubt – die Wege bleiben lesbar
   // Nachts leuchten die Wege ein wenig aus sich heraus (Stärke setzt world.js nach der Nacht)
   material.emissiveMap = makeTexture(glowData);
   material.emissive.set(0xffffff);

@@ -7,6 +7,9 @@
 /** Reihenfolge der Bosse: Nacht 5, 10, 15, 20 – danach von vorn, zäher. */
 export const BOSS_ORDER = ['holzfaeller', 'pilzmutter', 'laternenhexe', 'moosriese'];
 
+/** Das Finale (M25): In der Frostnacht führt das Moderherz die letzte Welle an. */
+export const FINALE_BOSS = 'moderherz';
+
 /** Boss der Nacht n (oder null). */
 export function bossOfNight(n) {
   if (n < 5 || n % 5 !== 0) return null;
@@ -37,6 +40,8 @@ export const BOSS_ATTACKS = {
   sporen: { first: 6, every: 11, telegraph: 1.4, radius: 5, heal: 0.25, spawn: 3 },
   lichtraub: { first: 5, every: 12, telegraph: 1.5, radius: 9, time: 25, healPer: 0.03 },
   stampfer: { first: 6, every: 10, telegraph: 1.2, radius: 2.8, damage: 160, bite: 18, stun: 1.2 },
+  // Moderherz (M25): Wurzeln brechen aus dem Boden – Barrikaden und Zubehör ringsum, Mika im Kreis
+  wurzeln: { first: 5, every: 8, telegraph: 1.4, radius: 3.2, damage: 260, bite: 20 },
 };
 
 /** Zerfällt der Boss (Moosriese): so groß und so viel Leben haben die Teile. */

@@ -254,6 +254,29 @@ export const ZOMBIES = {
     partsAlways: true,
     xp: 40,
   },
+  // --- Finale (M25): das Moderherz in der Frostnacht (data/autumn.js) ---
+  // Langsam, riesig und gepanzert; Wurzeln brechen Barrikaden, später Sporen.
+  // Unter zwei Dritteln seines Lebens ruft es die Horde über alle Wege, unter
+  // einem Drittel kommt der Frost.
+  moderherz: {
+    hp: 4800,
+    speed: 0.42,
+    armor: 6,
+    hit: 28,
+    bite: 24,
+    hitRate: 0.45,
+    scale: 2.3,
+    radius: 0.85,
+    smash: 4,
+    heavy: true,
+    boss: true,
+    immuneSlow: true,
+    heart: true,
+    attacks: ['wurzeln'],
+    loot: { teile: [40, 50], zahnraeder: [4, 6], moderkerne: 3 },
+    partsAlways: true,
+    xp: 80,
+  },
 };
 
 /**

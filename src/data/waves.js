@@ -5,8 +5,9 @@
 import { Rng } from '../core/rng.js';
 import { difficultyOf } from './difficulty.js';
 import { addChampions } from './champions.js';
-import { bossOfNight, bossHpFactor } from './bosses.js';
+import { bossOfNight, bossHpFactor, BOSS_ORDER, FINALE_BOSS } from './bosses.js';
 import { LURE } from './risk.js';
+import { AUTUMN, FINALE, ROGUE } from './autumn.js';
 
 /** Minuten seit 06:00: erste Welle um 20:30, die Nacht endet um 05:30. */
 export const NIGHT_START = 14 * 60 + 30;
@@ -133,23 +134,30 @@ export function nightBudget(n) {
   return 33 + 9 * (n - 1) + (n - 1) ** 2;
 }
 
-export function planNight(n, seed, entries, difficulty) {
+/**
+ * @param {'finale'|'rogue'|null} [mode] M25: Frostnacht (jede Welle über alle
+ *   Wege, das Moderherz führt die letzte an) bzw. nach dem Herbst eine Nacht, die
+ *   sich neu würfelt (langsamer wachsend, siehe data/autumn.js)
+ */
+export function planNight(n, seed, entries, difficulty, mode = null) {
   const rng = new Rng(seed * 31 + n * 977);
   const diff = difficultyOf(difficulty);
-  const count = wavesInNight(n);
+  // Nach dem Herbst wächst die Horde nur noch halb so schnell (M25)
+  const g = mode === 'rogue' ? AUTUMN.days + (n - AUTUMN.days) * ROGUE.growth : n;
+  const count = wavesInNight(Math.round(g));
   const waves = [];
   let at = NIGHT_START;
   // Spätere Wellen einer Nacht sind größer (Gewichte 0,8 / 1,0 / 1,2 …)
   const weights = Array.from({ length: count }, (_, w) => 0.8 + 0.2 * w);
   const weightSum = weights.reduce((a, b) => a + b, 0);
   for (let w = 0; w < count; w++) {
-    const budget = (nightBudget(n) * diff.budget * weights[w]) / weightSum;
+    const budget = (nightBudget(g) * diff.budget * (mode === 'finale' ? FINALE.budget : 1) * weights[w]) / weightSum;
     // Eingänge (M16): Nacht 1 eine Seite; ab Nacht 2 oft zwei, ab Nacht 4 manchmal alle –
     // sonst gehörte alles auf den letzten Abschnitt (m12-r1), und das Wegenetz wäre Kulisse
     const first = rng.pick(entries);
-    const used = [first];
+    const used = mode === 'finale' ? [...entries] : [first]; // M25: in der Frostnacht über alle Wege
     // (in Nacht 2 kommt die letzte Welle sicher über zwei Wege – so lernt man es kennen)
-    if (n >= 2 && (rng.chance(n >= 3 ? 0.6 : 0.45) || (n === 2 && w === count - 1))) used.push(rng.pick(entries.filter((e) => !used.includes(e))));
+    if (used.length < entries.length && n >= 2 && (rng.chance(n >= 3 ? 0.6 : 0.45) || (n === 2 && w === count - 1))) used.push(rng.pick(entries.filter((e) => !used.includes(e))));
     if (n >= 4 && used.length === 2 && entries.length > 2 && rng.chance(0.3)) used.push(rng.pick(entries.filter((e) => !used.includes(e))));
     // Gruppen: einzelne Schlurfer oder ein Pulk Schwärmer (kommen dicht beieinander)
     const groups = [];
@@ -184,8 +192,11 @@ export function planNight(n, seed, entries, difficulty) {
       const t = (i / Math.max(1, groups.length - 1)) * span + rng.range(0, 1.2);
       for (let k = 0; k < g.count; k++) spawns.push({ type: g.type, entry: g.entry, delay: t + k * (g.type === 'schwaermer' ? 0.35 : 1.4) });
     });
-    // Jede fünfte Nacht führt ein Boss die letzte Welle an (M22; vorher der Anführer)
-    if (isLeaderNight(n) && w === count - 1) spawns.push({ type: bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(n) });
+    // Jede fünfte Nacht führt ein Boss die letzte Welle an (M22; vorher der Anführer).
+    // M25: In der Frostnacht ist es das Moderherz (über den mittleren Weg), nach dem
+    // Herbst ein zufälliger Boss. Bosse behalten ihre eigene Kurve (ohne die Zähigkeit, M24).
+    if (mode === 'finale' && w === count - 1) spawns.push({ type: FINALE_BOSS, entry: entries[Math.floor(entries.length / 2)], delay: span + 4, hp: (FINALE.heartHp * bossHpFactor(n)) / toughness(g) });
+    else if (isLeaderNight(n) && w === count - 1) spawns.push({ type: mode === 'rogue' ? rng.pick(BOSS_ORDER) : bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(g) });
     const shuffled = spawns.sort((a, b) => a.delay - b.delay);
     waves.push({ at: Math.round(at), entries: used, spawns: shuffled });
     // Verschnaufpausen zum Einsammeln und Flicken, später dichter (m3-r1: das
@@ -197,7 +208,28 @@ export function planNight(n, seed, entries, difficulty) {
   // Neue Arten und Wellenmerkmale (M22): Schildträger, Moderfalter … · Nebelwelle, flinke Nacht … (eigener Zufall)
   addNewKinds(waves, n, seed);
   addWaveTraits(waves, n, seed);
-  return { night: n, hpFactor: hpFactor(n) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves };
+  if (mode === 'rogue') diceNight(waves, n, seed, entries);
+  return { night: n, hpFactor: hpFactor(g) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves, finale: mode === 'finale', rogue: mode === 'rogue' };
+}
+
+/**
+ * Nach dem Herbst (M25, »weiterspielen«): Jede Welle würfelt ihre Wege neu (ein
+ * bis alle), und ein Teil der Horde wird zu einer zufälligen Art aus allen, die
+ * es gibt. Eigener Zufall je Nacht – nach dem Neuladen gleich.
+ */
+function diceNight(waves, n, seed, entries) {
+  const rng = new Rng(seed * 97 + n * 1301);
+  for (const wave of waves) {
+    const pool = [...entries];
+    const pick = [];
+    const k = rng.int(1, entries.length);
+    while (pick.length < k) pick.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+    wave.entries = pick;
+    wave.spawns.forEach((sp, i) => {
+      sp.entry = pick[i % pick.length];
+      if (!sp.champion && !sp.hp && rng.chance(ROGUE.swap)) sp.type = rng.pick(ROGUE.kinds);
+    });
+  }
 }
 
 /**

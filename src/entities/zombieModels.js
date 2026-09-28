@@ -85,6 +85,13 @@ const SPECS = {
     skin: P.g3, skinShade: P.g2, shirt: P.g4, shirtDark: P.g3, pants: P.s4, pantsDark: P.s3, feet: P.s3,
     moss: P.g6, eyes: 0xb6f07a, hair: P.g4, extra: 'farn', stone: true, wide: true,
   },
+  // --- Finale (M25) ---
+  // Das Moderherz: ein pochendes Herz aus Pilzgeflecht auf Wurzelbeinen, eine
+  // Krone aus Hüten, Ranken statt Armen; die Knoten glimmen violett
+  moderherz: {
+    skin: P.d2, skinShade: P.d1, shirt: P.d2, shirtDark: P.d1, pants: P.d1, pantsDark: P.d0, feet: P.d0,
+    moss: P.g4, eyes: P.a3, hair: P.d3, extra: null, heart: true,
+  },
 };
 
 function buildLeg(s, seed) {
@@ -970,8 +977,77 @@ function mothParts32(s, seed) {
   ];
 }
 
+/**
+ * Moderherz (M25, Finale): kein Mensch mehr, sondern das Herz des Moders – mit
+ * denselben Gelenknamen wie alle Schlurfer (Wurzeln sind die »Beine«, Ranken
+ * die »Arme«, die Krone aus Pilzhüten der »Kopf«), damit Horde und Gerüst gleich
+ * bleiben. Maß 1/32 wie alle Schlurfer; groß wird es über `scale`.
+ */
+function heartParts32(s, seed) {
+  const bark = (x, y, z, n) => {
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed + 3);
+    if (h < 0.12) return s.moss; // Moosflecken
+    if (((x + z * 2 + (y >> 1)) & 7) === 0) return P.d0; // Rindenfurchen
+    return roundTone(s.pants, n, { light: 1, dark: -1 });
+  };
+  // Wurzelbeine: ein dicker Strang, unten aufgefächert in kleine Wurzeln
+  const leg = (side) => {
+    const m = new VoxelModel();
+    sculpt(m, smoothUnion(capsule(4, 13, 4, 4 + side, 3, 5, 4, 3.2), capsule(4 + side, 4, 5, 4 + side * 3, 0.8, 9, 2.4, 1.6), 1.5), -3, 0, -3, 12, 14, 13, bark);
+    sculpt(m, capsule(4 + side, 3, 4, 4 - side * 3, 0.6, 0, 2.2, 1.2), -3, 0, -3, 12, 5, 9, bark);
+    sculpt(m, capsule(4, 3, 4, 4 + side * 5, 0.6, 2, 2, 1.1), -4, 0, -2, 13, 5, 9, bark);
+    return m;
+  };
+  // Das Herz: zwei Kammern oben, unten spitz zulaufend; helle Adern, Moos auf der Kuppe
+  const heart = new VoxelModel();
+  const shape = smoothUnion(smoothUnion(blob(-6, 30, 0, 10, 9.5, 9), blob(6, 30.5, 0, 10, 9, 9), 3), blob(0, 21, 0, 11, 10, 8.5), 4);
+  sculpt(heart, shape, -17, 11, -10, 17, 40, 10, (x, y, z, n) => {
+    const h = hash3(x >> 1, y >> 1, z >> 1, seed);
+    if (n.y > 0.7 && h < 0.5) return h < 0.22 ? shade(s.moss, 1) : s.moss; // Moos oben
+    const vein = Math.abs(Math.sin(x * 0.55 + y * 0.35) + Math.cos(z * 0.5 - y * 0.25)) < 0.16;
+    if (vein && n.z > -0.3) return P.d4; // helle Adern
+    if (h < 0.08) return P.d3;
+    return roundTone(s.skin, n, { light: 1, dark: -1 });
+  });
+  // Krone aus Pilzhüten (»Kopf«): ein Ring kleiner Pilze auf der Kuppe
+  const crown = new VoxelModel();
+  const caps = [[-9, 0, -1, P.f4], [-4, 3, 4, P.r3], [2, 4, 5, P.f5], [7, 1, 2, P.r3], [0, 2, -5, P.f4], [9, -1, -4, P.f5], [-6, 1, -6, P.r4]];
+  caps.forEach(([cx, dy, cz, cap], k) => {
+    const stem = 3 + (k % 3);
+    crown.box(cx, 0, cz, cx, stem + dy, cz, P.s8);
+    sculpt(crown, blob(cx + 0.5, stem + dy + 1.2, cz + 0.5, 2.6, 1.4, 2.6), cx - 3, stem + dy, cz - 3, cx + 3, stem + dy + 3, cz + 3, (x, y, z, n) => (((x + z + k) & 3) === 0 && n.y > 0.3 ? P.a4 : roundTone(cap, n, { light: 1, dark: -1 })));
+  });
+  // Glimmende Knoten vorn auf dem Herzen (Glüh-Material, pochen mit dem Licht)
+  const glow = new VoxelModel();
+  for (const [kx, ky] of [[-7, 31], [5, 33], [-2, 24], [8, 25], [-9, 23], [1, 29]]) {
+    for (let z = 10; z >= -10; z--) {
+      if (shape(kx + 0.5, ky + 0.5, z + 0.5) <= 0) {
+        glow.box(kx, ky, z + 1, kx + 1, ky + 1, z + 1, P.a3).set(kx, ky + 1, z + 1, P.a4);
+        break;
+      }
+    }
+  }
+  // Ranken statt Arme: hängen seitlich herab und rollen sich am Ende ein
+  const tendril = (side) => {
+    const m = new VoxelModel();
+    sculpt(m, smoothUnion(capsule(0, 14, 2, side * 4, 7, 3, 2.6, 2), capsule(side * 4, 7, 3, side * 2, 1.5, 6, 2, 1.4), 1.2), -8, 0, -2, 8, 17, 9, (x, y, z, n) => roundTone(s.shirt, n, { light: 1, dark: -1 }));
+    sculpt(m, capsule(side * 2, 1.5, 6, side * -1, 3, 8, 1.4, 1), -6, 0, 3, 6, 6, 10, s.shirtDark);
+    return m;
+  };
+  return [
+    { name: 'legL', model: leg(-1), joint: [-6, 13, 0], offset: [-10, 0, -4], parent: 'root', unit: U32 },
+    { name: 'legR', model: leg(1), joint: [6, 13, 0], offset: [2, 0, -4], parent: 'root', unit: U32 },
+    { name: 'torso', model: heart, joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', unit: U32 },
+    { name: 'head', model: crown, joint: [0, 38, 0], offset: [0, 38, 0], parent: 'body', unit: U32 },
+    { name: 'glow', model: glow, joint: [0, 12, 0], offset: [0, 0, 0], parent: 'body', glow: true, unit: U32 },
+    { name: 'armL', model: tendril(-1), joint: [-15, 30, 0], offset: [-15, 16, -2], parent: 'body', unit: U32 },
+    { name: 'armR', model: tendril(1), joint: [15, 30, 0], offset: [15, 16, -2], parent: 'body', unit: U32 },
+  ];
+}
+
 function fineParts32(s, seed) {
   if (s.moth) return mothParts32(s, seed);
+  if (s.heart) return heartParts32(s, seed);
   const w = widthOf(s) * 2;
   const parts = [
     { name: 'legL', model: sculptZombieLeg(s, seed), joint: [-4, 12, 0], offset: [-8, 0, -4], parent: 'root', unit: U32 },

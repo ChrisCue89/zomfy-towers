@@ -597,7 +597,9 @@ export class Horde {
     }
     b.next -= dt;
     if (b.next > 0 || z.freezeT > 0 || z.stunT > 0) return;
-    const kind = z.def.attacks[0];
+    // Mehrere Angriffe (M25, Moderherz: je Phase andere) kommen reihum
+    const list = b.attacks || z.def.attacks;
+    const kind = list[(b.round || 0) % list.length];
     // Lohnt es sich gerade nicht, wartet er – aber nie ewig (sonst sähe man es nie)
     b.wait += 1;
     if (!(this.cb.bossReady?.(z, kind) ?? true) && b.wait < 12) {
@@ -605,6 +607,7 @@ export class Horde {
       return;
     }
     b.wait = 0;
+    b.round = (b.round || 0) + 1;
     b.kind = kind;
     b.windup = BOSS_ATTACKS[kind].telegraph;
     z.windup = 0;

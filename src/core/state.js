@@ -21,7 +21,7 @@ import { TOWERS } from '../data/towers.js';
 import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
 
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -82,6 +82,7 @@ export function createNewState(config, mapSeed = 1) {
     quests: { active: null, done: [] },
     feast: 0, // M23: Tag des Fests am Feuer (nach einer gehaltenen Bossnacht)
     risk: { streak: 0, treasure: false }, // M24: makellose Nächte in Folge, wartet Balduins Schatz?
+    autumn: { frost: null, mode: 'herbst', credits: false }, // M25: Tag des ersten Frosts, nach dem Herbst weiter?, Abspann gesehen
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -185,6 +186,9 @@ export function sanitizeState(data, config) {
   }
   out.feast = Math.floor(num(data.feast, 0, 0, 1e6));
   out.risk = { streak: Math.floor(num(data.risk?.streak, 0, 0, 99)), treasure: data.risk?.treasure === true }; // M24
+  // M25: ein Herbst mit Ende – Tag des ersten Frosts (oder noch keiner), weiterspielen?, Abspann gesehen
+  const frost = Number.isFinite(data.autumn?.frost) && data.autumn.frost >= 1 ? Math.floor(data.autumn.frost) : null;
+  out.autumn = { frost, mode: frost && data.autumn?.mode === 'weiter' ? 'weiter' : 'herbst', credits: Boolean(frost && data.autumn?.credits) };
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

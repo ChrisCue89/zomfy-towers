@@ -5,6 +5,31 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 25 – Ein Herbst mit Ende (Teil 1) ✓
+
+**Ziel (DESIGN 8, OFFENE-FRAGEN 117):** Ein Spiel hat ein Ende – ein Finale nach
+einem Herbst, danach weiterspielen oder eine neue Runde.
+
+- **Kalender:** »Tag 12 von 30« in der Uhr, ab Tag 25 ein Countdown am Morgen.
+- **Frostnacht (Nacht 30):** jede Welle über alle drei Wege, das
+  **Moderherz** (neues Modell: Herz aus Pilzgeflecht, Wurzelbeine, Krone aus
+  Pilzhüten, glimmende Knoten) führt die letzte an. Wurzeln brechen
+  Barrikaden; unter zwei Dritteln ruft es die Horde über alle Wege und schickt
+  Sporen, unter einem Drittel kommt der Frost – es schneit, das Herz wird
+  langsamer. Fällt es, zerfällt die Horde; sonst erstarrt es im Morgengrauen.
+- **Der erste Frost:** Schnee im Bild und auf Dächern, Bäumen, Türmen (der
+  Boden nur bestäubt), der Moder glimmt nicht mehr; der Morgenbericht erzählt
+  es, danach der **Abspann** (die Menschen der Bucht, die fleißigsten Türme,
+  die Zahlen des Herbsts) und die **Wahl**: hierbleiben – jede Nacht würfelt
+  sich neu – oder eine neue Runde an einer neuen Bucht.
+- **Technik:** `core/autumn.js`, `data/autumn.js`, Speichern v19 mit Migration
+  v18 → v19; Prüfabschnitt `finale`.
+- **Offen:** Die Frostnacht ist noch nicht mit dem Balance-Durchlauf über 30
+  Nächte vermessen (dauert Stunden); Sterne je Nacht, Herbstbuch,
+  Schlurferkunde und Turmalbum folgen in Teil 2.
+
+---
+
 ## Meilenstein 24 – Wagnis, Vorrat und die große Balance ✓
 
 **Ziel (DESIGN 8):** Mehr Einkommen nur durch Wagnis; Sparen lohnt sich; die

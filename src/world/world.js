@@ -50,12 +50,12 @@ export class World {
     this.colliders.setBoundsFn((pos, radius, horde) => this.map.pushInside(pos, radius, horde));
 
     this.materials = {
-      world: createWorldMaterial(),
-      windy: createWorldMaterial({ wind: true }), // Gras und Blumen im Wind
+      world: createWorldMaterial({ snow: true }),
+      windy: createWorldMaterial({ wind: true, snow: true }), // Gras und Blumen im Wind
       laundry: createWorldMaterial({ wind: 'hang', occluder: true }), // Wäsche flattert an der Leine
-      occluder: createWorldMaterial({ occluder: true }),
+      occluder: createWorldMaterial({ occluder: true, snow: true }),
       // Gebautes (Türme, Barrikaden, Werkbank …): nachts mit etwas Eigenlicht
-      building: createWorldMaterial({ occluder: true, selfLight: 0.12 }),
+      building: createWorldMaterial({ occluder: true, selfLight: 0.12, snow: true }),
       flame: createGlowMaterial(0xffffff, { vertexColors: true }),
       beacon: createGlowMaterial(0xffffff), // Leuchtfeuer auf dem Leuchtmast (Meilenstein 6)
       spawnGlow: createGlowMaterial(0xffffff), // fahle Laternen an den Spawns (Meilenstein 9)
@@ -141,6 +141,7 @@ export class World {
     this.particles = new Particles(800, seed);
     scene.add(this.particles.object);
     this.weather = new Weather({ scene, particles: this.particles, seed }); // M12: Tageswetter
+    this.moderFactor = 1; // M25: wie stark der Moder glimmt (nach dem Frost weniger, im Schnee gar nicht)
     this.leafKicks = 0; // wie oft Laub aus einem Haufen aufgestoben ist (Prüfung)
     this.chimneySmoke = new SmokeEmitter(this.particles, this.shelter.chimney, { rate: 1.3, size: [3, 8], life: [4.5, 6.5], rise: 0.4 });
     this.fireSmoke = new SmokeEmitter(this.particles, this.props.fire.smoke, { rate: 0.9, size: [2, 5], life: [2.5, 4], rise: 0.45 });
@@ -202,7 +203,7 @@ export class World {
     // Fackeln: tagsüber aus (dunkler Kopf), nachts helles Feuer
     L.addGlow(this.materials.torchGlow, { dim: 0x2e1f17, bright: 0xffb347, boost: 1.6, mode: 'lamp', twinkle: true });
     // Moder (M15): tagsüber blasses Lila, nachts ein kühles Glimmen im Unterholz
-    L.addGlow(this.materials.moderGlow, { dim: 0xa88fd0, bright: 0xc0a0ff, boost: 1.2, mode: 'lamp', twinkle: true });
+    this.moderGlowEntry = L.addGlow(this.materials.moderGlow, { dim: 0xa88fd0, bright: 0xc0a0ff, boost: 1.2, mode: 'lamp', twinkle: true });
   }
 
   /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
@@ -458,7 +459,9 @@ export class World {
     // Rauch, Funken, Glühwürmchen
     const night = dn.night;
     // Wege nachts mit einem Hauch Eigenlicht, Fackeln brennen nur im Dunkeln (m12-r1)
-    this.groundMaterial.emissiveIntensity = PATH_GLOW * night;
+    // M25: Nach dem Frost schläft der Moder – sein Glimmen im Boden und in den Pilzen erlischt
+    this.groundMaterial.emissiveIntensity = PATH_GLOW * night * (0.4 + 0.6 * this.moderFactor);
+    if (this.moderGlowEntry) this.moderGlowEntry.scale = this.moderFactor;
     if (this.props.torchFlames) this.props.torchFlames.visible = dn.lampLevel > 0.05;
     sharedUniforms.uNight.value = night;
     sharedUniforms.uTime.value = this.time;

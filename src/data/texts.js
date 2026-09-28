@@ -433,13 +433,14 @@ export const T = {
   },
   // Wetter (M12): Name in der Uhr, Satz im Morgenbericht
   wetter: {
-    name: { klar: 'klar', wind: 'Wind', regen: 'Nieselregen', nebel: 'Nebel' },
+    name: { klar: 'klar', wind: 'Wind', regen: 'Nieselregen', nebel: 'Nebel', schnee: 'Schnee' },
     // Je Wetter ein paar Sätze, nach dem Tag gewählt (m12-r1: zwei klare Tage klangen gleich)
     bericht: {
       klar: ['Heute bleibt es klar und kühl.', 'Blauer Himmel über dem See. Ein guter Tag zum Bauen.', 'Klar und frisch – man sieht bis zu den Inseln.'],
       wind: ['Heute weht ein kräftiger Wind – das Laub fliegt.', 'Der Wind rüttelt an den Fensterläden. Die Bäume werden kahl.', 'Stürmisch heute. Festhalten, was nicht festgenagelt ist!'],
       regen: ['Heute nieselt es. Gut für die Beete, schlecht für die Frisur.', 'Leiser Regen trommelt aufs Dach. Ein Tag für Tee.', 'Grau und nass heute. Die Wege werden matschig.'],
       nebel: ['Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.', 'Man sieht kaum den Steg. Der Nebel schluckt jedes Geräusch.', 'Nebel wie Watte – die Inseln sind verschwunden.'],
+      schnee: ['Schnee liegt auf dem Steg. Der erste Schnee dieses Jahres.', 'Alles ist weiß und still. Man hört nur den See.', 'Der Schnee knirscht unter den Stiefeln. Im Wald glimmt nichts mehr.'],
     },
     // Was das Wetter nachts bewirkt (M18) – Juna sagt es am Funk an
     wirkung: {
@@ -447,6 +448,7 @@ export const T = {
       wind: 'Wind heute Nacht: Die Kürbisse fliegen weiter.',
       regen: 'Regen heute Nacht: Die Horde wird nass – Frost beißt stärker, Feuer brennt schwächer.',
       nebel: 'Nebel heute Nacht: Die Türme sehen nicht so weit – außer im Schein einer Laterne.',
+      schnee: null,
     },
   },
   // Zustände und Reaktionen (M18): Name, was geschieht, Notiz fürs Notizbuch
@@ -833,6 +835,47 @@ export const T = {
       angriff: 'Stampf!',
       hinweis: 'Der Moosriese! Er stampft alles um, was vor ihm steht – und fällt er, zerfällt er in drei.',
       zerfaellt: 'zerfällt in drei!',
+    },
+    moderherz: {
+      name: 'das Moderherz',
+      titel: 'Das Moderherz',
+      warnung: 'pocht!',
+      angriff: 'Wurzeln!',
+      hinweis: 'Das Moderherz! Es pocht, dann brechen Wurzeln aus dem Boden – weg aus dem roten Kreis. Wird es schwächer, ruft es die Horde.',
+    },
+  },
+  // Ein Herbst mit Ende (M25): Kalender, Frostnacht mit dem Moderherz, Abspann, danach
+  herbst: {
+    tagVon: (tag, von) => `Tag ${tag} von ${von}`,
+    nochNaechte: (n) => (n === 1 ? 'Morgen kommt der erste Frost – und mit ihm das Moderherz.' : `Noch ${n} Nächte bis zum ersten Frost.`),
+    heuteFrost: 'Heute Nacht kommt der erste Frost. Und mit ihm das Moderherz – über alle Wege.',
+    frostnacht: 'Die Frostnacht! Das Moderherz kommt über alle Wege. Halte durch bis zum Morgen – oder fäll es.',
+    ruf: 'Das Herz ruft die Horde!',
+    frostKommt: 'Der Frost kommt!',
+    frostHinweis: 'Es schneit! Das Herz wird langsamer. Halte durch!',
+    herzFaellt: 'Das Moderherz ist gefallen!',
+    herzErstarrt: 'Der Frost ist da – das Moderherz erstarrt!',
+    bericht: {
+      gefallen: 'Das Moderherz ist gefallen. Der erste Frost liegt über der Bucht.',
+      erstarrt: 'Im Morgengrauen kam der Frost – das Moderherz erstarrte. Die Bucht hat gehalten.',
+    },
+    weiterGewaehlt: 'Wenn der Schnee schmilzt, regt sich der Moder wieder – jede Nacht anders.',
+    abspann: {
+      titel: 'Zomfy Towers',
+      untertitel: 'Ein Herbst an der alten Holzlände',
+      bucht: 'In der Bucht',
+      balduin: 'Balduin, übers Wasser',
+      tuerme: 'Die fleißigsten Türme',
+      turm: (name, n) => `${name} – ${n} erledigt`,
+      zahlen: 'Dieser Herbst',
+      naechte: (n) => (n === 1 ? 'eine Nacht gehalten' : `${n} Nächte gehalten`),
+      besiegt: (n) => `${n} Schlurfer erledigt`,
+      bosse: (n) => (n === 1 ? 'ein Boss gefällt' : `${n} Bosse gefällt`),
+      von: 'Ein Spiel von',
+      studio: 'Tales of Cue',
+      danke: 'Danke fürs Spielen!',
+      weiter: 'Der Moder schläft. Für diesen Winter.',
+      taste: 'E: schneller · Esc: weiter',
     },
   },
   // Wagnis und Vorrat (M24): Moderlocke, makellose Nacht, Balduins Schatz, Vorratskammer

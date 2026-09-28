@@ -717,7 +717,7 @@ export function shelterFootprint(level) {
 
 /** Materialien der Unterkunft – einmal anlegen, bei jedem Ausbau wiederverwenden. */
 export function createShelterMaterials() {
-  const baseMat = createWorldMaterial({ occluder: true });
+  const baseMat = createWorldMaterial({ occluder: true, snow: true });
   const glow = {
     window: createGlowMaterial(0xffffff),
     fairy: createGlowMaterial(0xffffff, { vertexColors: true }),

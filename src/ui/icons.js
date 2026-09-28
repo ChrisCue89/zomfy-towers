@@ -743,6 +743,24 @@ const ICONS = {
       '...b...b....',
     ],
   },
+  // M25: Schneeflocke (Uhr an Schneetagen, Frost-Hinweis)
+  schnee: {
+    legend: { W: P.s9, L: P.b5, M: P.b4 },
+    rows: [
+      '.....W......',
+      '...L.W.L....',
+      '....LWL.....',
+      '.L...W...L..',
+      '..L..W..L...',
+      'WWWWWWWWWWW.',
+      '..L..W..L...',
+      '.L...W...L..',
+      '....LWL.....',
+      '...L.W.L....',
+      '.....W......',
+      '............',
+    ],
+  },
   nebel: {
     legend: { Y: P.f6, W: P.f8, L: P.s8, M: P.s6 },
     rows: [

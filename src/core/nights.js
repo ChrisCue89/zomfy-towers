@@ -8,7 +8,7 @@ import { T } from '../data/texts.js';
 import { planNight, planDay, applyLure, NIGHT_START, NIGHT_END, MUT_BONUS } from '../data/waves.js';
 import { LURE, FLAWLESS, PANTRY } from '../data/risk.js';
 import { gain } from './inventory.js';
-import { bossOfNight, BOSS_ORDER as BOSS_TYPES } from '../data/bosses.js';
+import { bossOfNight, BOSS_ORDER as BOSS_TYPES, FINALE_BOSS } from '../data/bosses.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
 import { towerStatsOf } from '../data/towers.js';
@@ -86,7 +86,7 @@ export class Nights {
 
   /** Plan der Nacht von Tag `day` – mit der gewählten Schwierigkeit (M16). */
   planFor(day) {
-    const plan = planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty);
+    const plan = planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty, this.game.autumn?.planMode(day) || null); // M25: Frostnacht, danach neu gewürfelt
     if (this.hpMul) plan.hpFactor *= this.hpMul; // nur für den Balance-Durchlauf (tools/balance.mjs --nacht)
     // M24: Eine Moderlocke lockt in jeder Welle mehr Horde über ihren Spawn
     const lure = this.game.lureEntry?.();
@@ -163,7 +163,7 @@ export class Nights {
       entries: w.entries,
       heavy: juna ? HEAVY.filter((t) => w.spawns.some((s) => s.type === t)) : [],
       trait: w.trait || null, // M22: Wellenmerkmal (Nebelwelle …) – immer angekündigt
-      boss: w.spawns.find((s) => BOSS_TYPES.includes(s.type))?.type || null, // … und der Boss
+      boss: w.spawns.find((s) => BOSS_TYPES.includes(s.type) || s.type === FINALE_BOSS)?.type || null, // … und der Boss (M25: das Moderherz)
     }));
     return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.canCall(), evening: !this.active, juna, lure: plan.lure || null };
   }
@@ -313,8 +313,11 @@ export class Nights {
     const preLoss = st.world.dayEvents?.day === n ? Math.round(st.world.dayEvents.lost || 0) : 0;
     st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false, shift: 0, called: 0, towers: {} };
     this.game.hud.toast(T.horde.nachtBeginnt(n), 'mond', 4);
+    // M25: Die Frostnacht sagt sich selbst an (das Moderherz statt des Bosses)
+    this.game.autumn?.beginNight(n);
+    if (this.plan.finale) return;
     // Jede fünfte Nacht: der Boss (M22) – schon beim Einbruch der Nacht angesagt
-    const boss = bossOfNight(n);
+    const boss = this.plan.waves.flatMap((w) => w.spawns).find((s) => BOSS_TYPES.includes(s.type))?.type || bossOfNight(n);
     if (boss) this.game.hud.toast(T.bosse.heuteNacht(T.bosse[boss].name), 'warnung', 6);
     else if (n % 5 === 0) this.game.hud.toast(T.horde.anfuehrerNacht, 'warnung', 5);
   }
@@ -341,6 +344,7 @@ export class Nights {
     }
     g.posts?.onNightEnd(won); // M23: nach einer gehaltenen Bossnacht wird gefeiert
     const risk = this.settleRisk(won); // M24: Moderlocke, makellose Nacht, Vorratskammer
+    const finale = won && this.plan?.finale ? g.autumn?.onFrost(night) || null : null; // M25: der erste Frost
     st.report = {
       n: night.n,
       won,
@@ -359,6 +363,7 @@ export class Nights {
       // M17: Tor und Wall – gehalten oder durchbrochen, wie viele im Lager waren, was umgeworfen wurde
       lager: night.breach ? { at: night.breach.at, gate: night.breach.gate, entered: night.inCamp || 0, raided: [...(night.raided || [])] } : night.campHit ? { held: true } : null,
       risk,
+      finale,
     };
     g.quietSave();
   }

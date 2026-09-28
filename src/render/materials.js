@@ -3,6 +3,8 @@
 //  - OCCLUDER: gerasterte Durchsicht rund um die Spielfigur, wenn das Objekt davor steht.
 //  - FADE:     gerastertes Ausblenden (Dach und Vorderwand beim Betreten des Hauses).
 // Beides arbeitet mit discard, damit Tiefenpuffer und Umrisse stimmen.
+//  - SNOW:     Schnee auf allen Flächen, die nach oben schauen (M25, nach der
+//    Frostnacht) – fleckig im Maß 1/16 m, dichter, je stärker `uSnow`.
 //  - SELF_LIGHT: nachts ein Hauch Eigenlicht in der eigenen Farbe – für alles,
 //    worum es im Kampf geht (Schlurfer, Bauten, Beute). Lesbarkeit vor Stimmung:
 //    Die Welt bleibt dunkel, die Spielfiguren bleiben erkennbar (m3-r1).
@@ -21,6 +23,7 @@ export const sharedUniforms = {
   uNight: { value: 0 }, // 0 = Tag, 1 = tiefe Nacht (world.js)
   uTime: { value: 0 }, // Sekunden, für Wind in Gras und Blumen
   uWind: { value: 1 }, // Windstärke des Tages (Wetter, M12): 1 = normal
+  uSnow: { value: 0 }, // Schneedecke draußen (M25): 0 = keine, 1 = überall, wo Schnee liegen bleibt
 };
 
 const DECLARATIONS = /* glsl */ `
@@ -38,7 +41,33 @@ uniform float uFade;
 uniform float uNight;
 uniform float uSelfLight;
 #endif
+#ifdef SNOW
+uniform float uSnow;
+uniform float uSnowAmount;
+float snowHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float snowNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(snowHash(i), snowHash(i + vec2(1.0, 0.0)), f.x), mix(snowHash(i + vec2(0.0, 1.0)), snowHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+#endif
 ${BAYER_GLSL}
+`;
+
+const SNOW = /* glsl */ `
+#ifdef SNOW
+if (uSnow > 0.0) {
+  // Weltlage und -normale aus der Ansicht (die Kamera dreht nie – günstig genug)
+  vec3 snowN = inverseTransformDirection(normal, viewMatrix);
+  vec3 snowP = (vec4(-vViewPosition, 0.0) * viewMatrix).xyz + cameraPosition;
+  // Flecken statt Gries: weiches Rauschen (etwa 0,6 m), Kanten auf dem 1/16-m-Raster
+  vec2 snowQ = floor(snowP.xz * 16.0) / 16.0;
+  float snowH = snowNoise(snowQ * 1.6) * 0.75 + snowNoise(snowQ * 5.0 + 3.7) * 0.25;
+  float snowCover = smoothstep(0.55, 0.85, snowN.y) * step(1.02 - uSnow * uSnowAmount, snowH);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.93, 0.97), snowCover);
+}
+#endif
 `;
 
 const SELF_LIGHT = /* glsl */ `
@@ -101,19 +130,21 @@ function patch(material, extraUniforms = {}) {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${DECLARATIONS}`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\n${DISCARD}`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${SELF_LIGHT}`);
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${SNOW}\n${SELF_LIGHT}`);
   };
   return material;
 }
 
 /**
  * Beleuchtetes Voxel-Material.
- * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number, wind?: boolean|'hang'}} options
+ * @param {{occluder?: boolean, fade?: boolean, map?: THREE.Texture, vertexColors?: boolean, selfLight?: number, wind?: boolean|'hang', snow?: boolean|number}} options
+ *   snow: Schneedecke nach dem Frost (M25) – true = voll, eine Zahl = so viel davon (der Boden nur bestäubt)
  */
 export function createWorldMaterial(options = {}) {
-  const { occluder = false, fade = false, map = null, vertexColors = true, selfLight = 0, wind = false } = options;
+  const { occluder = false, fade = false, map = null, vertexColors = true, selfLight = 0, wind = false, snow = false } = options;
   const material = new THREE.MeshLambertMaterial({ vertexColors, map });
   material.defines = {};
+  if (snow) material.defines.SNOW = ''; // M25: Schneedecke (nur Feststehendes draußen)
   if (occluder) material.defines.OCCLUDER = '';
   if (fade) material.defines.FADE = '';
   if (selfLight > 0) material.defines.SELF_LIGHT = '';
@@ -128,6 +159,7 @@ export function createWorldMaterial(options = {}) {
     extra.uSelfLight = { value: selfLight };
     material.userData.selfLight = extra.uSelfLight;
   }
+  if (snow) extra.uSnowAmount = { value: snow === true ? 1 : snow };
   return patch(material, extra);
 }
 

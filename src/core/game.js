@@ -37,6 +37,7 @@ import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
 import { Furnishing } from './furnishing.js';
 import { Posts } from './posts.js';
 import { Quests } from './quests.js';
+import { Autumn } from './autumn.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
@@ -332,6 +333,7 @@ export class Game {
     this.furnishing = new Furnishing(this);
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
+    this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
     this.portraits = renderPortraits();
 
     this.state = loaded.state || createNewState(CONFIG, this.world.mapSeed);
@@ -1227,6 +1229,9 @@ export class Game {
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
     this.milled = this.grindMills(); // M19
+    // M25: Die letzten Tage vor dem ersten Frost zählen herunter
+    const frost = this.autumn.morningLine(this.state.time.day);
+    if (frost) this.hud.toast(frost, 'schnee', 6);
     this.events.emit('newDay', this.state.time.day);
   }
 
@@ -1336,6 +1341,7 @@ export class Game {
     this.hud.showBanner(T.bosse.kommt(B.titel));
     this.sound.play('champion');
     this.hud.toast(B.hinweis, 'warnung', 7);
+    if (z.def.heart) this.autumn.onHeart(z); // M25: das Moderherz in der Frostnacht
   }
 
   /** Lichtfresser (M22): löscht Lichter in seiner Nähe – bis zum Morgen –, auch Mikas Laterne. */
@@ -1359,7 +1365,7 @@ export class Game {
     const a = BOSS_ATTACKS[kind];
     const p = this.player.position;
     const nearMika = !this.viewInside && (p.x - z.x) ** 2 + (p.z - z.z) ** 2 <= (a.radius + 1) ** 2;
-    if (kind === 'hieb' || kind === 'stampfer') return nearMika || this.bossTargets(z.x, z.z, a.radius).length > 0;
+    if (kind === 'hieb' || kind === 'stampfer' || kind === 'wurzeln') return nearMika || this.bossTargets(z.x, z.z, a.radius).length > 0;
     if (kind === 'lichtraub') return this.world.lightPools.litNear(z.x, z.z, a.radius) || (this.state.player.lantern && nearMika);
     return true; // Sporen: immer
   }
@@ -1392,7 +1398,7 @@ export class Game {
     const nearMika = !this.viewInside && Math.hypot(p.x - z.x, p.z - z.z) <= a.radius + 0.3;
     this.bossStats.attacks++;
     this.hud.popWord(z.x, 2.2 * z.def.scale, z.z, B.angriff, hexToCss(P.f7));
-    if (kind === 'hieb' || kind === 'stampfer') {
+    if (kind === 'hieb' || kind === 'stampfer' || kind === 'wurzeln') {
       for (const b of this.bossTargets(z.x, z.z, a.radius)) {
         this.onBarricadeHit(b, a.damage, z);
         const c = this.world.buildings.bounds(b);
@@ -1402,6 +1408,7 @@ export class Game {
       if (nearMika) this.combat.hurt(a.bite, z);
       this.effects.dust(z.x, z.z, a.radius, 24);
       this.rig.shake = Math.max(this.rig.shake || 0, 0.3);
+      if (kind === 'wurzeln') this.effects.splat(z.x, 0.4, z.z, 'moos', 26, a.radius * 0.8); // M25: Wurzeln brechen aus dem Boden
       this.sound.play(kind === 'hieb' ? 'abriss' : 'knall', { x: z.x, z: z.z });
       if (kind === 'hieb') this.hud.popWord(z.x, 2.6 * z.def.scale, z.z, T.bosse.sturm, hexToCss(P.r4));
       return;
@@ -1458,6 +1465,10 @@ export class Game {
       return;
     }
     if (z.splitChild && this.horde.list.some((o) => o !== z && o.type === z.type && o.state !== 'dying')) return; // erst der letzte zählt
+    if (z.def.heart) {
+      this.autumn.heartDown(z); // M25: Der Moder bricht zusammen, der Frost kommt
+      return;
+    }
     this.hud.showBanner(T.bosse.faellt(B.titel));
     this.sound.play('jubel');
   }
@@ -2140,6 +2151,27 @@ export class Game {
     this.title.go('figur');
   }
 
+  /**
+   * Neue Runde nach dem Herbst (M25): eine neue Bucht mit neuem Wegenetz – Name,
+   * Aussehen und Schwierigkeit bleiben. Im Test-Modus gleich hier (dieselbe Karte).
+   */
+  newRound() {
+    const { name, look } = this.state.player;
+    const difficulty = this.state.difficulty;
+    if (!CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty })) {
+      this.saves.clear();
+      this.holdSave = true;
+      location.reload();
+      return;
+    }
+    this.newGame();
+    Object.assign(this.state.player, { name, look });
+    this.state.difficulty = difficulty;
+    this.appliedLook = null;
+    this.applyLook();
+    this.quietSave();
+  }
+
   /** Neues Spiel mit Name und Aussehen. */
   startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY) {
     // Die Karte gehört noch zum alten Spielstand: einmal neu laden, dann entsteht
@@ -2222,6 +2254,7 @@ export class Game {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
           this.state.report = null;
           this.mode = 'play';
+          this.autumn.afterReport(); // M25: nach der Frostnacht läuft der Abspann
         }
         this.player.idle(dt);
         break;
@@ -2250,12 +2283,19 @@ export class Game {
         if (this.mapView.update(input, dt)) this.mode = 'play';
         this.player.idle(dt);
         break;
+      case 'abspann': // M25: nach der Frostnacht
+        this.autumn.updateCredits(dt, input);
+        this.player.idle(dt);
+        break;
       default:
         break;
     }
 
     const titled = this.mode === 'splash' || this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
     const hours = titled ? TITLE_HOURS : hoursOf(this.state.time.minute);
+    // M25: Nach dem Frost schneit es, und der Moder schläft
+    this.world.weather.snowNow = !titled && this.autumn.snowing(this.state.time.day);
+    this.world.moderFactor = titled ? 1 : this.autumn.moderGlow(this.state.time.day);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player, day: this.state.time.day });
     this.world.crows.update(this.mode === 'play' ? dt : 0, { hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) });
     this.updateMood();
@@ -2265,13 +2305,15 @@ export class Game {
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.quests.update(dt);
+    this.autumn.update(this.mode === 'play' ? dt : 0);
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
     // Drinnen ist ein eigenes Bild (M11): Kamera umstellen, sobald Mika drinnen oder draußen ist
-    const inside = !titled && this.world.isInside(this.player.position.x, this.player.position.z);
+    // M25: Der Abspann zeigt die verschneite Bucht draußen, auch wenn Mika drinnen aufgewacht ist
+    const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
-    const look = titled ? null : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
     else {
@@ -2720,13 +2762,15 @@ export class Game {
     const frame = Math.min(0.1, (now - (this._lastRain || now)) / 1000);
     this._lastRain = now;
     this.world.weather.drawRain(ui, frame, dn.night, this.viewInside);
+    this.world.weather.drawSnow(ui, frame, dn.night, this.viewInside); // M25
     if (playing) this.builder.drawOverlay(ui);
     // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
-    const cinematic = this.pendingIntro || this.introRunning;
+    const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann'; // M25: im Abspann nur Bild und Namen
     if (!cinematic) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
+    if (this.mode === 'abspann') this.autumn.drawCredits(ui);
     this.perkChoice.draw(ui);
     this.mapView.draw(ui);
     // Meldungen unter Werkbank, Perk-Wahl und Morgenbericht (m12-r1: »gespeichert« lag auf der Überschrift)
@@ -3118,6 +3162,15 @@ export class Game {
       },
       // M24: Wagnis und Vorrat
       risk: () => ({ ...game.state.risk, lure: game.lureEntry(), unlocked: game.builder.lureUnlocked() }),
+      // M25: ein Herbst mit Ende – Frost, Modus, Abspann, das Herz und seine Phasen
+      autumn: () => game.autumn.view(),
+      /** Das Moderherz erscheinen lassen (wie aus dem Plan: Banner, erste Phase). */
+      spawnHeart(x, z) {
+        const zo = game.horde.spawn('moderherz', { x, z, hpFactor: game.nights.plan?.hpFactor || 1 });
+        zo.state = 'walk';
+        game.onBoss(zo);
+        return zo.id;
+      },
       lureEntryAt: (x, z) => game.lureEntryAt(x, z),
       // M23: Posten, Fest und Nebenaufträge
       posts: () => game.posts.view(),

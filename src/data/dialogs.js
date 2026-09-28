@@ -107,6 +107,29 @@ export const DIALOGE = {
       ],
     },
   ],
+  // --- Nach dem Herbst (M25): weiterspielen oder eine neue Runde? ---
+  nachDemHerbst: [
+    { s: 'mika', t: 'Schnee auf dem Steg. Der Moder schläft – zum ersten Mal ist es still im Wald.' },
+    { s: 'mika', t: 'Fort ist er nicht. Wenn der Schnee schmilzt, regt er sich wieder – nur nicht mehr so, wie man es kennt.' },
+    {
+      s: 'mika',
+      t: 'Und jetzt?',
+      antworten: [
+        { t: 'Hierbleiben – die Nächte würfeln neu', aktion: 'weiter', standard: true },
+        { t: 'Eine neue Bucht suchen (neue Runde)', aktion: 'neu' },
+      ],
+    },
+  ],
+  neueRundeSicher: [
+    {
+      s: 'mika',
+      t: 'Eine neue Bucht, ein neues Wegenetz – und alles von vorn. Dieser Spielstand endet dann. Wirklich?',
+      antworten: [
+        { t: 'Nein, ich bleibe hier', aktion: 'weiter', standard: true },
+        { t: 'Ja, neue Runde', aktion: 'neu' },
+      ],
+    },
+  ],
   // --- Überlebende ---
   knopfTreffen: [
     { s: 'mika', t: 'Na, wer bist du denn? Ein Hund – ganz allein hier draußen?' },

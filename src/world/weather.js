@@ -20,7 +20,9 @@ const WHITE = new THREE.Color(1, 1, 1);
 const BREATH = new THREE.Color(P.s9);
 const RAIN_DAY = hexToCss(P.n8);
 const RAIN_NIGHT = hexToCss(P.n6);
-const MIX_KEYS = ['sun', 'hemi', 'shadow', 'exposure', 'saturation', 'wind', 'rain', 'leaves', 'fog'];
+const MIX_KEYS = ['sun', 'hemi', 'shadow', 'exposure', 'saturation', 'wind', 'rain', 'leaves', 'fog', 'snow'];
+const SNOW_DAY = hexToCss(P.s9);
+const SNOW_NIGHT = hexToCss(P.n8);
 
 const FOG_VERT = /* glsl */ `
 varying vec3 vWorld;
@@ -174,6 +176,8 @@ export class Weather {
     this.rng = new Rng(seed + 77);
     this.kind = 'klar';
     this.forced = null; // Prüfung: ein Wetter erzwingen
+    this.snowNow = false; // M25: nach dem Frost (vom Spiel gesetzt) – dann schneit es
+    this.flakes = []; // Schneeflocken im Bild (Oberflächenpixel)
     this.waveFog = 0; // Nebelwelle unterwegs (M22, vom Spiel gesetzt) …
     this.waveFogMix = 0; // … und wie dicht ihr Nebel gerade ist
     const base = WEATHER.klar;
@@ -190,7 +194,8 @@ export class Weather {
 
   /** Wetter eines Tages (auch für die Ansage am Morgen). */
   forecast(day) {
-    return this.forced || weatherOf(day, this.seed);
+    if (this.forced) return this.forced;
+    return this.snowNow ? 'schnee' : weatherOf(day, this.seed);
   }
 
   /** Wetter sofort übernehmen (nach dem Laden, beim neuen Tag im Dunkeln). */
@@ -230,6 +235,7 @@ export class Weather {
 
     // Wind in Gras und Blumen, Rauch und Partikel
     sharedUniforms.uWind.value = m.wind;
+    sharedUniforms.uSnow.value = m.snow; // M25: die Schneedecke wächst langsam mit
     this.particles.wind.set(0.18 * m.wind, 0, -0.05 * m.wind);
 
     // Nebel: jeden Morgen über dem Wasser, an Nebeltagen dichter, länger und auch über der Bucht
@@ -304,6 +310,33 @@ export class Weather {
           });
         }
       }
+    }
+  }
+
+  /**
+   * Schnee im Bild (M25): einzelne Flocken, die langsam fallen und hin und her
+   * pendeln. Drinnen schneit es nicht.
+   * @param {import('../ui/ui.js').UICanvas} ui
+   */
+  drawSnow(ui, dt, night, inside) {
+    const want = inside ? 0 : Math.round(this.mix.snow * 140);
+    const flakes = this.flakes;
+    const r = this.rng;
+    while (flakes.length < want) flakes.push({ x: r.range(0, ui.width), y: r.range(-10, ui.height), v: r.range(14, 30), ph: r.range(0, 6.28), big: r.next() < 0.25 });
+    if (flakes.length > want) flakes.length = want;
+    if (!flakes.length) return;
+    const ctx = ui.ctx;
+    ctx.fillStyle = night > 0.5 ? SNOW_NIGHT : SNOW_DAY;
+    for (const f of flakes) {
+      f.y += f.v * dt;
+      f.x += (Math.sin(this.time * 1.3 + f.ph) * 8 + 4 * this.mix.wind) * dt;
+      if (f.y > ui.height) {
+        f.y = r.range(-12, -2);
+        f.x = r.range(-10, ui.width);
+      }
+      const x = Math.round(f.x);
+      const y = Math.round(f.y);
+      ctx.fillRect(x, y, f.big ? 2 : 1, f.big ? 2 : 1);
     }
   }
 

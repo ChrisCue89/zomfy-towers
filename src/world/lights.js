@@ -56,7 +56,7 @@ export class WarmLights {
    *   mode 'lamp' = hell in der Nacht, 'always' = immer, 'sky' = hell am Tag (Fensterglas von innen, M11)
    */
   addGlow(material, options) {
-    this.glows.push({
+    const glow = {
       material,
       dim: new THREE.Color(options.dim),
       bright: new THREE.Color(options.bright),
@@ -66,7 +66,10 @@ export class WarmLights {
       twinkle: options.twinkle || false,
       seed: this.glows.length * 7.1,
       on: true,
-    });
+      scale: 1, // M25: dämpfen, ohne auszuschalten (der schlafende Moder)
+    };
+    this.glows.push(glow);
+    return glow;
   }
 
   flicker(seed, speed, amount) {
@@ -96,6 +99,7 @@ export class WarmLights {
     for (const g of this.glows) {
       let level = g.entry ? g.entry.level : g.mode === 'always' ? 1 : g.mode === 'sky' ? 1 - lampLevel * 0.85 : lampLevel;
       if (!g.on) level = 0;
+      level *= g.scale;
       let f = g.entry ? this.flicker(g.entry.seed, g.entry.speed, g.entry.amount) : 1;
       if (g.twinkle) f *= 0.85 + 0.15 * Math.sin(this.time * 2.3 + g.seed);
       tmpColor.copy(g.dim).lerp(g.bright, Math.min(1, level));

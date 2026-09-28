@@ -58,6 +58,8 @@ export class ReportPanel {
       const list = Object.entries(n).map(([type, k]) => (k > 1 ? `${k}× ${T.bauten[type]}` : T.bauten[type]));
       if (list.length) out.push({ text: T.lager.berichtUmgeworfen(list.join(', ')), bad: true });
     }
+    // M25: die Frostnacht – das Herz fiel oder erstarrte im Morgengrauen
+    if (r.finale) out.unshift({ text: r.finale.heart ? T.herbst.bericht.gefallen : T.herbst.bericht.erstarrt, warm: true });
     // M24: Wagnis und Vorrat – Moderlocke, makellose Nacht, Vorratskammer
     const k = r.risk;
     if (k?.lure) out.push({ text: k.lure.chest ? T.wagnis.lockeKiste(T.horde.richtungKurz[k.lure.entry]) : T.wagnis.lockeFort, warm: k.lure.chest, dim: !k.lure.chest });

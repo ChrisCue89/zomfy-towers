@@ -1450,7 +1450,22 @@ Schlagkraft, Pfanne durchschlägt Panzer).
   und Ausbau, tote Optionen (Holzlager, Bank, Pfanne), Nahkampf – über zehn
   und mehr Nächte in allen drei Schwierigkeitsgraden.
 
-#### M25 – Ein Herbst mit Ende
+#### M25 – Ein Herbst mit Ende (Teil 1 ✓)
+
+*Umgesetzt (28.09.2026, Teil 1):* Die Uhr zeigt »Tag 12 von 30«, ab Tag 25
+zählen die Nächte bis zum ersten Frost herunter. In der **Frostnacht** (Nacht 30)
+kommt jede Welle über alle drei Wege, das **Moderherz** führt die letzte an – ein
+pochendes Herz aus Pilzgeflecht auf Wurzelbeinen mit einer Krone aus Pilzhüten.
+Es bricht mit Wurzeln Barrikaden, ruft unter zwei Dritteln seines Lebens die
+Horde über alle Wege und schickt Sporen; unter einem Drittel kommt der Frost
+(es schneit, das Herz wird langsamer). Fällt das Herz, zerfällt die Horde; hält
+die Bucht bis zum Morgengrauen, erstarrt es im Frost. Danach liegt Schnee (auch
+auf Dächern, Bäumen und Türmen, der Boden nur bestäubt), der Moder glimmt nicht
+mehr, der **Abspann** nennt die Menschen der Bucht, die fleißigsten Türme und die
+Zahlen des Herbsts – dann die Wahl: **hierbleiben** (jede Nacht würfelt sich neu:
+Wege, Arten, Merkmale, Bosse; die Horde wächst halb so schnell) oder eine **neue
+Runde** an einer neuen Bucht (Name, Aussehen und Schwierigkeit bleiben). Sterne,
+Herbstbuch, Schlurferkunde und Turmalbum folgen in Teil 2.
 
 *Vorbild:* die letzte Welle jeder TD-Karte, Schwierigkeitsgrade, Bestwerte.
 

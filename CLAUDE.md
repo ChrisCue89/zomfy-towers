@@ -260,6 +260,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       posts (Rollen auf dem Posten, Knopf, Nerven, Fest,
                       M23), quests (Nebenaufträge, Belohnungen, M23),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
+                      autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
+                      Schnee, danach, M25),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -450,6 +452,18 @@ Grundprinzipien:
   statt einer halben Stunde). Er ersetzt die Testspieler für die Frage »zu
   leicht, zu schwer?«; balanciert wird in `src/data/` (Zähigkeit:
   `TOUGHNESS` in `waves.js`).
+- **Ein Herbst mit Ende (M25, `core/autumn.js`):** `autumn.planMode(n)` sagt dem
+  Wellenplan, ob Nacht n die Frostnacht (`'finale'`: alle Wege, das Moderherz)
+  oder eine neu gewürfelte Nacht nach dem Herbst ist (`'rogue'`). Das Herz ist
+  ein Boss (`heart: true`) mit Phasen nach seinem Leben (`autumn.update`); fällt
+  es, zerfällt die Horde im nächsten Schritt (nie mitten in einer Schleife über
+  die Horde). `nights.finishNight` meldet die gehaltene Frostnacht
+  (`autumn.onFrost` → `state.autumn.frost`), nach dem Morgenbericht läuft der
+  Abspann (Modus `abspann`), dann der Dialog `nachDemHerbst`. Schnee:
+  `weather.snowNow` (vom Spiel gesetzt) wählt das Wetter `schnee`, der Shader
+  legt über `uSnow` eine Schneedecke auf alles mit `snow` im Material (nur
+  Feststehendes draußen; der Boden mit `snow: 0.5` nur bestäubt), der Moder
+  glimmt über `world.moderFactor` schwächer. Werte in `data/autumn.js`.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -642,7 +656,14 @@ Grundprinzipien:
    Schatz nach drei, ein Treffer am Zuhause bricht die Serie; Zinsen der
    Vorratskammer, keine nach einem Durchbruch; Pfanne durchschlägt Panzer, die
    Bank gibt Schlagkraft, das Holzlager baut morgens eine Barrikade wieder auf;
-   Speichern v18 und Migration v17 → v18 (Bilder: moderlocke, bericht-wagnis).
+   Speichern v18 und Migration v17 → v18 (Bilder: moderlocke, bericht-wagnis);
+   ab M25 (Abschnitt `finale`, nur der Kern): »Tag 12 von 30« und der
+   Countdown, die Frostnacht über alle Wege mit dem Moderherz, seine Phasen
+   (Ruf über alle drei Wege, Frost und Schnee), das Herz fällt und die Horde
+   zerfällt, Schnee am Morgen und der schlafende Moder, Bericht (echte Taste),
+   Abspann, Esc zur Wahl, Enter nimmt »Hierbleiben«; Nacht 31 würfelt sich neu;
+   Speichern v19, neue Runde, Migration v18 → v19 (Bilder: finale, abspann,
+   schnee).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -745,7 +766,9 @@ laufenden Auftrag und die Fundstücke, `offerQuest()` bietet den nächsten an,
 Handelsfensters; ab M24 zeigt `risk()` Serie, Schatz, den Spawn der Locke und
 ob sie schon freigeschaltet ist, `lureEntryAt(x, z)`, zu welchem Spawn eine
 Stelle gehört; `quietChoices()` entscheidet Perk- und Fähigkeiten-Wahlen still
-mit der ersten Karte (für Prüfabschnitte, deren Aufräumen Stufen bringt).
+mit der ersten Karte (für Prüfabschnitte, deren Aufräumen Stufen bringt); ab
+M25 zeigt `autumn()` Frost, Modus, Abspann, das Herz (Leben, Phase) und wie oft
+es gerufen hat, `spawnHeart(x, z)` lässt das Moderherz erscheinen.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

@@ -338,7 +338,8 @@ export class Hud {
     const day = hours >= 7.5 && hours < 18.5;
     let icon = (hours >= 5 && hours < 7.5) || (hours >= 18.5 && hours < 20.5) ? 'daemmerung' : day ? 'sonne' : 'mond';
     if (weather === 'regen' || (day && weather !== 'klar')) icon = weather;
-    const line1 = weather === 'klar' ? `${T.tag} ${state.time.day}` : `${T.tag} ${state.time.day} · ${T.wetter.name[weather]}`;
+    const tag = this.game.autumn ? this.game.autumn.dayLabel(state.time.day) : `${T.tag} ${state.time.day}`; // M25: »Tag 12 von 30«
+    const line1 = weather === 'klar' ? tag : `${tag} · ${T.wetter.name[weather]}`;
     const line2 = `${clockText(state.time.minute)} · ${dayPartLabel(hours)}`;
     const w = Math.max(measure(line1), measure(line2)) + 32;
     const x = 4;

@@ -1519,6 +1519,37 @@ zerschlagene Barrikaden wieder auf; die Bank heilt voll und gibt 20 s lang
 länger und schlägt etwas schneller – die Waffe gegen Brummer und Schildträger.
 **Warum:** Jede Option braucht eine Nische, in der sie die beste Wahl ist.
 
+### 152. Wie gewinnt man die Frostnacht? (M25)
+**Entscheidung:** Auf zwei Wegen: Man fällt das Moderherz – dann zerfällt die
+ganze Horde auf einmal –, oder man hält bis zum Morgengrauen durch, dann kommt
+der Frost und das Herz erstarrt. Verloren ist die Frostnacht nur, wenn das
+Zuhause fällt; dann kommt sie in der nächsten Nacht wieder (der Frost kam ja
+noch nicht). **Warum:** Das Finale soll ein Höhepunkt sein, kein Hindernis, an
+dem man ewig hängt; wer stark genug ist, erlebt den großen Moment des fallenden
+Herzens, wer knapp durchhält, erlebt den Frost als Retter – passend zur
+Geschichte (Kälte macht den Moder müde).
+
+### 153. Was kommt nach dem Herbst? (M25)
+**Entscheidung:** Nach dem Abspann fragt Mika: hierbleiben oder eine neue Bucht?
+Vorgewählt ist das Bleiben (die harmlose Antwort, eine neue Runde fragt noch
+einmal nach). Bleibt man, schmilzt der erste Schnee nach drei Tagen, und der
+Moder regt sich wieder – aber unberechenbar: Jede Nacht würfelt ihre Wege je
+Welle, ein gutes Drittel der Horde wird zu zufälligen Arten, Bosse kommen in
+zufälliger Reihenfolge; die Horde wächst nur noch halb so schnell. Eine neue
+Runde beginnt an einer neuen Bucht mit neuem Wegenetz; Name, Aussehen und
+Schwierigkeit bleiben. **Warum:** Wunsch des Auftraggebers (»wie bei
+RollerCoaster Tycoon«); Roguelike-Nächte halten das Weiterspielen frisch, ohne
+dass die Kurve davonläuft.
+
+### 154. Wie sieht der erste Schnee aus? (M25)
+**Entscheidung:** Flocken fallen im Bild wie der Regen (Oberflächenpixel), und
+auf allem Feststehenden draußen, was nach oben schaut, liegt eine fleckige
+Schneedecke (Dächer, Bäume, Türme, Barrikaden); der Boden ist nur bestäubt,
+damit die Wege lesbar bleiben. Figuren, Horde und Beute bekommen keinen Schnee
+(Lesbarkeit der Arten). Der Moder glimmt nach dem Frost nicht mehr – im Schnee
+gar nicht, danach nur schwach. **Warum:** Der Schnee ist die Belohnung und das
+Bild des Endes; er darf die Lesbarkeit nicht kosten (Look-Regel).
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
