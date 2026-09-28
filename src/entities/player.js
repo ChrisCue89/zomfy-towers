@@ -54,7 +54,7 @@ export class Player {
       mesh.renderOrder = 2;
       const outline = new THREE.Mesh(mesh.geometry, silhouette);
       outline.userData.outline = true;
-      outline.renderOrder = 1.75; // nach den Schlurfern: auch hinter einem Brummer bleibt Mika sichtbar
+      outline.renderOrder = 1.75; // nach Türmen und Bauten, vor den Schlurfern (1.8, m16-r1: kein gelbes Knäuel)
       mesh.add(outline);
     }
 

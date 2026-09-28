@@ -139,7 +139,7 @@ export class BuildBar {
     }
     if (option.confirm && (!this.armed || this.armed.id !== option.id)) {
       this.armed = { id: option.id, t: ARM_TIME };
-      this.game.hud.toast(option.confirmText || T.bauleiste.nochmal, 'abriss', option.confirmText ? 3 : 2);
+      this.game.hud.toast(option.confirmText || T.bauleiste.nochmal, option.confirmIcon || 'abriss', option.confirmText ? 3.5 : 2);
       return;
     }
     // Kaufen per Taste (Aufwertung, Stufe, Spezialisierung) braucht einen
@@ -238,6 +238,19 @@ export class BuildBar {
   }
 
   drawCost(ctx, option, rect) {
+    if (option.disabled && option.locked) {
+      // Schloss: geht gerade nicht (drinnen, während der Welle) – m16-r1: das Häkchen las sich wie »schon gebaut«
+      const cx = rect.x + Math.floor(rect.w / 2) - 3;
+      const cy = rect.y + 20;
+      ctx.fillStyle = COLORS.textDim;
+      ctx.fillRect(cx + 1, cy, 5, 1);
+      ctx.fillRect(cx, cy + 1, 1, 2);
+      ctx.fillRect(cx + 6, cy + 1, 1, 2);
+      ctx.fillRect(cx - 1, cy + 3, 9, 4);
+      ctx.fillStyle = COLORS.inset;
+      ctx.fillRect(cx + 3, cy + 4, 1, 2);
+      return;
+    }
     if (option.disabled) {
       // Häkchen: gebaut bzw. fertig
       const cx = rect.x + Math.floor(rect.w / 2) - 3;

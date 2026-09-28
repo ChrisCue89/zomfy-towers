@@ -181,7 +181,8 @@ export class World {
     const inside = this.interior.lights;
     this.lampLight = L.addLight({ position: inside.lampe, color: 0xffb865, intensity: 2.6, distance: 6, mode: 'lamp', flickerSpeed: 2.5, flickerAmount: 0.04 });
     this.kaminLight = L.addLight({ position: inside.kamin, color: 0xff8a3a, intensity: 7, distance: 7.5, mode: 'always', dayFactor: 0.55, flickerSpeed: 6, flickerAmount: 0.2 });
-    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.2, distance: 7, mode: 'manual', flickerSpeed: 3.5, flickerAmount: 0.05 });
+    // m16-r1: am hellen Tag nur ein Schimmer (Knopf leuchtete sonst wie ein glühender Fuchs); der Blitz hebt es an
+    this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.2, distance: 7, mode: 'manual', dimByDay: true, dayFactor: 0.2, flickerSpeed: 3.5, flickerAmount: 0.05 });
     this.lanternLight.on = false;
 
     L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });

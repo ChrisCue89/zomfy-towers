@@ -1111,8 +1111,10 @@ Jede neue Mechanik kommt mit ihren Zahlen, die große Balance-Runde ist M24.
 
 *Umgesetzt (28.09.2026):* Nachtplan ab 19:30 (mit Juna samt schweren Arten)
 und Randmarken zur nächsten Welle; Wellen ab Nacht 2 über zwei, ab Nacht 4
-auch über drei Wege; N ruft in der Pause die nächste Welle (spätere rücken
-vor, Mutbonus +25 % Beute), B verdoppelt nachts das Tempo; Schwierigkeit
+auch über drei Wege; N ruft die nächste Welle (spätere rücken vor, Mutbonus
++25 % Beute) – seit m16-r1 abends ab der Tafel schon die erste (»Ich bin
+bereit«) und nachts, sobald die laufende ganz unterwegs ist; B verdoppelt
+nachts das Tempo; Schwierigkeit
 Gemütlich/Ausgewogen/Wild im Titelbild und im Pausenmenü (ab der nächsten
 Nacht); sechs Fähigkeiten auf zwei Plätzen (6.13); Ausholen mit Risiko;
 Türme mit Namen, Erfahrung, vier Rängen, Wimpeln und dem Turm der Nacht
@@ -1127,9 +1129,10 @@ das ganze Wegenetz zählt.
 - **Mehrere Wege je Nacht:** ab Nacht 2 Wellen über zwei, ab Nacht 4 manchmal
   über alle drei Zuführungen. Verteidigung draußen an den Zweigen lohnt sich
   (m12-r1: »alles gehört auf den letzten Abschnitt«).
-- **Welle rufen und Zeitraffer:** In der Pause ruft eine Taste die nächste
-  Welle sofort (Mutbonus: mehr Teile); nachts läuft das Spiel auf Wunsch
-  doppelt so schnell.
+- **Welle rufen und Zeitraffer:** Ab der Tafel am Abend ruft eine Taste
+  die Horde sofort (»Ich bin bereit«), nachts die nächste Welle, sobald die
+  laufende ganz unterwegs ist (Mutbonus: mehr Teile); nachts läuft das Spiel
+  auf Wunsch doppelt so schnell. Ausruhen endet an der Tafel (19:30).
 - **Mika-Fähigkeiten:** zwei Fähigkeiten mit Abklingzeit, gewählt über die
   Perk-Stufen – Laternenblitz (blendet und lähmt kurz), Kürbiswurf (Fläche,
   setzt in Brand), Pfiff (Knopf lenkt eine Gruppe ab), Notbrett (flickt eine

@@ -111,6 +111,12 @@ export class MapView {
     return { x, y };
   }
 
+  /** Unterkante der Tafel: Meldungen erscheinen darunter statt auf der Karte (m16-r1). */
+  bottom(ui) {
+    const { y } = this.layout(ui);
+    return y + H + LINE_HEIGHT + 4;
+  }
+
   /** @param {import('./ui.js').UICanvas} ui */
   draw(ui) {
     if (!this.isOpen || !this.base) return;

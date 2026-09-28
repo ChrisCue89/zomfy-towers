@@ -72,5 +72,6 @@ Keine.
 ## Nachbesserung
 
 Alle Punkte aus »Stört den Spielfluss« (außer S10, teilweise) und F1–F13
-werden nachgebessert (Commit »m16-r1: Nachbesserungen«, nach M17 und zusammen
-mit M18 geprüft).
+sind nachgebessert (Commit »m16-r1: Nachbesserungen«, nach M17 und zusammen mit
+M18 geprüft; Prüfabschnitt `nachbesserung16`, Bild `bereit`). F14 und die
+Balance-Punkte bleiben für M22–M24 (OFFENE-FRAGEN 132).

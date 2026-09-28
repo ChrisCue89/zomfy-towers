@@ -11,6 +11,7 @@ import { DIFFICULTY_ORDER, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 
 const LOGO_SCALE = 3;
 const GUARD = 0.3; // nach jedem Seitenwechsel zählen Klicks kurz nicht
+const START_GUARD = 1.2; // m16-r1: »Los geht’s!« erst nach einem Moment – Tastenspam übersprang Name und Schwierigkeit
 
 export class TitleScreen {
   /** @param {import('../core/game.js').Game} game */
@@ -44,6 +45,7 @@ export class TitleScreen {
     this.focus = screen === 'figur' ? this.rows().length - 2 : 0; // »Los geht’s!« ist vorgewählt
     if (screen === 'confirm') this.focus = 1; // »Lieber nicht«
     this.guard = GUARD;
+    this.startGuard = screen === 'figur' ? START_GUARD : 0;
     this.editing = false;
   }
 
@@ -68,7 +70,7 @@ export class TitleScreen {
       { label: `${T.titel.name}: ${this.name}${this.editing && Math.floor(this.t * 2.5) % 2 === 0 ? '_' : ''}`, name: true, action: () => this.toggleEditing() },
       ...LOOK_KEYS.map((key) => ({ label: `${T.titel.aussehen[key]}: ${T.titel.werte[key][this.look[key]]}`, look: key, action: () => this.changeLook(key, 1) })),
       { label: `${T.schwierigkeit.titel}: ${T.schwierigkeit[this.difficulty]}`, difficulty: true, action: () => this.changeDifficulty(1) },
-      { label: T.titel.los, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }, this.difficulty) },
+      { label: T.titel.los, start: true, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }, this.difficulty) },
       { label: T.menue.zurueck, action: () => this.go('main') },
     ];
   }
@@ -109,6 +111,7 @@ export class TitleScreen {
     if (!this.isOpen) return;
     this.t += dt;
     this.guard = Math.max(0, this.guard - dt);
+    this.startGuard = Math.max(0, (this.startGuard || 0) - dt);
     const ui = this.game.ui;
     // Namensfeld: Tasten gehen in den Namen, Enter oder Esc beendet
     if (this.editing) {
@@ -135,7 +138,7 @@ export class TitleScreen {
       this.focus = hovered;
       this.game.sound.play('klick');
       L.rows[hovered].action();
-    } else if (input.pressed('confirm') && this.guard <= 0) {
+    } else if (input.pressed('confirm') && this.guard <= 0 && !(focused?.start && this.startGuard > 0)) {
       this.game.sound.play('klick');
       focused.action();
     } else if (input.pressed('menu') && this.screen !== 'main') {

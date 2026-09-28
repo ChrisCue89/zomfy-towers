@@ -72,6 +72,9 @@ export class PerkChoice {
     if (input.pressed('left') || input.pressed('up')) this.focus = (this.focus + cards.length - 1) % cards.length;
     if (input.pressed('right') || input.pressed('down')) this.focus = (this.focus + 1) % cards.length;
     if (this.t < LOCK) {
+      // m16-r1: Eine Ziffer in der Sperre wählt schon sichtbar aus (bestätigt aber nicht) –
+      // sonst nahm das nächste E die Vorauswahl, und Theo bekam Konter statt Sammlerherz
+      for (let k = 0; k < cards.length; k++) if (input.pressed(`slot${k + 1}`)) this.focus = k;
       if (input.mouse.clicked) input.consumeClick();
       return null;
     }
@@ -85,6 +88,11 @@ export class PerkChoice {
     }
     if (input.pressed('confirm')) return cards[this.focus]?.id || null;
     return null;
+  }
+
+  /** Solange die Wahl gesperrt ist, liegen die Karten gerastert im Schatten (m16-r1: die Sperre war unsichtbar). */
+  drawLock(ui, rect) {
+    if (this.t < LOCK) ui.ditherRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4, 0.45 * (1 - this.t / LOCK) + 0.1, COLORS.night);
   }
 
   /** @param {import('./ui.js').UICanvas} ui */
@@ -125,6 +133,7 @@ export class PerkChoice {
         ui.rect(px + 1, rect.y + rect.h - 8, 2, 2, n < have ? COLORS.gold : n === have ? (focused ? COLORS.textWarm : COLORS.frame) : COLORS.inset);
       }
     });
+    for (const { rect } of cards) this.drawLock(ui, rect);
     // Der Tasten-Hinweis erscheint erst, wenn die Wahl Eingaben annimmt (m5-r1: 1/2/3 »ohne Wirkung«)
     if (this.t >= LOCK) ui.textCentered(T.perks.hinweis, ui.width / 2, cards[0].rect.y + CARD_H + 8, COLORS.textDim, { outline: COLORS.outline });
   }

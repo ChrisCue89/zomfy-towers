@@ -66,7 +66,8 @@ const pick = (list, n) => list[((n % list.length) + list.length) % list.length];
 const hourOf = (state) => (6 + (state.time.minute || 0) / 60) % 24;
 
 /** Bis wann Ausruhen die Uhr vorstellt (Stunden). */
-export const REST_TARGET = { wartenAbend: 18.5, wartenNacht: 20.4 };
+// m16-r1: bis zur Abendtafel (19:30) – dann ruft N die Horde, wenn Mika bereit ist
+export const REST_TARGET = { wartenAbend: 19.5, wartenNacht: 20.4 };
 
 /** 18.5 → »18:30« */
 const clock = (h) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
@@ -114,8 +115,8 @@ export const DIALOGE = {
       s: 'mika',
       t: 'Struppig, dünn und mit einem großen Knopf am Halsband. Dann heißt du wohl Knopf.',
       antworten: [
-        { t: 'Komm her, Knopf!', aktion: 'streicheln' },
-        { t: 'Bis später.', standard: true },
+        { t: 'Komm her, Knopf!', aktion: 'streicheln', standard: true }, // m16-r1: bei einem Hund darf das vorgewählt sein
+        { t: 'Bis später.' },
       ],
     },
   ],

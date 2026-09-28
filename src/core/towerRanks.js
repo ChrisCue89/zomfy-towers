@@ -5,7 +5,7 @@
 
 import { T } from '../data/texts.js';
 import { BUILDINGS } from '../data/buildings.js';
-import { towerRank, towerStatsOf, TOWER_RANKS, TOWER_KILL_XP, TOWER_LIGHT_XP, RANK_NAMES } from '../data/towers.js';
+import { towerRank, towerStatsOf, TOWER_RANKS, TOWER_KILL_XP, TOWER_LIGHT_XP, TOWER_DAMAGE_XP, RANK_NAMES } from '../data/towers.js';
 
 export class TowerRanks {
   /** @param {import('./game.js').Game} game */
@@ -48,10 +48,10 @@ export class TowerRanks {
     return T.turmrang.titel(this.nameOf(b), T.bauten[b.type]);
   }
 
-  /** Schaden eines Turms: ein Punkt Erfahrung je Schadenspunkt. */
+  /** Schaden eines Turms: Erfahrung je Schadenspunkt (m16-r1: ein Repetierer war sonst nach einer Nacht ausgereizt). */
   onDamage(by, amount) {
     const b = this.tower(by);
-    if (b) this.gain(b, amount);
+    if (b) this.gain(b, amount * TOWER_DAMAGE_XP);
   }
 
   /** Abschuss: Strichliste, Zähler der Nacht, Erfahrung; Laternentürme im Licht verdienen mit. */

@@ -277,7 +277,8 @@ export class Survivors {
       dog.bark = 1.2;
       g.sound.play('bellen', { x: dog.x, z: dog.z });
     }
-    g.hud.toast(T.ueberlebende.bellt, 'pfote', 3.5);
+    // m16-r1: mitten in der Nacht ist es nicht »die Horde«, sondern die nächste Welle
+    g.hud.toast(n > 0 ? T.ueberlebende.belltWelle : T.ueberlebende.bellt, 'pfote', 3.5);
   }
 
   /** Die Alarmglocke läutet (M17e): Knopf bellt, wo er gerade ist. */

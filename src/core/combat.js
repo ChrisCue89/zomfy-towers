@@ -178,10 +178,18 @@ export class Combat {
       if (w.stun && !killed) g.horde.stun(z, w.stun);
       g.effects.splat(z.x, 0.8, z.z, 'moos', comboHit ? 12 : 6, comboHit ? 1.1 : 0.7);
     }
-    const heal = perkValue(st, 'lebensraub') * targets.length;
-    if (heal > 0) st.player.hp = Math.min(this.maxHp, st.player.hp + heal);
+    this.lifesteal(targets.length);
     g.hitstop = comboHit || w.stun ? 0.08 : 0.05;
     g.rig.shake = comboHit || w.stun ? 0.18 : 0.12;
+  }
+
+  /** Zähe Natur (Perk): Ein Schlag heilt – das erste Ziel voll, jedes weitere nur ein wenig (m16-r1). */
+  lifesteal(hits) {
+    const st = this.game.state;
+    const base = perkValue(st, 'lebensraub');
+    if (base <= 0 || hits <= 0) return;
+    const heal = base * (1 + PERKS.lebensraub.extra * (hits - 1));
+    st.player.hp = Math.min(this.maxHp, st.player.hp + heal);
   }
 
   /**
@@ -220,8 +228,7 @@ export class Combat {
       if (w.stun && !killed) g.horde.stun(z, w.stun);
       g.effects.splat(z.x, 0.8, z.z, 'moos', 8, 0.9);
     }
-    const heal = perkValue(st, 'lebensraub') * hits;
-    if (heal > 0) st.player.hp = Math.min(this.maxHp, st.player.hp + heal);
+    this.lifesteal(hits);
     if (hits) {
       g.hitstop = 0.07;
       g.rig.shake = 0.16;

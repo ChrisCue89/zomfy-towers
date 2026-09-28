@@ -38,6 +38,7 @@ export class WarmLights {
       base: options.intensity,
       mode: options.mode || 'lamp',
       dayFactor: options.dayFactor ?? 0.35,
+      dimByDay: Boolean(options.dimByDay), // von Hand geschaltet, aber am Tag gedämpft (Mikas Laterne, m16-r1)
       speed: options.flickerSpeed ?? 3,
       amount: options.flickerAmount ?? 0.05,
       seed: this.entries.length * 17.3,
@@ -85,6 +86,9 @@ export class WarmLights {
       if (e.mode === 'always') level = e.dayFactor + (1 - e.dayFactor) * lampLevel;
       else if (e.mode === 'manual') level = e.on ? 1 : 0;
       else level = lampLevel;
+      // Am Tag gedämpft, ein Aufflammen (boost, Laternenblitz) aber in voller Stärke:
+      // bis boost 2 ganz hell, darunter gleitet es stetig zurück auf den Schimmer
+      if (e.dimByDay && level > 0) level = Math.max(e.dayFactor + (1 - e.dayFactor) * lampLevel, Math.min(1, (e.boost || 1) - 1));
       if (!e.on) level = 0;
       e.level = level;
       e.light.intensity = e.base * level * this.flicker(e.seed, e.speed, e.amount) * (e.boost || 1);

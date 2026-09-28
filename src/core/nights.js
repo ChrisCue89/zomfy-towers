@@ -14,6 +14,8 @@ import { towerStatsOf } from '../data/towers.js';
 const COVER_WARN_AHEAD = 60;
 /** Nachtplan (M16): so viele Minuten vor der Horde erscheint er, höchstens so viele Zeilen. */
 const PLAN_AHEAD = 60;
+/** m16-r1: So lange vor der Nacht (ab der Tafel) ruft N schon die erste Welle – »Ich bin bereit«. */
+const CALL_AHEAD = 60;
 const PLAN_ROWS = 4;
 /** Arten, die der Nachtplan mit Juna nennt (die übrigen sind der Normalfall). */
 const HEAVY = ['anfuehrer', 'brummer', 'leuchtpilz'];
@@ -97,16 +99,28 @@ export class Nights {
   }
 
   /**
-   * Welle rufen (M16): nachts in der Pause, wenn die Welle davor besiegt ist.
-   * Die nächste kommt sofort, alle späteren rücken um dieselbe Zeit vor.
+   * Welle rufen (M16): Die nächste kommt sofort, alle späteren rücken um
+   * dieselbe Zeit vor, jede früh gerufene bringt den Mutbonus. Seit m16-r1
+   * schon abends ab der Tafel (die Nacht beginnt dann gleich) und nachts,
+   * sobald die laufende Welle ganz unterwegs ist – nicht erst, wenn sie besiegt
+   * ist: Die Wellen überlappten, gerufen werden konnte so nie.
    */
   canCall() {
     const night = this.state;
-    return this.active && Boolean(this.plan) && night.wave > 0 && night.wave < this.plan.waves.length && this.game.horde.alive === 0 && !this.queue.length;
+    if (!this.active) return this.canCallFirst();
+    return Boolean(this.plan) && night.wave > 0 && night.wave < this.plan.waves.length && !this.queue.length;
+  }
+
+  /** Abends ab der Tafel: Die Nacht dieses Tages hat noch nicht begonnen. */
+  canCallFirst() {
+    const st = this.game.state;
+    const m = st.time.minute;
+    return this.enabled && this.state.n !== st.time.day && m >= NIGHT_START - CALL_AHEAD && m < NIGHT_START;
   }
 
   callNext() {
     if (!this.canCall()) return false;
+    if (!this.active) this.beginNight(this.game.state.time.day); // »Ich bin bereit« (m16-r1)
     const night = this.state;
     const delta = this.plan.waves[night.wave].at - this.game.state.time.minute;
     if (delta < 1) return false;
@@ -142,7 +156,7 @@ export class Nights {
       entries: w.entries,
       heavy: juna ? HEAVY.filter((t) => w.spawns.some((s) => s.type === t)) : [],
     }));
-    return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.active, juna };
+    return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.canCall(), evening: !this.active, juna };
   }
 
   /**

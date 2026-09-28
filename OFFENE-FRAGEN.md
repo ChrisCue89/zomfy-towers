@@ -1304,6 +1304,20 @@ Leuchtfeuer blenden alle in ihrem Schein; der Laternenblitz blendet für die
 Dauer seiner Verlangsamung. **Offen für die Testrunde:** ob Dampf im Regen
 (alle sind nass) zu stark bremst.
 
+### 132. Wann ruft N die Horde – und was, wenn es nachts nie ruhig wird? (m16-r1, ändert Nr. 119)
+**Entscheidung:** N ruft abends ab der Tafel (19:30) die ganze Nacht vor
+(»Ich bin bereit«: sie beginnt sofort, alle Wellen rücken vor, die erste mit
+Mutbonus) und nachts die nächste Welle, sobald die laufende ganz unterwegs
+ist – nicht erst, wenn sie besiegt ist. Vorher sagt N, ab wann es geht.
+Ausruhen endet an der Tafel statt um 18:30. Perk- und Fähigkeitswahl gehen
+nachts auf, sobald kein Schlurfer näher als 10 m ist (tagsüber 6 m).
+**Warum:** Alle vier Testspieler warteten – zwei Stunden bis zur Horde, dann
+bis zu einer Stunde Anmarsch; weil die Wellen überlappen, war »erst die Welle
+erledigen« nie erfüllt, N ging in keiner Nacht, und Stufenaufstiege wirkten
+erst am Morgen. **Offen (M22/M24):** Auf »Wild« spielten Barrikaden und
+Zuhause keine Rolle (alle Wege treffen sich an einem Knoten, Türme dort decken
+alles); ein Tag bringt ab Tag 2 wenig, ein Moderkern kam nie.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

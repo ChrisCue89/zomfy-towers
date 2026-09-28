@@ -151,6 +151,8 @@ gilt bis auf Weiteres:
 - Gesichter sind Platten je Ausdruck (M12), nie Überlagerungen vor dem Kopf.
   Alles, was vor Mikas Körper liegt (Gesicht, Lider, Laterne, Werkzeug),
   braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
+  Schlurfer (1.8) liegen über dem Umriss: Er scheint nur durch Bauten und
+  Türme, nicht durch die Horde (m16-r1: im Getümmel ein gelbes Knäuel).
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -486,7 +488,19 @@ Grundprinzipien:
    echten Türmen am Weg (der Zustands-Turm stromauf), Zeichen über den Köpfen,
    Worte, der Eisblock zerspringt; Regen macht nass, Nebel kürzt die
    Reichweite; das Notizbuch mit Esc, S, E; Speichern v13 und Migration
-   v12 → v13 (Bilder: reaktionen, notizbuch).
+   v12 → v13 (Bilder: reaktionen, notizbuch); nach m16-r1 (Abschnitt
+   `nachbesserung16`): N sagt vor der Tafel, ab wann es geht, und ruft ab
+   19:30 die Nacht (»Ich bin bereit«, Mutbonus) – »Bald kommt die Horde«
+   bleibt dann aus –, nachts die nächste Welle, auch wenn noch Schlurfer
+   leben; eine Wahl geht nachts auf, sobald keiner näher als 10 m ist; eine
+   Ziffer in der Sperre wählt nur vor, ein schnelles E nach der Wahl geht
+   nicht durch die Tür; Schlurfer halten Abstand zu Mika und liegen über
+   ihrem Umriss; Banner »Mika geht zu Boden!«; Teilreparatur erst nach einem
+   zweiten Druck (echte Taste); die Laterne am Tag nur ein Schimmer, der
+   Blitz hell; Zähe Natur je Schlag, Turm-Erfahrung ein Viertel je
+   Schadenspunkt, »Kein Turm reicht hierher«; dazu im Titelbild ein Enter
+   gleich nach »Neues Spiel«, das noch nicht startet, und die Spitzhacke
+   ohne Stein (Bild: bereit).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

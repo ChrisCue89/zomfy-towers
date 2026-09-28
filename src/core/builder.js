@@ -152,6 +152,7 @@ export class Builder {
     if (this.game.viewInside) {
       for (const o of options) {
         o.disabled = true;
+        o.locked = true; // Schloss statt Häkchen (m16-r1)
         o.disabledText = T.bauleiste.nurDraussen;
       }
     }
@@ -210,15 +211,26 @@ export class Builder {
         info: info || (rebuild ? T.barrikaden.aufbauenInfo : T.bautenInfo.reparieren),
         cost: cost || {},
         disabled: !cost || busy,
+        locked: busy && Boolean(cost), // während der Welle: Schloss, nicht »fertig« (m16-r1)
         disabledText: busy ? T.bauleiste.erstWelle : T.bauleiste.nichtsKaputt,
         action,
       },
       inv
     );
-    // Anteilig flicken geht, anteilig aufbauen nicht
+    // Anteilig flicken geht, anteilig aufbauen nicht. m16-r1: Das nimmt den ganzen
+    // Vorrat einer Sorte – darum erst nach einem zweiten Druck, der sagt, was es kostet
     if (!rebuild && !o.disabled && !o.affordable && share > 0) {
       o.affordable = true;
       o.hint = T.bauleiste.teilweise(Math.round(share * 100));
+      const inv = this.game.state.inventory;
+      const uses = Object.entries(cost)
+        .map(([res, n]) => [res, Math.min(inv[res] || 0, Math.ceil(n * share - 1e-6))])
+        .filter(([, n]) => n > 0)
+        .map(([res, n]) => T.menge(n, res))
+        .join(', ');
+      o.confirm = true;
+      o.confirmIcon = 'reparieren';
+      o.confirmText = T.bauleiste.teilweiseNochmal(Math.round(share * 100), uses);
     }
     return o;
   }
@@ -392,6 +404,15 @@ export class Builder {
       action: () => this.demolish(b.id),
     });
     return options;
+  }
+
+  /** Reicht ein Turm (Schaden oder Kontrolle) bis an diese Stelle? */
+  towerReaches(x, z) {
+    return this.world.buildings.towers.some((t) => {
+      const c = this.world.buildings.bounds(t);
+      const r = towerStatsOf(t).range || 0;
+      return (c.x - x) ** 2 + (c.z - z) ** 2 <= r * r;
+    });
   }
 
   /** Zeigt das Platzieren dieses Baus die Wege der Horde? Immer – auch eine Bank kann im Weg stehen. */
@@ -1002,8 +1023,10 @@ export class Builder {
       const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
       // Passt, aber nutzlos: Ein Turm, dessen Kreis weder Weg noch Hof erreicht (m12-r1)
       const idle = !why && pl.ok && BUILDINGS[pl.type].tower && !this.world.pathing.covers(cx, cz, towerStats(pl.type, 1, null).range);
-      if (why || idle) {
-        const text = why || T.bauleiste.keineHorde;
+      // m16-r1: Eine Barrikade, die kein Turm erreicht, hält die Horde nur auf, wo niemand trifft
+      const alone = !why && !idle && pl.ok && pl.type === 'barrikade' && this.world.buildings.towers.length > 0 && !this.towerReaches(cx, cz);
+      if (why || idle || alone) {
+        const text = why || (idle ? T.bauleiste.keineHorde : T.bauleiste.keinTurm);
         const tw = measure(text) + 8;
         const tx = Math.round(r.x + r.w / 2 - tw / 2);
         const ty = r.y + r.h + 5;

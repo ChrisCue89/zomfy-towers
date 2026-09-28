@@ -178,8 +178,8 @@ export function towerStatsOf(b) {
 }
 
 /**
- * Ränge (M16): Türme sammeln Erfahrung – je Schadenspunkt einen, je Abschuss
- * TOWER_KILL_XP, der Laternenturm für jeden Abschuss in seinem Licht. Rang II
+ * Ränge (M16): Türme sammeln Erfahrung – je Schadenspunkt TOWER_DAMAGE_XP, je
+ * Abschuss TOWER_KILL_XP, der Laternenturm für jeden Abschuss in seinem Licht. Rang II
  * bis IV bringen je einen Wimpel und etwas mehr Wirkung.
  */
 export const TOWER_RANKS = [
@@ -189,6 +189,8 @@ export const TOWER_RANKS = [
   { xp: 1200, bonus: 0.25 },
 ];
 export const TOWER_KILL_XP = 6;
+/** Erfahrung je Schadenspunkt (m16-r1: vorher 1 – Rang IV kam schon in der ersten Nacht). */
+export const TOWER_DAMAGE_XP = 0.25;
 export const TOWER_LIGHT_XP = 4;
 export const RANK_NAMES = ['I', 'II', 'III', 'IV'];
 

@@ -92,7 +92,8 @@ export class Skills {
     const g = this.game;
     const id = this.slot(k);
     if (!id) {
-      g.hud.toast(T.faehigkeiten.leer, null, 2.6);
+      // m16-r1: Auf Stufe 3 mit wartender Wahl hieß es »kommt auf Stufe 3«
+      g.hud.toast(g.state.skillChoice ? T.faehigkeiten.leerWartet : T.faehigkeiten.leer, null, 2.6);
       return false;
     }
     if (this.cool[k] > 0) {

@@ -145,7 +145,8 @@ export class Menu {
     const buttons = this.buttons();
     const controls = this.screen === 'controls' ? T.steuerung : [];
     const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : this.screen === 'settings' ? [T.menue.einstellungenHinweis] : [];
-    const w = this.screen === 'controls' ? 250 : 220;
+    // m16-r1: Die Steuerung wird so breit, dass Taste und Text nie aneinanderstoßen
+    const w = this.screen === 'controls' ? Math.max(250, ...controls.map(([key, what]) => measure(key) + measure(what) + 36)) : 220;
     const bodyH = controls.length ? controls.length * LINE_HEIGHT + 8 : confirmText.length ? confirmText.length * LINE_HEIGHT + 8 : 0;
     const h = 30 + bodyH + buttons.length * 22 + 20;
     const x = Math.round((ui.width - w) / 2);

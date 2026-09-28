@@ -18,7 +18,9 @@ export const PERKS = {
   // Nahkampfschaden nahe eines Turms (3,5 m) × Wert
   turmfreund: { icon: 'bolzen', max: 3, none: 1, value: (n) => 1 + 0.25 * n },
   // Leben pro Treffer
-  lebensraub: { icon: 'herz', max: 3, none: 0, value: (n) => 1.5 * n },
+  // m16-r1: 1,5 je Stufe und Ziel machte Mika mit dem Rechen (5 Ziele) unverwundbar –
+  // jetzt 1 je Stufe, und jedes weitere Ziel desselben Schlags zählt nur ein Fünftel
+  lebensraub: { icon: 'herz', max: 3, none: 0, value: (n) => n, extra: 0.2 },
   // Schlagtempo ×
   flink: { icon: 'faust', max: 3, none: 1, value: (n) => 1 + 0.12 * n },
   // Erlittener Schaden ×

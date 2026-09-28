@@ -10,7 +10,7 @@ import { T } from '../data/texts.js';
 import { RECIPES } from '../data/recipes.js';
 import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
-import { measure, LINE_HEIGHT } from './font.js';
+import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { canAfford } from '../core/inventory.js';
 import { WEAPONS } from '../data/weapons.js';
 
@@ -85,7 +85,9 @@ export class CraftingMenu {
   layout(ui) {
     const list = this.recipes();
     const w = 300;
-    const head = this.shop ? 28 + LINE_HEIGHT : 28; // beim Händler: Spruch unter dem Titel
+    // beim Händler: Spruch unter dem Titel – lange Sprüche brechen um (m16-r1: sie ragten über den Rahmen)
+    this.quoteLines = this.shop ? wrap(this.game.trader.quote(), w - 20) : [];
+    const head = 28 + this.quoteLines.length * LINE_HEIGHT;
     const h = head + 6 + list.length * ROW_H + 18;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2) - 20;
@@ -183,7 +185,7 @@ export class CraftingMenu {
     ui.panel(L.x, L.y, L.w, L.h);
     ui.textCentered(this.shop ? T.haendler.titel : T.werkbank.titel, L.x + L.w / 2, L.y + 6, COLORS.gold);
     ui.rect(L.x + 10, L.y + 20, L.w - 20, 1, COLORS.frameDark);
-    if (this.shop) ui.textCentered(this.game.trader.quote(), L.x + L.w / 2, L.y + 24, COLORS.textWarm);
+    (this.quoteLines || []).forEach((line, k) => ui.textCentered(line, L.x + L.w / 2, L.y + 24 + k * LINE_HEIGHT, COLORS.textWarm));
     L.rows.forEach((row, k) => {
       const { recipe: r, rect } = row;
       const focused = k === this.focus;

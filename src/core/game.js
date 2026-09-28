@@ -21,6 +21,7 @@ import { damp } from './math.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { hexToCss } from '../render/palette.js';
 import { REACTION_COLORS, REACTION_PITCH, WEATHER_EFFECTS } from '../data/reactions.js';
+import { NIGHT_START } from '../data/waves.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
@@ -93,6 +94,7 @@ const PERK_NEAR = 6;
 /** Reifenschaukel (m12-r1): so lange, so schnell und so weit schwingt sie. */
 const SWING = { duration: 4.2, period: 1.7, amp: 0.42 };
 const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
+const NIGHT_CALM_NEAR = 10; // nachts: so weit weg muss die Horde sein, damit eine Wahl aufgeht (m16-r1)
 const DAY_FLOOR = 0.75; // so weit nagen Streuner das Zuhause tagsüber höchstens herunter
 const FRESH_KEY = 'zomfy-towers.neues-spiel';
 
@@ -452,10 +454,10 @@ export class Game {
   }
 
   /** Kampf in der Nähe: ein Schlurfer bis PERK_NEAR, ein Schwung oder eine Rolle. */
-  inFight() {
+  inFight(near = PERK_NEAR) {
     if (this.player.action) return true;
     const p = this.player.position;
-    return this.horde.list.some((z) => z.state !== 'dying' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < PERK_NEAR * PERK_NEAR);
+    return this.horde.list.some((z) => z.state !== 'dying' && (z.x - p.x) ** 2 + (z.z - p.z) ** 2 < near * near);
   }
 
   quietSave() {
@@ -1382,6 +1384,8 @@ export class Game {
     this.builder.cancel();
     this.mode = 'sleep';
     this.sleep = { t: 0, advanced: false, kind: this.nights.active ? 'rescue' : 'faint' };
+    // m16-r1: Kira merkte nicht, dass Mika gefallen war – plötzlich war sie drinnen
+    if (this.nights.active) this.hud.showBanner(T.horde.zuBoden);
   }
 
   /** Nachts gerettet: im Haus, angeschlagen, die Schlurfer verlieren sie aus den Augen. */
@@ -1552,14 +1556,22 @@ export class Game {
     this.applyLook();
   }
 
-  /** Nachts in der Pause: die nächste Welle jetzt rufen (M16, Mutbonus). */
+  /**
+   * Welle rufen (M16, Mutbonus): abends ab der Tafel die erste (die Nacht beginnt
+   * sofort), nachts die nächste, sobald die laufende ganz unterwegs ist (m16-r1).
+   * Geht es nicht, sagt eine Meldung, warum (m16-r1: vorher kam gar nichts).
+   */
   callWave() {
-    if (!this.nights.active) return;
-    if (!this.nights.callNext()) {
-      this.hud.toast(this.horde.alive > 0 || this.nights.queue.length ? T.nacht.rufenNochNicht : T.nacht.rufenKeine, null, 2.2);
+    const n = this.nights;
+    const evening = !n.active;
+    if (!n.callNext()) {
+      let why = T.nacht.rufenKeine;
+      if (evening) why = n.state.n === this.state.time.day ? T.nacht.rufenVorbei : T.nacht.rufenAb(clockText(NIGHT_START - 60), clockText(NIGHT_START));
+      else if (n.queue.length) why = T.nacht.rufenNochNicht;
+      this.hud.toast(why, null, 2.6);
       return;
     }
-    this.hud.toast(T.nacht.gerufen, 'warnung', 2.6);
+    this.hud.toast(evening ? T.nacht.gerufenAbend : T.nacht.gerufen, 'warnung', 2.6);
     this.sound.play('klick');
   }
 
@@ -1690,6 +1702,7 @@ export class Game {
         if (chosen && (kind === 'perk' ? this.combat.choosePerk(chosen) : this.skills.choose(chosen))) {
           this.perkChoice.close();
           this.mode = 'play';
+          this.useLockUntil = this.clock + 0.35; // m16-r1: ein schnelles E danach öffnete den Wegweiser
           if (kind === 'perk') this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
           else if (kind === 'lernen') this.hud.toast(T.faehigkeiten.gelernt(T.faehigkeiten[chosen][0]), SKILLS[chosen].icon, 3.2);
           else this.hud.toast(T.faehigkeiten.geschaerft(T.faehigkeiten[chosen][0], this.skills.rankOf(chosen)), SKILLS[chosen].icon, 2.8);
@@ -1840,7 +1853,9 @@ export class Game {
     // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
     // Nachts erst, wenn keine Welle mehr unterwegs ist (m12-r1: die Wahl ging mitten in Welle 3 auf)
     if ((this.state.perkChoice || this.state.skillChoice) && !this.perkChoice.isOpen) {
-      const busy = this.inFight() || (this.nights.active && this.horde.alive > 0);
+      // m16-r1: Nachts wurde es nie »ruhig« (die Wellen überlappen) – jetzt genügt es,
+      // dass keine Horde in der Nähe ist (nachts etwas weiter weg als am Tag)
+      const busy = this.inFight(this.nights.active ? NIGHT_CALM_NEAR : PERK_NEAR);
       this.perkCalm = busy ? 0 : this.perkCalm + dt;
       if (this.perkCalm >= PERK_CALM) {
         this.perkCalm = 0;
@@ -1929,7 +1944,7 @@ export class Game {
     const h = hoursOf(time.minute);
     const flags = this.state.flags;
     const before = hoursOf(time.minute - dt / CONFIG.time.secondsPerGameMinute);
-    if (before < 20 && h >= 20 && h < 20.5) this.hud.toast(T.horde.bald, 'warnung', 4);
+    if (before < 20 && h >= 20 && h < 20.5 && !this.nights.active) this.hud.toast(T.horde.bald, 'warnung', 4); // m16-r1: nicht, wenn sie schon gerufen ist
     if (!flags.abendHorde && h >= 19 && h < 20.5 && !this.world.buildings.towers.length) {
       flags.abendHorde = true;
       this.startDialog('abendHorde');
@@ -2163,13 +2178,13 @@ export class Game {
     this.perkChoice.draw(ui);
     this.mapView.draw(ui);
     // Meldungen unter Werkbank, Perk-Wahl und Morgenbericht (m12-r1: »gespeichert« lag auf der Überschrift)
-    const toastY = this.crafting.isOpen
-      ? this.crafting.bottom(ui)
-      : this.perkChoice.isOpen
-        ? this.perkChoice.bottom(ui)
-        : this.mode === 'report' && this.report.isOpen
-          ? this.report.bottom(ui)
-          : Math.max(64, (this.hud.bannerBottom || 0) + 4, (this.hud.planBottom || 0) + 4);
+    // Meldungen weichen offenen Fenstern aus – auch der Karte (m16-r1: »Bald
+    // kommt die Horde« lag auf dem Nordweg)
+    let toastY = Math.max(64, (this.hud.bannerBottom || 0) + 4, (this.hud.planBottom || 0) + 4);
+    if (this.crafting.isOpen) toastY = this.crafting.bottom(ui);
+    else if (this.mapView.isOpen) toastY = this.mapView.bottom(ui);
+    else if (this.perkChoice.isOpen) toastY = this.perkChoice.bottom(ui);
+    else if (this.mode === 'report' && this.report.isOpen) toastY = this.report.bottom(ui);
     if (!cinematic) this.hud.drawToasts(ui, toastY);
     // Zeilen mit `karte` zeigen die Karte der Wege über dem Dialog (M15)
     if (this.mode === 'dialog' && this.dialog.active && this.dialog.line?.karte) this.mapView.drawInset(ui, this.dialog.top(ui));
@@ -2339,7 +2354,7 @@ export class Game {
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
       startbild: this.mode === 'splash' ? this.splash.view() : null,
-      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`) } : null,
+      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`), tasten: !(this.title.guard > 0), bereit: !(this.title.startGuard > 0) } : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
       nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}`, richtung: this.nights.directionText() } : null,

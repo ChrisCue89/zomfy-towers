@@ -5,6 +5,56 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Testrunde m16-r1 und Nachbesserung
+
+**Runde:** vier Testspieler auf M16, je zwei bis vier Nächte (Kira auf Wild,
+Gemütlich und Ausgewogen, Mira Gemütlich, Jonas und Theo Wild); alle geben
+7/10, keine Blocker, Konsole überall leer. Berichte und Auswertung in
+`playtests/m16-r1/` (ZUSAMMENFASSUNG.md). Geliebt: die Kernstunde der Nacht,
+die Tafel, Türme mit Namen, Balduin, Knopf. Gestört: das Warten.
+
+**Behoben**
+
+- **Warten (alle):** N ruft ab der Tafel um 19:30 die Nacht (»Ich bin
+  bereit«, Mutbonus) und sagt vorher, ab wann es geht; nachts ruft N die
+  nächste Welle, sobald die laufende ganz unterwegs ist (vorher erst nach dem
+  letzten Schlurfer – das trat nie ein). Ausruhen endet an der Tafel.
+- **Stufenaufstieg nachts (Kira):** Perk- und Fähigkeitswahl gehen auf,
+  sobald kein Schlurfer näher als 10 m ist; X nennt die wartende Wahl.
+- **Gelbes Knäuel (Mira, Jonas, Theo):** Schlurfer liegen über Mikas Umriss;
+  sie halten sanft Abstand zu Mika – kein Brummer steht mehr in ihr (Theo).
+- **Zähe Natur (Jonas):** 1 Leben je Stufe und Schlag, jedes weitere Ziel
+  nur ein Fünftel – mit dem Rechen war Mika vorher unverwundbar.
+- **Perk verloren (Theo, Kira, Jonas):** Die Sperre ist sichtbar (Karten
+  gerastert), eine Ziffer darin wählt vor, ohne zu bestätigen; ein E gleich
+  nach der Wahl geht nicht mehr in die Welt.
+- **Reparieren (Kira):** Reicht der Vorrat nur für einen Teil, nennt der
+  erste Druck Anteil und Kosten, erst der zweite flickt.
+- **Zu Boden (Kira):** Banner »Mika geht zu Boden!«.
+- **Feinschliff:** Tafel unter der Zielzeile; E-Hinweis weicht Mikas
+  Gedanken aus; Schloss statt Häkchen, wenn ein Bau gerade nicht geht;
+  Mikas Laterne am Tag nur ein Schimmer (der Blitz bleibt hell); »Knopf bellt
+  – gleich kommt die nächste Welle!«; »Bald kommt die Horde« nicht nach dem
+  Rufen, Meldungen weichen der Karte aus; »Los geht’s!« nimmt erst nach gut
+  einer Sekunde Tasten an; »Komm her, Knopf!« vorgewählt; Balduins Spruch
+  bricht um; die Steuerung wird so breit wie nötig; Turm-Ränge wachsen
+  langsamer (¼ Erfahrung je Schadenspunkt); Spitzhacke ohne Stein (4 Holz,
+  3 Schrott); »Kein Turm reicht hierher« beim Setzen einer Barrikade.
+- **Prüfung:** neuer Abschnitt `nachbesserung16` (siehe CLAUDE.md), dazu
+  Titelbild (Tastenspam), Knopf (vorgewählt), Ausruhen (19:30) und
+  Spitzhacke in den alten Abschnitten.
+
+**Offen (Balance, M22–M24)**
+
+- Auf »Wild« spielen Barrikaden und Zuhause keine Rolle: Alle Wege treffen
+  sich an einem Knoten, Türme dort decken alles (Theo, Jonas) – das Tor (M17)
+  ist ein zweiter Druckpunkt, neue Arten (M22) sollen mehrere Stellen fordern.
+- Ab Tag 2 lohnt der Tag kaum (Theo), ein Moderkern kam nie; Zielpfeil,
+  Randpfeile auf sichtbaren Schlurfern, Treibholz, Steinring, See am Abend
+  (F14) bleiben klein offen.
+
+---
+
 ## Meilenstein 18 – Zusammenspiel: Zustände und Reaktionen ✓
 
 **Ziel (DESIGN 8):** Wer einen Sprenger neben den Frostnebel stellt, sieht

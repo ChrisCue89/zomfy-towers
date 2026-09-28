@@ -50,6 +50,8 @@ const HORDE_MOVE = { bounds: true, horde: true }; // durch Balduins Wagen hindur
 const STATUS_KEY = { nass: 'wetT', frostig: 'frostT', matschig: 'mudT', geblendet: 'blindT' };
 /** Nach einer Reaktion kann derselbe Schlurfer sie so lange nicht noch einmal auslösen (s). */
 const REACT_AGAIN = 6;
+/** So breit ist Mika für die Schlurfer: näher kommt keiner (m16-r1). */
+const PLAYER_R = 0.3;
 const TINT = {
   normal: new THREE.Color(1, 1, 1),
   flash: new THREE.Color(4, 4, 4),
@@ -145,7 +147,10 @@ export class Horde {
         mesh.frustumCulled = false;
         mesh.count = 0;
         mesh.visible = false;
-        mesh.renderOrder = 1.5; // nach dem eigenen Umriss (1), vor Mikas Umriss (1.75) – siehe materials.js
+        // Nach dem eigenen Umriss (1) und nach Mikas Umriss (1.75) – siehe materials.js.
+        // m16-r1: Stand ein Schlurfer vor Mika, schien ihr Umriss gelb gerastert über ihn –
+        // im Getümmel wurde daraus ein Knäuel; jetzt leuchtet er nur hinter Bauten auf.
+        mesh.renderOrder = 1.8;
         this.group.add(mesh);
         meshes[p.name] = mesh;
         if (!p.glow) {
@@ -732,6 +737,7 @@ export class Horde {
     }
 
     this.separate(dt);
+    if (player.alive && !player.inside) this.keepOffPlayer(player, dt);
   }
 
   /** Ausholen läuft ab; am Ende beißt er zu, wenn Mika noch in Reichweite (plus Ausfallschritt) ist. */
@@ -787,6 +793,25 @@ export class Horde {
     const hx = Math.max(r.minX, Math.min(z.x, r.maxX));
     const hz = Math.max(r.minZ, Math.min(z.z, r.maxZ));
     return [hx - z.x || 0.001, hz - z.z || 0.001];
+  }
+
+  /**
+   * Niemand steht in Mika (m16-r1: ein Brummer stand deckungsgleich auf ihr, Zielen
+   * wurde Raten): Wer ihr zu nah kommt, wird sanft zurückgeschoben – Mika selbst nicht.
+   */
+  keepOffPlayer(player, dt) {
+    for (const z of this.list) {
+      if (z.state === 'dying' || z.state === 'enter') continue;
+      const dx = z.x - player.x;
+      const dz = z.z - player.z;
+      const min = z.def.radius + PLAYER_R;
+      const d2 = dx * dx + dz * dz;
+      if (d2 >= min * min) continue;
+      const d = Math.sqrt(d2) || 0.01;
+      const k = ((min - d) / d) * Math.min(1, dt * 10);
+      z.x += (d2 < 1e-6 ? 0.01 : dx) * k;
+      z.z += (d2 < 1e-6 ? 0 : dz) * k;
+    }
   }
 
   /** Schlurfer schieben sich nicht ineinander. */

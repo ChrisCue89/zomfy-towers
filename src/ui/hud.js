@@ -456,6 +456,7 @@ export class Hud {
    */
   drawNightPlan(ui) {
     this.planBottom = null;
+    this.planRect = null;
     const view = this.game.nights.planView();
     if (!view) return;
     const lines = view.rows.map((r) => {
@@ -464,16 +465,23 @@ export class Hud {
       return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${schwer}`;
     });
     if (view.more) lines.push(T.nacht.weitere(view.more));
-    const title = view.canCall ? T.nacht.planPause : T.nacht.planAbend(view.total);
-    const hint = view.canCall ? T.nacht.rufenHinweis : view.juna ? null : T.nacht.planOhneJuna;
-    const w = Math.max(measure(title), measure(hint || ''), ...lines.map((l) => measure(l))) + 14;
-    const h = 16 + lines.length * 11 + (hint ? 13 : 2);
+    const title = view.evening ? T.nacht.planAbend(view.total) : T.nacht.planPause;
+    // Hinweise: N (abends »Ich bin bereit«, nachts die nächste Welle), abends ohne Juna das Funkgerät
+    const hints = [];
+    if (view.canCall) hints.push(view.evening ? T.nacht.rufenAbend : T.nacht.rufenHinweis);
+    if (view.evening && !view.juna) hints.push(T.nacht.planOhneJuna);
+    const w = Math.max(measure(title), ...hints.map((l) => measure(l)), ...lines.map((l) => measure(l))) + 14;
+    const h = 16 + lines.length * 11 + (hints.length ? 4 + hints.length * 11 : 2);
     const x = Math.round(ui.width / 2 - w / 2);
-    const y = Math.max(this.nightBarBottom + 4, this.bannerBottom ? this.bannerBottom + 2 : 0, 40);
+    let y = Math.max(this.nightBarBottom + 4, this.bannerBottom ? this.bannerBottom + 2 : 0, 40);
+    // m16-r1: nicht über die Zielzeile – liegt sie darunter, rückt die Tafel unter sie
+    const gb = this.goalBox;
+    if (gb.on && x < gb.x + gb.w + 4 && y < gb.y + gb.h + 2) y = gb.y + gb.h + 4;
+    this.planRect = { x, y, w, h };
     ui.panel(x, y, w, h);
     ui.textCentered(title, ui.width / 2, y + 3, COLORS.gold);
-    lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.text));
-    if (hint) ui.textCentered(hint, ui.width / 2, y + 16 + lines.length * 11 + 1, COLORS.textDim);
+    lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 && !view.evening ? COLORS.textWarm : COLORS.text));
+    hints.forEach((l, k) => ui.textCentered(l, ui.width / 2, y + 16 + lines.length * 11 + 1 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.textDim));
     this.planBottom = y + h; // Meldungen erscheinen darunter
   }
 
@@ -878,6 +886,7 @@ export class Hud {
   }
 
   drawSpeech(ui) {
+    this.speechRect = null;
     const s = this.speech;
     if (!s) return;
     if (s.duration - s.time < 0.4 && Math.floor(s.time * 12) % 2 === 0) return;
@@ -886,6 +895,7 @@ export class Hud {
     const w = measure(s.text) + 12;
     const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
     const y = Math.round(Math.max(62, at.y - 18)); // nie über Uhr und Ziel
+    this.speechRect = { x, y, w, h: 19 }; // m16-r1: der E-Hinweis weicht der Sprechblase aus
     ui.panel(x, y, w, 17, { fill: COLORS.fillLight });
     ui.text(s.text, x + 6, y + 2, COLORS.text);
     // Zipfel der Sprechblase
@@ -1043,7 +1053,11 @@ export class Hud {
       }
     }
     const x = Math.round(Math.min(ui.width - w - 2, Math.max(2, prompt.x - w / 2)));
-    const y = Math.round(Math.min(ui.height - 60, Math.max(40, prompt.y - h)));
+    let y = Math.round(Math.min(ui.height - 60, Math.max(40, prompt.y - h)));
+    // m16-r1: Lag der Hinweis auf Mikas Gedanken, war der nicht zu lesen – dann darunter
+    const sr = this.speechRect;
+    if (sr && x < sr.x + sr.w && x + w > sr.x && y < sr.y + sr.h && y + h > sr.y) y = sr.y + sr.h + 2;
+    this.promptRect = { x, y, w, h };
     ui.panel(x, y, w, h);
     // Tastenkappe
     ui.inset(x + 4, y + 3, 11, 11, { fill: prompt.dim ? COLORS.textDim : COLORS.textWarm, border: COLORS.outline });

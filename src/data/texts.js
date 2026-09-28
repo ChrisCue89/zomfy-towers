@@ -131,6 +131,7 @@ export const T = {
     hoechste: 'Höchste Stufe erreicht.',
     grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden', nurWeg: 'Barrikaden nur auf den Weg' },
     keineHorde: 'Hier kommt keine Horde vorbei', // m12-r1: der Turm stand mitten in der Bucht
+    keinTurm: 'Kein Turm reicht hierher', // m16-r1: Barrikaden gehören in den Kreis eines Turms
     nurDraussen: 'Nur draußen',
     // Warum »Kein Platz«? (m7-r1)
     grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg', stand: 'Balduins Stand' },
@@ -141,6 +142,7 @@ export const T = {
     wegeHinweis: 'Kreis: Reichweite · Pünktchen: Weg der Horde · Kreuz: dort greift sie an.',
     wegeHinweisKurz: 'Pünktchen: Weg der Horde · Kreuz: dort greift sie an.',
     teilweise: (p) => `Der Vorrat reicht für ${p} %.`,
+    teilweiseNochmal: (p, was) => `Flickt ${p} % und braucht ${was} – nochmal drücken.`,
     weg: 'Die Horde braucht einen Weg zum Haus.',
     kaputt: 'Kaputt – erst reparieren.',
     setzen: 'Klick oder E setzt · Mausrad dreht · Esc bricht ab',
@@ -182,14 +184,14 @@ export const T = {
     titel: (stufe) => `Stufe ${stufe}! Wähle einen Vorteil.`,
     hinweis: '1 · 2 · 3 oder A/D und E',
     stufeAuf: (stufe) => `Stufe ${stufe} erreicht!`,
-    wartet: 'Perk-Wahl, sobald es ruhig ist',
+    wartet: 'Perk-Wahl, sobald keine Horde in der Nähe ist',
     gewaehlt: (name) => `Neu: ${name}`,
     stufe: (n) => `Stufe ${n}`,
     sammler: ['Sammlerherz', 'Loot fliegt aus größerer Entfernung zu dir (+30 %).'],
     konter: ['Konter', 'Nach dem Ausweichen trifft der nächste Schlag doppelt so hart.'],
     flicker: ['Flickschusterei', 'Wo du stehst, reparieren sich Bauten nach und nach.'],
     turmfreund: ['Rückendeckung', 'Nahe eines Turms schlägst du 25 % härter.'],
-    lebensraub: ['Zähe Natur', 'Jeder Treffer heilt dich ein wenig.'],
+    lebensraub: ['Zähe Natur', 'Jeder Schlag, der trifft, heilt dich ein wenig.'],
     flink: ['Flinke Hände', 'Du schlägst 12 % schneller.'],
     dickesFell: ['Dickes Fell', 'Du nimmst 12 % weniger Schaden.'],
     glueckspilz: ['Glückspilz', 'Besiegte Schlurfer lassen öfter ein Stück Schrott mehr fallen.'],
@@ -267,12 +269,13 @@ export const T = {
     gelernt: (name) => `Neu: ${name} (Taste X)`,
     geschaerft: (name, rang) => `${name} geschärft: Rang ${rang}`,
     leer: 'Die zweite Fähigkeit kommt auf Stufe 3.',
+    leerWartet: 'Deine neue Fähigkeit wählst du, sobald keine Horde in der Nähe ist.',
     drinnen: 'Drinnen nicht – das hebst du dir für draußen auf.',
     keineBarrikade: 'Keine beschädigte Barrikade in Reichweite.',
     keinTurm: 'Kein Turm in der Nähe, den du anfeuern könntest.',
     keinKnopf: 'Knopf ist noch nicht bei dir.',
     blitzHinweis: 'Rechtsklick: Laternenblitz – blendet Schlurfer rings um dich.',
-    wartet: 'Neue Fähigkeit, sobald es ruhig ist',
+    wartet: 'Neue Fähigkeit, sobald keine Horde in der Nähe ist',
   },
   horde: {
     // Die Spawns am linken Kartenrand (Meilenstein 9): drei Wege aus dem Wald
@@ -315,7 +318,8 @@ export const T = {
     verloren: 'Die Horde bricht durch …',
     keller: 'Mika verschanzt sich im Keller.',
     ohnmacht: 'Mika wird schwarz vor Augen …',
-    gerettet: 'Gerade noch ins Haus geschafft. Kurz durchatmen – draußen tobt die Nacht weiter.',
+    gerettet: 'Mika ging zu Boden und hat sich gerade noch ins Haus geschleppt. Kurz durchatmen – draußen tobt die Nacht weiter.',
+    zuBoden: 'Mika geht zu Boden!',
     barrikadeWeg: 'Eine Barrikade ist zerschlagen!',
   },
   bericht: {
@@ -479,6 +483,7 @@ export const T = {
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
     knopfHilft: 'Knopf bleibt! Er bellt, bevor die Horde kommt – und morgens buddelt er Sachen aus.',
     bellt: 'Knopf bellt – gleich kommt die Horde!',
+    belltWelle: 'Knopf bellt – gleich kommt die nächste Welle!',
     getauscht: (menge) => `Getauscht: +${menge}`,
     gabe: {
       knopf: 'Knopf hat etwas ausgebuddelt:',
@@ -696,9 +701,13 @@ export const T = {
   // Die Nacht in der Hand (M16): Welle rufen, Zeitraffer, Nachtplan
   nacht: {
     gerufen: 'Welle gerufen – Mutbonus auf die Beute!',
-    rufenNochNicht: 'Erst die Welle erledigen, dann die nächste rufen.',
+    gerufenAbend: 'Die Horde ist gerufen – Mutbonus auf die Beute!',
+    rufenNochNicht: 'Erst muss die laufende Welle ganz unterwegs sein.',
     rufenKeine: 'Heute Nacht kommt keine Welle mehr.',
+    rufenVorbei: 'Die Nacht ist schon geschafft.',
+    rufenAb: (ab, um) => `Die Horde kommt um ${um} – ab ${ab} kannst du sie mit N rufen.`,
     rufenHinweis: 'N: nächste Welle jetzt rufen',
+    rufenAbend: 'N: Ich bin bereit – die Horde jetzt rufen',
     rafferAn: 'Zeitraffer: doppelt so schnell',
     rafferAus: 'Zeitraffer aus',
     rafferNurNachts: 'Den Zeitraffer gibt es nur nachts.',

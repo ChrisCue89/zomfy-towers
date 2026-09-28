@@ -4,7 +4,8 @@
 import { WEAPONS, WEAPON_ORDER } from './weapons.js';
 
 export const RECIPES = [
-  { id: 'spitzhacke', icon: 'spitzhacke', cost: { holz: 3, stein: 2, schrott: 2 }, gives: { tool: 'spitzhacke' }, once: true },
+  // m16-r1: ohne Stein – die Werkbank braucht die 2 Stein vom Anfang, und Stein gibt es nur mit der Spitzhacke
+  { id: 'spitzhacke', icon: 'spitzhacke', cost: { holz: 4, schrott: 3 }, gives: { tool: 'spitzhacke' }, once: true },
   // Waffen (Meilenstein 4): einmal bauen, aufwerten in der Bauleiste
   ...WEAPON_ORDER.map((id) => ({ id, icon: WEAPONS[id].icon, cost: WEAPONS[id].cost, gives: { weapon: id }, once: true })),
   { id: 'schrottAusHolz', icon: 'schrott', cost: { holz: 3 }, gives: { inventory: { schrott: 1 } } },
