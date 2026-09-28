@@ -163,6 +163,17 @@ const SFX = {
       }
     }
   },
+  // Reaktion (M18): ein heller Doppelton, je Reaktion eigene Tonhöhe
+  reaktion: (s, t, v, o, opt) => {
+    const f = opt.pitch || 880;
+    s.tone('triangle', f, t, 0.12, { peak: 0.07 * v, out: o });
+    s.tone('triangle', f * 1.5, t + 0.07, 0.16, { peak: 0.05 * v, out: o });
+  },
+  // Eisblock zerspringt (M18): helles Klirren aus Rauschen und hohen Tönen
+  klirr: (s, t, v, o) => {
+    s.noise(t, 0.18, { type: 'highpass', freq: 4200, freqEnd: 2600, peak: 0.16 * v, out: o });
+    for (const [f, dt] of [[2637, 0], [3136, 0.03], [3951, 0.06]]) s.tone('sine', f, t + dt, 0.2, { peak: 0.03 * v, attack: 0.002, out: o });
+  },
   // Pechkessel kippt (M17e): dumpfes Wummern, dann Zischen und Knistern
   pech: (s, t, v, o) => {
     s.tone('sine', 110, t, 0.3, { freqEnd: 45, peak: 0.25 * v, out: o });
@@ -172,7 +183,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

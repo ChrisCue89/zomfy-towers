@@ -238,6 +238,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
+                      reactions (Zustände, Reaktionen, Wetter-Wirkung, M18),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -342,6 +343,15 @@ Grundprinzipien:
   hängt an Barrikaden (je Stufe ein Platz) und am Tor (drei) und wird in
   `game.gearHit` beim Schlag ausgelöst; Licht (Laternenturm, Leuchtfeuer,
   Laternen) lässt Schlurfer auch langsamer zuschlagen.
+- **Zustände und Reaktionen (M18, `data/reactions.js`):** Jeder Schlurfer hat
+  Uhren für nass, frostig, matschig, geblendet (`wetT` …); `horde.status`
+  setzt sie, `horde.react` prüft jedes Bild Eisblock, Dampf und Glut,
+  `horde.damage` lässt einen Eisblock zerspringen und prüft die
+  Schwachstelle (Bolzen: `kind: 'bolzen'`), `towers.explode` Splitter und
+  Klebekürbis. `horde.reaction` meldet über `onReaction` (Wort mit
+  `hud.popWord`, Klang, Notizbuch `state.notes`); dieselbe Reaktion je
+  Schlurfer nur alle paar Sekunden. Regen (`ctx.wet`, `ctx.burnFactor`) und
+  Nebel/Wind (`towers.weatherRange`) wirken über das Wetter der Welt.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -472,7 +482,11 @@ Grundprinzipien:
    Kampf stechen, brennen und bremsen sie; die Alarmglocke läutet beim ersten
    Schlag der Nacht, Bert flickt das Tor; Speichern v12 (Stufe, Zubehör,
    Umgeworfenes) und Migration v11 → v12 (Bilder: lager, lager-nacht,
-   zubehoer).
+   zubehoer); ab M18 (Abschnitt `reaktionen`): alle sechs Reaktionen mit
+   echten Türmen am Weg (der Zustands-Turm stromauf), Zeichen über den Köpfen,
+   Worte, der Eisblock zerspringt; Regen macht nass, Nebel kürzt die
+   Reichweite; das Notizbuch mit Esc, S, E; Speichern v13 und Migration
+   v12 → v13 (Bilder: reaktionen, notizbuch).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -546,7 +560,11 @@ Erfahrung; ab M17 nennt `camp()` Wall und Tor (Stufe, Leben, Aussehen,
 Schlupftür, Zubehör), `hitCamp(id, n)` trifft sie, `upgradeCamp(id)` baut
 sie aus, `lager()` zeigt Ostkante, Umgeworfenes, Plünderer, Nachtwerte
 (Durchbruch, im Lager, umgeworfen) und Laternen, `addGear(id, art)` bringt
-Zubehör an, `raidHit(id, n)` trifft einen Bau im Lager.
+Zubehör an, `raidHit(id, n)` trifft einen Bau im Lager; ab M18 nennt
+`statuses()` je Schlurfer die Zustände, `applyStatus(id, art, s)` setzt einen,
+`notes()` zeigt das Notizbuch, `words()` die Worte über den Köpfen,
+`towerReach(id)` die Reichweite eines Turms bei diesem Wetter und
+`stickies()` die klebrigen Flächen.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

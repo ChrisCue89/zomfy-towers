@@ -959,6 +959,21 @@ const ICONS = {
       '.kkk.',
     ],
   },
+  // Notizbuch (M18): aufgeschlagenes Buch mit Lesezeichen
+  buch: {
+    legend: { k: P.e1, p: P.e9, P: P.s9, l: P.s6, r: P.r3, b: P.e5 },
+    rows: [
+      '.......r...',
+      '.kkkk.kkrk.',
+      'kpppPkPppk.',
+      'kplpPkPlpk.',
+      'kpppPkPppk.',
+      'kplpPkPlpk.',
+      'kpppPkPppk.',
+      'kbbbbkbbbbk',
+      '.kkkkkkkkk.',
+    ],
+  },
   // Zubehör (M17e): Dornen, Pechkessel, Alarmglocke (die Laterne hat ihr Symbol schon)
   dornen: {
     legend: { k: P.s1, s: P.s5, S: P.s8, w: P.e5, W: P.e7 },

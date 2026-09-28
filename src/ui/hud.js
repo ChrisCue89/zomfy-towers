@@ -13,6 +13,19 @@ import { xpForLevel } from '../data/perks.js';
 import { SKILLS } from '../data/skills.js';
 import { P, hexToCss } from '../render/palette.js';
 
+/**
+ * Zeichen der Zustände über dem Kopf (M18): 5 × 5 Pixel auf dunklem Grund –
+ * Eisblock, Brand, nass, frostig, matschig, geblendet (höchstens drei je Kopf).
+ */
+const STATUS_PIX = [
+  ['iceT', 0xa8dcff, ['#####', '#.#.#', '##.##', '#.#.#', '#####']],
+  ['burnT', P.f5, ['..#..', '.##..', '.###.', '#####', '.###.']],
+  ['wetT', P.b4, ['..#..', '.###.', '#####', '#####', '.###.']],
+  ['frostT', 0xe8f8ff, ['#.#.#', '.###.', '##.##', '.###.', '#.#.#']],
+  ['mudT', P.e5, ['.....', '.###.', '#####', '#####', '#.#.#']],
+  ['blindT', P.f7, ['..#..', '#.#.#', '.###.', '#.#.#', '..#..']],
+].map(([key, color, rows]) => ({ key, color: hexToCss(color), px: rows.flatMap((r, y) => [...r].map((c, x) => (c === '#' ? [x, y] : null)).filter(Boolean)) }));
+
 const SWOOSH_TIME = 0.16;
 const RING_TIME = 0.42; // Ringe der Fähigkeiten auf dem Boden (M16)
 const RING_COLORS = {
@@ -84,6 +97,7 @@ export class Hud {
     this.bannerBottom = null; // Unterkante des Banners (für die Meldungen)
     this.goalBox = { on: false, x: 0, y: 0, w: 0, h: 17 }; // Rahmen der Zielzeile (dieses Bild)
     this.numbers = []; // Schadenszahlen
+    this.words = []; // Worte der Reaktionen über dem Kopf (M18)
     this.swooshes = []; // Schwung-Bögen im Nahkampf
     this.rings = []; // Ringe der Fähigkeiten (M16)
     this.skillTiles = [];
@@ -183,6 +197,12 @@ export class Hud {
     if (this.numbers.length > 24) this.numbers.shift();
   }
 
+  /** Ein Wort über dem Kopf (Reaktion, M18): steigt auf, bleibt etwas länger als eine Zahl. */
+  popWord(x, y, z, text, color) {
+    this.words.push({ x, y, z, text, color, t: 0 });
+    if (this.words.length > 12) this.words.shift();
+  }
+
   damageNumber(x, y, z, amount, hurt = false) {
     this.numbers.push({ x: x + (Math.random() - 0.5) * 0.3, y, z, text: String(amount), hurt, t: 0 });
     if (this.numbers.length > 24) this.numbers.shift();
@@ -219,6 +239,8 @@ export class Hud {
     this.gateAlarm = Math.max(0, this.gateAlarm - dt);
     for (const n of this.numbers) n.t += dt;
     this.numbers = this.numbers.filter((n) => n.t < 0.7);
+    for (const w of this.words) w.t += dt;
+    this.words = this.words.filter((w) => w.t < 1.3);
     for (const w of this.swooshes) w.t += dt;
     this.swooshes = this.swooshes.filter((w) => w.t < SWOOSH_TIME);
     for (const r of this.rings) r.t += dt;
@@ -241,9 +263,11 @@ export class Hud {
     if (show.prompt) this.drawLowHealth(ui);
     if (show.prompt) {
       this.drawZombieBars(ui);
+      this.drawStatus(ui);
       this.drawRings(ui);
       this.drawSwooshes(ui);
       this.drawNumbers(ui);
+      this.drawWords(ui);
     }
     this.drawClock(ui);
     this.drawGoal(ui);
@@ -538,6 +562,42 @@ export class Hud {
       const y = Math.round(p.y);
       ui.rect(x, y, w, 3, COLORS.outline);
       ui.rect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * (z.hp / z.maxHp))), 1, z.freezeT > 0 ? COLORS.green : COLORS.buildBad);
+    }
+  }
+
+  /** Zustände als kleine Zeichen über dem Kopf (M18), höchstens drei je Schlurfer. */
+  drawStatus(ui) {
+    const g = this.game;
+    this.statusShown = 0;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying') continue;
+      const shown = [];
+      for (const s of STATUS_PIX) {
+        if (z[s.key] > 0) shown.push(s);
+        if (shown.length === 3) break;
+      }
+      if (!shown.length) continue;
+      const p = g.worldToUi(z.x, 2.05 * z.def.scale, z.z);
+      if (p.x < -10 || p.y < -10 || p.x > ui.width + 10 || p.y > ui.height + 10) continue;
+      this.statusShown++;
+      const w = shown.length * 7 - 1;
+      let x = Math.round(p.x - w / 2);
+      const y = Math.round(p.y) - 8;
+      for (const s of shown) {
+        ui.rect(x - 1, y - 1, 7, 7, COLORS.outline);
+        for (const [px, py] of s.px) ui.rect(x + px, y + py, 1, 1, s.color);
+        x += 7;
+      }
+    }
+  }
+
+  /** Worte der Reaktionen (M18): farbig, mit Umriss, steigen auf. */
+  drawWords(ui) {
+    for (const w of this.words) {
+      const p = this.game.worldToUi(w.x, w.y, w.z);
+      const rise = Math.round(Math.min(1, w.t / 0.5) * 12 + w.t * 6);
+      if (w.t > 1.05 && Math.floor(w.t * 20) % 2) continue; // blinkt aus
+      ui.text(w.text, Math.round(p.x - measure(w.text) / 2), Math.round(p.y - 22 - rise), w.color, { outline: COLORS.outline });
     }
   }
 

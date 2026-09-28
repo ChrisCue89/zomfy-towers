@@ -1284,6 +1284,26 @@ Stark wird es nur mit Ausbau (bis 1000 und ein Viertel Abwehr) und Türmen, die
 den Platz davor bestreichen. **Offen für die Testrunde:** ob das Tor zu früh
 alles entscheidet (ein fester Stauplatz vor den Türmen) oder zu schnell fällt.
 
+### 130. Wirkt das Wetter jetzt doch? (M18, ändert Nr. 99)
+**Entscheidung:** Ja – seit die Nächte mehr Werkzeug haben (M16) und die
+Reaktionen das Wetter zu einer Zutat machen. Regen macht alle nass (Frost wird
+stärker, Brand brennt mit 60 %), Nebel kürzt die Reichweite aller Türme auf
+80 %, außer der Turm steht im Schein einer Laterne oder eines Laternenturms,
+Wind trägt Kürbisse 15 % weiter und ihre Splitter 40 % weiter. Der Morgen
+sagt es an; die ersten beiden Tage bleiben klar. **Warum:** Das Wetter soll
+eine Entscheidung am Morgen auslösen (»heute regnet es – Frost an den Weg«),
+nicht nur Stimmung sein.
+
+### 131. Wie stark und wie oft sind Reaktionen? (M18)
+**Entscheidung:** Spürbar, aber nicht jede Sekunde: Dieselbe Reaktion löst
+ein Schlurfer höchstens alle 6 s aus (Eisblock 4 s), eine Glut je Brand
+einmal. Der Frostnebel macht nur frostig, nicht nass – für den Eisblock
+braucht es einen zweiten Sprenger oder Regen; so ist jede Reaktion eine
+Entscheidung beim Bauen. Die Laterne am Zubehör, der Laternenturm und das
+Leuchtfeuer blenden alle in ihrem Schein; der Laternenblitz blendet für die
+Dauer seiner Verlangsamung. **Offen für die Testrunde:** ob Dampf im Regen
+(alle sind nass) zu stark bremst.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -14,8 +14,9 @@ import { TOWER_PARTS, TOWER_PART_IDS } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { SKILLS, SKILL_IDS, SKILL_MAX_RANK, START_SKILL, freshSkills } from '../data/skills.js';
+import { REACTIONS } from '../data/reactions.js';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -52,6 +53,7 @@ export function createNewState(config, mapSeed = 1) {
     // skillChoice: offene Fähigkeiten-Wahl { mode: 'lernen'|'schaerfen', options }
     skills: freshSkills(),
     skillChoice: null,
+    notes: {}, // M18: Notizbuch – entdeckte Reaktion -> Tag der Entdeckung
     // tower: Ausbau des Funkturms (0–3), furniture: gekaufte Möbel, tradeDay: Tag des
     // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
@@ -143,6 +145,9 @@ export function sanitizeState(data, config) {
   if (slots[1] === slots[0]) slots[1] = null;
   out.skills = { slots: [slots[0], slots[1] || null], ranks: {} };
   for (const id of out.skills.slots) if (id) out.skills.ranks[id] = Math.floor(num(sk.ranks?.[id], 1, 1, SKILL_MAX_RANK));
+  // Notizbuch (M18): entdeckte Reaktionen mit dem Tag der Entdeckung
+  out.notes = {};
+  if (data.notes && typeof data.notes === 'object') for (const [k, d] of Object.entries(data.notes)) if (REACTIONS[k] && Number.isFinite(d)) out.notes[k] = Math.floor(num(d, 1, 1, 1e6));
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

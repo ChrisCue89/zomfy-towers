@@ -370,6 +370,41 @@ export const T = {
       regen: ['Heute nieselt es. Gut für die Beete, schlecht für die Frisur.', 'Leiser Regen trommelt aufs Dach. Ein Tag für Tee.', 'Grau und nass heute. Die Wege werden matschig.'],
       nebel: ['Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.', 'Man sieht kaum den Steg. Der Nebel schluckt jedes Geräusch.', 'Nebel wie Watte – die Inseln sind verschwunden.'],
     },
+    // Was das Wetter nachts bewirkt (M18) – Juna sagt es am Funk an
+    wirkung: {
+      klar: null,
+      wind: 'Wind heute Nacht: Die Kürbisse fliegen weiter.',
+      regen: 'Regen heute Nacht: Die Horde wird nass – Frost beißt stärker, Feuer brennt schwächer.',
+      nebel: 'Nebel heute Nacht: Die Türme sehen nicht so weit – außer im Schein einer Laterne.',
+    },
+  },
+  // Zustände und Reaktionen (M18): Name, was geschieht, Notiz fürs Notizbuch
+  reaktionen: {
+    eisblock: ['Eisblock', 'Nass und frostig: Er friert ein – der nächste Treffer zerspringt doppelt.', 'Wasser zuerst, dann Kälte. Das Geflecht wird spröde wie Glas.'],
+    dampf: ['Dampf', 'Nass und brennend: Das Feuer erlischt, aber ringsum stehen alle verwirrt im Dampf.', 'Feuer auf nassem Moder gibt Dampf – und der macht sie blind wie Maulwürfe.'],
+    glut: ['Glut', 'Brennend und matschig: Der Schlamm hält die Glut – der Brand dauert doppelt so lange.', 'Schlamm hält die Hitze. Wie ein Kachelofen, nur weniger gemütlich.'],
+    schwachstelle: ['Schwachstelle', 'Ein Bolzen trifft einen Geblendeten: doppelter Schaden.', 'Im Licht zieht sich das Geflecht zusammen – dann trifft man, wo es weh tut.'],
+    splitter: ['Splitter', 'Ein Streukürbis trifft einen Frostigen: Eissplitter fliegen auf alle ringsum.', 'Gefrorenes zerspringt. Die Splitter fliegen weit.'],
+    klebekuerbis: ['Klebekürbis', 'Ein Kürbis trifft einen Matschigen: Die Stelle klebt und bremst eine Weile.', 'Kürbisbrei und Schlamm – da kommt keiner schnell durch.'],
+    zerspringt: 'Klirr!',
+  },
+  // Notizbuch (M18): entdeckte Reaktionen mit Notiz
+  notizbuch: {
+    titel: 'Notizbuch',
+    menue: 'Notizbuch',
+    neu: (name) => `Neu im Notizbuch: ${name}`,
+    entdeckt: (tag) => `entdeckt an Tag ${tag}`,
+    unbekannt: '???',
+    hinweis: {
+      eisblock: 'Vielleicht Wasser und Kälte?',
+      dampf: 'Vielleicht Wasser und Feuer?',
+      glut: 'Vielleicht Feuer und Schlamm?',
+      schwachstelle: 'Vielleicht Licht und ein Bolzen?',
+      splitter: 'Vielleicht Kälte und ein Streukürbis?',
+      klebekuerbis: 'Vielleicht Schlamm und ein Kürbis?',
+    },
+    zaehler: (n, von) => `${n} von ${von} entdeckt`,
+    notiz: (text) => `Dr. Yusuf: „${text}“`,
   },
   // Vorgeschichte in der Welt (M15): Gedanken als Sprechblase, nie als Dialog
   geschichte: {

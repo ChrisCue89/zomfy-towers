@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { towerStatsOf } from '../data/towers.js';
+import { REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { dampAngle } from '../core/math.js';
 
 const MAX_PROJECTILES = 120;
@@ -62,6 +63,7 @@ export class TowerSystem {
     this.cb = callbacks;
     this.projectiles = [];
     this.fires = [];
+    this.stickies = []; // klebrige Flächen (Klebekürbis, M18)
     this.time = 0;
     const basic = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {
@@ -81,6 +83,7 @@ export class TowerSystem {
   clear() {
     this.projectiles.length = 0;
     this.fires.length = 0;
+    this.stickies.length = 0;
   }
 
   /** Mittelpunkt und Kopfhöhe eines Turms. */
@@ -124,8 +127,24 @@ export class TowerSystem {
     return best;
   }
 
+  /**
+   * Wetter (M18): Nebel kürzt die Reichweite – außer der Turm steht im Schein
+   * einer Laterne oder eines Laternenturms –, Wind trägt Kürbisse weiter.
+   */
+  weatherRange(t) {
+    const kind = this.world.weather.kind;
+    if (kind === 'nebel') {
+      const o = this.origin(t);
+      const lit = this.lightSlow(o.x, o.z) > 0 || this.world.buildings.gearSlow(o.x, o.z) > 0;
+      return lit ? 1 : WEATHER_EFFECTS.nebel.range;
+    }
+    if (kind === 'wind' && t.type === 'katapult') return WEATHER_EFFECTS.wind.catapult;
+    return 1;
+  }
+
   /** Ziele im Umkreis, sortiert nach Priorität. */
   targets(t, range, n, strongest, minRange = 0) {
+    range *= this.weatherRange(t);
     const o = this.origin(t);
     const pathing = this.world.pathing;
     const list = [];
@@ -189,6 +208,7 @@ export class TowerSystem {
     }
     this.updateProjectiles(dt);
     this.updateFires(dt);
+    this.updateStickies(dt);
   }
 
   aim(t, target, dt, speed = 10) {
@@ -256,8 +276,10 @@ export class TowerSystem {
 
   runSprinkler(t, s, mult, dt) {
     const o = this.origin(t);
-    const inRange = this.horde.inRange(o.x, o.z, s.range);
+    const inRange = this.horde.inRange(o.x, o.z, s.range * this.weatherRange(t));
     const kind = t.spec === 'A' ? 'frost' : t.spec === 'B' ? 'schlamm' : 'wasser';
+    // Zustand (M18): Wasser macht nass, Frostnebel frostig, Schlamm matschig
+    const status = t.spec === 'A' ? 'frostig' : t.spec === 'B' ? 'matschig' : 'nass';
     // Kopf dreht sich immer und tröpfelt ein wenig (man sieht, was er ist);
     // richtig los geht es, wenn jemand in der Nähe ist
     t.headAngle = (t.headAngle || 0) + dt * (inRange.length ? 5 : 1.2);
@@ -281,8 +303,9 @@ export class TowerSystem {
     const freezeNow = s.freeze && t.freezeCd <= 0;
     if (freezeNow) t.freezeCd = 4;
     for (const z of inRange) {
-      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id })) continue;
+      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
       this.horde.slow(z, s.slow, s.slowTime);
+      this.horde.status(z, status);
       if (freezeNow) {
         this.horde.freeze(z, s.freeze);
         this.effects.splat(z.x, 0.6, z.z, 'frost', 6, 0.6);
@@ -308,7 +331,7 @@ export class TowerSystem {
         p.angle = Math.atan2(dx, dz);
         if (d <= step + 0.05) {
           if (p.target && p.target.state !== 'dying') {
-            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null });
+            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null, kind: 'bolzen' });
             this.effects.splat(p.tx, 0.7, p.tz, 'funken', 4, 0.5);
           }
           this.projectiles.splice(i, 1);
@@ -341,19 +364,59 @@ export class TowerSystem {
     const r = p.splash;
     const burnTime = p.burnTime || 3;
     this.cb.onImpact?.(p.x, p.z);
+    let frosty = null;
+    let muddy = null;
     for (const z of this.horde.inRange(p.x, p.z, r)) {
+      // Reaktionen (M18): Streukürbis auf Frostige, Kürbis auf Matschige
+      if (z.frostT > 0 && p.split) frosty = frosty || z;
+      if (z.mudT > 0 && p.kind === 'pumpkin') muddy = muddy || z;
       if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: p.source || 'turm', lucky: p.lucky, by: p.by ?? null })) continue;
       if (p.burn) this.horde.ignite(z, p.burn, burnTime, p.by ?? null);
     }
+    if (frosty) this.splinter(p, frosty);
+    if (muddy) this.sticky(p, muddy);
     this.effects.splat(p.x, 0.3, p.z, p.burn ? 'feuer' : 'kuerbis', p.kind === 'mini' ? 8 : 16, p.kind === 'mini' ? 0.7 : 1);
     if (p.burn) this.fires.push({ x: p.x, z: p.z, r, dps: p.burn, t: burnTime, by: p.by ?? null });
     if (p.split) {
       for (let k = 0; k < p.split; k++) {
         const a = (k / p.split) * Math.PI * 2 + this.time;
-        const tx = p.x + Math.cos(a) * 1.3;
-        const tz = p.z + Math.sin(a) * 1.3;
+        const reach = 1.3 * (this.world.weather.kind === 'wind' ? WEATHER_EFFECTS.wind.split : 1); // Wind trägt sie weiter (M18)
+        const tx = p.x + Math.cos(a) * reach;
+        const tz = p.z + Math.sin(a) * reach;
         this.projectiles.push({ kind: 'mini', x0: p.x, y0: 0.3, z0: p.z, x1: tx, z1: tz, t: 0, T: 0.45, h: 0.8, damage: p.damage * 0.55, splash: r * 0.7, burn: 0, split: 0, x: p.x, y: 0.3, z: p.z, lucky: p.lucky, by: p.by ?? null });
       }
+    }
+  }
+
+  /** Splitter (M18): Ein Streukürbis trifft einen Frostigen – Eissplitter springen auf alle ringsum. */
+  splinter(p, z) {
+    const r = REACTIONS.splitter;
+    for (const o of this.horde.inRange(z.x, z.z, r.radius)) {
+      if (o === z) continue;
+      this.horde.damage(o, p.damage * r.damage, { fromX: z.x, fromZ: z.z, push: 0.2, source: 'turm', by: p.by ?? null });
+    }
+    this.effects.splat(z.x, 0.7, z.z, 'frost', 18, 1.2);
+    this.horde.reaction(z, 'splitter', 1.5);
+  }
+
+  /** Klebekürbis (M18): Ein Kürbis trifft einen Matschigen – eine klebrige Fläche bremst eine Weile. */
+  sticky(p, z) {
+    const r = REACTIONS.klebekuerbis;
+    this.stickies.push({ x: p.x, z: p.z, r: r.radius, slow: r.slow, t: r.time });
+    this.effects.splat(p.x, 0.2, p.z, 'schlamm', 18, 1.3);
+    this.horde.reaction(z, 'klebekuerbis', 2);
+  }
+
+  updateStickies(dt) {
+    for (let i = this.stickies.length - 1; i >= 0; i--) {
+      const s = this.stickies[i];
+      s.t -= dt;
+      if (s.t <= 0) {
+        this.stickies.splice(i, 1);
+        continue;
+      }
+      if (Math.random() < dt * 6) this.effects.splat(s.x + (Math.random() - 0.5) * s.r, 0.1, s.z + (Math.random() - 0.5) * s.r, 'schlamm', 2, 0.3);
+      for (const z of this.horde.inRange(s.x, s.z, s.r)) this.horde.slow(z, s.slow, 0.3);
     }
   }
 

@@ -5,6 +5,29 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 18 – Zusammenspiel: Zustände und Reaktionen ✓
+
+**Ziel (DESIGN 8):** Wer einen Sprenger neben den Frostnebel stellt, sieht
+Eisblöcke zerspringen – und hat das selbst herausgefunden.
+
+- **Zustände** (`data/reactions.js`): nass, frostig, matschig, geblendet,
+  dazu Brand und Betäubung – als kleine Zeichen über dem Kopf (höchstens drei).
+- **Reaktionen:** Eisblock, Dampf, Glut, Schwachstelle, Splitter, Klebekürbis –
+  jede mit eigenem Effekt, Klang und einem Wort, das aufpoppt; der Eisblock
+  zerspringt beim nächsten Treffer (»Klirr!«).
+- **Das Wetter wirkt:** Regen macht alle nass und dämpft Brand, Nebel kürzt die
+  Reichweite (außer im Laternenschein), Wind trägt Kürbisse weiter; der
+  Morgenbericht sagt an, was die Nacht bringt.
+- **Notizbuch** im Pausenmenü: eine Zeile je Reaktion (Name und Tag der
+  Entdeckung), darunter für die gewählte, was geschieht, und Dr. Yusufs Notiz;
+  unentdeckte mit einem Hinweis; beim ersten Mal eine Meldung. Die Seite passt
+  auch in die kleinste Oberfläche (270 Zeilen).
+- **Spielstand v13** (Notizbuch), Migration v12 → v13.
+- **Prüfung:** neuer Abschnitt `reaktionen` (siehe CLAUDE.md), alle
+  Versionsprüfungen auf v13.
+
+---
+
 ## Meilenstein 17 – Tor und Wall: die Bucht wird ein Lager ✓
 
 **Wunsch des Auftraggebers (OFFENE-FRAGEN 120):** ein Tor und ein Wall um das

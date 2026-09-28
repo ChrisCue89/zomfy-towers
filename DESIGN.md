@@ -400,8 +400,11 @@ Nebel, Horde-Wellen, Balduins Boot und Tagesereignisse. Lichtwerte kommen aus
 einer Schlüsselbild-Tabelle über 24 Stunden. Das Wetter wechselt von Tag zu
 Tag (klar, Nieselregen, Wind, Nebel) und färbt Licht und Klang. Es folgt aus
 dem Welt-Startwert und dem Tag (kein Platz im Spielstand); die ersten beiden
-Tage sind klar. Die Uhr zeigt es neben dem Tag, der Morgen sagt es an. Auf
-Werte wirkt es nicht (OFFENE-FRAGEN 99).
+Tage sind klar. Die Uhr zeigt es neben dem Tag, der Morgen sagt es an. Seit
+M18 wirkt es auch (OFFENE-FRAGEN 99, 130): Regen macht die Horde nass (Frost
+beißt stärker, Feuer brennt schwächer), Nebel kürzt die Reichweite aller Türme
+außer im Schein einer Laterne, Wind trägt Kürbisse und ihre Splitter weiter;
+der Morgenbericht sagt, was die Nacht bringt.
 
 ### 6.2 Karte und Wege
 
@@ -568,6 +571,27 @@ Werkbank in der Werkstatt.
   Mika es tagsüber für die Hälfte der Baukosten wieder aufstellt.
 
 ### 6.9 Türme
+
+**Zustände und Reaktionen (M18):** Türme hinterlassen Zustände an den
+Schlurfern, als kleine Zeichen über dem Kopf – nass (Sprenger), frostig
+(Frostnebel), matschig (Schlammschleuder), geblendet (Laternenblitz, Schein von
+Laterne, Laternenturm, Leuchtfeuer), brennend (Feuerkürbis, Kürbiswurf,
+Pechkessel). Zwei passende treffen sich zu einer **Reaktion** mit eigenem
+Effekt, Klang und einem Wort, das kurz aufpoppt:
+
+| Reaktion | Zutaten | Wirkung |
+|---|---|---|
+| **Eisblock** | nass + frostig | eingefroren (2 s), der nächste Treffer zerspringt doppelt (»Klirr!«) |
+| **Dampf** | nass + brennend | das Feuer erlischt, er und alle ringsum stehen 2,5 s verwirrt |
+| **Glut** | brennend + matschig | der Brand dauert doppelt so lange und brennt anderthalbmal so heiß |
+| **Schwachstelle** | geblendet + Bolzen | doppelter Bolzenschaden |
+| **Splitter** | frostig + Streukürbis | Eissplitter treffen alle ringsum mit halbem Kürbisschaden |
+| **Klebekürbis** | matschig + Kürbis | eine klebrige Fläche bremst 4 s lang um die Hälfte |
+
+Jede entdeckte Reaktion kommt mit einer Notiz von Dr. Yusuf ins
+**Notizbuch** (Pausenmenü): eine Zeile je Reaktion, darunter steht für die
+gewählte, was geschieht, und Yusufs Notiz; unentdeckte stehen dort als »???«
+mit einem Hinweis. Werte in `data/reactions.js`.
 
 Türme stehen **frei neben den Wegen** (nie darauf) und arbeiten autonom.
 Vier Rollen, jede
@@ -1169,7 +1193,12 @@ Burgverteidigungs-Karten (das Tor hält, bis es fällt).
 *Spielbar heißt:* Nacht für Nacht hält das Tor ein bisschen länger – und in
 der Nacht, in der es fällt, kämpft man im eigenen Garten.
 
-#### M18 – Zusammenspiel: Zustände und Reaktionen
+#### M18 – Zusammenspiel: Zustände und Reaktionen ✓
+
+*Umgesetzt (28.09.2026):* Zustände als Zeichen über dem Kopf, sechs Reaktionen
+mit Wort, Klang und Wirkung (6.9), das Wetter wirkt (6.1), das Notizbuch im
+Pausenmenü, Spielstand v13. Der Laternenblitz blendet jetzt auch – ein
+Bolzen trifft danach die Schwachstelle.
 
 *Vorbild:* Element TD (Elemente, die einander schlagen), Verlangsamen plus
 Flächenschaden in allen TD-Karten.

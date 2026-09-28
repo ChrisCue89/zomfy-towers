@@ -69,6 +69,8 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v12 -> v13: M18 (Zustände und Reaktionen). Das Notizbuch beginnt leer.
+  12: (data) => ({ ...data, version: 13, notes: {} }),
   // v11 -> v12: M17 (Tor und Wall). Neue Bauarten wall3, wall4 und tor – das Spiel stellt
   // den Weidenzaun mit Tor beim Laden auf und gibt zurück, was auf der Linie stand.
   11: (data) => ({ ...data, version: 12 }),

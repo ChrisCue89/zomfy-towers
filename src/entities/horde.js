@@ -25,6 +25,7 @@ import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { V } from '../world/layout.js';
 import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { BUILDINGS, RAID } from '../data/buildings.js';
+import { STATUS, REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { zombieParts, ZOMBIE_TYPES } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
@@ -45,6 +46,10 @@ const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurüc
 const WINDUP = 0.38; // so lange holt ein Schlurfer aus, bevor er beißt
 const BITE_LUNGE = 0.45; // M16: so weit reicht der Biss über die Reichweite hinaus (Ausfallschritt)
 const HORDE_MOVE = { bounds: true, horde: true }; // durch Balduins Wagen hindurch (steht nicht im Flussfeld)
+/** Zustände (M18) und ihre Uhren am Schlurfer. */
+const STATUS_KEY = { nass: 'wetT', frostig: 'frostT', matschig: 'mudT', geblendet: 'blindT' };
+/** Nach einer Reaktion kann derselbe Schlurfer sie so lange nicht noch einmal auslösen (s). */
+const REACT_AGAIN = 6;
 const TINT = {
   normal: new THREE.Color(1, 1, 1),
   flash: new THREE.Color(4, 4, 4),
@@ -218,6 +223,14 @@ export class Horde {
       anchored: false,
       rejoinT: 0,
       target: null,
+      // Zustände (M18): nass, frostig, matschig, geblendet (Sekunden); Eisblock; Glut
+      wetT: 0,
+      frostT: 0,
+      mudT: 0,
+      blindT: 0,
+      iceT: 0,
+      glut: false,
+      reacted: {}, // Reaktion → Zeitpunkt (Horde-Uhr), ab dem sie wieder geht
       inCamp: false, // schon einmal hinter Wall und Tor gewesen (M17d)
       raidScan: 0,
       raidT: 0,
@@ -237,8 +250,20 @@ export class Horde {
 
   /** Schaden austeilen. Gibt true zurück, wenn der Schlurfer daran stirbt. */
   /** @param {{by?: number|null}} [opts] by: Turm, dem Schaden und Abschuss gutgeschrieben werden (M16) */
-  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null, lucky = false, by = null } = {}) {
+  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null, lucky = false, by = null, kind = null } = {}) {
     if (z.state === 'dying') return false;
+    // Reaktionen am Treffer (M18): Eisblock zerspringt (nicht am Sprühnebel selbst),
+    // Bolzen in die Schwachstelle
+    if (z.iceT > 0 && kind !== 'spray') {
+      amount *= REACTIONS.eisblock.shatter;
+      z.iceT = 0;
+      z.freezeT = 0;
+      this.cb.onShatter?.(z);
+    }
+    if (kind === 'bolzen' && z.blindT > 0) {
+      amount *= REACTIONS.schwachstelle.damage;
+      this.reaction(z, 'schwachstelle', 1.2);
+    }
     const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
     z.hp -= dealt;
     z.flash = 0.1;
@@ -303,6 +328,55 @@ export class Horde {
     if (by !== null) z.burnBy = by; // wer zuletzt angezündet hat, bekommt den Brand gutgeschrieben (M16)
   }
 
+  /**
+   * Zustand setzen (M18): nass, frostig, matschig oder geblendet für `time`
+   * Sekunden (ein neuer Treffer frischt auf) – danach prüfen, ob sich zwei
+   * Zustände zu einer Reaktion treffen.
+   */
+  status(z, kind, time = STATUS[kind].time) {
+    if (z.state === 'dying') return;
+    const key = STATUS_KEY[kind];
+    z[key] = Math.max(z[key], time);
+    this.react(z);
+  }
+
+  /** Eine Reaktion melden (Wort über dem Kopf, Notizbuch) – je Schlurfer nicht zu oft. */
+  reaction(z, kind, again = REACT_AGAIN) {
+    if ((z.reacted[kind] || 0) > this.time) return false;
+    z.reacted[kind] = this.time + again;
+    this.cb.onReaction?.(kind, z);
+    return true;
+  }
+
+  /** Zwei passende Zustände treffen sich (M18): Eisblock, Dampf, Glut. */
+  react(z) {
+    if (z.state === 'dying') return;
+    if (z.wetT > 0 && z.frostT > 0 && !(z.iceT > 0) && (z.reacted.eisblock || 0) <= this.time) {
+      const r = REACTIONS.eisblock;
+      z.wetT = 0;
+      z.frostT = 0;
+      z.iceT = r.freeze;
+      this.freeze(z, r.freeze);
+      this.reaction(z, 'eisblock', 4);
+    }
+    if (z.wetT > 0 && z.burnT > 0 && (z.reacted.dampf || 0) <= this.time) {
+      const r = REACTIONS.dampf;
+      z.wetT = 0;
+      z.burnT = 0;
+      z.burn = 0;
+      for (const o of this.inRange(z.x, z.z, r.radius)) this.stun(o, r.confuse);
+      this.reaction(z, 'dampf');
+    }
+    if (z.burnT > 0 && z.mudT > 0 && !z.glut) {
+      const r = REACTIONS.glut;
+      z.mudT = 0;
+      z.glut = true;
+      z.burnT *= r.burnTime;
+      z.burn *= r.burnDps;
+      this.reaction(z, 'glut', 1);
+    }
+  }
+
   /** Alle Lebenden im Umkreis (neue Liste). */
   inRange(x, z, r) {
     const out = [];
@@ -351,10 +425,17 @@ export class Horde {
       z.freezeT = Math.max(0, z.freezeT - dt);
       z.stunT = Math.max(0, z.stunT - dt);
       z.lureT = Math.max(0, z.lureT - dt);
+      // Zustände (M18): Regen macht nass, Licht blendet; dann laufen die Uhren
+      z.wetT = Math.max(ctx.wet ? 0.3 : 0, z.wetT - dt);
+      z.frostT = Math.max(0, z.frostT - dt);
+      z.mudT = Math.max(0, z.mudT - dt);
+      z.blindT = Math.max(0, z.blindT - dt);
+      z.iceT = Math.max(0, z.iceT - dt);
       if (z.noChase > 0) z.noChase -= dt;
       if (z.burnT > 0) {
         z.burnT -= dt;
-        z.burnAcc = (z.burnAcc || 0) + z.burn * dt;
+        if (z.burnT <= 0) z.glut = false;
+        z.burnAcc = (z.burnAcc || 0) + z.burn * dt * (ctx.burnFactor ?? 1); // Regen dämpft den Brand (M18)
         if (z.burnAcc >= 1) {
           const n = Math.floor(z.burnAcc);
           z.burnAcc -= n;
@@ -377,6 +458,8 @@ export class Horde {
       const lured = z.lureT > 0;
       const frozen = z.freezeT > 0 || z.stunT > 0 || lured;
       const light = ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0; // Licht macht den Moder müde
+      if (light > 0) z.blindT = Math.max(z.blindT, STATUS.geblendet.light); // … und blendet (M18)
+      this.react(z);
       let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - light);
       if (frozen) speed = 0;
       z.cooldown = Math.max(0, z.cooldown - dt);

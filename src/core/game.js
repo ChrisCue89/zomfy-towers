@@ -19,6 +19,8 @@ import { TowerRanks } from './towerRanks.js';
 import { Rng } from './rng.js';
 import { damp } from './math.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
+import { hexToCss } from '../render/palette.js';
+import { REACTION_COLORS, REACTION_PITCH, WEATHER_EFFECTS } from '../data/reactions.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
@@ -60,7 +62,7 @@ import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
-import { towerInvested } from '../data/towers.js';
+import { towerInvested, towerStatsOf } from '../data/towers.js';
 import { GOALS } from '../data/goals.js';
 import { RECIPES } from '../data/recipes.js';
 import { upgradeValue } from '../data/upgrades.js';
@@ -211,6 +213,12 @@ export class Game {
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
       onRaidHit: (b, dmg, z) => this.onRaidHit(b, dmg, z),
       onEnterCamp: (z) => this.onEnterCamp(z),
+      onReaction: (kind, z) => this.onReaction(kind, z),
+      onShatter: (z) => {
+        this.effects.splat(z.x, 0.9, z.z, 'frost', 16, 1);
+        this.sound.play('klirr', { x: z.x, z: z.z });
+        this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.reaktionen.zerspringt, hexToCss(REACTION_COLORS.eisblock));
+      },
       onDamage: (z, amount, source, by) => {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
         if (by !== null && by !== undefined) this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
@@ -1058,7 +1066,8 @@ export class Game {
     // Was die Überlebenden und ein gemütliches Zuhause am Morgen bringen (Meilenstein 6)
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.placeInside(w);
@@ -1341,6 +1350,23 @@ export class Game {
     const night = this.state.night;
     night.inCamp = (night.inCamp || 0) + 1;
     if (night.inCamp === 1 && !night.breach) this.hud.toast(T.lager.imLager, 'warnung', 4);
+  }
+
+  /**
+   * Eine Reaktion (M18): Wort über dem Kopf, eigener Klang – und beim ersten Mal
+   * ein Eintrag im Notizbuch.
+   */
+  onReaction(kind, z) {
+    const [name] = T.reaktionen[kind];
+    this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, `${name}!`, hexToCss(REACTION_COLORS[kind]));
+    this.sound.play('reaktion', { x: z.x, z: z.z, pitch: REACTION_PITCH[kind] });
+    if (kind === 'dampf') this.effects.splat(z.x, 1.1, z.z, 'wasser', 14, 0.9);
+    if (kind === 'glut') this.effects.splat(z.x, 0.8, z.z, 'feuer', 10, 0.6);
+    const notes = this.state.notes;
+    if (notes[kind]) return;
+    notes[kind] = this.state.time.day;
+    this.hud.toast(T.notizbuch.neu(name), 'buch', 4);
+    this.sound.play('aufwertung');
   }
 
   /** Mika geht zu Boden: nachts verliert man die Nacht, tagsüber nur Zeit. */
@@ -1838,6 +1864,9 @@ export class Game {
     this.horde.update(dt, {
       player: { x: p.x, z: p.z, inside, alive: this.state.player.hp > 0 },
       lightSlow: (x, z) => Math.max(this.towers.lightSlow(x, z), this.survivors.beaconSlow(x, z), this.world.buildings.gearSlow(x, z)),
+      // Das Wetter wirkt (M18): Regen macht alle nass und dämpft jeden Brand
+      wet: this.world.weather.kind === 'regen',
+      burnFactor: this.world.weather.kind === 'regen' ? WEATHER_EFFECTS.regen.burn : 1,
     });
     this.towers.update(dt);
     this.combat.update(dt);
@@ -2534,6 +2563,23 @@ export class Game {
       // M16: Fähigkeiten abfragen, nutzen, lernen; Abklingzeit stellen
       skills: () => ({ slots: [...game.state.skills.slots], ranks: { ...game.state.skills.ranks }, cool: [...game.skills.cool], used: { ...game.skills.used }, choice: game.state.skillChoice ? JSON.parse(JSON.stringify(game.state.skillChoice)) : null, lure: game.skills.lure ? { ...game.skills.lure } : null }),
       useSkill: (k) => game.skills.use(k),
+      // M18: Zustände und Reaktionen, Wörter über den Köpfen, Notizbuch, Wetter an Türmen
+      statuses: () =>
+        game.horde.list
+          .filter((q) => q.state !== 'dying')
+          .map((q) => ({ id: q.id, nass: +q.wetT.toFixed(1), frostig: +q.frostT.toFixed(1), matschig: +q.mudT.toFixed(1), geblendet: +q.blindT.toFixed(1), brennend: +q.burnT.toFixed(1), eis: +q.iceT.toFixed(1), betaeubt: +q.stunT.toFixed(1), hp: Math.round(q.hp) })),
+      applyStatus(id, kind, time) {
+        const q = game.horde.list.find((o) => o.id === id);
+        if (q) game.horde.status(q, kind, time);
+        return Boolean(q);
+      },
+      notes: () => ({ ...game.state.notes }),
+      words: () => game.hud.words.map((w) => w.text),
+      towerReach: (id) => {
+        const b = game.world.buildings.get(id);
+        return b ? +(towerStatsOf(b).range * game.towers.weatherRange(b)).toFixed(2) : null;
+      },
+      stickies: () => game.towers.stickies.length,
       // M17: Wall und Tor abfragen, treffen, ausbauen
       camp: () => game.world.buildings.camp.map((b) => ({ id: b.id, type: b.type, i: b.i, j: b.j, level: b.level, hp: Math.round(b.hp), max: maxHpOf(b), broken: Boolean(b.broken), look: b.look, wicket: +(b.wicketOpen || 0).toFixed(2), gear: [...(b.gear || [])] })),
       // M17d/e: Lager und Zubehör – umgeworfene Bauten, Zubehör anbringen, Laternen, Nachtwerte
