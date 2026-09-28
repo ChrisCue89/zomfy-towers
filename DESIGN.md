@@ -758,9 +758,21 @@ der Klang startet mit der ersten Eingabe.
   das in drei Stufen dichter wird, je näher die Horde dem Haus und Mika
   kommt. Zwischen den ruhigen Stücken bleibt Stille für Wind, Vögel und
   Wellen. Balduins Ankunftsfanfare (M9.1) duckt die Musik.
+- **Titelmusik (N2):** »Herbstlied am Stillsee« (G-Dur, 72 Schläge pro Minute:
+  Spieluhr und Flöte im Wechsel über E-Piano, Gitarre und weichem Bass, im
+  Mittelteil Streicher) läuft auf dem Titelbild in Schleife und macht beim
+  Losspielen gleich Platz. Davor, auf dem Startbild, die **Spieluhr von Tales
+  of Cue:** G–H–D–G aufwärts, ein warmer Akkord, ein Glitzern.
 
 ### 6.20 Titelbild und Einstellungen
 
+- **Startbild (N2, Wunsch des Auftraggebers):** Beim Start zuerst »Tales of
+  Cue präsentiert« in großer Pixelschrift über einem offenen Buch, auf dem
+  eine Laterne warm leuchtet; Laub fällt. Weil der Browser Klang erst nach
+  einer Eingabe erlaubt, steht darunter »Taste drücken« – dann spielt die
+  Spieluhr, Funken steigen auf, ein Glanz läuft über den Schriftzug, und das
+  Titelbild blendet mit seiner Musik ein. Ein zweiter Druck springt gleich
+  weiter. Prüfung und `?test`/`?nointro`/`?notitle` überspringen es.
 - **Titelbild:** großer Schriftzug über der Bucht im Abendlicht.
   Weiterspielen, Neues Spiel (Name und Aussehen), Einstellungen, Steuerung.
 - **Einstellungen:** Lautstärke, Musik, Geräusche, Ansicht (nah/weit, M13),
@@ -993,6 +1005,14 @@ Texturen, die 3D-Modelle selber!« (OFFENE-FRAGEN 115).
 - **Knopf:** runder Rumpf mit Brust, Kopf mit Schnauze und Schlappohren,
   gebogener Schwanz mit heller Spitze, Pfoten, Zotteln als Büschel, der große
   Knopf am roten Halsband ist von vorn zu sehen.
+
+### N2 – Startbild und Menümusik ✓
+
+Wunsch des Auftraggebers: »Wenn man startet, soll auch eine Musik im Menü
+sein, und ein pixeliges ›Produced by Tales of Cue‹ oder so eingeblendet
+werden« (OFFENE-FRAGEN 121). Startbild mit Buch, Laterne und Laub, die
+Spieluhr als Klang-Logo nach dem ersten Tastendruck, danach das Titelbild mit
+dem neuen Stück »Herbstlied am Stillsee« (6.19, 6.20).
 
 ### Der Plan ab M16 – jetzt kommt der Spaß (28.09.2026)
 

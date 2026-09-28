@@ -162,6 +162,7 @@ export class Sound {
     this.nextDrip = 0; // Regentropfen (M12)
     this.nextCrow = 14; // Krähen am Tag (M12)
     this.music = null; // der Soundtrack (M10d), entsteht mit dem AudioContext
+    this.jingles = 0; // wie oft die Spieluhr des Startbilds lief (für die Prüfung, N2)
   }
 
   get ready() {
@@ -344,6 +345,14 @@ export class Sound {
       o.start(t);
       this.track(o, t + dur + 0.22, g);
     }
+  }
+
+  /** Startbild (N2): die Spieluhr von Tales of Cue. false, solange noch kein Klang läuft. */
+  jingle() {
+    if (!this.ready || !this.music) return false;
+    this.music.jingle();
+    this.jingles++;
+    return true;
   }
 
   /**

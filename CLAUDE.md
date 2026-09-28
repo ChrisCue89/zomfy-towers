@@ -180,7 +180,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
                       Umgebung; erst nach der ersten Eingabe), music
                       (Soundtrack: Stücke als Noten-Daten, Instrumente,
-                      Überblendung, Nachtstufen)
+                      Überblendung, Nachtstufen, Titelstück und die
+                      Spieluhr des Startbilds)
 src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
@@ -222,8 +223,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu,
                       buildbar (Bauleiste), crafting (Werkbank und
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
-                      (Morgenbericht), perkChoice (Perk-Wahl), title
-                      (Titelbild, Name und Aussehen)
+                      (Morgenbericht), perkChoice (Perk-Wahl), splash
+                      (Startbild, N2), title (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung, Turmteile,
                       `towerStatsOf`), zombies,
@@ -246,7 +247,7 @@ Grundprinzipien:
 
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
-- Modi der Spielschleife: `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
+- Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
@@ -415,7 +416,11 @@ Grundprinzipien:
    Schlurfer-Arten, den Überlebenden, Balduin und Knopf sind gewölbt (höchstens
    rund die Hälfte einer Vorderseite in einer Ebene), Mika beugt beim Gehen mit
    echter Taste die Knie und hält die Laterne (F) mit angewinkeltem Arm (Bild:
-   figuren).
+   figuren); ab N2 (im Spielstart): zuerst das Startbild »Tales of Cue
+   präsentiert« ohne jeden Klang, eine echte Taste startet die Spieluhr, dann
+   blendet das Titelbild mit der Titelmusik ein; nach »Los geht’s!« ist sie
+   aus; Titelstück und Spieluhr rechnen offline ohne Übersteuerung (Bild:
+   startbild).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -474,7 +479,9 @@ ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 (`setPartsChance`, `null` = Wert aus `zombies.js`); ab M10 zeigt
 `trader()` auch Boot-z, Leine (`rope`, Glieder) und Balduins Gesten;
 ab M10d berechnet `renderMusic(id, s, stufe)` ein Musikstück ohne
-Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende;
+Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende
+(ab N2 auch `renderMusic('titel' | 'jingle')`, `sound().jingles` zählt die
+Spieluhr, `zomfyView().startbild` zeigt Phase und Texte des Startbilds);
 ab M11 zeigt `interior()` Eingang, Ausgang, Grenzen, Räume, Maßstab und ob
 Mika drinnen ist, `wakeSpot()` liegt im Innenraum; ab M12 zeigt `weather()`
 Art, Regen, Wind, Tropfen und Nebel, `setWeather(art, sofort)` erzwingt ein

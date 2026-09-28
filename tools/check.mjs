@@ -123,6 +123,17 @@ async function shot(page, name, setup) {
   note(`  Screenshot: screenshots/${name}.png`);
 }
 
+/**
+ * Startbild (N2): auf »Tales of Cue präsentiert« warten, eine echte Taste drücken
+ * (erst dann darf Klang entstehen), dann ist das Titelbild da.
+ */
+async function passSplash(page) {
+  await page.waitForFunction(() => window.zomfy.mode === 'splash', null, { timeout: 180000 });
+  await settle(page, 20);
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
+}
+
 async function runBrowserChecks() {
   const { chromium } = loadPlaywright();
   mkdirSync(SHOTS, { recursive: true });
@@ -562,6 +573,24 @@ async function runTour(browser, url) {
     // --- 0. Erster Eindruck: neues Spiel mit Einblenden und Intro -----------------
     const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart');
     await intro.page.evaluate(() => window.zomfy.setDebug(false));
+    // Startbild (N2): »Tales of Cue präsentiert«, vor dem ersten Druck kein Klang; die
+    // echte Taste startet die Spieluhr, danach blendet das Titelbild mit seiner Musik ein
+    await intro.page.waitForFunction(() => window.zomfy.mode === 'splash', null, { timeout: 180000 });
+    await intro.page.waitForFunction(() => window.zomfy.game.splash.t > 1.6, null, { timeout: 180000 });
+    await settle(intro.page, 4);
+    const vorDruck = await intro.page.evaluate(() => ({ bild: window.zomfyView().startbild, klang: window.zomfy.sound() }));
+    await intro.page.screenshot({ path: join(SHOTS, 'startbild.png') });
+    note('  Screenshot: screenshots/startbild.png');
+    await intro.page.keyboard.press('Space');
+    await settle(intro.page, 6);
+    const nachDruck = await intro.page.evaluate(() => ({ bild: window.zomfyView().startbild, klang: window.zomfy.sound() }));
+    await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
+    await intro.page.waitForFunction(() => window.zomfy.sound().music === 'titel', null, { timeout: 180000 }).catch(() => {});
+    const titelMusik = await intro.page.evaluate(() => window.zomfy.sound());
+    const texte = vorDruck.bild?.texte || [];
+    if (texte.includes('Tales of Cue') && texte.includes('präsentiert') && texte.includes('Taste drücken') && vorDruck.klang.state === null && nachDruck.klang.jingles === 1 && nachDruck.bild?.spieluhr && titelMusik.music === 'titel') {
+      note('✓ Startbild (N2): »Tales of Cue präsentiert«, vor dem Tastendruck kein Klang – die echte Taste startet die Spieluhr, dann das Titelbild mit »Herbstlied am Stillsee«');
+    } else fail(`Startbild (N2): ${JSON.stringify({ vorDruck, nachDruck, titelMusik })}`);
     // Titelbild (Meilenstein 7): ohne Spielstand ist »Neues Spiel« vorgewählt
     await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
     await settle(intro.page, 60);
@@ -618,6 +647,9 @@ async function runTour(browser, url) {
       }
     }
     const mika = await intro.page.evaluate(() => window.zomfy.state().player);
+    const musikImSpiel = await intro.page.evaluate(() => window.zomfy.sound().music);
+    if (musikImSpiel !== 'titel') note(`✓ Musik (N2): im Spiel ist die Titelmusik aus (jetzt: ${musikImSpiel ? `»${musikImSpiel}«` : 'Ruhe'})`);
+    else fail('Musik (N2): nach »Los geht’s!« läuft noch die Titelmusik');
     const bei = (f, o) => f && Math.abs(f.x - o.x) < 2.5 && Math.abs(f.z - (o.z - 1)) < 2.5;
     const nach = (key) => fahrt.find((f) => f.look === key);
     const ende = fahrt[fahrt.length - 1];
@@ -784,7 +816,7 @@ async function runSaveChecks(browser, url) {
     // --- 2a. Titelbild ohne Spielstand: erst »Los geht’s!« legt einen an (m7-r1) ------
     const t = await openGame(browser, `${url}index.html?debug`, 'Titelbild ohne Stand', { init: () => localStorage.clear() });
     await t.page.evaluate(() => window.zomfy.setDebug(false));
-    await t.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
+    await passSplash(t.page);
     await settle(t.page, 60); // das Titelbild nimmt erst nach dem Einblenden Tasten an
     await t.page.keyboard.press('Enter'); // Neues Spiel → Figur
     await settle(t.page, 20);
@@ -1799,10 +1831,10 @@ async function runNightChecks(browser, url) {
   // Soundtrack (M10d): tagsüber gemütlich, bei der Welle treibend; jedes Stück ohne
   // Lautsprecher berechnet – keine Übersteuerung, keine kaputten Samples, nicht stumm
   const pegel = {};
-  for (const [id, threat] of [['tag', 0], ['abend', 0], ['nacht', 2]]) pegel[id] = await z(([id, threat]) => window.zomfy.renderMusic(id, 8, threat), [id, threat]);
+  for (const [id, threat] of [['tag', 0], ['abend', 0], ['nacht', 2], ['titel', 0], ['jingle', 0]]) pegel[id] = await z(([id, threat]) => window.zomfy.renderMusic(id, 8, threat), [id, threat]);
   const pegelOk = Object.values(pegel).every((p) => p.bad === 0 && p.peak < 0.95 && p.rms > 0.01);
   if (musikTag.music === 'tag' && musikNacht.music === 'nacht' && pegelOk) {
-    note(`✓ Musik: tagsüber »Morgen am See«, während der Welle »Die Horde kommt«; Spitzen ${Object.entries(pegel).map(([id, p]) => `${id} ${p.peak.toFixed(2)}`).join(', ')}`);
+    note(`✓ Musik: tagsüber »Morgen am See«, während der Welle »Die Horde kommt«, dazu Titelstück und Spieluhr (N2); Spitzen ${Object.entries(pegel).map(([id, p]) => `${id} ${p.peak.toFixed(2)}`).join(', ')}`);
   } else fail(`Musik: ${JSON.stringify({ tag: musikTag, nacht: musikNacht, pegel })}`);
   checkMessages(session);
   await session.context.close();

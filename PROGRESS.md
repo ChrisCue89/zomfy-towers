@@ -5,6 +5,34 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N2 – Startbild und Menümusik ✓
+
+**Auftrag:** »Wenn man startet, soll auch eine Musik im Menü sein, und ein
+pixeliges ›Produced by Tales of Cue‹ oder so eingeblendet werden.«
+(OFFENE-FRAGEN 121)
+
+- **Startbild** (`src/ui/splash.js`, neuer Modus `splash`): »Tales of Cue«
+  in großer Pixelschrift, darunter »präsentiert«, darüber ein offenes Buch
+  (Zeilen, ein kleiner Kürbis) mit einer Laterne, deren gerasterter Schein
+  flackert; Laub fällt. Bis zum ersten Druck steht »Taste drücken« da –
+  vorher entsteht kein Klang. Der Druck startet die Spieluhr, Funken steigen
+  auf, ein Glanz läuft über den Schriftzug, dann blendet das Titelbild ein;
+  ein zweiter Druck springt weiter. Die 3D-Szene ruht dahinter (nur die
+  ersten Bilder zeichnet sie, damit die Shader schon übersetzt sind).
+- **Musik:** neues Titelstück »Herbstlied am Stillsee« (G-Dur, 72 Schläge
+  pro Minute, 18 Takte: Vorspiel, Thema mit Spieluhr, Thema mit Flöte,
+  Mittelteil mit Streichern, Schluss), in Schleife mit kurzer Pause; beim
+  Losspielen blendet es in zwei Sekunden aus und macht dem Tag Platz. Die
+  Spieluhr des Startbilds: G–H–D–G, warmer Akkord mit Gitarre und
+  Streichern, ein Glitzern (rund drei Sekunden). Beide ohne Übersteuerung
+  (Spitzen 0,24 und 0,25 im Prüfbrowser).
+- **Prüfung:** im Spielstart das Startbild (Texte, kein Klang vor dem Druck,
+  Spieluhr danach, Titelmusik »titel«, nach »Los geht’s!« aus), Bild
+  startbild; »Titelbild ohne Stand« geht mit echter Taste am Startbild vorbei;
+  die Pegelprüfung rechnet auch Titelstück und Spieluhr.
+
+---
+
 ## N1 – Figuren aus Formen statt Kästen ✓
 
 **Auftrag:** »3D-Modelle der Zombies und Figuren aufwändiger gestalten. Etwas

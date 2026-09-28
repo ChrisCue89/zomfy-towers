@@ -558,6 +558,12 @@ export const T = {
     huette: 'Baue die Notunterkunft zur Hütte aus.',
     kiesel: 'Sammle Kiesel am Ufer und an den Wegen – das ist Stein.', // m12-r1: Stein fand keiner
   },
+  // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch
+  startbild: {
+    studio: 'Tales of Cue',
+    praesentiert: 'präsentiert',
+    taste: 'Taste drücken',
+  },
   titel: {
     untertitel: 'Ein gemütliches Zuhause am See',
     weiter: 'Weiterspielen',

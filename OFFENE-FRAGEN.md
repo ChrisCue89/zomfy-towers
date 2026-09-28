@@ -1190,6 +1190,20 @@ in dem das Tor fällt, macht den Kampf im eigenen Garten zum Höhepunkt der
 Nacht statt zum Dauerzustand. Offen für die Umsetzung: ob Türme auf dem
 Wehrgang stehen dürfen (Grundregel 2 sagt »neben den Wegen«).
 
+### 121. Startbild: »Produced by Tales of Cue« – und wann beginnt der Klang? (N2, Wunsch des Auftraggebers)
+**Wunsch:** »Wenn man startet, soll auch eine Musik im Menü sein, und ein
+pixeliges ›Produced by Tales of Cue‹ oder so eingeblendet werden.«
+**Entscheidung:** Auf Deutsch wie alle Spieltexte: »Tales of Cue präsentiert«
+– der Name bleibt, wie er ist. Browser erlauben Klang erst nach einer echten
+Eingabe (sonst Warnung, CLAUDE.md Regel 5); deshalb zeigt das Startbild
+»Taste drücken«, und dieser erste Druck wird zum Moment: Die Spieluhr spielt
+G–H–D–G, Funken steigen aus dem Buch, ein Glanz läuft über den Schriftzug,
+dann blendet das Titelbild mit seiner eigenen Musik ein. Ein zweiter Druck
+springt gleich weiter; Prüfung und die Test-Parameter überspringen das
+Startbild. Das Bild ist ganz im Code gezeichnet (Buch mit Zeilen und einem
+kleinen Kürbis, Laterne mit gerastertem Schein, fallendes Laub). »Produced
+by« lässt sich jederzeit in `texts.js` ändern (`T.startbild`).
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

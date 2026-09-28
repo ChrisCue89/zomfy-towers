@@ -137,6 +137,11 @@ export class Input {
     return this.pressedCodes.has(code);
   }
 
+  /** Irgendeine Taste oder ein Klick in diesem Bild (Startbild, N2). */
+  get anyPressed() {
+    return this.pressedCodes.size > 0 || this.mouse.clicked;
+  }
+
   /** Tastendruck einer Aktion verbrauchen (niemand sonst sieht ihn in diesem Bild). */
   consume(action) {
     for (const code of BINDINGS[action]) this.pressedCodes.delete(code);

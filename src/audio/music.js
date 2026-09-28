@@ -9,6 +9,11 @@
 //          Spieluhr. Läuft auch auf dem Titelbild.
 //   abend  »Laternenzeit« – d-Moll, 66 Schläge pro Minute: Streicherfläche,
 //          E-Piano, einzelne Gitarrentöne, eine etwas wehmütige Flöte.
+//   titel  »Herbstlied am Stillsee« (N2) – G-Dur, 72 Schläge pro Minute: Spieluhr
+//          und Flöte im Wechsel über E-Piano, Gitarre und weichem Bass, im
+//          Mittelteil Streicher. Läuft auf dem Titelbild, nach kurzer Pause
+//          wieder von vorn. Davor, auf dem Startbild, die Spieluhr von Tales of
+//          Cue (jingle): G–H–D–G aufwärts, ein warmer Akkord, ein Glitzern.
 //   nacht  »Die Horde kommt« – d-Moll, 126 Schläge pro Minute, solange eine Welle
 //          läuft. Stufe 0: Achtel-Bass, Kick, Hi-Hat. Stufe 1 (viele unterwegs,
 //          Barrikaden unter Schlägen): Snare, Staccato-Streicher, tiefe Fläche.
@@ -48,6 +53,16 @@ const CHORDS = {
   C: { bass: 'C2', ep: 'E3 G3 C4', arp: 'C3 G3 C4 E4 G4' },
   A7sus: { bass: 'A1', ep: 'G3 D4 E4', arp: 'A2 E3 G3 D4 E4' },
   A7: { bass: 'A1', ep: 'G3 C#4 E4', arp: 'A2 E3 G3 C#4 E4' },
+  // Titel (N2): G-Dur
+  Gmaj7: { bass: 'G2', ep: 'F#3 B3 D4', arp: 'G3 D4 F#4 B4 D5' },
+  Gadd9: { bass: 'G2', ep: 'B3 D4 A4', arp: 'G3 D4 A4 B4 D5' },
+  GB: { bass: 'B1', ep: 'G3 B3 D4', arp: 'B2 G3 D4 G4 B4' }, // G-Dur mit h im Bass
+  Em7: { bass: 'E2', ep: 'D3 G3 B3', arp: 'E3 B3 D4 G4 B4' },
+  Cmaj7: { bass: 'C2', ep: 'E3 G3 B3', arp: 'C3 G3 B3 E4 G4' },
+  Cadd9: { bass: 'C2', ep: 'E3 G3 D4', arp: 'C3 G3 D4 E4 G4' },
+  Dsus: { bass: 'D2', ep: 'D3 G3 A3', arp: 'D3 A3 D4 G4 A4' },
+  D: { bass: 'D2', ep: 'D3 F#3 A3', arp: 'D3 A3 D4 F#4 A4' },
+  D7: { bass: 'D2', ep: 'C3 F#3 A3', arp: 'D3 A3 C4 F#4 A4' },
   // Nacht
   Dm: { bass: 'D2', ep: 'D3 F3 A3', str: 'D3 F3 A3 D4 F4 A4' },
   Bb: { bass: 'Bb1', ep: 'D3 F3 Bb3', str: 'D3 F3 Bb3 D4 F4 Bb4' },
@@ -102,6 +117,23 @@ const SONGS = {
       { chords: ['Dm9', 'Gm7', 'Bbmaj7', 'A7sus|A7'], ep: 'bar', arp: 'sparse', bass: 'long', pad: true, lead: 0, mel: ['A4:6 C5:2 D5:8', 'Bb4:8 A4:4 G4:4', 'F4:8 D4:8', 'E4:16'] },
       { chords: ['Dm9', 'Bbmaj7', 'Fmaj7', 'C7sus|C'], ep: 'bar', arp: 'roll', bass: 'long', pad: true, lead: 1, mel: ['F5:6 E5:2 D5:4 A4:4', 'D5:8 F5:4 D5:4', 'C5:4 A4:4 G4:4 A4:4', 'G4:12 -:4'] },
       { chords: ['Dm9', 'Gm7', 'Bbmaj7', 'A7sus|A7'], ep: 'bar', arp: 'roll', bass: 'long', pad: true, lead: 0, mel: ['A4:8 D5:8', 'D5:6 C5:2 Bb4:8', 'A4:8 F4:8', 'E4:8 C#5:8'] },
+    ],
+  },
+  titel: {
+    bpm: 72,
+    verb: 0.34,
+    bellOctave: 2,
+    rest: [4, 8], // auf dem Titelbild nur eine kurze Pause
+    end: { chord: 'Gadd9', note: 'G5' },
+    sections: [
+      // Vorspiel: E-Piano und einzelne Gitarrentöne
+      { chords: ['Gmaj7', 'Cadd9'], ep: 'bar', arp: 'sparse', bass: 'long' },
+      // Thema – zuerst die Spieluhr, beim nächsten Durchgang die Flöte
+      { chords: ['Gmaj7', 'Em7', 'Cmaj7', 'Dsus|D'], ep: 'bar', arp: 'roll', bass: 'long', lead: 1, mel: ['B4:6 A4:2 G4:4 D4:4', 'E4:4 G4:4 B4:8', 'C5:6 B4:2 A4:4 G4:4', 'A4:12 -:4'] },
+      { chords: ['Gmaj7', 'Em7', 'Cmaj7', 'D7|Gmaj7'], ep: 'comp', arp: 'roll', bass: 'walk', brush: true, lead: 0, mel: ['B4:6 A4:2 G4:4 B4:4', 'D5:4 E5:4 D5:8', 'C5:4 B4:4 A4:4 C5:4', 'B4:8 G4:8'] },
+      // Mittelteil mit Streichern
+      { chords: ['Em7', 'Cmaj7', 'GB', 'D'], ep: 'bar', arp: 'wave', bass: 'walk', brush: true, pad: true, lead: 1, mel: ['E5:6 D5:2 B4:4 G4:4', 'C5:6 D5:2 E5:8', 'D5:6 B4:2 G4:4 B4:4', 'A4:8 F#4:4 A4:4'] },
+      { chords: ['Gmaj7', 'Em7', 'Cadd9', 'Dsus|D'], ep: 'comp', arp: 'roll', bass: 'walk', pad: true, lead: 0, mel: ['B4:6 A4:2 G4:4 D4:4', 'E4:4 G4:4 B4:6 C5:2', 'D5:4 E5:4 D5:4 B4:4', 'A4:8 D5:8'] },
     ],
   },
   nacht: {
@@ -162,7 +194,7 @@ export class Music {
     this.restUntil = 0;
     this.duckUntil = 0;
     this.level = 1;
-    this.passes = { tag: 0, abend: 0, nacht: 0 };
+    this.passes = { tag: 0, abend: 0, nacht: 0, titel: 0 };
     this.plucks = new Map();
   }
 
@@ -182,15 +214,18 @@ export class Music {
    */
   update(dt, s) {
     const t = this.ctx.currentTime;
-    const want = s.title ? 'tag' : s.quiet ? null : s.fight ? 'nacht' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
+    // Startbild: noch keine Musik (nur die Spieluhr); Titelbild: das Titelstück (N2)
+    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? 'nacht' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
     const level = t < this.duckUntil ? 0.15 : 1;
     if (level !== this.level) {
       this.level = level;
       this.out.gain.setTargetAtTime(level, t, level < 1 ? 0.3 : 1.5);
     }
     const cur = this.cur;
-    // Nacht kommt sofort, sonst darf ein Durchgang zu Ende spielen
-    if (cur && (want === 'nacht' ? cur.id !== 'nacht' : cur.id === 'nacht' || !want)) this.stop(t, cur.id === 'nacht' ? 2.5 : 1.5);
+    // Nacht kommt sofort, sonst darf ein Durchgang zu Ende spielen – nur das
+    // Titelstück wechselt gleich (ins Spiel hinein oder zurück zum Titelbild)
+    const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel');
+    if (cur && (titleSwitch || (want === 'nacht' ? cur.id !== 'nacht' : cur.id === 'nacht' || !want))) this.stop(t, cur.id === 'nacht' ? 2.5 : titleSwitch ? 2 : 1.5);
     if (!this.cur && want && (want === 'nacht' || t >= this.restUntil)) this.begin(want, t + 0.08);
     if (this.cur) this.schedule(t + LOOKAHEAD, s.threat || 0, t);
     for (let k = this.old.length - 1; k >= 0; k--) {
@@ -270,6 +305,33 @@ export class Music {
     this.old.push({ bus: cur.bus, until: t + beat * 5 + 3 });
     this.restUntil = t + beat * 3 + rand(...cur.song.rest);
     this.cur = null;
+  }
+
+  /**
+   * Startbild (N2): die Spieluhr von Tales of Cue – aufwärts G–H–D–G, dann ein
+   * warmer Akkord mit gezupfter Gitarre und Streichern, zum Schluss ein
+   * Glitzern. Rund drei Sekunden; danach darf das Titelstück beginnen.
+   */
+  jingle() {
+    const c = this.ctx;
+    const t = c.currentTime + 0.06;
+    const bus = c.createGain();
+    bus.gain.value = 1;
+    bus.connect(this.out);
+    const send = c.createGain();
+    send.gain.value = 0.42;
+    bus.connect(send).connect(this.verb);
+    const eighth = 0.15;
+    ['G5', 'B5', 'D6', 'G6'].forEach((n, k) => this.bell(hz(n), t + k * eighth, 0.05, bus));
+    const chord = CHORDS.Gmaj7;
+    const at = t + 4 * eighth;
+    chord.ep.forEach((f, k) => this.ep(f, at + k * 0.02, 2.6, 0.04, bus));
+    chord.arp.forEach((f, k) => this.pluck(f, at + 0.02 + k * 0.05, 0.045, bus));
+    this.bass(chord.bass, at, 2.4, 0.1, bus);
+    this.pad(chord.ep, at, 2.6, 0.02, 1100, bus);
+    ['D6', 'B5', 'G6'].forEach((n, k) => this.bell(hz(n), at + 0.55 + k * 0.16, 0.035, bus));
+    this.old.push({ bus, until: at + 5 });
+    this.restUntil = Math.max(this.restUntil, at + 2.4);
   }
 
   // --- Tag und Abend --------------------------------------------------------------------
@@ -593,8 +655,11 @@ export async function renderMusic(SoundClass, id, seconds, { threat = 0, sampleR
   const nd = s.noiseBuffer.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
   const music = new Music(s, ctx.destination);
-  music.begin(id, 0.05);
-  music.schedule(seconds, threat);
+  if (id === 'jingle') music.jingle(); // die Spieluhr des Startbilds (N2)
+  else {
+    music.begin(id, 0.05);
+    music.schedule(seconds, threat);
+  }
   const buf = await ctx.startRendering();
   const l = buf.getChannelData(0);
   const r = buf.getChannelData(1);

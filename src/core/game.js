@@ -20,6 +20,7 @@ import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
+import { SplashScreen } from '../ui/splash.js';
 import { MIKA } from '../entities/characters.js';
 import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
@@ -194,6 +195,7 @@ export class Game {
     this.perkChoice = new PerkChoice(this);
     this.mapView = new MapView(this);
     this.title = new TitleScreen(this);
+    this.splash = new SplashScreen(this); // Startbild »Tales of Cue präsentiert« (N2)
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
       onKill: (z, source, lucky) => this.onZombieKilled(z, source, lucky),
@@ -256,8 +258,14 @@ export class Game {
       // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
       this.titleIntro = this.pendingIntro;
       this.pendingIntro = false;
-      this.mode = 'title';
-      this.title.open(loaded.status === 'ok');
+      // Startbild (N2): erst »Tales of Cue präsentiert« mit der Spieluhr, dann das Titelbild
+      const hasSave = loaded.status === 'ok';
+      this.mode = 'splash';
+      this.splash.open(() => {
+        this.mode = 'title';
+        this.title.open(hasSave);
+        this.intro.t = 0; // das Titelbild blendet aus dem Dunkel ein
+      });
       // Ohne Spielstand wird erst gespeichert, wenn wirklich ein Spiel beginnt:
       // Sonst legte schon das Verlassen der Seite in der Figurwahl einen leeren
       // Stand an, und das Titelbild böte »Weiterspielen« als Mika an (m7-r1)
@@ -1396,6 +1404,10 @@ export class Game {
         this.menu.update(input, dt);
         this.player.idle(dt);
         break;
+      case 'splash':
+        this.splash.update(input, dt);
+        this.player.idle(dt);
+        break;
       case 'title':
         this.title.update(input, dt);
         this.player.idle(dt);
@@ -1436,7 +1448,7 @@ export class Game {
         break;
     }
 
-    const titled = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+    const titled = this.mode === 'splash' || this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
     const hours = titled ? TITLE_HOURS : hoursOf(this.state.time.minute);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player, day: this.state.time.day });
     this.world.crows.update(this.mode === 'play' ? dt : 0, { hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) });
@@ -1729,6 +1741,7 @@ export class Game {
     info.zombiesNear = near;
     info.quiet = this.mode === 'sleep';
     info.title = this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+    info.splash = this.mode === 'splash'; // Startbild: nur die Spieluhr, noch keine Musik
     info.rain = this.world.weather.rain; // Wetter (M12): Regen trommelt, Wind weht stärker
     info.wind = this.world.weather.mix.wind;
     // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
@@ -1815,12 +1828,16 @@ export class Game {
   }
 
   render() {
-    this.horde.render();
-    this.towers.render();
-    this.loot.render();
-    sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
     const dn = this.world.dayNight;
-    this.pixel.render(this.scene, this.rig, this.viewInside ? dn.lookInside : dn.look);
+    // Startbild (N2): Es deckt alles zu – die Szene ruht, bis es ausblendet
+    // (die ersten Bilder zeichnet sie noch, damit alle Shader schon übersetzt sind)
+    if (!(this.mode === 'splash' && this.splash.hidesScene)) {
+      this.horde.render();
+      this.towers.render();
+      this.loot.render();
+      sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
+      this.pixel.render(this.scene, this.rig, this.viewInside ? dn.lookInside : dn.look);
+    }
 
     const ui = this.ui;
     ui.begin(this.input.mouse);
@@ -1834,6 +1851,11 @@ export class Game {
       this.hud.prompt = null;
     }
     this.hud.debugLines = this.showDebug ? this.debugLines() : null;
+    // Startbild (N2): deckt alles zu
+    if (this.mode === 'splash') {
+      this.splash.draw(ui);
+      return;
+    }
     // Titelbild: nur Schriftzug und Knöpfe über der Lichtung (Menü darüber, wenn offen)
     if (this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle)) {
       if (this.mode === 'title') this.title.draw(ui);
@@ -2032,6 +2054,7 @@ export class Game {
           }
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
+      startbild: this.mode === 'splash' ? this.splash.view() : null,
       titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`) } : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
@@ -2095,7 +2118,7 @@ export class Game {
         return game.mode;
       },
       state: () => JSON.parse(JSON.stringify(game.state)),
-      sound: () => ({ ready: game.sound.ready, state: game.sound.ctx?.state || null, voices: game.sound.voices, music: game.sound.music?.mode ?? null }),
+      sound: () => ({ ready: game.sound.ready, state: game.sound.ctx?.state || null, voices: game.sound.voices, music: game.sound.music?.mode ?? null, jingles: game.sound.jingles }),
       /** Ein Musikstück ohne Lautsprecher berechnen: Spitzen- und Mittelpegel (M10d). */
       renderMusic: async (id, seconds = 8, threat = 0) => {
         const r = await renderMusic(Sound, id, seconds, { threat });
