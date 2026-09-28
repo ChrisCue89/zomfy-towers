@@ -18,8 +18,10 @@ import { REACTIONS } from '../data/reactions.js';
 import { BLUEPRINTS, BLUEPRINT_CHOICES } from '../data/blueprints.js';
 import { MIXES } from '../data/mixes.js';
 import { TOWERS } from '../data/towers.js';
+import { QUESTS } from '../data/quests.js';
+import { POST_ROLES } from '../data/posts.js';
 
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -76,6 +78,9 @@ export function createNewState(config, mapSeed = 1) {
     hordeQueue: [], // noch ausstehende Schlurfer der laufenden Welle
     loot: [], // Überreste am Boden (bleiben bis zu drei Tage, `until` in absoluten Spielminuten)
     report: null, // Morgenbericht, der noch gezeigt werden muss
+    // M23: Nebenaufträge – der laufende { id, got: aufgesammelte Fundstellen, n: Champions } und die erledigten
+    quests: { active: null, done: [] },
+    feast: 0, // M23: Tag des Fests am Feuer (nach einer gehaltenen Bossnacht)
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -141,6 +146,7 @@ export function sanitizeState(data, config) {
   out.stats.nightsLost = Math.floor(num(data.stats?.nightsLost, 0, 0, 1e6));
   out.stats.champions = Math.floor(num(data.stats?.champions, 0, 0, 1e6)); // M21
   out.stats.chests = Math.floor(num(data.stats?.chests, 0, 0, 1e6));
+  out.stats.quests = Math.floor(num(data.stats?.quests, 0, 0, 1e6)); // M23
   for (const k of Object.keys(out.upgrades)) out.upgrades[k] = Math.floor(num(data.upgrades?.[k], 0, 0, 3));
   for (const k of WEAPON_ORDER) if (Number.isFinite(data.weapons?.[k])) out.weapons[k] = Math.floor(num(data.weapons[k], 1, 1, 3));
   for (const k of PERK_IDS) if (Number.isFinite(data.perks?.[k])) out.perks[k] = Math.floor(num(data.perks[k], 0, 0, PERKS[k].max));
@@ -160,7 +166,7 @@ export function sanitizeState(data, config) {
   const bc = data.blueprintChoice;
   if (bc && Array.isArray(bc.options)) {
     const options = [...new Set(bc.options.filter((id) => BLUEPRINTS[id] && !out.blueprints.includes(id)))].slice(0, BLUEPRINT_CHOICES);
-    if (options.length) out.blueprintChoice = { options, from: ['nacht', 'wrack', 'balduin'].includes(bc.from) ? bc.from : 'nacht', extra: Math.floor(num(bc.extra, 0, 0, 9)) };
+    if (options.length) out.blueprintChoice = { options, from: ['nacht', 'wrack', 'balduin', 'auftrag'].includes(bc.from) ? bc.from : 'nacht', extra: Math.floor(num(bc.extra, 0, 0, 9)) };
   }
   // Notizbuch (M18): entdeckte Reaktionen mit dem Tag der Entdeckung
   out.notes = {};
@@ -168,6 +174,15 @@ export function sanitizeState(data, config) {
   // Werkstattbuch (M20): nur bekannte Rezepte
   out.recipes = {};
   if (data.recipes && typeof data.recipes === 'object') for (const [k, d] of Object.entries(data.recipes)) if (MIXES[k] && Number.isFinite(d)) out.recipes[k] = Math.floor(num(d, 1, 1, 1e6));
+  // Nebenaufträge (M23): nur bekannte, jeder einmal; aufgesammelte Fundstellen im Rahmen
+  const q = data.quests || {};
+  out.quests = { active: null, done: Array.isArray(q.done) ? [...new Set(q.done.filter((id) => QUESTS[id]))] : [] };
+  if (q.active && QUESTS[q.active.id] && !out.quests.done.includes(q.active.id)) {
+    const count = QUESTS[q.active.id].count || 1;
+    const got = Array.isArray(q.active.got) ? [...new Set(q.active.got.filter((k) => Number.isInteger(k) && k >= 0 && k < count))] : [];
+    out.quests.active = { id: q.active.id, got, n: Math.floor(num(q.active.n, 0, 0, 99)) };
+  }
+  out.feast = Math.floor(num(data.feast, 0, 0, 1e6));
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
@@ -199,6 +214,13 @@ export function sanitizeState(data, config) {
     inCamp: Math.floor(num(n.inCamp, 0, 0, 1e4)),
     raided: Array.isArray(n.raided) ? n.raided.filter((t) => typeof t === 'string' && BUILDINGS[t]).slice(0, 60) : [],
   };
+  // M23: Was die Leute auf den Posten in dieser Nacht getan haben (Morgenbericht)
+  if (n.posts && typeof n.posts === 'object') {
+    const p = {};
+    for (const k of ['bert', 'hilde', 'juna', 'yusuf', 'knopf']) if (Number.isFinite(n.posts[k])) p[k] = num(n.posts[k], 0, 0, 1e7);
+    if (Array.isArray(n.posts.rueckzug)) p.rueckzug = [...new Set(n.posts.rueckzug.filter((id) => POST_ROLES[id]))];
+    out.night.posts = p;
+  }
   if (n.breach && Number.isFinite(n.breach.at)) out.night.breach = { at: Math.floor(num(n.breach.at, 0, 0, 24 * 60)), gate: Boolean(n.breach.gate) };
   if (n.towers && typeof n.towers === 'object') {
     for (const [id, k] of Object.entries(n.towers)) if (/^\d+$/.test(id) && Number.isFinite(k)) out.night.towers[id] = Math.floor(num(k, 0, 0, 1e6));
@@ -229,6 +251,8 @@ export function sanitizeState(data, config) {
         if (Number.isFinite(b.xp) && b.xp > 0) entry.xp = Math.round(num(b.xp, 0, 0, 1e7));
         if (Number.isFinite(b.kills) && b.kills > 0) entry.kills = Math.floor(num(b.kills, 0, 0, 1e7));
         if (Number.isInteger(b.name) && b.name >= 0) entry.name = Math.floor(num(b.name, 0, 0, 999));
+        // Hochsitz (M23): wer dort nachts Posten bezieht
+        if (typeof b.post === 'string' && POST_ROLES[b.post]) entry.post = b.post;
         // Zubehör an Barrikade oder Tor (M17e)
         if (Array.isArray(b.gear)) entry.gear = [...new Set(b.gear.filter((id) => typeof id === 'string' && GEAR[id]))].slice(0, 3);
         // Mischturm (M20): aus welchen Türmen er entstand

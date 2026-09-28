@@ -20,6 +20,7 @@ import { BUILDINGS } from '../data/buildings.js';
 const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
 const BARK_AHEAD = 12; // Spielminuten vor einer Welle bellt Knopf
+const POST_FACING = -Math.PI / 4; // auf dem Hochsitz: Blick nach Südwesten (zu Weg und Wald, halb zur Kamera, M23)
 
 /** »Schlurfer, Flitzer und ein Brummer« – was in einer Nacht kommt (für Junas Funkspruch). */
 export function nightMix(plan) {
@@ -90,9 +91,11 @@ export class Survivors {
 
   // --- Stellen und Sichtbarkeit -----------------------------------------------------
 
-  /** Wo steht jemand gerade (Ankunftsort oder fester Platz, frei von Bauten)? */
+  /** Wo steht jemand gerade (Ankunftsort, fester Platz, am Festmorgen am Feuer – frei von Bauten)? */
   standSpot(id) {
     const def = SURVIVORS[id];
+    const feast = this.resident(id) ? this.game.posts?.feastSpot(id) : null; // M23: Fest am Feuer
+    if (feast) return { ...this.freeSpot(feast.x, feast.z, 0.28), facing: feast.facing };
     const want = this.stage(id) === 1 ? def.arrive : def.spot;
     return this.freeSpot(want.x, want.z, def.dog ? 0.2 : 0.28);
   }
@@ -130,14 +133,32 @@ export class Survivors {
       return;
     }
     const n = this.npcs.get(id, def.dog);
+    // M23: Auf dem Hochsitz (abends bis morgens) – oben auf der Plattform, Blick zum Weg
+    const post = !def.dog && this.game.posts?.onDuty(id) ? this.game.posts.postOf(id) : null;
+    if (post) {
+      const s = this.game.posts.spotOf(post);
+      n.model.root.visible = true;
+      n.sitTarget = 0;
+      n.y = this.game.world.heightAt(s.x, s.z) + s.y;
+      n.restFacing = POST_FACING;
+      this.npcs.place(n, s.x, s.z, POST_FACING);
+      return;
+    }
+    if (!def.dog) n.y = null;
     // Menschen gehen nachts schlafen (Gäste am Feuer, Eingezogene ins Zelt)
     const visible = def.dog || out;
     n.model.root.visible = visible;
     n.sitTarget = def.dog && !out ? 1 : 0;
     if (!visible) return;
     const p = this.standSpot(id);
-    if (jump) this.npcs.place(n, p.x, p.z, 0);
+    if (!def.dog) n.restFacing = p.facing ?? null; // am Festmorgen zum Feuer schauen
+    if (jump) this.npcs.place(n, p.x, p.z, p.facing ?? 0);
     else this.npcs.walkTo(n, p.x, p.z);
+  }
+
+  /** Steht jemand gerade auf dem Posten (dann kein Gespräch, M23)? */
+  onPost(id) {
+    return Boolean(this.game.posts?.onDuty(id));
   }
 
   refreshInteractions() {
@@ -146,7 +167,7 @@ export class Survivors {
       if (this.stage(id) === 0) continue;
       const n = this.npcs.list.get(id);
       if (!n) continue;
-      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: SURVIVORS[id].prompt, npc: id, enabled: n.model.root.visible });
+      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: SURVIVORS[id].prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) });
     }
     this.interactions = list;
     this.game.world.npcInteractions = list;
@@ -170,7 +191,7 @@ export class Survivors {
       if (!n) continue;
       it.x = n.x;
       it.z = n.z;
-      it.enabled = n.model.root.visible;
+      it.enabled = n.model.root.visible && !this.onPost(it.npc);
     }
     // Neu angekommen: winkt, sobald Mika in der Nähe ist
     const p = g.player.position;

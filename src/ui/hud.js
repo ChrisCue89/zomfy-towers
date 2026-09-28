@@ -358,21 +358,31 @@ export class Hud {
   drawGoal(ui) {
     const box = this.goalBox;
     box.on = false;
+    box.h = 17;
     const goal = this.game.goal;
-    if (!goal) return;
+    const quest = this.game.quests?.goal(); // M23: der laufende Auftrag als zweite Zeile
+    if (!goal && !quest) return;
+    const rows = [];
+    if (goal) rows.push({ icon: 'ziel', text: goal.progress ? `${goal.text} ${goal.progress}` : goal.text, main: true });
+    if (quest) rows.push({ icon: quest.icon, text: quest.progress ? `${quest.text} ${quest.progress}` : quest.text, main: false });
     const x = 4;
     const y = 41;
-    const text = goal.progress ? `${goal.text} ${goal.progress}` : goal.text;
-    const w = measure(text) + 24;
+    const w = Math.max(...rows.map((r) => measure(r.text))) + 24;
+    const h = 4 + rows.length * 13;
     // Das Banner weicht ihr aus (m12-r1)
     box.on = true;
     box.x = x;
     box.y = y;
     box.w = w;
+    box.h = h;
     const flash = this.goalFlash > 0 && Math.floor(this.goalFlash * 8) % 2 === 0;
-    ui.panel(x, y, w, 17, { frame: flash ? COLORS.gold : COLORS.frame });
-    drawIcon(ui.ctx, 'ziel', x + 5, y + 3);
-    ui.text(text, x + 17, y + 2, flash ? COLORS.gold : COLORS.textWarm);
+    ui.panel(x, y, w, h, { frame: flash ? COLORS.gold : COLORS.frame });
+    rows.forEach((r, k) => {
+      const ry = y + k * 13;
+      const size = iconSize(r.icon);
+      drawIcon(ui.ctx, r.icon, x + 5 + Math.floor((10 - size.w) / 2), ry + 3 + Math.max(0, Math.floor((11 - size.h) / 2)));
+      ui.text(r.text, x + 17, ry + 2, r.main ? (flash ? COLORS.gold : COLORS.textWarm) : COLORS.text);
+    });
   }
 
   visibleResources() {
@@ -392,7 +402,7 @@ export class Hud {
     const total = widths.reduce((a, b) => a + b, 0) + (entries.length - 1) * 7 + 12;
     const x0 = ui.width - total - 4;
     // Schmales Fenster: Vorrat unter Uhr und Ziel statt daneben
-    const y = x0 < 130 ? (this.game.goal ? 62 : 42) : 4;
+    const y = x0 < 130 ? (this.goalBox.on ? this.goalBox.y + this.goalBox.h + 4 : 42) : 4;
     ui.panel(x0, y, total, 20);
     let x = x0 + 6;
     const hovered = [];
@@ -1090,6 +1100,17 @@ export class Hud {
       if (k === 0) drawIcon(ui.ctx, 'maus', x + 1, t.y + 1);
       else drawTiny(ui.ctx, 'X', x + 2, t.y + 2, COLORS.textDim);
     });
+    // M23: Juna auf dem Hochsitz – das Leuchtfeuer liegt auf J
+    const juna = this.game.posts?.junaView();
+    if (juna) {
+      const text = juna.wartet > 0 ? T.posten.hudWartet(Math.ceil(juna.wartet)) : T.posten.hudBereit;
+      const w = measure(text) + 22;
+      const jx = L.panel.x + L.panel.w - w;
+      const jy = L.panel.y - 17;
+      ui.panel(jx, jy, w, 15);
+      drawIcon(ui.ctx, 'juna', jx + 4, jy + 2);
+      ui.text(text, jx + 17, jy + 1, juna.wartet > 0 ? COLORS.textDim : COLORS.gold);
+    }
     // Name und Taste über den Kacheln, solange die Maus darauf zeigt
     if (hoverK >= 0) {
       const id = sk.slot(hoverK);

@@ -5,6 +5,31 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 23 – Gemeinsam durch die Nacht: Posten, Fest, Nebenaufträge ✓
+
+**Ziel (DESIGN 8):** Man stellt Bert ans Tor und Hilde an den Engpass – und
+morgens erzählen sie davon.
+
+- **Hochsitz und Posten:** neuer Bau im Reiter Einrichten (neben den Weg,
+  höchstens vier); die Auswahl stellt eine eingezogene Person auf den Posten.
+  Abends steht sie oben: Bert flickt Barrikaden, Wall und Tor, Hilde wirft
+  Einmachgläser, Juna zündet auf J das Leuchtfeuer, Dr. Yusuf verarztet Mika
+  und die Türme. Knopf jagt Schwärmer aus dem Hof. Wer zu viel abbekommt,
+  zieht sich ins Haus zurück. Der Morgenbericht erzählt davon.
+- **Fest am Feuer:** nach jeder gehaltenen Bossnacht – alle stehen morgens ums
+  Lagerfeuer, nachts treffen die Türme 10 % härter.
+- **Nebenaufträge:** Hildes Garn am Wrack, Junas Antennenteile und Berts
+  Werkzeugkasten an den Wegen, Proben von Champions für Dr. Yusuf, Balduins
+  Bitte im Handelsfenster; Belohnungen sind Baupläne und Turmteile bis
+  »einzigartig«. Zweite Zeile im Zielkasten, Fundstücke funkeln.
+- **Technik:** Speichern v17 (Posten am Bau, laufender Auftrag, Fest) mit
+  Migration v16 → v17; Morgenbericht bricht lange Zeilen um (Junas Funkspruch
+  war seit M22 zu breit); neue Symbole (Hochsitz, Gesichter, Fundstücke).
+- **Prüfung:** neuer Abschnitt `gemeinsam` (nur der Kern), Versionsprüfungen
+  auf v17.
+
+---
+
 ## Meilenstein 22 – Die Horde stellt Fragen: Arten, Merkmale, Bosse ✓
 
 **Ziel (DESIGN 8):** Der Nachtplan kündigt eine Nebelwelle an, und man stellt

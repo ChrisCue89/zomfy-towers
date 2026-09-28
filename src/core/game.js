@@ -35,6 +35,8 @@ import { Survivors } from './survivors.js';
 import { Trader } from './trader.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
 import { Furnishing } from './furnishing.js';
+import { Posts } from './posts.js';
+import { Quests } from './quests.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
 import { LAYOUT } from '../world/layout.js';
@@ -325,6 +327,8 @@ export class Game {
     this.survivors = new Survivors(this);
     this.trader = new Trader(this);
     this.furnishing = new Furnishing(this);
+    this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
+    this.quests = new Quests(this); // M23: Nebenaufträge
     this.portraits = renderPortraits();
 
     this.state = loaded.state || createNewState(CONFIG, this.world.mapSeed);
@@ -457,8 +461,10 @@ export class Game {
     this.world.crows.settle(hoursOf(st.time.minute), this.player.position); // Krähen sitzen schon (M12)
     this.furnishing.apply();
     this.survivors.apply();
+    this.posts.apply();
     this.trader.apply();
     this.world.resources.apply(st.world, st.time.day);
+    this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     const axe = this.world.props.axe;
     axe.object.visible = !st.tools.axt;
     // Solange die Axt dort steckt, geht der Hackklotz anderen Einblendungen vor; danach
@@ -809,6 +815,7 @@ export class Game {
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
     else if (it.npc) this.survivors.talk(it.npc);
+    else if (it.questItem !== undefined) this.quests.pick(it.questItem); // M23: Fundstück eines Auftrags
     else if (this.gathering.interact(it)) return;
     else if (it.thought) this.hud.say(T.geschichte[it.thought], 5); // M15: Gedanke statt Dialog
     else if (it.dialog) this.startDialog(it.dialog);
@@ -1010,6 +1017,12 @@ export class Game {
       this.quietSave();
       return true;
     }
+    if (recipe.gives.quest) {
+      // Balduins Bitte (M23): abgegeben – er rückt das Versprochene heraus
+      this.quests.complete();
+      this.quietSave();
+      return true;
+    }
     if (recipe.trade) {
       // Balduins Handel (Meilenstein 8, seit M9 am Boot)
       this.trader.sold(recipe);
@@ -1173,7 +1186,10 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
+    const bitte = this.quests.offer();
+    if (bitte) extra.push({ text: bitte });
     // M19: was die Mühlen gemahlen haben, und ob ein Bauplan wartet
     if (this.milled) extra.push({ text: T.muehle.gemahlen(this.milled) });
     if (st.blueprintChoice) extra.push({ text: T.bauplaene.bericht });
@@ -1443,6 +1459,7 @@ export class Game {
     this.effects.splat(z.x, 1.2, z.z, 'licht', 18, 1.2);
     this.sound.play('jubel', { x: z.x, z: z.z });
     this.hud.toast(T.champions.faellt(T.champions.namen[z.champion.name]), 'kiste', 4);
+    this.quests.onChampion(); // M23: Proben für Dr. Yusuf
     if (!z.split) return;
     this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.champions.zerfaellt, hexToCss(P.g6));
     for (let k = 0; k < z.split; k++) {
@@ -2167,7 +2184,10 @@ export class Game {
     this.updateMood();
     this.updateHeartbeat(this.mode === 'play' ? dt : 0);
     this.trader.update(this.mode === 'play' ? dt : 0);
+    this.posts.update(this.mode === 'play' ? dt : 0); // M23: vor den Überlebenden – wer steht auf dem Posten?
+    this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
+    this.quests.update(dt);
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
@@ -2228,6 +2248,7 @@ export class Game {
     // Die Nacht in der Hand (M16): nächste Welle jetzt rufen, Zeitraffer
     if (input.pressed('callWave')) this.callWave();
     if (input.pressed('fast')) this.toggleFast();
+    if (input.pressed('beacon')) this.posts.junaFlash(); // M23: Junas Leuchtfeuer vom Hochsitz
     // Fähigkeiten (M16): Rechtsklick (wenn er nicht gerade das Bauen abbricht) und X
     if (input.mouse.rightClicked && !cancelling && !this.passage && !this.ride) this.skills.use(0);
     if (input.pressed('skill2') && !this.passage && !this.ride) this.skills.use(1);
@@ -3008,6 +3029,34 @@ export class Game {
       fogged: () => game.horde.list.filter((q) => q.fog && q.state !== 'dying').map((q) => ({ id: q.id, hidden: game.horde.isHidden(q), seen: q.seenT, x: q.x, z: q.z })),
       litAt: (x, z) => game.litAt(x, z),
       planView: () => game.nights.planView(),
+      // M23: Posten, Fest und Nebenaufträge
+      posts: () => game.posts.view(),
+      assignPost(id, who) {
+        const b = game.world.buildings.get(id);
+        if (!b || !BUILDINGS[b.type].post) return false;
+        if (who) game.posts.assign(b, who);
+        else game.posts.free(b);
+        return true;
+      },
+      postNpc(who) {
+        const n = game.survivors.npcs.list.get(who);
+        return n ? { x: n.x, y: n.model.root.position.y, z: n.z, visible: n.model.root.visible, prompt: game.survivors.interactions.find((it) => it.npc === who)?.enabled ?? null } : null;
+      },
+      junaFlash: () => game.posts.junaFlash(),
+      setFeast(day) {
+        game.state.feast = day;
+        return game.posts.view();
+      },
+      quests: () => game.quests.view(),
+      offerQuest: () => game.quests.offer(),
+      questGoal: () => game.quests.goal(),
+      tradeRows: () => {
+        const was = game.crafting.source;
+        game.crafting.source = 'haendler';
+        const rows = game.crafting.recipes().map((r) => r.id);
+        game.crafting.source = was;
+        return rows;
+      },
       mountPart(id, part) {
         const b = game.world.buildings.get(id);
         if (!b) return false;

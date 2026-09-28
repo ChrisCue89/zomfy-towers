@@ -175,6 +175,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Fähigkeiten: zwei Plätze, Abklingzeit, Wahl auf
                       Stufe 3/6/9, M16), towerRanks (Türme mit Geschichte:
                       Erfahrung, Rang, Wimpel, Name, Turm der Nacht, M16),
+                      posts (Posten auf den Hochsitzen, Knopf im Hof,
+                      Rückzug, Fest am Feuer, M23), quests (Nebenaufträge:
+                      Bitte, Fundstücke, Belohnung, M23),
                       survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
                       Funkturm), furnishing (Möbel, Gemütlichkeit), trader
@@ -220,6 +223,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Wohnraum des Innenraums),
+                      questModels (Fundstücke der Nebenaufträge, M23),
                       voxelKit (Baukasten für feine Modelle: Farbstufen,
                       Bretter, Rundholz, Steine, Quader im 1/16-Maß,
                       Kantenlicht; FINE, FINE32)
@@ -253,6 +257,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       champions (Champions: Anzahl je Nacht, Merkmale,
                       Fundkiste, M21), bosses (Bosse: Reihenfolge,
                       angekündigte Angriffe, Zerfallen, M22),
+                      posts (Rollen auf dem Posten, Knopf, Nerven, Fest,
+                      M23), quests (Nebenaufträge, Belohnungen, M23),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -283,7 +289,8 @@ Grundprinzipien:
 - **Eingaben im Spielmodus, in dieser Reihenfolge:** Bauleiste (Kacheln,
   Q R T G C V, Tab; Abreißen liegt immer auf V) → Schnellleiste und
   Fähigkeiten-Kacheln → Abbrechen (Esc/Rechtsklick, vor dem Menü) → Karte (M),
-  Ansicht (Z), Welle rufen (N), Zeitraffer (B), Fähigkeiten (Rechtsklick –
+  Ansicht (Z), Welle rufen (N), Zeitraffer (B), Junas Leuchtfeuer (J, M23),
+  Fähigkeiten (Rechtsklick –
   nur wenn er nicht gerade das Bauen abbricht – und X, M16) → Bewegung
   (Leertaste: Ausweichrolle) →
   Builder (Vorschau, Setzen, Auswahl per Klick – ein Schlurfer unter dem
@@ -409,6 +416,18 @@ Grundprinzipien:
   (`lightPools.steal`) kehrt nach Ablauf bzw. am Morgen zurück (`restore`).
   Teile können an einem anderen Teil hängen (`parent: 'armR'` – die Laterne
   der Hexe).
+- **Gemeinsam durch die Nacht (M23):** Der Hochsitz (`post: true` in
+  `buildings.js`) trägt im Bau, wer dort Posten bezieht (`b.post`).
+  `core/posts.js` entscheidet, wer gerade oben steht (`onDuty`: Dienst von der
+  Dämmerung bis zum Morgen und solange die Nacht läuft), was er tut (Werte in
+  `data/posts.js`) und wann er sich zurückzieht; `survivors.placeOne` stellt
+  die Figur dann auf die Plattform (`n.y`), ohne Gesprächs-Einblendung. Das Fest
+  (`state.feast` = Tag) holt die Leute ans Feuer (`feastSpot`), die Türme
+  bekommen nachts `towers.boost`. Nebenaufträge (`core/quests.js`,
+  `state.quests`): immer nur einer, morgens angeboten (`quests.offer`);
+  Fundstücke sind eigene Einblendungen (`world.questInteractions`, Vorrang vor
+  Wrack und Quellen), Balduins Bitte ist eine Zeile im Handelsfenster
+  (`gives.quest`). Der Morgenbericht bricht lange Zeilen selbst um.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -585,7 +604,15 @@ Grundprinzipien:
    Lichtfresser löscht eine Fackel; aus der Kapsel des Brüters schlüpfen
    Schwärmer; der Moosriese zerfällt in drei; eine Nebelwelle bleibt nach dem
    Neuladen eine; die Boss-Musik rechnet offline ohne Übersteuerung (Bilder:
-   nebelwelle, boss).
+   nebelwelle, boss); ab M23 (Abschnitt `gemeinsam`, nur der Kern): ein
+   Hochsitz neben dem Weg, nie darauf, die Taste der Auswahl stellt Juna auf
+   den Posten; abends stehen Bert, Hilde und Juna oben (ohne »Ansprechen«); J
+   betäubt ringsum, ein zweites J wartet; Hilde wirft Gläser, Bert flickt eine
+   Barrikade, Knopf jagt einen Schwärmer; Rückzug ins Haus; nach der Bossnacht
+   Fest am Feuer, Türme ×1,1, der Bericht erzählt von den Posten; Hildes Garn
+   mit echter Taste am Wrack (Bauplan zur Wahl), Balduins Bitte im
+   Handelsfenster, Junas Antennenteile neben den Wegen; Speichern v17 und
+   Migration v16 → v17 (Bilder: posten, fest, auftrag).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -679,7 +706,13 @@ der zuletzt geöffneten Fundkiste, `mountPart(id, teil)` baut ein Teil ein,
 ab M22 nimmt `spawnZombie` als fünften Wert ein Wellenmerkmal, `waveTraits(n)`
 zeigt die Merkmale einer Nacht, `fogged()` die Schlurfer im Nebel (verborgen
 oder nicht), `litAt(x, z)`, ob eine Stelle im Licht liegt, `planView()` den
-Nachtplan.
+Nachtplan; ab M23 zeigt `posts()` Posten, Dienst, Nerven, Leuchtfeuer und Fest,
+`assignPost(id, wer)` stellt jemanden auf einen Hochsitz (`null` räumt),
+`postNpc(wer)` zeigt Stelle, Höhe und Einblendung einer Figur, `junaFlash()`
+zündet das Leuchtfeuer, `setFeast(tag)` setzt das Fest; `quests()` zeigt den
+laufenden Auftrag und die Fundstücke, `offerQuest()` bietet den nächsten an,
+`questGoal()` die Zeile im Zielkasten, `tradeRows()` die Zeilen des
+Handelsfensters.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

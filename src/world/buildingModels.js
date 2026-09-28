@@ -428,6 +428,43 @@ export function buildWoodpile(seed) {
   return m;
 }
 
+/**
+ * Hochsitz (M23): vier Stelzen mit Kreuzstreben, eine Plattform in 1,4 m Höhe
+ * mit Geländer, vorn eine Leiter, darüber ein kleines Pultdach mit Schindeln.
+ * Oben steht nachts ein Überlebender auf Posten.
+ */
+export function buildHochsitz(seed) {
+  const m = new VoxelModel();
+  const leg = (x, z) => m.box(x, 0, z, x + 1, 44, z + 1, (xx, y) => (y < 2 ? P.e2 : (y + xx) % 9 === 0 ? P.e3 : P.e4));
+  for (const x of [-14, 12]) for (const z of [-14, 12]) leg(x, z);
+  // Kreuzstreben links, rechts und hinten
+  for (const x of [-14, 13]) {
+    m.line(x, 4, -13, x, 40, 12, P.e3);
+    m.line(x, 4, 12, x, 40, -13, P.e3);
+  }
+  m.line(-13, 4, -14, 12, 40, -14, P.e3);
+  // Plattform aus Brettern
+  m.box(-15, 44, -15, 14, 45, 14, (x, y, z) => (y === 44 ? P.e3 : (z + 15) % 6 === 0 ? P.e5 : hash3(x >> 2, y, z >> 1, seed) > 0.85 ? P.e7 : P.e6));
+  // Geländer: Pfosten, Handlauf, ein Brett in der Mitte (vorn eine Lücke für die Leiter)
+  for (const x of [-15, 14]) for (const z of [-15, 14]) m.box(x, 46, z, x, 58, z, P.e4);
+  m.box(-15, 58, -15, 14, 58, -15, P.e5).box(-15, 58, -15, -15, 58, 14, P.e5).box(14, 58, -15, 14, 58, 14, P.e5);
+  m.box(-15, 51, -15, 14, 52, -15, P.e4).box(-15, 51, -15, -15, 52, 14, P.e4).box(14, 51, -15, 14, 52, 14, P.e4);
+  m.box(-15, 58, 14, -6, 58, 14, P.e5).box(5, 58, 14, 14, 58, 14, P.e5);
+  // Leiter vorn
+  for (const x of [-5, 4]) m.line(x, 0, 19, x, 45, 15, P.e5);
+  for (let y = 4; y <= 42; y += 6) m.box(-4, y, 19 - Math.round((y * 4) / 45), 3, y, 19 - Math.round((y * 4) / 45), P.e6);
+  // Dachpfosten hinten und vorn, Pultdach mit Schindeln (vorn höher)
+  for (const x of [-15, 14]) {
+    m.box(x, 59, -15, x, 72, -15, P.e4);
+    m.box(x, 59, 14, x, 76, 14, P.e4);
+  }
+  for (let z = -17; z <= 16; z++) {
+    const y = 72 + Math.round(((z + 17) * 5) / 33);
+    m.box(-17, y, z, 16, y, z, (x) => ((x + z) % 4 === 0 ? P.r1 : (z & 1) ? P.r2 : P.r3));
+  }
+  return m;
+}
+
 export const BUILDING_MODELS = {
   holzlager: { model: buildWoodpile },
   zelt: { model: buildTent, glow: buildTentGlow },
@@ -436,4 +473,5 @@ export const BUILDING_MODELS = {
   laternenpfahl: { model: buildLampPost, glow: buildLampPostGlow, pool: { y: 1.3, radius: 3.0 } },
   beet: { model: buildGardenPlot },
   bank: { model: buildBench },
+  hochsitz: { model: buildHochsitz },
 };

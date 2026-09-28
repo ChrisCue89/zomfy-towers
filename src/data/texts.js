@@ -74,6 +74,7 @@ export const T = {
     ausbau: [null, null, 'Zur Hütte ausbauen', 'Schlafzimmer unterm Dach', 'Werkstatt anbauen', 'Lager anbauen'],
     hausStufe: [null, 'Notunterkunft', 'Hütte', 'Hütte mit Schlafzimmer', 'Haus mit Werkstatt', 'Fischerhaus'],
     zelt: 'Schlafzelt',
+    hochsitz: 'Hochsitz', // M23
     // M17: Wall und Tor des Lagers
     wall3: 'Wall',
     wall4: 'Wall',
@@ -143,6 +144,7 @@ export const T = {
     abrissBewohnt: (name) => `Hier schläft ${name}. Gibt das ganze Material zurück.`,
     zelt: 'Ein Schlafplatz für eine Überlebende oder einen Überlebenden.',
     holzlager: 'Gespaltene Scheite unterm Dach – jeden Tag 2 Holz zum Mitnehmen.',
+    hochsitz: 'Neben den Weg: Nachts bezieht jemand hier Posten – auswählen, wer.', // M23
   },
   rezepte: {
     spitzhacke: 'Spitzhacke',
@@ -514,7 +516,7 @@ export const T = {
   },
   // Baupläne (M19): Wahl nach einer gewonnenen Nacht, im Wrack, bei Balduin
   bauplaene: {
-    titel: { nacht: 'Ein neuer Bauplan! Wähle einen.', wrack: 'Alte Baupläne im Wrack! Wähle einen.', balduin: 'Balduins Baupläne. Wähle einen.' },
+    titel: { nacht: 'Ein neuer Bauplan! Wähle einen.', wrack: 'Alte Baupläne im Wrack! Wähle einen.', balduin: 'Balduins Baupläne. Wähle einen.', auftrag: 'Ein Bauplan als Dank! Wähle einen.' },
     art: { turm: 'Turm', falle: 'Falle' },
     gewaehlt: (name, reiter) => `Neuer Bauplan: ${name} – im Reiter »${reiter}«.`,
     wartet: 'Ein Bauplan wartet …',
@@ -830,6 +832,76 @@ export const T = {
       zerfaellt: 'zerfällt in drei!',
     },
   },
+  // Posten (M23): Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
+  posten: {
+    aufPosten: (name) => `${name} auf den Posten`,
+    rolle: {
+      bert: 'Flickt nachts Barrikaden, Wall und Tor ringsum.',
+      hilde: 'Wirft Einmachgläser: Schaden, und klebrig.',
+      juna: 'Leuchtfeuer auf J: betäubt und blendet ringsum.',
+      yusuf: 'Verarztet Mika und die Türme ringsum.',
+    },
+    wechselt: '(wechselt hierher)',
+    raeumen: (name) => `${name} vom Posten holen`,
+    raeumenInfo: 'Schläft nachts wieder im Zelt.',
+    niemand: 'Noch niemand da',
+    niemandInfo: 'Wer ins Zelt einzieht, kann hier nachts Posten beziehen.',
+    zeile: (name) => `Posten: ${name}`,
+    zeileFrei: 'Posten: frei',
+    bezogen: (name) => `${name} bezieht abends den Hochsitz.`,
+    geraeumt: (name) => `${name} schläft nachts wieder im Zelt.`,
+    junaKeinPosten: 'Für das Leuchtfeuer braucht Juna einen Hochsitz.',
+    junaWartet: (s) => `Das Leuchtfeuer glüht noch nach (${s} s).`,
+    rueckzug: (name) => `${name} zieht sich ins Haus zurück!`,
+    wort: 'Licht!',
+    hudBereit: 'J: Leuchtfeuer',
+    hudWartet: (s) => `J: Leuchtfeuer ${s} s`,
+    bericht: {
+      titel: 'Auf den Posten:',
+      bert: (n) => `Bert flickte ${n}`,
+      hilde: (n) => (n === 1 ? 'Hilde warf ein Glas' : `Hilde warf ${n} Gläser`),
+      juna: (n) => (n === 1 ? 'Juna zündete einmal' : `Juna zündete ${n}-mal`),
+      yusuf: (n) => `Yusuf heilte ${n}`,
+      knopf: (n) => (n === 1 ? 'Knopf verjagte einen Schwärmer' : `Knopf verjagte ${n} Schwärmer`),
+      rueckzug: (name) => `${name} musste vom Hochsitz ins Haus – zu viele Schlurfer darunter.`,
+    },
+    fest: 'Fest am Feuer! Heute Nacht treffen die Türme härter.',
+  },
+  // Nebenaufträge (M23): Bitte am Morgen, Ziel, Fund, Dank
+  nebenauftraege: {
+    garn: {
+      bitte: 'Oma Hilde bittet: Hol ihre Garnrollen aus dem Bootswrack.',
+      ziel: 'Hildes Garnrollen am Wrack',
+      gefunden: 'Hildes Garnrollen!',
+      dank: 'Oma Hilde strahlt: »Mein Garn! Da, Kindchen – ein Bauplan.«',
+    },
+    antenne: {
+      bitte: 'Juna bittet: Such drei Antennenteile an den Wegen.',
+      ziel: 'Antennenteile für Juna',
+      gefunden: 'Ein Antennenteil!',
+      dank: 'Juna: »Das Funkgerät rauscht wie neu! Das hier ist für dich.«',
+    },
+    werkzeug: {
+      bitte: 'Bert bittet: Such seinen roten Werkzeugkasten an den Wegen.',
+      ziel: 'Berts Werkzeugkasten an den Wegen',
+      gefunden: 'Berts roter Werkzeugkasten!',
+      dank: 'Bert: »Mein guter Kasten! Nimm das Teil – und den Bauplan.«',
+    },
+    balduin: {
+      bitte: 'Balduin bittet: 1 Moderkern und 15 Zombieteile – für etwas Besonderes.',
+      ziel: 'Balduin: Moderkern, Zombieteile',
+      zeile: ['Balduins Bitte', 'Ein einzigartiges Turmteil – nur dieses eine Mal.'],
+      dank: 'Balduin zwinkert: »Abgemacht ist abgemacht.«',
+    },
+    proben: {
+      bitte: 'Dr. Yusuf bittet: Proben von zwei Champions.',
+      ziel: 'Proben für Dr. Yusuf',
+      gefunden: 'Eine Probe für Dr. Yusuf!',
+      dank: 'Dr. Yusuf: »Hervorragend! Dafür ein Teil – und ein Bauplan.«',
+    },
+    noch: (n) => (n === 1 ? 'Noch eins.' : `Noch ${n}.`),
+    teil: (name, seltenheit) => `Belohnung: ${name} (${seltenheit}).`,
+  },
   // Wellenmerkmale (M22): Name im Nachtplan und Banner, Erklärung beim ersten Mal
   wellen: {
     merkmale: {
@@ -1032,6 +1104,7 @@ export const T = {
     ['Rechtsklick', 'Fähigkeit (beim Bauen: abbrechen)'],
     ['X', 'Zweite Fähigkeit'],
     ['N / B', 'Nachts: Welle rufen / Zeitraffer'],
+    ['J', 'Nachts: Junas Leuchtfeuer (Hochsitz)'],
     ['Esc', 'Menü'],
   ],
   fehler: {

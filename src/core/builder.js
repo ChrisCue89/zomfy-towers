@@ -89,6 +89,7 @@ export class Builder {
     const b = this.selected();
     if (b && BUILDINGS[b.type].camp) return b.broken ? T.lager.truemmer : T.lager.haelt(Math.ceil(b.hp), maxHpOf(b)) + this.gearNote(b); // M17
     if (b && b.type === 'barrikade' && b.gear?.length) return T.zubehoer.zeile(b.gear.map((id) => T.zubehoer[id][0]).join(', ')); // M17e
+    if (b && BUILDINGS[b.type].post) return b.post ? T.posten.zeile(SURVIVORS[b.post].name) : T.posten.zeileFrei; // Hochsitz (M23)
     // Im Lager (M17d): umgeworfen oder angeschlagen
     if (b && BUILDINGS[b.type].raid) return b.broken ? T.lager.umgeworfenZeile : b.hp < maxHpOf(b) ? T.lager.haelt(Math.ceil(b.hp), maxHpOf(b)) : null;
     return b && BUILDINGS[b.type].tower ? this.game.towerRanks.record(b) : null;
@@ -183,7 +184,7 @@ export class Builder {
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.placeOptions(['zelt', 'holzlager']);
+    const options = this.placeOptions(['zelt', 'holzlager', 'hochsitz']); // M23: der Hochsitz gehört zu den Überlebenden
     for (const o of this.game.furnishing.options()) options.push(this.option({ ...o, buy: true }, inv));
     const tower = this.game.survivors.towerOption();
     if (tower) options.push(this.option(tower, inv));
@@ -411,6 +412,8 @@ export class Builder {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
     }
+    // Hochsitz (M23): wer bezieht nachts den Posten?
+    if (def.post) options.push(...this.postOptions(b));
     // Bewohntes Zelt: vor dem Abriss sagen, wer darin schläft (m6-r1)
     const guest = b.type === 'zelt' ? this.game.survivors.occupant(b.id) : null;
     const guestName = guest ? SURVIVORS[guest].name : null;
@@ -429,6 +432,30 @@ export class Builder {
       action: () => this.demolish(b.id),
     });
     return options;
+  }
+
+  /**
+   * Hochsitz (M23): je eingezogener Person eine Kachel »… auf den Posten« (steht sie
+   * schon woanders, wechselt sie), dazu »Posten räumen«. Ohne Bewohner ein Hinweis.
+   */
+  postOptions(b) {
+    const posts = this.game.posts;
+    const who = posts.candidates();
+    if (!who.length) return [{ id: 'posten-niemand', icon: 'hochsitz', name: T.posten.niemand, info: T.posten.niemandInfo, cost: {}, affordable: false, disabled: true, disabledText: T.posten.niemand, progress: 0 }];
+    const out = who
+      .filter((id) => id !== b.post)
+      .map((id) => ({
+        id: `posten-${id}`,
+        icon: id,
+        name: T.posten.aufPosten(SURVIVORS[id].name),
+        info: posts.postOf(id) ? `${T.posten.rolle[id]} ${T.posten.wechselt}` : T.posten.rolle[id],
+        cost: {},
+        affordable: true,
+        progress: 1,
+        action: () => posts.assign(b, id),
+      }));
+    if (b.post) out.unshift({ id: 'posten-frei', icon: b.post, name: T.posten.raeumen(SURVIVORS[b.post].name), info: T.posten.raeumenInfo, cost: {}, affordable: true, progress: 1, action: () => posts.free(b) });
+    return out.slice(0, 4);
   }
 
   /**

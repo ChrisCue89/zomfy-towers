@@ -77,7 +77,8 @@ export class CraftingMenu {
       // Letzte Zeile: Tschüss sagen (M9.1 – schließt das Fenster auch ohne Esc)
       const traded = g.trader.tradedToday();
       const bye = { id: 'tschuess', close: true, icon: 'boot', name: T.haendler.fertig, info: traded ? T.haendler.fertigInfo : T.haendler.fertigInfoWarten, cost: {}, gives: {}, affordable: true };
-      return [...g.trader.offers(), bye];
+      const bitte = g.quests.tradeRow(); // M23: Balduins Bitte (Nebenauftrag)
+      return [...g.trader.offers(), ...(bitte ? [bitte] : []), bye];
     }
     const list = RECIPES.map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));

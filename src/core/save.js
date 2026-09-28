@@ -70,6 +70,9 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v16 -> v17: M23 (Gemeinsam durch die Nacht). Noch kein Nebenauftrag, kein Fest;
+  // Hochsitze gibt es erst ab jetzt (kein Bau trägt schon einen Posten).
+  16: (data) => ({ ...data, version: 17, quests: { active: null, done: [] }, feast: 0 }),
   // v14 -> v15: M20 (Mischtürme). Das Werkstattbuch beginnt leer.
   // v15 -> v16: M21 (Turmteile mit Seltenheit). Ein Turm trägt seine Teile als Liste
   // (ein Fach, ab Stufe 4 zwei) – aus `part` wird `parts`.

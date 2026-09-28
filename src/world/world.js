@@ -65,6 +65,7 @@ export class World {
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
+    this.questInteractions = []; // Fundstücke der Nebenaufträge (core/quests.js, M23)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed, this.map);
@@ -218,7 +219,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */

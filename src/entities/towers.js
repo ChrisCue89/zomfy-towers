@@ -165,6 +165,7 @@ export class TowerSystem {
     this.bursts = []; // Feuerwerk (M20): Kettenexplosionen, die noch kommen
     this.maxPierce = 0; // Kürbisballiste (M20, Prüfung): die meisten Treffer eines Bolzens
     this.lured = 0; // wie viele Schlurfer gerade eine Vogelscheuche anlocken (M19, Prüfung)
+    this.boost = 1; // Schaden aller Türme mal so viel (M23: nach dem Fest am Feuer; setzt das Spiel)
     this.time = 0;
     const basic = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {
@@ -306,7 +307,7 @@ export class TowerSystem {
       if (t.type === 'vogelscheuche' && t.object) t.object.rotation.x = t.hp <= 0 ? -Math.PI / 2 : 0;
       if (t.hp <= 0) continue;
       const s = towerStatsOf(t);
-      const mult = 1 + (t.aura || 0);
+      const mult = (1 + (t.aura || 0)) * this.boost; // boost: nach dem Fest am Feuer (M23)
       const coolBefore = t.cool;
       switch (t.type) {
         case 'bolzen':

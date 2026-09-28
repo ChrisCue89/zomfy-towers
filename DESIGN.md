@@ -1383,7 +1383,24 @@ ein Boss), die Bosse der Hero-Defense-Karten.
 *Spielbar heißt:* Der Nachtplan kündigt eine Nebelwelle an, und man stellt
 schnell noch Laternen an den Nordweg.
 
-#### M23 – Gemeinsam durch die Nacht
+#### M23 – Gemeinsam durch die Nacht ✓
+
+*Umgesetzt (28.09.2026):* Neuer Bau **Hochsitz** (Reiter Einrichten, neben den
+Weg, höchstens vier). Über seine Auswahl stellt man eine eingezogene Person
+auf den Posten; ab der Dämmerung steht sie oben, bis zum Morgen. Bert flickt
+Barrikaden, Wall und Tor im Umkreis, Hilde wirft Einmachgläser (Schaden,
+klebrig), Juna zündet auf **J** ihr Leuchtfeuer (betäubt, blendet, holt aus
+dem Nebel; 30 s Pause), Dr. Yusuf verarztet Mika und die Türme ringsum. Knopf
+jagt nachts einzelne Schwärmer aus dem Hof. Rütteln Schlurfer zu lange am
+Hochsitz, zieht sich die Person ins Haus zurück. Der Morgenbericht erzählt,
+was die Posten getan haben. Nach einer gehaltenen Bossnacht feiern alle am
+Morgen am Feuer (bis Mittag), und in der Nacht darauf treffen die Türme um
+10 % härter. **Nebenaufträge** (einer auf einmal, morgens angeboten, zweite
+Zeile im Zielkasten): Hildes Garnrollen am Wrack, drei Antennenteile für Juna
+und Berts Werkzeugkasten neben den Wegen (feste Stellen aus dem Startwert der
+Karte, sie funkeln), Proben von zwei Champions für Dr. Yusuf, Balduins Bitte
+(ein Moderkern und 15 Zombieteile) im Handelsfenster – Belohnung: Baupläne
+zur Wahl und Turmteile bis »einzigartig«.
 
 *Vorbild:* die Mitspieler der Teamkarten, Legion TD (Einheiten statt Türme).
 

@@ -254,6 +254,7 @@ export class Buildings {
       building.broken = Boolean(extra.broken);
     }
     if (def.raid || def.trap) building.broken = Boolean(extra.broken); // umgeworfen (M17d), Falle verbraucht (M19)
+    if (def.post) building.post = typeof extra.post === 'string' ? extra.post : null; // Hochsitz (M23): wer dort Posten bezieht
     // Zubehör (M17e): Barrikade je Stufe eins, das Tor drei
     if (gearSlots(building)) building.gear = [...new Set((extra.gear || []).filter((id) => gearFits(type, id)))].slice(0, gearSlots(building));
     if (hasHp(type)) building.hp = building.broken ? 0 : Math.min(maxHpOf(building), extra.hp ?? maxHpOf(building));
@@ -674,6 +675,7 @@ export class Buildings {
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       if (b.gear?.length) e.gear = [...b.gear]; // Zubehör (M17e)
+      if (b.post) e.post = b.post; // Hochsitz (M23)
       if (b.from?.length) e.from = b.from.map((f) => ({ ...f })); // Mischturm (M20)
       return e;
     });

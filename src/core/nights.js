@@ -332,6 +332,7 @@ export class Nights {
     } else {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;
     }
+    g.posts?.onNightEnd(won); // M23: nach einer gehaltenen Bossnacht wird gefeiert
     st.report = {
       n: night.n,
       won,

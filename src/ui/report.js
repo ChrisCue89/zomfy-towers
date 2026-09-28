@@ -6,7 +6,7 @@ import { T } from '../data/texts.js';
 import { clockText } from '../core/state.js';
 import { RESOURCES } from '../data/items.js';
 import { COLORS } from './ui.js';
-import { measure, LINE_HEIGHT } from './font.js';
+import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { drawIcon } from './icons.js';
 
 export class ReportPanel {
@@ -40,7 +40,8 @@ export class ReportPanel {
     return false;
   }
 
-  lines() {
+  /** Zeilen des Berichts – mit `ui` so umgebrochen, dass sie in den Kasten passen (M23). */
+  lines(ui = null) {
     const r = this.report;
     const out = [];
     out.push({ text: T.bericht.besiegt(r.kills) });
@@ -72,11 +73,22 @@ export class ReportPanel {
       const heil = !r.homeLost && !r.broken && (r.homeNow === undefined || r.homeNow >= r.homeMax);
       out.push({ text: heil ? T.bericht.schlussHeil : T.bericht.schlussKratzer, dim: true });
     }
+    return ui ? this.wrapLines(ui, out) : out;
+  }
+
+  /** Lange Zeilen umbrechen (Junas Funkspruch nennt seit M22 viele Arten, die Posten erzählen viel). */
+  wrapLines(ui, lines) {
+    const max = ui.width - 16 - 24;
+    const out = [];
+    for (const l of lines) {
+      if (l.res || measure(l.text) <= max) out.push(l);
+      else wrap(l.text, max - 8).forEach((t, k) => out.push({ ...l, text: k ? `  ${t}` : t }));
+    }
     return out;
   }
 
   /** Lage des Kastens (auch für die Meldungen darunter, m12-r1). */
-  layout(ui, lines = this.lines()) {
+  layout(ui, lines = this.lines(ui)) {
     const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
     const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => measure(l.text) + (l.res ? resW(l.res) + 8 : 0) + 24)));
     const h = 34 + lines.length * (LINE_HEIGHT + 3) + 16;
@@ -93,7 +105,7 @@ export class ReportPanel {
   draw(ui) {
     const r = this.report;
     if (!r) return;
-    const lines = this.lines();
+    const lines = this.lines(ui);
     const { x, y, w, h } = this.layout(ui, lines);
     ui.ditherFill(0.4);
     ui.panel(x, y, w, h);

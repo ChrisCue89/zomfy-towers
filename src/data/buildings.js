@@ -35,6 +35,8 @@ export const BUILDINGS = {
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2, raid: 25 },
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7, raid: 30 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1, raid: 30 },
+  // M23: Hochsitz neben dem Weg – nachts bezieht ein eingezogener Überlebender dort Posten (Reiter Einrichten)
+  hochsitz: { w: 1, d: 1, cost: { holz: 10, schrott: 3 }, icon: 'hochsitz', post: true, max: 4, height: 2.4 },
   // Meilenstein 6: Schlafplatz für eine Überlebende oder einen Überlebenden
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
   holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4, raid: 45 },

@@ -1442,6 +1442,45 @@ oben im Bild, ein eigenes Musikstück. **Warum:** Wie in den Hero-Defense-Karten
 soll man den Schlag kommen sehen und ausweichen können – ein Boss ist ein
 Kampf, kein dicker Schlurfer.
 
+### 146. Wie arbeiten die Posten, und wann halten sie nicht mehr? (M23)
+**Entscheidung:** Ein Hochsitz (10 Holz, 3 Schrott, höchstens vier) steht wie
+ein Turm neben dem Weg; über seine Auswahl stellt man eine eingezogene Person
+dorthin (wechselt sie, wird ihr alter Posten frei). Dienst ist von der
+Dämmerung (20:15, wenn die anderen schlafen gehen) bis zum Morgen. Bert flickt
+6 Lebenspunkte je Sekunde an Barrikaden, Wall und Tor im Umkreis von 4,5 m;
+Hilde wirft alle 1,8 s ein Glas (6 Schaden, klebrig: 45 % langsamer für 3 s);
+Juna zündet auf J das Leuchtfeuer (6 m, betäubt 1,5 s, blendet und holt aus
+dem Nebel für 4 s, dann 30 s Pause); Dr. Yusuf heilt Mika (3 je s) und Türme
+(4 je s) im Umkreis von 6 m. Knopf jagt nachts alle 1,4 s einen Schwärmer im
+Hof davon. Jede Person hat 100 Nerven; Schlurfer direkt am Hochsitz zehren
+daran (ihr Biss), sind sie weg, zieht sie sich bis zum Morgen ins Haus zurück.
+**Warum:** Die Leute sollen spürbar helfen, aber keine Türme ersetzen – und
+man soll überlegen, wo man sie hinstellt (Bert an die Barrikadenreihe, Hilde an
+den Engpass, Juna dorthin, wo der Nebel kommt). Besiegt wird niemand: Das
+Spiel bleibt gemütlich.
+
+### 147. Was bringt das Fest am Feuer? (M23)
+**Entscheidung:** Nach jeder gehaltenen Bossnacht (jede fünfte) feiern alle am
+Morgen bis 12 Uhr im Kreis ums Lagerfeuer, winken und bellen reihum, und in der
+Nacht darauf treffen alle Türme um 10 % härter. **Warum:** Ein sichtbarer
+Lohn für die schwerste Nacht, der die nächste etwas leichter macht, ohne die
+Balance zu kippen.
+
+### 148. Wie laufen die Nebenaufträge? (M23)
+**Entscheidung:** Immer nur einer auf einmal, morgens angeboten (steht im
+Morgenbericht und als zweite Zeile im Zielkasten), in fester Reihenfolge,
+sobald die Person eingezogen und der Tag erreicht ist: Hildes Garnrollen am
+Wrack (ab Tag 4, Bauplan), drei Antennenteile für Juna (ab Tag 5, besonderes
+Turmteil), Berts Werkzeugkasten (ab Tag 6, seltenes Teil und Bauplan), Balduins
+Bitte – ein Moderkern und 15 Zombieteile im Handelsfenster (ab Tag 6,
+einzigartiges Teil), Proben von zwei Champions für Dr. Yusuf (ab Tag 7,
+besonderes Teil und Bauplan). Fundstücke an den Wegen liegen an festen Stellen
+aus dem Startwert der Karte (weit genug von der Bucht, x ≤ −14), sie funkeln
+und haben beim Aufsammeln Vorrang vor Wrack und Quellen. Wer ist nicht
+eingezogen, dessen Auftrag wartet, der nächste kommt vor. **Warum:** Die Tage
+bekommen Ziele mit Weg und Belohnung (m12-r1: »tagsüber ist wenig zu tun«),
+ohne Druck – kein Auftrag läuft ab.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
