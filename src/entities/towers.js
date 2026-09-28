@@ -145,7 +145,18 @@ export class TowerSystem {
     const towers = this.world.buildings.towers;
     this.updateAuras(towers);
     for (const t of towers) {
-      t.cool = Math.max(0, (t.cool ?? 0.5) - dt);
+      // Angefeuert (M16): Die Abklingzeit läuft schneller ab
+      const haste = t.hasteT > 0 ? 1 + (t.haste || 0) : 1;
+      if (t.hasteT > 0) {
+        t.hasteT -= dt;
+        t.cheerAcc = (t.cheerAcc || 0) + dt;
+        if (t.cheerAcc > 0.35) {
+          t.cheerAcc = 0;
+          const o = this.origin(t);
+          this.effects.splat(o.x, o.y + 0.5, o.z, 'licht', 2, 0.35);
+        }
+      }
+      t.cool = Math.max(0, (t.cool ?? 0.5) - dt * haste);
       t.kick = Math.max(0, (t.kick || 0) - dt * 4);
       if (t.hp <= 0) continue;
       const s = towerStatsOf(t);
@@ -207,7 +218,7 @@ export class TowerSystem {
     t.kick = 1;
     const o = this.origin(t);
     for (const z of list) {
-      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0, lucky: t.part === 'gluecksmuenze' });
+      this.projectiles.push({ kind: 'bolt', x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: 13, damage: s.damage * mult, pierce: Boolean(s.pierce), angle: 0, lucky: t.part === 'gluecksmuenze', by: t.id });
     }
     this.cb.onShot?.('bolzen', o.x, o.z);
   }
@@ -239,7 +250,7 @@ export class TowerSystem {
     const tx = best.x + Math.sin(best.facing) * lead;
     const tz = best.z + Math.cos(best.facing) * lead;
     const dist = Math.hypot(tx - o.x, tz - o.z);
-    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z, lucky: t.part === 'gluecksmuenze' });
+    this.projectiles.push({ kind: 'pumpkin', x0: o.x, y0: o.y + 0.4, z0: o.z, x1: tx, z1: tz, t: 0, T: 0.75 + dist * 0.05, h: 1.4 + dist * 0.15, damage: s.damage * mult, splash: s.splash, burn: s.burn || 0, split: s.split || 0, x: o.x, y: o.y, z: o.z, lucky: t.part === 'gluecksmuenze', by: t.id });
     this.cb.onShot?.('katapult', o.x, o.z);
   }
 
@@ -270,7 +281,7 @@ export class TowerSystem {
     const freezeNow = s.freeze && t.freezeCd <= 0;
     if (freezeNow) t.freezeCd = 4;
     for (const z of inRange) {
-      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze' })) continue;
+      if (this.horde.damage(z, s.damage * mult, { push: s.push || 0, fromX: o.x, fromZ: o.z, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id })) continue;
       this.horde.slow(z, s.slow, s.slowTime);
       if (freezeNow) {
         this.horde.freeze(z, s.freeze);
@@ -297,7 +308,7 @@ export class TowerSystem {
         p.angle = Math.atan2(dx, dz);
         if (d <= step + 0.05) {
           if (p.target && p.target.state !== 'dying') {
-            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky });
+            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null });
             this.effects.splat(p.tx, 0.7, p.tz, 'funken', 4, 0.5);
           }
           this.projectiles.splice(i, 1);
@@ -320,21 +331,28 @@ export class TowerSystem {
     }
   }
 
+  /** Kürbis aus Mikas Hand (Fähigkeit Kürbiswurf, M16): fliegt im Bogen wie vom Katapult. */
+  throwPumpkin({ x0, y0, z0, x1, z1, damage, splash, burn = 0, burnTime = 3, source = 'wurf' }) {
+    const dist = Math.hypot(x1 - x0, z1 - z0);
+    this.projectiles.push({ kind: 'pumpkin', x0, y0, z0, x1, z1, t: 0, T: 0.45 + dist * 0.05, h: 1.1 + dist * 0.12, damage, splash, burn, burnTime, split: 0, x: x0, y: y0, z: z0, lucky: false, source });
+  }
+
   explode(p) {
     const r = p.splash;
+    const burnTime = p.burnTime || 3;
     this.cb.onImpact?.(p.x, p.z);
     for (const z of this.horde.inRange(p.x, p.z, r)) {
-      if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky })) continue;
-      if (p.burn) this.horde.ignite(z, p.burn, 3);
+      if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: p.source || 'turm', lucky: p.lucky, by: p.by ?? null })) continue;
+      if (p.burn) this.horde.ignite(z, p.burn, burnTime, p.by ?? null);
     }
     this.effects.splat(p.x, 0.3, p.z, p.burn ? 'feuer' : 'kuerbis', p.kind === 'mini' ? 8 : 16, p.kind === 'mini' ? 0.7 : 1);
-    if (p.burn) this.fires.push({ x: p.x, z: p.z, r, dps: p.burn, t: 3 });
+    if (p.burn) this.fires.push({ x: p.x, z: p.z, r, dps: p.burn, t: burnTime, by: p.by ?? null });
     if (p.split) {
       for (let k = 0; k < p.split; k++) {
         const a = (k / p.split) * Math.PI * 2 + this.time;
         const tx = p.x + Math.cos(a) * 1.3;
         const tz = p.z + Math.sin(a) * 1.3;
-        this.projectiles.push({ kind: 'mini', x0: p.x, y0: 0.3, z0: p.z, x1: tx, z1: tz, t: 0, T: 0.45, h: 0.8, damage: p.damage * 0.55, splash: r * 0.7, burn: 0, split: 0, x: p.x, y: 0.3, z: p.z, lucky: p.lucky });
+        this.projectiles.push({ kind: 'mini', x0: p.x, y0: 0.3, z0: p.z, x1: tx, z1: tz, t: 0, T: 0.45, h: 0.8, damage: p.damage * 0.55, splash: r * 0.7, burn: 0, split: 0, x: p.x, y: 0.3, z: p.z, lucky: p.lucky, by: p.by ?? null });
       }
     }
   }
@@ -348,7 +366,7 @@ export class TowerSystem {
         continue;
       }
       if (Math.random() < dt * 30) this.effects.flames(f.x, f.z, f.r);
-      for (const z of this.horde.inRange(f.x, f.z, f.r)) this.horde.ignite(z, f.dps, 1);
+      for (const z of this.horde.inRange(f.x, f.z, f.r)) this.horde.ignite(z, f.dps, 1, f.by ?? null);
     }
   }
 

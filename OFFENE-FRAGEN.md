@@ -1204,6 +1204,39 @@ Startbild. Das Bild ist ganz im Code gezeichnet (Buch mit Zeilen und einem
 kleinen Kürbis, Laterne mit gerastertem Schein, fallendes Laub). »Produced
 by« lässt sich jederzeit in `texts.js` ändern (`T.startbild`).
 
+### 122. Welche Fähigkeiten, auf welchen Tasten – und kann man sie tauschen? (M16)
+**Entscheidung:** Zwei Plätze: rechte Maustaste (war bisher nur »Abbrechen«
+– beim Bauen und bei einer Auswahl bricht sie weiter ab) und X, dazu ein
+Klick auf die Kacheln. Den Laternenblitz hat Mika von Anfang an: Er passt
+zur Geschichte (Licht macht den Moder müde) und rettet schon in Nacht 1 eine
+Barrikade. Auf Stufe 3 kommt die zweite Fähigkeit **zusätzlich** zum Perk
+(keine Perk-Stufe geht verloren), auf 6 und 9 wird geschärft. Die Wahl ist
+endgültig – wie die Fertigkeiten eines Helden in den Warcraft-Karten; das
+macht die drei Karten zu einer echten Entscheidung. Den Pfiff gibt es erst,
+wenn Knopf eingezogen ist. Alte Stände ab Stufe 3 bekommen die fällige Wahl
+im nächsten ruhigen Moment. **Offen:** Tauschen am Bett oder an der
+Werkbank, falls Testspieler es vermissen. Wer mehrere Stufen auf einmal
+steigt, wählt der Reihe nach (Perk von Stufe 2, dann auf Stufe 3 erst die
+Fähigkeit, dann den Perk); ein Klick auf eine Fähigkeit bricht einen
+laufenden Schlag ab – sie geht vor.
+
+### 123. Woher bekommen Türme Erfahrung, und was bringt ein Rang? (M16)
+**Entscheidung:** Aus dem, was sie tun: ein Punkt je Schadenspunkt, 6 je
+Abschuss, Brand zählt für den Turm, der ihn gelegt hat; der Laternenturm
+schießt nicht und bekommt 4 für jeden Abschuss in seinem Licht. Ränge bei
+150/500/1200 (etwa nach einer, drei und sieben guten Nächten) mit
++8/16/25 % Schaden bzw. Aura – spürbar, aber kein Muss: Ein neuer Turm am
+richtigen Weg bleibt besser als ein alter am falschen. Namen sind altmodische
+Vornamen (keine der Überlebenden) und stehen im Spielstand; der Wimpel am
+Mast zeigt den Rang ohne Auswahl. Mikas eigener Kürbiswurf zählt nicht
+(er soll kein Turm-Futter sein).
+
+### 124. Schwierigkeit mitten im Spiel umstellen? (M16)
+**Entscheidung:** Ja, im Pausenmenü (Einstellungen), gespeichert im
+Spielstand. Eine laufende Nacht behält ihren Plan; die neue Stufe gilt ab der
+nächsten. **Warum:** Wer merkt, dass es zu hart oder zu leicht ist, soll
+nicht neu anfangen müssen (Frage 118).
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

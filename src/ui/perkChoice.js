@@ -2,9 +2,12 @@
 // Spiel hält an. Wählen mit 1/2/3, A/D und E oder per Klick. In den ersten
 // Augenblicken zählen keine Eingaben – wer gerade E hämmert, wählt nicht aus
 // Versehen. Klicks werden in update() ausgewertet (siehe CLAUDE.md).
+// Dieselben Karten zeigen auf Stufe 3, 6 und 9 die Fähigkeiten (M16): erst
+// lernen (»lernen«), dann schärfen (»schaerfen«).
 
 import { T } from '../data/texts.js';
 import { PERKS, perkLevel } from '../data/perks.js';
+import { SKILLS, SKILL_MAX_RANK } from '../data/skills.js';
 import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
 import { measure, wrap, LINE_HEIGHT } from './font.js';
@@ -23,12 +26,14 @@ export class PerkChoice {
     this.focus = 0;
     this.t = 0;
     this.level = 1;
+    this.kind = 'perk'; // 'perk' | 'lernen' | 'schaerfen' (M16)
   }
 
-  open(options, level) {
+  open(options, level, kind = 'perk') {
     this.isOpen = true;
     this.options = options;
     this.level = level;
+    this.kind = kind;
     this.focus = 0;
     this.t = 0;
     this.aimed = false; // Maus seit dem Öffnen bewegt? Erst dann zählt ein Klick (m12-r1)
@@ -88,14 +93,17 @@ export class PerkChoice {
     const st = this.game.state;
     const cards = this.layout(ui);
     ui.ditherFill(0.45);
-    const title = T.perks.titel(this.level);
+    const skill = this.kind !== 'perk';
+    const title = !skill ? T.perks.titel(this.level) : this.kind === 'lernen' ? T.faehigkeiten.titelLernen(this.level) : T.faehigkeiten.titelSchaerfen(this.level);
     const tw = measure(title) + 16;
     ui.panel(Math.round((ui.width - tw) / 2), cards[0].rect.y - 30, tw, 20, { fill: COLORS.fillLight });
     ui.textCentered(title, ui.width / 2, cards[0].rect.y - 27, COLORS.gold);
     cards.forEach(({ id, rect }, k) => {
       const focused = k === this.focus;
-      const perk = PERKS[id];
-      const [name, info] = T.perks[id];
+      const perk = skill ? { icon: SKILLS[id].icon, max: SKILL_MAX_RANK } : PERKS[id];
+      const [name, baseInfo] = skill ? T.faehigkeiten[id] : T.perks[id];
+      const have = skill ? this.game.skills.rankOf(id) : perkLevel(st, id);
+      const info = this.kind === 'schaerfen' ? T.faehigkeiten.rang(have + 1) : baseInfo;
       ui.panel(rect.x, rect.y, rect.w, rect.h, { fill: focused ? COLORS.fillHover : COLORS.fill, frame: focused ? COLORS.gold : COLORS.frame });
       // Taste 1/2/3 oben links
       ui.text(String(k + 1), rect.x + 5, rect.y + 3, focused ? COLORS.gold : COLORS.textDim);
@@ -105,8 +113,12 @@ export class PerkChoice {
       ui.textCentered(name, rect.x + rect.w / 2, rect.y + 32, focused ? COLORS.gold : COLORS.text);
       const lines = wrap(info, rect.w - 12);
       lines.slice(0, 4).forEach((line, i) => ui.text(line, rect.x + 6, rect.y + 48 + i * LINE_HEIGHT, COLORS.textDim));
+      // Eine neue Fähigkeit: Taste statt Stufen-Punkten
+      if (this.kind === 'lernen') {
+        ui.textCentered(T.faehigkeiten.liegtAuf, rect.x + rect.w / 2, rect.y + rect.h - 13, focused ? COLORS.textWarm : COLORS.frame);
+        return;
+      }
       // Stufen-Punkte: schon genommen / möglich
-      const have = perkLevel(st, id);
       for (let n = 0; n < perk.max; n++) {
         const px = rect.x + rect.w / 2 - (perk.max * 6) / 2 + n * 6;
         ui.rect(px, rect.y + rect.h - 9, 4, 4, COLORS.outline);

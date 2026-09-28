@@ -5,6 +5,55 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 16 – Die Nacht in der Hand ✓
+
+**Ziel (DESIGN 8):** In jeder Welle gibt es etwas zu entscheiden, Warten ist
+freiwillig, das ganze Wegenetz zählt.
+
+- **Nachtplan:** ab 19:30 eine Tafel mit den Wellen der Nacht (Zeit, Wege;
+  mit Juna am Funk auch Anführer, Brummer, Leuchtpilze), nachts in jeder
+  Pause die nächsten; Randmarken (hohle Pfeile mit der Nummer der Welle)
+  zeigen, wo die nächste Welle aus dem Wald kommt.
+- **Mehrere Wege:** Nacht 1 über je einen Weg, ab Nacht 2 oft über zwei, ab
+  Nacht 4 manchmal über alle drei (`data/waves.js`).
+- **Welle rufen (N) und Zeitraffer (B):** In der Pause holt N die nächste
+  Welle sofort, alle späteren rücken um dieselbe Zeit vor, gerufene Wellen
+  lassen 25 % mehr fallen. B läuft nachts doppelt so schnell (die
+  Nachtleiste zeigt »×2«) und geht am Morgen von selbst aus.
+- **Schwierigkeit:** Gemütlich (65 % Budget, 80 % Leben, 92 % Tempo, 125 %
+  Beute), Ausgewogen, Wild (135 %, 120 %, 108 %, 90 %) – im Titelbild und im
+  Pausenmenü (ab der nächsten Nacht).
+- **Mikas Fähigkeiten:** zwei Kacheln neben der Schnellleiste (Uhrzeiger-
+  Raster, Sekunden, Rang-Punkte), rechte Maustaste und X. Laternenblitz von
+  Anfang an; auf Stufe 3 zusätzlich zum Perk eine von drei: Kürbiswurf,
+  Pfiff (Knopf rennt los und bellt), Notbrett, Anfeuern, Wirbel; auf 6 und 9
+  schärfen. Eigene Posen (Laterne hoch, Wurf über Kopf, Finger an den Mund,
+  Jubel, einmal ganz herum), Ringe auf dem Boden, neue Klänge (Blitz,
+  Pfiff, Jubel). Bei der ersten Welle stellt eine Meldung den Blitz vor.
+- **Nahkampf mit Risiko:** Ein Rückstoß bricht das Ausholen der Schlurfer
+  nicht mehr ab; der Biss reicht 0,45 m weiter. Blenden und Betäuben
+  brechen es ab – dafür ist der Laternenblitz da.
+- **Türme mit Geschichte:** Namen (»Gertrud, Kürbiskatapult«), Erfahrung aus
+  Schaden und Abschüssen, Ränge II–IV mit Wimpeln am Mast und etwas mehr
+  Wirkung, Aufstieg mit Meldung und Funken; die Auswahl zeigt Rang,
+  Abschüsse und Erfahrung; der Morgenbericht kürt den Turm der Nacht.
+- **Spielstand v11:** Schwierigkeit, Fähigkeiten (Plätze, Ränge, offene
+  Wahl), Turm-Erfahrung, Abschüsse und Namen, Abschüsse je Turm und
+  gerufene Wellen der laufenden Nacht; Migration v10 → v11.
+- **Prüfung:** neuer Abschnitt `nacht16` (siehe CLAUDE.md), Titel-Prüfung
+  mit der Zeile »Schwierigkeit«, alle Versionsprüfungen auf v11. Die volle
+  Prüfung fand zwei Stellen, an denen das Neue ältere Prüfpunkte störte: Die
+  Fähigkeiten-Wahl auf Stufe 3 hielt die »verlorene Nacht« an (die Prüfung
+  wählt sie jetzt weg), und die Fähigkeiten-Kacheln lagen über der vierten
+  Barrikade der dichten Reihe (die Reihe steht jetzt höher im Bild). Beide
+  Abschnitte danach grün, alles andere im ersten Durchlauf.
+- **Offen für die Testrunde:** Werte der Fähigkeiten und Ränge, ob man
+  Fähigkeiten tauschen möchte (OFFENE-FRAGEN 122), wie oft N und B genutzt
+  werden. Die geplante Runde m15-r1 läuft als **m16-r1** gleich über
+  M13–M16 – so spielen die Testspieler schon die neuen Nächte.
+
+---
+
 ## N2 – Startbild und Menümusik ✓
 
 **Auftrag:** »Wenn man startet, soll auch eine Musik im Menü sein, und ein

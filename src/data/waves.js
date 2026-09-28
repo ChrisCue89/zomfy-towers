@@ -3,6 +3,7 @@
 // 6.10, OFFENE-FRAGEN.md Nr. 2 und 5). Deterministisch je Nacht (Seed).
 
 import { Rng } from '../core/rng.js';
+import { difficultyOf } from './difficulty.js';
 
 /** Minuten seit 06:00: erste Welle um 20:30, die Nacht endet um 05:30. */
 export const NIGHT_START = 14 * 60 + 30;
@@ -12,6 +13,12 @@ export const DAY_END = 11 * 60; // 17:00
 
 /** Punktekosten je Art (wie viel »Budget« ein Schlurfer verbraucht). */
 const COST = { schlurfer: 1, flitzer: 1.2, schwaermer: 0.6, brummer: 5, leuchtpilz: 3 };
+
+/**
+ * Welle rufen (M16, OFFENE-FRAGEN 119): Wer die nächste Welle in der Pause selbst
+ * ruft, bekommt von ihr so viel mehr Beute – wie das frühe Rufen in den TD-Karten.
+ */
+export const MUT_BONUS = 1.25;
 
 export function wavesInNight(n) {
   return Math.min(8, 3 + Math.floor((n - 1) / 2));
@@ -43,8 +50,9 @@ export function nightBudget(n) {
   return 33 + 9 * (n - 1) + (n - 1) ** 2;
 }
 
-export function planNight(n, seed, entries) {
+export function planNight(n, seed, entries, difficulty) {
   const rng = new Rng(seed * 31 + n * 977);
+  const diff = difficultyOf(difficulty);
   const count = wavesInNight(n);
   const waves = [];
   let at = NIGHT_START;
@@ -52,10 +60,14 @@ export function planNight(n, seed, entries) {
   const weights = Array.from({ length: count }, (_, w) => 0.8 + 0.2 * w);
   const weightSum = weights.reduce((a, b) => a + b, 0);
   for (let w = 0; w < count; w++) {
-    const budget = (nightBudget(n) * weights[w]) / weightSum;
-    // Eingänge: eine Seite, ab Nacht 3 manchmal zwei
+    const budget = (nightBudget(n) * diff.budget * weights[w]) / weightSum;
+    // Eingänge (M16): Nacht 1 eine Seite; ab Nacht 2 oft zwei, ab Nacht 4 manchmal alle –
+    // sonst gehörte alles auf den letzten Abschnitt (m12-r1), und das Wegenetz wäre Kulisse
     const first = rng.pick(entries);
-    const used = n >= 3 && rng.chance(0.5) ? [first, rng.pick(entries.filter((e) => e !== first))] : [first];
+    const used = [first];
+    // (in Nacht 2 kommt die letzte Welle sicher über zwei Wege – so lernt man es kennen)
+    if (n >= 2 && (rng.chance(n >= 3 ? 0.6 : 0.45) || (n === 2 && w === count - 1))) used.push(rng.pick(entries.filter((e) => !used.includes(e))));
+    if (n >= 4 && used.length === 2 && entries.length > 2 && rng.chance(0.3)) used.push(rng.pick(entries.filter((e) => !used.includes(e))));
     // Gruppen: einzelne Schlurfer oder ein Pulk Schwärmer (kommen dicht beieinander)
     const groups = [];
     let left = budget;
@@ -96,7 +108,7 @@ export function planNight(n, seed, entries) {
     // Warten zwischen den Wellen zog sich)
     at += Math.max(36, 62 - n * 3) + rng.int(-6, 6);
   }
-  return { night: n, hpFactor: hpFactor(n), waves };
+  return { night: n, hpFactor: hpFactor(n) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves };
 }
 
 /**

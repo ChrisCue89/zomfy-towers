@@ -39,6 +39,8 @@ const REJOIN_MAX = 15;
 
 const MAX_PER_TYPE = 110;
 const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
+const WINDUP = 0.38; // so lange holt ein Schlurfer aus, bevor er beißt
+const BITE_LUNGE = 0.45; // M16: so weit reicht der Biss über die Reichweite hinaus (Ausfallschritt)
 const HORDE_MOVE = { bounds: true, horde: true }; // durch Balduins Wagen hindurch (steht nicht im Flussfeld)
 const TINT = {
   normal: new THREE.Color(1, 1, 1),
@@ -183,7 +185,7 @@ export class Horde {
       facing: 0,
       hp,
       maxHp: hp,
-      speed: def.speed * (day ? 0.65 : 1) * (0.92 + this.rng.next() * 0.16),
+      speed: def.speed * (day ? 0.65 : o.speedFactor || 1) * (0.92 + this.rng.next() * 0.16),
       state: o.entry ? 'enter' : 'walk',
       entry: o.entry || null,
       phase: this.rng.next() * 6,
@@ -194,6 +196,9 @@ export class Horde {
       slowT: 0,
       freezeT: 0,
       stunT: 0, // betäubt (Bratpfanne): steht, der Kopf taumelt
+      lureT: 0, // abgelenkt (Pfiff, M16): steht und starrt Knopf an
+      lureX: 0,
+      lureZ: 0,
       burn: 0,
       burnT: 0,
       kx: 0,
@@ -212,7 +217,7 @@ export class Horde {
       target: null,
       deathT: 0,
       aggro: day ? DAY_ZOMBIE.aggro : def.aggro ?? NIGHT_AGGRO,
-      lootFactor: day ? 0.5 : 1,
+      lootFactor: day ? 0.5 : o.lootFactor || 1, // M16: Schwierigkeit und Mutbonus
     };
     if (o.entry) z.facing = Math.atan2(o.entry.x - start.x, o.entry.z - start.z);
     this.list.push(z);
@@ -224,7 +229,8 @@ export class Horde {
   }
 
   /** Schaden austeilen. Gibt true zurück, wenn der Schlurfer daran stirbt. */
-  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null, lucky = false } = {}) {
+  /** @param {{by?: number|null}} [opts] by: Turm, dem Schaden und Abschuss gutgeschrieben werden (M16) */
+  damage(z, amount, { pierce = false, push = 0, fromX = null, fromZ = null, source = null, lucky = false, by = null } = {}) {
     if (z.state === 'dying') return false;
     const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
     z.hp -= dealt;
@@ -238,21 +244,21 @@ export class Horde {
       z.kx += (dx / d) * push * 6 * resist;
       z.kz += (dz / d) * push * 6 * resist;
     }
-    this.cb.onDamage?.(z, dealt, source);
+    this.cb.onDamage?.(z, dealt, source, by);
     if (z.hp <= 0) {
-      this.kill(z, source, lucky);
+      this.kill(z, source, lucky, by);
       return true;
     }
     return false;
   }
 
   /** @param {boolean} [lucky] ein Turm mit Glücksmünze war es (M10: dann sicher Teile) */
-  kill(z, source, lucky = false) {
+  kill(z, source, lucky = false, by = null) {
     z.hp = 0;
     z.state = 'dying';
     z.deathT = 0;
     z.deathDir = source === 'spieler' ? 1 : -1;
-    this.cb.onKill?.(z, source, lucky);
+    this.cb.onKill?.(z, source, lucky, by);
   }
 
   slow(z, amount, time) {
@@ -264,18 +270,30 @@ export class Horde {
   freeze(z, time) {
     if (z.def.immuneSlow || z.state === 'dying') return;
     z.freezeT = Math.max(z.freezeT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.windup = 0;
   }
 
-  /** Betäuben (Nahkampf): steht still, schlägt nicht. Zähe nur halb so lange. */
+  /** Betäuben (Nahkampf, Laternenblitz): steht still, schlägt nicht, holt neu aus. Zähe nur halb so lange. */
   stun(z, time) {
     if (z.state === 'dying') return;
     z.stunT = Math.max(z.stunT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.windup = 0;
   }
 
-  ignite(z, dps, time) {
+  /** Ablenken (Pfiff, M16): bleibt stehen und starrt auf (x, zz). Zähe nur halb so lange. */
+  lure(z, x, zz, time) {
+    if (z.state === 'dying' || z.state === 'enter') return;
+    z.lureT = Math.max(z.lureT, time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1));
+    z.lureX = x;
+    z.lureZ = zz;
+    z.windup = 0;
+  }
+
+  ignite(z, dps, time, by = null) {
     if (z.state === 'dying') return;
     z.burn = Math.max(z.burn, dps);
     z.burnT = Math.max(z.burnT, time);
+    if (by !== null) z.burnBy = by; // wer zuletzt angezündet hat, bekommt den Brand gutgeschrieben (M16)
   }
 
   /** Alle Lebenden im Umkreis (neue Liste). */
@@ -321,6 +339,7 @@ export class Horde {
       if (z.slowT <= 0) z.slow = 0;
       z.freezeT = Math.max(0, z.freezeT - dt);
       z.stunT = Math.max(0, z.stunT - dt);
+      z.lureT = Math.max(0, z.lureT - dt);
       if (z.noChase > 0) z.noChase -= dt;
       if (z.burnT > 0) {
         z.burnT -= dt;
@@ -328,7 +347,7 @@ export class Horde {
         if (z.burnAcc >= 1) {
           const n = Math.floor(z.burnAcc);
           z.burnAcc -= n;
-          if (this.damage(z, n, { pierce: true, source: 'feuer' })) continue;
+          if (this.damage(z, n, { pierce: true, source: 'feuer', by: z.burnBy ?? null })) continue;
         }
       }
       if (z.def.summon && z.state !== 'enter') {
@@ -344,7 +363,8 @@ export class Horde {
         }
       }
 
-      const frozen = z.freezeT > 0 || z.stunT > 0;
+      const lured = z.lureT > 0;
+      const frozen = z.freezeT > 0 || z.stunT > 0 || lured;
       let speed = z.speed * (1 - z.slow) * (z.hasted ? 1 + 0.15 : 1) * (1 - (ctx.lightSlow ? ctx.lightSlow(z.x, z.z) : 0));
       if (frozen) speed = 0;
       z.cooldown = Math.max(0, z.cooldown - dt);
@@ -481,25 +501,23 @@ export class Horde {
             }
             vx = dx * speed * 1.1;
             vz = dz * speed * 1.1;
-            z.windup = 0;
+            // M16: Wer einmal ausholt, schlägt zu – ein Rückstoß aus der Reichweite
+            // bricht das nicht mehr ab (m12-r1: wer im Takt klickte, wurde nie
+            // getroffen). Nur Betäuben, Blenden und Ablenken stoppen ihn.
+            if (z.windup > 0 && !frozen) this.swing(z, pd, reach, dt);
           } else if (!frozen) {
             z.facing = dampAngle(z.facing, Math.atan2(player.x - z.x, player.z - z.z), 10, dt);
-            if (z.windup > 0) {
-              z.windup -= dt;
-              if (z.windup <= 0) {
-                z.attackAnim = 0.35;
-                if (pd <= reach + 0.25) this.cb.onPlayerHit?.(z.def.bite * (z.day ? 0.6 : 1), z);
-                z.cooldown = 1 / z.def.hitRate;
-              }
-            } else if (z.cooldown <= 0) {
-              z.windup = 0.38;
-            }
+            if (z.windup > 0) this.swing(z, pd, reach, dt);
+            else if (z.cooldown <= 0) z.windup = WINDUP;
           }
           break;
         }
         default:
           break;
       }
+
+      // Abgelenkt: steht und starrt dorthin, wo Knopf bellt
+      if (lured) z.facing = dampAngle(z.facing, Math.atan2(z.lureX - z.x, z.lureZ - z.z), 6, dt);
 
       // Rückstoß abklingen lassen
       vx += z.kx;
@@ -557,6 +575,16 @@ export class Horde {
     }
 
     this.separate(dt);
+  }
+
+  /** Ausholen läuft ab; am Ende beißt er zu, wenn Mika noch in Reichweite (plus Ausfallschritt) ist. */
+  swing(z, pd, reach, dt) {
+    z.windup -= dt;
+    if (z.windup > 0) return;
+    z.windup = 0;
+    z.attackAnim = 0.35;
+    if (pd <= reach + BITE_LUNGE) this.cb.onPlayerHit?.(z.def.bite * (z.day ? 0.6 : 1), z);
+    z.cooldown = 1 / z.def.hitRate;
   }
 
   /** Jagd vorbei: zurück zur letzten Stelle auf dem Weg – ohne eine zum nächsten Weg. */

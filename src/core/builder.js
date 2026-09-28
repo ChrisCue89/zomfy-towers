@@ -60,7 +60,14 @@ export class Builder {
     if (!BUILDINGS[b.type].tower) return name;
     const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
     const part = b.part ? ` · ${T.turmteile[b.part][0]}` : '';
-    return `${name} · ${T.bauleiste.stufe(b.level)}${spec}${part}`; // »Bolzenwerfer 2« las sich wie »der zweite«
+    // M16: Türme tragen einen Namen – »Gertrud, Bolzenwerfer«
+    return `${this.game.towerRanks.title(b)} · ${T.bauleiste.stufe(b.level)}${spec}${part}`; // »Bolzenwerfer 2« las sich wie »der zweite«
+  }
+
+  /** Strichliste des ausgewählten Turms (M16): Rang, Abschüsse, Erfahrung. */
+  selectionRecord() {
+    const b = this.selected();
+    return b && BUILDINGS[b.type].tower ? this.game.towerRanks.record(b) : null;
   }
 
   selected() {

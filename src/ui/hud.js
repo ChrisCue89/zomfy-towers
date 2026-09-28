@@ -10,13 +10,50 @@ import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, drawTiny } from './font.js';
 import { drawIcon, iconSize } from './icons.js';
 import { xpForLevel } from '../data/perks.js';
+import { SKILLS } from '../data/skills.js';
 import { P, hexToCss } from '../render/palette.js';
 
 const SWOOSH_TIME = 0.16;
+const RING_TIME = 0.42; // Ringe der Fähigkeiten auf dem Boden (M16)
+const RING_COLORS = {
+  licht: [hexToCss(P.f8), hexToCss(P.f6)],
+  pfiff: [hexToCss(P.a4), hexToCss(P.s7)],
+  jubel: [hexToCss(P.f6), hexToCss(P.f4)],
+  wirbel: [hexToCss(P.s9), hexToCss(P.s6)],
+};
+const COOL_STEPS = 24;
+const coolCache = new Map();
+
+/**
+ * Abklingzeit als Uhrzeiger-Raster (M16): Was noch wartet, liegt dunkel
+ * gerastert über der Kachel und gibt sie im Uhrzeigersinn frei.
+ */
+function cooldownCanvas(fraction) {
+  const step = Math.max(1, Math.min(COOL_STEPS, Math.ceil(fraction * COOL_STEPS)));
+  let c = coolCache.get(step);
+  if (c) return c;
+  c = document.createElement('canvas');
+  c.width = SLOT_SIZE;
+  c.height = SLOT_SIZE;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = hexToCss(P.n0);
+  const f = step / COOL_STEPS;
+  for (let y = 1; y < SLOT_SIZE - 1; y++) {
+    for (let x = 1; x < SLOT_SIZE - 1; x++) {
+      if (x % 2 === 0 && y % 2 === 0) continue; // drei Viertel dunkel: das Symbol schimmert durch
+      const a = Math.atan2(x + 0.5 - SLOT_SIZE / 2, -(y + 0.5 - SLOT_SIZE / 2)); // 0 oben, im Uhrzeigersinn
+      const turn = (a < 0 ? a + Math.PI * 2 : a) / (Math.PI * 2);
+      if (turn >= 1 - f) ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  coolCache.set(step, c);
+  return c;
+}
 export const LOW_HP = 0.35; // darunter pulsiert der Bildrand und das Herz schlägt (m12-r1)
 const LOW_HP_RED = hexToCss(P.f1);
 
 const SLOT = 20;
+const SLOT_SIZE = SLOT;
 const SLOT_GAP = 2;
 const FLOAT_TIME = 1.2;
 
@@ -46,6 +83,9 @@ export class Hud {
     this.goalBox = { on: false, x: 0, y: 0, w: 0, h: 17 }; // Rahmen der Zielzeile (dieses Bild)
     this.numbers = []; // Schadenszahlen
     this.swooshes = []; // Schwung-Bögen im Nahkampf
+    this.rings = []; // Ringe der Fähigkeiten (M16)
+    this.skillTiles = [];
+    this.skillPanel = null;
     this.prompt = null; // { text, x, y }
     this.debugLines = null;
     this.slotRects = [];
@@ -110,6 +150,37 @@ export class Hud {
     }
   }
 
+  /** Ring auf dem Boden, der sich ausbreitet (Fähigkeiten, M16). */
+  ring(x, z, radius, kind = 'licht') {
+    this.rings.push({ x, z, r: radius, kind, t: 0 });
+  }
+
+  drawRings(ui) {
+    const g = this.game;
+    for (const ring of this.rings) {
+      const q = ring.t / RING_TIME;
+      const r = ring.r * (0.35 + 0.65 * (1 - (1 - q) * (1 - q)));
+      const c = g.worldToUi(ring.x, 0.08, ring.z);
+      const e = g.worldToUi(ring.x + r, 0.08, ring.z);
+      const n = Math.max(16, Math.round((Math.PI * 2 * Math.abs(e.x - c.x)) / 3));
+      const [bright, dim] = RING_COLORS[ring.kind] || RING_COLORS.licht;
+      const skip = Math.floor(q * 12);
+      for (let k = 0; k < n; k++) {
+        if (q > 0.55 && (k + skip) % 2) continue; // gegen Ende gerastert ausblenden
+        const a = (k / n) * Math.PI * 2;
+        const p = g.worldToUi(ring.x + Math.sin(a) * r, 0.08, ring.z + Math.cos(a) * r);
+        ui.rect(Math.round(p.x), Math.round(p.y), 2, 2, q < 0.5 ? bright : dim);
+      }
+    }
+  }
+
+  /** Grüne »+n« über einem geflickten Bau (Notbrett, M16). */
+  healNumber(x, y, z, amount) {
+    if (amount <= 0) return;
+    this.numbers.push({ x, y, z, text: `+${amount}`, heal: true, t: 0 });
+    if (this.numbers.length > 24) this.numbers.shift();
+  }
+
   damageNumber(x, y, z, amount, hurt = false) {
     this.numbers.push({ x: x + (Math.random() - 0.5) * 0.3, y, z, text: String(amount), hurt, t: 0 });
     if (this.numbers.length > 24) this.numbers.shift();
@@ -147,6 +218,8 @@ export class Hud {
     this.numbers = this.numbers.filter((n) => n.t < 0.7);
     for (const w of this.swooshes) w.t += dt;
     this.swooshes = this.swooshes.filter((w) => w.t < SWOOSH_TIME);
+    for (const r of this.rings) r.t += dt;
+    this.rings = this.rings.filter((r) => r.t < RING_TIME);
     if (this.banner) {
       this.banner.time += dt;
       if (this.banner.time > 2.4) this.banner = null;
@@ -165,6 +238,7 @@ export class Hud {
     if (show.prompt) this.drawLowHealth(ui);
     if (show.prompt) {
       this.drawZombieBars(ui);
+      this.drawRings(ui);
       this.drawSwooshes(ui);
       this.drawNumbers(ui);
     }
@@ -176,12 +250,16 @@ export class Hud {
     if (show.prompt) this.drawEdgeMarkers(ui);
     if (show.prompt && !this.game.viewInside) this.drawGoalMarker(ui);
     if (show.prompt) this.drawTargetMark(ui);
+    // Nachtplan (M16) über den Markierungen – sonst läge der Zielpfeil im Text
+    if (show.prompt) this.drawNightPlan(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
     if (show.prompt) this.drawActionProgress(ui);
     if (show.prompt) this.drawSpeech(ui);
     if (show.hotbar) this.drawHotbar(ui);
+    if (show.prompt) this.drawSkills(ui);
+    else this.skillPanel = null;
     if (show.prompt && this.prompt) this.drawPrompt(ui, this.prompt);
     if (show.hotbar) this.drawLabels(ui);
     if (this.debugLines) this.drawDebug(ui);
@@ -289,6 +367,8 @@ export class Hud {
     const max = HOUSE_LEVELS[st.world.houseLevel].hp;
     const active = g.nights.active;
     const damaged = st.world.homeHp < max - 0.5;
+    this.nightBarBottom = 4;
+    this.bannerBottom = null;
     if (!active && !damaged && !this.banner) return;
     const cx = Math.round(ui.width / 2);
     let bottom = 34;
@@ -301,7 +381,7 @@ export class Hud {
       const y = 4;
       ui.panel(x, y, w, from ? 42 : 30);
       bottom = y + (from ? 42 : 30);
-      const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}` : T.horde.zuhause;
+      const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}${g.fast ? ` · ${T.nacht.raffer}` : ''}` : T.horde.zuhause;
       ui.textCentered(label, cx, y + 2, active ? COLORS.textWarm : COLORS.text);
       if (from) ui.textCentered(from, cx, y + 28, COLORS.gold);
       const q = Math.max(0, Math.min(1, st.world.homeHp / max));
@@ -313,6 +393,7 @@ export class Hud {
       const hit = this.homeFlash > 0 && Math.floor(this.homeFlash * 12) % 2 === 0;
       ui.rect(x + 21, y + 20, Math.max(0, Math.round((barW - 2) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
       drawTiny(ui.ctx, hpText, x + 20 + barW + 3, y + 19, hit ? COLORS.text : COLORS.textWarm);
+      this.nightBarBottom = bottom;
     }
     this.bannerBottom = null;
     if (this.banner) {
@@ -324,6 +405,33 @@ export class Hud {
       if (b.time < 2 || Math.floor(b.time * 10) % 2 === 0) this.game.drawBigText(ui, b.text, cx, by, 2, COLORS.gold);
       this.bannerBottom = by + 20; // Meldungen erscheinen darunter (m3-r2: sie verdeckten das Banner)
     }
+  }
+
+  /**
+   * Nachtplan (M16): Tafel unter der Nachtleiste (und unter einem Banner) – welche
+   * Wellen wann über welche Wege kommen; in den Pausen der Hinweis auf N.
+   */
+  drawNightPlan(ui) {
+    this.planBottom = null;
+    const view = this.game.nights.planView();
+    if (!view) return;
+    const lines = view.rows.map((r) => {
+      const wege = r.entries.map((e) => T.horde.richtungKurz[e]).join(' + ');
+      const schwer = r.heavy.length ? ` · ${T.nacht.mit(r.heavy.map((t) => T.horde.arten[t][1]).join(', '))}` : '';
+      return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${schwer}`;
+    });
+    if (view.more) lines.push(T.nacht.weitere(view.more));
+    const title = view.canCall ? T.nacht.planPause : T.nacht.planAbend(view.total);
+    const hint = view.canCall ? T.nacht.rufenHinweis : view.juna ? null : T.nacht.planOhneJuna;
+    const w = Math.max(measure(title), measure(hint || ''), ...lines.map((l) => measure(l))) + 14;
+    const h = 16 + lines.length * 11 + (hint ? 13 : 2);
+    const x = Math.round(ui.width / 2 - w / 2);
+    const y = Math.max(this.nightBarBottom + 4, this.bannerBottom ? this.bannerBottom + 2 : 0, 40);
+    ui.panel(x, y, w, h);
+    ui.textCentered(title, ui.width / 2, y + 3, COLORS.gold);
+    lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.text));
+    if (hint) ui.textCentered(hint, ui.width / 2, y + 16 + lines.length * 11 + 1, COLORS.textDim);
+    this.planBottom = y + h; // Meldungen erscheinen darunter
   }
 
   /** Balken über Mikas Kopf beim Durchsuchen und Ernten: hier stehen bleiben. */
@@ -391,8 +499,8 @@ export class Hud {
     const q = Math.max(0, Math.min(1, pl.xp / xpForLevel(pl.level)));
     if (q > 0) ui.rect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * q)), 1, COLORS.gold);
     // Neue Stufe im Getümmel: Die Wahl kommt, sobald es ruhig ist
-    if (this.game.state.perkChoice && !this.game.perkChoice.isOpen) {
-      const text = T.perks.wartet;
+    if ((this.game.state.perkChoice || this.game.state.skillChoice) && !this.game.perkChoice.isOpen) {
+      const text = this.game.state.skillChoice ? T.faehigkeiten.wartet : T.perks.wartet;
       const tw = measure(text) + 10;
       const pulse = Math.floor(this.game.clock * 3) % 2 === 0;
       ui.panel(r.x + 4, y - 31, tw, 15, { frame: pulse ? COLORS.gold : COLORS.frame }); // über dem Lebensbalken
@@ -418,7 +526,7 @@ export class Hud {
     for (const n of this.numbers) {
       const p = this.game.worldToUi(n.x, n.y, n.z);
       const rise = Math.round(n.t * 22);
-      ui.text(n.text, Math.round(p.x - measure(n.text) / 2), Math.round(p.y - 10 - rise), n.hurt ? COLORS.buildBad : COLORS.text, { outline: COLORS.outline });
+      ui.text(n.text, Math.round(p.x - measure(n.text) / 2), Math.round(p.y - 10 - rise), n.heal ? COLORS.green : n.hurt ? COLORS.buildBad : COLORS.text, { outline: COLORS.outline });
     }
   }
 
@@ -600,6 +708,39 @@ export class Hud {
         this.edgeMarks.push({ art: 'zuhause', richtung: where((hp.x - sx) / len, (hp.y - sy) / len), anzahl: 1 });
       }
     }
+    // Nachtplan (M16): Woher kommt die nächste Welle? Hohle Pfeile mit der Nummer der
+    // Welle am Rand, im Bild ein kleines Wellenzeichen über dem Waldrand
+    const next = g.nights.nextEntries();
+    if (next) {
+      for (const name of next.entries) {
+        const e = g.world.pathing.entries[name];
+        if (!e) continue;
+        const p = g.worldToUi(e.x, 1.2, e.z);
+        const label = String(next.n);
+        if (p.x >= 8 && p.x < ui.width - 8 && p.y >= 8 && p.y < ui.height - 8) {
+          const bob = Math.round(Math.sin(g.clock * 3) * 1.5);
+          const x = Math.round(p.x);
+          const y = Math.round(p.y) + bob;
+          ui.rect(x - 6, y - 6, 13, 13, COLORS.outline);
+          ui.rect(x - 5, y - 5, 11, 11, blink ? COLORS.fillHover : COLORS.fill);
+          drawTiny(ui.ctx, label, x - label.length * 2 + 1, y - 2, COLORS.gold);
+          this.edgeMarks.push({ art: 'welle', richtung: 'im Bild', anzahl: next.n });
+          continue;
+        }
+        const len = Math.hypot(p.x - sx, p.y - sy) || 1;
+        const ux = (p.x - sx) / len;
+        const uy = (p.y - sy) / len;
+        const { x: bx, y: by } = edge(ux, uy);
+        this.drawArrow(ui, bx, by, ux, uy, 9, COLORS.outline);
+        this.drawArrow(ui, bx, by, ux, uy, 6.5, blink ? COLORS.gold : COLORS.goldDark);
+        this.drawArrow(ui, bx, by, ux, uy, 3.5, COLORS.outline); // hohl: die Welle kommt erst noch
+        const tx = Math.round(bx - ux * 13 - (label.length * 4) / 2);
+        const ty = Math.round(by - uy * 13 - 2);
+        ui.rect(tx - 1, ty - 1, label.length * 4 + 1, 7, COLORS.outline);
+        drawTiny(ui.ctx, label, tx, ty, COLORS.gold);
+        this.edgeMarks.push({ art: 'welle', richtung: where(ux, uy), anzahl: next.n });
+      }
+    }
     for (const s of sectors.values()) {
       const len = Math.hypot(s.dx, s.dy) || 1;
       const ux = s.dx / len;
@@ -703,6 +844,73 @@ export class Hud {
       drawTiny(ui.ctx, i + 1, sx + 2, sy + 2, isSelected ? COLORS.gold : COLORS.textDim);
       this.slotRects.push({ x: sx, y: sy, w: SLOT, h: SLOT });
     }
+  }
+
+  /** Zwei Kacheln rechts neben der Schnellleiste: Mikas Fähigkeiten (M16). */
+  skillLayout(ui) {
+    const r = this.hotbarRect(ui);
+    const x = r.x + r.w + 3;
+    const panel = { x, y: r.y, w: 2 * SLOT + SLOT_GAP + 8, h: r.h };
+    const tiles = [0, 1].map((k) => ({ x: x + 4 + k * (SLOT + SLOT_GAP), y: r.y + 4, w: SLOT, h: SLOT }));
+    return { panel, tiles };
+  }
+
+  drawSkills(ui) {
+    const sk = this.game.skills;
+    const L = this.skillLayout(ui);
+    this.skillPanel = L.panel;
+    this.skillTiles = L.tiles;
+    ui.panel(L.panel.x, L.panel.y, L.panel.w, L.panel.h);
+    let hoverK = -1;
+    L.tiles.forEach((t, k) => {
+      const id = sk.slot(k);
+      const cool = sk.coolFraction(k);
+      const flash = sk.readyFlash[k] > 0 && Math.floor(sk.readyFlash[k] * 10) % 2 === 0;
+      const shake = sk.denied[k] > 0 ? Math.round(Math.sin(sk.denied[k] * 70)) : 0;
+      const hovered = ui.hover(t.x, t.y, t.w, t.h);
+      if (hovered) hoverK = k;
+      const x = t.x + shake;
+      ui.inset(x, t.y, t.w, t.h, { fill: hovered && id ? COLORS.fillLight : COLORS.inset, border: flash ? COLORS.gold : sk.denied[k] > 0 ? COLORS.buildBad : COLORS.frameDark });
+      if (id) {
+        const icon = SKILLS[id].icon;
+        const size = iconSize(icon);
+        drawIcon(ui.ctx, icon, x + Math.floor((SLOT - size.w) / 2), t.y + Math.floor((SLOT - size.h) / 2) + 1);
+        if (cool > 0) {
+          ui.ctx.drawImage(cooldownCanvas(cool), x, t.y);
+          const secs = String(Math.ceil(sk.cool[k]));
+          const w = secs.length * 4 + 1;
+          ui.rect(x + SLOT - w - 1, t.y + SLOT - 8, w + 1, 7, COLORS.outline);
+          drawTiny(ui.ctx, secs, x + SLOT - w, t.y + SLOT - 7, COLORS.text);
+        }
+        // Rang über 1: goldene Punkte oben rechts
+        for (let n = 1; n < sk.rankOf(id); n++) ui.rect(x + SLOT - 4 - (n - 1) * 3, t.y + 2, 2, 2, COLORS.gold);
+      } else {
+        drawTiny(ui.ctx, '3', x + 9, t.y + 8, COLORS.frameDark); // kommt auf Stufe 3
+      }
+      // Taste oben links: rechte Maustaste bzw. X
+      if (k === 0) drawIcon(ui.ctx, 'maus', x + 1, t.y + 1);
+      else drawTiny(ui.ctx, 'X', x + 2, t.y + 2, COLORS.textDim);
+    });
+    // Name und Taste über den Kacheln, solange die Maus darauf zeigt
+    if (hoverK >= 0) {
+      const id = sk.slot(hoverK);
+      const text = id ? `${T.faehigkeiten[id][0]} · ${T.faehigkeiten.taste[hoverK]}` : T.faehigkeiten.leer;
+      const tw = measure(text);
+      const tx = Math.max(4, Math.min(ui.width - tw - 4, Math.round(L.panel.x + L.panel.w / 2 - tw / 2)));
+      ui.text(text, tx, L.panel.y - 13, COLORS.gold, { outline: COLORS.outline });
+    }
+  }
+
+  /** Kachel der Fähigkeit unter der Maus (0, 1) oder -1. */
+  skillAt(ui) {
+    if (!this.skillPanel) return -1;
+    return this.skillTiles.findIndex((t) => ui.hover(t.x, t.y, t.w, t.h));
+  }
+
+  /** Liegt die Maus über den Fähigkeiten? */
+  containsSkills(ui) {
+    const r = this.skillPanel;
+    return Boolean(r && ui.hover(r.x, r.y, r.w, r.h));
   }
 
   /** Index des Platzes unter der Maus, -2 für die Laterne, sonst -1. */

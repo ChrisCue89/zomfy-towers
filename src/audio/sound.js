@@ -98,6 +98,19 @@ const SFX = {
   },
   // Krähe fliegt auf (M12)
   kraehe: (s, t, v, o) => s.caw(t, 0, 1.3 * v, o),
+  // Fähigkeiten (M16): Laternenblitz – ein heller Schimmer über einem weichen Wumms
+  blitz: (s, t, v, o) => {
+    s.tone('sine', 190, t, 0.22, { freqEnd: 80, peak: 0.16 * v, out: o });
+    s.tone('triangle', 1250, t, 0.28, { freqEnd: 2600, peak: 0.07 * v, out: o });
+    s.noise(t, 0.34, { type: 'highpass', freq: 2800, freqEnd: 6200, attack: 0.01, peak: 0.07 * v, out: o });
+  },
+  // Pfiff: zwei Finger im Mund, hoch und wieder herunter
+  pfiff: (s, t, v, o) => {
+    s.tone('sine', 1650, t, 0.15, { freqEnd: 2450, peak: 0.07 * v, attack: 0.02, out: o });
+    s.tone('sine', 2450, t + 0.17, 0.24, { freqEnd: 1950, peak: 0.07 * v, attack: 0.01, vibrato: 7, out: o });
+  },
+  // Anfeuern: kurzer, steigender Jubel
+  jubel: (s, t, v, o) => [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, k) => s.tone('square', f, t + k * 0.05, 0.1, { peak: 0.04 * v, filter: 2600, out: o })),
   // Haustür (M11): knarzende Angel, dann fällt die Tür leise zu
   tuer: (s, t, v, o) => {
     s.noise(t, 0.2, { type: 'bandpass', freq: 560, freqEnd: 380, q: 4, peak: 0.07 * v, out: o });

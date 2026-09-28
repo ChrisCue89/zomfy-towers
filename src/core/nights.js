@@ -5,13 +5,18 @@
 // aber nie mit Spielende. Am Morgen gibt es einen Bericht.
 
 import { T } from '../data/texts.js';
-import { planNight, planDay, NIGHT_START, NIGHT_END } from '../data/waves.js';
+import { planNight, planDay, NIGHT_START, NIGHT_END, MUT_BONUS } from '../data/waves.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
 import { towerStatsOf } from '../data/towers.js';
 
 /** So viele Spielminuten vor der Nacht sagt Mika, wenn am Weg der ersten Welle kein Turm steht. */
 const COVER_WARN_AHEAD = 60;
+/** Nachtplan (M16): so viele Minuten vor der Horde erscheint er, höchstens so viele Zeilen. */
+const PLAN_AHEAD = 60;
+const PLAN_ROWS = 4;
+/** Arten, die der Nachtplan mit Juna nennt (die übrigen sind der Normalfall). */
+const HEAVY = ['anfuehrer', 'brummer', 'leuchtpilz'];
 
 export class Nights {
   /** @param {import('./game.js').Game} game */
@@ -74,11 +79,84 @@ export class Nights {
     return this.game.world.seed;
   }
 
+  /** Plan der Nacht von Tag `day` – mit der gewählten Schwierigkeit (M16). */
+  planFor(day) {
+    return planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty);
+  }
+
   ensurePlans() {
     const st = this.game.state;
     const day = st.time.day;
     if (!this.dayPlan || this.dayPlan.day !== day) this.dayPlan = { day, events: planDay(day, this.seed(), ENTRY_NAMES) };
-    if (this.state.n === day && (!this.plan || this.plan.night !== day)) this.plan = planNight(day, this.seed(), ENTRY_NAMES);
+    if (this.state.n === day && (!this.plan || this.plan.night !== day)) {
+      this.plan = this.planFor(day);
+      // Nach dem Neuladen: früh gerufene Wellen (M16) haben die späteren vorgezogen
+      const shift = this.state.shift || 0;
+      if (shift) for (let i = this.state.wave; i < this.plan.waves.length; i++) this.plan.waves[i].at -= shift;
+    }
+  }
+
+  /**
+   * Welle rufen (M16): nachts in der Pause, wenn die Welle davor besiegt ist.
+   * Die nächste kommt sofort, alle späteren rücken um dieselbe Zeit vor.
+   */
+  canCall() {
+    const night = this.state;
+    return this.active && Boolean(this.plan) && night.wave > 0 && night.wave < this.plan.waves.length && this.game.horde.alive === 0 && !this.queue.length;
+  }
+
+  callNext() {
+    if (!this.canCall()) return false;
+    const night = this.state;
+    const delta = this.plan.waves[night.wave].at - this.game.state.time.minute;
+    if (delta < 1) return false;
+    for (let i = night.wave; i < this.plan.waves.length; i++) this.plan.waves[i].at -= delta;
+    this.plan.waves[night.wave].called = true;
+    night.shift = (night.shift || 0) + delta;
+    night.called = (night.called || 0) + 1;
+    return true;
+  }
+
+  /**
+   * Nachtplan (M16): eine Stunde vor der Horde die ganze Nacht im Voraus, nachts
+   * in jeder Pause die nächsten Wellen – Uhrzeit und Wege; ist Juna eingezogen,
+   * auch die schweren Arten (wie ihr Funkspruch am Morgen). Null = nichts zeigen.
+   */
+  planView() {
+    const g = this.game;
+    const st = g.state;
+    const minute = st.time.minute;
+    let plan = null;
+    let from = 0;
+    if (this.active) {
+      if (!this.canCall()) return null; // während einer Welle genügt die Nachtleiste
+      plan = this.plan;
+      from = this.state.wave;
+    } else if (this.state.n !== st.time.day && minute >= NIGHT_START - PLAN_AHEAD && minute < NIGHT_START) {
+      plan = this.planFor(st.time.day);
+    } else return null;
+    const juna = Boolean(g.survivors?.resident('juna'));
+    const rows = plan.waves.slice(from, from + PLAN_ROWS).map((w, k) => ({
+      n: from + k + 1,
+      at: w.at,
+      entries: w.entries,
+      heavy: juna ? HEAVY.filter((t) => w.spawns.some((s) => s.type === t)) : [],
+    }));
+    return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.active, juna };
+  }
+
+  /**
+   * Woher die nächste Welle kommt (M16, Randmarken): abends die erste, nachts in
+   * der Pause die nächste. Während eine Welle läuft, zeigen die Pfeile die Horde selbst.
+   */
+  nextEntries() {
+    const view = this.planView();
+    return view && view.rows.length ? { n: view.rows[0].n, entries: view.rows[0].entries } : null;
+  }
+
+  /** Zeitraffer (M16): nur nachts, solange die Horde kommt. */
+  get fastAllowed() {
+    return this.active;
   }
 
   /** Pro Spielschritt (nur wenn die Zeit läuft). */
@@ -111,7 +189,7 @@ export class Nights {
 
     // Eine Stunde vor der Horde: Kommt die erste Welle über einen Weg ohne Turm?
     if (this.enabled && minute >= NIGHT_START - COVER_WARN_AHEAD && minute < NIGHT_START && this.state.n !== st.time.day && this.coverWarned !== `${st.time.day}|0`) {
-      const first = planNight(st.time.day, this.seed(), ENTRY_NAMES).waves[0];
+      const first = this.planFor(st.time.day).waves[0];
       if (first) this.warnUncovered(st.time.day, 0, first.entries, true);
     }
 
@@ -124,12 +202,17 @@ export class Nights {
       while (night.wave < plan.waves.length && minute >= plan.waves[night.wave].at) {
         const wave = plan.waves[night.wave];
         night.wave++;
-        for (const s of wave.spawns) this.queue.push({ ...s });
+        for (const s of wave.spawns) this.queue.push({ ...s, bonus: Boolean(wave.called) });
         // Das Banner sagt es groß (Welle und Richtung), die Nachtleiste behält es –
         // eine zusätzliche Meldung lag nur darüber (m3-r2)
         g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}`);
         g.sound.play('welle');
         g.player.express('staunen', 1.4); // da kommen sie (M12)
+        // Die erste Welle überhaupt: Mikas Laternenblitz vorstellen (M16)
+        if (!st.flags.blitzHinweis) {
+          st.flags.blitzHinweis = true;
+          g.hud.toast(T.faehigkeiten.blitzHinweis, 'blitz', 6);
+        }
       }
       // Morgengrauen: Wer noch da ist, flieht in den Wald
       if (minute >= NIGHT_END) {
@@ -153,7 +236,8 @@ export class Nights {
       s.delay -= dt;
       if (s.delay > 0) continue;
       this.queue.splice(i, 1);
-      this.spawnGroup(s.type, s.entry, 1, { hpFactor: this.plan ? this.plan.hpFactor : 1 });
+      const p = this.plan;
+      this.spawnGroup(s.type, s.entry, 1, { hpFactor: p ? p.hpFactor : 1, speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1) });
     }
 
     // Geschafft?
@@ -175,23 +259,23 @@ export class Nights {
     return null;
   }
 
-  spawnGroup(type, entryName, count, { day = false, hpFactor = 1 } = {}) {
+  spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1 } = {}) {
     const g = this.game;
     const entry = g.world.pathing.entries[entryName];
     for (let k = 0; k < count; k++) {
       const jitter = (k - (count - 1) / 2) * 0.7;
       const from = { x: entry.from.x + jitter, z: entry.from.z + jitter * 0.5 };
-      g.horde.spawn(type, { from, entry, hpFactor, day });
+      g.horde.spawn(type, { from, entry, hpFactor, speedFactor, lootFactor, day });
     }
   }
 
   beginNight(n) {
     const st = this.game.state;
-    this.plan = planNight(n, this.seed(), ENTRY_NAMES);
+    this.plan = this.planFor(n);
     this.queue.length = 0;
     // Was Streuner schon vor der Nacht abgenagt haben, nennt der Morgenbericht extra
     const preLoss = st.world.dayEvents?.day === n ? Math.round(st.world.dayEvents.lost || 0) : 0;
-    st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false };
+    st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false, shift: 0, called: 0, towers: {} };
     this.game.hud.toast(T.horde.nachtBeginnt(n), 'mond', 4);
     if (n % 5 === 0) this.game.hud.toast(T.horde.anfuehrerNacht, 'warnung', 5);
   }
@@ -228,6 +312,7 @@ export class Nights {
       losses: night.losses || null,
       damaged: night.damaged || null,
       broken: night.broken || 0,
+      turm: g.towerRanks?.bestOfNight() || null, // Turm der Nacht (M16)
     };
     g.quietSave();
   }
@@ -241,7 +326,7 @@ export class Nights {
 
   /** Zum Speichern: noch ausstehende Schlurfer der laufenden Welle. */
   toState() {
-    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1) }));
+    return this.queue.map((s) => ({ type: s.type, entry: s.entry, delay: +s.delay.toFixed(1), ...(s.bonus ? { bonus: true } : {}) }));
   }
 
   load(queue) {

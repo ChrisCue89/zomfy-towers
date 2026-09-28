@@ -147,7 +147,7 @@ export class Npcs {
         const d = Math.hypot(dx, dz);
         if (d < 0.08) n.target = null;
         else {
-          const step = Math.min(d, WALK_SPEED * (n.dog ? 1.3 : 1) * dt);
+          const step = Math.min(d, WALK_SPEED * (n.dog ? 1.3 : 1) * (n.rush || 1) * dt); // rush: Knopf auf den Pfiff (M16)
           const pos = { x: n.x, z: n.z };
           this.world.colliders.move(pos, (dx / d) * step, (dz / d) * step, n.dog ? 0.2 : 0.25, { bounds: true });
           speed = Math.hypot(pos.x - n.x, pos.z - n.z) / Math.max(dt, 1e-4);

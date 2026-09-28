@@ -8,6 +8,7 @@ import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS } from '../core/settings.js';
+import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
 const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text'];
@@ -44,14 +45,14 @@ export class Menu {
     }
     if (this.screen === 'settings') {
       const st = this.game.settings;
-      return [
-        ...SETTING_KEYS.map((key) => ({
-          label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}`,
-          setting: key,
-          action: () => this.change(key, 1, true),
-        })),
-        { label: T.menue.zurueck, action: () => this.go('main') },
-      ];
+      const rows = SETTING_KEYS.map((key) => ({
+        label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}`,
+        setting: key,
+        action: () => this.change(key, 1, true),
+      }));
+      // M16: Die Schwierigkeit gehört zum Spielstand und gilt ab der nächsten Nacht
+      if (!this.fromTitle) rows.push({ label: `${T.schwierigkeit.titel}: ${T.schwierigkeit[this.game.state.difficulty]}`, setting: 'difficulty', action: () => this.change('difficulty', 1) });
+      return [...rows, { label: T.menue.zurueck, action: () => this.go('main') }];
     }
     if (this.screen === 'confirm') {
       return [
@@ -68,6 +69,13 @@ export class Menu {
    * der Reihe nach weiter, auch mit Umlauf, sonst käme man per E nicht zurück.
    */
   change(key, dir, cycle = false) {
+    if (key === 'difficulty') {
+      const n = DIFFICULTY_ORDER.length;
+      const next = DIFFICULTY_ORDER[(DIFFICULTY_ORDER.indexOf(this.game.state.difficulty) + dir + n) % n];
+      this.game.setDifficulty(next);
+      this.game.sound.play('klick');
+      return;
+    }
     const st = this.game.settings;
     let value;
     if (CHOICES[key]) {

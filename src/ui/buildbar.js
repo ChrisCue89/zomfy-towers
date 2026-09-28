@@ -186,6 +186,13 @@ export class BuildBar {
       const tx = Math.min(L.x, ui.width - tw - 4);
       ui.panel(tx, L.y - 15, tw, 17, { fill: COLORS.fillLight, highlight: null });
       ui.text(L.title, tx + 5, L.y - 14, COLORS.gold);
+      // Türme (M16): Rang und Strichliste links daneben
+      const record = this.builder.selectionRecord();
+      if (record) {
+        const rw = measure(record) + 10;
+        ui.panel(tx - rw - 2, L.y - 15, rw, 17, { fill: COLORS.fill, highlight: null });
+        ui.text(record, tx - rw + 3, L.y - 14, COLORS.textWarm);
+      }
     }
     ui.panel(L.x, L.y, L.w, L.h);
 

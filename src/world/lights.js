@@ -87,7 +87,7 @@ export class WarmLights {
       else level = lampLevel;
       if (!e.on) level = 0;
       e.level = level;
-      e.light.intensity = e.base * level * this.flicker(e.seed, e.speed, e.amount);
+      e.light.intensity = e.base * level * this.flicker(e.seed, e.speed, e.amount) * (e.boost || 1);
     }
     for (const g of this.glows) {
       let level = g.entry ? g.entry.level : g.mode === 'always' ? 1 : g.mode === 'sky' ? 1 - lampLevel * 0.85 : lampLevel;

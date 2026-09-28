@@ -571,6 +571,14 @@ in eine von zwei Richtungen; Stufe 4 und 5 bauen sie aus.
   fallen (statt jedes zweite Mal). Werte in `data/towers.js`.
 - Am stärksten wirken Türme dort, wo Barrikaden die Horde aufhalten:
   **Barrikade plus Kreuzfeuer** ist das Herz jeder Verteidigung.
+- **Türme mit Geschichte (M16):** Jeder Turm bekommt beim ersten Blick einen
+  Namen (»Gertrud, Kürbiskatapult«) und sammelt Erfahrung – einen Punkt je
+  Schadenspunkt, 6 je Abschuss, der Laternenturm 4 für jeden Abschuss in
+  seinem Licht (Brand zählt für den Turm, der ihn gelegt hat). Ränge I–IV
+  bei 0/150/500/1200 Erfahrung, je Rang ein Wimpel mehr an einem kleinen
+  Mast (rot, blau, gold) und +8/16/25 % Schaden bzw. Aura. Die Auswahl zeigt
+  »Rang II · 23 erledigt · 352/500«; der Morgenbericht kürt den Turm der
+  Nacht (meiste Abschüsse).
 
 ### 6.10 Barrikaden und Wegobjekte
 
@@ -660,6 +668,23 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 
 - **Erfahrung und Perks:** Besiegte Schlurfer geben Erfahrung (im Nahkampf
   doppelt); jede Stufe bringt eine Wahl aus drei Perks, sobald es ruhig ist.
+- **Fähigkeiten (M16):** zwei Plätze mit Abklingzeit – rechte Maustaste und X
+  (oder ein Klick auf die Kacheln rechts neben der Schnellleiste, dort
+  zeigt ein Uhrzeiger-Raster die Wartezeit). Den **Laternenblitz** hat Mika
+  von Anfang an (lähmt ringsum 1,1 s, danach halb so schnell, 16 s). Auf
+  Stufe 3 wählt sie zusätzlich zum Perk eine zweite aus drei Karten:
+  **Kürbiswurf** (an den Zeiger, Fläche, brennt, 12 s), **Pfiff** (Knopf
+  rennt hin und bellt, wer dort steht, starrt ihn 4 s an; erst wenn Knopf
+  eingezogen ist, 22 s), **Notbrett** (flickt eine Barrikade in Reichweite
+  um gut die Hälfte, 18 s), **Anfeuern** (Türme im Umkreis von 6 m schießen
+  7 s lang 40 % schneller, 24 s), **Wirbel** (Rundumschlag mit der Waffe in
+  der Hand, stößt weit zurück, 10 s). Auf Stufe 6 und 9 schärft sie eine der
+  beiden (−18 % Abklingzeit, +25 % Wirkung je Rang). Drinnen ruhen sie; was
+  kein Ziel findet, kostet nichts. Werte in `data/skills.js`.
+- **Nahkampf mit Risiko (M16):** Wer einmal ausholt, beißt zu – ein Rückstoß
+  aus der Reichweite bricht das nicht mehr ab (m12-r1: wer im Takt klickte,
+  wurde nie getroffen). Nur Betäuben, Blenden, Einfrieren und Ablenken
+  stoppen ein Ausholen; der Biss reicht 0,45 m über die Reichweite hinaus.
 - **Aufwertungen der Figur:** Sammelradius, Lebenskraft, Schlagkraft, Tempo.
 
 ### 6.14 Überlebende und Geschichte
@@ -1026,7 +1051,16 @@ fertigstellen → Testrunde mit der Frage »Wo macht es Spaß, wo langweilt
 es?« → M16 bis M25. Die Balance aus M14 geht in diesen Meilensteinen auf:
 Jede neue Mechanik kommt mit ihren Zahlen, die große Balance-Runde ist M24.
 
-#### M16 – Die Nacht in der Hand
+#### M16 – Die Nacht in der Hand ✓
+
+*Umgesetzt (28.09.2026):* Nachtplan ab 19:30 (mit Juna samt schweren Arten)
+und Randmarken zur nächsten Welle; Wellen ab Nacht 2 über zwei, ab Nacht 4
+auch über drei Wege; N ruft in der Pause die nächste Welle (spätere rücken
+vor, Mutbonus +25 % Beute), B verdoppelt nachts das Tempo; Schwierigkeit
+Gemütlich/Ausgewogen/Wild im Titelbild und im Pausenmenü (ab der nächsten
+Nacht); sechs Fähigkeiten auf zwei Plätzen (6.13); Ausholen mit Risiko;
+Türme mit Namen, Erfahrung, vier Rängen, Wimpeln und dem Turm der Nacht
+(6.9). Spielstand v11.
 
 *Ziel:* In jeder Welle gibt es etwas zu entscheiden, Warten ist freiwillig,
 das ganze Wegenetz zählt.

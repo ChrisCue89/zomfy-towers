@@ -43,6 +43,7 @@ export class ReportPanel {
     const r = this.report;
     const out = [];
     out.push({ text: T.bericht.besiegt(r.kills) });
+    if (r.turm) out.push({ text: T.turmrang.derNacht(r.turm.name, r.turm.art, r.turm.kills), warm: true }); // M16
     out.push({ text: T.bericht.eingesammelt, res: r.loot, empty: T.bericht.nichts });
     if (r.preLoss > 0) out.push({ text: T.bericht.vorher(Math.round(r.preLoss)) });
     out.push({ text: r.fell ? T.bericht.gefallen(r.homeNow, r.homeMax) : T.bericht.zuhause(r.homeLost, r.homeNow, r.homeMax) });

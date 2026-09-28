@@ -11,7 +11,8 @@ import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MAT
 import { createGlowMaterial, createSilhouetteMaterial } from '../render/materials.js';
 import { P } from '../render/palette.js';
 import { BUILDINGS, footprint, maxHpOf } from '../data/buildings.js';
-import { towerStatsOf } from '../data/towers.js';
+import { towerStatsOf, towerRank } from '../data/towers.js';
+import { VoxelModel } from '../render/voxel.js';
 import { BUILDING_MODELS, buildBarricade, buildRubble, BUILDING_UNIT } from './buildingModels.js';
 import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { V } from './layout.js';
@@ -186,6 +187,10 @@ export class Buildings {
       building.level = extra.level || 1;
       building.spec = extra.spec || null;
       building.part = extra.part || null; // besonderes Turmteil (M10)
+      // Geschichte des Turms (M16): Erfahrung, Abschüsse, Name (Index in T.turmnamen)
+      building.xp = extra.xp || 0;
+      building.kills = extra.kills || 0;
+      building.name = Number.isInteger(extra.name) ? extra.name : null;
     }
     if (type === 'barrikade') {
       building.level = Math.max(1, Math.min(3, extra.level || 1));
@@ -232,7 +237,11 @@ export class Buildings {
     b.look = this.lookOf(b);
     b.object = this.object(b.type, b.turns, { level: b.level, spec: b.spec, look: b.look });
     if (b.part) this.addPart(b);
-    if (BUILDINGS[b.type].tower) this.addOutline(b.object);
+    if (BUILDINGS[b.type].tower) {
+      b.rank = towerRank(b.xp);
+      if (b.rank > 1) this.addPennants(b);
+      this.addOutline(b.object);
+    }
     b.object.position.set(cx, 0, cz);
     b.head = b.object.userData.head || null;
     if (b.head && b.headAngle !== undefined) b.head.rotation.y = b.headAngle;
@@ -259,6 +268,57 @@ export class Buildings {
     if (b.part === 'schmierfett') mesh.position.set(0.18, 0, 0.18);
     else mesh.position.set(-F / 2, 0.55, 0.44);
     b.object.add(mesh);
+  }
+
+  /**
+   * Wimpel für den Rang (M16): ein dünner Mast an der hinteren Ecke, darüber
+   * ein Querholz mit einem bis drei Wimpeln, die im Wind wehen (Vertex-Shader,
+   * wind: 'hang'). Rang IV hat einen goldenen in der Mitte.
+   */
+  addPennants(b) {
+    const U = 1 / 32;
+    const head = b.object.userData.head;
+    const towerTop = head ? head.position.y + (b.object.userData.headTop || 0) : 1.2;
+    const H = Math.round((towerTop + 0.35) / U); // Mast vom Boden bis knapp über den Kopf
+    const key = `wimpel|${H}`;
+    if (!this.models.has(key)) {
+      const shared = (g) => {
+        g.userData.shared = true;
+        return g;
+      };
+      const pole = new VoxelModel();
+      pole.box(0, 0, 0, 0, H, 0, P.e3);
+      pole.box(-10, H, 0, 10, H, 0, P.e4); // Querholz: daran hängen die Wimpel wie eine kleine Kette
+      pole.set(0, H + 1, 0, P.f6); // Knauf
+      if (!this.models.has('wimpel|flags')) {
+        const flag = (c1, c2) => {
+          const m = new VoxelModel();
+          // Dreieck mit der Spitze nach unten; der Ursprung liegt oben (dort hängt er)
+          for (let y = 0; y < 9; y++) {
+            const half = Math.max(0, Math.round((8 - y) * 0.4));
+            m.box(-half, -y - 1, 0, half, -y - 1, 0, y === 2 ? c2 : c1);
+          }
+          return shared(m.toGeometry({ jitter: 0, ao: false, size: U }));
+        };
+        this.models.set('wimpel|flags', [flag(P.f3, P.f5), flag(P.b3, P.b5), flag(P.f6, P.f8)]);
+      }
+      this.models.set(key, { pole: shared(pole.toGeometry({ jitter: 0, ao: false, size: U })), top: (H + 0.5) * U });
+    }
+    const w = this.models.get(key);
+    const flags = this.models.get('wimpel|flags');
+    const mast = new THREE.Group();
+    mast.name = 'wimpel';
+    mast.position.set(-0.4, 0, -0.4); // hintere linke Ecke der Zelle: der Kopf dreht sich frei
+    mast.add(new THREE.Mesh(w.pole, this.materials.building || this.materials.occluder));
+    // Rang II: ein roter, III: rot und blau, IV: rot, gold, blau
+    const colors = b.rank >= 4 ? [0, 2, 1] : b.rank === 3 ? [0, 1] : [0];
+    const xs = colors.length === 1 ? [0] : colors.length === 2 ? [-4, 4] : [-7, 0, 7];
+    colors.forEach((c, k) => {
+      const flag = new THREE.Mesh(flags[c], this.materials.laundry || this.materials.building);
+      flag.position.set(xs[k] * U, w.top, 0);
+      mast.add(flag);
+    });
+    b.object.add(mast);
   }
 
   /**
@@ -354,6 +414,9 @@ export class Buildings {
       if (b.level) e.level = b.level;
       if (b.spec) e.spec = b.spec;
       if (b.part) e.part = b.part;
+      if (b.xp) e.xp = Math.round(b.xp);
+      if (b.kills) e.kills = b.kills;
+      if (b.name !== null && b.name !== undefined) e.name = b.name;
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       return e;

@@ -152,7 +152,8 @@ export function partFits(type, id) {
  * neues Objekt pro Bild); neu gerechnet, wenn sich Stufe, Richtung oder Teil ändern.
  */
 export function towerStatsOf(b) {
-  const key = `${b.level}|${b.spec}|${b.part || ''}`;
+  const rank = towerRank(b.xp);
+  const key = `${b.level}|${b.spec}|${b.part || ''}|${rank}`;
   if (b._statsKey === key) return b._stats;
   const base = towerStats(b.type, b.level, b.spec);
   const part = b.part ? TOWER_PARTS[b.part] : null;
@@ -164,9 +165,38 @@ export function towerStatsOf(b) {
     if (part.rate && base.rate && b.type !== 'laternenturm') s.rate = base.rate * part.rate;
     if (part.aura && base.aura) s.aura = base.aura * part.aura;
   }
+  // Rang (M16): ein wenig mehr Schaden bzw. Aura
+  const bonus = TOWER_RANKS[rank - 1].bonus;
+  if (bonus > 0) {
+    if (s === base) s = { ...base };
+    if (s.damage) s.damage *= 1 + bonus;
+    if (s.aura) s.aura *= 1 + bonus;
+  }
   b._statsKey = key;
   b._stats = s;
   return s;
+}
+
+/**
+ * Ränge (M16): Türme sammeln Erfahrung – je Schadenspunkt einen, je Abschuss
+ * TOWER_KILL_XP, der Laternenturm für jeden Abschuss in seinem Licht. Rang II
+ * bis IV bringen je einen Wimpel und etwas mehr Wirkung.
+ */
+export const TOWER_RANKS = [
+  { xp: 0, bonus: 0 },
+  { xp: 150, bonus: 0.08 },
+  { xp: 500, bonus: 0.16 },
+  { xp: 1200, bonus: 0.25 },
+];
+export const TOWER_KILL_XP = 6;
+export const TOWER_LIGHT_XP = 4;
+export const RANK_NAMES = ['I', 'II', 'III', 'IV'];
+
+/** Rang 1–4 aus der Erfahrung. */
+export function towerRank(xp) {
+  let rank = 1;
+  for (let k = 1; k < TOWER_RANKS.length; k++) if ((xp || 0) >= TOWER_RANKS[k].xp) rank = k + 1;
+  return rank;
 }
 
 /** Gesamtkosten bis zu einer Stufe (für den Abriss: 70 % davon zurück). */

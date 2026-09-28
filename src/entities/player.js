@@ -25,6 +25,10 @@ function easeOut(t) {
   return 1 - (1 - t) * (1 - t);
 }
 
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+}
+
 export class Player {
   /**
    * @param {object} deps
@@ -87,7 +91,7 @@ export class Player {
 
   /**
    * Aktion starten.
-   * @param {'swing'|'search'} kind
+   * @param {'swing'|'search'|'roll'|'blitz'|'wurf'|'pfiff'|'jubel'|'wirbel'} kind
    * @param {{duration?:number, hitAt?:number, tool?:string|null, face?:{x:number,z:number}, onHit?:Function, onDone?:Function, onCancel?:Function, progress?:boolean, cancelable?:boolean}} options
    */
   startAction(kind, options = {}) {
@@ -288,6 +292,9 @@ export class Player {
 
   animate(dt) {
     const p = this.character.parts;
+    this.flashT = Math.max(0, (this.flashT || 0) - dt); // Laternenblitz (M16): Licht über intensity
+    const act = this.action;
+    this.spinAngle = act && act.kind === 'wirbel' ? easeInOut(Math.min(1, act.t / act.duration)) * Math.PI * 2 : 0;
     const amt = this.moveAmount;
     const s = Math.sin(this.phase);
     const idle = 1 - clamp(amt, 0, 1);
@@ -316,7 +323,9 @@ export class Player {
       this.faceTimer = Math.max(0, this.faceTimer - dt);
       let expr = this.faceTimer > 0 ? this.faceTemp : this.mood;
       if (this.flinch > 0) expr = 'aua';
-      else if (a && (a.kind === 'swing' || a.kind === 'roll')) expr = 'entschlossen';
+      else if (a && (a.kind === 'swing' || a.kind === 'roll' || a.kind === 'wurf' || a.kind === 'wirbel')) expr = 'entschlossen';
+      else if (a && a.kind === 'blitz') expr = 'staunen';
+      else if (a && a.kind === 'jubel') expr = 'froh';
       if (expr !== this.faceShown && p.faces[expr]) {
         p.faces[this.faceShown].visible = false;
         p.faces[expr].visible = true;
@@ -366,6 +375,34 @@ export class Player {
       p.armR.rotation.z = 0.12;
       p.body.rotation.x = q > hit * 0.8 && q < hit + 0.15 ? 0.12 : 0;
       if (p.elbowR) p.elbowR.rotation.x = q < hit * 0.8 ? -0.5 * easeOut(q / (hit * 0.8)) : lerp(-0.5, 0, Math.min(1, (q - hit * 0.8) / (hit * 0.2))); // ausholen, dann strecken
+    } else if (a && a.kind === 'wurf') {
+      // Kürbiswurf (M16): über Kopf ausholen, beim Loslassen weit nach vorn
+      const q = a.t / a.duration;
+      const hit = a.hitAt / a.duration;
+      p.armR.rotation.x = q < hit ? lerp(-0.3, -3.0, easeOut(q / hit)) : lerp(-3.0, -0.8, Math.min(1, (q - hit) / 0.3));
+      p.armR.rotation.z = 0.15;
+      p.body.rotation.x = q < hit ? -0.1 * (q / hit) : 0.16 * Math.max(0, 1 - (q - hit) / (1 - hit));
+      if (p.elbowR) p.elbowR.rotation.x = q < hit ? -1.1 * easeOut(q / hit) : lerp(-1.1, -0.15, Math.min(1, (q - hit) / 0.2));
+    } else if (a && a.kind === 'pfiff') {
+      // Pfiff (M16): zwei Finger an den Mund, Kopf ein wenig zurück
+      const q = Math.min(1, a.t / (a.hitAt * 0.8));
+      p.armR.rotation.x = lerp(-0.2, -2.1, easeOut(q));
+      p.armR.rotation.z = lerp(0.05, -0.4, q);
+      if (p.elbowR) p.elbowR.rotation.x = lerp(-0.2, -1.9, easeOut(q));
+      p.head.rotation.x = -0.18 * q;
+    } else if (a && a.kind === 'jubel') {
+      // Anfeuern (M16): Arm hoch, kleiner Hüpfer
+      const q = a.t / a.duration;
+      p.armR.rotation.x = -2.9 + Math.sin(q * Math.PI * 4) * 0.2;
+      p.armR.rotation.z = 0.35;
+      if (p.elbowR) p.elbowR.rotation.x = -0.1;
+      p.body.position.y = Math.abs(Math.sin(q * Math.PI * 2)) * 0.07;
+    } else if (a && a.kind === 'wirbel') {
+      // Wirbel (M16): Arm seitlich gestreckt, einmal ganz herum
+      p.armR.rotation.x = -1.35;
+      p.armR.rotation.z = 1.15;
+      if (p.elbowR) p.elbowR.rotation.x = 0;
+      p.body.rotation.x = 0.1;
     } else if (a && a.kind === 'search') {
       const w = Math.sin(a.t * 14);
       p.armR.rotation.x = -0.9 + w * 0.35;
@@ -379,7 +416,7 @@ export class Player {
     }
     // Werkzeug in Ruhe schräg nach vorn getragen (sonst steckt es im Boden);
     // beim Schwung liegt es in der Verlängerung des Arms
-    const carry = shownTool && !(a && (a.kind === 'swing' || a.kind === 'search')) ? -1.0 : 0;
+    const carry = shownTool && !(a && (a.kind === 'swing' || a.kind === 'search' || a.kind === 'wirbel')) ? -1.0 : 0;
     p.hand.rotation.x = damp(p.hand.rotation.x, carry, 14, dt);
 
     // Auf der Schaukel: Hände an den Seilen, Beine gerade, kein Werkzeug in der Hand
@@ -396,8 +433,22 @@ export class Player {
 
     // Linker Arm: Laterne oder Schwingen
     const lantern = this.character.lantern;
-    lantern.group.visible = this.holdingLantern;
-    if (this.holdingLantern) {
+    const flashing = a && a.kind === 'blitz';
+    lantern.group.visible = this.holdingLantern || flashing;
+    if (flashing) {
+      // Laternenblitz (M16): die Laterne hoch über den Kopf – sie flammt am höchsten Punkt auf
+      const q = a.t / a.duration;
+      const up = q < a.hitAt / a.duration ? easeOut(q / (a.hitAt / a.duration)) : q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+      p.armL.rotation.x = lerp(LANTERN_UPPER, -2.95, up);
+      p.armL.rotation.z = -0.12;
+      if (p.elbowL) p.elbowL.rotation.x = lerp(LANTERN_FORE, -0.05, up);
+      lantern.group.rotation.x = -p.armL.rotation.x - (p.elbowL ? p.elbowL.rotation.x : 0);
+      lantern.group.rotation.z = 0;
+    } else if (a && a.kind === 'jubel' && !this.holdingLantern) {
+      p.armL.rotation.x = -2.9 - Math.sin((a.t / a.duration) * Math.PI * 4) * 0.2;
+      p.armL.rotation.z = -0.35;
+      if (p.elbowL) p.elbowL.rotation.x = -0.1;
+    } else if (this.holdingLantern) {
       this.lanternSwing = damp(this.lanternSwing, s * 0.25 * amt, 6, dt);
       // N1: Oberarm etwas vor, Unterarm hoch – die Laterne hängt vor der Brust
       const upper = p.elbowL ? LANTERN_UPPER : LANTERN_RAISE;
@@ -425,7 +476,7 @@ export class Player {
 
   syncObject() {
     this.object.position.copy(this.position);
-    this.object.rotation.y = this.facing;
+    this.object.rotation.y = this.facing + (this.spinAngle || 0);
     this.object.rotation.z = this.riding ?? 0; // auf der Schaukel neigt sie sich mit
   }
 

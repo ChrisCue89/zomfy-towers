@@ -184,6 +184,50 @@ export class Combat {
     g.rig.shake = comboHit || w.stun ? 0.18 : 0.12;
   }
 
+  /**
+   * Fähigkeit Wirbel (M16): einmal ganz herum mit dem, was Mika in der Hand
+   * hat – trifft alle ringsum und stößt sie weit zurück.
+   */
+  spin(S, power) {
+    const g = this.game;
+    const id = this.weaponId;
+    const w = weaponStats(id, g.state) || WEAPONS.faeuste;
+    const started = g.player.startAction('wirbel', {
+      duration: 0.42,
+      hitAt: 0.2,
+      tool: id === 'faeuste' ? null : id,
+      onHit: () => this.spinHit(w, S, power),
+    });
+    if (started) g.sound.play('schwung');
+    return started;
+  }
+
+  spinHit(w, S, power) {
+    const g = this.game;
+    const st = g.state;
+    const p = g.player.position;
+    const reach = w.reach + S.reach;
+    g.hud.swoosh(p.x, p.z, g.player.facing, reach * 0.85, Math.PI);
+    g.hud.ring(p.x, p.z, reach, 'wirbel');
+    const damage = w.damage * S.damage * power * upgradeValue(st, 'schlag');
+    let hits = 0;
+    for (const z of g.horde.list) {
+      if (z.state === 'dying') continue;
+      if (Math.hypot(z.x - p.x, z.z - p.z) > reach + z.def.radius) continue;
+      hits++;
+      g.sound.play('treffer', { x: z.x, z: z.z });
+      const killed = g.horde.damage(z, damage, { push: w.push + S.push, fromX: p.x, fromZ: p.z, source: 'spieler' });
+      if (w.stun && !killed) g.horde.stun(z, w.stun);
+      g.effects.splat(z.x, 0.8, z.z, 'moos', 8, 0.9);
+    }
+    const heal = perkValue(st, 'lebensraub') * hits;
+    if (heal > 0) st.player.hp = Math.min(this.maxHp, st.player.hp + heal);
+    if (hits) {
+      g.hitstop = 0.07;
+      g.rig.shake = 0.16;
+    }
+  }
+
   /** Kann Mika gerade ausweichen? */
   get canRoll() {
     const p = this.game.player;
@@ -262,12 +306,19 @@ export class Combat {
       g.player.express('froh', 2);
     }
     this.offerPerk();
+    g.skills?.offer(); // Stufe 3, 6, 9: dazu eine Fähigkeiten-Wahl (M16)
+  }
+
+  /** Schon gewählte Perk-Stufen (die nächste Wahl gehört zu Stufe `perksTaken + 2`). */
+  get perksTaken() {
+    const st = this.game.state;
+    return PERK_IDS.reduce((n, id) => n + perkLevel(st, id), 0);
   }
 
   /** Noch nicht gewählte Perks (eine Wahl pro Stufe, solange es welche gibt). */
   get owedPerks() {
     const st = this.game.state;
-    const taken = PERK_IDS.reduce((n, id) => n + perkLevel(st, id), 0);
+    const taken = this.perksTaken;
     const possible = PERK_IDS.reduce((n, id) => n + PERKS[id].max, 0);
     return Math.max(0, Math.min(st.player.level - 1, possible) - taken);
   }

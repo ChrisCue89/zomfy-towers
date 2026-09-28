@@ -7,6 +7,7 @@ import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, drawText, missingGlyphs } from './font.js';
 import { LOOKS, LOOK_KEYS, NAME_MAX, cleanName } from '../data/looks.js';
+import { DIFFICULTY_ORDER, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 
 const LOGO_SCALE = 3;
 const GUARD = 0.3; // nach jedem Seitenwechsel zählen Klicks kurz nicht
@@ -23,6 +24,7 @@ export class TitleScreen {
     this.editing = false; // Namensfeld nimmt gerade Tasten an
     this.name = 'Mika';
     this.look = { hat: 'orange', jacket: 'gruen', hair: 'braun', skin: 'mittel' };
+    this.difficulty = DEFAULT_DIFFICULTY; // M16: Gemütlich · Ausgewogen · Wild
     this.logo = null;
   }
 
@@ -61,11 +63,12 @@ export class TitleScreen {
         { label: T.menue.sicherNein, action: () => this.go('main') },
       ];
     }
-    // Figur: Name, vier Aussehen-Zeilen, Los, Zurück
+    // Figur: Name, vier Aussehen-Zeilen, Schwierigkeit (M16), Los, Zurück
     return [
       { label: `${T.titel.name}: ${this.name}${this.editing && Math.floor(this.t * 2.5) % 2 === 0 ? '_' : ''}`, name: true, action: () => this.toggleEditing() },
       ...LOOK_KEYS.map((key) => ({ label: `${T.titel.aussehen[key]}: ${T.titel.werte[key][this.look[key]]}`, look: key, action: () => this.changeLook(key, 1) })),
-      { label: T.titel.los, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }) },
+      { label: `${T.schwierigkeit.titel}: ${T.schwierigkeit[this.difficulty]}`, difficulty: true, action: () => this.changeDifficulty(1) },
+      { label: T.titel.los, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }, this.difficulty) },
       { label: T.menue.zurueck, action: () => this.go('main') },
     ];
   }
@@ -73,6 +76,12 @@ export class TitleScreen {
   toggleEditing() {
     this.editing = !this.editing;
     if (!this.editing) this.name = cleanName(this.name);
+  }
+
+  changeDifficulty(dir) {
+    const n = DIFFICULTY_ORDER.length;
+    this.difficulty = DIFFICULTY_ORDER[(DIFFICULTY_ORDER.indexOf(this.difficulty) + dir + n) % n];
+    this.game.sound.play('klick');
   }
 
   changeLook(key, dir) {
@@ -118,6 +127,7 @@ export class TitleScreen {
     if (input.pressed('down')) this.focus = (this.focus + 1) % L.rows.length;
     const focused = L.rows[Math.min(this.focus, L.rows.length - 1)];
     if (focused?.look && (input.pressed('left') || input.pressed('right'))) this.changeLook(focused.look, input.pressed('left') ? -1 : 1);
+    if (focused?.difficulty && (input.pressed('left') || input.pressed('right'))) this.changeDifficulty(input.pressed('left') ? -1 : 1);
     if (input.mouse.clicked && this.guard > 0) {
       input.consumeClick();
     } else if (hovered >= 0 && input.mouse.clicked) {
@@ -172,7 +182,9 @@ export class TitleScreen {
       ui.textCentered(T.menue.sicherFrage, ui.width / 2, L.y - 16, COLORS.text, { outline: COLORS.outline });
     }
     L.rows.forEach((r, k) => ui.button(r.label, r.rect.x, r.rect.y, r.rect.w, r.rect.h, { focused: k === this.focus, hoverHighlight: false }));
-    const hint = this.editing ? T.titel.hinweisName : figur ? T.titel.hinweisFigur : T.titel.hinweis;
+    // Auf der Zeile »Schwierigkeit« sagt der Hinweis, was sie bedeutet (M16)
+    const onDifficulty = figur && L.rows[this.focus]?.difficulty;
+    const hint = this.editing ? T.titel.hinweisName : onDifficulty ? T.schwierigkeit.info[this.difficulty] : figur ? T.titel.hinweisFigur : T.titel.hinweis;
     ui.textCentered(hint, ui.width / 2, ui.height - 16, COLORS.textDim, { outline: COLORS.outline });
   }
 }

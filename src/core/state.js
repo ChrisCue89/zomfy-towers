@@ -12,8 +12,10 @@ import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
 import { TRADER_OFFERS } from '../data/trader.js';
 import { TOWER_PARTS, TOWER_PART_IDS } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
+import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
+import { SKILLS, SKILL_IDS, SKILL_MAX_RANK, START_SKILL, freshSkills } from '../data/skills.js';
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -32,6 +34,7 @@ export function createNewState(config, mapSeed = 1) {
   const start = LAYOUT.start;
   return {
     version: SAVE_VERSION,
+    difficulty: DEFAULT_DIFFICULTY, // M16: gemuetlich · ausgewogen · wild
     time: { day: 1, minute: config.time.newGameMinute },
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
@@ -45,6 +48,10 @@ export function createNewState(config, mapSeed = 1) {
     weapons: {}, // gebaute Waffen: Name -> Stufe (1–3)
     perks: {}, // gewählte Perks: Name -> Stufe
     perkChoice: null, // offene Perk-Wahl (drei Namen), falls beim Speichern noch nicht gewählt
+    // M16: Fähigkeiten auf zwei Plätzen (rechte Maustaste, X) und ihr Rang (1–3);
+    // skillChoice: offene Fähigkeiten-Wahl { mode: 'lernen'|'schaerfen', options }
+    skills: freshSkills(),
+    skillChoice: null,
     // tower: Ausbau des Funkturms (0–3), furniture: gekaufte Möbel, tradeDay: Tag des
     // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
@@ -87,6 +94,7 @@ export function sanitizeState(data, config) {
     typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
   const out = base;
   if (!data || typeof data !== 'object') return out;
+  out.difficulty = DIFFICULTIES[data.difficulty] ? data.difficulty : DEFAULT_DIFFICULTY;
   out.time.day = Math.floor(num(data.time?.day, base.time.day, 1, 1e6));
   out.time.minute = num(data.time?.minute, base.time.minute, 0, DAY_MINUTES - 0.001);
   // Drinnen (M11) liegt die Figur weit östlich der Karte im Innenraum
@@ -128,6 +136,18 @@ export function sanitizeState(data, config) {
     const choice = data.perkChoice.filter((id) => PERK_IDS.includes(id)).slice(0, 3);
     out.perkChoice = choice.length ? choice : null;
   }
+  // Fähigkeiten (M16): Platz 1 ist nie leer, keine Fähigkeit doppelt
+  const sk = data.skills || {};
+  const slots = Array.isArray(sk.slots) ? sk.slots.slice(0, 2).map((id) => (SKILLS[id] ? id : null)) : [];
+  if (!slots[0]) slots[0] = START_SKILL;
+  if (slots[1] === slots[0]) slots[1] = null;
+  out.skills = { slots: [slots[0], slots[1] || null], ranks: {} };
+  for (const id of out.skills.slots) if (id) out.skills.ranks[id] = Math.floor(num(sk.ranks?.[id], 1, 1, SKILL_MAX_RANK));
+  const sc = data.skillChoice;
+  if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
+    const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
+    out.skillChoice = options.length ? { mode: sc.mode, options } : null;
+  }
   out.tools.axt = Boolean(data.tools?.axt);
   out.tools.spitzhacke = Boolean(data.tools?.spitzhacke);
   const w = data.world || {};
@@ -146,7 +166,13 @@ export function sanitizeState(data, config) {
     loot: {},
     homeStart: num(n.homeStart, out.world.homeHp, 0, 5000),
     preLoss: num(n.preLoss, 0, 0, 5000),
+    shift: num(n.shift, 0, 0, 24 * 60), // M16: um so viele Minuten sind späte Wellen vorgerückt
+    called: Math.floor(num(n.called, 0, 0, 99)), // M16: selbst gerufene Wellen
+    towers: {}, // M16: Abschüsse je Turm in dieser Nacht (Turm der Nacht)
   };
+  if (n.towers && typeof n.towers === 'object') {
+    for (const [id, k] of Object.entries(n.towers)) if (/^\d+$/.test(id) && Number.isFinite(k)) out.night.towers[id] = Math.floor(num(k, 0, 0, 1e6));
+  }
   for (const r of RESOURCES) if (Number.isFinite(n.loot?.[r])) out.night.loot[r] = Math.floor(n.loot[r]);
   const listOf = (v) => (Array.isArray(v) ? v.filter((e) => e && typeof e === 'object') : []);
   out.horde = listOf(data.horde).filter((z) => typeof z.type === 'string' && Number.isFinite(z.x) && Number.isFinite(z.z)).slice(0, 300);
@@ -167,6 +193,10 @@ export function sanitizeState(data, config) {
         if (Number.isFinite(b.hp)) entry.hp = num(b.hp, 100, 0, 1000);
         if (b.broken === true) entry.broken = true; // zerstörte Barrikade (Trümmer)
         if (typeof b.part === 'string' && TOWER_PARTS[b.part]) entry.part = b.part; // Turmteil (M10)
+        // Geschichte des Turms (M16): Erfahrung, Abschüsse, Name
+        if (Number.isFinite(b.xp) && b.xp > 0) entry.xp = Math.round(num(b.xp, 0, 0, 1e7));
+        if (Number.isFinite(b.kills) && b.kills > 0) entry.kills = Math.floor(num(b.kills, 0, 0, 1e7));
+        if (Number.isInteger(b.name) && b.name >= 0) entry.name = Math.floor(num(b.name, 0, 0, 999));
         return entry;
       });
   }

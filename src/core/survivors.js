@@ -15,8 +15,6 @@ import { SURVIVORS, SURVIVOR_ORDER, TOWER_STAGES, BEACON, TRADES, MORNING_GIFTS,
 import { Npcs } from '../entities/npcs.js';
 import { hoursOf } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
-import { planNight } from '../data/waves.js';
-import { ENTRY_NAMES } from '../world/pathing.js';
 import { BUILDINGS } from '../data/buildings.js';
 
 const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
@@ -44,6 +42,7 @@ export class Survivors {
     this.errandCheck = 0; // Sekunden bis zur nächsten Prüfung der Licht-Aufträge
     this.greeted = new Set(); // wer Mika bei der Ankunft schon zugewinkt hat
     this.outside = null; // sind die Menschen gerade draußen?
+    this.whistled = null; // Pfiff (M16): { t, back } – Knopf rennt hin, bellt, trabt zurück
   }
 
   get st() {
@@ -187,11 +186,69 @@ export class Survivors {
       else n.wave = 1.6;
     }
     this.barkBeforeWave();
+    this.updateWhistle(dt);
+    // Nach dem Pfiff wieder daheim: normal laufen, nachts hinlegen
+    if (this.returning) {
+      const dog = this.npcs.list.get('knopf');
+      if (!dog || !dog.target) {
+        this.returning = false;
+        if (dog) {
+          dog.rush = 1;
+          this.placeOne('knopf', this.isOutsideTime(), false);
+        }
+      }
+    }
     if ((this.errandCheck -= dt) <= 0) {
       this.errandCheck = 1;
       this.checkLightErrands();
     }
     this.npcs.update(dt, p);
+  }
+
+  /**
+   * Pfiff (Fähigkeit, M16): Knopf rennt zur Stelle und bellt dort `time`
+   * Sekunden lang, dann trabt er zurück an seinen Platz. Bauten halten ihn
+   * auf – dann bellt er eben über die Barrikade hinweg.
+   */
+  whistle(x, z, time) {
+    const dog = this.npcs.list.get('knopf');
+    if (!dog) return false;
+    dog.model.root.visible = true;
+    dog.sitTarget = 0;
+    dog.rush = 4.2;
+    this.npcs.walkTo(dog, x, z);
+    this.whistled = { t: time, next: 0 };
+    return true;
+  }
+
+  updateWhistle(dt) {
+    const w = this.whistled;
+    if (!w) return;
+    const g = this.game;
+    const dog = this.npcs.list.get('knopf');
+    if (!dog) {
+      this.whistled = null;
+      return;
+    }
+    w.t -= dt;
+    if (w.t > 0) {
+      // Angekommen (oder aufgehalten): bellen, in kurzen Stößen
+      if (!dog.target) {
+        w.next -= dt;
+        if (w.next <= 0) {
+          w.next = 0.7;
+          dog.bark = 0.5;
+          g.sound.play('bellen', { x: dog.x, z: dog.z, volume: 0.8 });
+        }
+      }
+      return;
+    }
+    // Vorbei: zurück an den Platz (nachts ins Körbchen am Feuer)
+    this.whistled = null;
+    dog.rush = 1.6;
+    const home = this.standSpot('knopf');
+    this.npcs.walkTo(dog, home.x, home.z);
+    this.returning = true;
   }
 
   /** Knopf bellt kurz vor jeder Welle – auch vor der ersten (M9: ohne feste Richtung, OFFENE-FRAGEN Nr. 74). */
@@ -206,7 +263,7 @@ export class Survivors {
     if (plan) n = night.wave;
     else if (night.n !== day) {
       // Die Nacht hat noch nicht begonnen (sie beginnt mit Welle 1): ihr Plan steht schon fest
-      if (!this.upcoming || this.upcoming.night !== day) this.upcoming = planNight(day, g.world.seed, ENTRY_NAMES);
+      if (!this.upcoming || this.upcoming.night !== day) this.upcoming = g.nights.planFor(day);
       plan = this.upcoming;
     }
     if (!plan || n >= plan.waves.length) return;
@@ -429,7 +486,7 @@ export class Survivors {
     }
     if (this.resident('juna')) {
       // Juna meldet, was heute Nacht kommt (M9: Arten statt Richtung, OFFENE-FRAGEN Nr. 74)
-      const plan = planNight(st.time.day, g.world.seed, ENTRY_NAMES);
+      const plan = g.nights.planFor(st.time.day);
       lines.push({ text: T.ueberlebende.funk(plan.waves.length, nightMix(plan)) });
     }
     this.arrive(true);

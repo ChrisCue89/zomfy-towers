@@ -21,6 +21,7 @@ const SPLAT = {
   schlamm: [c(P.e3), c(P.e4), c(P.e2)],
   moos: [c(P.g5), c(P.g6), c(P.t4), c(P.a1)],
   funken: [c(P.f7), c(P.f8), c(P.s8)],
+  licht: [c(0xfff6d8), c(P.f8), c(P.f7), c(P.a4)], // Laternenblitz, Anfeuern (M16)
 };
 
 export class Effects {

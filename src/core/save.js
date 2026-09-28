@@ -69,6 +69,9 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v10 -> v11: M16 (Die Nacht in der Hand). Bisherige Stände spielen »ausgewogen«,
+  // Mika hat den Laternenblitz; eine fällige Fähigkeiten-Wahl kommt beim nächsten ruhigen Moment.
+  10: (data) => ({ ...data, version: 11, difficulty: 'ausgewogen', skills: { slots: ['laternenblitz', null], ranks: { laternenblitz: 1 } }, skillChoice: null }),
   // v9 -> v10: Meilenstein 11 (Innenraum als eigenes Bild). Wer im alten Haus stand,
   // steht jetzt im Innenraum hinter der Tür (das Haus von außen hat kein Inneres mehr).
   9: (data) => {

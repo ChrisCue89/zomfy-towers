@@ -26,6 +26,7 @@ import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js
 import { Weather } from './weather.js';
 import { P } from '../render/palette.js';
 import { Crows } from '../entities/crows.js';
+import { FLASH_TIME } from '../data/skills.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
 const KICK_COLORS = [P.f3, P.f4, P.f5, P.r3, P.e5].map((c) => new THREE.Color(c)); // aufstiebendes Laub (M12)
@@ -406,9 +407,11 @@ export class World {
 
     // Laterne der Spielfigur
     if (player) {
-      const lit = player.holdingLantern && player.lanternLit;
+      const flash = player.flashT > 0; // Laternenblitz (M16): flammt auch am Tag und ohne Laterne in der Hand auf
+      const lit = (player.holdingLantern && player.lanternLit) || flash;
       this.lanternLight.on = lit;
-      if (player.holdingLantern) this.lanternLight.light.position.copy(player.lanternPosition());
+      this.lanternLight.boost = flash ? 1 + 5 * (player.flashT / FLASH_TIME) : 1;
+      if (player.holdingLantern || flash) this.lanternLight.light.position.copy(player.lanternPosition());
     }
     this.lights.update(dt, dn.lampLevel);
     this.lightPools.update(dn.lampLevel);

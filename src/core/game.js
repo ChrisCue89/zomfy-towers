@@ -14,6 +14,8 @@ import { Builder } from './builder.js';
 import { Gathering } from './gathering.js';
 import { Nights } from './nights.js';
 import { Combat } from './combat.js';
+import { Skills } from './skills.js';
+import { TowerRanks } from './towerRanks.js';
 import { Rng } from './rng.js';
 import { PixelRenderer } from '../render/pixelRenderer.js';
 import { CameraRig } from '../render/cameraRig.js';
@@ -21,6 +23,7 @@ import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
 import { SplashScreen } from '../ui/splash.js';
+import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { MIKA } from '../entities/characters.js';
 import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
@@ -45,6 +48,7 @@ import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
 import { MapView } from '../ui/mapView.js';
 import { perkValue, PERKS, xpForLevel } from '../data/perks.js';
+import { SKILLS } from '../data/skills.js';
 import { drawText, measure, GLYPH_ROWS, setPlayerName } from '../ui/font.js';
 import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
@@ -196,14 +200,16 @@ export class Game {
     this.mapView = new MapView(this);
     this.title = new TitleScreen(this);
     this.splash = new SplashScreen(this); // Startbild »Tales of Cue präsentiert« (N2)
+    this.fast = false; // Zeitraffer (M16): nachts doppelt so schnell
     const rng = new Rng(CONFIG.world.seed + 99);
     this.horde = new Horde({ scene: this.scene, world: this.world, rng }, {
-      onKill: (z, source, lucky) => this.onZombieKilled(z, source, lucky),
+      onKill: (z, source, lucky, by) => this.onZombieKilled(z, source, lucky, by),
       onHouseHit: (dmg, z) => this.onHouseHit(dmg, z),
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
-      onDamage: (z, amount, source) => {
+      onDamage: (z, amount, source, by) => {
         if (source === 'spieler') this.hud.damageNumber(z.x, 1.7 * z.def.scale, z.z, amount);
+        if (by !== null && by !== undefined) this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
       },
     });
     this.towers = new TowerSystem(
@@ -216,6 +222,8 @@ export class Game {
     this.loot = new Loot(this.scene, rng);
     this.nights = new Nights(this);
     this.combat = new Combat(this);
+    this.skills = new Skills(this); // Mikas Fähigkeiten (M16)
+    this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
     this.trader = new Trader(this);
     this.furnishing = new Furnishing(this);
@@ -253,7 +261,7 @@ export class Game {
     // Neues Spiel nach dem Neuladen (frische Karte): gleich mit Name und Aussehen los
     const fresh = takeFreshStart();
     if (fresh && !this.worldFromSave) {
-      this.startNewFromTitle(fresh.name, fresh.look);
+      this.startNewFromTitle(fresh.name, fresh.look, fresh.difficulty);
     } else if (CONFIG.showTitle) {
       // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
       this.titleIntro = this.pendingIntro;
@@ -309,6 +317,17 @@ export class Game {
   /** Ein Simulationsschritt inklusive Eingabe-Abschluss. */
   step(dt) {
     this.update(dt);
+    // Zeitraffer (M16): nachts auf Wunsch doppelt so schnell – als zweiter Schritt
+    // gleicher Länge, damit Laufen, Treffer und Kollision so genau bleiben wie sonst
+    if (this.fast && !this.frozenFrame) {
+      if (this.mode === 'play' && this.nights.fastAllowed) {
+        this.input.endFrame();
+        this.update(dt);
+      } else if (!this.nights.fastAllowed) {
+        this.fast = false;
+        this.hud.toast(T.nacht.rafferAus, null, 2);
+      }
+    }
     // Im Trefferstopp bleiben Tastendrücke liegen (sonst verpufft ein Druck genau dann)
     if (!this.frozenFrame) this.input.endFrame();
     this.frame++;
@@ -362,6 +381,8 @@ export class Game {
     this.nights.load(st.hordeQueue);
     this.nights.ensurePlans(); // Nachtleiste sofort, auch wenn gleich die Perk-Wahl offen ist
     this.perkCalm = 0;
+    this.skills.reset();
+    this.skills.offer(); // alter Stand über Stufe 3: die Fähigkeiten-Wahl kommt im nächsten ruhigen Moment
     st.player.hp = Math.min(Math.max(1, st.player.hp), this.combat.maxHp);
     this.updateGoals(true);
     this.applyLook();
@@ -1062,9 +1083,10 @@ export class Game {
   // --- Horde: Treffer, Tod, Loot, verlorene Nacht --------------------------------
 
   /** @param {boolean} [lucky] ein Turm mit Glücksmünze hat getroffen (M10: sicher Teile) */
-  onZombieKilled(z, source, lucky = false) {
+  onZombieKilled(z, source, lucky = false, by = null) {
     const st = this.state;
     st.stats.kills = (st.stats.kills || 0) + 1;
+    this.towerRanks.onKill(by, z); // Strichliste und Erfahrung der Türme (M16)
     if (this.nights.active) st.night.kills += 1;
     const factor = z.lootFactor * (1 + this.towers.luckAt(z.x, z.z));
     // Zombieteile (M9.1): selbst erschlagen – sicher welche; durch Türme nur mit Glück
@@ -1327,6 +1349,40 @@ export class Game {
     this.applyLook();
   }
 
+  /** Nachts in der Pause: die nächste Welle jetzt rufen (M16, Mutbonus). */
+  callWave() {
+    if (!this.nights.active) return;
+    if (!this.nights.callNext()) {
+      this.hud.toast(this.horde.alive > 0 || this.nights.queue.length ? T.nacht.rufenNochNicht : T.nacht.rufenKeine, null, 2.2);
+      return;
+    }
+    this.hud.toast(T.nacht.gerufen, 'warnung', 2.6);
+    this.sound.play('klick');
+  }
+
+  /**
+   * Schwierigkeit wechseln (M16, Pausenmenü): gilt ab der nächsten Nacht – eine
+   * laufende Nacht behält ihren Plan.
+   */
+  setDifficulty(id) {
+    if (!DIFFICULTIES[id] || this.state.difficulty === id) return;
+    this.state.difficulty = id;
+    this.survivors.upcoming = null; // Knopfs Bellen vor Welle 1 rechnet den Plan neu
+    this.hud.toast(T.schwierigkeit.gewechselt(T.schwierigkeit[id]), null, 2.4);
+    this.quietSave();
+  }
+
+  /** Zeitraffer an/aus (M16) – nur nachts. */
+  toggleFast() {
+    if (!this.nights.fastAllowed) {
+      this.hud.toast(T.nacht.rafferNurNachts, null, 2.2);
+      return;
+    }
+    this.fast = !this.fast;
+    this.hud.toast(this.fast ? T.nacht.rafferAn : T.nacht.rafferAus, null, 2);
+    this.sound.play('klick');
+  }
+
   /** Pausenmenü »Neues Spiel« (bestätigt): zur Figur auf dem Titelbild, sonst gleich los. */
   newGameFromMenu() {
     if (!CONFIG.showTitle) {
@@ -1341,10 +1397,10 @@ export class Game {
   }
 
   /** Neues Spiel mit Name und Aussehen. */
-  startNewFromTitle(name, look) {
+  startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY) {
     // Die Karte gehört noch zum alten Spielstand: einmal neu laden, dann entsteht
     // ein neues Wegenetz und es geht gleich mit diesem Namen weiter
-    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look })) {
+    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty })) {
       this.saves.clear();
       this.holdSave = true;
       location.reload();
@@ -1354,6 +1410,7 @@ export class Game {
     this.holdSave = false;
     this.newGame();
     Object.assign(this.state.player, { name, look });
+    this.state.difficulty = DIFFICULTIES[difficulty] ? difficulty : DEFAULT_DIFFICULTY;
     this.appliedLook = null;
     this.applyLook();
     this.quietSave();
@@ -1426,10 +1483,13 @@ export class Game {
         break;
       case 'perk': {
         const chosen = this.perkChoice.update(input, dt);
-        if (chosen && this.combat.choosePerk(chosen)) {
+        const kind = this.perkChoice.kind;
+        if (chosen && (kind === 'perk' ? this.combat.choosePerk(chosen) : this.skills.choose(chosen))) {
           this.perkChoice.close();
           this.mode = 'play';
-          this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
+          if (kind === 'perk') this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
+          else if (kind === 'lernen') this.hud.toast(T.faehigkeiten.gelernt(T.faehigkeiten[chosen][0]), SKILLS[chosen].icon, 3.2);
+          else this.hud.toast(T.faehigkeiten.geschaerft(T.faehigkeiten[chosen][0], this.skills.rankOf(chosen)), SKILLS[chosen].icon, 2.8);
           this.sound.play('glocke');
           this.quietSave();
         }
@@ -1487,10 +1547,13 @@ export class Game {
     this.buildbar.update(dt, input);
     if (input.mouse.clicked) {
       const i = this.hud.slotAt(ui);
+      const k = this.hud.skillAt(ui);
       if (i === -2) this.toggleLantern();
       else if (i >= 0) this.selectSlot(i);
-      if (i !== -1) input.consumeClick();
+      else if (k >= 0) this.skills.use(k); // Fähigkeit per Klick auf die Kachel (M16)
+      if (i !== -1 || k >= 0) input.consumeClick();
     }
+    const cancelling = this.builder.placement || this.builder.selection !== null;
     const escUsed = this.builder.handleCancel(input);
     if (!escUsed && input.pressed('menu')) {
       this.openMenu();
@@ -1510,6 +1573,12 @@ export class Game {
       this.applySettings({ view: next });
       this.hud.toast(T.meldungen.ansicht[next], null, 2.2);
     }
+    // Die Nacht in der Hand (M16): nächste Welle jetzt rufen, Zeitraffer
+    if (input.pressed('callWave')) this.callWave();
+    if (input.pressed('fast')) this.toggleFast();
+    // Fähigkeiten (M16): Rechtsklick (wenn er nicht gerade das Bauen abbricht) und X
+    if (input.mouse.rightClicked && !cancelling && !this.passage && !this.ride) this.skills.use(0);
+    if (input.pressed('skill2') && !this.passage && !this.ride) this.skills.use(1);
 
     const slot = input.slotPressed();
     if (slot >= 0) this.selectSlot(slot);
@@ -1541,7 +1610,7 @@ export class Game {
     sp.z = p.z;
     sp.facing = this.player.facing;
 
-    const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui);
+    const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui) && !this.hud.containsSkills(ui);
     const rest = this.builder.update(dt, input, pointerFree);
     if (this.mode !== 'play') return;
     // Übrig gebliebener Klick in die Welt: zuschlagen – auf den Schlurfer unter
@@ -1567,12 +1636,19 @@ export class Game {
     // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an) – nicht mitten im
     // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
     // Nachts erst, wenn keine Welle mehr unterwegs ist (m12-r1: die Wahl ging mitten in Welle 3 auf)
-    if (this.state.perkChoice && !this.perkChoice.isOpen) {
+    if ((this.state.perkChoice || this.state.skillChoice) && !this.perkChoice.isOpen) {
       const busy = this.inFight() || (this.nights.active && this.horde.alive > 0);
       this.perkCalm = busy ? 0 : this.perkCalm + dt;
       if (this.perkCalm >= PERK_CALM) {
         this.perkCalm = 0;
-        this.perkChoice.open(this.state.perkChoice, this.state.player.level);
+        // Der Reihe nach wie die Stufen: der Perk von Stufe 2 vor der Fähigkeit von
+        // Stufe 3; auf derselben Stufe kommt die Fähigkeit (M16) zuerst
+        const sc = this.state.skillChoice;
+        const pc = this.state.perkChoice;
+        const perkAt = this.combat.perksTaken + 2;
+        const skillAt = this.skills.choiceLevel;
+        if (sc && (!pc || skillAt <= perkAt)) this.perkChoice.open(sc.options, Math.min(skillAt, this.state.player.level), sc.mode);
+        else this.perkChoice.open(pc, Math.min(perkAt, this.state.player.level));
         this.mode = 'perk';
         return;
       }
@@ -1588,6 +1664,7 @@ export class Game {
     });
     this.towers.update(dt);
     this.combat.update(dt);
+    this.skills.update(dt);
     if (this.mode !== 'play') return;
 
     // Kurz nach einem Dialog nimmt E nichts Neues an (Durchdrücken). Wer E über die
@@ -1885,7 +1962,7 @@ export class Game {
         ? this.perkChoice.bottom(ui)
         : this.mode === 'report' && this.report.isOpen
           ? this.report.bottom(ui)
-          : Math.max(64, (this.hud.bannerBottom || 0) + 4);
+          : Math.max(64, (this.hud.bannerBottom || 0) + 4, (this.hud.planBottom || 0) + 4);
     if (!cinematic) this.hud.drawToasts(ui, toastY);
     // Zeilen mit `karte` zeigen die Karte der Wege über dem Dialog (M15)
     if (this.mode === 'dialog' && this.dialog.active && this.dialog.line?.karte) this.mapView.drawInset(ui, this.dialog.top(ui));
@@ -2082,8 +2159,13 @@ export class Game {
       stufe: st.player.level,
       erfahrung: `${Math.floor(st.player.xp)}/${xpForLevel(st.player.level)}`,
       inDerHand: T.gegenstaende[this.player.heldTool] || T.gegenstaende.leer,
-      perkWartet: st.perkChoice && !this.perkChoice.isOpen ? T.perks.wartet : null,
-      perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => `${k + 1}: ${T.perks[id][0]} – ${T.perks[id][1]}`) : null,
+      perkWartet: (st.perkChoice || st.skillChoice) && !this.perkChoice.isOpen ? (st.skillChoice ? T.faehigkeiten.wartet : T.perks.wartet) : null,
+      perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => {
+        const [name, info] = this.perkChoice.kind === 'perk' ? T.perks[id] : T.faehigkeiten[id];
+        return `${k + 1}: ${name} – ${this.perkChoice.kind === 'schaerfen' ? T.faehigkeiten.rang(this.skills.rankOf(id) + 1) : info}`;
+      }) : null,
+      // Fähigkeiten (M16): Name, Taste, Rang und wie lange sie noch wartet
+      faehigkeiten: this.skills.view().map((f, k) => (f ? `${T.faehigkeiten.taste[k]}: ${f.name}${f.rang > 1 ? ` (Rang ${f.rang})` : ''}${f.wartet > 0 ? ` – noch ${Math.ceil(f.wartet)} s` : ' – bereit'}` : `${T.faehigkeiten.taste[k]}: –`)),
       perks: Object.entries(st.perks).map(([id, n]) => `${T.perks[id][0]} ${n}`),
       figur: { x: Number(this.player.position.x.toFixed(2)), z: Number(this.player.position.z.toFixed(2)), imHaus: this.world.playerInside },
       wetter: T.wetter.name[this.world.weather.kind], // M12
@@ -2271,6 +2353,32 @@ export class Game {
       },
       /** Erfahrung geben (wie besiegte Schlurfer). */
       giveXp: (n) => game.combat.gainXp(n),
+      // M16: Fähigkeiten abfragen, nutzen, lernen; Abklingzeit stellen
+      skills: () => ({ slots: [...game.state.skills.slots], ranks: { ...game.state.skills.ranks }, cool: [...game.skills.cool], used: { ...game.skills.used }, choice: game.state.skillChoice ? JSON.parse(JSON.stringify(game.state.skillChoice)) : null, lure: game.skills.lure ? { ...game.skills.lure } : null }),
+      useSkill: (k) => game.skills.use(k),
+      // M16: Türme mit Geschichte (Name, Erfahrung, Abschüsse, Rang, Wimpel)
+      towerRanks: () => game.towerRanks.view(),
+      giveTowerXp(id, xp) {
+        const b = game.towerRanks.tower(id);
+        if (b) game.towerRanks.gain(b, xp);
+        return b ? game.towerRanks.view().find((t) => t.id === id) : null;
+      },
+      learnSkill(id, slot = 1) {
+        game.state.skills.slots[slot] = id;
+        game.state.skills.ranks[id] = game.state.skills.ranks[id] || 1;
+        game.skills.cool[slot] = 0;
+      },
+      chooseSkill(id) {
+        const ok = game.skills.choose(id);
+        if (ok && game.mode === 'perk') {
+          game.perkChoice.close();
+          game.mode = 'play';
+        }
+        return ok;
+      },
+      readySkills() {
+        game.skills.cool = [0, 0];
+      },
       choosePerk(id) {
         const ok = game.combat.choosePerk(id);
         if (ok && game.mode === 'perk') {

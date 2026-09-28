@@ -178,6 +178,9 @@ async function runBrowserChecks() {
     // --- 6g. N1: Figuren aus Formen statt Kästen, Knie und Ellbogen ------------------------
     if (want('figuren')) await runFigureChecks(browser, url);
 
+    // --- 6h. M16: Die Nacht in der Hand (Nachtplan, Welle rufen, Fähigkeiten, Türme mit Geschichte)
+    if (want('nacht16')) await runNight16Checks(browser, url);
+
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
       const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
@@ -318,6 +321,338 @@ async function runViewChecks(browser, url) {
   else fail(`Bildlast im Hof: ${last.triangles} Dreiecke`);
   checkMessages(session);
   await session.context.close();
+}
+
+/**
+ * M16 – Die Nacht in der Hand: Nachtplan und Randmarken am Abend, Wellen über
+ * mehrere Wege, Schwierigkeit (Budget), Welle rufen (N) mit Mutbonus,
+ * Zeitraffer (B), Mikas Fähigkeiten (Rechtsklick, X; Wahl auf Stufe 3),
+ * Ausholen mit Risiko, Türme mit Erfahrung, Rang, Wimpel und Namen, Turm der
+ * Nacht im Morgenbericht, Schwierigkeit im Pausenmenü, Speichern v11 und
+ * Migration v10 → v11 – alles mit echten Tasten und Mausklicks.
+ */
+async function runNight16Checks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Nacht in der Hand (M16)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(60); // jeder Druck in einem eigenen Schritt
+  };
+  // Offene Wahlen (Perk, Fähigkeit) für ruhige Bilder erledigen – die Wahl selbst prüft ein eigener Punkt
+  const wahlenWeg = () =>
+    z(() => {
+      const g = window.zomfy.game;
+      for (let k = 0; k < 12 && (g.state.perkChoice || g.state.skillChoice); k++) {
+        if (g.state.skillChoice) g.skills.choose(g.state.skillChoice.options[0]);
+        else g.combat.choosePerk(g.state.perkChoice[0]);
+      }
+      if (g.mode === 'perk') {
+        g.perkChoice.close();
+        g.mode = 'play';
+      }
+    });
+  const perkWeg = async () => {
+    await z(() => {
+      const g = window.zomfy.game;
+      if (window.zomfy.mode !== 'perk') return;
+      const id = g.perkChoice.options[0];
+      if (g.perkChoice.kind === 'perk') window.zomfy.choosePerk(id);
+      else window.zomfy.chooseSkill(id);
+    });
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setWeather('klar');
+    window.zomfy.setHorde(false);
+    window.zomfy.give({ holz: 60, stein: 20, schrott: 90, zahnraeder: 4 });
+  });
+
+  // Wellenplan: Nacht 1 über einen Weg, ab Nacht 2 auch über zwei; die Schwierigkeit ändert das Budget
+  const plan = await z(() => {
+    const g = window.zomfy.game;
+    const out = { wege: [1, 2, 3, 4, 5, 6].map((n) => g.nights.planFor(n).waves.map((w) => w.entries.length)) };
+    for (const d of ['gemuetlich', 'ausgewogen', 'wild']) {
+      g.state.difficulty = d;
+      out[d] = [2, 6].map((n) => g.nights.planFor(n).waves.reduce((a, w) => a + w.spawns.length, 0));
+    }
+    g.state.difficulty = 'ausgewogen';
+    return out;
+  });
+  const mehrWege = plan.wege.slice(1).filter((n) => n.some((k) => k >= 2)).length;
+  if (plan.wege[0].every((k) => k === 1) && mehrWege >= 3 && plan.gemuetlich[1] < plan.ausgewogen[1] && plan.ausgewogen[1] < plan.wild[1]) note(`✓ Wellenplan (M16): Nacht 1 über je einen Weg, ${mehrWege} der Nächte 2–6 auch über zwei oder drei; Nacht 6 mit ${plan.gemuetlich[1]}/${plan.ausgewogen[1]}/${plan.wild[1]} Schlurfern (gemütlich/ausgewogen/wild)`);
+  else fail(`Wellenplan: ${JSON.stringify(plan)}`);
+
+  // Zwei Türme und eine Barrikade am Weg
+  const setup = await z(() => {
+    const col = window.zomfy.pathColumn(-9);
+    const j = col[Math.floor(col.length / 2)];
+    window.zomfy.build('barrikade', -9, j, 1);
+    const out = [];
+    for (const [type, i, jj] of [['bolzen', -7, -4], ['katapult', -8, j - 3], ['katapult', -8, j + 3], ['bolzen', -10, j - 3], ['bolzen', -10, j + 3]]) {
+      if (out.length >= 2) break;
+      if (window.zomfy.placeCheck(type, i, jj).ok && window.zomfy.build(type, i, jj) === 'ok') out.push({ type, i, j: jj });
+    }
+    const list = window.zomfy.buildings();
+    return { j, out, bar: list.find((b) => b.type === 'barrikade'), towers: window.zomfy.towerRanks() };
+  });
+
+  // Abend (Tag 2, 19:50): Nachtplan-Tafel und Randmarke zur ersten Welle
+  await z(() => {
+    window.zomfy.setDay(2);
+    window.zomfy.setTime(19, 50);
+    window.zomfy.teleport(2, 3, 0);
+    window.zomfy.setHorde(true);
+  });
+  await step(400);
+  const abend = await z(() => ({ view: window.zomfy.game.nights.planView(), marken: window.zomfy.game.hud.edgeMarks.filter((m) => m.art === 'welle'), next: window.zomfy.game.nights.nextEntries() }));
+  await step(680); // gehalten: gezeichnet wird nur im Schritt
+  await page.screenshot({ path: join(SHOTS, 'nachtplan.png') });
+  note('  Screenshot: screenshots/nachtplan.png');
+  if (abend.view && abend.view.rows.length >= 2 && abend.marken.length === abend.next.entries.length && abend.marken.length >= 1) note(`✓ Nachtplan (M16): am Abend ${abend.view.total} Wellen (${abend.view.rows.map((r) => r.entries.join('+')).join(', ')}), Randmarke zur ersten Welle`);
+  else fail(`Nachtplan am Abend: ${JSON.stringify(abend)}`);
+
+  // Nacht: Welle 1 abwarten und erledigen, dann N (echte Taste) ruft die nächste
+  await z(() => window.zomfy.setTime(20, 29));
+  await step(2500);
+  for (let k = 0; k < 40; k++) {
+    await z(() => { for (const zb of window.zomfy.zombies()) if (zb.state !== 'dying') window.zomfy.killZombie(zb.id, 'turm'); });
+    await step(800);
+    await perkWeg();
+    if (await z(() => window.zomfy.game.nights.canCall())) break;
+  }
+  const vorRuf = await z(() => ({ wave: window.zomfy.state().night.wave, at: window.zomfy.game.nights.plan.waves[window.zomfy.state().night.wave]?.at, minute: window.zomfy.state().time.minute }));
+  await tap('KeyN');
+  await step(200);
+  const gerufen = await z(() => ({ wave: window.zomfy.state().night.wave, called: window.zomfy.state().night.called, bonus: window.zomfy.game.nights.queue.some((s) => s.bonus), queue: window.zomfy.game.nights.queue.length }));
+  if (gerufen.wave === vorRuf.wave + 1 && gerufen.called === 1 && gerufen.bonus) note(`✓ Welle rufen (M16): N holt Welle ${gerufen.wave} ${Math.round(vorRuf.at - vorRuf.minute)} Spielminuten früher – mit Mutbonus`);
+  else fail(`Welle rufen: ${JSON.stringify({ vorRuf, gerufen })}`);
+  // B: Zeitraffer – doppelt so viele Spielminuten je Sekunde
+  const t0 = await z(() => window.zomfy.state().time.minute);
+  await step(1000);
+  const t1 = await z(() => window.zomfy.state().time.minute);
+  await tap('KeyB');
+  const t2 = await z(() => window.zomfy.state().time.minute);
+  await step(1000);
+  const t3 = await z(() => window.zomfy.state().time.minute);
+  const raffer = { normal: +(t1 - t0).toFixed(2), schnell: +(t3 - t2).toFixed(2), an: await z(() => window.zomfy.game.fast) };
+  await tap('KeyB');
+  if (raffer.an && raffer.schnell > raffer.normal * 1.7) note(`✓ Zeitraffer (M16): B verdoppelt nachts das Tempo (${raffer.normal} → ${raffer.schnell} Spielminuten je Sekunde)`);
+  else fail(`Zeitraffer: ${JSON.stringify(raffer)}`);
+  await z(() => {
+    window.zomfy.setHorde(false);
+    window.zomfy.game.nights.queue.length = 0;
+  });
+  await perkWeg();
+
+  // Laternenblitz mit echtem Rechtsklick: lähmt und bremst ringsum; ein zweiter Klick wartet noch
+  const bx = setup.bar.i + 0.5;
+  const bz = setup.bar.j + 0.5;
+  await z((p) => window.zomfy.teleport(p.x + 1.4, p.z, -Math.PI / 2), { x: bx, z: bz });
+  await step(200);
+  const nah = await z(() => {
+    const p = window.zomfy.game.player.position;
+    return [[1.6, 0.8], [-1.2, 1.5], [0.5, -2.0], [6, 0]].map(([dx, dz]) => window.zomfy.spawnZombie('schlurfer', p.x + dx, p.z + dz));
+  });
+  const ziel = await z((p) => window.zomfy.screenOf(p.x - 2, 0, p.z), { x: bx, z: bz });
+  await page.mouse.move(ziel.x, ziel.y);
+  await step(40);
+  await page.mouse.click(ziel.x, ziel.y, { button: 'right' });
+  await step(220);
+  const blitz = await z((ids) => {
+    const g = window.zomfy.game;
+    const q = ids.map((id) => g.horde.list.find((o) => o.id === id));
+    return { stun: q.map((o) => (o ? +o.stunT.toFixed(2) : null)), slow: q.map((o) => (o ? o.slow : null)), cool: window.zomfy.skills().cool[0], licht: +(g.world.lanternLight.boost || 1).toFixed(1) };
+  }, nah);
+  await step(136); // gehalten: gezeichnet wird nur im Schritt
+  await page.screenshot({ path: join(SHOTS, 'faehigkeiten.png') });
+  note('  Screenshot: screenshots/faehigkeiten.png');
+  await page.mouse.click(ziel.x, ziel.y, { button: 'right' });
+  await step(100);
+  const nochmal = await z(() => window.zomfy.skills().used.laternenblitz);
+  if (blitz.stun.slice(0, 3).every((s) => s > 0.5) && blitz.stun[3] === 0 && blitz.slow.slice(0, 3).every((s) => s > 0) && blitz.cool > 10 && blitz.licht > 2 && nochmal === 1) note(`✓ Laternenblitz (M16): Rechtsklick lähmt drei Schlurfer im Umkreis (der vierte, 6 m weg, bleibt frei), die Laterne flammt auf; ${Math.round(blitz.cool)} s Abklingzeit – ein zweiter Klick wartet`);
+  else fail(`Laternenblitz: ${JSON.stringify({ blitz, nochmal })}`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(1500);
+
+  // Stufe 3: Fähigkeiten-Wahl mit echter Taste – der Reihe nach: erst der Perk von Stufe 2
+  await z(() => window.zomfy.giveXp(40));
+  let wahl = null;
+  const reihe = [];
+  for (let k = 0; k < 40 && !wahl; k++) {
+    await step(300);
+    const offen = await z(() => (window.zomfy.mode === 'perk' ? { kind: window.zomfy.game.perkChoice.kind, level: window.zomfy.game.perkChoice.level, options: [...window.zomfy.game.perkChoice.options] } : null));
+    if (!offen) continue;
+    reihe.push(`${offen.kind} ${offen.level}`);
+    if (offen.kind === 'lernen') wahl = offen;
+    else {
+      await step(600);
+      await tap('Digit1'); // Perk der Stufe davor
+    }
+  }
+  await step(700);
+  await step(136); // gehalten: gezeichnet wird nur im Schritt
+  await page.screenshot({ path: join(SHOTS, 'faehigkeit-wahl.png') });
+  note('  Screenshot: screenshots/faehigkeit-wahl.png');
+  await tap('Digit1');
+  const gelernt = await z(() => window.zomfy.skills().slots);
+  for (let k = 0; k < 12; k++) {
+    await step(300);
+    if ((await z(() => window.zomfy.mode)) === 'perk') {
+      await step(600);
+      await tap('Digit1');
+    }
+  }
+  // Der Reihe nach: Stufen aufsteigend, auf Stufe 3 die Fähigkeit vor dem Perk
+  const stufen = reihe.map((r) => Number(r.split(' ')[1]));
+  const geordnet = stufen.every((l, i) => i === 0 || l >= stufen[i - 1]) && !reihe.includes('perk 3');
+  if (wahl?.kind === 'lernen' && wahl.level === 3 && geordnet && wahl.options.length === 3 && gelernt[1] === wahl.options[0]) note(`✓ Fähigkeiten-Wahl (M16): der Reihe nach (${reihe.join(' → ')}), Stufe 3 bietet drei Fähigkeiten (${wahl.options.join(', ')}), Taste 1 legt ${gelernt[1]} auf X`);
+  else fail(`Fähigkeiten-Wahl: ${JSON.stringify({ reihe, wahl, gelernt })}`);
+
+  // X: Kürbiswurf an den Zeiger (Fläche, Brand)
+  await z(() => {
+    window.zomfy.learnSkill('kuerbiswurf');
+    window.zomfy.readySkills();
+  });
+  const wurfZ = await z((p) => [[0, 0], [0.5, 0.3], [-0.4, 0.4]].map(([dx, dz]) => window.zomfy.spawnZombie('schlurfer', p.x - 3 + dx, p.z + dz)), { x: bx, z: bz });
+  const wurfZiel = await z((p) => window.zomfy.screenOf(p.x - 3, 0, p.z + 0.2), { x: bx, z: bz });
+  await page.mouse.move(wurfZiel.x, wurfZiel.y);
+  await step(40);
+  await tap('KeyX');
+  await step(1100);
+  const wurf = await z((ids) => ids.map((id) => {
+    const q = window.zomfy.game.horde.list.find((o) => o.id === id);
+    return q ? { hp: q.hp, max: q.maxHp, burn: q.burnT > 0 } : null;
+  }), wurfZ);
+  if (wurf.every((q) => q && q.hp < q.max && q.burn)) note('✓ Kürbiswurf (M16): X wirft an den Zeiger – alle drei getroffen, sie brennen');
+  else fail(`Kürbiswurf: ${JSON.stringify(wurf)}`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(1200);
+
+  // Ausholen mit Risiko: Rückstoß mitten im Ausholen – der Biss sitzt trotzdem
+  await z(() => (window.zomfy.game.state.player.hp = 100));
+  const jaeger = await z(() => {
+    const g = window.zomfy.game;
+    const p = g.player.position;
+    const id = window.zomfy.spawnZombie('schlurfer', p.x + 0.9, p.z);
+    const q = g.horde.list.find((o) => o.id === id);
+    Object.assign(q, { state: 'chase', cooldown: 0, aggro: 20 });
+    return id;
+  });
+  let holt = false;
+  for (let k = 0; k < 40 && !holt; k++) {
+    await step(20);
+    holt = await z((id) => (window.zomfy.game.horde.list.find((o) => o.id === id)?.windup || 0) > 0, jaeger);
+  }
+  await z((id) => {
+    const g = window.zomfy.game;
+    const q = g.horde.list.find((o) => o.id === id);
+    const p = g.player.position;
+    g.horde.damage(q, 1, { push: 0.55, fromX: p.x, fromZ: p.z, source: 'test' });
+  }, jaeger);
+  await step(600);
+  const biss = await z(() => window.zomfy.game.state.player.hp);
+  if (holt && biss < 100) note(`✓ Nahkampf mit Risiko (M16): Ein Rückstoß bricht das Ausholen nicht mehr ab – der Biss sitzt (Leben ${Math.round(biss)}/100)`);
+  else fail(`Ausholen: ${JSON.stringify({ holt, biss })}`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(1200);
+
+  // Türme mit Geschichte: echter Beschuss, Erfahrung, Rang II mit Wimpel, Name in der Auswahl
+  const tp = setup.out[0];
+  await z((t) => window.zomfy.teleport(t.i + 2.5, t.j + 0.5, 0), tp);
+  await z((t) => {
+    const col = window.zomfy.pathColumn(t.i - 1);
+    const jj = col.length ? col[Math.floor(col.length / 2)] : t.j;
+    for (let k = 0; k < 6; k++) window.zomfy.spawnZombie('schlurfer', t.i - 1 + (k % 3) * 0.3, jj + 0.5 + Math.floor(k / 3) * 0.4);
+  }, tp);
+  for (let k = 0; k < 24; k++) {
+    await step(500);
+    if (!(await z(() => window.zomfy.game.horde.alive))) break;
+  }
+  await wahlenWeg();
+  const beschuss = await z(() => window.zomfy.towerRanks());
+  const bester = [...beschuss].sort((a, b) => b.xp - a.xp)[0];
+  const aufstieg = await z((id) => window.zomfy.giveTowerXp(id, Math.max(0, 160 - window.zomfy.towerRanks().find((t) => t.id === id).xp)), bester.id);
+  const toast = await z(() => window.zomfy.game.hud.toasts.map((t) => t.text).filter((t) => t.includes('steigt auf')));
+  await z((id) => window.zomfy.selectBuilding(id), bester.id);
+  await step(200);
+  const titel = await z(() => ({ title: window.zomfy.game.builder.selectionTitle(), record: window.zomfy.game.builder.selectionRecord() }));
+  await z(() => window.zomfy.game.applySettings({ view: 'nah' }));
+  await step(680); // gehalten: gezeichnet wird nur im Schritt
+  await page.screenshot({ path: join(SHOTS, 'turm-rang.png') });
+  note('  Screenshot: screenshots/turm-rang.png');
+  await z(() => {
+    window.zomfy.game.applySettings({ view: 'weit' });
+    window.zomfy.game.builder.cancel();
+  });
+  const gespeichert = await z(() => window.zomfy.game.world.buildings.toState().find((b) => b.xp > 0));
+  if (bester.xp > 20 && bester.kills >= 1 && aufstieg.rang === 2 && aufstieg.wimpel === 1 && toast.length && titel.title.startsWith(`${aufstieg.name}, `) && titel.record.startsWith('Rang II') && gespeichert?.name !== undefined && gespeichert.kills >= 1) note(`✓ Türme mit Geschichte (M16): ${bester.name} sammelt im Beschuss ${bester.xp} Erfahrung und ${bester.kills} Abschüsse, steigt auf Rang II (Wimpel am Mast) – Auswahl »${titel.title}«, »${titel.record}«; Name, Erfahrung und Abschüsse im Spielstand`);
+  else fail(`Türme mit Geschichte: ${JSON.stringify({ beschuss, aufstieg, toast, titel, gespeichert })}`);
+
+  // Turm der Nacht im Morgenbericht
+  await wahlenWeg();
+  await z((id) => {
+    const g = window.zomfy.game;
+    g.state.night.towers = { [id]: 7 };
+    window.zomfy.endNight(true);
+    g.showReport();
+  }, bester.id);
+  await step(300);
+  await step(340); // gehalten: gezeichnet wird nur im Schritt
+  const bericht = await z(() => ({ turm: window.zomfy.state().report?.turm, zeilen: window.zomfy.game.report.isOpen ? window.zomfy.game.report.lines().map((l) => l.text) : [] }));
+  await page.screenshot({ path: join(SHOTS, 'turm-der-nacht.png') });
+  note('  Screenshot: screenshots/turm-der-nacht.png');
+  if (bericht.turm?.kills === 7 && bericht.zeilen.some((l) => l.startsWith('Turm der Nacht:') && l.includes(bericht.turm.name))) note(`✓ Turm der Nacht (M16): »${bericht.zeilen.find((l) => l.startsWith('Turm der Nacht'))}«`);
+  else fail(`Turm der Nacht: ${JSON.stringify(bericht)}`);
+  await tap('KeyE');
+  await step(200);
+
+  // Schwierigkeit im Pausenmenü: Esc, Einstellungen, S bis zur Zeile, D
+  await tap('Escape');
+  const mainRows = await z(() => window.zomfy.game.menu.buttons().map((b) => b.label));
+  for (let k = 0; k < mainRows.indexOf('Einstellungen'); k++) await tap('KeyS');
+  await tap('KeyE');
+  await step(400);
+  const rows = await z(() => window.zomfy.game.menu.buttons().map((b) => b.label));
+  const idx = rows.findIndex((r) => r.startsWith('Schwierigkeit'));
+  for (let k = 0; k < idx; k++) await tap('KeyS');
+  await tap('KeyD');
+  const schwer = await z(() => window.zomfy.state().difficulty);
+  await tap('KeyA');
+  const zurueck = await z(() => window.zomfy.state().difficulty);
+  await tap('Escape');
+  await tap('Escape');
+  if (idx >= 0 && schwer === 'wild' && zurueck === 'ausgewogen') note('✓ Schwierigkeit (M16): im Pausenmenü mit A/D umstellbar (Ausgewogen → Wild → Ausgewogen)');
+  else fail(`Schwierigkeit im Menü: ${JSON.stringify({ rows, idx, schwer, zurueck })}`);
+  checkMessages(session);
+  await session.context.close();
+
+  // Migration v10 → v11: Schwierigkeit »ausgewogen«, Laternenblitz auf Platz 1; Türme ohne Geschichte laden
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v10 → v11', {
+    init: () => {
+      if (sessionStorage.getItem('zomfy-v10')) return;
+      localStorage.setItem(
+        'zomfy-towers.spielstand',
+        JSON.stringify({
+          version: 10,
+          time: { day: 4, minute: 600 },
+          player: { x: 2, z: 3, facing: 0, lantern: false, hp: 90, xp: 5, level: 4, name: 'Kira', look: { hat: 'rot', jacket: 'gruen', hair: 'braun', skin: 'mittel' } },
+          inventory: { holz: 5, stein: 2, fasern: 1, stoff: 0, schrott: 7, teile: 0, zahnraeder: 0, moderkerne: 0 },
+          perks: { flink: 1, sammler: 1, konter: 1 },
+          world: { mapSeed: 3, houseLevel: 1, homeHp: 300, buildings: [{ id: 1, type: 'bolzen', i: -7, j: -4, turns: 0, level: 1 }], nodes: {} },
+          flags: { introGesehen: true },
+        })
+      );
+      sessionStorage.setItem('zomfy-v10', '1');
+    },
+  });
+  const m = await alt.page.evaluate(() => ({ st: window.zomfy.state(), turm: window.zomfy.towerRanks()[0] || null }));
+  if (m.st.version === 11 && m.st.difficulty === 'ausgewogen' && m.st.skills.slots[0] === 'laternenblitz' && m.st.skills.slots[1] === null && m.st.skillChoice?.mode === 'lernen' && m.turm?.xp === 0 && m.turm.rang === 1) note(`✓ Migration: Spielstand v10 wird zu v11 (Schwierigkeit ausgewogen, Laternenblitz auf Platz 1, auf Stufe 4 wartet die Fähigkeiten-Wahl; ${m.turm.name} ist ein neuer Turm)`);
+  else fail(`Migration v10 → v11: ${JSON.stringify({ v: m.st.version, d: m.st.difficulty, skills: m.st.skills, choice: m.st.skillChoice, turm: m.turm })}`);
+  checkMessages(alt);
+  await alt.context.close();
 }
 
 /**
@@ -606,7 +941,7 @@ async function runTour(browser, url) {
       await intro.page.keyboard.press(key);
       await settle(intro.page, 2);
     };
-    for (let k = 0; k < 4; k++) await tap('KeyW');
+    for (let k = 0; k < 5; k++) await tap('KeyW'); // M16: über »Schwierigkeit« hinweg zur Mütze
     await tap('KeyD');
     await tap('KeyW');
     await tap('KeyE');
@@ -617,7 +952,7 @@ async function runTour(browser, url) {
     await intro.page.screenshot({ path: join(SHOTS, 'figur.png') });
     note('  Screenshot: screenshots/figur.png');
     const knoepfe = await intro.page.evaluate(() => window.zomfyView().titel?.knoepfe || []);
-    for (let k = 0; k < 5; k++) await tap('KeyS');
+    for (let k = 0; k < 6; k++) await tap('KeyS');
     await tap('Enter');
     await intro.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 180000 });
     const neu = await intro.page.evaluate(() => window.zomfy.state().player);
@@ -886,7 +1221,7 @@ async function runSaveChecks(browser, url) {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 10 && Number.isFinite(saved.world.mapSeed)) note(`✓ Schlafen: Tag 2 begonnen und gespeichert (v10, Karte ${saved.world.mapSeed})`);
+    if (saved && saved.time.day === 2 && saved.version === 11 && Number.isFinite(saved.world.mapSeed)) note(`✓ Schlafen: Tag 2 begonnen und gespeichert (v11, Karte ${saved.world.mapSeed})`);
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -900,7 +1235,7 @@ async function runSaveChecks(browser, url) {
     const drinnenGeladen = await first.page.evaluate(() => window.zomfy.interior().inside);
     if (reloaded.time.day === 2 && Math.abs(reloaded.time.minute - 30) < 5 && drinnenGeladen) note('✓ Laden: Spielstand nach Neuladen wiederhergestellt (Tag 2, 06:30, Mika drinnen am Bett)');
     else fail(`Laden: falscher Zustand nach Neuladen (Tag ${reloaded.time.day}, Minute ${reloaded.time.minute}, drinnen ${drinnenGeladen})`);
-    // Migration v9 → v10: Wer im alten Haus stand, steht jetzt im Innenraum hinter der Tür
+    // Migration v9 → v11: Wer im alten Haus stand, steht jetzt im Innenraum hinter der Tür
     await first.page.evaluate(() => {
       window.zomfy.game.quietSave = () => {}; // beim Neuladen nicht über den alten Stand speichern
       const st = window.zomfy.state();
@@ -910,8 +1245,8 @@ async function runSaveChecks(browser, url) {
     await first.page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
     await settle(first.page, 10);
     const v9 = await first.page.evaluate(() => ({ v: window.zomfy.state().version, p: window.zomfy.state().player, i: window.zomfy.interior() }));
-    if (v9.v === 10 && v9.i.inside && Math.hypot(v9.p.x - v9.i.entry.x, v9.p.z - v9.i.entry.z) < 0.5) note('✓ Migration: Spielstand v9 wird zu v10 – wer im alten Haus stand, steht jetzt drinnen hinter der Tür');
-    else fail(`Migration v9 → v10: ${JSON.stringify(v9)}`);
+    if (v9.v === 11 && v9.i.inside && Math.hypot(v9.p.x - v9.i.entry.x, v9.p.z - v9.i.entry.z) < 0.5) note('✓ Migration: Spielstand v9 wird zu v11 – wer im alten Haus stand, steht jetzt drinnen hinter der Tür');
+    else fail(`Migration v9 → v11: ${JSON.stringify(v9)}`);
     checkMessages(first);
     await first.context.close();
 
@@ -1289,8 +1624,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 10 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v10 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 11 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v11 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -1317,8 +1652,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
-  if (v3.version === 10 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 0 && v3.inventory.holz === 15 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v10 (Leben, Zuhause, Stufe 1; die alte Barrikade gibt es als Holz zurück)');
+  if (v3.version === 11 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && v3.world.buildings.length === 0 && v3.inventory.holz === 15 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v11 (Leben, Zuhause, Stufe 1; die alte Barrikade gibt es als Holz zurück)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -1329,7 +1664,7 @@ async function runBuildChecks(browser, url) {
  * Wege vor dem Hof zusammenlaufen; die Horde bleibt auf den Wegen; Barrikaden
  * quer über den Weg halten sie auf und zerbrechen zu Trümmern, die sich
  * tagsüber wieder aufbauen und ausbauen lassen; Überreste halten drei Tage;
- * tagsüber nur einzelne Schlurfer; die Übersichtskarte (M); Speichern v10 mit
+ * tagsüber nur einzelne Schlurfer; die Übersichtskarte (M); Speichern v11 mit
  * dem Startwert der Karte und Migration v7 → v8. Feste Simulationsschritte.
  */
 async function runPathChecks(browser, url) {
@@ -1511,7 +1846,7 @@ async function runPathChecks(browser, url) {
   checkMessages(session);
   await session.context.close();
 
-  // Speichern v10: Der Startwert der Karte liegt im Spielstand und gilt nach dem Laden
+  // Speichern v11: Der Startwert der Karte liegt im Spielstand und gilt nach dem Laden
   const eins = await openGame(browser, `${url}index.html?test&map=123`, 'Karte speichern', {
     init: () => {
       if (!sessionStorage.getItem('zomfy-m9')) {
@@ -1533,8 +1868,8 @@ async function runPathChecks(browser, url) {
   await zwei.goto(`${url}index.html?test`, { timeout: 180000 });
   await zwei.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const nachLaden = await zwei.evaluate(() => ({ info: window.zomfy.mapInfo(), v: window.zomfy.state().version, seed: window.zomfy.state().world.mapSeed }));
-  if (vorLaden.seed === 123 && nachLaden.seed === 123 && nachLaden.info.seed === 123 && nachLaden.v === 10 && JSON.stringify(nachLaden.info.merge) === JSON.stringify(vorLaden.merge)) note('✓ Speichern v10: Startwert der Karte im Spielstand – nach dem Laden dasselbe Wegenetz');
-  else fail(`Speichern v10: ${JSON.stringify({ vorLaden, nachLaden })}`);
+  if (vorLaden.seed === 123 && nachLaden.seed === 123 && nachLaden.info.seed === 123 && nachLaden.v === 11 && JSON.stringify(nachLaden.info.merge) === JSON.stringify(vorLaden.merge)) note('✓ Speichern v11: Startwert der Karte im Spielstand – nach dem Laden dasselbe Wegenetz');
+  else fail(`Speichern v11: ${JSON.stringify({ vorLaden, nachLaden })}`);
   if (meldungen.length) fail(`Karte laden: Konsolenmeldungen ${meldungen.join(' | ')}`);
   await eins.context.close();
 
@@ -1573,8 +1908,8 @@ async function runPathChecks(browser, url) {
   const m = await alt.page.evaluate(() => ({ st: window.zomfy.state(), meldungen: window.zomfyView().meldungen || [] }));
   const typen = m.st.world.buildings.map((b) => b.type).sort().join(',');
   const zelt = m.st.world.buildings.find((b) => b.type === 'zelt');
-  if (m.st.version === 10 && Number.isFinite(m.st.world.mapSeed) && typen === 'werkbank,zelt' && zelt?.id === 4 && m.st.survivors.hilde.tent === 4 && m.st.inventory.holz >= 8 && m.st.inventory.schrott > 12 && m.st.inventory.teile === 7 && m.st.flags.wrackLeer && Math.hypot(m.st.player.x - 5.5, m.st.player.z + 3) < 1 && m.meldungen.some((t) => t.startsWith('Neue Karte'))) {
-    note(`✓ Migration: v7 wird zu v10 – neue Karte (${m.st.world.mapSeed}), Turm und Barrikade erstattet (Holz ${m.st.inventory.holz}, Schrott ${m.st.inventory.schrott}), Werkbank und Hildes Zelt in der Bucht neu aufgestellt`);
+  if (m.st.version === 11 && Number.isFinite(m.st.world.mapSeed) && typen === 'werkbank,zelt' && zelt?.id === 4 && m.st.survivors.hilde.tent === 4 && m.st.inventory.holz >= 8 && m.st.inventory.schrott > 12 && m.st.inventory.teile === 7 && m.st.flags.wrackLeer && Math.hypot(m.st.player.x - 5.5, m.st.player.z + 3) < 1 && m.meldungen.some((t) => t.startsWith('Neue Karte'))) {
+    note(`✓ Migration: v7 wird zu v11 – neue Karte (${m.st.world.mapSeed}), Turm und Barrikade erstattet (Holz ${m.st.inventory.holz}, Schrott ${m.st.inventory.schrott}), Werkbank und Hildes Zelt in der Bucht neu aufgestellt`);
   } else fail(`Migration v7: ${JSON.stringify({ v: m.st.version, seed: m.st.world.mapSeed, typen, zelt, hilde: m.st.survivors.hilde, inv: m.st.inventory, flags: m.st.flags, p: m.st.player, meldungen: m.meldungen })}`);
   checkMessages(alt);
   await alt.context.close();
@@ -1819,6 +2154,15 @@ async function runNightChecks(browser, url) {
     await step(1000);
     const m = await z(() => window.zomfy.mode);
     if (m === 'report') break;
+    // M16: Eine Wahl (Perk oder Fähigkeit), die in Ruhe aufgeht, hält das Spiel an – hier nicht Thema
+    if (m === 'perk') {
+      await z(() => {
+        const g = window.zomfy.game;
+        const id = g.perkChoice.options[0];
+        if (g.perkChoice.kind === 'perk') window.zomfy.choosePerk(id);
+        else window.zomfy.chooseSkill(id);
+      });
+    }
   }
   const verloren = await state();
   const bericht2 = (await z(() => window.zomfyView())).bericht || [];
@@ -2086,8 +2430,8 @@ async function runSurvivorChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await z(() => window.zomfy.state());
-  if (geladen.version === 10 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v10: Überlebende, Möbel und Leuchtmast bleiben nach dem Neuladen');
-  else fail(`Speichern v10: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
+  if (geladen.version === 11 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v11: Überlebende, Möbel und Leuchtmast bleiben nach dem Neuladen');
+  else fail(`Speichern v11: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
   checkMessages(session);
   await session.context.close();
 
@@ -2105,8 +2449,8 @@ async function runSurvivorChecks(browser, url) {
     },
   });
   const m = await v4.page.evaluate(() => ({ state: window.zomfy.state(), tabs: window.zomfyView().bauleiste }));
-  if (m.state.version === 10 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
-    note('✓ Migration: Spielstand v4 wird zu v10 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
+  if (m.state.version === 11 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
+    note('✓ Migration: Spielstand v4 wird zu v11 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
   } else fail(`Migration v4: ${JSON.stringify(m.state)}`);
   checkMessages(v4);
   await v4.context.close();
@@ -2116,7 +2460,7 @@ async function runSurvivorChecks(browser, url) {
  * Meilenstein 8 (seit M9 an der Bucht): Das Bootswrack gibt nur einmal etwas
  * her, Schrotthaufen alle zwei Tage. Balduin kommt ab Tag 2 morgens mit dem Boot
  * an den Steg, handelt bis Mittag Zombieteile gegen Rohstoffe (echte Tasten im
- * Handelsfenster), Vorrat je Tag, Speichern v10 und Migration v6 → v8.
+ * Handelsfenster), Vorrat je Tag, Speichern v11 und Migration v6 → v8.
  */
 async function runTraderChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Händler', {
@@ -2293,7 +2637,7 @@ async function runTraderChecks(browser, url) {
   if (geht.phase === 'geht' && weg.phase === 'weg' && !weg.visible) note('✓ Balduin: um 12 Uhr legt er ab, nachmittags ist er fort');
   else fail(`Balduin geht: ${JSON.stringify({ geht: geht.phase, weg })}`);
 
-  // Speichern v10: Vorrat des Tages und Flags bleiben
+  // Speichern v11: Vorrat des Tages und Flags bleiben
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -2301,8 +2645,8 @@ async function runTraderChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await state();
-  if (geladen.version === 10 && geladen.world.trader.day === 3 && geladen.world.trader.sold.zahnrad === 2 && geladen.flags.wrackLeer && geladen.flags.balduinGetroffen) note('✓ Speichern v10: Balduins Vorrat, Bootswrack und Bekanntschaft bleiben nach dem Neuladen');
-  else fail(`Speichern v10: ${JSON.stringify({ v: geladen.version, trader: geladen.world.trader, flags: geladen.flags })}`);
+  if (geladen.version === 11 && geladen.world.trader.day === 3 && geladen.world.trader.sold.zahnrad === 2 && geladen.flags.wrackLeer && geladen.flags.balduinGetroffen) note('✓ Speichern v11: Balduins Vorrat, Bootswrack und Bekanntschaft bleiben nach dem Neuladen');
+  else fail(`Speichern v11: ${JSON.stringify({ v: geladen.version, trader: geladen.world.trader, flags: geladen.flags })}`);
 
   // Meilenstein 10: besondere Turmteile. An Tag 4 bietet Balduin eine Glücksmünze an;
   // eingebaut über die Turm-Auswahl (Taste der Kachel). Abschüsse dieses Turms lassen
@@ -2371,8 +2715,8 @@ async function runTraderChecks(browser, url) {
   });
   await step(100);
   const laterneKacheln = await z(() => window.zomfy.buildbarLayout().tiles.map((t) => t.id));
-  if (kauf.angebote.includes('gluecksmuenze') && kauf.gekauft && kauf.vorrat === 1 && turmTeil.res === 'ok' && eingebaut.teil === 'gluecksmuenze' && eingebaut.vorrat === 0 && muenze.lebend === 0 && muenze.teile >= 3 && nachLaden.v === 10 && nachLaden.teil === 'gluecksmuenze' && laterne.res === 'ok' && laterneKacheln.includes('teil-fernrohr') && !laterneKacheln.includes('teil-gluecksmuenze')) {
-    note(`✓ Turmteile: Balduin bietet an Tag 4 eine Glücksmünze an, eine Taste baut sie in den Bolzenwerfer ein – ${muenze.teile} Zombieteile von drei Schlurfern, nach dem Neuladen steckt sie noch (v10); der Laternenturm nimmt ein Fernrohr, aber keine Münze`);
+  if (kauf.angebote.includes('gluecksmuenze') && kauf.gekauft && kauf.vorrat === 1 && turmTeil.res === 'ok' && eingebaut.teil === 'gluecksmuenze' && eingebaut.vorrat === 0 && muenze.lebend === 0 && muenze.teile >= 3 && nachLaden.v === 11 && nachLaden.teil === 'gluecksmuenze' && laterne.res === 'ok' && laterneKacheln.includes('teil-fernrohr') && !laterneKacheln.includes('teil-gluecksmuenze')) {
+    note(`✓ Turmteile: Balduin bietet an Tag 4 eine Glücksmünze an, eine Taste baut sie in den Bolzenwerfer ein – ${muenze.teile} Zombieteile von drei Schlurfern, nach dem Neuladen steckt sie noch (v11); der Laternenturm nimmt ein Fernrohr, aber keine Münze`);
   } else fail(`Turmteile: ${JSON.stringify({ kauf, turmTeil: { res: turmTeil.res, id: turmTeil.id }, kachel, eingebaut, muenze, nachLaden, laterne, laterneKacheln })}`);
   checkMessages(session);
   await session.context.close();
@@ -2390,7 +2734,7 @@ async function runTraderChecks(browser, url) {
     },
   });
   const m = await v6.page.evaluate(() => window.zomfy.state());
-  if (m.version === 10 && m.flags.wrackLeer && m.inventory.teile === 0 && m.inventory.schrott === 12 && m.world.trader.day === 0 && m.player.name === 'Kira') note('✓ Migration: Spielstand v6 wird zu v10 (Wrack schon ausgeräumt, Zombieteile bei null)');
+  if (m.version === 11 && m.flags.wrackLeer && m.inventory.teile === 0 && m.inventory.schrott === 12 && m.world.trader.day === 0 && m.player.name === 'Kira') note('✓ Migration: Spielstand v6 wird zu v11 (Wrack schon ausgeräumt, Zombieteile bei null)');
   else fail(`Migration v6: ${JSON.stringify({ v: m.version, flags: m.flags, inv: m.inventory, trader: m.world.trader })}`);
   checkMessages(v6);
   await v6.context.close();
@@ -2550,8 +2894,8 @@ async function runCombatChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await state();
-  if (geladen.version === 10 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
-    note(`✓ Speichern v10: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
+  if (geladen.version === 11 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+    note(`✓ Speichern v11: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);
   await session.context.close();
@@ -3005,10 +3349,12 @@ async function runFixChecks(browser, url) {
   const reiheKlick = await z(() => {
     const Z = window.zomfy;
     Z.give({ holz: 20 });
+    Z.setHorde(false); // kein Streuner neben Mika: dann hätte Zuschlagen Vorrang vor dem Auswählen
     const col = Z.pathColumn(-10);
     for (const j of col) Z.build('barrikade', -10, j, 1);
-    Z.teleport(-7.5, col[0] - 2.5, 0);
-    return col.slice(0, -1); // die vorderste liegt nah an der Schnellleiste
+    // Die Reihe steht im oberen Teil des Bildes: unten liegen Schnellleiste und Fähigkeiten (M16)
+    Z.teleport(-7.5, col[0] - 1, 0);
+    return col.slice(0, -1);
   });
   await step(300);
   const getroffen = [];
@@ -3018,8 +3364,10 @@ async function runFixChecks(browser, url) {
     await step(50);
     getroffen.push(await z(() => window.zomfy.game.builder.hovered?.j ?? null));
   }
+  const zeigerLage = await z(() => ({ kampf: window.zomfy.game.builder.fighting(), modus: window.zomfy.mode }));
+  await z(() => window.zomfy.setHorde(true));
   if (getroffen.length >= 3 && getroffen.every((j, k) => j === reiheKlick[k])) note(`✓ Auswahl: In einer dichten Barrikadenreihe trifft der Zeiger die Barrikade darunter (${getroffen.length} von ${reiheKlick.length})`);
-  else fail(`Barrikade unter dem Zeiger: ${JSON.stringify({ reiheKlick, getroffen })}`);
+  else fail(`Barrikade unter dem Zeiger: ${JSON.stringify({ reiheKlick, getroffen, zeigerLage })}`);
 
   // E neben Werkbank und Sessel (Theo): Die Werkbank geht vor
   const sitz = await z(() => {

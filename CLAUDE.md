@@ -169,7 +169,11 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Wegvorschau), gathering (Sammeln, Durchsuchen), nights
                       (Tagesschlurfer, Wellen, Sieg/Niederlage, Bericht),
                       combat (Waffen-Schlag, Ausweichrolle, Lebenspunkte,
-                      Erfahrung, Perk-Vergabe), survivors (Überlebende:
+                      Erfahrung, Perk-Vergabe, Wirbel), skills (Mikas
+                      Fähigkeiten: zwei Plätze, Abklingzeit, Wahl auf
+                      Stufe 3/6/9, M16), towerRanks (Türme mit Geschichte:
+                      Erfahrung, Rang, Wimpel, Name, Turm der Nacht, M16),
+                      survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
                       Funkturm), furnishing (Möbel, Gemütlichkeit), trader
                       (Balduin: Fahrplan aus der Uhrzeit, Einfahrt mit
@@ -231,6 +235,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       waves (Wellenplan je Nacht, Tagesschlurfer), upgrades
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
+                      skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
+                      difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel, Gemütlichkeit), looks (Aussehen der
@@ -257,8 +263,11 @@ Grundprinzipien:
   brauchen, berechnet eine eigene `layout()`-Methode.
 - Die Oberfläche ist ein 2D-Canvas in Spielauflösung, sofort-modus gezeichnet.
 - **Eingaben im Spielmodus, in dieser Reihenfolge:** Bauleiste (Kacheln,
-  Q R T G C V, Tab; Abreißen liegt immer auf V) → Schnellleiste → Abbrechen
-  (Esc/Rechtsklick, vor dem Menü) → Bewegung (Leertaste: Ausweichrolle) →
+  Q R T G C V, Tab; Abreißen liegt immer auf V) → Schnellleiste und
+  Fähigkeiten-Kacheln → Abbrechen (Esc/Rechtsklick, vor dem Menü) → Karte (M),
+  Ansicht (Z), Welle rufen (N), Zeitraffer (B), Fähigkeiten (Rechtsklick –
+  nur wenn er nicht gerade das Bauen abbricht – und X, M16) → Bewegung
+  (Leertaste: Ausweichrolle) →
   Builder (Vorschau, Setzen, Auswahl per Klick – ein Schlurfer unter dem
   Zeiger geht vor, dann ist der Klick ein Schlag) → Interaktion (E) →
   Sammeln bei gehaltenem E. `use` (E/Enter) gilt im Spiel, `confirm`
@@ -420,7 +429,19 @@ Grundprinzipien:
    präsentiert« ohne jeden Klang, eine echte Taste startet die Spieluhr, dann
    blendet das Titelbild mit der Titelmusik ein; nach »Los geht’s!« ist sie
    aus; Titelstück und Spieluhr rechnen offline ohne Übersteuerung (Bild:
-   startbild).
+   startbild); ab M16 (Abschnitt `nacht16`, dazu die neue Zeile
+   »Schwierigkeit« im Titelbild): Nacht 1 kommt über je einen Weg, ab Nacht 2
+   auch über zwei oder drei, die Schwierigkeit ändert das Budget; am Abend
+   zeigen Nachtplan und Randmarke die erste Welle; N ruft in der Pause die
+   nächste Welle (Mutbonus), B verdoppelt nachts das Tempo; ein echter
+   Rechtsklick blitzt mit der Laterne (lähmt ringsum, Abklingzeit, ein zweiter
+   Klick wartet); Stufe 3 bietet drei Fähigkeiten, Taste 1 legt eine auf X;
+   X wirft einen Kürbis an den Zeiger; ein Rückstoß bricht das Ausholen eines
+   Schlurfers nicht mehr ab; Türme sammeln im Beschuss Erfahrung, steigen mit
+   Wimpel auf und tragen Namen (auch im Spielstand); der Morgenbericht kürt
+   den Turm der Nacht; die Schwierigkeit lässt sich im Pausenmenü mit A/D
+   umstellen; Migration v10 → v11 (Bilder: nachtplan, faehigkeiten,
+   faehigkeit-wahl, turm-rang, turm-der-nacht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -491,7 +512,13 @@ auf ihre Plätze; ab M13g misst `detail()` je Modellfamilie die kleinste
 Kantenlänge der Geometrie (»Voxel je Meter«, 32 = doppelt fein); ab M15
 zeigt `camera()` den Blickpunkt der Kamera, die laufende Fahrt der
 Einleitung und die Dialogzeile, `lookSpot(ort)` die Blickpunkte der
-Einleitung (`wald`, `unterholz`, `zusammen`, `haus`).
+Einleitung (`wald`, `unterholz`, `zusammen`, `haus`); ab M16 zeigt
+`skills()` Plätze, Ränge, Abklingzeiten, Nutzungen und eine offene Wahl,
+`useSkill(k)` nutzt Platz k, `learnSkill(id, platz)` legt eine Fähigkeit
+auf einen Platz, `chooseSkill(id)` nimmt eine Karte der Fähigkeiten-Wahl,
+`readySkills()` beendet alle Abklingzeiten; `towerRanks()` nennt je Turm
+Name, Erfahrung, Abschüsse, Rang und Wimpel, `giveTowerXp(id, n)` schenkt
+Erfahrung.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

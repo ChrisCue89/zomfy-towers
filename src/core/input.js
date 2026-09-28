@@ -12,6 +12,9 @@ const BINDINGS = {
   dodge: ['Space'], // im Spiel: Ausweichrolle
   lantern: ['KeyF'],
   map: ['KeyM'], // Übersichtskarte (Meilenstein 9)
+  callWave: ['KeyN'], // nachts: nächste Welle jetzt rufen (M16)
+  fast: ['KeyB'], // nachts: Zeitraffer an/aus (M16)
+  skill2: ['KeyX'], // zweite Fähigkeit (M16); die erste liegt auf der rechten Maustaste
   zoom: ['KeyZ', 'KeyY'], // Ansicht nah/weit (M13) – auf deutschen Tastaturen liegt Z dort, wo sonst Y ist
   menu: ['Escape', 'KeyP'],
   debug: ['F3'],
