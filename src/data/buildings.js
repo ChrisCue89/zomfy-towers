@@ -43,6 +43,8 @@ export const BUILDINGS = {
   zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4, raid: 50 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
   // M19: Fallen auf den Wegen (begehbar; hp = wie lange sie halten, Werte in traps.js)
   stachelbrett: { w: 1, d: 1, cost: { holz: 2, schrott: 2 }, icon: 'stachelbrett', trap: true, onPath: true, repeat: true, hp: 30, height: 0.2 },
+  // M24: Moderlocke – auf den Weg nahe einem Spawn: dort in der Nacht mehr Horde und Beute (data/risk.js)
+  moderlocke: { w: 1, d: 1, cost: { teile: 8, fasern: 3 }, icon: 'moderlocke', lure: true, onPath: true, max: 1, height: 0.9 },
   leimtopf: { w: 1, d: 1, cost: { holz: 1, schrott: 1, fasern: 2 }, icon: 'leimtopf', trap: true, onPath: true, repeat: true, hp: 25, height: 0.4 },
   klettenteppich: { w: 1, d: 1, cost: { holz: 1, fasern: 4 }, icon: 'klettenteppich', trap: true, onPath: true, repeat: true, hp: 30, height: 0.15 },
   knallerbsen: { w: 1, d: 1, cost: { holz: 1, schrott: 3 }, icon: 'knallerbsen', trap: true, onPath: true, repeat: true, hp: 1, height: 0.2 },

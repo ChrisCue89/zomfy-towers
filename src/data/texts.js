@@ -95,6 +95,7 @@ export const T = {
     gluehschwarm: 'Glühschwarm',
     wetterhahn: 'Wetterhahn',
     stachelbrett: 'Stachelbrett',
+    moderlocke: 'Moderlocke', // M24
     leimtopf: 'Leimtopf',
     klettenteppich: 'Klettenteppich',
     knallerbsen: 'Knallerbsen',
@@ -123,6 +124,7 @@ export const T = {
     gluehschwarm: 'Leuchtende Bienen stechen durch Panzer und blenden.',
     wetterhahn: 'Sprühstoß im Wind: nass und zurückgeschoben.',
     stachelbrett: 'Auf den Weg: Wer drüberläuft, sticht sich. Nutzt sich ab.',
+    moderlocke: 'Auf einen Weg am Waldrand: Dort kommt nachts mehr Horde – mit mehr Beute und einer Fundkiste.', // M24
     leimtopf: 'Auf den Weg: Wer hineintritt, klebt fest und wird langsam.',
     klettenteppich: 'Auf den Weg: Kletten hängen lange und bremsen.',
     knallerbsen: 'Auf den Weg: Knallen einmal – Schaden ringsum und kurz betäubt.',
@@ -170,7 +172,7 @@ export const T = {
     reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten' },
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
-    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg' },
+    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg', locke: 'Nur auf einen Weg nahe dem Waldrand' },
     keineHorde: 'Hier kommt keine Horde vorbei', // m12-r1: der Turm stand mitten in der Bucht
     keinTurm: 'Kein Turm reicht hierher', // m16-r1: Barrikaden gehören in den Kreis eines Turms
     nurDraussen: 'Nur draußen',
@@ -831,6 +833,19 @@ export const T = {
       hinweis: 'Der Moosriese! Er stampft alles um, was vor ihm steht – und fällt er, zerfällt er in drei.',
       zerfaellt: 'zerfällt in drei!',
     },
+  },
+  // Wagnis und Vorrat (M24): Moderlocke, makellose Nacht, Balduins Schatz, Vorratskammer
+  wagnis: {
+    lockeNeu: 'Neu im Reiter »Fallen«: die Moderlocke – mehr Horde, mehr Beute.',
+    planLocke: (weg) => `Moderlocke am ${weg}: mehr Horde, mehr Beute`,
+    lockeKiste: (weg) => `Die Moderlocke am ${weg} hat gehalten – dort wartet eine Fundkiste.`,
+    lockeFort: 'Die Moderlocke ist fort.',
+    makellos: (n) => (n > 1 ? `Makellose Nacht, ${n} in Folge! Niemand im Lager:` : 'Makellose Nacht! Niemand im Lager:'),
+    schatz: 'Drei makellose Nächte in Folge – Balduin hat etwas Besonderes dabei.',
+    schatzAngebot: ['Balduins Schatz', 'Ein einzigartiges Turmteil – nur für makellose Nächte.'],
+    schatzAuf: (name) => `Balduins Schatz: ${name}!`,
+    zinsen: 'Vorratskammer – das Gesparte wuchs:',
+    keineZinsen: 'Nach dem Durchbruch wuchs in der Vorratskammer nichts.',
   },
   // Posten (M23): Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
   posten: {

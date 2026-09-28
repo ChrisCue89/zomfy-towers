@@ -70,6 +70,8 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v17 -> v18: M24 (Wagnis und Vorrat). Noch keine makellose Nacht in Folge, kein Schatz.
+  17: (data) => ({ ...data, version: 18, risk: { streak: 0, treasure: false } }),
   // v16 -> v17: M23 (Gemeinsam durch die Nacht). Noch kein Nebenauftrag, kein Fest;
   // Hochsitze gibt es erst ab jetzt (kein Bau trägt schon einen Posten).
   16: (data) => ({ ...data, version: 17, quests: { active: null, done: [] }, feast: 0 }),

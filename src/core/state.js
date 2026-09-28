@@ -21,7 +21,7 @@ import { TOWERS } from '../data/towers.js';
 import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
 
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -81,6 +81,7 @@ export function createNewState(config, mapSeed = 1) {
     // M23: Nebenaufträge – der laufende { id, got: aufgesammelte Fundstellen, n: Champions } und die erledigten
     quests: { active: null, done: [] },
     feast: 0, // M23: Tag des Fests am Feuer (nach einer gehaltenen Bossnacht)
+    risk: { streak: 0, treasure: false }, // M24: makellose Nächte in Folge, wartet Balduins Schatz?
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -183,6 +184,7 @@ export function sanitizeState(data, config) {
     out.quests.active = { id: q.active.id, got, n: Math.floor(num(q.active.n, 0, 0, 99)) };
   }
   out.feast = Math.floor(num(data.feast, 0, 0, 1e6));
+  out.risk = { streak: Math.floor(num(data.risk?.streak, 0, 0, 99)), treasure: data.risk?.treasure === true }; // M24
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
@@ -213,6 +215,7 @@ export function sanitizeState(data, config) {
     campHit: Boolean(n.campHit),
     inCamp: Math.floor(num(n.inCamp, 0, 0, 1e4)),
     raided: Array.isArray(n.raided) ? n.raided.filter((t) => typeof t === 'string' && BUILDINGS[t]).slice(0, 60) : [],
+    homeHit: Boolean(n.homeHit), // M24: Das Zuhause wurde getroffen (keine makellose Nacht)
   };
   // M23: Was die Leute auf den Posten in dieser Nacht getan haben (Morgenbericht)
   if (n.posts && typeof n.posts === 'object') {

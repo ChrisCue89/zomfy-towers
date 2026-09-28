@@ -1501,6 +1501,22 @@ const ICONS = {
       '...aabba....',
     ],
   },
+  // M24: Moderlocke – Sack am Pfahl über einem Haufen, violetter Moder
+  moderlocke: {
+    legend: { k: P.e1, S: P.e5, s: P.e4, p: P.e4, T: P.t4, t: P.t3, D: P.d2, d: P.d1, A: P.a2, O: P.f4 },
+    rows: [
+      '.kkkkkkkk.',
+      '.kSk...kpk',
+      'kSSSk..kpk',
+      'kSsSk..kpk',
+      '.kkk.k.kpk',
+      '..kDDDk.kpk',
+      '.kdAdkTTkpk',
+      'kOOkTtTTtTk',
+      'kOOTtTTtTTk',
+      '.kkkkkkkkk.',
+    ],
+  },
   // M23: Hochsitz und die Gesichter der Überlebenden (Posten, Aufträge)
   hochsitz: {
     legend: { k: P.e1, R: P.e4, r: P.e3, L: P.e5, B: P.e6, l: P.e7 },

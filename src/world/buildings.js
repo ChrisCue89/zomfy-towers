@@ -78,6 +78,8 @@ export class Buildings {
     const cells = this.grid.cells(i, j, w, d);
     const onPath = cells.map(([ci, cj]) => this.grid.isPath(ci, cj));
     if (def.onPath && onPath.some((p) => !p)) return { ok: false, reason: 'nurWeg' };
+    // Moderlocke (M24): nur nahe einem Spawn, dort wo der Weg aus dem Wald kommt
+    if (def.lure && this.lureEntry && !this.lureEntry(i + w / 2, j + d / 2)) return { ok: false, reason: 'locke' };
     if (!def.onPath && onPath.some(Boolean)) return { ok: false, reason: 'aufWeg' };
     if (!this.grid.canPlace(i, j, w, d)) {
       const why = cells.map(([ci, cj]) => this.grid.blockReason(ci, cj)).find(Boolean) || null;
@@ -286,7 +288,7 @@ export class Buildings {
     }
     if (building.broken && !def.raid) this.setBlocking(building, false); // Trümmer: begehbar (Umgeworfenes nicht)
     if (type === 'barrikade') building.collider.climb = true; // Mika klettert drüber, die Horde nicht (m12-r1)
-    if (def.trap) this.setBlocking(building, false); // Fallen (M19): begehbar, für alle
+    if (def.trap || def.lure) this.setBlocking(building, false); // Fallen (M19), Moderlocke (M24): begehbar, für alle
     this.grid.occupy(building.id, i, j, w, d);
     this.setInteraction(building);
     this.list.push(building);
@@ -534,7 +536,7 @@ export class Buildings {
 
   /** Kollision eines Baus an/aus (das Tor hat mehrere Teile). */
   setBlocking(b, on) {
-    if (BUILDINGS[b.type].trap) on = false; // Fallen sperren nie (M19)
+    if (BUILDINGS[b.type].trap || BUILDINGS[b.type].lure) on = false; // Fallen (M19) und die Moderlocke (M24) sperren nie
     for (const c of b.colliders || [b.collider]) c.enabled = on;
   }
 

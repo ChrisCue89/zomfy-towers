@@ -122,7 +122,7 @@ export class Pathing {
     const id = g.occupant[k];
     if (id === null) return g.pathCost[k];
     const b = this.buildingOf(id);
-    if (b && BUILDINGS[b.type].trap) return g.pathCost[k]; // Fallen (M19): begehbar
+    if (b && (BUILDINGS[b.type].trap || BUILDINGS[b.type].lure)) return g.pathCost[k]; // Fallen (M19), Moderlocke (M24): begehbar
     if (!b || !BUILDINGS[b.type].smash) return INF;
     if (b.broken) return g.pathCost[k];
     if (brute === 'free') return BUILDINGS[b.type].camp ? GATE_COST : g.pathCost[k]; // M22: drüber bzw. drunter durch
@@ -323,7 +323,7 @@ export class Pathing {
     const id = g.occupant[k];
     if (id === null) return true;
     const b = this.buildingOf(id);
-    return Boolean(b && ((b.type === 'barrikade' && b.broken) || BUILDINGS[b.type].trap));
+    return Boolean(b && ((b.type === 'barrikade' && b.broken) || BUILDINGS[b.type].trap || BUILDINGS[b.type].lure));
   }
 
   /** Steht auf der Zelle nichts – oder nur eine Falle, über die man läuft (M19)? */
@@ -331,7 +331,7 @@ export class Pathing {
     const id = this.grid.occupant[k];
     if (id === null) return true;
     const b = this.buildingOf(id);
-    return Boolean(b && BUILDINGS[b.type].trap);
+    return Boolean(b && (BUILDINGS[b.type].trap || BUILDINGS[b.type].lure));
   }
 
   /** Steht zwischen zwei Punkten nichts im Raster (Bau, Hindernis, Wald)? */

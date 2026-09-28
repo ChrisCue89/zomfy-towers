@@ -16,6 +16,7 @@ import { T } from '../data/texts.js';
 import { blueprintOptions } from '../data/blueprints.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
+import { FLAWLESS } from '../data/risk.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 
@@ -302,6 +303,18 @@ export class Trader {
 
   /** Angebote des Tages als Rezepte für das Handelsfenster. */
   offers() {
+    const st = this.game.state;
+    const list = this.dayOffers();
+    // M24: nach drei makellosen Nächten hat Balduin einen Schatz dabei
+    if (st.risk?.treasure) {
+      const [name, info] = T.wagnis.schatzAngebot;
+      list.push({ id: 'tausch-schatz', key: 'schatz', cost: FLAWLESS.price, trade: true, icon: 'kiste', name, info, gives: { rare: FLAWLESS.rarity }, affordable: canAfford(st.inventory, FLAWLESS.price) });
+    }
+    return list;
+  }
+
+  /** Die Angebote dieses Tages (Fahrplan aus data/trader.js). */
+  dayOffers() {
     const st = this.game.state;
     return offersOfDay(st.time.day).map((key) => {
       const o = TRADER_OFFERS[key];

@@ -551,6 +551,7 @@ export class Hud {
     const hints = [];
     if (view.canCall) hints.push(view.evening ? T.nacht.rufenAbend : T.nacht.rufenHinweis);
     if (view.evening && !view.juna) hints.push(T.nacht.planOhneJuna);
+    if (view.lure) hints.push(T.wagnis.planLocke(T.horde.richtungKurz[view.lure])); // M24
     const w = Math.max(measure(title), ...hints.map((l) => measure(l)), ...lines.map((l) => measure(l))) + 14;
     const h = 16 + lines.length * 11 + (hints.length ? 4 + hints.length * 11 : 2);
     const x = Math.round(ui.width / 2 - w / 2);

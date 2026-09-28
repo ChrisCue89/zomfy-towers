@@ -5,6 +5,7 @@
 import { T } from '../data/texts.js';
 import { clockText } from '../core/state.js';
 import { RESOURCES } from '../data/items.js';
+import { FLAWLESS } from '../data/risk.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { drawIcon } from './icons.js';
@@ -57,7 +58,14 @@ export class ReportPanel {
       const list = Object.entries(n).map(([type, k]) => (k > 1 ? `${k}× ${T.bauten[type]}` : T.bauten[type]));
       if (list.length) out.push({ text: T.lager.berichtUmgeworfen(list.join(', ')), bad: true });
     }
+    // M24: Wagnis und Vorrat – Moderlocke, makellose Nacht, Vorratskammer
+    const k = r.risk;
+    if (k?.lure) out.push({ text: k.lure.chest ? T.wagnis.lockeKiste(T.horde.richtungKurz[k.lure.entry]) : T.wagnis.lockeFort, warm: k.lure.chest, dim: !k.lure.chest });
+    if (k?.flawless) out.push({ text: T.wagnis.makellos(k.streak), res: FLAWLESS.reward });
+    if (k?.treasure) out.push({ text: T.wagnis.schatz, warm: true });
     out.push({ text: T.bericht.eingesammelt, res: r.loot, empty: T.bericht.nichts });
+    if (k?.interest > 0) out.push({ text: T.wagnis.zinsen, res: { schrott: k.interest } });
+    else if (k?.breach && r.won) out.push({ text: T.wagnis.keineZinsen, dim: true });
     if (r.preLoss > 0) out.push({ text: T.bericht.vorher(Math.round(r.preLoss)) });
     out.push({ text: r.fell ? T.bericht.gefallen(r.homeNow, r.homeMax) : T.bericht.zuhause(r.homeLost, r.homeNow, r.homeMax) });
     if (r.broken) out.push({ text: T.bericht.kaputt(r.broken) });

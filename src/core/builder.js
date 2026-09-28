@@ -19,6 +19,7 @@ import { ITEMS } from '../data/items.js';
 import { SURVIVORS } from '../data/survivors.js';
 import { knowsBuilding } from '../data/blueprints.js';
 import { TRAP_REARM } from '../data/traps.js';
+import { LURE } from '../data/risk.js';
 import { MIX_COST, MIX_MIN_LEVEL, mixFor } from '../data/mixes.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
@@ -56,7 +57,7 @@ export class Builder {
     const guests = Object.values(this.game.state.survivors).some((s) => s.stage > 0);
     // Baupläne (M19): mehr als fünf Türme – zweite Seite; die erste bleibt Q R T G C
     const outside = this.knownTowers().length > TAB_PAGE ? ['tuerme', 'tuerme2'] : ['tuerme'];
-    if (this.knownTraps().length) outside.push('fallen');
+    if (this.knownTraps().length || this.lureUnlocked()) outside.push('fallen'); // M24: die Moderlocke liegt bei den Fallen
     const tabs = [...outside, 'figur', 'zuhause', ...(guests ? ['einrichten'] : [])];
     // Drinnen (M11) wird nichts aufgestellt: keine Türme, nur Figur, Zuhause und Einrichten
     return this.game.viewInside ? tabs.filter((t) => !outside.includes(t)) : tabs;
@@ -70,6 +71,11 @@ export class Builder {
   /** Fallen aus Bauplänen (M19). */
   knownTraps() {
     return TRAP_TAB.filter((t) => this.game.state.blueprints.includes(t));
+  }
+
+  /** Die Moderlocke (M24) gibt es, sobald genug Nächte gewonnen sind. */
+  lureUnlocked() {
+    return (this.game.state.stats.nightsWon || 0) >= LURE.unlock;
   }
 
   selectionTitle() {
@@ -137,7 +143,7 @@ export class Builder {
     if (b) return this.selectionOptions(b);
     if (tab === 'tuerme') return this.buildOptions(this.knownTowers().slice(0, TAB_PAGE));
     if (tab === 'tuerme2') return this.buildOptions(this.knownTowers().slice(TAB_PAGE));
-    if (tab === 'fallen') return this.buildOptions(this.knownTraps());
+    if (tab === 'fallen') return this.buildOptions([...(this.lureUnlocked() ? ['moderlocke'] : []), ...this.knownTraps()]);
     if (tab === 'figur') return this.figureOptions();
     if (tab === 'zuhause') return this.homeOptions();
     if (tab === 'einrichten') return this.furnishOptions();

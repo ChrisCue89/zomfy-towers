@@ -5,7 +5,9 @@
 // aber nie mit Spielende. Am Morgen gibt es einen Bericht.
 
 import { T } from '../data/texts.js';
-import { planNight, planDay, NIGHT_START, NIGHT_END, MUT_BONUS } from '../data/waves.js';
+import { planNight, planDay, applyLure, NIGHT_START, NIGHT_END, MUT_BONUS } from '../data/waves.js';
+import { LURE, FLAWLESS, PANTRY } from '../data/risk.js';
+import { gain } from './inventory.js';
 import { bossOfNight, BOSS_ORDER as BOSS_TYPES } from '../data/bosses.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
@@ -84,7 +86,10 @@ export class Nights {
 
   /** Plan der Nacht von Tag `day` – mit der gewählten Schwierigkeit (M16). */
   planFor(day) {
-    return planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty);
+    const plan = planNight(day, this.seed(), ENTRY_NAMES, this.game.state.difficulty);
+    // M24: Eine Moderlocke lockt in jeder Welle mehr Horde über ihren Spawn
+    const lure = this.game.lureEntry?.();
+    return lure ? applyLure(plan, lure, this.seed()) : plan;
   }
 
   ensurePlans() {
@@ -159,7 +164,7 @@ export class Nights {
       trait: w.trait || null, // M22: Wellenmerkmal (Nebelwelle …) – immer angekündigt
       boss: w.spawns.find((s) => BOSS_TYPES.includes(s.type))?.type || null, // … und der Boss
     }));
-    return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.canCall(), evening: !this.active, juna };
+    return { total: plan.waves.length, rows, more: Math.max(0, plan.waves.length - from - rows.length), canCall: this.canCall(), evening: !this.active, juna, lure: plan.lure || null };
   }
 
   /**
@@ -259,7 +264,8 @@ export class Nights {
       if (s.delay > 0) continue;
       this.queue.splice(i, 1);
       const p = this.plan;
-      this.spawnGroup(s.type, s.entry, 1, { hpFactor: (p ? p.hpFactor : 1) * (s.hp || 1), speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1), champion: s.champion || null, trait: s.trait || null });
+      const lured = p?.lure && s.entry === p.lure ? LURE.loot : 1; // M24: über die Moderlocke mehr Beute
+      this.spawnGroup(s.type, s.entry, 1, { hpFactor: (p ? p.hpFactor : 1) * (s.hp || 1), speedFactor: p ? p.speedFactor : 1, lootFactor: (p ? p.lootFactor : 1) * (s.bonus ? MUT_BONUS : 1) * lured, champion: s.champion || null, trait: s.trait || null });
     }
 
     // Geschafft?
@@ -333,6 +339,7 @@ export class Nights {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;
     }
     g.posts?.onNightEnd(won); // M23: nach einer gehaltenen Bossnacht wird gefeiert
+    const risk = this.settleRisk(won); // M24: Moderlocke, makellose Nacht, Vorratskammer
     st.report = {
       n: night.n,
       won,
@@ -350,8 +357,51 @@ export class Nights {
       turm: g.towerRanks?.bestOfNight() || null, // Turm der Nacht (M16)
       // M17: Tor und Wall – gehalten oder durchbrochen, wie viele im Lager waren, was umgeworfen wurde
       lager: night.breach ? { at: night.breach.at, gate: night.breach.gate, entered: night.inCamp || 0, raided: [...(night.raided || [])] } : night.campHit ? { held: true } : null,
+      risk,
     };
     g.quietSave();
+  }
+
+  /**
+   * Wagnis und Vorrat nach der Nacht (M24): Die Moderlocke dieser Nacht wird zur
+   * Fundkiste (gehalten) oder ist fort; eine makellose Nacht (niemand im Lager,
+   * das Zuhause heil) bringt einen Bonus und zählt zur Serie – nach drei hat
+   * Balduin einen Schatz dabei; gespartes Schrott wächst, außer nach einem
+   * Durchbruch. Gibt die Zeilen für den Morgenbericht zurück.
+   */
+  settleRisk(won) {
+    const g = this.game;
+    const st = g.state;
+    const night = st.night;
+    const out = { lure: null, flawless: false, streak: 0, treasure: false, interest: 0, breach: false };
+    // Moderlocke: nur die, mit der diese Nacht geplant war
+    const lure = this.plan?.lure ? g.world.buildings.list.find((b) => b.type === 'moderlocke') : null;
+    if (lure) out.lure = { entry: this.plan.lure, chest: g.consumeLure(lure, won) };
+    const broke = Boolean(night.breach || night.inCamp);
+    out.breach = broke;
+    const r = st.risk;
+    if (won && !broke && !night.homeHit && !night.fell) {
+      gain(st.inventory, FLAWLESS.reward);
+      r.streak += 1;
+      out.flawless = true;
+      out.streak = r.streak;
+      if (r.streak >= FLAWLESS.streak) {
+        r.streak = 0;
+        r.treasure = true;
+        out.treasure = true;
+      }
+    } else r.streak = 0;
+    if (won && !broke) {
+      const cap = st.world.houseLevel >= 5 ? PANTRY.capStore : PANTRY.cap;
+      out.interest = Math.min(cap, Math.floor((st.inventory.schrott || 0) * PANTRY.rate));
+      if (out.interest > 0) gain(st.inventory, { schrott: out.interest });
+    }
+    // Die Locke gibt es, sobald genug Nächte gewonnen sind – einmal ansagen
+    if (!st.flags.lockeHinweis && (st.stats.nightsWon || 0) >= LURE.unlock) {
+      st.flags.lockeHinweis = true;
+      g.hud.toast(T.wagnis.lockeNeu, 'moderlocke', 7);
+    }
+    return out;
   }
 
   /** Beim Laden: Warteschlange ist leer; Plan wird neu erstellt. */

@@ -6,6 +6,7 @@ import { Rng } from '../core/rng.js';
 import { difficultyOf } from './difficulty.js';
 import { addChampions } from './champions.js';
 import { bossOfNight, bossHpFactor } from './bosses.js';
+import { LURE } from './risk.js';
 
 /** Minuten seit 06:00: erste Welle um 20:30, die Nacht endet um 05:30. */
 export const NIGHT_START = 14 * 60 + 30;
@@ -181,6 +182,27 @@ export function planNight(n, seed, entries, difficulty) {
   addNewKinds(waves, n, seed);
   addWaveTraits(waves, n, seed);
   return { night: n, hpFactor: hpFactor(n) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves };
+}
+
+/**
+ * Moderlocke (M24): In jeder Welle kommen zusätzlich rund `LURE.extra` so viele
+ * (mindestens `LURE.min`, Arten aus der Welle, nie Boss oder Champion) über den
+ * gelockten Spawn; der Weg steht dann im Plan. Eigener Zufall, gleich nach dem
+ * Neuladen.
+ */
+export function applyLure(plan, entry, seed) {
+  const rng = new Rng((seed * 53 + plan.night * 7 + 11) >>> 0);
+  plan.lure = entry;
+  for (const wave of plan.waves) {
+    const pool = wave.spawns.filter((s) => !s.champion && !s.hp && s.type !== 'anfuehrer');
+    if (!pool.length) continue;
+    const n = Math.max(LURE.min, Math.round(pool.length * LURE.extra));
+    const span = Math.max(4, ...wave.spawns.map((s) => s.delay));
+    for (let k = 0; k < n; k++) wave.spawns.push({ type: rng.pick(pool).type, entry, delay: rng.range(0, span), lure: true });
+    wave.spawns.sort((a, b) => a.delay - b.delay);
+    if (!wave.entries.includes(entry)) wave.entries = [...wave.entries, entry];
+  }
+  return plan;
 }
 
 /**

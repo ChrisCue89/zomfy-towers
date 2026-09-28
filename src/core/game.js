@@ -69,6 +69,7 @@ import { WEAPONS } from '../data/weapons.js';
 import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, barricadeLevel, barricadeInvested, houseLossFactor, maxHpOf, blockOf, CAMP_DAY_FLOOR, CAMP_LAYOUT, GEAR } from '../data/buildings.js';
 import { towerInvested, towerStatsOf, TOWER_PARTS, PART_RARITIES, TINKER_COUNT, partsOfRarity, hasPart } from '../data/towers.js';
 import { CHAMPION, CHEST_RARITY, CHEST_LOOT } from '../data/champions.js';
+import { LURE } from '../data/risk.js';
 import { BOSS_ATTACKS, SPLIT } from '../data/bosses.js';
 import { BAG_RARITY } from '../data/trader.js';
 import { GOALS } from '../data/goals.js';
@@ -189,6 +190,7 @@ export class Game {
     const mapSeed = loaded.state?.world.mapSeed ?? CONFIG.world.mapSeed ?? randomMapSeed();
     this.worldFromSave = loaded.status === 'ok'; // gehört die Karte zu einem Spielstand?
     this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, mapSeed, renderConfig: CONFIG.render });
+    this.world.buildings.lureEntry = (x, z) => this.lureEntryAt(x, z); // M24: die Moderlocke nur auf einen Zulauf am Waldrand
     this.world.crows.onCaw = (x, z) => this.sound.play('kraehe', { x, z }); // Krähen fliegen krächzend auf (M12)
     this.effects = new Effects(this.world.particles);
     this.player = new Player({ world: this.world, config: CONFIG.player });
@@ -1007,6 +1009,17 @@ export class Game {
       this.quietSave();
       return true;
     }
+    if (recipe.gives.rare) {
+      // Balduins Schatz (M24): nach drei makellosen Nächten ein Teil der höchsten Seltenheit
+      const id = this.loot.rng.pick(partsOfRarity(recipe.gives.rare));
+      this.gainPart(id);
+      this.trader.sold(recipe);
+      this.state.risk.treasure = false;
+      this.hud.toast(T.wagnis.schatzAuf(T.turmteile[id][0]), id, 4.5);
+      this.sound.play('kiste');
+      this.quietSave();
+      return true;
+    }
     if (recipe.gives.bag) {
       // Balduins Wundertüte (M21): ein zufälliges Turmteil, meist gewöhnlich
       const id = this.randomPart(BAG_RARITY);
@@ -1509,6 +1522,48 @@ export class Game {
     return rng.pick(partsOfRarity(rarity));
   }
 
+  // --- Wagnis (M24): Moderlocke ------------------------------------------------------
+
+  /**
+   * Liegt (x, z) auf einem Zulauf nahe dem Waldrand (westlich von `LURE.maxX`)? Dann
+   * gehört die Stelle zu dessen Spawn (Name) – sonst null. Hinter dem Zusammenfluss
+   * wüsste die Locke nicht, wen sie lockt.
+   */
+  lureEntryAt(x, z) {
+    if (x > LURE.maxX) return null;
+    let best = null;
+    let bd = Infinity;
+    for (const p of this.world.map.paths) {
+      for (const q of p.points) {
+        const d = (q.x - x) ** 2 + (q.z - z) ** 2;
+        if (d < bd) {
+          bd = d;
+          best = p;
+        }
+      }
+    }
+    return best?.feeder && Math.sqrt(bd) <= best.width / 2 + 1 ? best.feeder : null;
+  }
+
+  /** Spawn der ausgelegten Moderlocke (oder null). */
+  lureEntry() {
+    const b = this.world.buildings.list.find((q) => q.type === 'moderlocke');
+    if (!b) return null;
+    const c = this.world.buildings.bounds(b);
+    return this.lureEntryAt(c.x, c.z);
+  }
+
+  /** Die Locke hat ihre Nacht gehabt: gehalten → Fundkiste an ihrer Stelle, sonst ist sie fort. */
+  consumeLure(b, won) {
+    const c = this.world.buildings.bounds(b);
+    this.world.buildings.remove(b.id);
+    this.state.world.buildings = this.world.buildings.toState();
+    this.effects.splat(c.x, 0.5, c.z, 'moos', 14, 0.9);
+    if (!won) return false;
+    this.loot.spawn('kiste', c.x, c.z);
+    return true;
+  }
+
   /** Ein Turmteil in den Vorrat – beim ersten Mal erklärt Mika, wie man es einbaut. */
   gainPart(id) {
     const st = this.state;
@@ -1564,6 +1619,7 @@ export class Game {
     // Zuhause höchstens auf drei Viertel (m3-r1: die Vorhut fraß es sonst am
     // Abend auf; m5-r1: bis zur Hälfte war zu viel – Theo verlor so jede Nacht)
     const day = !this.nights.active;
+    if (!day) st.night.homeHit = true; // M24: keine makellose Nacht mehr
     if (day) {
       const floor = Math.round(max * DAY_FLOOR);
       if (st.world.homeHp <= floor) return;
@@ -3029,6 +3085,9 @@ export class Game {
       fogged: () => game.horde.list.filter((q) => q.fog && q.state !== 'dying').map((q) => ({ id: q.id, hidden: game.horde.isHidden(q), seen: q.seenT, x: q.x, z: q.z })),
       litAt: (x, z) => game.litAt(x, z),
       planView: () => game.nights.planView(),
+      // M24: Wagnis und Vorrat
+      risk: () => ({ ...game.state.risk, lure: game.lureEntry(), unlocked: game.builder.lureUnlocked() }),
+      lureEntryAt: (x, z) => game.lureEntryAt(x, z),
       // M23: Posten, Fest und Nebenaufträge
       posts: () => game.posts.view(),
       assignPost(id, who) {

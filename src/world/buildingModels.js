@@ -465,6 +465,47 @@ export function buildHochsitz(seed) {
   return m;
 }
 
+/**
+ * Moderlocke (M24): ein Haufen Überreste um einen fauligen Kürbis, darüber an
+ * einem Pfahl ein Jutesack – und obendrauf sprießt schon der Moder
+ * (pflaumenviolett, glimmende Knoten im Glüh-Modell).
+ */
+export function buildModerlocke(seed) {
+  const m = new VoxelModel();
+  // Haufen: Erde, graugrüne Überreste, Moos
+  m.ellipsoid(0, 0, 3, 11, 4.5, 9, (x, y, z) => {
+    if (y < 0) return null;
+    const h = hash3(x >> 1, y, z >> 1, seed);
+    return y === 0 ? P.e2 : h > 0.62 ? P.t4 : h > 0.45 ? P.t3 : hash3(x, y, z, seed + 3) > 0.72 ? P.g4 : P.e3;
+  });
+  // fauliger Kürbis vorn links, mit Stiel
+  m.ellipsoid(-6, 4, 8, 4.5, 3.5, 4, (x, y) => ((x + 9) % 3 === 0 ? P.f3 : y >= 5 ? P.f4 : P.f3));
+  m.box(-6, 7, 8, -6, 8, 8, P.g3);
+  // Pfahl mit Querholz, daran an einer Schnur der Sack
+  m.box(5, 0, -5, 6, 31, -4, (x, y) => (y % 7 === 0 ? P.e3 : P.e4));
+  m.box(-3, 29, -5, 6, 30, -4, P.e5);
+  m.box(-2, 23, -4, -2, 28, -4, P.e7);
+  m.ellipsoid(-2, 18, -4, 4, 5.2, 3.5, (x, y) => (y >= 22 ? P.e6 : (x + y) % 4 === 0 ? P.e4 : P.e5));
+  m.box(-3, 22, -5, -1, 22, -3, P.e3); // zugebunden
+  // Moder: Pilzhüte auf dem Haufen und am Sack
+  const cap = (x, y, z, r) => {
+    m.box(x, y - 2, z, x, y - 1, z, P.d1);
+    m.ellipsoid(x, y, z, r, 1.3, r, (xx, yy) => (yy >= y ? P.d2 : P.d1));
+  };
+  cap(3, 6, 7, 2.2);
+  cap(-1, 6, 4, 1.7);
+  cap(8, 4, 4, 1.5);
+  cap(1, 16, -1, 1.4);
+  return m;
+}
+
+/** Glimmende Knoten des Moders auf der Locke (nachts sichtbar). */
+export function buildModerlockeGlow() {
+  const m = new VoxelModel();
+  for (const [x, y, z] of [[3, 8, 7], [-1, 8, 4], [8, 6, 4], [1, 18, -1], [4, 7, 9], [-2, 7, 2]]) m.set(x, y, z, P.a2);
+  return m;
+}
+
 export const BUILDING_MODELS = {
   holzlager: { model: buildWoodpile },
   zelt: { model: buildTent, glow: buildTentGlow },
@@ -474,4 +515,5 @@ export const BUILDING_MODELS = {
   beet: { model: buildGardenPlot },
   bank: { model: buildBench },
   hochsitz: { model: buildHochsitz },
+  moderlocke: { model: buildModerlocke, glow: buildModerlockeGlow }, // M24
 };
