@@ -1289,7 +1289,16 @@ Metallkreuz ist schon die dritte Stufe der Barrikade (OFFENE-FRAGEN 136).
 *Spielbar heißt:* Zwei Spiele nebeneinander verteidigen sich verschieden –
 einmal mit Bienen und Glocken, einmal mit Windrad und Knallerbsen.
 
-#### M20 – Mischtürme
+#### M20 – Mischtürme ✓
+
+*Umgesetzt (28.09.2026):* Acht Rezepte – die sechs der ersten vier Familien,
+dazu Glühschwarm (Bienenkorb + Laternenturm) und Wetterhahn (Windrad +
+Sprenger). Zwei Türme ab Stufe 3, Kante an Kante, werden in der Auswahl mit
+»Verbinden« (ein Moderkern, 10 Schrott, zwei Drücke) ein Turm auf beiden
+Feldern; die Stufe ist die kleinere, danach bis Stufe 5. Unbekannte Rezepte
+heißen in der Leiste »???«. Das Werkstattbuch im Pausenmenü zeigt je Rezept
+Name, Tag und Zutaten, unentdeckte mit einem Hinweis von Bert oder Juna.
+Balduin bringt den ersten Moderkern schon an Tag 4. Spielstand v15.
 
 *Vorbild:* Element TD (Doppel- und Dreifachtürme), Gem TD (Rezepte).
 

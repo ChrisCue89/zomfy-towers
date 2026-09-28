@@ -234,7 +234,7 @@ export class Game {
       { scene: this.scene, world: this.world, horde: this.horde, effects: this.effects },
       {
         onShot: (kind, x, z) => this.sound.play(kind, { x, z, volume: kind === 'sprenger' ? 0.6 : 1 }),
-        onImpact: (x, z) => this.sound.play('platsch', { x, z }),
+        onImpact: (x, z, name = 'platsch') => this.sound.play(name, { x, z }), // M20: das Feuerwerk knallt
         // M19: Glockenschlag (Ring am Boden, Friedensglocke grün-golden), Windstoß, Schwarm
         onBell: (t, o, range, healed) => {
           this.bellStats.rings++;
@@ -2695,6 +2695,18 @@ export class Game {
         return true;
       },
       offerBlueprint: (from = 'nacht') => game.offerBlueprint(from),
+      // M20: Mischtürme – Werkstattbuch, Partner eines Turms, zwei Türme verbinden
+      recipes: () => ({ ...game.state.recipes }),
+      mixPartners: (id) => {
+        const b = game.world.buildings.get(id);
+        return b ? game.builder.mixPartners(b).map((c) => c.id) : [];
+      },
+      mergeTowers(a, c) {
+        const A = game.world.buildings.get(a);
+        const C = game.world.buildings.get(c);
+        const m = A && C ? game.builder.mergeTowers(A, C) : null;
+        return m ? m.id : null;
+      },
       chooseBlueprint(id) {
         const ok = game.chooseBlueprint(id);
         if (ok && game.perkChoice.isOpen && game.perkChoice.kind === 'bauplan') {

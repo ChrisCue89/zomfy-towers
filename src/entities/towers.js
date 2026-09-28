@@ -9,17 +9,56 @@
 //   Laternenturm   stärkt Türme in der Nähe (Leuchtfeuer: Licht bremst die
 //                  Horde, Glückslaterne: mehr Loot im Licht)
 //
+// Mischtürme (M20, mixes.js) stehen auf zwei Feldern und kämpfen auf eigene Art:
+//   Kürbisballiste     schwerer Bolzen durchschlägt eine Reihe, platzt am Ende
+//   Eiszapfenschleuder Eiszapfen machen frostig, ein Eisblock zerspringt dreifach
+//   Leuchtpfeil        markiert sein Ziel (alle Türme treffen härter), blendet
+//   Matschkessel       Matsch im Bogen: matschig, der Boden klebt
+//   Feuerwerk          Rakete, dann Kettenexplosionen – brennt und blendet
+//   Nebelleuchte       leuchtender Nebel: nass, geblendet, ein Stück zurück
+//   Glühschwarm        Bienen, die stechen und blenden
+//   Wetterhahn         Sprühstoß im Wind: nass und zurückgeschoben
+//
 // Kaputte Türme (Haltbarkeit 0) tun nichts, bis sie repariert sind.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { towerStatsOf } from '../data/towers.js';
+import { BUILDINGS } from '../data/buildings.js';
 import { REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { dampAngle } from '../core/math.js';
 
 const MAX_PROJECTILES = 120;
-const HEAD_Y = { bolzen: 1.2, katapult: 0.9, sprenger: 1.3, laternenturm: 2.2, glockenturm: 1.75, windrad: 2.05, bienenkorb: 1.0, vogelscheuche: 1.35 };
+const HEAD_Y = {
+  bolzen: 1.2,
+  katapult: 0.9,
+  sprenger: 1.3,
+  laternenturm: 2.2,
+  glockenturm: 1.75,
+  windrad: 2.05,
+  bienenkorb: 1.0,
+  vogelscheuche: 1.35,
+  // M20: Mischtürme
+  kuerbisballiste: 1.15,
+  eiszapfen: 1.2,
+  leuchtpfeil: 1.35,
+  matschkessel: 1.0,
+  feuerwerk: 1.15,
+  nebelleuchte: 1.7,
+  gluehschwarm: 1.05,
+  wetterhahn: 2.1,
+};
+/** Mischtürme (M20): Geschosse im Bild (Pools) und ihr Tempo. */
+const PROJECTILE_POOL = { bolt: 'bolt', pumpkin: 'pumpkin', mini: 'mini', spear: 'spear', icicle: 'icicle', glow: 'glow', mud: 'mud', rocket: 'rocket' };
+const STRAIGHT = new Set(['bolt', 'spear', 'icicle', 'glow']);
+/** Mischtürme mit Laterne: Nebel kürzt ihre Reichweite nicht. */
+const LIT_MIX = new Set(['leuchtpfeil', 'feuerwerk', 'nebelleuchte', 'gluehschwarm']);
+/** Kürbisballiste: so nah (m) an der Flugbahn trifft der schwere Bolzen. */
+const SPEAR_REACH = 0.5;
+/** Feuerwerk: so weit (m) springt die nächste Explosion, so lange (s) dauert es bis dahin. */
+const CHAIN_REACH = 2.6;
+const CHAIN_DELAY = 0.2;
 /** Bienen (M19): je Schwarm so viele, höchstens so viele im Bild; Flugtempo (m/s). */
 const BEES_PER_SWARM = 9;
 const MAX_BEES = 270;
@@ -57,6 +96,50 @@ function pumpkinModel(size) {
   return m;
 }
 
+/** Kürbisballiste (M20): langer, dicker Schaft mit kleinem Kürbis als Spitze. */
+function spearModel() {
+  const m = new VoxelModel();
+  m.box(0, 0, -7, 0, 1, 4, P.e6); // Schaft
+  m.box(-1, 0, 5, 1, 1, 7, P.f4).set(0, 2, 6, P.g5); // Kürbisspitze mit Stiel
+  for (const z of [-7, -6]) m.set(-1, 0, z, P.r3).set(1, 0, z, P.r3); // Federn
+  m.box(0, 0, -14, 1, 0, -8, (x, y, z) => (z >= -10 ? 0xfff0c8 : P.f6)); // Leuchtspur
+  return m;
+}
+
+/** Eiszapfen (M20): hellblauer Zapfen, vorn spitz. */
+function icicleModel() {
+  const m = new VoxelModel();
+  m.box(-1, 0, -3, 1, 1, 1, (x, y, z) => (z === -3 ? 0xe8f8ff : 0xa8dcff));
+  m.box(0, 0, 2, 0, 1, 4, 0xe8f8ff).set(0, 0, 5, 0xffffff);
+  m.box(0, 0, -9, 0, 0, -4, 0xd8f0ff); // Frosthauch
+  return m;
+}
+
+/** Leuchtpfeil (M20): Bolzen mit glühender Spitze und langer Lichtspur. */
+function glowModel() {
+  const m = boltModel();
+  m.set(0, 0, 4, 0xfff6d8).set(0, 0, 5, 0xffffff).set(-1, 0, 4, P.f8).set(1, 0, 4, P.f8);
+  m.box(0, 0, -18, 0, 0, -13, P.f8);
+  return m;
+}
+
+/** Matschklumpen (M20): braune Kugel mit Spritzern. */
+function mudModel() {
+  const m = new VoxelModel();
+  m.ellipsoid(0, 3, 0, 3.4, 2.9, 3.4, (x, y, z) => ((x + y + z) % 3 === 0 ? P.e2 : P.e3));
+  m.set(0, 6, 0, P.e4).set(2, 5, 1, P.e4);
+  return m;
+}
+
+/** Rakete (M20): roter Leib, goldene Spitze, Funkenschweif. */
+function rocketModel() {
+  const m = new VoxelModel();
+  m.box(-1, -1, -3, 1, 1, 3, (x, y, z) => (z === 0 ? P.f7 : P.r3));
+  m.set(0, 0, 4, P.f7).set(0, 0, 5, P.f8);
+  m.box(0, 0, -8, 0, 0, -4, (x, y, z) => (z >= -5 ? 0xfff6d8 : P.f6));
+  return m;
+}
+
 /** Biene (M19): gelb-schwarzer Leib und helle Flügel – im Maß 1/32 ein paar Pixel groß. */
 function beeModel() {
   const m = new VoxelModel();
@@ -79,6 +162,8 @@ export class TowerSystem {
     this.fires = [];
     this.stickies = []; // klebrige Flächen (Klebekürbis, M18)
     this.swarms = []; // Bienenschwärme (M19): { tower, x, y, z, target, acc }
+    this.bursts = []; // Feuerwerk (M20): Kettenexplosionen, die noch kommen
+    this.maxPierce = 0; // Kürbisballiste (M20, Prüfung): die meisten Treffer eines Bolzens
     this.lured = 0; // wie viele Schlurfer gerade eine Vogelscheuche anlocken (M19, Prüfung)
     this.time = 0;
     const basic = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -87,6 +172,12 @@ export class TowerSystem {
       pumpkin: new THREE.InstancedMesh(pumpkinModel(2).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
       mini: new THREE.InstancedMesh(pumpkinModel(1).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
       bee: new THREE.InstancedMesh(beeModel().toGeometry({ jitter: 0, ao: false, size: FINE / 2 }), basic, MAX_BEES),
+      // M20: Geschosse der Mischtürme
+      spear: new THREE.InstancedMesh(spearModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      icicle: new THREE.InstancedMesh(icicleModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      glow: new THREE.InstancedMesh(glowModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      mud: new THREE.InstancedMesh(mudModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      rocket: new THREE.InstancedMesh(rocketModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
     };
     for (const mesh of Object.values(this.meshes)) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -102,10 +193,15 @@ export class TowerSystem {
     this.fires.length = 0;
     this.stickies.length = 0;
     this.swarms.length = 0;
+    this.bursts.length = 0;
   }
 
-  /** Mittelpunkt und Kopfhöhe eines Turms. */
+  /** Mittelpunkt und Kopfhöhe eines Turms (Mischtürme: Mitte beider Felder, M20). */
   origin(t) {
+    if (BUILDINGS[t.type]?.w === 2) {
+      const across = (t.turns || 0) % 2 === 0;
+      return { x: t.i + (across ? 1 : 0.5), y: HEAD_Y[t.type], z: t.j + (across ? 0.5 : 1) };
+    }
     return { x: t.i + 0.5, y: HEAD_Y[t.type], z: t.j + 0.5 };
   }
 
@@ -152,6 +248,7 @@ export class TowerSystem {
   weatherRange(t) {
     const kind = this.world.weather.kind;
     if (kind === 'nebel') {
+      if (LIT_MIX.has(t.type)) return 1; // M20: Mischtürme mit Laterne leuchten sich selbst den Weg
       const o = this.origin(t);
       const lit = this.lightSlow(o.x, o.z) > 0 || this.world.buildings.gearSlow(o.x, o.z) > 0 || this.windAt(o.x, o.z); // M19: das Windrad verweht den Nebel
       return lit ? 1 : WEATHER_EFFECTS.nebel.range;
@@ -236,6 +333,27 @@ export class TowerSystem {
         case 'vogelscheuche':
           this.runScarecrow(t, s, mult, dt);
           break;
+        // M20: Mischtürme
+        case 'kuerbisballiste':
+          this.runSpear(t, s, mult, dt);
+          break;
+        case 'eiszapfen':
+        case 'leuchtpfeil':
+          this.runHoming(t, s, mult, dt, t.type === 'eiszapfen' ? 'icicle' : 'glow');
+          break;
+        case 'matschkessel':
+        case 'feuerwerk':
+          this.runLob(t, s, mult, dt, t.type === 'matschkessel' ? 'mud' : 'rocket');
+          break;
+        case 'nebelleuchte':
+          this.runFogLamp(t, s, mult, dt);
+          break;
+        case 'gluehschwarm':
+          this.runHive(t, s, dt);
+          break;
+        case 'wetterhahn':
+          this.runVane(t, s, mult, dt);
+          break;
         default:
           break;
       }
@@ -245,6 +363,7 @@ export class TowerSystem {
     this.updateFires(dt);
     this.updateStickies(dt);
     this.updateSwarms(dt);
+    this.updateBursts(dt);
   }
 
   /** Kopf eines Turms bewegen: zielen und Rückstoß; Glocke schwingt, Windrad dreht sich (M19). */
@@ -267,12 +386,19 @@ export class TowerSystem {
       t.shake = Math.max(0, (t.shake || 0) - dt * 3);
       return;
     }
-    // Rückstoß entgegen der Schussrichtung; beim Katapult schnellt der Wurfarm vor
+    if (t.type === 'wetterhahn') {
+      // Wetterhahn (M20): dreht sich zum Ziel, die Flügel laufen, beim Stoß schneller
+      t.spin = (t.spin || 0) + dt * (1.2 + (t.gust || 0) * 8);
+      t.head.rotation.set(0, a, t.spin);
+      return;
+    }
+    // Rückstoß entgegen der Schussrichtung; beim Katapult (und Matschkessel) schnellt der Wurfarm vor
     t.head.rotation.y = a;
-    const back = t.type === 'katapult' ? 0.02 : 0.07;
+    const lob = t.type === 'katapult' || t.type === 'matschkessel';
+    const back = lob ? 0.02 : 0.07;
     t.head.position.x = -Math.sin(a) * t.kick * back;
     t.head.position.z = -Math.cos(a) * t.kick * back;
-    t.head.rotation.x = t.type === 'katapult' ? Math.sin(Math.min(1, t.kick) * Math.PI) * 0.55 : 0;
+    t.head.rotation.x = lob ? Math.sin(Math.min(1, t.kick) * Math.PI) * 0.55 : 0;
   }
 
   /**
@@ -389,6 +515,11 @@ export class TowerSystem {
         const n = Math.floor(sw.acc);
         sw.acc -= n;
         const dead = this.horde.damage(goal, n, { pierce: true, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'bienen' });
+        if (!dead && s.blind) {
+          // Glühschwarm (M20): leuchtende Bienen blenden – ein Bolzen trifft danach die Schwachstelle
+          this.horde.status(goal, 'geblendet', s.blind);
+          if (Math.random() < 0.3) this.effects.splat(goal.x, 1.1, goal.z, 'licht', 2, 0.3);
+        }
         if (!dead && s.slow) {
           this.horde.slow(goal, s.slow, s.slowTime);
           if (Math.random() < 0.3) this.effects.splat(goal.x, 0.9, goal.z, 'honig', 2, 0.3);
@@ -466,13 +597,10 @@ export class TowerSystem {
     this.cb.onShot?.('bolzen', o.x, o.z);
   }
 
-  runCatapult(t, s, mult, dt) {
-    // Ziel mit den meisten Nachbarn im Splash-Radius (gegen Gruppen)
+  /** Ziel im Bogen: das mit den meisten Nachbarn im Splash-Radius (gegen Gruppen), sonst null. */
+  groupTarget(t, s) {
     const candidates = this.targets(t, s.range, 12, false, 1.2);
-    if (!candidates.length) {
-      this.scan(t, dt);
-      return;
-    }
+    if (!candidates.length) return null;
     let best = candidates[0];
     let bestN = -1;
     for (const c of candidates) {
@@ -482,6 +610,15 @@ export class TowerSystem {
         bestN = n;
         best = c;
       }
+    }
+    return best;
+  }
+
+  runCatapult(t, s, mult, dt) {
+    const best = this.groupTarget(t, s);
+    if (!best) {
+      this.scan(t, dt);
+      return;
     }
     const off = this.aim(t, best, dt, 6);
     if (t.cool > 0 || off > 0.3) return;
@@ -536,10 +673,198 @@ export class TowerSystem {
     }
   }
 
+  // --- M20: Mischtürme ---------------------------------------------------------------
+
+  /**
+   * Kürbisballiste: Ein schwerer Bolzen fliegt gerade durch die Reihe – er trifft
+   * bis zu `pierce` Schlurfer auf seiner Bahn (durch jede Panzerung) und platzt
+   * am Ende wie ein Kürbis.
+   */
+  runSpear(t, s, mult, dt) {
+    const list = this.targets(t, s.range, 1, false);
+    if (!list.length) {
+      this.scan(t, dt);
+      return;
+    }
+    const off = this.aim(t, list[0], dt, 5);
+    if (t.cool > 0 || off > 0.2) return;
+    t.cool = 1 / s.rate;
+    t.kick = 1;
+    const o = this.origin(t);
+    const dx = list[0].x - o.x;
+    const dz = list[0].z - o.z;
+    const d = Math.hypot(dx, dz) || 1;
+    const reach = s.range * this.weatherRange(t) + 1.5;
+    this.projectiles.push({ kind: 'spear', x: o.x, y: o.y, z: o.z, dx: dx / d, dz: dz / d, left: reach, speed: 15, angle: Math.atan2(dx, dz), damage: s.damage * mult, pierce: s.pierce, burst: s.burst * mult, splash: s.splash, hit: [], lucky: t.part === 'gluecksmuenze', by: t.id });
+    this.cb.onShot?.('ballista', o.x, o.z);
+  }
+
+  /** Eiszapfenschleuder und Leuchtpfeil: zielsuchende Geschosse wie der Bolzen, mit eigener Wirkung. */
+  runHoming(t, s, mult, dt, kind) {
+    const list = this.targets(t, s.range, 1, Boolean(s.strongest));
+    if (!list.length) {
+      this.scan(t, dt);
+      return;
+    }
+    const off = this.aim(t, list[0], dt, 10);
+    if (t.cool > 0 || off > 0.4) return;
+    t.cool = 1 / s.rate;
+    t.kick = 1;
+    const o = this.origin(t);
+    const z = list[0];
+    this.projectiles.push({ kind, x: o.x, y: o.y, z: o.z, target: z, tx: z.x, tz: z.z, speed: kind === 'icicle' ? 12 : 16, damage: s.damage * mult, angle: 0, lucky: t.part === 'gluecksmuenze', by: t.id, frost: s.frost || 0, slow: s.slow || 0, slowTime: s.slowTime || 0, shatter: s.shatter || 1, mark: s.mark || 0, markBonus: s.markBonus || 0, blind: s.blind || 0 });
+    this.cb.onShot?.('bolzen', o.x, o.z);
+  }
+
+  /** Matschkessel und Feuerwerk: im Bogen auf die dichteste Gruppe, wie das Katapult. */
+  runLob(t, s, mult, dt, kind) {
+    const best = this.groupTarget(t, s);
+    if (!best) {
+      this.scan(t, dt);
+      return;
+    }
+    const off = this.aim(t, best, dt, 6);
+    if (t.cool > 0 || off > 0.3) return;
+    t.cool = 1 / s.rate;
+    t.kick = 1;
+    const o = this.origin(t);
+    const lead = 0.5 * best.speed * (1 - best.slow);
+    const tx = best.x + Math.sin(best.facing) * lead;
+    const tz = best.z + Math.cos(best.facing) * lead;
+    const dist = Math.hypot(tx - o.x, tz - o.z);
+    const rocket = kind === 'rocket';
+    this.projectiles.push({
+      kind,
+      x0: o.x,
+      y0: o.y + 0.3,
+      z0: o.z,
+      x1: tx,
+      z1: tz,
+      t: 0,
+      T: rocket ? 0.5 + dist * 0.035 : 0.75 + dist * 0.05,
+      h: rocket ? 2 + dist * 0.2 : 1.3 + dist * 0.15,
+      damage: s.damage * mult,
+      splash: s.splash,
+      burn: s.burn || 0,
+      split: 0,
+      x: o.x,
+      y: o.y,
+      z: o.z,
+      lucky: t.part === 'gluecksmuenze',
+      by: t.id,
+      // Matschkessel
+      mud: s.mud || 0,
+      slow: s.slow || 0,
+      slowTime: s.slowTime || 0,
+      sticky: s.sticky || 0,
+      stickySlow: s.stickySlow || 0,
+      // Feuerwerk
+      firework: rocket,
+      chain: s.chain || 0,
+      blind: s.blind || 0,
+    });
+    this.cb.onShot?.(rocket ? 'rakete' : 'katapult', o.x, o.z);
+  }
+
+  /**
+   * Nebelleuchte: Ein leuchtender Nebelstoß rundum – nass, geblendet, gebremst
+   * und ein Stück den Weg zurück (die Horde verliert die Richtung).
+   */
+  runFogLamp(t, s, mult, dt) {
+    const o = this.origin(t);
+    t.headAngle = (t.headAngle || 0) + dt * 0.6; // die Linse dreht sich langsam
+    const range = s.range * this.weatherRange(t);
+    if (t.cool > 0) return;
+    const list = this.horde.inRange(o.x, o.z, range);
+    if (!list.length) return;
+    t.cool = 1 / s.rate;
+    t.kick = 1;
+    for (let k = 0; k < 14; k++) this.effects.spray(o.x, o.y - 0.5, o.z, (k / 14) * Math.PI * 2, range * 0.8, 'nebel');
+    this.effects.splat(o.x, o.y, o.z, 'licht', 8, 0.8);
+    for (const z of list) {
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
+      this.horde.status(z, 'nass', s.wet);
+      this.horde.status(z, 'geblendet', s.blind);
+      this.horde.slow(z, s.slow, s.slowTime);
+      this.horde.blowBack(z, s.push);
+    }
+    this.cb.onShot?.('nebel', o.x, o.z);
+  }
+
+  /** Wetterhahn: ein Sprühstoß im Wind, als Kegel zum Ziel – nass, gebremst, zurückgeschoben. */
+  runVane(t, s, mult, dt) {
+    t.gust = Math.max(0, (t.gust || 0) - dt * 1.2);
+    const list = this.targets(t, s.range, 1, false);
+    if (!list.length) {
+      this.scan(t, dt);
+      return;
+    }
+    const off = this.aim(t, list[0], dt, 4);
+    if (t.cool > 0 || off > 0.35) return;
+    t.cool = 1 / s.rate;
+    t.gust = 1;
+    const o = this.origin(t);
+    const a = t.headAngle || 0;
+    const range = s.range * this.weatherRange(t);
+    for (let k = 0; k < 16; k++) this.effects.spray(o.x, o.y - 0.7, o.z, a + (k / 15 - 0.5) * 2 * s.cone, range * 0.6, 'wasser');
+    for (const z of this.horde.inRange(o.x, o.z, range)) {
+      let diff = Math.abs(Math.atan2(z.x - o.x, z.z - o.z) - a) % (Math.PI * 2);
+      if (diff > Math.PI) diff = Math.PI * 2 - diff;
+      if (diff > s.cone) continue;
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'spray' })) continue;
+      this.horde.status(z, 'nass', s.wet);
+      this.horde.slow(z, s.slow, s.slowTime);
+      this.horde.blowBack(z, s.push);
+    }
+    this.cb.onGust?.(t, o);
+  }
+
+  /** Feuerwerk (M20): Kettenexplosionen – jede springt zu einem Schlurfer in der Nähe. */
+  updateBursts(dt) {
+    for (let i = this.bursts.length - 1; i >= 0; i--) {
+      const b = this.bursts[i];
+      b.t -= dt;
+      if (b.t > 0) continue;
+      this.bursts.splice(i, 1);
+      let x = b.x + (Math.random() - 0.5) * CHAIN_REACH;
+      let z = b.z + (Math.random() - 0.5) * CHAIN_REACH;
+      const near = this.horde.inRange(b.x, b.z, CHAIN_REACH);
+      if (near.length) {
+        const pick = near[Math.floor(Math.random() * near.length)];
+        x = pick.x;
+        z = pick.z;
+      }
+      this.explode({ kind: 'rocket', firework: true, x, y: 0.5, z, splash: b.splash, damage: b.damage, burn: b.burn, blind: b.blind, split: 0, chain: b.left - 1, lucky: b.lucky, by: b.by });
+    }
+  }
+
   updateProjectiles(dt) {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
-      if (p.kind === 'bolt') {
+      if (p.kind === 'spear') {
+        // Kürbisballiste (M20): gerade Bahn, trifft jeden auf ihr einmal, bis `pierce` voll ist
+        const step = p.speed * dt;
+        p.x += p.dx * step;
+        p.z += p.dz * step;
+        p.y = Math.max(0.75, p.y - dt * 0.6);
+        p.left -= step;
+        for (const z of this.horde.list) {
+          if (p.hit.length >= p.pierce) break;
+          if (z.state === 'dying' || z.state === 'enter' || p.hit.includes(z.id)) continue;
+          const r = SPEAR_REACH + z.def.radius * 0.5;
+          if ((z.x - p.x) ** 2 + (z.z - p.z) ** 2 > r * r) continue;
+          p.hit.push(z.id);
+          this.horde.damage(z, p.damage, { pierce: true, push: 0.2, fromX: p.x - p.dx, fromZ: p.z - p.dz, source: 'turm', lucky: p.lucky, by: p.by, kind: 'ballista' });
+          this.effects.splat(z.x, 0.8, z.z, 'funken', 5, 0.6);
+        }
+        if (p.hit.length >= p.pierce || p.left <= 0) {
+          this.maxPierce = Math.max(this.maxPierce, p.hit.length);
+          this.projectiles.splice(i, 1);
+          this.explode({ kind: 'spear', x: p.x, y: 0.4, z: p.z, splash: p.splash, damage: p.burst, burn: 0, split: 0, lucky: p.lucky, by: p.by });
+        }
+        continue;
+      }
+      if (p.kind === 'bolt' || p.kind === 'icicle' || p.kind === 'glow') {
         // Zielsuchend; stirbt das Ziel, fliegt der Bolzen zur letzten Stelle
         if (p.target && p.target.state !== 'dying') {
           p.tx = p.target.x;
@@ -553,10 +878,7 @@ export class TowerSystem {
         const step = p.speed * dt;
         p.angle = Math.atan2(dx, dz);
         if (d <= step + 0.05) {
-          if (p.target && p.target.state !== 'dying') {
-            this.horde.damage(p.target, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null, kind: 'bolzen' });
-            this.effects.splat(p.tx, 0.7, p.tz, 'funken', 4, 0.5);
-          }
+          if (p.target && p.target.state !== 'dying') this.hitHoming(p, p.target);
           this.projectiles.splice(i, 1);
           continue;
         }
@@ -583,23 +905,60 @@ export class TowerSystem {
     this.projectiles.push({ kind: 'pumpkin', x0, y0, z0, x1, z1, t: 0, T: 0.45 + dist * 0.05, h: 1.1 + dist * 0.12, damage, splash, burn, burnTime, split: 0, x: x0, y: y0, z: z0, lucky: false, source });
   }
 
+  /** Treffer eines zielsuchenden Geschosses: Bolzen, Eiszapfen, Leuchtpfeil (M20). */
+  hitHoming(p, z) {
+    if (p.kind === 'icicle') {
+      // Ein Eisblock zerspringt am Eiszapfen noch heftiger (horde.damage verdoppelt ohnehin)
+      const dead = this.horde.damage(z, p.damage * (z.iceT > 0 ? p.shatter : 1), { push: 0.1, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null, kind: 'eiszapfen' });
+      if (!dead) {
+        this.horde.status(z, 'frostig', p.frost);
+        this.horde.slow(z, p.slow, p.slowTime);
+      }
+      this.effects.splat(p.tx, 0.8, p.tz, 'frost', 6, 0.6);
+      return;
+    }
+    // Bolzen und Leuchtpfeil (zählt als Bolzen: ein Geblendeter zeigt die Schwachstelle)
+    const dead = this.horde.damage(z, p.damage, { pierce: p.pierce, push: 0.15, fromX: p.x, fromZ: p.z, source: 'turm', lucky: p.lucky, by: p.by ?? null, kind: 'bolzen' });
+    if (p.kind === 'glow') {
+      if (!dead) {
+        this.horde.mark(z, p.mark, p.markBonus);
+        this.horde.status(z, 'geblendet', p.blind);
+      }
+      this.effects.splat(p.tx, 0.9, p.tz, 'licht', 6, 0.6);
+      return;
+    }
+    this.effects.splat(p.tx, 0.7, p.tz, 'funken', 4, 0.5);
+  }
+
   explode(p) {
     const r = p.splash;
     const burnTime = p.burnTime || 3;
-    this.cb.onImpact?.(p.x, p.z);
+    this.cb.onImpact?.(p.x, p.z, p.firework ? 'knall' : 'platsch');
     let frosty = null;
     let muddy = null;
     for (const z of this.horde.inRange(p.x, p.z, r)) {
       // Reaktionen (M18): Streukürbis auf Frostige, Kürbis auf Matschige
       if (z.frostT > 0 && p.split) frosty = frosty || z;
-      if (z.mudT > 0 && p.kind === 'pumpkin') muddy = muddy || z;
+      if (z.mudT > 0 && (p.kind === 'pumpkin' || p.kind === 'spear')) muddy = muddy || z;
       if (this.horde.damage(z, p.damage, { push: 0.25, fromX: p.x, fromZ: p.z, source: p.source || 'turm', lucky: p.lucky, by: p.by ?? null })) continue;
       if (p.burn) this.horde.ignite(z, p.burn, burnTime, p.by ?? null);
+      // M20: Matschkessel macht matschig, Feuerwerk blendet
+      if (p.mud) {
+        this.horde.status(z, 'matschig', p.mud);
+        this.horde.slow(z, p.slow, p.slowTime);
+      }
+      if (p.blind) this.horde.status(z, 'geblendet', p.blind);
     }
     if (frosty) this.splinter(p, frosty);
     if (muddy) this.sticky(p, muddy);
-    this.effects.splat(p.x, 0.3, p.z, p.burn ? 'feuer' : 'kuerbis', p.kind === 'mini' ? 8 : 16, p.kind === 'mini' ? 0.7 : 1);
-    if (p.burn) this.fires.push({ x: p.x, z: p.z, r, dps: p.burn, t: burnTime, by: p.by ?? null });
+    const look = p.mud ? 'schlamm' : p.firework ? 'feuerwerk' : p.burn ? 'feuer' : 'kuerbis';
+    this.effects.splat(p.x, p.firework ? 0.9 : 0.3, p.z, look, p.kind === 'mini' ? 8 : p.firework ? 22 : 16, p.kind === 'mini' ? 0.7 : p.firework ? 1.4 : 1);
+    if (p.firework) this.effects.splat(p.x, 1.2, p.z, 'licht', 6, 1);
+    // Matsch (M20): Der Boden klebt eine Weile
+    if (p.mud && p.sticky) this.stickies.push({ x: p.x, z: p.z, r: r * 0.8, slow: p.stickySlow, t: p.sticky });
+    // Feuerwerk (M20): die nächste Explosion der Kette
+    if (p.chain > 0) this.bursts.push({ x: p.x, z: p.z, t: CHAIN_DELAY, left: p.chain, damage: p.damage * 0.8, splash: p.splash, burn: p.burn, blind: p.blind, lucky: p.lucky, by: p.by ?? null });
+    if (p.burn && !p.firework) this.fires.push({ x: p.x, z: p.z, r, dps: p.burn, t: burnTime, by: p.by ?? null });
     if (p.split) {
       for (let k = 0; k < p.split; k++) {
         const a = (k / p.split) * Math.PI * 2 + this.time;
@@ -657,15 +1016,21 @@ export class TowerSystem {
   }
 
   render() {
-    const counts = { bolt: 0, pumpkin: 0, mini: 0, bee: 0 };
+    const counts = { bolt: 0, pumpkin: 0, mini: 0, bee: 0, spear: 0, icicle: 0, glow: 0, mud: 0, rocket: 0 };
     const d = this.dummy;
     for (const p of this.projectiles) {
-      const key = p.kind === 'bolt' ? 'bolt' : p.kind === 'mini' ? 'mini' : 'pumpkin';
+      const key = PROJECTILE_POOL[p.kind] || 'pumpkin';
       const mesh = this.meshes[key];
       const k = counts[key]++;
       if (k >= MAX_PROJECTILES) continue;
       d.position.set(p.x, p.y, p.z);
-      d.rotation.set(0, p.kind === 'bolt' ? p.angle : this.time * 6, 0);
+      if (p.kind === 'rocket') {
+        // Rakete (M20): Nase in Flugrichtung, im Bogen erst steigend, dann fallend
+        const q = Math.min(1, p.t / p.T);
+        const vh = Math.hypot(p.x1 - p.x0, p.z1 - p.z0) / p.T;
+        const vy = (-p.y0 + 4 * p.h * (1 - 2 * q)) / p.T;
+        d.rotation.set(-Math.atan2(vy, vh), Math.atan2(p.x1 - p.x0, p.z1 - p.z0), 0, 'YXZ');
+      } else d.rotation.set(0, STRAIGHT.has(p.kind) ? p.angle : this.time * 6, 0, 'XYZ');
       d.scale.set(1, 1, 1);
       d.updateMatrix();
       mesh.setMatrixAt(k, d.matrix);

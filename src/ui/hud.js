@@ -24,6 +24,7 @@ const STATUS_PIX = [
   ['frostT', 0xe8f8ff, ['#.#.#', '.###.', '##.##', '.###.', '#.#.#']],
   ['mudT', P.e5, ['.....', '.###.', '#####', '#####', '#.#.#']],
   ['blindT', P.f7, ['..#..', '#.#.#', '.###.', '#.#.#', '..#..']],
+  ['markT', P.a4, ['.###.', '#...#', '#.#.#', '#...#', '.###.']], // markiert (M20, Leuchtpfeil)
 ].map(([key, color, rows]) => ({ key, color: hexToCss(color), px: rows.flatMap((r, y) => [...r].map((c, x) => (c === '#' ? [x, y] : null)).filter(Boolean)) }));
 
 const SWOOSH_TIME = 0.16;

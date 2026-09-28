@@ -104,7 +104,7 @@ export class Buildings {
    */
   object(type, turns, options = {}) {
     const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null, look = 'ganz' } = options;
-    if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow);
+    if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow, turns);
     if (BUILDINGS[type].camp) return this.campObject(type, level, look, material, shadow);
     const key = type === 'barrikade' ? `${type}|${level}|${look}` : look === 'truemmer' || look === 'verbraucht' ? `${type}|${look}` : type;
     if (!this.models.has(key)) {
@@ -156,9 +156,19 @@ export class Buildings {
     return group;
   }
 
-  towerObject(type, level, spec, material, glowMaterial, shadow) {
-    const key = `${type}|${level}|${spec}`;
-    if (!this.models.has(key)) this.models.set(key, fineTowerModels(type, level, spec, this.seed));
+  towerObject(type, level, spec, material, glowMaterial, shadow, turns = 0) {
+    // Mischtürme (M20) liegen auf zwei Feldern: übereinander (turns ungerade) ist der Sockel gedreht
+    const rot = BUILDINGS[type].mix ? turns % 2 : 0;
+    const key = `${type}|${level}|${spec}|${rot}`;
+    if (!this.models.has(key)) {
+      const fresh = { ...fineTowerModels(type, level, spec, this.seed) };
+      if (rot) {
+        fresh.base = fresh.base.rotated(1);
+        if (fresh.baseGlow) fresh.baseGlow = fresh.baseGlow.rotated(1);
+        if (fresh.glow && !fresh.glowOnHead) fresh.glow = fresh.glow.rotated(1);
+      }
+      this.models.set(key, fresh);
+    }
     const m = this.models.get(key);
     const U = m.unit || V;
     if (!m.geo) {
@@ -176,6 +186,7 @@ export class Buildings {
         head: shared(m.head.toGeometry({ jitter: 0.03, seed: this.seed, size: U })),
         headOutline: shared(m.head.downsampled(2, 1).toGeometry({ jitter: 0, ao: false, size: U * 2 })),
         glow: m.glow ? shared(m.glow.toGeometry({ jitter: 0, ao: false, size: U })) : null,
+        baseGlow: m.baseGlow ? shared(m.baseGlow.toGeometry({ jitter: 0, ao: false, size: U })) : null, // M20: Leuchtendes am Sockel
       };
       // Oberkante des Kopfs (für das Fernrohr, M10)
       let top = 0;
@@ -211,6 +222,7 @@ export class Buildings {
       if (m.glowOnHead) head.add(glow);
       else group.add(glow);
     }
+    if (m.geo.baseGlow) group.add(new THREE.Mesh(m.geo.baseGlow, glowMaterial));
     group.userData.head = head;
     return group;
   }
@@ -229,6 +241,8 @@ export class Buildings {
       building.xp = extra.xp || 0;
       building.kills = extra.kills || 0;
       building.name = Number.isInteger(extra.name) ? extra.name : null;
+      // Mischturm (M20): aus welchen Türmen er entstand (für den Abriss)
+      if (def.mix) building.from = Array.isArray(extra.from) ? extra.from.map((f) => ({ t: f.t, l: f.l, s: f.s || null })) : [];
     }
     if (type === 'barrikade') {
       building.level = Math.max(1, Math.min(3, extra.level || 1));
@@ -659,6 +673,7 @@ export class Buildings {
       if (b.broken) e.broken = true;
       if (b.hp !== undefined && b.hp < maxHpOf(b)) e.hp = Math.round(b.hp);
       if (b.gear?.length) e.gear = [...b.gear]; // Zubehör (M17e)
+      if (b.from?.length) e.from = b.from.map((f) => ({ ...f })); // Mischturm (M20)
       return e;
     });
   }

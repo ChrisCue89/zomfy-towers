@@ -16,8 +16,10 @@ import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { SKILLS, SKILL_IDS, SKILL_MAX_RANK, START_SKILL, freshSkills } from '../data/skills.js';
 import { REACTIONS } from '../data/reactions.js';
 import { BLUEPRINTS, BLUEPRINT_CHOICES } from '../data/blueprints.js';
+import { MIXES } from '../data/mixes.js';
+import { TOWERS } from '../data/towers.js';
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -55,6 +57,7 @@ export function createNewState(config, mapSeed = 1) {
     skills: freshSkills(),
     skillChoice: null,
     notes: {}, // M18: Notizbuch – entdeckte Reaktion -> Tag der Entdeckung
+    recipes: {}, // M20: Werkstattbuch – gebautes Rezept (Mischturm) -> Tag
     // M19: gewählte Baupläne (Bauarten, der Reihe nach) und eine offene Wahl
     // { options: [drei Baupläne], from: 'nacht'|'wrack'|'balduin', extra: so viele Wahlen kommen danach }
     blueprints: [],
@@ -160,6 +163,9 @@ export function sanitizeState(data, config) {
   // Notizbuch (M18): entdeckte Reaktionen mit dem Tag der Entdeckung
   out.notes = {};
   if (data.notes && typeof data.notes === 'object') for (const [k, d] of Object.entries(data.notes)) if (REACTIONS[k] && Number.isFinite(d)) out.notes[k] = Math.floor(num(d, 1, 1, 1e6));
+  // Werkstattbuch (M20): nur bekannte Rezepte
+  out.recipes = {};
+  if (data.recipes && typeof data.recipes === 'object') for (const [k, d] of Object.entries(data.recipes)) if (MIXES[k] && Number.isFinite(d)) out.recipes[k] = Math.floor(num(d, 1, 1, 1e6));
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
@@ -221,6 +227,13 @@ export function sanitizeState(data, config) {
         if (Number.isInteger(b.name) && b.name >= 0) entry.name = Math.floor(num(b.name, 0, 0, 999));
         // Zubehör an Barrikade oder Tor (M17e)
         if (Array.isArray(b.gear)) entry.gear = [...new Set(b.gear.filter((id) => typeof id === 'string' && GEAR[id]))].slice(0, 3);
+        // Mischturm (M20): aus welchen Türmen er entstand
+        if (Array.isArray(b.from)) {
+          entry.from = b.from
+            .filter((f) => f && typeof f.t === 'string' && TOWERS[f.t] && !MIXES[f.t])
+            .slice(0, 2)
+            .map((f) => ({ t: f.t, l: Math.floor(num(f.l, 3, 1, 5)), s: f.s === 'A' || f.s === 'B' ? f.s : null }));
+        }
         return entry;
       });
   }

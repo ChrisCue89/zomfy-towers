@@ -5,6 +5,38 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 20 – Mischtürme ✓
+
+**Ziel (DESIGN 8):** Man entdeckt ein Rezept, baut es, und der Abend sieht
+anders aus.
+
+- **Acht Rezepte** (`data/mixes.js`): Kürbisballiste (schwerer Bolzen durch
+  eine Reihe, platzt am Ende), Eiszapfenschleuder (frostig, ein Eisblock
+  zerspringt dreifach), Leuchtpfeil (markiert: alle Türme treffen härter,
+  geblendet), Matschkessel (matschig, klebriger Boden), Feuerwerk (Rakete und
+  Kettenexplosionen, brennt und blendet), Nebelleuchte (nass, geblendet, ein
+  Stück zurück), Glühschwarm (Bienen, die blenden), Wetterhahn (Sprühstoß im
+  Kegel: nass, zurückgeschoben). Mischtürme mit Laterne sehen durch den Nebel.
+- **Verbinden:** Zwei Türme ab Stufe 3, Kante an Kante, andere Familie – in
+  der Auswahl »Verbinden: Name« bzw. »???«, ein Moderkern und 10 Schrott, zwei
+  Drücke, nie in der Welle. Der Mischturm steht auf beiden Feldern
+  (übereinander gedreht), steigt bis Stufe 5, behält Name, Erfahrung und
+  Turmteil.
+- **Modelle** (`world/mixModels.js`): zwei Felder breit, in der Mitte der
+  Kopf, links und rechts die beiden Ursprünge; Laternen und Raketenspitzen
+  leuchten. Neue Geschosse (Ballistabolzen, Eiszapfen, Leuchtpfeil, Matsch,
+  Rakete), Klänge (Ballista, Rakete, Nebel), Symbole und ein Zeichen
+  »markiert« über dem Kopf.
+- **Werkstattbuch** im Pausenmenü: Zähler, je Rezept Name und Tag, darunter
+  was es tut und woraus es entsteht; unentdeckte mit Regel und einem Hinweis
+  von Bert oder Juna.
+- **Balduin** bringt den ersten Moderkern an Tag 4.
+- **Spielstand v15** (Werkstattbuch, Herkunft der Mischtürme), Migration
+  v14 → v15.
+- **Prüfung:** neuer Abschnitt `misch` (nur der Kern, siehe CLAUDE.md).
+
+---
+
 ## Meilenstein 19 – Mehr Spielzeug: neue Türme, Fallen und Baupläne ✓
 
 **Ziel (DESIGN 8):** Zwei Spiele nebeneinander verteidigen sich verschieden –

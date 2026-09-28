@@ -21,6 +21,8 @@
 //   hp       Haltbarkeit der Vogelscheuche   lure  so viele lockt sie zugleich,
 //            lureTime so lange (s), damage beim Krähenscheuche: Picken je Sekunde
 
+import { MIXES } from './mixes.js';
+
 export const TOWER_TYPES = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche'];
 
 export const TOWERS = {
@@ -243,6 +245,12 @@ export const TOWERS = {
     },
   },
 };
+
+// Mischtürme (M20, mixes.js): Stufe 3–5 wie eine Spezialisierung »A« – Stufe 1 und 2
+// gibt es nicht (sie entstehen erst beim Verbinden zweier Türme ab Stufe 3)
+for (const [id, m] of Object.entries(MIXES)) {
+  TOWERS[id] = { role: 'misch', projectile: m.projectile, mix: m.parts, strongest: Boolean(m.strongest), base: [m.levels[0], m.levels[0]], specs: { A: { key: id, levels: m.levels } } };
+}
 
 /** Werte eines Turms auf Stufe level (1..5) mit Spezialisierung spec ('A'|'B'|null). */
 export function towerStats(type, level, spec) {

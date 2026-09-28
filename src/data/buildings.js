@@ -18,6 +18,7 @@
 // wenn sie den Bauplan gewählt hat (blueprints.js).
 
 import { TOWERS, towerStats } from './towers.js';
+import { MIXES } from './mixes.js';
 
 export const BUILDINGS = {
   bolzen: { w: 1, d: 1, tower: true, cost: TOWERS.bolzen.base[0].cost, icon: 'bolzen', hp: 100, height: 1.6 },
@@ -49,6 +50,10 @@ export const BUILDINGS = {
   wall4: { w: 1, d: 4, camp: 'wall', smash: true, defense: true, hp: 1, icon: 'wall', height: 1.6 },
   tor: { w: 1, d: 5, camp: 'tor', smash: true, defense: true, hp: 1, icon: 'tor', height: 2.2 },
 };
+
+// Mischtürme (M20): zwei Felder (turns = 1: übereinander), entstehen nur durch
+// Verbinden zweier Türme – darum in keinem Reiter der Bauleiste
+for (const id of Object.keys(MIXES)) BUILDINGS[id] = { w: 2, d: 1, tower: true, mix: true, cost: {}, icon: id, hp: 160, height: 1.9 };
 
 /**
  * Wall und Tor je Stufe (M17, DESIGN.md 8): 1 Weidenzaun, 2 Palisade,

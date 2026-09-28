@@ -1353,6 +1353,31 @@ den Nebenaufträgen (M23) – dort sind sie Belohnung und Inhalt für die Tage.
 Nach neun Bauplänen ist der Vorrat leer; die Mischtürme (M20) bringen neue
 Rezepte statt weiterer Pläne.
 
+### 137. Was kostet ein Mischturm, und woher kommt der Moderkern? (M20)
+**Entscheidung:** Verbinden kostet einen Moderkern und 10 Schrott; beide Türme
+stecken im Mischturm (Abriss: 70 % von allem). Balduin bringt seinen ersten
+Moderkern schon an Tag 4 (vorher Tag 6), der Anführer lässt jede fünfte
+Nacht einen fallen. **Warum:** m16-r1 – »Moderkern nie gesehen«; ein
+Mischturm soll in der ersten Woche erreichbar sein, aber eine Entscheidung
+bleiben (derselbe Kern bringt sonst einen Turm auf Stufe 5 oder das Steintor).
+
+### 138. Welche Stufe hat der Mischturm, und was wird aus Namen, Erfahrung und Turmteilen? (M20)
+**Entscheidung:** Die kleinere Stufe der beiden; danach steigt er bis 5 wie ein
+Turm. Name und Erfahrung nimmt er vom erfahreneren Turm, die Abschüsse beider
+zählen zusammen. Ein Turmteil bleibt am Mischturm, ein zweites kommt zurück in
+den Vorrat. **Warum:** Wer zwei Lieblingstürme verbindet, soll »seinen« Turm
+behalten, nicht einen namenlosen neuen.
+
+### 139. Wie entdeckt man Rezepte? (M20)
+**Entscheidung:** Durchs Bauen: Steht ein passendes Paar nebeneinander, zeigt
+die Auswahl »Verbinden: ???«; nach dem ersten Verbinden steht das Rezept mit
+Tag im Werkstattbuch (Banner »Neues Rezept!«). Unentdeckte stehen dort als
+»???« mit der Regel; ist Bert bzw. Juna eingezogen, verraten sie einen
+Hinweis. Mit den Familien aus M19 gibt es zunächst zwei Rezepte (Glühschwarm,
+Wetterhahn), weitere mit Glocke und Vogelscheuche folgen. **Warum:** Wer ein
+Rezept selbst findet, fühlt sich klug (DESIGN 10.2); die Hinweise machen die
+Überlebenden wertvoller.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

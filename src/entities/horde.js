@@ -234,6 +234,8 @@ export class Horde {
       mudT: 0,
       blindT: 0,
       iceT: 0,
+      markT: 0, // markiert vom Leuchtpfeil (M20): alle Türme treffen härter
+      markBonus: 0,
       glut: false,
       reacted: {}, // Reaktion → Zeitpunkt (Horde-Uhr), ab dem sie wieder geht
       lureBy: 0, // von dieser Vogelscheuche gelockt (M19, Bau-ID)
@@ -272,6 +274,8 @@ export class Horde {
       amount *= REACTIONS.schwachstelle.damage;
       this.reaction(z, 'schwachstelle', 1.2);
     }
+    // Markiert (M20, Leuchtpfeil): Türme treffen härter
+    if (z.markT > 0 && source === 'turm') amount *= 1 + z.markBonus;
     const dealt = Math.max(1, Math.round(pierce ? amount : amount - z.def.armor));
     z.hp -= dealt;
     z.flash = 0.1;
@@ -416,6 +420,13 @@ export class Horde {
     z.kz -= dir.z * dist * 6 * resist;
   }
 
+  /** Markieren (M20, Leuchtpfeil): `time` Sekunden treffen alle Türme um `bonus` härter. */
+  mark(z, time, bonus) {
+    if (z.state === 'dying') return;
+    z.markT = Math.max(z.markT, time);
+    z.markBonus = Math.max(z.markT > time ? z.markBonus : 0, bonus);
+  }
+
   /** Alle Lebenden im Umkreis (neue Liste). */
   inRange(x, z, r) {
     const out = [];
@@ -470,6 +481,7 @@ export class Horde {
       z.mudT = Math.max(0, z.mudT - dt);
       z.blindT = Math.max(0, z.blindT - dt);
       z.iceT = Math.max(0, z.iceT - dt);
+      z.markT = Math.max(0, z.markT - dt);
       if (z.noChase > 0) z.noChase -= dt;
       if (z.burnT > 0) {
         z.burnT -= dt;

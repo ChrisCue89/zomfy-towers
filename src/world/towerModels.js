@@ -13,6 +13,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
 import { shade } from './voxelKit.js';
 import { FAMILY_MODELS } from './familyModels.js';
+import { MIX_MODELS } from './mixModels.js';
 
 const WHITE = 0xffffff;
 
@@ -28,6 +29,15 @@ const SPEC_COLORS = {
   windrad: { A: [P.b3, P.b5], B: [P.e7, P.e9] },
   bienenkorb: { A: [P.f5, P.f7], B: [P.f3, P.f5] },
   vogelscheuche: { A: [P.e6, P.e8], B: [P.n2, P.n4] },
+  // M20: Mischtürme (nur »A«) – die Fahne in der Leitfarbe des Rezepts
+  kuerbisballiste: { A: [P.f3, P.f6] },
+  eiszapfen: { A: [P.b4, 0xe8f8ff] },
+  leuchtpfeil: { A: [P.f5, P.f8] },
+  matschkessel: { A: [P.e3, P.e6] },
+  feuerwerk: { A: [P.r3, P.f7] },
+  nebelleuchte: { A: [P.s6, P.s9] },
+  gluehschwarm: { A: [P.f6, P.f8] },
+  wetterhahn: { A: [P.b3, P.s8] },
 };
 
 /** Stufen-Fahne an der hinteren linken Ecke – groß genug, um sie im Getümmel zu lesen. */
@@ -166,7 +176,7 @@ function boltHead(level, spec) {
 // --- Kürbiskatapult ----------------------------------------------------------------
 
 /** Gerippter Kürbis mit Mitte (cx, y0 = Unterseite, cz): feine Furchen, glänzende Rippen, Stiel. */
-function pumpkin(m, cx, y0, cz, r, colors = [P.f3, P.f4, P.f5]) {
+export function pumpkin(m, cx, y0, cz, r, colors = [P.f3, P.f4, P.f5]) {
   m.ellipsoid(cx, y0 + r * 0.8, cz, r, r * 0.8, r, (x, y, z, dx, dy) => {
     const a = Math.atan2(z + 0.5 - cz, x + 0.5 - cx);
     const ph = ((a / (Math.PI * 2)) * 10 + 10.25) % 1;
@@ -425,6 +435,7 @@ export function fineTowerModels(type, level, spec, seed = 5) {
     sprenger: fineSprinkler,
     laternenturm: fineLantern,
     ...FAMILY_MODELS, // M19: Glockenturm, Windrad, Bienenkorb, Vogelscheuche
+    ...MIX_MODELS, // M20: Mischtürme auf zwei Feldern
   }[type](level, spec, seed);
   return { ...m, unit: TOWER_UNIT };
 }

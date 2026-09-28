@@ -187,6 +187,19 @@ const SFX = {
     for (const [k, dur, peak] of [[0.5, 1.1, 0.03], [1, 0.9, 0.07], [1.2, 0.6, 0.03], [1.5, 0.5, 0.025], [2, 0.35, 0.02]]) s.tone('sine', f * k, t, dur, { peak: peak * v, attack: 0.003, out: o });
   },
   // Windrad: ein Windstoß – Rauschen, das anschwillt und abebbt
+  // M20: Mischtürme – schwerer Bolzen, Rakete, Nebelstoß
+  ballista: (s, t, v, o) => {
+    s.tone('sine', 92, t, 0.24, { freqEnd: 48, peak: 0.5 * v, out: o });
+    s.noise(t, 0.3, { type: 'bandpass', freq: 600, freqEnd: 1800, q: 1.2, attack: 0.02, peak: 0.2 * v, out: o });
+  },
+  rakete: (s, t, v, o) => {
+    s.tone('triangle', 700, t, 0.42, { freqEnd: 1900, peak: 0.07 * v, attack: 0.03, out: o });
+    s.noise(t, 0.38, { type: 'highpass', freq: 2600, attack: 0.02, peak: 0.08 * v, out: o });
+  },
+  nebel: (s, t, v, o) => {
+    s.noise(t, 0.6, { type: 'highpass', freq: 1800, attack: 0.15, peak: 0.1 * v, out: o });
+    s.tone('sine', 1320, t, 0.45, { peak: 0.04 * v, attack: 0.05, out: o });
+  },
   windstoss: (s, t, v, o) => s.noise(t, 0.7, { type: 'bandpass', freq: 380, freqEnd: 900, q: 0.7, attack: 0.25, peak: 0.16 * v, out: o }),
   // Bienenkorb: kurzes Summen, wenn ein Schwarm ausfliegt
   summen: (s, t, v, o) => s.tone('sawtooth', 210, t, 0.5, { freqEnd: 240, attack: 0.08, peak: 0.025 * v, filter: 900, vibrato: 14, out: o }),
@@ -203,7 +216,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

@@ -57,9 +57,9 @@ export const TRADER_BASE = ['schrott'];
 export const TRADER_DAILY = [
   ['holz', 'stoff'],
   ['stein', 'zahnrad'],
-  ['fasern', 'stoff'],
+  ['stein', 'moderkern'], // M20: der erste Moderkern schon an Tag 4 – für den ersten Mischturm
   ['holz', 'zahnrad'],
-  ['stein', 'moderkern'],
+  ['fasern', 'stoff'],
   ['fasern', 'zahnrad'],
 ];
 

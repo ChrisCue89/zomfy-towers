@@ -215,6 +215,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Stufe/Spezialisierung), familyModels (Glockenturm,
                       Windrad, Bienenkorb, Vogelscheuche aus Formen, M19),
                       trapModels (Fallen ganz und verbraucht, M19),
+                      mixModels (Mischtürme auf zwei Feldern, M20),
                       buildPreview (Geistermodell,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
@@ -248,6 +249,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       reactions (Zustände, Reaktionen, Wetter-Wirkung, M18),
                       blueprints (Baupläne: Vorrat, Gewichte, Wahl, M19),
                       traps (Werte der Fallen, M19),
+                      mixes (Mischtürme: Rezepte, Werte, Kosten, M20),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -371,6 +373,15 @@ Grundprinzipien:
   (`pathing.freeCell`); `entities/traps.js` prüft je Bild, wer auf welcher
   Falle steht. Die Vogelscheuche nutzt den Raid-Zustand der Horde mit
   `lureBy` (Schläge über `onLureHit`), gelockt wird nur, wer auf dem Weg läuft.
+- **Mischtürme (M20, `data/mixes.js`):** Jedes Rezept ist eine eigene Turmart
+  (`TOWERS[id]` mit `role: 'misch'`, nur Spezialisierung »A«, Stufe 3–5) und
+  ein Bau mit `w: 2, mix: true` in keinem Reiter; `turns = 1` heißt
+  übereinander (`towerObject` dreht dann den Sockel). `builder.mixPartners`
+  sucht Nachbarn (Kante an Kante, andere Familie, Stufe 3+),
+  `builder.mergeTowers` ersetzt beide durch den Mischturm (`b.from` merkt die
+  Herkunft für den Abriss) und trägt das Rezept in `state.recipes` ein.
+  `towers.origin` nimmt bei zwei Feldern die Mitte; neue Geschosse haben
+  eigene Pools (`PROJECTILE_POOL`), Markieren läuft über `horde.mark`.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -525,7 +536,12 @@ Grundprinzipien:
    Fallen auf dem Weg (sperren nie, nur auf Wegfeldern), Knallerbsen und
    Ölspur danach verbraucht, neu richten; Mühle; Balduins Bauplan an
    ungeraden Tagen; Speichern v14 und Migration v13 → v14 (Bilder: bauplan,
-   spielzeug, fallen).
+   spielzeug, fallen); ab M20 (Abschnitt `misch`, nur der Kern): zwei Türme
+   ab Stufe 3 nebeneinander zeigen »Verbinden: ???«, zwei echte Drücke machen
+   die Kürbisballiste auf beiden Feldern (Moderkern, Banner, Werkstattbuch),
+   ihr Bolzen durchschlägt eine Reihe; übereinander entsteht die Nebelleuchte
+   (nass, geblendet); das Werkstattbuch mit Esc, S, E; Speichern v15 und
+   Migration v14 → v15 (Bilder: mischturm, werkstattbuch).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -608,7 +624,9 @@ Pläne, offene Wahl und Reiter, `giveBlueprint(id)` schaltet einen frei,
 `offerBlueprint(von)`/`chooseBlueprint(id)` stellen und nehmen eine Wahl,
 `traps()` nennt Fallen samt Zählern, `swarms()` die Bienenschwärme,
 `lured()` die Gelockten, `bells()` Glockenschläge und Geflicktes,
-`grindMills()` lässt die Mühlen mahlen.
+`grindMills()` lässt die Mühlen mahlen; ab M20 zeigt `recipes()` das
+Werkstattbuch, `mixPartners(id)` die Nachbarn zum Verbinden, `mergeTowers(a, c)`
+verbindet zwei Türme (mit Kosten).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

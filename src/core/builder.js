@@ -19,6 +19,7 @@ import { ITEMS } from '../data/items.js';
 import { SURVIVORS } from '../data/survivors.js';
 import { knowsBuilding } from '../data/blueprints.js';
 import { TRAP_REARM } from '../data/traps.js';
+import { MIX_COST, MIX_MIN_LEVEL, mixFor } from '../data/mixes.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -77,7 +78,7 @@ export class Builder {
     const name = T.bauten[b.type];
     if (BUILDINGS[b.type].camp) return `${name} · ${T.lager.stufen[campLevel(b.level).key][0]}`; // M17
     if (!BUILDINGS[b.type].tower) return name;
-    const spec = b.spec ? ` · ${T.tuerme[b.spec][b.type][0]}` : '';
+    const spec = b.spec && !BUILDINGS[b.type].mix ? ` · ${T.tuerme[b.spec][b.type][0]}` : ''; // Mischtürme (M20) tragen ihr Rezept schon im Namen
     const part = b.part ? ` · ${T.turmteile[b.part][0]}` : '';
     // M16: Türme tragen einen Namen – »Gertrud, Bolzenwerfer«
     return `${this.game.towerRanks.title(b)} · ${T.bauleiste.stufe(b.level)}${spec}${part}`; // »Bolzenwerfer 2« las sich wie »der zweite«
@@ -361,12 +362,14 @@ export class Builder {
           options.push(this.option({ id: `spec${spec}`, icon: def.icon, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, buy: true, action: () => this.upgradeTower(b, 3, spec) }, inv));
         }
       } else if (b.level < 5) {
-        const [name] = T.tuerme[b.spec][b.type];
+        const [name] = def.mix ? T.misch[b.type] : T.tuerme[b.spec][b.type];
         options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, buy: true, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
       } else {
         options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
       }
     }
+    // Mischtürme (M20): mit einem Nachbarn verbinden
+    if (def.tower && !def.mix && b.level >= MIX_MIN_LEVEL && b.hp > 0) options.push(...this.mixOptions(b, inv));
     // Besondere Turmteile einbauen (M10): eins je Turm, solange die Leiste Platz hat
     if (def.tower && !b.part) {
       const room = 5 - options.length - (def.hp && b.hp < maxHpOf(b) ? 1 : 0);
@@ -428,6 +431,84 @@ export class Builder {
     return options;
   }
 
+  /**
+   * Mischtürme (M20): je passender Nachbar eine Kachel »Verbinden« – ist das Rezept
+   * noch unbekannt, steht dort »???«. Zwei Drücke, nie mitten in der Welle.
+   */
+  mixOptions(b, inv) {
+    const busy = this.waveRunning();
+    return this.mixPartners(b)
+      .slice(0, 2)
+      .map((c) => {
+        const id = mixFor(b.type, c.type);
+        const known = Boolean(this.game.state.recipes?.[id]);
+        const name = known ? T.misch[id][0] : T.misch.unbekannt;
+        const info = known ? `${T.misch[id][1]} ${this.statLine(id, Math.min(b.level, c.level), 'A')}` : `${T.misch.unbekanntInfo} ${T.misch.verbindenInfo}`;
+        return this.option({ id: `misch-${c.id}`, icon: known ? id : 'misch', name: T.misch.verbinden(name), info, cost: MIX_COST, confirm: true, confirmText: T.misch.nochmal(name), confirmIcon: 'misch', disabled: busy, locked: busy, disabledText: T.bauleiste.erstWelle, action: () => this.mergeTowers(b, c) }, inv);
+      });
+  }
+
+  /** Nachbarn, mit denen sich ein Turm verbinden lässt: Kante an Kante, andere Familie, Stufe 3+, ein Rezept. */
+  mixPartners(b) {
+    const out = [];
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const c = this.world.buildings.atCell(b.i + di, b.j + dj);
+      if (!c || c === b || out.includes(c)) continue;
+      const cd = BUILDINGS[c.type];
+      if (!cd.tower || cd.mix || c.level < MIX_MIN_LEVEL || c.hp <= 0 || !mixFor(b.type, c.type)) continue;
+      out.push(c);
+    }
+    return out;
+  }
+
+  /**
+   * Zwei Türme werden ein Mischturm (M20): Beide weichen, auf ihren beiden
+   * Feldern steht der neue. Stufe: die kleinere; Name und Erfahrung vom
+   * erfahreneren, Abschüsse zusammen; ein Turmteil bleibt, ein zweites kommt in
+   * den Vorrat. Beim ersten Mal steht das Rezept im Werkstattbuch.
+   */
+  mergeTowers(a, c) {
+    const id = mixFor(a.type, c.type);
+    const g = this.game;
+    const st = g.state;
+    if (!id || this.waveRunning() || !pay(st.inventory, MIX_COST)) return null;
+    const bs = this.world.buildings;
+    const across = a.j === c.j; // nebeneinander, sonst übereinander
+    const [lead, other] = (c.xp || 0) > (a.xp || 0) ? [c, a] : [a, c];
+    if (lead.part && other.part) st.towerParts[other.part] = (st.towerParts[other.part] || 0) + 1;
+    const extra = {
+      level: Math.min(a.level, c.level),
+      spec: 'A',
+      from: [a, c].map((t) => ({ t: t.type, l: t.level, s: t.spec })),
+      xp: Math.max(a.xp || 0, c.xp || 0),
+      kills: (a.kills || 0) + (c.kills || 0),
+      name: lead.name,
+      part: lead.part || other.part || null,
+    };
+    const i = Math.min(a.i, c.i);
+    const j = Math.min(a.j, c.j);
+    const angle = lead.headAngle ?? -Math.PI / 2;
+    bs.remove(a.id);
+    bs.remove(c.id);
+    const m = bs.place(id, i, j, across ? 0 : 1, null, extra);
+    m.headAngle = angle;
+    st.world.buildings = bs.toState();
+    this.world.refreshInteractions();
+    this.select(m.id);
+    const fresh = !st.recipes[id];
+    if (fresh) st.recipes[id] = st.time.day;
+    const c0 = bs.bounds(m);
+    g.effects.dust(c0.x, c0.z, 1.4, 22);
+    g.effects.splat(c0.x, 1.4, c0.z, 'licht', 18, 1.2);
+    g.sound.play('aufwertung');
+    if (fresh) {
+      g.hud.showBanner(T.misch.neu(T.misch[id][0]));
+      g.hud.toast(T.werkstattbuch.neu(T.misch[id][0]), 'buch', 4);
+    } else g.hud.toast(T.misch.gebaut(T.misch[id][0]), id, 3);
+    g.quietSave();
+    return m;
+  }
+
   /** Reicht ein Turm (Schaden oder Kontrolle) bis an diese Stelle? */
   towerReaches(x, z) {
     return this.world.buildings.towers.some((t) => {
@@ -464,6 +545,12 @@ export class Builder {
     if (type === 'windrad') return s.grind ? W.muehle(num(s.push), s.grind) : W.wind(num(s.push), num(s.range));
     if (type === 'bienenkorb') return W.bienen(Math.round(s.damage), s.swarms, num(s.range));
     if (type === 'vogelscheuche') return W.scheuche(s.hp, s.lure, num(s.range));
+    // M20: Mischtürme
+    if (type === 'kuerbisballiste') return W.ballista(Math.round(s.damage), s.pierce, num(s.range));
+    if (type === 'leuchtpfeil') return W.leuchtpfeil(Math.round(s.damage), Math.round(s.markBonus * 100), num(s.range));
+    if (type === 'feuerwerk') return W.feuerwerk(Math.round(s.damage), s.chain + 1, num(s.range));
+    if (type === 'nebelleuchte' || type === 'wetterhahn') return W.nebel(num(s.push), num(s.range));
+    if (type === 'gluehschwarm') return W.bienen(Math.round(s.damage), s.swarms, num(s.range));
     return `Schaden ${Math.round(s.damage)} · ${num(s.rate)}/s · ${num(s.range)} m`;
   }
 
@@ -939,6 +1026,17 @@ export class Builder {
   /** Rückgabe beim Abreißen: Zuhause-Bauten alles, Verteidigung (Türme, Barrikaden) 70 %. */
   refundFor(b) {
     const def = BUILDINGS[b.type];
+    if (def.mix) {
+      // Mischturm (M20): beide Türme, das Verbinden und jeder Ausbau danach
+      const total = { ...MIX_COST };
+      const add = (cost) => {
+        for (const [res, n] of Object.entries(cost)) total[res] = (total[res] || 0) + n;
+      };
+      for (const f of b.from || []) if (TOWERS[f.t]) add(towerInvested(f.t, f.l, f.s));
+      const start = Math.min(...(b.from || []).map((f) => f.l), b.level);
+      for (let l = start + 1; l <= b.level; l++) add(towerStats(b.type, l, 'A').cost);
+      return scale(total, TOWER_REFUND);
+    }
     if (def.tower) {
       // Der Bau selbst zählt zum Staffelpreis des zuletzt gebauten Turms dieser Art
       const invested = towerInvested(b.type, b.level, b.spec);

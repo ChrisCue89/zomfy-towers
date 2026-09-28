@@ -1,5 +1,5 @@
-// Pause-Menü: Weiter, Steuerung, Notizbuch (M18), Einstellungen, Vollbild,
-// Neues Spiel (mit Rückfrage).
+// Pause-Menü: Weiter, Steuerung, Notizbuch (M18), Werkstattbuch (M20),
+// Einstellungen, Vollbild, Neues Spiel (mit Rückfrage).
 // Layout wird einmal berechnet und von update() (Klicks) und draw() genutzt.
 // Schutz vor versehentlichem Löschen: Nach jedem Seitenwechsel zählen Klicks
 // kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
@@ -11,6 +11,7 @@ import { measure, LINE_HEIGHT, wrap } from './font.js';
 import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS } from '../core/settings.js';
 import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
+import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
 import { hexToCss } from '../render/palette.js';
 
 /** Notizbuch (M18): Breite der Seite, Höhe einer Zeile der Liste, Breite der Beschreibung. */
@@ -47,6 +48,7 @@ export class Menu {
         { label: T.menue.weiter, action: () => this.game.closeMenu() },
         { label: T.menue.steuerung, action: () => this.go('controls') },
         { label: T.notizbuch.menue, action: () => this.go('notes') },
+        { label: T.werkstattbuch.menue, action: () => this.go('recipes') },
         { label: T.menue.einstellungen, action: () => this.go('settings') },
         { label: T.menue.vollbild, action: () => this.game.toggleFullscreen() },
         { label: T.menue.neuesSpiel, action: () => this.go('confirm') },
@@ -74,6 +76,14 @@ export class Menu {
       const notes = this.game.state.notes || {};
       return [
         ...REACTION_ORDER.map((k) => ({ label: notes[k] ? `${T.reaktionen[k][0]} · ${T.notizbuch.entdeckt(notes[k])}` : T.notizbuch.unbekannt, note: k, action: () => this.game.sound.play('klick') })),
+        { label: T.menue.zurueck, action: () => this.go('main') },
+      ];
+    }
+    if (this.screen === 'recipes') {
+      // Werkstattbuch (M20): je Rezept eine Zeile, unentdeckte als »???«
+      const recipes = this.game.state.recipes || {};
+      return [
+        ...MIX_ORDER.map((k) => ({ label: recipes[k] ? `${T.misch[k][0]} · ${T.werkstattbuch.entdeckt(recipes[k])}` : T.misch.unbekannt, note: k, action: () => this.game.sound.play('klick') })),
         { label: T.menue.zurueck, action: () => this.go('main') },
       ];
     }
@@ -121,6 +131,10 @@ export class Menu {
    * eine Zeile – Name und Tag, unentdeckte als »???«.
    */
   noteLines() {
+    if (this.screen === 'recipes') {
+      const recipes = this.game.state.recipes || {};
+      return [{ text: T.werkstattbuch.zaehler(MIX_ORDER.filter((k) => recipes[k]).length, MIX_ORDER.length) }];
+    }
     const notes = this.game.state.notes || {};
     const found = REACTION_ORDER.filter((k) => notes[k]);
     return [{ text: T.notizbuch.zaehler(found.length, REACTION_ORDER.length) }, ...this.buttons().filter((b) => b.note).map((b) => ({ text: b.label }))];
@@ -131,6 +145,7 @@ export class Menu {
    * Notiz – unentdeckt nur ein Hinweis.
    */
   noteDetail(k) {
+    if (this.screen === 'recipes') return this.recipeDetail(k);
     const [, info, note] = T.reaktionen[k];
     if (!this.game.state.notes?.[k]) return wrap(T.notizbuch.hinweis[k], NOTE_TEXT_W).map((text) => ({ text, color: COLORS.textDim }));
     return [
@@ -139,9 +154,31 @@ export class Menu {
     ];
   }
 
+  /**
+   * Eintrag im Werkstattbuch (M20): was der Mischturm tut und woraus er
+   * entsteht – unentdeckt die Regel und ein Hinweis von Bert oder Juna, wenn
+   * sie eingezogen sind.
+   */
+  recipeDetail(k) {
+    const [, info, hint] = T.misch[k];
+    const [a, b] = MIXES[k].parts;
+    const parts = T.werkstattbuch.zutaten(T.bauten[a], T.bauten[b]);
+    if (this.game.state.recipes?.[k]) {
+      return [
+        ...wrap(info, NOTE_TEXT_W).map((text) => ({ text, color: COLORS.text })),
+        { text: parts, color: COLORS.textWarm, gap: true },
+      ];
+    }
+    const helper = this.game.survivors?.resident(MIX_HINTS[k]);
+    return [
+      ...wrap(T.werkstattbuch.regel, NOTE_TEXT_W).map((text) => ({ text, color: COLORS.textDim })),
+      ...wrap(helper ? hint : T.werkstattbuch.keinHinweis, NOTE_TEXT_W).map((text, i) => ({ text, color: helper ? COLORS.textWarm : COLORS.textDim, gap: i === 0 })),
+    ];
+  }
+
   /** Maße und Knopf-Rechtecke für die aktuelle Seite. */
   layout(ui) {
-    if (this.screen === 'notes') return this.notesLayout(ui);
+    if (this.screen === 'notes' || this.screen === 'recipes') return this.notesLayout(ui);
     const buttons = this.buttons();
     const controls = this.screen === 'controls' ? T.steuerung : [];
     const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : this.screen === 'settings' ? [T.menue.einstellungenHinweis] : [];
@@ -222,7 +259,7 @@ export class Menu {
     ui.ditherFill(0.5);
     const L = this.layout(ui);
     ui.panel(L.x, L.y, L.w, L.h);
-    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel }[this.screen] || T.menue.titel;
+    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel, recipes: T.werkstattbuch.titel }[this.screen] || T.menue.titel;
     ui.textCentered(title, L.x + L.w / 2, L.y + 7, COLORS.gold);
     ui.rect(L.x + 10, L.y + 21, L.w - 20, 1, COLORS.frameDark);
     let cy = L.y + 28;
@@ -245,7 +282,10 @@ export class Menu {
 
   /** Notizbuch (M18): Zähler, Zeilen der Reaktionen, Beschreibung, »Zurück«. */
   drawNotes(ui, L) {
-    const notes = this.game.state.notes || {};
+    // Dieselbe Seite trägt das Werkstattbuch (M20)
+    const recipes = this.screen === 'recipes';
+    const notes = (recipes ? this.game.state.recipes : this.game.state.notes) || {};
+    const colors = recipes ? MIX_COLORS : REACTION_COLORS;
     ui.textCentered(L.notes.count, L.x + L.w / 2, L.y + 28, COLORS.textDim);
     L.buttons.forEach((b, i) => {
       const focused = i === this.focus;
@@ -255,7 +295,7 @@ export class Menu {
       }
       const shown = b.note === L.notes.shown;
       if (focused || shown) ui.rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, focused ? COLORS.fillHover : COLORS.fillLight);
-      const color = notes[b.note] ? hexToCss(REACTION_COLORS[b.note]) : COLORS.textDim;
+      const color = notes[b.note] ? hexToCss(colors[b.note]) : COLORS.textDim;
       if (focused) for (let k = 0; k < 3; k++) ui.rect(b.rect.x + 3 + k, b.rect.y + 3 + k, 1, 7 - 2 * k, COLORS.gold); // kleiner Pfeil
       ui.text(b.label, b.rect.x + 12, b.rect.y + 1, color);
     });

@@ -29,6 +29,9 @@ const SPLAT = {
   kletten: [c(P.g3), c(P.e3), c(P.g2)],
   papier: [c(P.r3), c(P.a4), c(P.r4), c(P.f7)],
   oel: [c(P.n1), c(P.n2), c(P.a5)],
+  // M20: Feuerwerk (bunt) und Nebel der Nebelleuchte
+  feuerwerk: [c(P.r4), c(P.f7), c(P.b5), c(P.g7), c(P.a4), c(0xfff6d8)],
+  nebel: [c(0xe8eef4), c(0xd8e2ea), c(0xf4f8fc)],
 };
 
 export class Effects {
