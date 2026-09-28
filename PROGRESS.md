@@ -28,8 +28,17 @@ Was die Testrunde als Feinschliff fand und ohne Balance zu lösen war:
   Palette hat keine goldenen Mitteltöne (offen, siehe OFFENE-FRAGEN 110).
 - **Durchsicht:** Mikas gelbe Durchsicht ist nur noch halb gerastert – dicht
   verschmolz sie mit Schlurfern und Stühlen davor (Mira, Kira).
-- **Prüfung:** zwei neue Punkte im Abschnitt `nachbesserung` (Klettern über
-  die eigene Reihe, Werkzeug drinnen weggesteckt).
+- **Bedienung (Theo):** In einer dichten Barrikadenreihe wählt der Zeiger die
+  Barrikade darunter, nicht mehr die Nachbarin davor (die Kästen überdecken
+  sich stark – nachgestellt: vorher traf jeder Klick die südliche). Breite
+  Bauten zum Benutzen (Werkbank, Bank, Beet) messen den Abstand zur
+  Grundfläche statt zur Mitte, und Sitzplätze treten hinter ihnen zurück –
+  E neben dem Sessel öffnet die Werkbank. Die Zahl an den Randmarken heißt in
+  der Textansicht »Stück«. (Verschluckte schnelle Tasten in der Werkbank-Liste
+  kamen aus der Brücke: Fünf Tipper in einem Bild zählen einmal.)
+- **Prüfung:** neue Punkte im Abschnitt `nachbesserung` (Klettern über die
+  eigene Reihe, Werkzeug drinnen weggesteckt, Barrikade unter dem Zeiger,
+  Werkbank vor dem Sessel – mit Gegenprobe).
 
 ---
 

@@ -202,7 +202,9 @@ klettert über ihre eigenen Barrikaden, Kiesel und fällbare Bäume sind von der
 Deko zu unterscheiden (helle Kiesel, blau-weißer Markierpflock), drinnen ist
 das Werkzeug weggesteckt, das Wrack ist ein erkennbarer Bootsrumpf, das
 Tageslicht wechselt über den Tag, Mikas Durchsicht ist nur noch halb
-gerastert.
+gerastert; der Zeiger trifft in dichten Barrikadenreihen die richtige
+Barrikade, E neben dem Sessel öffnet die Werkbank, die Randmarken-Zahl heißt
+»Stück«.
 
 ## Offen
 

@@ -1894,7 +1894,8 @@ export class Game {
         return q.x >= 0 && q.x < this.ui.width && q.y >= 0 && q.y < this.ui.height;
       }).length,
       schlurferAusserhalb: this.hud.edgeCount || 0,
-      randMarken: (this.hud.edgeMarks || []).map((m) => `${m.art} ${m.richtung}${m.anzahl > 1 ? ` (${m.anzahl})` : ''}`),
+      // Die Zahl am Pfeil ist die Anzahl (m12-r1: Theo las sie als Entfernung)
+      randMarken: (this.hud.edgeMarks || []).map((m) => `${m.art} ${m.richtung}${m.anzahl > 1 ? ` (${m.anzahl} Stück)` : ''}`),
       lootAmBoden: this.loot.items.length,
       // Mengen stehen im Bild als Symbole – für die Textansicht als Wörter (m7-r1: »Knopf hat etwas ausgebuddelt:« wirkte leer)
       bericht: this.report.isOpen

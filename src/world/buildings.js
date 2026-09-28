@@ -179,6 +179,9 @@ export class Buildings {
     building.interaction = def.use
       ? { id: `bau-${building.id}`, x: cx, z: cz, radius, prompt: def.prompt || def.use, use: def.use, building: building.id }
       : { id: `bau-${building.id}`, x: cx, z: cz, radius: radius - 0.2, prompt: 'auswaehlen', select: building.id };
+    // Breite Bauten zum Benutzen (Werkbank, Bank, Beet): Der Abstand zählt zur Grundfläche,
+    // nicht zur Mitte – vor ihrem Ende stehend war man sonst »zu weit weg« (m12-r1)
+    if (def.use && Math.max(w, d) > 1) Object.assign(building.interaction, { hw: w / 2, hd: d / 2, radius: 1.25 });
     this.list.push(building);
     this.pathing?.rebuild();
     return building;

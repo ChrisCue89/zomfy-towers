@@ -343,7 +343,8 @@ Grundprinzipien:
    Barrikadenreihe zurück (Gegenprobe: ohne Rückkehr zogen sie vorbei),
    schnelles E nach einem Dialog öffnet nichts, ein bewusstes schon, Mika
    klettert über die eigene Barrikadenreihe, drinnen ist das Werkzeug
-   weggesteckt.
+   weggesteckt, in einer dichten Reihe trifft der Zeiger die Barrikade
+   darunter, neben dem Sessel geht die Werkbank vor.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

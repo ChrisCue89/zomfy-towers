@@ -322,14 +322,18 @@ export class World {
       const tz = it.north ? Math.max(it.z - it.north, Math.min(z, it.z)) : it.z;
       const dx = it.x - x;
       const dz = tz - z;
-      const d = Math.hypot(dx, dz);
+      const d = it.hw ? Math.hypot(Math.max(0, Math.abs(dx) - it.hw), Math.max(0, Math.abs(dz) - it.hd)) : Math.hypot(dx, dz);
       if (d > it.radius + grace) continue;
-      const facingDot = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
+      const dc = Math.hypot(dx, dz);
+      const facingDot = dc > 0.01 ? (dx * fx + dz * fz) / dc : 1;
       // Nur-Anschauen (Wäscheleine, Schild …) tritt hinter Bauten und Quellen zurück
       // Menschen (und Knopf) gehen vor – mit jemandem reden will man lieber als Gras rupfen;
       // ebenso der Hackklotz, solange die Axt dort steckt (m5-r1)
       const flavor = it.prompt === 'ansehen' || it.flavor;
-      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
+      // Sitzplätze (Sessel, Feuer, Bank) treten hinter Bauten zurück, die man benutzt –
+      // m12-r1: E an der Werkbank neben dem Sessel setzte Mika hin
+      const rest = it.prompt === 'hinsetzen' || it.prompt === 'feuer' || it.use === 'bank';
+      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) + (rest ? 0.35 : 0) - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

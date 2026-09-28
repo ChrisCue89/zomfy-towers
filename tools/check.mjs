@@ -2564,6 +2564,49 @@ async function runFixChecks(browser, url) {
   if (werkzeug.draussen.includes('axt') && werkzeug.drinnen.length === 0) note('✓ Werkzeug: draußen in der Hand, drinnen weggesteckt');
   else fail(`Werkzeug drinnen: ${JSON.stringify(werkzeug)}`);
 
+  // Dichte Barrikadenreihe (Theo): Der Zeiger auf einer Barrikade wählt genau diese,
+  // nicht die Nachbarin davor
+  const reiheKlick = await z(() => {
+    const Z = window.zomfy;
+    Z.give({ holz: 20 });
+    const col = Z.pathColumn(-10);
+    for (const j of col) Z.build('barrikade', -10, j, 1);
+    Z.teleport(-7.5, col[0] - 2.5, 0);
+    return col.slice(0, -1); // die vorderste liegt nah an der Schnellleiste
+  });
+  await step(300);
+  const getroffen = [];
+  for (const j of reiheKlick) {
+    const s = await z((jj) => window.zomfy.screenOf(-9.5, 0.45, jj + 0.5), j);
+    await page.mouse.move(s.x, s.y);
+    await step(50);
+    getroffen.push(await z(() => window.zomfy.game.builder.hovered?.j ?? null));
+  }
+  if (getroffen.length >= 3 && getroffen.every((j, k) => j === reiheKlick[k])) note(`✓ Auswahl: In einer dichten Barrikadenreihe trifft der Zeiger die Barrikade darunter (${getroffen.length} von ${reiheKlick.length})`);
+  else fail(`Barrikade unter dem Zeiger: ${JSON.stringify({ reiheKlick, getroffen })}`);
+
+  // E neben Werkbank und Sessel (Theo): Die Werkbank geht vor
+  const sitz = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const sessel = g.world.interactions.find((i) => i.id === 'sessel');
+    Z.give({ holz: 20, stein: 10 });
+    let bank = null;
+    for (const [di, dj] of [[1, 0], [1, -1], [-2, 0], [1, 1], [-2, -1]]) {
+      const i = Math.floor(sessel.x) + di;
+      const j = Math.floor(sessel.z) + dj;
+      if (g.world.buildings.list.some((b) => b.type === 'werkbank')) break;
+      if (Z.placeCheck('werkbank', i, j).ok && Z.build('werkbank', i, j) === 'ok') bank = { i, j };
+    }
+    const wb = g.world.buildings.list.find((b) => b.type === 'werkbank');
+    if (!wb) return { bank: null };
+    // Wie bei Theo: nördlich vor dem Sessel, die Werkbank rechts daneben, Blick nach Süden
+    const it = g.world.findInteraction(sessel.x + 0.25, sessel.z - 1.0, 0);
+    return { bank, gewaehlt: it?.id || null, prompt: it?.prompt || null };
+  });
+  if (sitz.gewaehlt && sitz.gewaehlt.startsWith('bau-')) note(`✓ E: Neben dem Sessel geht die Werkbank vor („${sitz.prompt}“)`);
+  else fail(`Werkbank neben dem Sessel: ${JSON.stringify(sitz)}`);
+
   checkMessages(session);
   await session.context.close();
 }

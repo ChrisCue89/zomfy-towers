@@ -675,18 +675,30 @@ export class Builder {
     if (!m.inside) return null;
     let best = null;
     let bestZ = -Infinity;
+    // Dichte Barrikadenreihe (m12-r1): Die Kästen überdecken sich stark, und die
+    // vorderste gewann fast immer – dann gilt die, deren Mitte dem Zeiger am nächsten ist
+    let near = null;
+    let nearD = Infinity;
+    let others = false;
     for (const b of this.world.buildings.list) {
       const { w, d } = footprint(b.type, b.turns);
       const h = BUILDINGS[b.type].height || 1.2;
       const a = g.worldToUi(b.i, h, b.j);
       const c = g.worldToUi(b.i + w, 0, b.j + d);
       if (m.x < a.x - 1 || m.x > c.x + 1 || m.y < a.y - 1 || m.y > c.y + 1) continue;
+      if (b.type === 'barrikade') {
+        const dist = Math.hypot(m.x - (a.x + c.x) / 2, m.y - (a.y + c.y) / 2);
+        if (dist < nearD) {
+          nearD = dist;
+          near = b;
+        }
+      } else others = true;
       if (b.j + d > bestZ) {
         bestZ = b.j + d;
         best = b;
       }
     }
-    return best;
+    return near && !others ? near : best;
   }
 
   /** Lebender Schlurfer in Schlagweite unter dem Mauszeiger (Bildschirmkasten wie bei Bauten). */
