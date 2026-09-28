@@ -2831,6 +2831,8 @@ export class Game {
       inDerHand: T.gegenstaende[this.player.heldTool] || T.gegenstaende.leer,
       perkWartet: (st.perkChoice || st.skillChoice) && !this.perkChoice.isOpen ? (st.skillChoice ? T.faehigkeiten.wartet : T.perks.wartet) : null,
       perkWahl: this.perkChoice.isOpen ? this.perkChoice.options.map((id, k) => {
+        // Bauplan-Wahl (M19) nutzt dieselben Karten
+        if (this.perkChoice.kind === 'bauplan') return `${k + 1}: ${T.bauten[id]} – ${T.bauplaene.art[BLUEPRINTS[id].kind]}`;
         const [name, info] = this.perkChoice.kind === 'perk' ? T.perks[id] : T.faehigkeiten[id];
         return `${k + 1}: ${name} – ${this.perkChoice.kind === 'schaerfen' ? T.faehigkeiten.rang(this.skills.rankOf(id) + 1) : info}`;
       }) : null,

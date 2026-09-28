@@ -3955,13 +3955,36 @@ async function runNightChecks(browser, url) {
   await page.screenshot({ path: join(SHOTS, 'horde.png') });
   note('  Screenshot: screenshots/horde.png');
   let nacht = n1;
-  for (let k = 0; k < 60 && !nacht.night.done; k++) {
+  for (let k = 0; k < 90 && !nacht.night.done; k++) {
     await step(5000);
+    // m16-r1: Eine Wahl (Perk, Fähigkeit, Bauplan) geht auch nachts in Ruhe auf und hält das
+    // Spiel an – hier nicht Thema: die erste Karte nehmen
+    await z(() => {
+      const g = window.zomfy.game;
+      if (window.zomfy.mode !== 'perk') return;
+      const id = g.perkChoice.options[0];
+      if (g.perkChoice.kind === 'perk') window.zomfy.choosePerk(id);
+      else if (g.perkChoice.kind === 'bauplan') window.zomfy.chooseBlueprint(id);
+      else window.zomfy.chooseSkill(id);
+    });
     nacht = await z(() => window.zomfy.nightState());
   }
   const home = (await state()).world.homeHp;
   if (nacht.night.done && nacht.night.won) note(`✓ Nacht 1 überstanden: ${nacht.night.kills} Schlurfer besiegt, Zuhause ${home}/300`);
-  else fail(`Nacht 1: nicht geschafft (${JSON.stringify(nacht)}, Zuhause ${home})`);
+  else {
+    const rest = await z(() => {
+      const g = window.zomfy.game;
+      return g.horde.list.filter((q) => q.state !== 'dying').slice(0, 4).map((q) => {
+        const dir = g.world.pathing.direction(q.x, q.z, true);
+        const ahead = dir ? g.world.buildings.atCell(Math.floor(q.x + dir.x * 0.55), Math.floor(q.z + dir.z * 0.55)) : null;
+        return { t: q.type, x: +q.x.toFixed(2), z: +q.z.toFixed(2), s: q.state, speed: +q.speed.toFixed(2), slow: q.slow, frz: q.freezeT, stun: q.stunT, lure: q.lureT, dir: dir ? [+dir.x.toFixed(2), +dir.z.toFixed(2)] : null, ahead: ahead ? `${ahead.type}@${ahead.i},${ahead.j}` : null, kx: +q.kx.toFixed(2) };
+      });
+    });
+    await z(() => window.zomfy.teleport(-13, 1.5, 0));
+    await step(300);
+    await page.screenshot({ path: join(SHOTS, 'nacht1-fehler.png') });
+    fail(`Nacht 1: nicht geschafft (${JSON.stringify(nacht)}, Zuhause ${home}, übrig ${JSON.stringify(rest)})`);
+  }
 
   // Nach der Nacht: Reparieren geht wieder – reicht der Vorrat nicht, dann anteilig
   const teil = await z(() => {
@@ -3994,8 +4017,19 @@ async function runNightChecks(browser, url) {
     window.zomfy.setTime(20, 28);
     window.zomfy.teleport(6, 4, 0);
   });
-  // In kleinen Schritten: Eine offene Perk-Wahl geht erst in Ruhe auf (m12-r1) und hält das Spiel an
-  for (let k = 0; k < 6; k++) await step(500);
+  // In kleinen Schritten: Eine offene Perk-Wahl geht erst in Ruhe auf (m12-r1) und hält das Spiel
+  // an (seit m16-r1 auch nachts) – hier nicht Thema: die erste Karte nehmen
+  for (let k = 0; k < 8; k++) {
+    await step(500);
+    await z(() => {
+      const g = window.zomfy.game;
+      if (window.zomfy.mode !== 'perk') return;
+      const id = g.perkChoice.options[0];
+      if (g.perkChoice.kind === 'perk') window.zomfy.choosePerk(id);
+      else if (g.perkChoice.kind === 'bauplan') window.zomfy.chooseBlueprint(id);
+      else window.zomfy.chooseSkill(id);
+    });
+  }
   const musikNacht = await z(() => window.zomfy.sound()); // M10d: während der Welle das treibende Stück
   await z(() => {
     window.zomfy.setHomeHp(3);
@@ -4345,6 +4379,12 @@ async function runTraderChecks(browser, url) {
   let st = await state();
   await z(() => window.zomfy.interact('wrack'));
   await step(2500);
+  // M19: Im Wrack lagen alte Baupläne – die Wahl (sie hält das Spiel an) prüft `spielzeug`
+  await z(() => {
+    const bc = window.zomfy.game.state.blueprintChoice;
+    if (bc) window.zomfy.chooseBlueprint(bc.options[0]);
+  });
+  await step(100);
   const nachAuto = await state();
   const ausAuto = nachAuto.inventory.schrott - st.inventory.schrott;
   await z(() => window.zomfy.setDay(5));
@@ -4558,10 +4598,11 @@ async function runTraderChecks(browser, url) {
     g.state.towerParts.gluecksmuenze = 1;
     g.state.towerParts.fernrohr = 1;
     window.zomfy.give({ schrott: 40, holz: 20, stein: 20, zahnraeder: 4 });
-    const col = window.zomfy.pathColumn(-8);
+    // (bei x = -8 steht seit M17 der Wall – der Laternenturm kommt weiter westlich an den Weg)
+    const col = window.zomfy.pathColumn(-14);
     const j = col[0] - 1;
-    const res = window.zomfy.build('laternenturm', -8, j);
-    const b = window.zomfy.buildings().find((q) => q.i === -8 && q.j === j);
+    const res = window.zomfy.build('laternenturm', -14, j);
+    const b = window.zomfy.buildings().find((q) => q.i === -14 && q.j === j);
     window.zomfy.selectBuilding(b?.id);
     return { res, id: b?.id };
   });
