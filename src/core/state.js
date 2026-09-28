@@ -15,8 +15,9 @@ import { LAYOUT } from '../world/layout.js';
 import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { SKILLS, SKILL_IDS, SKILL_MAX_RANK, START_SKILL, freshSkills } from '../data/skills.js';
 import { REACTIONS } from '../data/reactions.js';
+import { BLUEPRINTS, BLUEPRINT_CHOICES } from '../data/blueprints.js';
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
 export const DAY_MINUTES = 24 * 60;
@@ -54,6 +55,10 @@ export function createNewState(config, mapSeed = 1) {
     skills: freshSkills(),
     skillChoice: null,
     notes: {}, // M18: Notizbuch – entdeckte Reaktion -> Tag der Entdeckung
+    // M19: gewählte Baupläne (Bauarten, der Reihe nach) und eine offene Wahl
+    // { options: [drei Baupläne], from: 'nacht'|'wrack'|'balduin', extra: so viele Wahlen kommen danach }
+    blueprints: [],
+    blueprintChoice: null,
     // tower: Ausbau des Funkturms (0–3), furniture: gekaufte Möbel, tradeDay: Tag des
     // letzten Tauschs mit Hilde, yusufNight: Nacht, in der Yusuf Mika schon verarztet hat,
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
@@ -145,6 +150,13 @@ export function sanitizeState(data, config) {
   if (slots[1] === slots[0]) slots[1] = null;
   out.skills = { slots: [slots[0], slots[1] || null], ranks: {} };
   for (const id of out.skills.slots) if (id) out.skills.ranks[id] = Math.floor(num(sk.ranks?.[id], 1, 1, SKILL_MAX_RANK));
+  // Baupläne (M19): nur bekannte Namen, jeder einmal; eine offene Wahl mit ein bis drei Plänen
+  out.blueprints = Array.isArray(data.blueprints) ? [...new Set(data.blueprints.filter((id) => BLUEPRINTS[id]))] : [];
+  const bc = data.blueprintChoice;
+  if (bc && Array.isArray(bc.options)) {
+    const options = [...new Set(bc.options.filter((id) => BLUEPRINTS[id] && !out.blueprints.includes(id)))].slice(0, BLUEPRINT_CHOICES);
+    if (options.length) out.blueprintChoice = { options, from: ['nacht', 'wrack', 'balduin'].includes(bc.from) ? bc.from : 'nacht', extra: Math.floor(num(bc.extra, 0, 0, 9)) };
+  }
   // Notizbuch (M18): entdeckte Reaktionen mit dem Tag der Entdeckung
   out.notes = {};
   if (data.notes && typeof data.notes === 'object') for (const [k, d] of Object.entries(data.notes)) if (REACTIONS[k] && Number.isFinite(d)) out.notes[k] = Math.floor(num(d, 1, 1, 1e6));

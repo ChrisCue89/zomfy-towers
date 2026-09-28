@@ -310,6 +310,7 @@ export class Nights {
       g.hud.showBanner(T.horde.geschafftKurz);
       g.sound.play('morgen');
       g.survivors?.onNightEnd(); // Bert flickt die Türme
+      g.offerBlueprint?.('nacht'); // M19: nach jeder gewonnenen Nacht ein Bauplan zur Wahl
     } else {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;
     }
@@ -326,6 +327,7 @@ export class Nights {
       losses: night.losses || null,
       damaged: night.damaged || null,
       broken: night.broken || 0,
+      spent: night.spent || 0, // M19: verbrauchte Fallen
       turm: g.towerRanks?.bestOfNight() || null, // Turm der Nacht (M16)
       // M17: Tor und Wall – gehalten oder durchbrochen, wie viele im Lager waren, was umgeworfen wurde
       lager: night.breach ? { at: night.breach.at, gate: night.breach.gate, entered: night.inCamp || 0, raided: [...(night.raided || [])] } : night.campHit ? { held: true } : null,

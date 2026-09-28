@@ -9,6 +9,7 @@ const LAGER_DINGE = {
   holzlager: ['Ein Holzlager', 'einem Holzlager'],
   zelt: ['Ein Schlafzelt', 'einem Schlafzelt'],
   laternenpfahl: ['Ein Laternenpfahl', 'einem Laternenpfahl'],
+  vogelscheuche: ['Die Vogelscheuche', 'der Vogelscheuche'], // M19: fällt um, wenn die Gelockten sie zerschlagen
 };
 
 export const T = {
@@ -78,6 +79,16 @@ export const T = {
     wall4: 'Wall',
     tor: 'Tor',
     holzlager: 'Holzlager',
+    // M19: Familien und Fallen aus den Bauplänen
+    glockenturm: 'Glockenturm',
+    windrad: 'Windrad',
+    bienenkorb: 'Bienenkorb',
+    vogelscheuche: 'Vogelscheuche',
+    stachelbrett: 'Stachelbrett',
+    leimtopf: 'Leimtopf',
+    klettenteppich: 'Klettenteppich',
+    knallerbsen: 'Knallerbsen',
+    oelspur: 'Ölspur',
   },
   bautenInfo: {
     bolzen: 'Schießt Bolzen auf einzelne Schlurfer.',
@@ -87,6 +98,16 @@ export const T = {
     reparieren: 'Flickt Zuhause, Türme und Barrikaden.',
     werkbank: 'Werkzeuge bauen, Überschuss verwerten.',
     barrikade: 'Nur auf den Weg: Die Horde bleibt hängen und schlägt darauf ein.',
+    // M19
+    glockenturm: 'Ein Glockenschlag betäubt alles ringsum kurz.',
+    windrad: 'Windstöße schieben die Horde den Weg zurück und verwehen den Nebel.',
+    bienenkorb: 'Ein Schwarm folgt einem Schlurfer und sticht – durch jede Panzerung.',
+    vogelscheuche: 'Lockt Schlurfer vom Weg auf sich. Hält einiges aus, muss aber geflickt werden.',
+    stachelbrett: 'Auf den Weg: Wer drüberläuft, sticht sich. Nutzt sich ab.',
+    leimtopf: 'Auf den Weg: Wer hineintritt, klebt fest und wird langsam.',
+    klettenteppich: 'Auf den Weg: Kletten hängen lange und bremsen.',
+    knallerbsen: 'Auf den Weg: Knallen einmal – Schaden ringsum und kurz betäubt.',
+    oelspur: 'Auf den Weg: rutschig. Kommt Feuer dazu, brennt sie lichterloh.',
     laternenpfahl: 'Warmes Licht für lange Abende.',
     beet: 'Blüht blau – jeden Tag Fasern zum Ernten.',
     bank: 'Hinsetzen heilt Mika sofort (alle 30 Sekunden).',
@@ -126,10 +147,10 @@ export const T = {
     stoffAusFasern: '4 Fasern werden zu 1 Stoff.',
   },
   bauleiste: {
-    reiter: { zuhause: 'Zuhause', tuerme: 'Türme', figur: 'Figur', einrichten: 'Einrichten' },
+    reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten' },
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
-    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden', nurWeg: 'Barrikaden nur auf den Weg' },
+    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg' },
     keineHorde: 'Hier kommt keine Horde vorbei', // m12-r1: der Turm stand mitten in der Bucht
     keinTurm: 'Kein Turm reicht hierher', // m16-r1: Barrikaden gehören in den Kreis eines Turms
     nurDraussen: 'Nur draußen',
@@ -163,12 +184,22 @@ export const T = {
       katapult: ['Feuerkürbis', 'Brennender Boden nach dem Einschlag.'],
       sprenger: ['Frostnebel', 'Stark bremsen, dann kurz einfrieren.'],
       laternenturm: ['Leuchtfeuer', 'Mehr Schaden für Nachbarn, Licht bremst.'],
+      // M19
+      glockenturm: ['Sturmglocke', 'Schlägt härter und weiter, betäubt länger.'],
+      windrad: ['Sturm', 'Bläst die Horde weit zurück.'],
+      bienenkorb: ['Königin', 'Mehrere Schwärme, mehrere Ziele.'],
+      vogelscheuche: ['Strohmann', 'Hält viel aus und lockt mehr auf einmal.'],
     },
     B: {
       bolzen: ['Repetierer', 'Sehr schnell, zwei Ziele auf einmal.'],
       katapult: ['Streukürbis', 'Zerplatzt in kleine Kürbisse.'],
       sprenger: ['Schlammschleuder', 'Stößt zurück, hält Zähe auf.'],
       laternenturm: ['Glückslaterne', 'Mehr Loot von allem im Licht.'],
+      // M19
+      glockenturm: ['Friedensglocke', 'Jeder Schlag flickt Barrikaden, Tor und Wall ringsum.'],
+      windrad: ['Mühle', 'Mahlt über Tag Schrott – morgens liegt er bereit.'],
+      bienenkorb: ['Honig', 'Ein starker Schwarm, Honig klebt und bremst.'],
+      vogelscheuche: ['Krähenscheuche', 'Krähen picken nach allen, die sie lockt.'],
     },
   },
   figur: {
@@ -391,6 +422,38 @@ export const T = {
     splitter: ['Splitter', 'Ein Streukürbis trifft einen Frostigen: Eissplitter fliegen auf alle ringsum.', 'Gefrorenes zerspringt. Die Splitter fliegen weit.'],
     klebekuerbis: ['Klebekürbis', 'Ein Kürbis trifft einen Matschigen: Die Stelle klebt und bremst eine Weile.', 'Kürbisbrei und Schlamm – da kommt keiner schnell durch.'],
     zerspringt: 'Klirr!',
+  },
+  // Werte der Familien aus den Bauplänen (M19) auf Kachel und Tafel; z: Zahl mit Komma
+  turmwerte: {
+    glocke: (dmg, stun, r) => `Schaden ${dmg} · betäubt ${stun} s · ${r} m`,
+    frieden: (stun, heal, r) => `Betäubt ${stun} s · flickt ${heal} · ${r} m`,
+    wind: (push, r) => `Stoß ${push} m · ${r} m`,
+    muehle: (push, grind) => `Stoß ${push} m · ${grind} Schrott am Tag`,
+    bienen: (dps, n, r) => `${dps}/s · ${n === 1 ? '1 Schwarm' : `${n} Schwärme`} · ${r} m`,
+    scheuche: (hp, lure, r) => `Hält ${hp} · lockt ${lure} · ${r} m`,
+  },
+  // Fallen (M19): neu richten, was sie tun
+  fallen: {
+    richten: 'Neu richten',
+    richtenInfo: 'Die Falle wieder scharf machen.',
+    gerichtet: (name) => `${name}: wieder scharf.`,
+    knall: 'Knall!',
+    flammen: 'Flammenwand!',
+    verbraucht: (n) => (n === 1 ? 'Verbraucht: 1 Falle' : `Verbraucht: ${n} Fallen`),
+  },
+  // Baupläne (M19): Wahl nach einer gewonnenen Nacht, im Wrack, bei Balduin
+  bauplaene: {
+    titel: { nacht: 'Ein neuer Bauplan! Wähle einen.', wrack: 'Alte Baupläne im Wrack! Wähle einen.', balduin: 'Balduins Baupläne. Wähle einen.' },
+    art: { turm: 'Turm', falle: 'Falle' },
+    gewaehlt: (name, reiter) => `Neuer Bauplan: ${name} – im Reiter »${reiter}«.`,
+    wartet: 'Ein Bauplan wartet …',
+    bericht: 'Im Morgengrauen liegt ein neuer Bauplan bereit.',
+    kaufen: ['Bauplan', 'Drei Baupläne zur Wahl – einen darfst du behalten.'],
+    keine: 'Keine neuen Baupläne mehr.',
+  },
+  // Windrad als Mühle (M19): was sie über Tag mahlt
+  muehle: {
+    gemahlen: (n) => `Die Mühle hat ${n} Schrott gemahlen.`,
   },
   // Notizbuch (M18): entdeckte Reaktionen mit Notiz
   notizbuch: {

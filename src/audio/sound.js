@@ -180,10 +180,30 @@ const SFX = {
     s.noise(t, 0.25, { type: 'lowpass', freq: 900, freqEnd: 200, peak: 0.3 * v, out: o });
     s.noise(t + 0.08, 0.7, { type: 'highpass', freq: 2600, freqEnd: 1500, attack: 0.05, peak: 0.12 * v, out: o });
   },
+  // M19: Glockenturm – ein Schlag, heller als die Sturmglocke am Tor (Friedensglocke noch heller)
+  turmglocke: (s, t, v, o, opt) => {
+    const f = opt.pitch || 523.25;
+    s.noise(t, 0.025, { type: 'bandpass', freq: 3000, q: 2, peak: 0.07 * v, out: o });
+    for (const [k, dur, peak] of [[0.5, 1.1, 0.03], [1, 0.9, 0.07], [1.2, 0.6, 0.03], [1.5, 0.5, 0.025], [2, 0.35, 0.02]]) s.tone('sine', f * k, t, dur, { peak: peak * v, attack: 0.003, out: o });
+  },
+  // Windrad: ein Windstoß – Rauschen, das anschwillt und abebbt
+  windstoss: (s, t, v, o) => s.noise(t, 0.7, { type: 'bandpass', freq: 380, freqEnd: 900, q: 0.7, attack: 0.25, peak: 0.16 * v, out: o }),
+  // Bienenkorb: kurzes Summen, wenn ein Schwarm ausfliegt
+  summen: (s, t, v, o) => s.tone('sawtooth', 210, t, 0.5, { freqEnd: 240, attack: 0.08, peak: 0.025 * v, filter: 900, vibrato: 14, out: o }),
+  // Knallerbsen: ein Knall und Knistern
+  knall: (s, t, v, o) => {
+    s.noise(t, 0.09, { type: 'highpass', freq: 900, peak: 0.4 * v, out: o });
+    for (let k = 1; k < 6; k++) s.noise(t + k * 0.045 + Math.random() * 0.02, 0.02, { type: 'bandpass', freq: 2500 + Math.random() * 2000, q: 2, peak: 0.1 * v, out: o });
+  },
+  // Ölspur fängt Feuer: Wummern und Fauchen
+  flammen: (s, t, v, o) => {
+    s.tone('sine', 80, t, 0.4, { freqEnd: 40, peak: 0.22 * v, out: o });
+    s.noise(t, 1.1, { type: 'lowpass', freq: 1800, freqEnd: 500, attack: 0.08, peak: 0.24 * v, out: o });
+  },
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

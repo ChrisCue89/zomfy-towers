@@ -3,19 +3,22 @@
 // (ui/buildbar.js) zeigt nur an, was hier entschieden wird.
 //
 // Reiter: Türme · Figur · Zuhause (DESIGN.md 6.6). Ist ein Turm ausgewählt,
-// zeigt die Leiste seine Ausbau- und Spezialisierungsoptionen.
+// zeigt die Leiste seine Ausbau- und Spezialisierungsoptionen. Mit den
+// Bauplänen (M19) kommen »Türme 2« (mehr als fünf Türme) und »Fallen« dazu.
 //
 // Platzieren: Die Vorschau folgt der Maus, sobald sie bewegt wurde – sonst
 // steht sie vor der Figur (reine Tastatur: Q … wählen, E setzt).
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
-import { BUILDINGS, HOME_TAB, TOWER_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
+import { BUILDINGS, HOME_TAB, TOWER_TAB, TRAP_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
 import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, partFits } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
 import { SURVIVORS } from '../data/survivors.js';
+import { knowsBuilding } from '../data/blueprints.js';
+import { TRAP_REARM } from '../data/traps.js';
 import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
@@ -23,6 +26,8 @@ import { measure, LINE_HEIGHT } from '../ui/font.js';
 
 /** Bauleisten-Optionen, die beim ersten Bezahlbar-Werden eine Meldung bekommen. */
 const ANNOUNCE = new Set(['werkbank', 'huette', 'bolzen', 'specA', 'specB']);
+/** So viele Bauten passen auf eine Seite eines Reiters (Q R T G C; V bleibt dem Abreißen). */
+const TAB_PAGE = 5;
 const FIGHT_NEAR = 2.4; // so nah an einem Schlurfer schlägt jeder Klick zu
 const POINTER_NEAR = 1.1; // so nah am Bodenpunkt unter dem Zeiger zählt ein Schlurfer als »angeklickt«
 const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
@@ -48,9 +53,22 @@ export class Builder {
   tabs() {
     // »Einrichten« (Zelte, Möbel, Funkturm) kommt mit dem ersten Besuch (Meilenstein 6)
     const guests = Object.values(this.game.state.survivors).some((s) => s.stage > 0);
+    // Baupläne (M19): mehr als fünf Türme – zweite Seite; die erste bleibt Q R T G C
+    const outside = this.knownTowers().length > TAB_PAGE ? ['tuerme', 'tuerme2'] : ['tuerme'];
+    if (this.knownTraps().length) outside.push('fallen');
+    const tabs = [...outside, 'figur', 'zuhause', ...(guests ? ['einrichten'] : [])];
     // Drinnen (M11) wird nichts aufgestellt: keine Türme, nur Figur, Zuhause und Einrichten
-    const tabs = guests ? ['tuerme', 'figur', 'zuhause', 'einrichten'] : ['tuerme', 'figur', 'zuhause'];
-    return this.game.viewInside ? tabs.slice(1) : tabs;
+    return this.game.viewInside ? tabs.filter((t) => !outside.includes(t)) : tabs;
+  }
+
+  /** Türme und Barrikade, die Mika kennt – die vier ersten immer, dazu die aus Bauplänen (M19). */
+  knownTowers() {
+    return TOWER_TAB.filter((t) => knowsBuilding(this.game.state.blueprints, t));
+  }
+
+  /** Fallen aus Bauplänen (M19). */
+  knownTraps() {
+    return TRAP_TAB.filter((t) => this.game.state.blueprints.includes(t));
   }
 
   selectionTitle() {
@@ -115,7 +133,9 @@ export class Builder {
   options(tab) {
     const b = this.selected();
     if (b) return this.selectionOptions(b);
-    if (tab === 'tuerme') return this.buildOptions(TOWER_TAB);
+    if (tab === 'tuerme') return this.buildOptions(this.knownTowers().slice(0, TAB_PAGE));
+    if (tab === 'tuerme2') return this.buildOptions(this.knownTowers().slice(TAB_PAGE));
+    if (tab === 'fallen') return this.buildOptions(this.knownTraps());
     if (tab === 'figur') return this.figureOptions();
     if (tab === 'zuhause') return this.homeOptions();
     if (tab === 'einrichten') return this.furnishOptions();
@@ -382,6 +402,8 @@ export class Builder {
     }
     // Umgeworfen (M17d): wieder aufstellen
     if (def.raid && b.broken) options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b), rebuild: true, name: T.lager.aufstellen, info: T.lager.aufstellenInfo }, inv));
+    // Falle verbraucht (M19): neu richten
+    if (def.trap && b.broken) options.push(this.repairOption({ id: `rep-${b.id}`, cost: this.buildingRepairCost(b), action: () => this.repairBuilding(b), rebuild: true, name: T.fallen.richten, info: T.fallen.richtenInfo }, inv));
     if (hasHp(b.type) && !b.broken && b.hp < maxHpOf(b)) {
       const cost = this.buildingRepairCost(b);
       options.push(this.repairOption({ id: `rep-${b.id}`, cost, action: () => this.repairBuilding(b) }, inv));
@@ -436,6 +458,12 @@ export class Builder {
     const s = towerStats(type, level, spec);
     if (type === 'laternenturm') return `+${Math.round(s.aura * 100)} % Schaden · ${num(s.auraRange)} m`;
     if (type === 'sprenger') return `Bremst ${Math.round(s.slow * 100)} % · ${num(s.range)} m`;
+    // M19: Familien aus den Bauplänen
+    const W = T.turmwerte;
+    if (type === 'glockenturm') return s.heal ? W.frieden(num(s.stun), s.heal, num(s.range)) : W.glocke(Math.round(s.damage), num(s.stun), num(s.range));
+    if (type === 'windrad') return s.grind ? W.muehle(num(s.push), s.grind) : W.wind(num(s.push), num(s.range));
+    if (type === 'bienenkorb') return W.bienen(Math.round(s.damage), s.swarms, num(s.range));
+    if (type === 'vogelscheuche') return W.scheuche(s.hp, s.lure, num(s.range));
     return `Schaden ${Math.round(s.damage)} · ${num(s.rate)}/s · ${num(s.range)} m`;
   }
 
@@ -544,9 +572,11 @@ export class Builder {
       for (const [res, n] of Object.entries(invested)) cost[res] = Math.max(1, Math.ceil(n * share));
       return cost;
     }
-    // Im Lager (M17d): Aufstellen kostet die Hälfte der Baukosten, Flicken anteilig davon
-    if (def.raid) {
-      const share = b.broken ? RAID.rebuild : ((maxHpOf(b) - b.hp) / maxHpOf(b)) * RAID.rebuild;
+    // Im Lager (M17d): Aufstellen kostet die Hälfte der Baukosten, Flicken anteilig davon;
+    // Fallen (M19) neu richten ebenso (TRAP_REARM)
+    if (def.raid || def.trap) {
+      const part = def.trap ? TRAP_REARM : RAID.rebuild;
+      const share = b.broken ? part : ((maxHpOf(b) - b.hp) / maxHpOf(b)) * part;
       if (share <= 0) return null;
       const cost = {};
       for (const [res, n] of Object.entries(def.cost)) cost[res] = Math.max(1, Math.ceil(n * share));
@@ -616,7 +646,7 @@ export class Builder {
       const c = this.world.buildings.bounds(b);
       this.game.effects.dust(c.x, c.z, 1.1);
       this.game.sound.play('bau');
-      this.game.hud.toast(def.camp ? T.lager.wiederAufgebaut(T.bauten[b.type]) : def.raid ? T.lager.wiederAufgestellt(T.bauten[b.type]) : T.barrikaden.wiederAufgebaut, def.icon, 2);
+      this.game.hud.toast(def.camp ? T.lager.wiederAufgebaut(T.bauten[b.type]) : def.raid ? T.lager.wiederAufgestellt(T.bauten[b.type]) : def.trap ? T.fallen.gerichtet(T.bauten[b.type]) : T.barrikaden.wiederAufgebaut, def.icon, 2);
       this.game.quietSave();
       return;
     }
@@ -912,7 +942,7 @@ export class Builder {
     if (def.tower) {
       // Der Bau selbst zählt zum Staffelpreis des zuletzt gebauten Turms dieser Art
       const invested = towerInvested(b.type, b.level, b.spec);
-      const extra = towerBuildCost(b.type, Math.max(0, this.world.buildings.count(b.type) - 1)).schrott - TOWERS[b.type].base[0].cost.schrott;
+      const extra = towerBuildCost(b.type, Math.max(0, this.world.buildings.count(b.type) - 1)).schrott - (TOWERS[b.type].base[0].cost.schrott || 0);
       return scale({ ...invested, schrott: (invested.schrott || 0) + extra }, TOWER_REFUND);
     }
     // Trümmer: nur abräumen. Sonst gerundet (M9.1: eine Holzbarriere kostet 1 Holz –
@@ -926,6 +956,7 @@ export class Builder {
       return back;
     }
     if (def.defense) return scale(def.cost, TOWER_REFUND);
+    if (def.trap) return b.broken ? {} : scale(def.cost, TOWER_REFUND, Math.round); // Fallen (M19): wie Barrikaden
     // Umgeworfen (M17d): nur die Hälfte – sonst wäre Abreißen und neu Bauen billiger als Aufstellen
     if (def.raid && b.broken) return scale(def.cost, 1 - RAID.rebuild);
     return def.cost;

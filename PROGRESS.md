@@ -5,6 +5,34 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 19 – Mehr Spielzeug: neue Türme, Fallen und Baupläne ✓
+
+**Ziel (DESIGN 8):** Zwei Spiele nebeneinander verteidigen sich verschieden –
+einmal mit Bienen und Glocken, einmal mit Windrad und Knallerbsen.
+
+- **Baupläne** (`data/blueprints.js`): am Anfang die vier Türme und die
+  Holzbarriere; nach jeder gewonnenen Nacht, einmal im Wrack und an
+  ungeraden Tagen bei Balduin drei Pläne zur Wahl (nach dem Morgenbericht,
+  Karten wie die Perks), möglichst aus verschiedenen Arten, fest am
+  Startwert der Karte.
+- **Bauleiste:** »Türme 2« ab dem sechsten Turm, Reiter »Fallen«; die erste
+  Seite bleibt Q R T G C; nach der Wahl springt die Leiste zum neuen Bau.
+- **Vier Familien** (`world/familyModels.js`, aus Formen): Glockenturm
+  (Sturm-/Friedensglocke), Windrad (Sturm/Mühle), Bienenkorb (Königin/Honig),
+  Vogelscheuche (Strohmann/Krähenscheuche) – je fünf Stufen, eigene Klänge,
+  Ringe, Schwärme, eine Vogelscheuche fällt um und wird geflickt.
+- **Fünf Fallen** (`entities/traps.js`, `world/trapModels.js`): Stachelbrett,
+  Leimtopf, Klettenteppich, Knallerbsen, Ölspur – begehbar, sperren das
+  Flussfeld nie, nutzen sich ab, neu richten für die Hälfte; der
+  Morgenbericht zählt verbrauchte Fallen; auf der Karte violett.
+- **Spielstand v14** (Baupläne, offene Wahl), Migration v13 → v14: Wer schon
+  eine Nacht gewonnen hat, darf gleich wählen.
+- **Prüfung:** neuer Abschnitt `spielzeug` (siehe CLAUDE.md), alle
+  Versionsprüfungen auf v14; die Schleifen, die offene Wahlen auflösen,
+  kennen jetzt auch Baupläne.
+
+---
+
 ## Testrunde m16-r1 und Nachbesserung
 
 **Runde:** vier Testspieler auf M16, je zwei bis vier Nächte (Kira auf Wild,

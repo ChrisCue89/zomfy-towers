@@ -121,6 +121,7 @@ export class Pathing {
     const id = g.occupant[k];
     if (id === null) return g.pathCost[k];
     const b = this.buildingOf(id);
+    if (b && BUILDINGS[b.type].trap) return g.pathCost[k]; // Fallen (M19): begehbar
     if (!b || !BUILDINGS[b.type].smash) return INF;
     if (b.broken) return g.pathCost[k];
     return brute ? (BUILDINGS[b.type].camp ? GATE_COST : BARRICADE_COST) : INF;
@@ -131,7 +132,7 @@ export class Pathing {
     const g = this.grid;
     this.targets = [];
     for (let k = 0; k < this.walk.length; k++) {
-      if ((!g.path[k] && !g.yard[k]) || g.blocked[k] || g.occupant[k] !== null) continue;
+      if ((!g.path[k] && !g.yard[k]) || g.blocked[k] || !this.freeCell(k)) continue;
       const c = this.cellCenter(k);
       if (this.distanceToHome(c.x, c.z) <= 2.6) this.targets.push(k);
     }
@@ -167,7 +168,7 @@ export class Pathing {
         const nj = j + dj;
         if (ni < 0 || nj < 0 || ni >= g.width || nj >= g.height) continue;
         const nk = nj * g.width + ni;
-        if (back[nk] < INF || !g.inside[nk] || g.blocked[nk] || g.occupant[nk] !== null) continue;
+        if (back[nk] < INF || !g.inside[nk] || g.blocked[nk] || !this.freeCell(nk)) continue;
         back[nk] = back[k] + 1;
         queue[tail++] = nk;
       }
@@ -319,7 +320,15 @@ export class Pathing {
     const id = g.occupant[k];
     if (id === null) return true;
     const b = this.buildingOf(id);
-    return Boolean(b && b.type === 'barrikade' && b.broken);
+    return Boolean(b && ((b.type === 'barrikade' && b.broken) || BUILDINGS[b.type].trap));
+  }
+
+  /** Steht auf der Zelle nichts – oder nur eine Falle, über die man läuft (M19)? */
+  freeCell(k) {
+    const id = this.grid.occupant[k];
+    if (id === null) return true;
+    const b = this.buildingOf(id);
+    return Boolean(b && BUILDINGS[b.type].trap);
   }
 
   /** Steht zwischen zwei Punkten nichts im Raster (Bau, Hindernis, Wald)? */

@@ -520,6 +520,16 @@ die Figur oder das Zuhause?
   auf dem Raster (nie auf einem Weg); Ausbauten des
   Hauses und Nebengebäude haben feste Plätze.
 - Bauen geht jederzeit; Reparieren nicht, solange nachts eine Welle läuft.
+- **Baupläne (M19):** Am Anfang kennt Mika die vier Türme und die
+  Holzbarriere. Nach jeder gewonnenen Nacht liegt ein Bauplan bereit: Nach
+  dem Morgenbericht stehen drei zur Wahl (Karten wie bei den Perks, Taste
+  1/2/3), einer kommt in die Bauleiste. Baupläne gibt es auch einmal im
+  Wrack und an ungeraden Tagen ab Tag 3 bei Balduin (12 Zombieteile). Die
+  Wahl hängt am Startwert der Karte – neu laden würfelt nicht neu.
+- **Reiter mit Seiten (M19):** Mehr als fünf Türme – dann kommt »Türme 2«
+  dazu; die erste Seite bleibt Q Bolzen, R Katapult, T Sprenger, G Laterne,
+  C Barrikade. Fallen haben ihren eigenen Reiter »Fallen«. Tab geht alle
+  Reiter durch.
 
 ### 6.7 Crafting (Werkbank)
 
@@ -593,6 +603,19 @@ Jede entdeckte Reaktion kommt mit einer Notiz von Dr. Yusuf ins
 gewählte, was geschieht, und Yusufs Notiz; unentdeckte stehen dort als »???«
 mit einem Hinweis. Werte in `data/reactions.js`.
 
+**Familien aus den Bauplänen (M19),** je fünf Stufen und zwei Richtungen,
+geformt wie die Figuren:
+
+| Familie | Aussehen | Wirkung | A | B |
+|---|---|---|---|---|
+| **Glockenturm** | Glockenstuhl mit rotem Giebeldach, die Glocke schwingt | ein Schlag alle paar Sekunden: kleiner Schaden, alle ringsum kurz betäubt, ein Ring am Boden | **Sturmglocke:** härter, weiter, länger betäubt | **Friedensglocke:** silbern mit Kranz – jeder Schlag flickt Barrikaden, Tor und Wall im Umkreis |
+| **Windrad** | hoher Mast, Gondel, vier Flügel zur Kamera | Windstöße schieben die Horde den Weg zurück (gegen das Flussfeld), Türme daneben sehen durch Nebel | **Sturm:** weiter und stärker, blaue Segel | **Mühle:** mahlt über Tag Schrott (3/5/8 je Stufe), morgens im Vorrat |
+| **Bienenkorb** | Strohkorb auf einem Bänkchen | ein Schwarm (kleine gelbe Punkte) folgt einem Ziel und sticht – Schaden je Sekunde, durch jede Panzerung | **Königin:** zwei, dann drei Schwärme | **Honig:** ein starker Schwarm, Honig bremst |
+| **Vogelscheuche** | Stroh, Hemd, Querholz, Kürbiskopf mit Hut (glimmt nachts) | lockt Schlurfer vom Weg auf sich (2–6 zugleich, je 5–7 s); sie schlagen auf sie ein, bis sie umfällt – dann flicken | **Strohmann:** dick ausgestopft, hält viel aus | **Krähenscheuche:** Krähen picken nach den Gelockten |
+
+Gelockte kehren danach an ihre Stelle auf dem Weg zurück (wie Jäger, m12-r1)
+und lassen sich ein paar Sekunden nicht wieder locken.
+
 Türme stehen **frei neben den Wegen** (nie darauf) und arbeiten autonom.
 Vier Rollen, jede
 mit fünf Stufen. Stufe 1–2 sind allgemein, auf **Stufe 3 spezialisiert** man
@@ -659,6 +682,17 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
   | **Laterne** | 2 Schrott, 1 Stoff | blendet: im Schein (2,4 m) laufen und schlagen Schlurfer um 30 % langsamer; eine Lichtinsel |
   | **Pechkessel** (nur Barrikade) | 2 Holz, 3 Schrott | kippt beim ersten Schlag der Nacht: alles im Umkreis brennt 4 s lang; bis zur nächsten Nacht füllt er sich wieder |
   | **Alarmglocke** (nur Tor) | 4 Schrott, 1 Zahnrad | läutet beim ersten Schlag der Nacht: Banner, Knopf bellt, und wohnt Bert im Lager, flickt er das Tor um ein Fünftel |
+- **Fallen (M19, aus Bauplänen):** stehen wie Barrikaden nur auf Wegfeldern
+  (eine je Feld), sind aber **begehbar** – sie sperren das Flussfeld nie, die
+  Horde läuft darüber. Sie nutzen sich ab und werden tagsüber für die Hälfte
+  der Baukosten neu gerichtet:
+  | Falle | Aussehen | Kosten | Wirkung |
+  |---|---|---|---|
+  | **Stachelbrett** | zwei Bretter voller Nägel | 2 Holz, 2 Schrott | jeder Tritt 12 Schaden (durch jede Panzerung), nutzt sich ab |
+  | **Leimtopf** | Tontopf in goldener Lache | 1 Holz, 1 Schrott, 2 Fasern | klebt: 60 % langsamer, noch 1,5 s danach |
+  | **Klettenteppich** | Matte voller Kletten | 1 Holz, 4 Fasern | Kletten hängen 5 s und bremsen um 30 % |
+  | **Knallerbsen** | Kistchen, rot-weiße Papierkugeln | 1 Holz, 3 Schrott | knallen einmal: 22 Schaden ringsum, 1,2 s betäubt |
+  | **Ölspur** | schwarz glänzende Lache mit Kanne | 1 Holz, 2 Schrott | rutschig; mit Feuer (Brennender, Feuerkürbis) eine Flammenwand, danach verbraucht |
 
 ### 6.11 Die Horde
 
@@ -1225,7 +1259,13 @@ Flächenschaden in allen TD-Karten.
 *Spielbar heißt:* Wer einen Sprenger neben den Frostnebel stellt, sieht
 Eisblöcke zerspringen – und hat das selbst herausgefunden.
 
-#### M19 – Mehr Spielzeug: neue Türme, Fallen und Baupläne
+#### M19 – Mehr Spielzeug: neue Türme, Fallen und Baupläne ✓
+
+*Umgesetzt (28.09.2026):* Baupläne nach gewonnenen Nächten, im Wrack und bei
+Balduin (6.6), Glockenturm, Windrad, Bienenkorb und Vogelscheuche mit je zwei
+Richtungen (6.9), fünf begehbare Fallen (6.10), die Mühle mahlt Schrott,
+Spielstand v14. Eine eigene »Barrikadenart« als Bauplan fehlt noch – das
+Metallkreuz ist schon die dritte Stufe der Barrikade (OFFENE-FRAGEN 136).
 
 *Vorbild:* Green TD (Vielfalt), Element TD (Wahl der Elemente), Gem TD
 (Zufall mit Wahl).

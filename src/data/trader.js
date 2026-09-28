@@ -40,11 +40,15 @@ export const TRADER_OFFERS = {
   fernrohr: { give: { teile: 12 }, part: 'fernrohr', stock: 1 },
   schmierfett: { give: { teile: 12 }, part: 'schmierfett', stock: 1 },
   gluecksmuenze: { give: { teile: 10 }, part: 'gluecksmuenze', stock: 1 },
+  // M19: ein Bauplan (Wahl aus drei) an ungeraden Tagen ab Tag 3
+  bauplan: { give: { teile: 12 }, blueprint: true, stock: 1 },
 };
 
 /** Turmteile im Angebot: an geraden Tagen ab Tag 4 eines, reihum (M10). */
 export const TRADER_PARTS = ['fernrohr', 'schmierfett', 'gluecksmuenze'];
 export const PARTS_FROM_DAY = 4;
+/** Baupläne (M19): an ungeraden Tagen ab diesem Tag – an den anderen kommen die Turmteile. */
+export const PLANS_FROM_DAY = 3;
 
 /** Immer im Angebot. */
 export const TRADER_BASE = ['schrott'];
@@ -63,5 +67,6 @@ export const TRADER_DAILY = [
 export function offersOfDay(day) {
   const k = Math.max(0, day - TRADER.fromDay) % TRADER_DAILY.length;
   const part = day >= PARTS_FROM_DAY && day % 2 === 0 ? [TRADER_PARTS[(day / 2) % TRADER_PARTS.length]] : [];
-  return [...TRADER_BASE, ...TRADER_DAILY[k], ...part];
+  const plan = day >= PLANS_FROM_DAY && day % 2 === 1 ? ['bauplan'] : [];
+  return [...TRADER_BASE, ...TRADER_DAILY[k], ...part, ...plan];
 }

@@ -5,6 +5,7 @@ import { SAVE_VERSION, sanitizeState } from './state.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { towerInvested, towerBuildCost } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
+import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -69,6 +70,13 @@ const BROKEN_KEY = 'zomfy-towers.spielstand.defekt';
 
 /** Migrationen: MIGRATIONS[n] wandelt einen Stand der Version n in Version n+1. */
 const MIGRATIONS = {
+  // v13 -> v14: M19 (Baupläne). Wer schon eine Nacht gewonnen hat, darf gleich den
+  // ersten Bauplan wählen – sonst gäbe es den ersten erst nach der nächsten Nacht.
+  13: (data) => {
+    const won = Math.max(0, Math.floor(data.stats?.nightsWon || 0));
+    const choice = won > 0 ? { options: blueprintOptions([], won, blueprintSeed(data.world?.mapSeed, won, 0)), from: 'nacht' } : null;
+    return { ...data, version: 14, blueprints: [], blueprintChoice: choice };
+  },
   // v12 -> v13: M18 (Zustände und Reaktionen). Das Notizbuch beginnt leer.
   12: (data) => ({ ...data, version: 13, notes: {} }),
   // v11 -> v12: M17 (Tor und Wall). Neue Bauarten wall3, wall4 und tor – das Spiel stellt

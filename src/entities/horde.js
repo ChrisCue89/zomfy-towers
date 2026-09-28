@@ -236,6 +236,9 @@ export class Horde {
       iceT: 0,
       glut: false,
       reacted: {}, // Reaktion → Zeitpunkt (Horde-Uhr), ab dem sie wieder geht
+      lureBy: 0, // von dieser Vogelscheuche gelockt (M19, Bau-ID)
+      lureUntil: 0,
+      lureAgain: 0, // erst ab dann lässt er sich wieder locken
       inCamp: false, // schon einmal hinter Wall und Tor gewesen (M17d)
       raidScan: 0,
       raidT: 0,
@@ -382,6 +385,37 @@ export class Horde {
     }
   }
 
+  /**
+   * Vogelscheuche (M19): Der Schlurfer verlässt den Weg und schlägt auf sie ein –
+   * `time` Sekunden lang (Zähe halb so lang), dann kehrt er an seine Stelle auf
+   * dem Weg zurück (wie nach einer Jagd).
+   */
+  lureTo(z, b, time) {
+    if (z.state === 'dying' || z.state === 'enter') return;
+    z.state = 'raid';
+    z.target = b.id;
+    z.raidT = 0;
+    z.lureBy = b.id;
+    z.lureUntil = this.time + time * (z.type === 'brummer' || z.type === 'anfuehrer' ? 0.5 : 1);
+  }
+
+  /** Genug gelockt: zurück auf den Weg, eine Weile lässt er sich nicht wieder locken. */
+  endLure(z) {
+    z.lureBy = 0;
+    z.lureAgain = this.time + 4;
+    this.endChase(z);
+  }
+
+  /** Windrad (M19): ein Stück den Weg zurück, gegen das Flussfeld. Zähe nur knapp halb so weit. */
+  blowBack(z, dist) {
+    if (z.state === 'dying' || z.state === 'enter') return;
+    const dir = this.world.pathing.direction(z.x, z.z, true, this._dir);
+    if (!dir) return;
+    const resist = z.type === 'brummer' || z.type === 'anfuehrer' ? 0.4 : 1;
+    z.kx -= dir.x * dist * 6 * resist;
+    z.kz -= dir.z * dist * 6 * resist;
+  }
+
   /** Alle Lebenden im Umkreis (neue Liste). */
   inRange(x, z, r) {
     const out = [];
@@ -476,7 +510,7 @@ export class Horde {
       const pd = Math.hypot(player.x - z.x, player.z - z.z);
 
       // Letzte Stelle auf Weg oder Hof merken: Dorthin kehrt ein Jäger zurück (m12-r1)
-      if (z.state !== 'chase' && z.state !== 'rejoin' && z.state !== 'enter' && pathing.onPathOrYard(z.x, z.z)) {
+      if (z.state !== 'chase' && z.state !== 'rejoin' && z.state !== 'enter' && !z.lureBy && pathing.onPathOrYard(z.x, z.z)) {
         z.ax = z.x;
         z.az = z.z;
         z.anchored = true;
@@ -486,7 +520,10 @@ export class Horde {
       // dazwischen stehen, M17: dann geht er weiter zum Tor und schlägt es ein. In der
       // Schlupftür steht sie beiden Seiten offen.)
       const walled = campShut && (z.x < campX - 1.05 ? player.x > campX : z.x > campX && player.x < campX - 1.05);
-      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro && !walled) z.state = 'chase';
+      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro && !walled) {
+        z.state = 'chase';
+        z.lureBy = 0; // Mika geht vor der Vogelscheuche (M19)
+      }
       else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive || walled)) this.endChase(z);
 
       // Im Lager (M17d): Wer hinter Wall und Tor steht, wirft um, was dort steht
@@ -588,8 +625,13 @@ export class Horde {
           break;
         }
         case 'raid': {
-          // Im Lager (M17d): an die nächste Kante des Baus und draufschlagen
+          // Im Lager (M17d): an die nächste Kante des Baus und draufschlagen –
+          // oder gelockt von einer Vogelscheuche (M19), bis sie umfällt oder die Zeit um ist
           const b = world.buildings.get(z.target);
+          if (z.lureBy && (!b || b.hp <= 0 || this.time > z.lureUntil)) {
+            this.endLure(z);
+            break;
+          }
           if (!b || b.broken) {
             z.state = 'walk';
             break;
@@ -601,7 +643,11 @@ export class Horde {
           z.raidMoving = d > z.def.radius + 0.35;
           if (z.raidMoving) {
             z.raidT += dt;
-            if (z.raidT > RAID.giveUp) {
+            if (z.raidT > RAID.giveUp * (z.lureBy ? 2 : 1)) {
+              if (z.lureBy) {
+                this.endLure(z); // kommt nicht an die Vogelscheuche heran
+                break;
+              }
               z.raidIgnore = b.id; // kommt nicht heran: weiter zum Haus
               z.state = 'walk';
               break;
@@ -613,7 +659,8 @@ export class Horde {
             if (!frozen && z.cooldown <= 0) {
               z.cooldown = 1 / (z.def.hitRate * (1 - light));
               z.attackAnim = 0.45;
-              this.cb.onRaidHit?.(b, z.def.hit, z);
+              if (z.lureBy) this.cb.onLureHit?.(b, z.def.hit, z);
+              else this.cb.onRaidHit?.(b, z.def.hit, z);
             }
           }
           break;

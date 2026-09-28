@@ -231,7 +231,7 @@ export class BuildBar {
     const tip = this.hover >= 0 ? L.tiles[this.hover]?.option : null;
     if (placing) {
       // Türme: gleich beim ersten Setzen sagen, was die Pünktchen bedeuten (m3-r1)
-      const note = BUILDINGS[placing.type].tower ? T.bauleiste.wegeHinweis : TOWER_TAB.includes(placing.type) ? T.bauleiste.wegeHinweisKurz : null;
+      const note = BUILDINGS[placing.type].tower ? T.bauleiste.wegeHinweis : TOWER_TAB.includes(placing.type) || BUILDINGS[placing.type].trap ? T.bauleiste.wegeHinweisKurz : null;
       this.drawTip(ui, L, { name: placing.name, info: placing.info || T.bautenInfo[placing.type], hint: T.bauleiste.setzen, note, cost: placing.cost }, this.builder.placementRect());
     }
     else if (tip) this.drawTip(ui, L, tip);

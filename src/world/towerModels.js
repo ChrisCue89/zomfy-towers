@@ -12,6 +12,7 @@ import { P } from '../render/palette.js';
 import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
 import { shade } from './voxelKit.js';
+import { FAMILY_MODELS } from './familyModels.js';
 
 const WHITE = 0xffffff;
 
@@ -22,10 +23,15 @@ const SPEC_COLORS = {
   katapult: { A: [P.f3, P.f5], B: [P.g5, P.g7] },
   sprenger: { A: [0x8ecff0, 0xe8f8ff], B: [P.e4, P.e6] },
   laternenturm: { A: [P.f5, P.f7], B: [P.g6, P.g8] },
+  // M19: Familien aus den Bauplänen
+  glockenturm: { A: [P.f4, P.f6], B: [P.g6, P.g8] },
+  windrad: { A: [P.b3, P.b5], B: [P.e7, P.e9] },
+  bienenkorb: { A: [P.f5, P.f7], B: [P.f3, P.f5] },
+  vogelscheuche: { A: [P.e6, P.e8], B: [P.n2, P.n4] },
 };
 
 /** Stufen-Fahne an der hinteren linken Ecke – groß genug, um sie im Getümmel zu lesen. */
-function levelFlag(m, type, level, spec, top) {
+export function levelFlag(m, type, level, spec, top) {
   if (level < 2) return;
   const x = -16;
   const z = -16;
@@ -50,7 +56,7 @@ function levelFlag(m, type, level, spec, top) {
 }
 
 /** Goldene Nieten (Stufenmarken) vorn am Sockel. */
-function pips(m, level, y = 4) {
+export function pips(m, level, y = 4) {
   for (let k = 0; k < level; k++) {
     const c = k < 2 ? P.f5 : k < 4 ? P.s8 : P.f7;
     m.box(-10 + k * 4, y, 16, -9 + k * 4, y + 1, 16, c).set(-10 + k * 4, y + 1, 16, shade(c, 1));
@@ -58,7 +64,7 @@ function pips(m, level, y = 4) {
 }
 
 /** Sockel aus behauenen Steinen mit feinen Fugen, jede Steinreihe oben mit heller Kante. */
-function plinth(m, seed, top = 7) {
+export function plinth(m, seed, top = 7) {
   m.box(-16, 0, -16, 15, top, 15, (x, y, z) => {
     const corner = (x === -16 || x === 15) && z === 15; // vordere Ecken abgeschrägt
     if (corner && y >= top - 1) return null;
@@ -418,6 +424,7 @@ export function fineTowerModels(type, level, spec, seed = 5) {
     katapult: fineCatapult,
     sprenger: fineSprinkler,
     laternenturm: fineLantern,
+    ...FAMILY_MODELS, // M19: Glockenturm, Windrad, Bienenkorb, Vogelscheuche
   }[type](level, spec, seed);
   return { ...m, unit: TOWER_UNIT };
 }

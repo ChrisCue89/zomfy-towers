@@ -13,6 +13,7 @@
 // Spielstand (`sold` des Tages) – nach dem Laden ist er dann einfach fort.
 
 import { T } from '../data/texts.js';
+import { blueprintOptions } from '../data/blueprints.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
@@ -307,6 +308,12 @@ export class Trader {
       const left = o.stock ? Math.max(0, o.stock - this.soldToday(key)) : null;
       const soldOut = left === 0;
       const common = { id: `tausch-${key}`, key, cost: o.give, trade: true, owned: soldOut, ownedText: T.haendler.ausverkauft, affordable: !soldOut && canAfford(st.inventory, o.give) };
+      if (o.blueprint) {
+        // Bauplan (M19): drei zur Wahl – ausverkauft, wenn es keine neuen mehr gibt
+        const none = !blueprintOptions(st.blueprints, 99, 1).length;
+        const [name, info] = T.bauplaene.kaufen;
+        return { ...common, icon: 'bauplan', name: T.haendler.vorrat(name, left), info, gives: { blueprint: true }, owned: soldOut || none, ownedText: none ? T.bauplaene.keine : T.haendler.ausverkauft, affordable: !soldOut && !none && canAfford(st.inventory, o.give) };
+      }
       if (o.part) {
         // Besonderes Turmteil (M10)
         const [name, info] = T.turmteile[o.part];

@@ -1318,6 +1318,41 @@ erst am Morgen. **Offen (M22/M24):** Auf »Wild« spielten Barrikaden und
 Zuhause keine Rolle (alle Wege treffen sich an einem Knoten, Türme dort decken
 alles); ein Tag bringt ab Tag 2 wenig, ein Moderkern kam nie.
 
+### 133. Wann kommt die Bauplan-Wahl, und hält sie das Spiel an? (M19)
+**Entscheidung:** Nach jeder gewonnenen Nacht wartet ein Bauplan; die drei
+Karten gehen erst auf, wenn der Morgenbericht gelesen ist, nie in der Nacht
+und nie im Getümmel (wie die Perk-Wahl) – das Spiel hält dafür kurz an. Im
+Wrack und bei Balduin genauso; kommt eine zweite Wahl, solange eine offen
+ist, folgt sie danach (`extra`). Die drei Pläne stammen möglichst aus
+verschiedenen Arten (ein Turm, eine Falle …) und hängen am Startwert der
+Karte: neu laden würfelt nicht neu, zwei Spiele bekommen verschiedene Wege.
+Knallerbsen und Ölspur kommen frühestens nach Nacht 2 bzw. 3.
+**Warum:** Die Wahl ist ein kleiner Moment (»Überraschung mit Wahl«,
+DESIGN 10) – am Morgen, mit Ruhe, nicht mitten im Kampf.
+
+### 134. Wo haben neun neue Bauten Platz in der Bauleiste? (M19)
+**Entscheidung:** Ein Reiter trägt fünf Bauten (Q R T G C, V bleibt dem
+Abreißen). Mehr Türme ergeben eine zweite Seite »Türme 2«; Fallen bekommen
+den Reiter »Fallen«. Die erste Seite bleibt immer gleich – wer Q für den
+Bolzenwerfer gelernt hat, behält es. Nach einer Wahl springt die Leiste in
+den Reiter des neuen Baus.
+
+### 135. Die Vogelscheuche lockt vom Weg – widerspricht das »nur auf den Wegen«? (M19)
+**Entscheidung:** Nein: Die Vogelscheuche steht wie jeder Turm neben dem Weg
+auf festem Boden; wer ihr folgt, verlässt den Schotter nur ein, zwei Schritte
+(wie ein Jäger hinter Mika) und kehrt an seine Stelle auf dem Weg zurück –
+nie hinter eine Barrikadenreihe. Sie lockt nur, wer auf dem Weg läuft, nie
+Jäger; Mika geht vor. **Warum:** Der Köder ist ein klassisches TD-Werkzeug
+(Zeit gewinnen), bleibt aber in der Geschichte des Moders.
+
+### 136. Was aus dem Plan kommt später? (M19)
+**Entscheidung:** Die Richtungen der vier Grundtürme bleiben frei (nichts
+wegnehmen, was man schon hatte). Eine neue **Barrikadenart** als Bauplan und
+**Funde am Waldrand** (Skizzen, die man an manchen Tagen findet) folgen mit
+den Nebenaufträgen (M23) – dort sind sie Belohnung und Inhalt für die Tage.
+Nach neun Bauplänen ist der Vorrat leer; die Mischtürme (M20) bringen neue
+Rezepte statt weiterer Pläne.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

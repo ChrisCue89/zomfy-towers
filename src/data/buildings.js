@@ -11,14 +11,24 @@
 // raid: Haltbarkeit gegen die Horde im Lager (M17d). Bricht sie durch, wirft sie
 // um, was dort steht; umgeworfen (`broken`) tut ein Bau nichts mehr, bis Mika
 // ihn tagsüber wieder aufstellt (RAID.rebuild der Baukosten).
+// trap: Falle (M19) – steht auf einem Wegfeld wie eine Barrikade, ist aber
+// begehbar: keine Kollision, sperrt das Flussfeld nicht. Abgenutzt (`broken`)
+// wirkt sie nicht mehr, bis Mika sie tagsüber neu richtet. Werte in traps.js.
+// Türme, Fallen und Barrikadenarten aus den Bauplänen (M19) kennt Mika erst,
+// wenn sie den Bauplan gewählt hat (blueprints.js).
 
-import { TOWERS } from './towers.js';
+import { TOWERS, towerStats } from './towers.js';
 
 export const BUILDINGS = {
   bolzen: { w: 1, d: 1, tower: true, cost: TOWERS.bolzen.base[0].cost, icon: 'bolzen', hp: 100, height: 1.6 },
   katapult: { w: 1, d: 1, tower: true, cost: TOWERS.katapult.base[0].cost, icon: 'katapult', hp: 100, height: 1.5 },
   sprenger: { w: 1, d: 1, tower: true, cost: TOWERS.sprenger.base[0].cost, icon: 'sprenger', hp: 100, height: 1.4 },
   laternenturm: { w: 1, d: 1, tower: true, cost: TOWERS.laternenturm.base[0].cost, icon: 'laternenturm', hp: 100, height: 2.4 },
+  // M19: Familien aus den Bauplänen (die Vogelscheuche hält je Stufe mehr aus, towers.js)
+  glockenturm: { w: 1, d: 1, tower: true, cost: TOWERS.glockenturm.base[0].cost, icon: 'glockenturm', hp: 100, height: 2.2 },
+  windrad: { w: 1, d: 1, tower: true, cost: TOWERS.windrad.base[0].cost, icon: 'windrad', hp: 100, height: 2.6 },
+  bienenkorb: { w: 1, d: 1, tower: true, cost: TOWERS.bienenkorb.base[0].cost, icon: 'bienenkorb', hp: 100, height: 1.3 },
+  vogelscheuche: { w: 1, d: 1, tower: true, cost: TOWERS.vogelscheuche.base[0].cost, icon: 'vogelscheuche', hp: 100, height: 2, lure: true },
   werkbank: { w: 2, d: 1, cost: { holz: 8, stein: 2 }, max: 1, icon: 'werkbank', use: 'werkbank', height: 1.6, raid: 60 },
   barrikade: { w: 1, d: 1, cost: { holz: 1 }, icon: 'barrikade', repeat: true, defense: true, onPath: true, smash: true, hp: 20, height: 1 },
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2, raid: 25 },
@@ -28,6 +38,12 @@ export const BUILDINGS = {
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
   holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 2 }, max: 2, height: 1.4, raid: 45 },
   zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4, raid: 50 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
+  // M19: Fallen auf den Wegen (begehbar; hp = wie lange sie halten, Werte in traps.js)
+  stachelbrett: { w: 1, d: 1, cost: { holz: 2, schrott: 2 }, icon: 'stachelbrett', trap: true, onPath: true, repeat: true, hp: 30, height: 0.2 },
+  leimtopf: { w: 1, d: 1, cost: { holz: 1, schrott: 1, fasern: 2 }, icon: 'leimtopf', trap: true, onPath: true, repeat: true, hp: 25, height: 0.4 },
+  klettenteppich: { w: 1, d: 1, cost: { holz: 1, fasern: 4 }, icon: 'klettenteppich', trap: true, onPath: true, repeat: true, hp: 30, height: 0.15 },
+  knallerbsen: { w: 1, d: 1, cost: { holz: 1, schrott: 3 }, icon: 'knallerbsen', trap: true, onPath: true, repeat: true, hp: 1, height: 0.2 },
+  oelspur: { w: 1, d: 1, cost: { holz: 1, schrott: 2 }, icon: 'oelspur', trap: true, onPath: true, repeat: true, hp: 1, height: 0.2 },
   // M17: Wall (Abschnitte zu 3 und 4 m) und Tor (5 m) am Westrand der Bucht
   wall3: { w: 1, d: 3, camp: 'wall', smash: true, defense: true, hp: 1, icon: 'wall', height: 1.6 },
   wall4: { w: 1, d: 4, camp: 'wall', smash: true, defense: true, hp: 1, icon: 'wall', height: 1.6 },
@@ -185,6 +201,7 @@ export function maxHpOf(b) {
   const def = BUILDINGS[b.type];
   if (def.camp === 'tor') return campLevel(b.level).gateHp;
   if (def.camp === 'wall') return campLevel(b.level).wallHp * def.d;
+  if (def.lure) return towerStats(b.type, b.level || 1, b.spec).hp; // Vogelscheuche (M19): je Stufe mehr
   return def.hp || def.raid || 0;
 }
 
@@ -201,8 +218,13 @@ export function blockOf(b) {
   return 0;
 }
 
-/** Reihenfolge in den Reitern der Bauleiste. */
-export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade'];
+/**
+ * Reihenfolge in den Reitern der Bauleiste. Die erste Seite der Türme bleibt
+ * immer gleich (Q R T G C); Familien aus den Bauplänen kommen dahinter (M19),
+ * Fallen in den eigenen Reiter »Fallen«.
+ */
+export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade', 'glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche'];
+export const TRAP_TAB = ['stachelbrett', 'leimtopf', 'klettenteppich', 'knallerbsen', 'oelspur'];
 export const HOME_TAB = ['werkbank', 'laternenpfahl', 'beet', 'bank'];
 
 /**

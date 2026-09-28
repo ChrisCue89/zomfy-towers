@@ -3,11 +3,14 @@
 // Augenblicken zählen keine Eingaben – wer gerade E hämmert, wählt nicht aus
 // Versehen. Klicks werden in update() ausgewertet (siehe CLAUDE.md).
 // Dieselben Karten zeigen auf Stufe 3, 6 und 9 die Fähigkeiten (M16): erst
-// lernen (»lernen«), dann schärfen (»schaerfen«).
+// lernen (»lernen«), dann schärfen (»schaerfen«) – und die Baupläne (M19,
+// »bauplan«): drei Bauten zur Wahl, einer kommt in die Bauleiste.
 
 import { T } from '../data/texts.js';
 import { PERKS, perkLevel } from '../data/perks.js';
 import { SKILLS, SKILL_MAX_RANK } from '../data/skills.js';
+import { BUILDINGS } from '../data/buildings.js';
+import { BLUEPRINTS } from '../data/blueprints.js';
 import { COLORS } from './ui.js';
 import { drawIcon, iconSize } from './icons.js';
 import { measure, wrap, LINE_HEIGHT } from './font.js';
@@ -26,14 +29,16 @@ export class PerkChoice {
     this.focus = 0;
     this.t = 0;
     this.level = 1;
-    this.kind = 'perk'; // 'perk' | 'lernen' | 'schaerfen' (M16)
+    this.kind = 'perk'; // 'perk' | 'lernen' | 'schaerfen' (M16) | 'bauplan' (M19)
+    this.from = null; // Bauplan: aus der Nacht, dem Wrack oder von Balduin
   }
 
-  open(options, level, kind = 'perk') {
+  open(options, level, kind = 'perk', from = null) {
     this.isOpen = true;
     this.options = options;
     this.level = level;
     this.kind = kind;
+    this.from = from;
     this.focus = 0;
     this.t = 0;
     this.aimed = false; // Maus seit dem Öffnen bewegt? Erst dann zählt ein Klick (m12-r1)
@@ -101,6 +106,10 @@ export class PerkChoice {
     const st = this.game.state;
     const cards = this.layout(ui);
     ui.ditherFill(0.45);
+    if (this.kind === 'bauplan') {
+      this.drawBlueprints(ui, cards);
+      return;
+    }
     const skill = this.kind !== 'perk';
     const title = !skill ? T.perks.titel(this.level) : this.kind === 'lernen' ? T.faehigkeiten.titelLernen(this.level) : T.faehigkeiten.titelSchaerfen(this.level);
     const tw = measure(title) + 16;
@@ -135,6 +144,30 @@ export class PerkChoice {
     });
     for (const { rect } of cards) this.drawLock(ui, rect);
     // Der Tasten-Hinweis erscheint erst, wenn die Wahl Eingaben annimmt (m5-r1: 1/2/3 »ohne Wirkung«)
+    if (this.t >= LOCK) ui.textCentered(T.perks.hinweis, ui.width / 2, cards[0].rect.y + CARD_H + 8, COLORS.textDim, { outline: COLORS.outline });
+  }
+
+  /** Bauplan-Karten (M19): Symbol, Name und was der Bau tut, unten die Art (Turm, Falle). */
+  drawBlueprints(ui, cards) {
+    const title = T.bauplaene.titel[this.from] || T.bauplaene.titel.nacht;
+    const tw = measure(title) + 16;
+    ui.panel(Math.round((ui.width - tw) / 2), cards[0].rect.y - 30, tw, 20, { fill: COLORS.fillLight });
+    ui.textCentered(title, ui.width / 2, cards[0].rect.y - 27, COLORS.gold);
+    cards.forEach(({ id, rect }, k) => {
+      const focused = k === this.focus;
+      const icon = BUILDINGS[id].icon;
+      ui.panel(rect.x, rect.y, rect.w, rect.h, { fill: focused ? COLORS.fillHover : COLORS.fill, frame: focused ? COLORS.gold : COLORS.frame });
+      ui.text(String(k + 1), rect.x + 5, rect.y + 3, focused ? COLORS.gold : COLORS.textDim);
+      const size = iconSize(icon);
+      ui.inset(rect.x + rect.w / 2 - 11, rect.y + 6, 22, 22, { fill: COLORS.inset });
+      drawIcon(ui.ctx, icon, Math.round(rect.x + rect.w / 2 - size.w / 2), Math.round(rect.y + 17 - size.h / 2));
+      ui.textCentered(T.bauten[id], rect.x + rect.w / 2, rect.y + 32, focused ? COLORS.gold : COLORS.text);
+      wrap(T.bautenInfo[id], rect.w - 12)
+        .slice(0, 4)
+        .forEach((line, i) => ui.text(line, rect.x + 6, rect.y + 48 + i * LINE_HEIGHT, COLORS.textDim));
+      ui.textCentered(T.bauplaene.art[BLUEPRINTS[id].kind], rect.x + rect.w / 2, rect.y + rect.h - 13, focused ? COLORS.textWarm : COLORS.frame);
+    });
+    for (const { rect } of cards) this.drawLock(ui, rect); // m16-r1: die Sperre sichtbar
     if (this.t >= LOCK) ui.textCentered(T.perks.hinweis, ui.width / 2, cards[0].rect.y + CARD_H + 8, COLORS.textDim, { outline: COLORS.outline });
   }
 }

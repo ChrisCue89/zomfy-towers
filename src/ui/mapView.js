@@ -170,7 +170,7 @@ export class MapView {
       ui.rect(p.x, p.y, 1, 1, COLORS.gold);
     }
     // Bauten: Türme golden, Barrikaden braun (Trümmer rot), Wall dunkel und
-    // das Tor hell (M17, eingebrochen rot), anderes hell
+    // das Tor hell (M17, eingebrochen rot), Fallen violett (M19), anderes hell
     for (const b of g.world.buildings.list) {
       const c = g.world.buildings.bounds(b);
       const p = at(b.i, b.j);
@@ -187,7 +187,11 @@ export class MapView {
             ? b.broken
               ? COLORS.buildBad
               : hexToCss(b.level >= 3 ? P.s7 : P.e7)
-            : COLORS.textDim;
+            : def.trap // Fallen (M19): violett wie ein Hinweis, verbraucht rot
+              ? b.broken
+                ? COLORS.buildBad
+                : hexToCss(P.a3)
+              : COLORS.textDim;
       ui.rect(p.x - 1, p.y - 1, w + 2, h + 2, COLORS.outline);
       ui.rect(p.x, p.y, w, h, color);
     }

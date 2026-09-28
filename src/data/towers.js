@@ -11,8 +11,17 @@
 //   aura     Schadensbonus für Nachbartürme (Laterne), auraRange in Metern
 //   pierce   ignoriert Panzerung          strongest zielt auf das meiste Leben
 //   luck     Loot-Bonus im Licht          lightSlow Verlangsamung im Licht
+//
+// Die vier Familien aus den Bauplänen (M19, DESIGN.md 8):
+//   stun     Betäubung je Glockenschlag (s)  heal  Haltbarkeit je Schlag für
+//            Barrikaden, Tor und Wall im Umkreis (Friedensglocke)
+//   push     Rückstoß gegen den Weg (m)      grind Schrott, den die Mühle über
+//            Tag mahlt (morgens im Vorrat)
+//   swarms   Schwärme gleichzeitig; damage ist beim Bienenkorb Schaden je Sekunde
+//   hp       Haltbarkeit der Vogelscheuche   lure  so viele lockt sie zugleich,
+//            lureTime so lange (s), damage beim Krähenscheuche: Picken je Sekunde
 
-export const TOWER_TYPES = ['bolzen', 'katapult', 'sprenger', 'laternenturm'];
+export const TOWER_TYPES = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche'];
 
 export const TOWERS = {
   bolzen: {
@@ -116,6 +125,119 @@ export const TOWERS = {
           { cost: { schrott: 18, zahnraeder: 1 }, aura: 0.2, auraRange: 3.6, range: 3.6, luck: 0.5 },
           { cost: { schrott: 24, zahnraeder: 2 }, aura: 0.25, auraRange: 3.9, range: 3.9, luck: 0.8 },
           { cost: { schrott: 34, moderkerne: 1 }, aura: 0.3, auraRange: 4.2, range: 4.2, luck: 1.2 },
+        ],
+      },
+    },
+  },
+  // --- M19: Familien aus den Bauplänen ---------------------------------------------
+  // Glockenturm: Ein Schlag betäubt alles in Reichweite kurz. Sturmglocke schlägt
+  // härter, die Friedensglocke flickt dabei Barrikaden, Tor und Wall.
+  glockenturm: {
+    role: 'kontrolle',
+    projectile: null,
+    base: [
+      { cost: { schrott: 12, holz: 2 }, damage: 6, rate: 0.25, range: 3.2, stun: 0.5 },
+      { cost: { schrott: 12 }, damage: 9, rate: 0.27, range: 3.5, stun: 0.6 },
+    ],
+    specs: {
+      A: {
+        key: 'sturmglocke',
+        levels: [
+          { cost: { schrott: 18, zahnraeder: 1 }, damage: 14, rate: 0.3, range: 3.8, stun: 0.8 },
+          { cost: { schrott: 24, zahnraeder: 2 }, damage: 20, rate: 0.32, range: 4.1, stun: 1 },
+          { cost: { schrott: 34, moderkerne: 1 }, damage: 30, rate: 0.35, range: 4.5, stun: 1.3 },
+        ],
+      },
+      B: {
+        key: 'friedensglocke',
+        levels: [
+          { cost: { schrott: 18, zahnraeder: 1 }, damage: 6, rate: 0.25, range: 3.8, stun: 0.4, heal: 5 },
+          { cost: { schrott: 24, zahnraeder: 2 }, damage: 8, rate: 0.27, range: 4.1, stun: 0.5, heal: 8 },
+          { cost: { schrott: 34, moderkerne: 1 }, damage: 10, rate: 0.3, range: 4.5, stun: 0.6, heal: 12 },
+        ],
+      },
+    },
+  },
+  // Windrad: Ein Windstoß schiebt die Horde ein Stück den Weg zurück; im Umkreis
+  // sehen Türme durch den Nebel. Sturm bläst stärker, die Mühle mahlt tagsüber Schrott.
+  windrad: {
+    role: 'kontrolle',
+    projectile: null,
+    base: [
+      { cost: { schrott: 8, holz: 6 }, push: 0.7, rate: 0.33, range: 3.4, slow: 0.2, slowTime: 1 },
+      { cost: { schrott: 10 }, push: 0.9, rate: 0.35, range: 3.7, slow: 0.25, slowTime: 1 },
+    ],
+    specs: {
+      A: {
+        key: 'sturm',
+        levels: [
+          { cost: { schrott: 16, zahnraeder: 1 }, push: 1.2, rate: 0.37, range: 4, slow: 0.3, slowTime: 1.2 },
+          { cost: { schrott: 22, zahnraeder: 2 }, push: 1.5, rate: 0.4, range: 4.3, slow: 0.35, slowTime: 1.3 },
+          { cost: { schrott: 32, moderkerne: 1 }, push: 1.9, rate: 0.43, range: 4.7, slow: 0.4, slowTime: 1.5 },
+        ],
+      },
+      B: {
+        key: 'muehle',
+        levels: [
+          { cost: { schrott: 16, zahnraeder: 1 }, push: 0.8, rate: 0.33, range: 3.7, slow: 0.2, slowTime: 1, grind: 3 },
+          { cost: { schrott: 22, zahnraeder: 2 }, push: 0.9, rate: 0.35, range: 3.9, slow: 0.2, slowTime: 1, grind: 5 },
+          { cost: { schrott: 32, moderkerne: 1 }, push: 1, rate: 0.37, range: 4.1, slow: 0.25, slowTime: 1, grind: 8 },
+        ],
+      },
+    },
+  },
+  // Bienenkorb: Ein Schwarm folgt einem Ziel und sticht (Schaden je Sekunde, durch
+  // jede Panzerung). Die Königin schickt mehrere Schwärme, Honig klebt und bremst.
+  bienenkorb: {
+    role: 'schwarm',
+    projectile: 'bienen',
+    base: [
+      { cost: { schrott: 10, fasern: 2 }, damage: 9, range: 4.5, swarms: 1 },
+      { cost: { schrott: 10 }, damage: 14, range: 4.8, swarms: 1 },
+    ],
+    specs: {
+      A: {
+        key: 'koenigin',
+        levels: [
+          { cost: { schrott: 16, zahnraeder: 1 }, damage: 12, range: 5, swarms: 2 },
+          { cost: { schrott: 22, zahnraeder: 2 }, damage: 16, range: 5.3, swarms: 2 },
+          { cost: { schrott: 32, moderkerne: 1 }, damage: 18, range: 5.6, swarms: 3 },
+        ],
+      },
+      B: {
+        key: 'honig',
+        levels: [
+          { cost: { schrott: 16, zahnraeder: 1 }, damage: 22, range: 5, swarms: 1, slow: 0.25, slowTime: 0.6 },
+          { cost: { schrott: 22, zahnraeder: 2 }, damage: 30, range: 5.3, swarms: 1, slow: 0.3, slowTime: 0.6 },
+          { cost: { schrott: 32, moderkerne: 1 }, damage: 40, range: 5.6, swarms: 1, slow: 0.35, slowTime: 0.6 },
+        ],
+      },
+    },
+  },
+  // Vogelscheuche: lockt Schlurfer vom Weg auf sich und muss geflickt werden. Der
+  // Strohmann hält mehr aus, bei der Krähenscheuche picken Krähen die Gelockten.
+  vogelscheuche: {
+    role: 'koeder',
+    projectile: null,
+    base: [
+      { cost: { holz: 6, fasern: 4 }, hp: 70, lure: 2, range: 3.4, lureTime: 5 },
+      { cost: { holz: 4, schrott: 6 }, hp: 100, lure: 3, range: 3.7, lureTime: 5 },
+    ],
+    specs: {
+      A: {
+        key: 'strohmann',
+        levels: [
+          { cost: { holz: 8, schrott: 12, zahnraeder: 1 }, hp: 160, lure: 4, range: 4, lureTime: 6 },
+          { cost: { holz: 10, schrott: 18, zahnraeder: 2 }, hp: 230, lure: 5, range: 4.3, lureTime: 6 },
+          { cost: { holz: 12, schrott: 26, moderkerne: 1 }, hp: 320, lure: 6, range: 4.6, lureTime: 7 },
+        ],
+      },
+      B: {
+        key: 'kraehen',
+        levels: [
+          { cost: { holz: 6, schrott: 14, zahnraeder: 1 }, hp: 110, lure: 3, range: 4, lureTime: 5, damage: 6 },
+          { cost: { holz: 8, schrott: 20, zahnraeder: 2 }, hp: 150, lure: 3, range: 4.3, lureTime: 5, damage: 10 },
+          { cost: { holz: 10, schrott: 30, moderkerne: 1 }, hp: 200, lure: 4, range: 4.6, lureTime: 6, damage: 15 },
         ],
       },
     },

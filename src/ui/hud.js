@@ -33,6 +33,9 @@ const RING_COLORS = {
   pfiff: [hexToCss(P.a4), hexToCss(P.s7)],
   jubel: [hexToCss(P.f6), hexToCss(P.f4)],
   wirbel: [hexToCss(P.s9), hexToCss(P.s6)],
+  // M19: Glockenturm (Sturm- und Friedensglocke)
+  glocke: [hexToCss(P.f7), hexToCss(P.e7)],
+  frieden: [hexToCss(P.g8), hexToCss(P.f7)],
 };
 const COOL_STEPS = 24;
 const coolCache = new Map();

@@ -17,6 +17,7 @@ import { towerStatsOf, towerRank } from '../data/towers.js';
 import { VoxelModel } from '../render/voxel.js';
 import { BUILDING_MODELS, buildBarricade, buildRubble, collapseModel, BUILDING_UNIT } from './buildingModels.js';
 import { fineTowerModels, towerPartModel } from './towerModels.js';
+import { TRAP_MODELS } from './trapModels.js';
 import { V } from './layout.js';
 import { edgeLight } from './voxelKit.js';
 
@@ -105,9 +106,9 @@ export class Buildings {
     const { material = this.materials.building || this.materials.occluder, glowMaterial = this.glowMaterial, shadow = 'full', level = 1, spec = null, look = 'ganz' } = options;
     if (BUILDINGS[type].tower) return this.towerObject(type, level, spec, material, glowMaterial, shadow);
     if (BUILDINGS[type].camp) return this.campObject(type, level, look, material, shadow);
-    const key = type === 'barrikade' ? `${type}|${level}|${look}` : look === 'truemmer' ? `${type}|truemmer` : type;
+    const key = type === 'barrikade' ? `${type}|${level}|${look}` : look === 'truemmer' || look === 'verbraucht' ? `${type}|${look}` : type;
     if (!this.models.has(key)) {
-      const s = BUILDING_MODELS[type];
+      const s = BUILDING_MODELS[type] || { model: (seed) => TRAP_MODELS[type](seed, look === 'verbraucht') }; // Fallen (M19)
       let model;
       if (type === 'barrikade') model = look === 'truemmer' ? buildRubble(this.seed, level) : buildBarricade(this.seed, level, look === 'kaputt' ? 0.55 : 0);
       else if (look === 'truemmer') model = collapseModel(s.model(this.seed), this.seed); // umgeworfen (M17d)
@@ -237,7 +238,7 @@ export class Buildings {
       building.level = Math.max(1, Math.min(CAMP_MAX, extra.level || 1));
       building.broken = Boolean(extra.broken);
     }
-    if (def.raid) building.broken = Boolean(extra.broken); // umgeworfen (M17d)
+    if (def.raid || def.trap) building.broken = Boolean(extra.broken); // umgeworfen (M17d), Falle verbraucht (M19)
     // Zubehör (M17e): Barrikade je Stufe eins, das Tor drei
     if (gearSlots(building)) building.gear = [...new Set((extra.gear || []).filter((id) => gearFits(type, id)))].slice(0, gearSlots(building));
     if (hasHp(type)) building.hp = building.broken ? 0 : Math.min(maxHpOf(building), extra.hp ?? maxHpOf(building));
@@ -269,6 +270,7 @@ export class Buildings {
     }
     if (building.broken && !def.raid) this.setBlocking(building, false); // Trümmer: begehbar (Umgeworfenes nicht)
     if (type === 'barrikade') building.collider.climb = true; // Mika klettert drüber, die Horde nicht (m12-r1)
+    if (def.trap) this.setBlocking(building, false); // Fallen (M19): begehbar, für alle
     this.grid.occupy(building.id, i, j, w, d);
     this.setInteraction(building);
     this.list.push(building);
@@ -503,6 +505,7 @@ export class Buildings {
   /** Aussehen einer Barrikade: ganz, kaputt (unter halber Haltbarkeit) oder Trümmer; im Lager auch umgeworfen. */
   lookOf(b) {
     if (BUILDINGS[b.type].raid) return b.broken ? 'truemmer' : 'ganz';
+    if (BUILDINGS[b.type].trap) return b.broken ? 'verbraucht' : 'ganz'; // M19
     if (!BUILDINGS[b.type].smash) return 'ganz';
     if (b.broken) return 'truemmer';
     return b.hp < maxHpOf(b) * 0.5 ? 'kaputt' : 'ganz';
@@ -515,6 +518,7 @@ export class Buildings {
 
   /** Kollision eines Baus an/aus (das Tor hat mehrere Teile). */
   setBlocking(b, on) {
+    if (BUILDINGS[b.type].trap) on = false; // Fallen sperren nie (M19)
     for (const c of b.colliders || [b.collider]) c.enabled = on;
   }
 
@@ -548,6 +552,28 @@ export class Buildings {
     b.hp = 0;
     this.attachObject(b);
     this.setInteraction(b);
+  }
+
+  /**
+   * Friedensglocke (M19): Barrikaden, Tor und Wall im Umkreis bekommen
+   * `amount` Haltbarkeit zurück (Trümmer nicht). Gibt zurück, wie viele es waren.
+   */
+  healAround(x, z, r, amount) {
+    let n = 0;
+    for (const b of this.list) {
+      const def = BUILDINGS[b.type];
+      if (!def.smash || b.broken) continue;
+      const full = maxHpOf(b);
+      if (b.hp >= full) continue;
+      const c = this.bounds(b);
+      const dx = Math.max(c.i - x, 0, x - (c.i + c.w));
+      const dz = Math.max(c.j - z, 0, z - (c.j + c.d));
+      if (dx * dx + dz * dz > r * r) continue;
+      b.hp = Math.min(full, b.hp + amount);
+      this.refreshLook(b);
+      n++;
+    }
+    return n;
   }
 
   /** Wall-Abschnitt oder Tor eine Stufe höher (M17): danach wie neu. */
@@ -588,8 +614,11 @@ export class Buildings {
 
   /** Turm auf eine neue Stufe/Spezialisierung bringen. */
   upgrade(b, level, spec) {
+    const before = hasHp(b.type) ? maxHpOf(b) : 0;
     b.level = level;
     if (spec) b.spec = spec;
+    // Die Vogelscheuche (M19) hält je Stufe mehr aus: der Zuwachs kommt dazu
+    if (BUILDINGS[b.type].lure) b.hp = Math.min(maxHpOf(b), b.hp + Math.max(0, maxHpOf(b) - before));
     this.attachObject(b);
   }
 

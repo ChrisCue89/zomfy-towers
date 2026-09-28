@@ -19,7 +19,13 @@ import { REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
 import { dampAngle } from '../core/math.js';
 
 const MAX_PROJECTILES = 120;
-const HEAD_Y = { bolzen: 1.2, katapult: 0.9, sprenger: 1.3, laternenturm: 2.2 };
+const HEAD_Y = { bolzen: 1.2, katapult: 0.9, sprenger: 1.3, laternenturm: 2.2, glockenturm: 1.75, windrad: 2.05, bienenkorb: 1.0, vogelscheuche: 1.35 };
+/** Bienen (M19): je Schwarm so viele, höchstens so viele im Bild; Flugtempo (m/s). */
+const BEES_PER_SWARM = 9;
+const MAX_BEES = 270;
+const BEE_SPEED = 4.2;
+/** So nah (m) sticht der Schwarm. */
+const BEE_REACH = 0.4;
 
 const FINE = 1 / 16; // Geschosse im feinen Maß (M12)
 
@@ -51,6 +57,14 @@ function pumpkinModel(size) {
   return m;
 }
 
+/** Biene (M19): gelb-schwarzer Leib und helle Flügel – im Maß 1/32 ein paar Pixel groß. */
+function beeModel() {
+  const m = new VoxelModel();
+  m.set(0, 0, 1, P.f6).set(0, 0, 0, P.n1).set(0, 0, -1, P.f6).set(0, 0, 2, P.n1);
+  m.set(-1, 1, 0, P.s9).set(1, 1, 0, P.s9);
+  return m;
+}
+
 export class TowerSystem {
   /**
    * @param {object} deps scene, world, horde, effects
@@ -64,12 +78,15 @@ export class TowerSystem {
     this.projectiles = [];
     this.fires = [];
     this.stickies = []; // klebrige Flächen (Klebekürbis, M18)
+    this.swarms = []; // Bienenschwärme (M19): { tower, x, y, z, target, acc }
+    this.lured = 0; // wie viele Schlurfer gerade eine Vogelscheuche anlocken (M19, Prüfung)
     this.time = 0;
     const basic = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.meshes = {
       bolt: new THREE.InstancedMesh(boltModel().toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
       pumpkin: new THREE.InstancedMesh(pumpkinModel(2).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
       mini: new THREE.InstancedMesh(pumpkinModel(1).toGeometry({ jitter: 0, ao: false, size: FINE }), basic, MAX_PROJECTILES),
+      bee: new THREE.InstancedMesh(beeModel().toGeometry({ jitter: 0, ao: false, size: FINE / 2 }), basic, MAX_BEES),
     };
     for (const mesh of Object.values(this.meshes)) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -84,6 +101,7 @@ export class TowerSystem {
     this.projectiles.length = 0;
     this.fires.length = 0;
     this.stickies.length = 0;
+    this.swarms.length = 0;
   }
 
   /** Mittelpunkt und Kopfhöhe eines Turms. */
@@ -135,11 +153,21 @@ export class TowerSystem {
     const kind = this.world.weather.kind;
     if (kind === 'nebel') {
       const o = this.origin(t);
-      const lit = this.lightSlow(o.x, o.z) > 0 || this.world.buildings.gearSlow(o.x, o.z) > 0;
+      const lit = this.lightSlow(o.x, o.z) > 0 || this.world.buildings.gearSlow(o.x, o.z) > 0 || this.windAt(o.x, o.z); // M19: das Windrad verweht den Nebel
       return lit ? 1 : WEATHER_EFFECTS.nebel.range;
     }
     if (kind === 'wind' && t.type === 'katapult') return WEATHER_EFFECTS.wind.catapult;
     return 1;
+  }
+
+  /** Weht hier ein Windrad (M19)? Dann verweht es den Nebel. */
+  windAt(x, z) {
+    for (const W of this.world.buildings.list) {
+      if (W.type !== 'windrad' || W.hp <= 0) continue;
+      const r = towerStatsOf(W).range;
+      if ((x - W.i - 0.5) ** 2 + (z - W.j - 0.5) ** 2 <= r * r) return true;
+    }
+    return false;
   }
 
   /** Ziele im Umkreis, sortiert nach Priorität. */
@@ -177,6 +205,8 @@ export class TowerSystem {
       }
       t.cool = Math.max(0, (t.cool ?? 0.5) - dt * haste);
       t.kick = Math.max(0, (t.kick || 0) - dt * 4);
+      // Die Vogelscheuche fällt um, wenn sie nichts mehr aushält (M19) – bis Mika sie flickt
+      if (t.type === 'vogelscheuche' && t.object) t.object.rotation.x = t.hp <= 0 ? -Math.PI / 2 : 0;
       if (t.hp <= 0) continue;
       const s = towerStatsOf(t);
       const mult = 1 + (t.aura || 0);
@@ -193,22 +223,215 @@ export class TowerSystem {
         case 'laternenturm':
           t.headAngle = Math.sin(this.time * 0.8 + t.id) * 0.08;
           break;
+        // M19: Familien aus den Bauplänen
+        case 'glockenturm':
+          this.runBell(t, s, mult, dt);
+          break;
+        case 'windrad':
+          this.runWindmill(t, s, dt);
+          break;
+        case 'bienenkorb':
+          this.runHive(t, s, dt);
+          break;
+        case 'vogelscheuche':
+          this.runScarecrow(t, s, mult, dt);
+          break;
         default:
           break;
       }
-      if (t.head) {
-        // Rückstoß entgegen der Schussrichtung; beim Katapult schnellt der Wurfarm vor
-        const a = t.headAngle || 0;
-        t.head.rotation.y = a;
-        const back = t.type === 'katapult' ? 0.02 : 0.07;
-        t.head.position.x = -Math.sin(a) * t.kick * back;
-        t.head.position.z = -Math.cos(a) * t.kick * back;
-        t.head.rotation.x = t.type === 'katapult' ? Math.sin(Math.min(1, t.kick) * Math.PI) * 0.55 : 0;
-      }
+      if (t.head) this.poseHead(t, dt);
     }
     this.updateProjectiles(dt);
     this.updateFires(dt);
     this.updateStickies(dt);
+    this.updateSwarms(dt);
+  }
+
+  /** Kopf eines Turms bewegen: zielen und Rückstoß; Glocke schwingt, Windrad dreht sich (M19). */
+  poseHead(t, dt) {
+    const a = t.headAngle || 0;
+    if (t.type === 'glockenturm') {
+      // Die Glocke schwingt nach dem Schlag seitlich aus
+      const sw = t.swing || 0;
+      t.head.rotation.set(0, 0, Math.sin((1 - sw) * 16) * 0.45 * sw);
+      return;
+    }
+    if (t.type === 'windrad') {
+      t.spin = (t.spin || 0) + dt * (1.4 + (t.gust || 0) * 9);
+      t.head.rotation.set(0, 0, t.spin);
+      return;
+    }
+    if (t.type === 'vogelscheuche') {
+      // Der Kürbiskopf schaut, wen er lockt, und wackelt bei jedem Schlag
+      t.head.rotation.set(0, a, Math.sin(this.time * 30) * 0.12 * (t.shake || 0));
+      t.shake = Math.max(0, (t.shake || 0) - dt * 3);
+      return;
+    }
+    // Rückstoß entgegen der Schussrichtung; beim Katapult schnellt der Wurfarm vor
+    t.head.rotation.y = a;
+    const back = t.type === 'katapult' ? 0.02 : 0.07;
+    t.head.position.x = -Math.sin(a) * t.kick * back;
+    t.head.position.z = -Math.cos(a) * t.kick * back;
+    t.head.rotation.x = t.type === 'katapult' ? Math.sin(Math.min(1, t.kick) * Math.PI) * 0.55 : 0;
+  }
+
+  /**
+   * Glockenturm (M19): Ist jemand in Reichweite, schlägt die Glocke – alle ringsum
+   * nehmen Schaden und stehen kurz betäubt. Die Friedensglocke flickt dabei
+   * Barrikaden, Tor und Wall im Umkreis.
+   */
+  runBell(t, s, mult, dt) {
+    t.swing = Math.max(0, (t.swing || 0) - dt * 0.9);
+    if (t.cool > 0) return;
+    const o = this.origin(t);
+    const range = s.range * this.weatherRange(t);
+    const list = this.horde.inRange(o.x, o.z, range);
+    if (!list.some((z) => z.state !== 'enter')) return;
+    t.cool = 1 / s.rate;
+    t.swing = 1;
+    for (const z of list) {
+      if (z.state === 'enter') continue;
+      if (this.horde.damage(z, s.damage * mult, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'glocke' })) continue;
+      this.horde.stun(z, s.stun);
+    }
+    const healed = s.heal ? this.world.buildings.healAround(o.x, o.z, range, s.heal) : 0;
+    this.cb.onBell?.(t, o, range, healed);
+  }
+
+  /**
+   * Windrad (M19): Ein Windstoß schiebt alle in Reichweite ein Stück den Weg
+   * zurück (gegen das Flussfeld) und bremst sie kurz.
+   */
+  runWindmill(t, s, dt) {
+    t.gust = Math.max(0, (t.gust || 0) - dt * 1.2);
+    if (t.cool > 0) return;
+    const o = this.origin(t);
+    const list = this.horde.inRange(o.x, o.z, s.range * this.weatherRange(t));
+    if (!list.some((z) => z.state !== 'enter')) return;
+    t.cool = 1 / s.rate;
+    t.gust = 1;
+    for (const z of list) {
+      if (z.state === 'enter') continue;
+      this.horde.blowBack(z, s.push);
+      this.horde.slow(z, s.slow, s.slowTime);
+      this.effects.splat(z.x, 0.6, z.z, 'wasser', 2, 0.4);
+    }
+    this.cb.onGust?.(t, o);
+  }
+
+  /**
+   * Bienenkorb (M19): Er schickt so viele Schwärme aus, wie seine Stufe zählt –
+   * jeder zu einem eigenen Ziel. Die Schwärme selbst fliegen in updateSwarms.
+   */
+  runHive(t, s, dt) {
+    let active = 0;
+    for (const sw of this.swarms) if (sw.tower === t.id) active++;
+    if (active >= s.swarms || t.cool > 0) return;
+    const target = this.beeTarget(t, s, null);
+    if (!target) return;
+    const o = this.origin(t);
+    this.swarms.push({ tower: t.id, x: o.x, y: o.y, z: o.z, target, acc: 0, phase: Math.random() * 6.28 });
+    t.cool = 0.5;
+    this.cb.onSwarm?.(t, o);
+  }
+
+  /** Nächstes Ziel eines Schwarms: in Reichweite des Korbs, möglichst eines, das noch kein Schwarm dieses Korbs hat. */
+  beeTarget(t, s, current) {
+    const list = this.targets(t, s.range, 6, false); // targets() rechnet das Wetter selbst ein
+    for (const z of list) {
+      if (z === current) continue;
+      let taken = false;
+      for (const sw of this.swarms) if (sw.tower === t.id && sw.target === z) taken = true;
+      if (!taken) return z;
+    }
+    return list[0] || null;
+  }
+
+  updateSwarms(dt) {
+    for (let i = this.swarms.length - 1; i >= 0; i--) {
+      const sw = this.swarms[i];
+      const t = this.world.buildings.get(sw.tower);
+      if (!t || t.hp <= 0) {
+        this.swarms.splice(i, 1);
+        continue;
+      }
+      const s = towerStatsOf(t);
+      const o = this.origin(t);
+      const z = sw.target;
+      const range = s.range * this.weatherRange(t);
+      if (!z || z.state === 'dying' || (z.x - o.x) ** 2 + (z.z - o.z) ** 2 > (range + 1) ** 2) sw.target = this.beeTarget(t, s, z);
+      const goal = sw.target;
+      const gx = goal ? goal.x : o.x;
+      const gy = goal ? 1.1 * goal.def.scale : o.y;
+      const gz = goal ? goal.z : o.z;
+      const dx = gx - sw.x;
+      const dy = gy - sw.y;
+      const dz = gz - sw.z;
+      const d = Math.hypot(dx, dy, dz);
+      const step = BEE_SPEED * dt;
+      if (d > step) {
+        sw.x += (dx / d) * step;
+        sw.y += (dy / d) * step;
+        sw.z += (dz / d) * step;
+      } else {
+        sw.x = gx;
+        sw.y = gy;
+        sw.z = gz;
+      }
+      if (!goal) {
+        if (d < 0.2) this.swarms.splice(i, 1); // zurück im Korb
+        continue;
+      }
+      if (d > BEE_REACH) continue;
+      // Stechen: Schaden je Sekunde, in ganzen Punkten (wie ein Brand), durch jede Panzerung
+      sw.acc += s.damage * (1 + (t.aura || 0)) * dt;
+      if (sw.acc >= 1) {
+        const n = Math.floor(sw.acc);
+        sw.acc -= n;
+        const dead = this.horde.damage(goal, n, { pierce: true, source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'bienen' });
+        if (!dead && s.slow) {
+          this.horde.slow(goal, s.slow, s.slowTime);
+          if (Math.random() < 0.3) this.effects.splat(goal.x, 0.9, goal.z, 'honig', 2, 0.3);
+        }
+      }
+    }
+  }
+
+  /**
+   * Vogelscheuche (M19): Solange sie steht, lockt sie Schlurfer in Reichweite
+   * vom Weg auf sich (höchstens `lure` zugleich, je `lureTime` Sekunden); die
+   * schlagen auf sie ein, bis sie umfällt oder die Zeit um ist. Die
+   * Krähenscheuche lässt Krähen nach den Gelockten picken.
+   */
+  runScarecrow(t, s, mult, dt) {
+    const o = this.origin(t);
+    let lured = 0;
+    let first = null;
+    for (const z of this.horde.list) {
+      if (z.state === 'raid' && z.lureBy === t.id) {
+        lured++;
+        first = first || z;
+        if (s.damage) {
+          z.peckAcc = (z.peckAcc || 0) + s.damage * mult * dt;
+          if (z.peckAcc >= 1) {
+            const n = Math.floor(z.peckAcc);
+            z.peckAcc -= n;
+            if (Math.random() < 0.25) this.effects.splat(z.x, 1.4 * z.def.scale, z.z, 'federn', 2, 0.4);
+            this.horde.damage(z, n, { source: 'turm', lucky: t.part === 'gluecksmuenze', by: t.id, kind: 'kraehen' });
+          }
+        }
+      }
+    }
+    this.lured = Math.max(this.lured, lured);
+    if (first) t.headAngle = dampAngle(t.headAngle || 0, Math.atan2(first.x - o.x, first.z - o.z), 3, dt);
+    if (lured >= s.lure || t.cool > 0) return;
+    t.cool = 0.4;
+    // Wer auf dem Weg an ihr vorbeikommt (nicht schon gelockt, nicht auf der Jagd nach Mika)
+    for (const z of this.targets(t, s.range, s.lure - lured, false)) {
+      if (z.state !== 'walk' || z.lureBy || z.lureAgain > this.horde.time) continue;
+      this.horde.lureTo(z, t, s.lureTime);
+      this.cb.onLure?.(t, z);
+    }
   }
 
   aim(t, target, dt, speed = 10) {
@@ -434,7 +657,7 @@ export class TowerSystem {
   }
 
   render() {
-    const counts = { bolt: 0, pumpkin: 0, mini: 0 };
+    const counts = { bolt: 0, pumpkin: 0, mini: 0, bee: 0 };
     const d = this.dummy;
     for (const p of this.projectiles) {
       const key = p.kind === 'bolt' ? 'bolt' : p.kind === 'mini' ? 'mini' : 'pumpkin';
@@ -447,8 +670,21 @@ export class TowerSystem {
       d.updateMatrix();
       mesh.setMatrixAt(k, d.matrix);
     }
+    // Bienen (M19): jeder Schwarm eine kleine, summende Wolke um seinen Mittelpunkt
+    const bees = this.meshes.bee;
+    for (const sw of this.swarms) {
+      for (let b = 0; b < BEES_PER_SWARM && counts.bee < MAX_BEES; b++) {
+        const a = this.time * (5 + b * 0.7) + sw.phase + b * 2.1;
+        const r = 0.12 + (b % 3) * 0.07;
+        d.position.set(sw.x + Math.cos(a) * r, sw.y + Math.sin(a * 1.7 + b) * 0.1, sw.z + Math.sin(a) * r);
+        d.rotation.set(0, -a, 0);
+        d.scale.set(1, 1, 1);
+        d.updateMatrix();
+        bees.setMatrixAt(counts.bee++, d.matrix);
+      }
+    }
     for (const [key, mesh] of Object.entries(this.meshes)) {
-      mesh.count = Math.min(MAX_PROJECTILES, counts[key]);
+      mesh.count = Math.min(key === 'bee' ? MAX_BEES : MAX_PROJECTILES, counts[key]);
       mesh.visible = mesh.count > 0;
       mesh.instanceMatrix.needsUpdate = true;
     }

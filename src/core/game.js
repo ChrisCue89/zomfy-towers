@@ -22,6 +22,7 @@ import { PixelRenderer } from '../render/pixelRenderer.js';
 import { hexToCss } from '../render/palette.js';
 import { REACTION_COLORS, REACTION_PITCH, WEATHER_EFFECTS } from '../data/reactions.js';
 import { NIGHT_START } from '../data/waves.js';
+import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
@@ -41,6 +42,7 @@ import { AREA as TERRAIN_AREA } from '../world/terrain.js';
 import { Player } from '../entities/player.js';
 import { Horde } from '../entities/horde.js';
 import { TowerSystem } from '../entities/towers.js';
+import { TrapSystem } from '../entities/traps.js';
 import { Loot } from '../entities/loot.js';
 import { UICanvas, COLORS } from '../ui/ui.js';
 import { Hud, LOW_HP } from '../ui/hud.js';
@@ -214,6 +216,7 @@ export class Game {
       onPlayerHit: (dmg, z) => this.combat.hurt(dmg, z),
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
       onRaidHit: (b, dmg, z) => this.onRaidHit(b, dmg, z),
+      onLureHit: (b, dmg, z) => this.onLureHit(b, dmg, z),
       onEnterCamp: (z) => this.onEnterCamp(z),
       onReaction: (kind, z) => this.onReaction(kind, z),
       onShatter: (z) => {
@@ -226,13 +229,42 @@ export class Game {
         if (by !== null && by !== undefined) this.towerRanks.onDamage(by, amount); // M16: Erfahrung des Turms
       },
     });
+    this.bellStats = { rings: 0, healed: 0 }; // Glockenschläge und geflickte Bauten (M19, Prüfung)
     this.towers = new TowerSystem(
       { scene: this.scene, world: this.world, horde: this.horde, effects: this.effects },
       {
         onShot: (kind, x, z) => this.sound.play(kind, { x, z, volume: kind === 'sprenger' ? 0.6 : 1 }),
         onImpact: (x, z) => this.sound.play('platsch', { x, z }),
+        // M19: Glockenschlag (Ring am Boden, Friedensglocke grün-golden), Windstoß, Schwarm
+        onBell: (t, o, range, healed) => {
+          this.bellStats.rings++;
+          this.bellStats.healed += healed;
+          this.hud.ring(o.x, o.z, range, t.spec === 'B' ? 'frieden' : 'glocke');
+          this.sound.play('turmglocke', { x: o.x, z: o.z, pitch: t.spec === 'B' ? 659.25 : 523.25 });
+          if (healed) this.effects.splat(o.x, 1.8, o.z, 'licht', 6, 0.6);
+        },
+        onGust: (t, o) => {
+          this.sound.play('windstoss', { x: o.x, z: o.z });
+          this.effects.leaves(o.x - 0.8, o.z, 1.6, 10);
+        },
+        onSwarm: (t, o) => this.sound.play('summen', { x: o.x, z: o.z }),
       }
     );
+    // Fallen auf den Wegen (M19)
+    this.traps = new TrapSystem({
+      world: this.world,
+      horde: this.horde,
+      towers: this.towers,
+      effects: this.effects,
+      sound: this.sound,
+      callbacks: {
+        onTrap: (kind, b) => this.hud.popWord(b.i + 0.5, 1.2, b.j + 0.5, T.fallen[kind], kind === 'flammen' ? hexToCss(0xf4a64c) : hexToCss(0xfde08e)),
+        onTrapSpent: (b) => {
+          if (this.nights.active) this.state.night.spent = (this.state.night.spent || 0) + 1;
+          this.state.world.buildings = this.world.buildings.toState();
+        },
+      },
+    });
     this.loot = new Loot(this.scene, rng);
     this.nights = new Nights(this);
     this.combat = new Combat(this);
@@ -892,6 +924,15 @@ export class Game {
     }
     if (recipe.gives.inventory) gain(st.inventory, recipe.gives.inventory);
     const gives = recipe.gives.inventory ? Object.entries(recipe.gives.inventory)[0] : null;
+    if (recipe.gives.blueprint) {
+      // Bauplan von Balduin (M19): drei zur Wahl, sobald das Handelsfenster zu ist
+      this.trader.sold(recipe);
+      this.offerBlueprint('balduin');
+      this.hud.toast(T.bauplaene.wartet, 'bauplan', 3);
+      this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
     if (recipe.gives.part) {
       // Besonderes Turmteil von Balduin (M10): kommt in den Vorrat, eingebaut wird über die Turm-Auswahl
       const id = recipe.gives.part;
@@ -1070,6 +1111,9 @@ export class Game {
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
     const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    // M19: was die Mühlen gemahlen haben, und ob ein Bauplan wartet
+    if (this.milled) extra.push({ text: T.muehle.gemahlen(this.milled) });
+    if (st.blueprintChoice) extra.push({ text: T.bauplaene.bericht });
     if (st.report) st.report.extra = extra;
     else for (const line of extra) this.hud.toast(line.text, null, 4);
     this.placeInside(w);
@@ -1082,7 +1126,50 @@ export class Game {
   onNewDay() {
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
+    this.milled = this.grindMills(); // M19
     this.events.emit('newDay', this.state.time.day);
+  }
+
+  /** Mühlen (M19): Jedes Windrad mit Richtung Mühle hat über Tag Schrott gemahlen. */
+  grindMills() {
+    let n = 0;
+    for (const b of this.world.buildings.towers) if (b.type === 'windrad' && b.hp > 0) n += towerStatsOf(b).grind || 0;
+    if (n > 0) gain(this.state.inventory, { schrott: n });
+    return n;
+  }
+
+  /**
+   * Einen Bauplan zur Wahl stellen (M19): nach einer gewonnenen Nacht, im Wrack,
+   * bei Balduin. Wartet schon eine Wahl, kommt diese danach (`extra`). Gibt
+   * false zurück, wenn es keine neuen Baupläne mehr gibt.
+   */
+  offerBlueprint(from) {
+    const st = this.state;
+    if (st.blueprintChoice) {
+      st.blueprintChoice.extra = (st.blueprintChoice.extra || 0) + 1;
+      return true;
+    }
+    const won = st.stats.nightsWon || 0;
+    const options = blueprintOptions(st.blueprints, won, blueprintSeed(st.world.mapSeed, won, st.blueprints.length + (from === 'nacht' ? 0 : 40)));
+    if (!options.length) return false;
+    st.blueprintChoice = { options, from };
+    return true;
+  }
+
+  /** Bauplan gewählt (M19): ab jetzt in der Bauleiste – der Reiter springt gleich dorthin. */
+  chooseBlueprint(id) {
+    const st = this.state;
+    const bc = st.blueprintChoice;
+    if (!bc || !bc.options.includes(id) || !BLUEPRINTS[id]) return false;
+    st.blueprints.push(id);
+    st.blueprintChoice = null;
+    if (bc.extra > 0 && this.offerBlueprint(bc.from) && st.blueprintChoice) st.blueprintChoice.extra = bc.extra - 1;
+    const tab = BUILDINGS[id].trap ? 'fallen' : this.builder.knownTowers().indexOf(id) >= 5 ? 'tuerme2' : 'tuerme';
+    this.buildbar.tabId = tab;
+    this.hud.toast(T.bauplaene.gewaehlt(T.bauten[id], T.bauleiste.reiter[tab]), BUILDINGS[id].icon, 4.5);
+    this.sound.play('glocke');
+    this.quietSave();
+    return true;
   }
 
   showReport() {
@@ -1344,6 +1431,22 @@ export class Game {
     this.hud.toast(T.lager.umgeworfen(b.type), BUILDINGS[b.type].icon, 3.5);
     if (this.nights.active) (this.state.night.raided ||= []).push(b.type);
     this.state.world.buildings = this.world.buildings.toState();
+  }
+
+  /**
+   * Die Vogelscheuche wird geschlagen (M19): Stroh fliegt, der Kopf wackelt; bei
+   * null Haltbarkeit fällt sie um (lockt nicht mehr, bis Mika sie flickt).
+   */
+  onLureHit(b, dmg, z) {
+    if (b.hp <= 0) return;
+    b.hp = Math.max(0, b.hp - dmg * (z?.def.smash || 1));
+    b.shake = 1;
+    const c = this.world.buildings.bounds(b);
+    this.effects.splat(c.x, 1.1, c.z, 'stroh', 4, 0.5);
+    if (b.hp > 0) return;
+    this.effects.dust(c.x, c.z, 1, 18);
+    this.sound.play('abriss', { x: c.x, z: c.z, volume: 0.6 });
+    this.hud.toast(T.lager.umgeworfen('vogelscheuche'), 'vogelscheuche', 3);
   }
 
   /** Ein Schlurfer ist hinter Wall und Tor (M17d): mitzählen; ohne Durchbruch-Banner einmal warnen. */
@@ -1699,13 +1802,14 @@ export class Game {
       case 'perk': {
         const chosen = this.perkChoice.update(input, dt);
         const kind = this.perkChoice.kind;
-        if (chosen && (kind === 'perk' ? this.combat.choosePerk(chosen) : this.skills.choose(chosen))) {
+        const ok = chosen && (kind === 'perk' ? this.combat.choosePerk(chosen) : kind === 'bauplan' ? this.chooseBlueprint(chosen) : this.skills.choose(chosen));
+        if (ok) {
           this.perkChoice.close();
           this.mode = 'play';
           this.useLockUntil = this.clock + 0.35; // m16-r1: ein schnelles E danach öffnete den Wegweiser
           if (kind === 'perk') this.hud.toast(T.perks.gewaehlt(T.perks[chosen][0]), PERKS[chosen].icon, 2.4);
           else if (kind === 'lernen') this.hud.toast(T.faehigkeiten.gelernt(T.faehigkeiten[chosen][0]), SKILLS[chosen].icon, 3.2);
-          else this.hud.toast(T.faehigkeiten.geschaerft(T.faehigkeiten[chosen][0], this.skills.rankOf(chosen)), SKILLS[chosen].icon, 2.8);
+          else if (kind === 'schaerfen') this.hud.toast(T.faehigkeiten.geschaerft(T.faehigkeiten[chosen][0], this.skills.rankOf(chosen)), SKILLS[chosen].icon, 2.8);
           this.sound.play('glocke');
           this.quietSave();
         }
@@ -1852,7 +1956,9 @@ export class Game {
     // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an) – nicht mitten im
     // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
     // Nachts erst, wenn keine Welle mehr unterwegs ist (m12-r1: die Wahl ging mitten in Welle 3 auf)
-    if ((this.state.perkChoice || this.state.skillChoice) && !this.perkChoice.isOpen) {
+    // Bauplan (M19): erst, wenn der Morgenbericht gelesen ist, und nie in der Nacht
+    const bc = this.state.blueprintChoice && !this.state.report && !this.nights.active ? this.state.blueprintChoice : null;
+    if ((this.state.perkChoice || this.state.skillChoice || bc) && !this.perkChoice.isOpen) {
       // m16-r1: Nachts wurde es nie »ruhig« (die Wellen überlappen) – jetzt genügt es,
       // dass keine Horde in der Nähe ist (nachts etwas weiter weg als am Tag)
       const busy = this.inFight(this.nights.active ? NIGHT_CALM_NEAR : PERK_NEAR);
@@ -1860,13 +1966,14 @@ export class Game {
       if (this.perkCalm >= PERK_CALM) {
         this.perkCalm = 0;
         // Der Reihe nach wie die Stufen: der Perk von Stufe 2 vor der Fähigkeit von
-        // Stufe 3; auf derselben Stufe kommt die Fähigkeit (M16) zuerst
+        // Stufe 3; auf derselben Stufe kommt die Fähigkeit (M16) zuerst – Baupläne danach
         const sc = this.state.skillChoice;
         const pc = this.state.perkChoice;
         const perkAt = this.combat.perksTaken + 2;
         const skillAt = this.skills.choiceLevel;
         if (sc && (!pc || skillAt <= perkAt)) this.perkChoice.open(sc.options, Math.min(skillAt, this.state.player.level), sc.mode);
-        else this.perkChoice.open(pc, Math.min(perkAt, this.state.player.level));
+        else if (pc) this.perkChoice.open(pc, Math.min(perkAt, this.state.player.level));
+        else this.perkChoice.open(bc.options, 0, 'bauplan', bc.from);
         this.mode = 'perk';
         return;
       }
@@ -1884,6 +1991,7 @@ export class Game {
       burnFactor: this.world.weather.kind === 'regen' ? WEATHER_EFFECTS.regen.burn : 1,
     });
     this.towers.update(dt);
+    this.traps.update(dt); // Fallen (M19)
     this.combat.update(dt);
     this.skills.update(dt);
     this.updateCamp(dt);
@@ -1938,6 +2046,7 @@ export class Game {
       this.hud.toast(T.meldungen.neuerTag(time.day));
       this.hud.toast(this.weatherLine(time.day), null, 4); // M12
       this.onNewDay();
+      if (this.milled) this.hud.toast(T.muehle.gemahlen(this.milled), 'windrad', 4); // M19
       // Wach geblieben: Der Morgenbericht kommt trotzdem (m12-r1: er kam nur nach dem Schlafen)
       if (this.state.report && this.mode === 'play') this.showReport();
     }
@@ -2578,6 +2687,27 @@ export class Game {
       // M16: Fähigkeiten abfragen, nutzen, lernen; Abklingzeit stellen
       skills: () => ({ slots: [...game.state.skills.slots], ranks: { ...game.state.skills.ranks }, cool: [...game.skills.cool], used: { ...game.skills.used }, choice: game.state.skillChoice ? JSON.parse(JSON.stringify(game.state.skillChoice)) : null, lure: game.skills.lure ? { ...game.skills.lure } : null }),
       useSkill: (k) => game.skills.use(k),
+      // M19: Baupläne, Fallen, Schwärme, Vogelscheuche, Mühle
+      blueprints: () => ({ known: [...game.state.blueprints], choice: game.state.blueprintChoice ? JSON.parse(JSON.stringify(game.state.blueprintChoice)) : null, tabs: game.builder.tabs(), open: game.perkChoice.isOpen && game.perkChoice.kind === 'bauplan' }),
+      giveBlueprint(id) {
+        if (!BLUEPRINTS[id] || game.state.blueprints.includes(id)) return false;
+        game.state.blueprints.push(id);
+        return true;
+      },
+      offerBlueprint: (from = 'nacht') => game.offerBlueprint(from),
+      chooseBlueprint(id) {
+        const ok = game.chooseBlueprint(id);
+        if (ok && game.perkChoice.isOpen && game.perkChoice.kind === 'bauplan') {
+          game.perkChoice.close();
+          game.mode = 'play';
+        }
+        return ok;
+      },
+      traps: () => ({ list: game.world.buildings.list.filter((b) => BUILDINGS[b.type].trap).map((b) => ({ id: b.id, type: b.type, i: b.i, j: b.j, hp: +b.hp.toFixed(1), broken: Boolean(b.broken) })), stats: { ...game.traps.stats } }),
+      swarms: () => game.towers.swarms.map((sw) => ({ tower: sw.tower, target: sw.target ? sw.target.id : null, x: +sw.x.toFixed(2), z: +sw.z.toFixed(2) })),
+      lured: () => game.horde.list.filter((q) => q.state === 'raid' && q.lureBy).map((q) => ({ id: q.id, by: q.lureBy, x: +q.x.toFixed(2), z: +q.z.toFixed(2) })),
+      grindMills: () => game.grindMills(),
+      bells: () => ({ ...game.bellStats }),
       // M18: Zustände und Reaktionen, Wörter über den Köpfen, Notizbuch, Wetter an Türmen
       statuses: () =>
         game.horde.list

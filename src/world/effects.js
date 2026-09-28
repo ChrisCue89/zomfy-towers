@@ -22,6 +22,13 @@ const SPLAT = {
   moos: [c(P.g5), c(P.g6), c(P.t4), c(P.a1)],
   funken: [c(P.f7), c(P.f8), c(P.s8)],
   licht: [c(0xfff6d8), c(P.f8), c(P.f7), c(P.a4)], // Laternenblitz, Anfeuern (M16)
+  // M19: Honig (Bienenkorb, Leimtopf), Stroh (Vogelscheuche), Federn (Krähenscheuche), Kletten, Papier (Knallerbsen), Öl
+  honig: [c(P.f6), c(P.f5), c(P.f7)],
+  stroh: [c(P.e7), c(P.e8), c(P.f6), c(P.e6)],
+  federn: [c(P.n1), c(P.n2), c(P.s2)],
+  kletten: [c(P.g3), c(P.e3), c(P.g2)],
+  papier: [c(P.r3), c(P.a4), c(P.r4), c(P.f7)],
+  oel: [c(P.n1), c(P.n2), c(P.a5)],
 };
 
 export class Effects {

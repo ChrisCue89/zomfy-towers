@@ -212,7 +212,10 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       campModels (Wall und Tor je Stufe, Schlupftür,
                       Zubehör: Dornen, Laterne, Pechkessel, Glocke, M17),
                       towerModels (Türme je
-                      Stufe/Spezialisierung), buildPreview (Geistermodell,
+                      Stufe/Spezialisierung), familyModels (Glockenturm,
+                      Windrad, Bienenkorb, Vogelscheuche aus Formen, M19),
+                      trapModels (Fallen ganz und verbraucht, M19),
+                      buildPreview (Geistermodell,
                       Felder), lightPools (Lichtinseln), pathing
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Wohnraum des Innenraums),
@@ -223,7 +226,9 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       für Menschen: Kopf, Rumpf, Glieder mit Knie/Ellbogen,
                       Vorderkarten, N1), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels, towers
-                      (Zielen, Geschosse, Auren, Feuer), loot (Brocken,
+                      (Zielen, Geschosse, Auren, Feuer, Glocke, Windstoß,
+                      Bienenschwärme, Vogelscheuche), traps (Fallen auf den
+                      Wegen, M19), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
                       Laufen, Winken, Bellen, Lächeln), survivorModels (auch
                       Balduin), dogModel, traderModels (Balduins Boot),
@@ -241,6 +246,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       (Figur-Aufwertungen), weapons (Waffenwerte je Stufe),
                       perks (Erfahrungskurve, Perks und ihre Wirkung),
                       reactions (Zustände, Reaktionen, Wetter-Wirkung, M18),
+                      blueprints (Baupläne: Vorrat, Gewichte, Wahl, M19),
+                      traps (Werte der Fallen, M19),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
@@ -354,6 +361,16 @@ Grundprinzipien:
   `hud.popWord`, Klang, Notizbuch `state.notes`); dieselbe Reaktion je
   Schlurfer nur alle paar Sekunden. Regen (`ctx.wet`, `ctx.burnFactor`) und
   Nebel/Wind (`towers.weatherRange`) wirken über das Wetter der Welt.
+- **Baupläne und Fallen (M19):** `state.blueprints` (gewählte Bauarten) und
+  `state.blueprintChoice` ({ options, from, extra }); `knowsBuilding` sagt,
+  was die Bauleiste zeigt. `game.offerBlueprint(from)` stellt eine Wahl,
+  `game.chooseBlueprint(id)` nimmt sie; die Karten öffnen sich in der Ruhe-
+  Schlange der Perk-Wahl (Art `bauplan`), nie bei offenem Bericht oder in der
+  Nacht. Fallen (`trap: true`) stehen auf Wegfeldern, haben eine abgeschaltete
+  Kollision (`setBlocking` lässt sie aus) und zählen im Flussfeld als frei
+  (`pathing.freeCell`); `entities/traps.js` prüft je Bild, wer auf welcher
+  Falle steht. Die Vogelscheuche nutzt den Raid-Zustand der Horde mit
+  `lureBy` (Schläge über `onLureHit`), gelockt wird nur, wer auf dem Weg läuft.
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -500,7 +517,15 @@ Grundprinzipien:
    Blitz hell; Zähe Natur je Schlag, Turm-Erfahrung ein Viertel je
    Schadenspunkt, »Kein Turm reicht hierher«; dazu im Titelbild ein Enter
    gleich nach »Neues Spiel«, das noch nicht startet, und die Spitzhacke
-   ohne Stein (Bild: bereit).
+   ohne Stein (Bild: bereit); ab M19 (Abschnitt
+   `spielzeug`): Bauplan nach gewonnener Nacht erst nach dem Morgenbericht,
+   Taste 1 wählt; Reiter »Türme 2« und »Fallen« (Tab); Glocke betäubt,
+   Friedensglocke flickt, Windrad schiebt zurück, Bienen stechen Brummer,
+   Vogelscheuche lockt, fällt um und steht nach dem Flicken wieder; fünf
+   Fallen auf dem Weg (sperren nie, nur auf Wegfeldern), Knallerbsen und
+   Ölspur danach verbraucht, neu richten; Mühle; Balduins Bauplan an
+   ungeraden Tagen; Speichern v14 und Migration v13 → v14 (Bilder: bauplan,
+   spielzeug, fallen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -578,7 +603,12 @@ Zubehör an, `raidHit(id, n)` trifft einen Bau im Lager; ab M18 nennt
 `statuses()` je Schlurfer die Zustände, `applyStatus(id, art, s)` setzt einen,
 `notes()` zeigt das Notizbuch, `words()` die Worte über den Köpfen,
 `towerReach(id)` die Reichweite eines Turms bei diesem Wetter und
-`stickies()` die klebrigen Flächen.
+`stickies()` die klebrigen Flächen; ab M19 zeigt `blueprints()` bekannte
+Pläne, offene Wahl und Reiter, `giveBlueprint(id)` schaltet einen frei,
+`offerBlueprint(von)`/`chooseBlueprint(id)` stellen und nehmen eine Wahl,
+`traps()` nennt Fallen samt Zählern, `swarms()` die Bienenschwärme,
+`lured()` die Gelockten, `bells()` Glockenschläge und Geflicktes,
+`grindMills()` lässt die Mühlen mahlen.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
