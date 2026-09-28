@@ -209,7 +209,7 @@ das Werkzeug weggesteckt, das Wrack ist ein erkennbarer Bootsrumpf, das
 Tageslicht wechselt über den Tag, Mikas Durchsicht ist nur noch halb
 gerastert; der Zeiger trifft in dichten Barrikadenreihen die richtige
 Barrikade, E neben dem Sessel öffnet die Werkbank, die Randmarken-Zahl heißt
-»Stück«.
+»Stück«, und an der Reifenschaukel schaukelt Mika wirklich.
 
 ## Offen
 

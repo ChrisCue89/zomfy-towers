@@ -79,6 +79,8 @@ const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es i
 const LOOT_PITCH = { schrott: 700, teile: 560, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
 // Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
 const PERK_NEAR = 6;
+/** Reifenschaukel (m12-r1): so lange, so schnell und so weit schwingt sie. */
+const SWING = { duration: 4.2, period: 1.7, amp: 0.42 };
 const PERK_CALM = 0.8; // so lange (s) muss es ruhig sein
 const DAY_FLOOR = 0.75; // so weit nagen Streuner das Zuhause tagsüber höchstens herunter
 const FRESH_KEY = 'zomfy-towers.neues-spiel';
@@ -171,6 +173,7 @@ export class Game {
     this.rig.limits = TERRAIN_AREA;
     this.viewInside = false; // drinnen: eigenes Bild im doppelten Maßstab (M11)
     this.passage = null; // gerade durch die Haustür unterwegs
+    this.ride = null; // gerade auf der Reifenschaukel
 
     this.hud = new Hud(this);
     this.dialog = new DialogBox(this);
@@ -663,6 +666,7 @@ export class Game {
     if (it.action === 'sleep') this.requestSleep();
     else if (it.action === 'takeAxe') this.takeAxe();
     else if (it.action === 'enterHouse') this.startPassage('innen');
+    else if (it.action === 'swing') this.startSwing();
     else if (it.use === 'werkbank') this.openCrafting();
     else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ernten') this.harvest(it.building);
@@ -671,6 +675,54 @@ export class Game {
     else if (it.npc) this.survivors.talk(it.npc);
     else if (this.gathering.interact(it)) return;
     else if (it.dialog) this.startDialog(it.dialog);
+  }
+
+  /** Auf die Reifenschaukel: ein paar Schwünge, Mika steht auf dem Reifen (m12-r1). */
+  startSwing() {
+    if (this.ride || !this.world.props.swing) return;
+    this.ride = { t: 0 };
+    this.player.action = null;
+    this.player.express('froh', SWING.duration);
+    this.hud.say(T.schaukel.los, 2.4);
+  }
+
+  updateRide(dt, input) {
+    const r = this.ride;
+    const sw = this.world.props.swing;
+    // Woanders hingesetzt (Ohnmacht, Neuladen, Prüfung): Die Schaukel lässt sie los
+    const pp = this.player.position;
+    if (r.last && Math.hypot(pp.x - r.last.x, pp.z - r.last.z) > 0.8) {
+      sw.pivot.rotation.z = 0;
+      this.player.riding = null;
+      this.ride = null;
+      return;
+    }
+    r.t += dt;
+    // Loslaufen (nach dem ersten Schwung) oder ausgeschaukelt: absteigen
+    const m = input.moveVector();
+    if (r.t >= SWING.duration || (r.t > 0.6 && Math.hypot(m.x, m.z) > 0.1)) {
+      this.endRide();
+      return;
+    }
+    const swell = Math.min(1, r.t / 0.9) * Math.min(1, (SWING.duration - r.t) / 1.2);
+    const angle = Math.sin((r.t / SWING.period) * Math.PI * 2) * SWING.amp * swell;
+    sw.pivot.rotation.z = angle;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    const pv = sw.pivot.position;
+    this.player.ride(dt, pv.x + sw.seat.x * c - sw.seat.y * s, pv.y + sw.seat.x * s + sw.seat.y * c, pv.z + sw.seat.z, angle);
+    r.last = r.last || { x: 0, z: 0 };
+    r.last.x = pp.x;
+    r.last.z = pp.z;
+  }
+
+  endRide() {
+    const sw = this.world.props.swing;
+    sw.pivot.rotation.z = 0;
+    this.player.riding = null;
+    this.player.place(sw.stand.x, sw.stand.z, 0);
+    this.ride = null;
+    this.hud.say(T.schaukel.danach, 3.2);
   }
 
   /** Küche (M11): einmal am Tag Suppe – volle Lebenspunkte und mehr davon bis zum Morgen. */
@@ -1378,6 +1430,8 @@ export class Game {
     if (this.passage) {
       this.updatePassage(dt);
       this.player.idle(dt);
+    } else if (this.ride) {
+      this.updateRide(dt, input);
     } else {
       this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
       const through = this.world.passageAt(this.player.position.x, this.player.position.z);
@@ -1451,7 +1505,7 @@ export class Game {
 
     // Beim Platzieren setzt E den Bau – dann keine Interaktion.
     let it = null;
-    if (!this.builder.placement && !this.player.busy && !this.passage) {
+    if (!this.builder.placement && !this.player.busy && !this.passage && !this.ride) {
       // Etwas Spielraum: Wo die Einblendung steht, wirkt auch E (und umgekehrt)
       it = this.world.findInteraction(p.x, p.z, this.player.facing, 0.4);
       // Gesperrt bis zum Weggehen (Bett nach dem Aufwachen) oder kurz nach einem Dialog

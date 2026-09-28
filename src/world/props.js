@@ -9,7 +9,7 @@ import { hash3, Rng } from '../core/rng.js';
 import { LAYOUT, V } from './layout.js';
 import { buildDeciduous } from './nature.js';
 import { BAY } from './map.js';
-import { createStaticVoxelObject } from '../render/staticMesh.js';
+import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 
 // --- Bausteine ----------------------------------------------------------------
 
@@ -490,9 +490,14 @@ function buildTorchFlame() {
 
 function buildOakWithSwing(seed) {
   const m = buildDeciduous(seed, 1.3);
-  // Starker Ast nach Osten
+  // Starker Ast nach Osten – die Schaukel hängt als eigenes Teil daran (buildSwingTire)
   m.line(1, 16, 0, 12, 21, 0, P.e2, 1);
-  // Seile und Reifen
+  return m;
+}
+
+/** Seile und Reifen der Schaukel, in denselben Koordinaten wie die Eiche (Aufhängung bei 10, 20, 0). */
+function buildSwingTire() {
+  const m = new VoxelModel();
   m.box(10, 7, -1, 10, 20, -1, P.e8);
   m.box(10, 7, 1, 10, 20, 1, P.e8);
   for (let a = 0; a < 24; a++) {
@@ -821,7 +826,25 @@ export function createProps({ seed, materials, colliders, map }) {
   add(buildOakWithSwing(seed + 16), oak.x, oak.z, { occluder: true, name: 'Eiche' });
   colliders.addCircle(oak.x, oak.z, 0.45);
   colliders.addCircle(oak.x + 1.3, oak.z, 0.3);
-  interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', dialog: 'schaukel', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
+  interactions.push({ id: 'schaukel', x: oak.x + 1.3, z: oak.z + 0.4, radius: 1.2, prompt: 'schaukeln', action: 'swing', flavor: true }); // tritt wie Nur-Anschauen zurück (m7-r1)
+  // Die Schaukel schwingt um ihre Aufhängung am Ast (m12-r1: Kira – »Wiiiiieee!«, aber
+  // Mika stand nur daneben). Alle Flächen, weil sie sich dreht; Schatten mit.
+  const tireModel = buildSwingTire();
+  const swingPivot = new THREE.Group();
+  swingPivot.name = 'Schaukel';
+  swingPivot.position.set(oak.x + 10 * V, 20 * V, oak.z);
+  const tire = new THREE.Mesh(tireModel.toGeometry({ seed }), materials.world);
+  tire.receiveShadow = true;
+  const tireShadow = new THREE.Mesh(shadowGeometry(tireModel), SHADOW_PROXY_MATERIAL);
+  tireShadow.castShadow = true;
+  tireShadow.layers.set(SHADOW_LAYER);
+  for (const o of [tire, tireShadow]) {
+    o.position.set(-10 * V, -20 * V, 0);
+    swingPivot.add(o);
+  }
+  group.add(swingPivot);
+  // Mika steht auf dem unteren Rand des Reifens (von der Aufhängung aus gesehen)
+  const swing = { pivot: swingPivot, seat: { x: 0, y: -16.6 * V, z: 0.12 }, stand: { x: oak.x + 1.3, z: oak.z + 0.85 } };
 
   // --- Herbst (M12): Kürbisse, Kürbislaternen, Laubhaufen, Treibholz ---
   const fine = (model, x, z, name, material = materials.world, shadow = 'full') => {
@@ -871,6 +894,7 @@ export function createProps({ seed, materials, colliders, map }) {
   ];
 
   return {
+    swing,
     lanterns,
     leafPiles,
     reserved,

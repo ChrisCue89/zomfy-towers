@@ -406,11 +406,6 @@ export const DIALOGE = {
 
   beet: [{ s: 'mika', t: 'Ein verwildertes Beet voller Kürbisse. Jemand hat hier mal gegärtnert – und die Kürbisse haben einfach weitergemacht.' }],
 
-  schaukel: [
-    { s: 'mika', t: 'Wiiiiieee!' },
-    { s: 'mika', t: '…Ich bin erwachsen. Aber es guckt ja keiner.' },
-  ],
-
   morgen: (state) => [
     {
       s: 'mika',

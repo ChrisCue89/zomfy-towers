@@ -2640,6 +2640,30 @@ async function runFixChecks(browser, url) {
   if (raeume.length === 4 && raeume.every((r) => r.rest < 0.6)) note(`✓ Drinnen: Alle Räume sind zu Fuß erreichbar (${raeume.map((r) => r.weg).join(', ')})`);
   else fail(`Räume zu Fuß: ${JSON.stringify(raeume)}`);
 
+  // Reifenschaukel (Kira): E, und Mika schaukelt wirklich – danach steht sie wieder davor
+  await step(100);
+  await z(() => window.zomfy.finishDialog()); // »Eine richtige Werkbank!« vom Punkt davor
+  await step(400);
+  await z(() => {
+    const i = window.zomfy.game.world.interactions.find((q) => q.id === 'schaukel');
+    window.zomfy.teleport(i.x, i.z + 0.3, Math.PI);
+  });
+  await step(300);
+  const schaukelHinweis = (await view()).hinweis;
+  await page.keyboard.press('KeyE');
+  let hoch = 0;
+  let weite = 0;
+  for (let k = 0; k < 8; k++) {
+    await step(250);
+    const r = await z(() => ({ y: window.zomfy.game.player.position.y, rot: Math.abs(window.zomfy.game.world.props.swing.pivot.rotation.z) }));
+    hoch = Math.max(hoch, r.y);
+    weite = Math.max(weite, r.rot);
+  }
+  await step(3000);
+  const nachher = await z(() => ({ ride: Boolean(window.zomfy.game.ride), y: window.zomfy.game.player.position.y, gedanke: window.zomfyView().gedanke || '' }));
+  if (schaukelHinweis === 'Schaukeln' && hoch > 0.3 && weite > 0.25 && !nachher.ride && nachher.y < 0.1 && /erwachsen/.test(nachher.gedanke)) note(`✓ Schaukel: E, Mika schaukelt (bis ${weite.toFixed(2)} rad, ${hoch.toFixed(2)} m hoch) und steht danach wieder davor`);
+  else fail(`Schaukel: ${JSON.stringify({ schaukelHinweis, hoch, weite, nachher })}`);
+
   checkMessages(session);
   await session.context.close();
 }

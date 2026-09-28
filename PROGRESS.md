@@ -36,6 +36,11 @@ Was die Testrunde als Feinschliff fand und ohne Balance zu lösen war:
   Palette hat keine goldenen Mitteltöne (offen, siehe OFFENE-FRAGEN 110).
 - **Durchsicht:** Mikas gelbe Durchsicht ist nur noch halb gerastert – dicht
   verschmolz sie mit Schlurfern und Stühlen davor (Mira, Kira).
+- **Reifenschaukel (Kira):** Mika schaukelt wirklich – sie steht im Reifen,
+  hält sich an den Seilen fest und schwingt ein paar Sekunden mit (die
+  Schaukel ist ein eigenes, drehbares Teil am Ast). »Wiiiiieee!« und
+  »…Ich bin erwachsen« sind jetzt Gedanken statt eines Dialogs; wer
+  losläuft, steigt ab.
 - **Bedienung (Theo):** In einer dichten Barrikadenreihe wählt der Zeiger die
   Barrikade darunter, nicht mehr die Nachbarin davor (die Kästen überdecken
   sich stark – nachgestellt: vorher traf jeder Klick die südliche). Breite

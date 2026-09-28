@@ -32,6 +32,7 @@ export class Player {
     this.world = world;
     this.config = config;
     this.climbing = false; // klettert gerade über eine eigene Barrikade (m12-r1)
+    this.riding = null; // Neigung, solange Mika auf der Reifenschaukel steht (m12-r1)
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
@@ -363,6 +364,16 @@ export class Player {
     const carry = shownTool && !(a && (a.kind === 'swing' || a.kind === 'search')) ? -1.0 : 0;
     p.hand.rotation.x = damp(p.hand.rotation.x, carry, 14, dt);
 
+    // Auf der Schaukel: Hände an den Seilen, Beine gerade, kein Werkzeug in der Hand
+    if (this.riding !== null) {
+      p.legL.rotation.x = 0;
+      p.legR.rotation.x = 0;
+      p.body.rotation.x = 0;
+      p.armR.rotation.x = -2.8;
+      p.armR.rotation.z = -0.18;
+      for (const mesh of Object.values(this.character.tools)) mesh.visible = false;
+    }
+
     // Linker Arm: Laterne oder Schwingen
     const lantern = this.character.lantern;
     lantern.group.visible = this.holdingLantern;
@@ -379,11 +390,28 @@ export class Player {
       p.armL.rotation.x = -s * 0.6 * amt;
       p.armL.rotation.z = -0.05 - Math.sin(this.time * 2.1) * 0.03 * idle;
     }
+    if (this.riding !== null && !this.holdingLantern) {
+      p.armL.rotation.x = -2.8;
+      p.armL.rotation.z = 0.18;
+    }
   }
 
   syncObject() {
     this.object.position.copy(this.position);
     this.object.rotation.y = this.facing;
+    this.object.rotation.z = this.riding ?? 0; // auf der Schaukel neigt sie sich mit
+  }
+
+  /** Auf der Reifenschaukel: Stelle und Neigung kommen von der Schaukel. */
+  ride(dt, x, y, z, tilt) {
+    this.time += dt;
+    this.position.set(x, y, z);
+    this.velocity.set(0, 0, 0);
+    this.facing = 0;
+    this.riding = tilt;
+    this.moveAmount = 0;
+    this.animate(dt);
+    this.syncObject();
   }
 
   /** Weltposition des Laternenglases (für das Licht). */

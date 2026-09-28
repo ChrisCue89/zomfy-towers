@@ -278,6 +278,11 @@ export const T = {
       nebel: ['Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.', 'Man sieht kaum den Steg. Der Nebel schluckt jedes Geräusch.', 'Nebel wie Watte – die Inseln sind verschwunden.'],
     },
   },
+  // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
+  schaukel: {
+    los: 'Wiiiiieee!',
+    danach: '…Ich bin erwachsen. Aber es guckt ja keiner.',
+  },
   aktionen: {
     schlafen: 'Schlafen',
     radio: 'Radio hören',
