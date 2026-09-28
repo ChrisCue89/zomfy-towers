@@ -278,6 +278,17 @@ export const T = {
       nebel: ['Dichter Nebel liegt über dem See. Er hebt sich erst gegen Mittag.', 'Man sieht kaum den Steg. Der Nebel schluckt jedes Geräusch.', 'Nebel wie Watte – die Inseln sind verschwunden.'],
     },
   },
+  // Vorgeschichte in der Welt (M15): Gedanken als Sprechblase, nie als Dialog
+  geschichte: {
+    // Läuft Mika gegen den Wald: einmal am Tag ein Gedanke, je Tag ein anderer
+    waldrand: [
+      'Dahinter beginnt der Moder – weich wie Moos, zäh wie Leim. Ich bleibe lieber auf festem Boden.',
+      'Da rein? Nie im Leben. Wer dort einsinkt, kommt als Schlurfer wieder raus.',
+      'Das Laub sieht harmlos aus. Aber darunter zieht sich das Geflecht bis zu den Knien.',
+      'Nur auf den alten Wegen ist der Boden fest. Deshalb kommen sie ja auch darüber.',
+    ],
+    warnpfahl: 'Ein rotes Kreuz und eine alte Laterne. Jemand vor mir hat markiert, wo sie aus dem Wald kommen.',
+  },
   // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
   schaukel: {
     los: 'Wiiiiieee!',
@@ -389,6 +400,7 @@ export const T = {
       '„Finger gegen Zahnräder – ehrlicher geht Handel nicht.“',
       '„Psst. Wenn jemand fragt: Ich war nie hier.“',
       '„Meine Sammlung ist fast komplett. Fast!“',
+      '„Auf den Inseln wächst kein Moder. Zu viel Wind, zu viel Fels, zu viel Balduin!“', // M15
     ],
   },
   auftraege: {

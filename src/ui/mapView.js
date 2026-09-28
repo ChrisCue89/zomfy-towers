@@ -114,14 +114,39 @@ export class MapView {
   /** @param {import('./ui.js').UICanvas} ui */
   draw(ui) {
     if (!this.isOpen || !this.base) return;
-    const g = this.game;
     const { x: ox, y: oy } = this.layout(ui);
-    const at = (wx, wz) => ({ x: Math.round(ox + (wx - MAP.x0) * PX), y: Math.round(oy + (wz - MAP.z0) * PX) });
     ui.ditherFill(0.55, COLORS.night);
     ui.panel(ox - 8, oy - 22, W + 16, H + 22 + LINE_HEIGHT + 12);
     ui.textCentered(T.karte.titel, ox + W / 2, oy - 17, COLORS.gold, { outline: COLORS.outline });
-    ui.ctx.drawImage(this.base, ox, oy);
-    ui.frame(ox - 1, oy - 1, W + 2, H + 2, COLORS.outline);
+    this.drawMap(ui, ox, oy);
+    ui.textCentered(T.karte.schliessen, ox + W / 2, oy + H + 6, COLORS.textDim);
+  }
+
+  /**
+   * Die Karte als Bild in der Einleitung (M15): alle Wege auf einen Blick, über
+   * dem Dialogfenster, ohne das Bild dahinter abzudunkeln.
+   * @param {import('./ui.js').UICanvas} ui
+   * @param {number} bottom Unterkante (Oberkante des Dialogs)
+   */
+  drawInset(ui, bottom) {
+    if (!this.base) this.base = this.paintBase();
+    this.t = this.game.clock; // Mika blinkt im Takt der Spielzeit
+    // Auf niedrigen Oberflächen (z. B. 300 Zeilen) halb so groß, damit sie über den Dialog passt
+    const k = bottom - 24 >= H ? 1 : 0.5;
+    const ox = Math.round((ui.width - W * k) / 2);
+    const oy = Math.max(18, bottom - H * k - 6);
+    ui.panel(ox - 6, oy - 17, W * k + 12, H * k + 23);
+    ui.textCentered(T.karte.titel, ox + (W * k) / 2, oy - 13, COLORS.gold, { outline: COLORS.outline });
+    this.drawMap(ui, ox, oy, k);
+  }
+
+  /** Karte mit Spawns, Überresten, Bauten, Schlurfern, Mika und dem Zuhause (k: Maßstab). */
+  drawMap(ui, ox, oy, k = 1) {
+    const g = this.game;
+    const px = PX * k;
+    const at = (wx, wz) => ({ x: Math.round(ox + (wx - MAP.x0) * px), y: Math.round(oy + (wz - MAP.z0) * px) });
+    ui.ctx.drawImage(this.base, ox, oy, W * k, H * k);
+    ui.frame(ox - 1, oy - 1, W * k + 2, H * k + 2, COLORS.outline);
 
     // Spawns: roter Pfeil am linken Rand mit Namen des Wegs
     const map = g.world.map;
@@ -142,8 +167,8 @@ export class MapView {
     for (const b of g.world.buildings.list) {
       const c = g.world.buildings.bounds(b);
       const p = at(b.i, b.j);
-      const w = Math.max(2, c.w * PX);
-      const h = Math.max(2, c.d * PX);
+      const w = Math.max(2, c.w * px);
+      const h = Math.max(2, c.d * px);
       const def = BUILDINGS[b.type];
       const color = def.tower ? COLORS.gold : b.type === 'barrikade' ? (b.broken ? COLORS.buildBad : hexToCss(b.level >= 3 ? P.s7 : P.e7)) : COLORS.textDim;
       ui.rect(p.x - 1, p.y - 1, w + 2, h + 2, COLORS.outline);
@@ -166,7 +191,5 @@ export class MapView {
     const home = at(LAYOUT.shelter.x + 2.5, LAYOUT.shelter.z - 1.2);
     const label = T.karte.zuhause;
     ui.text(label, home.x - Math.round(measure(label) / 2), home.y - LINE_HEIGHT, COLORS.textWarm, { outline: COLORS.outline });
-
-    ui.textCentered(T.karte.schliessen, ox + W / 2, oy + H + 6, COLORS.textDim);
   }
 }

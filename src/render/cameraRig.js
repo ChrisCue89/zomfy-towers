@@ -87,13 +87,15 @@ export class CameraRig {
    * @param {number} dt
    * @param {{x:number, z:number}} target Position der Spielfigur
    * @param {{x:number, z:number}} velocity für leichtes Vorausschauen
+   * @param {number} [sharpness] wie straff die Kamera folgt (Kamerafahrt: straffer,
+   *   weil der Blickpunkt dort schon weich geführt ist)
    */
-  update(dt, target, velocity) {
+  update(dt, target, velocity, sharpness = this.cfg.followSharpness) {
     const ahead = this.cfg.lookAhead;
     const tx = target.x + (velocity ? velocity.x * ahead * 0.25 : 0);
     const tz = target.z + (this.cfg.focusOffsetZ || 0) + (velocity ? velocity.z * ahead * 0.25 : 0);
-    this.focus.x = damp(this.focus.x, tx, this.cfg.followSharpness, dt);
-    this.focus.z = damp(this.focus.z, tz, this.cfg.followSharpness, dt);
+    this.focus.x = damp(this.focus.x, tx, sharpness, dt);
+    this.focus.z = damp(this.focus.z, tz, sharpness, dt);
     this.shake = Math.max(0, this.shake - dt);
     this.applyBounds();
     this.place();

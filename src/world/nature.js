@@ -322,6 +322,68 @@ function buildMushroomGroup(seed, kind) {
   return m;
 }
 
+/**
+ * Ein Moderpilz: blasser Stiel (unten erdig), Hut mit violettem Rand und
+ * hellerer Mitte; die Kuppe kommt ins Glühmodell (Material `moderGlow`) und
+ * glimmt nachts. r = 1 kleiner Hut (3 × 3), r = 2 großer (5 × 5, gewölbt).
+ */
+function moderMushroom(body, glow, x, z, h, r) {
+  body.box(x, 0, z, x, h - 1, z, (xx, y) => (y === 0 ? P.s6 : P.s8));
+  if (r >= 2) {
+    body.box(x - 2, h, z - 2, x + 2, h, z + 2, (xx, y, zz) => (Math.abs(xx - x) === 2 && Math.abs(zz - z) === 2 ? null : Math.abs(xx - x) + Math.abs(zz - z) <= 1 ? P.a3 : P.a2));
+    glow.box(x - 1, h + 1, z - 1, x + 1, h + 1, z + 1, 0xffffff).set(x, h + 2, z, 0xffffff);
+  } else {
+    body.box(x - 1, h, z - 1, x + 1, h, z + 1, (xx, y, zz) => (xx === x && zz === z ? P.a3 : P.a2));
+    glow.set(x, h + 1, z, 0xffffff).set(x - 1, h + 1, z, 0xffffff).set(x + 1, h + 1, z, 0xffffff).set(x, h + 1, z - 1, 0xffffff).set(x, h + 1, z + 1, 0xffffff);
+  }
+}
+
+/**
+ * Moderpilze (M15): Grüppchen blasser Pilze im Waldboden – dort, wo das
+ * Geflecht aus dem Boden drückt; dazwischen Fäden am Boden. `ring` legt sie
+ * als Hexenring um eine leere Mitte (in Lichtungen tiefer im Wald).
+ * @returns {{ body: VoxelModel, glow: VoxelModel }}
+ */
+function buildModerGroup(seed, ring = false) {
+  const body = new VoxelModel();
+  const glow = new VoxelModel();
+  const rng = new Rng(seed);
+  const spots = [];
+  if (ring) {
+    const n = rng.int(9, 11);
+    const rad = rng.range(6.5, 7.5);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rng.range(-0.15, 0.15);
+      spots.push([Math.round(Math.cos(a) * rad), Math.round(Math.sin(a) * rad * 0.9), rng.chance(0.3) ? 2 : 1]);
+    }
+  } else {
+    const count = rng.int(3, 5);
+    for (let i = 0; i < count; i++) {
+      let x = 0;
+      let z = 0;
+      for (let tries = 0; tries < 30; tries++) {
+        x = rng.int(-6, 5);
+        z = rng.int(-4, 4);
+        if (!spots.some(([a, b]) => Math.abs(a - x) < 4 && Math.abs(b - z) < 4)) break;
+      }
+      spots.push([x, z, i === 0 ? 2 : rng.chance(0.3) ? 2 : 1]);
+    }
+  }
+  for (const [x, z, r] of spots) moderMushroom(body, glow, x, z, r === 2 ? rng.int(3, 4) : rng.int(2, 3), r);
+  // Fäden am Boden zwischen den Pilzen (im Ring rundherum)
+  for (let i = ring ? 0 : 1; i < spots.length; i++) {
+    const [ax, az] = spots[(i + spots.length - 1) % spots.length];
+    const [bx, bz] = spots[i];
+    const n = Math.max(Math.abs(bx - ax), Math.abs(bz - az));
+    for (let k = 1; k < n; k++) {
+      const x = Math.round(ax + ((bx - ax) * k) / n);
+      const z = Math.round(az + ((bz - az) * k) / n);
+      if (!body.get(x, 0, z)) body.set(x, 0, z, k % 3 ? P.d2 : P.a2);
+    }
+  }
+  return { body, glow };
+}
+
 /** Pilzgruppen am Fuß der Bäume in der Bucht (fest, M12). */
 const BAY_MUSHROOMS = [
   { x: -6.5, z: -11.25, kind: 1 }, // unter der Eiche
@@ -453,6 +515,9 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   // Herbst (M12): Pilzgruppen und Schilf im feinen Maß (seit M13 ist alles fein)
   const groups = ['fliegenpilz', 'steinpilz', 'pfifferling'].flatMap((kind, k) => [buildMushroomGroup(seed + 81 + k * 2, kind), buildMushroomGroup(seed + 82 + k * 2, kind)]);
   const reeds = [0, 1, 2, 3].map((i) => buildReeds(seed + 91 + i));
+  // Moderpilze (M15): eigener Zufall, damit Wald und Herbstschmuck bleiben, wie sie waren
+  const moderRng = new Rng(seed ^ 0x30de);
+  const moders = materials.moderGlow ? [0, 1, 2, 3].map((i) => buildModerGroup(seed + 111 + i, i === 3)) : [];
 
   // M13: alle Modelle im feinen Maß; Bäume und Büsche werfen grobe Schatten (1/4 m wie vorher)
   const tree = { shadow: 'rough', size: FINE, jitter: 0.04 };
@@ -467,6 +532,18 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   mushrooms.forEach((m, i) => scatter.addModel(`mushroom${i}`, m, world, { shadow: 'none', size: FINE }));
   groups.forEach((m, i) => scatter.addModel(`pilze${i}`, m, world, { shadow: 'none', jitter: 0.03, size: FINE }));
   reeds.forEach((m, i) => scatter.addModel(`schilf${i}`, m, windy, { shadow: 'none', jitter: 0.02, size: FINE }));
+  moders.forEach((m, i) => {
+    scatter.addModel(`moder${i}`, m.body, world, { shadow: 'none', jitter: 0.03, size: FINE });
+    scatter.addModel(`moderglow${i}`, m.glow, materials.moderGlow, { shadow: 'none', jitter: 0, size: FINE });
+  });
+  let moderPlaced = 0;
+  /** Eine Gruppe Moderpilze (Nr. 3: Hexenring): Körper und Glühen an derselben Stelle. */
+  const placeModer = (x, z, k = moderRng.int(0, moders.length - 2)) => {
+    const turns = moderRng.int(0, 3);
+    scatter.place(`moder${k}`, snapV(x), snapV(z), turns);
+    scatter.place(`moderglow${k}`, snapV(x), snapV(z), turns);
+    moderPlaced++;
+  };
   /** Eine Pilzgruppe der Art 0 (Fliegenpilz), 1 (Steinpilz) oder 2 (Pfifferling). */
   const placeMushrooms = (x, z, kind) => scatter.place(`pilze${kind * 2 + deco.int(0, 1)}`, snapV(x), snapV(z), deco.int(0, 3));
 
@@ -517,6 +594,14 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
         const px = x + deco.range(-1.2, 1.2);
         const pz = z + deco.range(0.6, 1.4);
         if (map.pathDistance(px, pz) > 0.9) placeMushrooms(px, pz, deco.int(0, 2));
+      }
+      if (moders.length && edge < 5 && moderRng.chance(0.45)) {
+        // Moder (M15): nur im Unterholz, nie im Begehbaren oder auf dem Weg;
+        // tiefer drin ab und zu ein Hexenring zwischen den Stämmen
+        const ring = edge > 1.6 && moderRng.chance(0.18);
+        const px = x + moderRng.range(-1.1, 1.1);
+        const pz = z + (ring ? 1.2 : moderRng.range(0.5, 1.3));
+        if (map.edgeDistance(px, pz) > (ring ? 0.9 : 0.4) && map.pathDistance(px, pz) > (ring ? 1.8 : 1.2)) placeModer(px, pz, ring ? 3 : undefined);
       }
     }
   }
@@ -609,5 +694,5 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
   }
 
   const { group, instances } = scatter.build();
-  return { group, stats: { trees, bushes: bushesPlaced, rocks: rocksPlaced, tufts: tuftsPlaced, flowers: flowersPlaced, reeds: reedsPlaced, instances } };
+  return { group, stats: { trees, bushes: bushesPlaced, rocks: rocksPlaced, tufts: tuftsPlaced, flowers: flowersPlaced, reeds: reedsPlaced, moder: moderPlaced, instances } };
 }

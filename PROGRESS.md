@@ -5,6 +5,48 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 15 – Geschichte und Einleitung ✓
+
+**Auftrag:** »Wir wissen aktuell nicht, warum die Zombies nicht durch den
+Wald kommen, was überhaupt passiert ist und was unsere Aufgabe ist.« Vor der
+Balance (M14, wartet auf den Auftraggeber) vorgezogen. Die Antwort ist eine
+einzige Ursache, die man im Spiel sieht (OFFENE-FRAGEN 114, DESIGN 4.1):
+der **Moder**, ein Pilzgeflecht im Waldboden.
+
+- **Einleitung als Kamerafahrt:** Beim Einblenden steht die Kamera am
+  Waldrand beim Mittelweg-Spawn. Mika erzählt in sechs Zeilen: »Drei Herbste
+  ist es her, seit der Moder aus dem Waldboden kam …« – die Kamera gleitet
+  weich zum Unterholz (»… ein einziges Modergeflecht, weich wie Moos und zäh
+  wie Leim. Fest sind nur die alten Holzfällerwege.«), zum Zusammenfluss (die
+  Karte der Wege erscheint über dem Dialog: »Und alle diese Wege laufen hier
+  zusammen, an der alten Holzlände am Stillsee …«), zum Haus (»Hinter mir
+  nur Wasser – und Wasser meiden sie.«) und zurück zu Mika (»Tagsüber mache
+  ich es zu einem Zuhause, nachts halte ich die Wege …«). Die letzte Zeile
+  schickt zur Axt. Während der Einleitung zeigt das Bild nur den Dialog.
+  Der Blick ins Unterholz sucht sich auf jeder Karte die Stelle neben einer
+  Zuführung mit dem meisten Waldboden im Bild.
+- **Der Moder ist zu sehen:** Im Waldboden liegen dunkelviolette Matten mit
+  ausgefranstem Rand und Fäden mit hellen Knoten, dichter, je tiefer es in
+  den Wald geht; dazu Grüppchen blasser Moderpilze und kleine Hexenringe
+  (nie im Begehbaren, nie auf dem Weg). Nachts glimmen Fäden, Knoten und
+  Pilzkuppen – über das Eigenlicht des Bodens und ein Glühmaterial, ohne
+  zusätzliche Lichtquelle.
+- **In der Welt verteilt:** Läuft Mika gegen den Wald, denkt sie einmal am
+  Tag darüber nach (vier Sätze, je Tag ein anderer); der Warnpfahl am Spawn
+  lässt sich ansehen (»Ein rotes Kreuz und eine alte Laterne. Jemand vor mir
+  hat markiert, wo sie aus dem Wald kommen.«) – als Gedanke, weil dort nachts
+  die Horde kommt; Radio Stillwald rät »bleibt auf festem Boden … nachts
+  Licht an, Türen zu«; Hilde fährt nur auf festen Wegen, Bert erzählt von den
+  geschotterten Holzfällerwegen, Dr. Yusuf, was der Moder ist und was Licht
+  mit ihm macht, Balduin, warum auf den Inseln keiner wächst.
+- **Prüfung:** neuer Abschnitt `geschichte` (Moder im Boden und als Pilze,
+  Gedanke am Waldrand mit echter Taste, Warnpfahl mit echtem E, Bild
+  moder-nacht); der Spielstart prüft die Kamerafahrt mit echten Tasten (Bild
+  intro-wege). Die Schriftprüfung deckt jetzt auch die Tagessätze
+  eingezogener Überlebender ab.
+
+---
+
 ## Meilenstein 13 – Detailgrad
 
 **Neu im Plan (Frage des Auftraggebers):** Der Detailgrad bekommt einen

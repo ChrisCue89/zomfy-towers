@@ -5,7 +5,8 @@
 //   node tools/check.mjs --nur=nahkampf,naechte
 //                                   nur einzelne Abschnitte (rundgang, speichern,
 //                                   bauen, wege, naechte, nahkampf, ueberlebende,
-//                                   haendler, herbst, nachbesserung, ansicht, hd)
+//                                   haendler, herbst, nachbesserung, ansicht,
+//                                   geschichte, hd)
 //
 // Die volle Prüfung startet einen lokalen Server, öffnet das Spiel in
 // Headless-Chromium, sammelt alle Konsolenmeldungen, macht Screenshots nach
@@ -160,6 +161,9 @@ async function runBrowserChecks() {
     // --- 6e. Meilenstein 13: nahe Ansicht, Z schaltet auf die Übersicht --------------------
     if (want('ansicht')) await runViewChecks(browser, url);
 
+    // --- 6f. Meilenstein 15: Moder im Wald, Gedanke am Waldrand, Warnpfahl -----------------
+    if (want('geschichte')) await runStoryChecks(browser, url);
+
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
       const hd = await openGame(browser, `${url}index.html?test&nosave&time=21:15`, 'Full HD', { viewport: { width: 1920, height: 1080 } });
@@ -302,6 +306,109 @@ async function runViewChecks(browser, url) {
   await session.context.close();
 }
 
+/**
+ * M15: Der Moder wächst im Unterholz (Boden, Pilze, Glühen), Mika denkt einmal
+ * am Tag am Waldrand darüber nach (echte Taste), der Warnpfahl gibt einen
+ * Gedanken statt eines Dialogs (echtes E), nachts glimmt der Wald.
+ */
+async function runStoryChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Geschichte (M15)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const view = () => z(() => window.zomfyView());
+  await z(() => {
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) window.zomfy.setFlag(f);
+    window.zomfy.setHorde(false);
+    window.zomfy.setWeather('klar');
+    window.zomfy.setTime(10, 0);
+  });
+  await step(100);
+
+  // Moder: violette Fäden und Matten im Waldboden (Eigenlicht), Pilze im Unterholz – nie im Begehbaren
+  const moder = await z(() => {
+    const w = window.zomfy.game.world;
+    const glow = w.groundMaterial.emissiveMap.image.data;
+    let violet = 0;
+    for (let k = 0; k < glow.length; k += 4) if (glow[k + 2] > glow[k + 1] + 20 && glow[k + 2] >= glow[k]) violet++;
+    const pilze = [];
+    w.scene.traverse((o) => {
+      if (!o.isInstancedMesh || !/^moder\d/.test(o.name)) return;
+      const m = new o.matrixWorld.constructor();
+      for (let i = 0; i < o.count; i++) {
+        o.getMatrixAt(i, m);
+        pilze.push(w.map.edgeDistance(m.elements[12], m.elements[14]));
+      }
+    });
+    return { violet, pilze: pilze.length, imBegehbaren: pilze.filter((d) => d < 0.2).length, stats: w.stats.moder };
+  });
+  if (moder.violet > 2000 && moder.pilze > 30 && moder.imBegehbaren === 0) note(`✓ Moder (M15): ${moder.violet} glimmende Bodentexel im Unterholz, ${moder.pilze} Pilzgruppen – keine im Begehbaren`);
+  else fail(`Moder: ${JSON.stringify(moder)}`);
+
+  // Gedanke am Waldrand: echte Taste W gegen den Wald, einmal am Tag
+  const rand = await z(() => {
+    const m = window.zomfy.game.world.map;
+    const c = window.zomfy.game.world.colliders;
+    for (let x = -12; x > -46; x -= 0.5) {
+      for (let zz = -2; zz > -26; zz -= 0.25) {
+        const e = m.edgeDistance(x, zz);
+        if (e < -0.9 || e > -0.6 || m.pathDistance(x, zz) < 1.5) continue;
+        if (m.edgeDistance(x, zz - 1.3) < 0.5 || m.isWater(x, zz - 1.3) || m.inBay(x, zz - 1.3)) continue;
+        if (c.near(x, zz, 1.2).length) continue;
+        return { x, z: zz };
+      }
+    }
+    return null;
+  });
+  const gegenWald = async () => {
+    await z((r) => window.zomfy.teleport(r.x, r.z, Math.PI), rand);
+    await step(100);
+    await page.keyboard.down('KeyW');
+    await step(2500);
+    await page.keyboard.up('KeyW');
+    await step(100);
+    return { gedanke: (await view()).gedanke, tag: (await z(() => window.zomfy.state().flags.waldrandTag)) ?? null };
+  };
+  const erst = rand ? await gegenWald() : null;
+  await step(6000); // Blase ausklingen lassen
+  const nochmal = rand ? await gegenWald() : null;
+  await z(() => window.zomfy.setDay(2));
+  await step(6000);
+  const morgen = rand ? await gegenWald() : null;
+  if (rand && erst.gedanke && /Moder|Wald|Geflecht|Wegen/.test(erst.gedanke) && erst.tag === 1 && !nochmal.gedanke && morgen.gedanke && morgen.gedanke !== erst.gedanke && morgen.tag === 2) {
+    note(`✓ Waldrand (M15): W gegen den Wald – »${erst.gedanke}«; am selben Tag nicht noch einmal, am nächsten ein anderer Satz`);
+  } else fail(`Gedanke am Waldrand: ${JSON.stringify({ rand, erst, nochmal, morgen })}`);
+
+  // Warnpfahl: E gibt einen Gedanken, kein Dialog (dort kommt nachts die Horde)
+  const pfahl = await z(() => {
+    const it = window.zomfy.game.world.interactions.find((i) => i.id.startsWith('warnpfahl-'));
+    window.zomfy.teleport(it.x + 0.9, it.z, -Math.PI / 2);
+    return { x: it.x, z: it.z };
+  });
+  await step(300);
+  const pfahlHinweis = (await view()).hinweis;
+  await page.keyboard.press('KeyE');
+  await step(200);
+  const pfahlDanach = await view();
+  const pfahlModus = await z(() => window.zomfy.mode);
+  if (/Ansehen/.test(pfahlHinweis || '') && pfahlModus === 'play' && /rotes Kreuz/.test(pfahlDanach.gedanke || '')) note(`✓ Warnpfahl (M15): »${pfahlHinweis}«, E – »${pfahlDanach.gedanke}« (Gedanke, kein Dialog)`);
+  else fail(`Warnpfahl: ${JSON.stringify({ pfahl, pfahlHinweis, pfahlModus, gedanke: pfahlDanach.gedanke })}`);
+
+  // Nachts glimmt der Moder im Unterholz
+  await z(() => {
+    const s = window.zomfy.lookSpot('unterholz');
+    window.zomfy.game.hud.speech = null; // der Gedanke vom Warnpfahl gehört nicht ins Bild
+    window.zomfy.setTime(22, 30);
+    window.zomfy.teleport(s.x, s.z + 4, Math.PI);
+  });
+  await step(1500);
+  await page.screenshot({ path: join(SHOTS, 'moder-nacht.png') });
+  note('  Screenshot: screenshots/moder-nacht.png');
+  checkMessages(session);
+  await session.context.close();
+}
+
 /** Abschnitte 0 und 1: Spielstart mit Intro, Rundgang mit Bildern, Laufen, Laterne, Ausruhen, Schrift. */
 async function runTour(browser, url) {
   {
@@ -343,6 +450,33 @@ async function runTour(browser, url) {
     await settle(intro.page, 70);
     await intro.page.screenshot({ path: join(SHOTS, 'start.png') });
     note('  Screenshot: screenshots/start.png');
+    // M15: Die Einleitung fährt vom Waldrand über die Wege zum Haus und zurück zu Mika –
+    // mit echten Tasten (E zeigt die Zeile ganz, E geht weiter)
+    const blick = async () => intro.page.evaluate(() => ({ ...window.zomfy.camera(), mode: window.zomfy.mode }));
+    const fahrt = [await blick()];
+    const orte = await intro.page.evaluate(() => Object.fromEntries(['wald', 'unterholz', 'zusammen', 'haus'].map((k) => [k, window.zomfy.lookSpot(k)])));
+    for (let k = 0; k < 8 && fahrt[fahrt.length - 1].mode === 'dialog'; k++) {
+      await intro.page.keyboard.press('KeyE');
+      await settle(intro.page, 3);
+      if ((await blick()).mode === 'dialog') {
+        await intro.page.keyboard.press('KeyE');
+        await settle(intro.page, 3);
+      }
+      await settle(intro.page, 60);
+      fahrt.push(await blick());
+      if (fahrt[fahrt.length - 1].look === 'zusammen' && !fahrt.some((f) => f.shot)) {
+        await intro.page.screenshot({ path: join(SHOTS, 'intro-wege.png') });
+        note('  Screenshot: screenshots/intro-wege.png');
+        fahrt[fahrt.length - 1].shot = true;
+      }
+    }
+    const mika = await intro.page.evaluate(() => window.zomfy.state().player);
+    const bei = (f, o) => f && Math.abs(f.x - o.x) < 2.5 && Math.abs(f.z - (o.z - 1)) < 2.5;
+    const nach = (key) => fahrt.find((f) => f.look === key);
+    const ende = fahrt[fahrt.length - 1];
+    if (fahrt[0].look === 'wald' && fahrt[0].x < -30 && bei(nach('unterholz'), orte.unterholz) && bei(nach('zusammen'), orte.zusammen) && bei(nach('haus'), orte.haus) && nach('mika') && ende.mode === 'play' && Math.abs(ende.x - mika.x) < 2 && !ende.look) {
+      note(`✓ Einleitung (M15): Kamerafahrt vom Waldrand (x ${fahrt[0].x.toFixed(0)}) über Unterholz, Zusammenfluss (x ${nach('zusammen').x.toFixed(0)}) und Haus zurück zu Mika – ${fahrt.length - 1} Tastendrücke, danach folgt die Kamera wieder der Figur`);
+    } else fail(`Einleitung (M15): ${JSON.stringify({ fahrt, orte, mika: { x: mika.x, z: mika.z } })}`);
     checkMessages(intro);
     await intro.context.close();
 
@@ -466,15 +600,19 @@ async function runTour(browser, url) {
       collect(SPRECHER);
       for (const d of Object.values(DIALOGE)) {
         if (typeof d === 'function') {
+          // M15: auch eingezogene Überlebende (ihre Tagessätze) und fünf Tage (Listen mit fünf Sätzen)
+          const resident = { stage: 3, errand: 2 };
           for (const flags of [{}, { radioGehoert: true, briefkastenGesehen: true, sesselProbiert: true }]) {
-            for (let day = 1; day <= 4; day++) {
+            for (let day = 1; day <= 5; day++) {
               for (const minute of [60, 720, 900]) {
                 for (const schrott of [0, 99]) {
                   // Ausbaustufen und Suppe (M11) mit abdecken
                   for (let houseLevel = 1; houseLevel <= 4; houseLevel++) {
-                    const world = { houseLevel };
-                    const player = { soup: houseLevel % 2 ? day : 0 };
-                    collect(d({ flags, time: { day, minute }, inventory: { schrott }, world, player }));
+                    for (const survivors of [undefined, { hilde: resident, juna: resident, bert: resident, yusuf: resident, knopf: resident }]) {
+                      const world = { houseLevel };
+                      const player = { soup: houseLevel % 2 ? day : 0 };
+                      collect(d({ flags, time: { day, minute }, inventory: { schrott }, world, player, survivors }));
+                    }
                   }
                 }
               }

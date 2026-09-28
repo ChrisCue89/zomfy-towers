@@ -75,6 +75,8 @@ const REST = { fadeOut: 0.7, black: 0.8, fadeIn: 0.8 };
 const PASSAGE_TIME = 0.45; // Sekunden für den Weg durch die Haustür (abblenden, umsetzen, aufblenden)
 const ZERO = new THREE.Vector3();
 const TITLE_HOURS = 18.4; // Titelbild: goldenes Abendlicht, egal wie spät es im Spielstand ist
+// Kamerafahrt der Einleitung (M15): Die Fahrt selbst ist weich geführt, die Kamera folgt ihr straff
+const TOUR = { sharpness: 30, minTime: 0.9, maxTime: 3.2, metersPerSecond: 18 };
 /** Tonhöhe des Einsammel-Klangs je Beute (seltenes klingt heller). */
 const LOOT_PITCH = { schrott: 700, teile: 560, holz: 620, stein: 660, fasern: 740, stoff: 780, zahnraeder: 990, moderkerne: 1180 };
 // Perk-Wahl erst, wenn es ruhig ist: kein Schlurfer so nah, kein Schwung, keine Rolle
@@ -135,6 +137,9 @@ export class Game {
     this.frameWaiters = [];
     this._tmp = new THREE.Vector3();
     this.intro = { t: 0, duration: 1.9 };
+    this.tour = null; // Kamerafahrt der Einleitung (M15)
+    this.introRunning = false; // Einleitung läuft: keine Anzeigen außer dem Dialog
+    this.forestPush = 0; // wie lange Mika schon gegen den Wald läuft (M15)
   }
 
   init() {
@@ -677,6 +682,7 @@ export class Game {
     else if (it.trader) this.trader.talk();
     else if (it.npc) this.survivors.talk(it.npc);
     else if (this.gathering.interact(it)) return;
+    else if (it.thought) this.hud.say(T.geschichte[it.thought], 5); // M15: Gedanke statt Dialog
     else if (it.dialog) this.startDialog(it.dialog);
   }
 
@@ -893,6 +899,33 @@ export class Game {
         return;
       }
     }
+  }
+
+  /**
+   * Läuft Mika gegen den Wald (M15), denkt sie einmal am Tag laut darüber nach,
+   * warum dort niemand durchkommt – nicht am Wasser, nicht drinnen und nicht,
+   * solange die Horde unterwegs ist. Es zählt nur echtes Dagegenlaufen, nicht
+   * das Entlangstreifen am Waldsaum.
+   */
+  checkForestEdge(dt, move) {
+    const st = this.state;
+    const len = Math.hypot(move.x, move.z);
+    if (len < 0.5 || this.viewInside || this.hud.speech || this.nights.active || st.flags.waldrandTag === st.time.day) {
+      this.forestPush = 0;
+      return;
+    }
+    const m = this.world.map;
+    const p = this.player.position;
+    const ax = p.x + (move.x / len) * 0.7;
+    const az = p.z + (move.z / len) * 0.7;
+    const forest = m.edgeDistance(p.x, p.z) > -0.5 && m.edgeDistance(ax, az) > 0.1 && !m.isWater(ax, az) && !m.onIsland(ax, az) && !m.inBay(ax, az);
+    const stuck = Math.hypot(this.player.velocity.x, this.player.velocity.z) < 1.2;
+    this.forestPush = forest && stuck ? this.forestPush + dt : 0;
+    if (this.forestPush < 0.6) return;
+    this.forestPush = 0;
+    st.flags.waldrandTag = st.time.day;
+    const lines = T.geschichte.waldrand;
+    this.hud.say(lines[(st.time.day - 1) % lines.length], 5);
   }
 
   /** Bank: Hinsetzen heilt Mika (alle 30 s); nachts ohne Dialog, das hält nicht auf. */
@@ -1214,6 +1247,42 @@ export class Game {
     return f;
   }
 
+  /**
+   * Blickpunkt der Einleitung (M15): Schon beim Einblenden steht die Kamera am
+   * Waldrand; danach zeigt jede Zeile mit `blick` auf ihren Ort. Drinnen gibt
+   * es keine Fahrt (eigenes Bild mit eigenen Grenzen).
+   */
+  introLook() {
+    if (this.viewInside) return null;
+    if (this.pendingIntro && this.mode === 'play') return 'wald';
+    return this.mode === 'dialog' && this.dialog.active ? this.dialog.line?.blick || null : null;
+  }
+
+  /**
+   * Die Kamera gleitet weich an- und auslaufend zum Blickpunkt – je weiter,
+   * desto länger (höchstens gut drei Sekunden). Vor dem Intro springt sie.
+   */
+  tourFocus(dt, key) {
+    const tour = this.tour || (this.tour = { key: null, from: new THREE.Vector3(), to: new THREE.Vector3(), point: new THREE.Vector3(), t: 0, time: 1 });
+    const spot = key === 'mika' ? this.player.position : null;
+    if (tour.key !== key) {
+      const at = spot || this.world.lookSpot(key);
+      tour.from.set(this.rig.focus.x, 0, this.rig.focus.z - (CONFIG.camera.focusOffsetZ || 0));
+      tour.to.set(at.x, 0, at.z);
+      tour.key = key;
+      tour.t = 0;
+      tour.time = Math.min(TOUR.maxTime, TOUR.minTime + tour.from.distanceTo(tour.to) / TOUR.metersPerSecond);
+      if (this.pendingIntro) {
+        tour.t = tour.time;
+        this.rig.jumpTo(at.x, at.z);
+      }
+    }
+    if (spot) tour.to.set(spot.x, 0, spot.z);
+    tour.t = Math.min(tour.time, tour.t + dt);
+    const u = tour.t / tour.time;
+    return tour.point.lerpVectors(tour.from, tour.to, u * u * (3 - 2 * u));
+  }
+
   /** Aussehen auf dem Titelbild ausprobieren (noch nicht im Spielstand). */
   previewLook(look) {
     this.player.setLook(lookSpec(MIKA, look));
@@ -1304,7 +1373,9 @@ export class Game {
       this.intro.t += dt;
       if (this.pendingIntro && this.intro.t > this.intro.duration * 0.7 && this.mode === 'play') {
         this.pendingIntro = false;
+        this.introRunning = true; // M15: Kamerafahrt, nur Bild und Dialog
         this.startDialog('intro', () => {
+          this.introRunning = false;
           this.state.flags.introGesehen = true;
           this.hud.showHint(T.meldungen.hinweisStart, 14);
         });
@@ -1379,8 +1450,13 @@ export class Game {
     // Drinnen ist ein eigenes Bild (M11): Kamera umstellen, sobald Mika drinnen oder draußen ist
     const inside = !titled && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
+    const look = titled ? null : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
-    else this.rig.update(dt, this.player.position, this.player.velocity);
+    else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
+    else {
+      this.tour = null;
+      this.rig.update(dt, this.player.position, this.player.velocity);
+    }
     this.updateCutout();
     this.updateGoals();
     this.hud.update(dt);
@@ -1445,6 +1521,7 @@ export class Game {
       this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
       const through = this.world.passageAt(this.player.position.x, this.player.position.z);
       if (through) this.startPassage(through);
+      else this.checkForestEdge(dt, input.moveVector());
     }
     const p = this.player.position;
     const sp = this.state.player;
@@ -1771,7 +1848,9 @@ export class Game {
     this._lastRain = now;
     this.world.weather.drawRain(ui, frame, dn.night, this.viewInside);
     if (playing) this.builder.drawOverlay(ui);
-    this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
+    // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
+    const cinematic = this.pendingIntro || this.introRunning;
+    if (!cinematic) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
     this.crafting.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
@@ -1785,7 +1864,9 @@ export class Game {
         : this.mode === 'report' && this.report.isOpen
           ? this.report.bottom(ui)
           : Math.max(64, (this.hud.bannerBottom || 0) + 4);
-    this.hud.drawToasts(ui, toastY);
+    if (!cinematic) this.hud.drawToasts(ui, toastY);
+    // Zeilen mit `karte` zeigen die Karte der Wege über dem Dialog (M15)
+    if (this.mode === 'dialog' && this.dialog.active && this.dialog.line?.karte) this.mapView.drawInset(ui, this.dialog.top(ui));
     this.dialog.draw(ui);
     this.menu.draw(ui);
     if (this.sleep) this.drawSleep(ui);
@@ -2021,6 +2102,9 @@ export class Game {
         return { peak: r.peak, rms: r.rms, bad: r.bad };
       },
       save: () => game.quietSave(),
+      /** Kamera (M15): Blickpunkt am Boden, laufende Fahrt der Einleitung, Zeile im Dialog. */
+      camera: () => ({ x: game.rig.focus.x, z: game.rig.focus.z, look: game.tour?.key || null, line: game.dialog.active ? game.dialog.index : null }),
+      lookSpot: (key) => game.world.lookSpot(key),
       wakeSpot: () => ({ ...game.world.interior.wakeSpot }),
       /** Krähen (M12): Zustand, Sitzplatz; wie oft sie krächzend aufgeflogen sind. */
       crows: () => ({ list: game.world.crows.info(), caws: game.world.crows.caws, perches: game.world.crows.perches.map((p) => ({ x: p.x, y: p.y, z: p.z, ground: Boolean(p.ground) })) }),

@@ -1063,6 +1063,27 @@ Schatten der Horde und der Türme kommen aus einer groben 1/16-Fassung, Türme
 gleicher Art und Stufe teilen ihre Geometrie – 24 Türme auf Stufe 5 bauen
 sich damit sogar schneller als vorher.
 
+### 114. Warum kommt die Horde nicht durch den Wald – und was ist unsere Aufgabe? (M15, Frage des Auftraggebers)
+**Frage:** »Wir wissen aktuell nicht, warum die Zombies nicht durch den Wald
+kommen, was überhaupt passiert ist und was unsere Aufgabe ist.« Das Spiel
+erklärte nur die Bedienung, nicht die Welt.
+**Entscheidung:** Eine Ursache für alles: der **Moder**, ein Pilzgeflecht im
+Waldboden. Er macht Menschen zu Schlurfern (vor drei Herbsten), und er macht
+das Unterholz unpassierbar – weich wie Moos, zäh wie Leim, man sinkt ein.
+Fest sind nur die geschotterten Holzfällerwege; sie laufen an der alten
+Holzlände am See zusammen, wo früher die Stämme ins Wasser gingen – deshalb
+steht Mikas Haus genau dort, wo die Horde ankommt. Wasser spült den Moder
+ab (Seeseite und Inseln sind frei, Balduin kommt übers Wasser), Licht und
+Wärme machen ihn müde (Laternen, Leuchtfeuer). Mikas Aufgabe: die Nächte
+halten, ein Zuhause bauen, Zuflucht sein. Erzählt wird das nicht in einem
+Textblock, sondern mit einer Kamerafahrt in der Einleitung (Waldrand →
+Unterholz → Zusammenfluss mit der Karte der Wege → Haus → Mika), mit dem
+sichtbaren Moder im Wald (Matten, Fäden, Pilze, Hexenringe, nachts ein
+Glimmen) und mit einzelnen Sätzen in der Welt: ein Gedanke am Waldrand
+(einmal am Tag), der Warnpfahl, Radio Stillwald, die Überlebenden. Ob die
+Schlurfer heilbar sind, bleibt offen (Dr. Yusuf forscht an Moderkernen),
+ebenso, was Balduin mit den Teilen macht.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

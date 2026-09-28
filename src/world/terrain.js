@@ -1,9 +1,10 @@
 // Der Boden: eine große Fläche mit einer Textur, die pro 1/16 m einen Texel hat
 // (seit M13 so fein wie die Voxel der Modelle – in der nahen Ansicht waren die
 // 1/8-m-Texel als Kacheln zu sehen).
-// Herbstwiese, Waldboden mit Laub, die Erdwege der Horde, Sand und Kiesel am
-// Ufer, der Seegrund und die Hofstellen (Feuerstelle, Hackklotz, Beet) werden
-// hier prozedural gemalt. Das Wasser darüber (Wellen) kommt aus water.js.
+// Herbstwiese, Waldboden mit Laub und Moder, die Erdwege der Horde, Sand und
+// Kiesel am Ufer, der Seegrund und die Hofstellen (Feuerstelle, Hackklotz,
+// Beet) werden hier prozedural gemalt. Das Wasser darüber (Wellen) kommt aus
+// water.js.
 
 import * as THREE from 'three';
 import { P } from '../render/palette.js';
@@ -51,9 +52,39 @@ function forestFloor(h, h2, patch, clump) {
   return color;
 }
 
-/** Farbe eines Bodentexels an der Weltposition (x, z); `out.path` sagt, ob er zum Weg gehört. */
+/**
+ * Moder (M15): das Pilzgeflecht im Waldboden, das Schlurfer und Mika vom
+ * Unterholz fernhält – weiche, gesprenkelte Matten mit ausgefranstem Rand,
+ * dazwischen verzweigte Fäden mit helleren Knoten. Am Waldsaum nur Ausläufer,
+ * tiefer im Wald ein einziges Geflecht. Nachts glimmt es schwach violett
+ * (Eigenlicht wie die Wege, MODER_GLOW).
+ * @returns {0|1|2|3} 0 kein Moder, 1 Matte, 2 Faden oder helle Stelle, 3 Knoten
+ */
+function moderAt(x, z, edge, h, seed) {
+  // Der Anfang des Geflechts franst aus (sonst zeichnete er gerade Kanten des Begehbaren nach)
+  const e = edge + (valueNoise(x * 0.5, z * 0.5, seed + 71) - 0.5) * 2;
+  if (e < 0.4) return 0;
+  const dense = Math.min(1, (e - 0.4) / 1.5);
+  const mat = fbm(x * 0.33, z * 0.33, 3, seed + 61);
+  const cut = 0.64 - 0.12 * dense;
+  if (mat > cut + 0.03) return h > 0.97 ? 3 : h > 0.78 ? 2 : 1;
+  if (mat > cut) return h < 0.45 ? 1 : 0; // ausgefranster Rand
+  const main = Math.abs(valueNoise(x * 0.8, z * 0.8, seed + 51) - 0.5);
+  const w = 0.012 + 0.02 * dense;
+  if (main < w) return main < w * 0.4 || h > 0.93 ? 3 : 2;
+  const fine = Math.abs(valueNoise(x * 2.2, z * 2.2, seed + 53) - 0.5);
+  return fine < 0.012 * dense ? 2 : 0;
+}
+const MODER_COLOR = [0, P.d1, P.d2, P.a2];
+const MODER_GLOW = [0, P.d0, P.d3, P.a3];
+
+/**
+ * Farbe eines Bodentexels an der Weltposition (x, z); `out.path` sagt, ob er
+ * zum Weg gehört, `out.moder`, ob dort Moder wächst (1 Faden, 2 Knoten).
+ */
 function groundColor(map, x, z, i, j, seed, out) {
   out.path = false;
+  out.moder = 0;
   out.kind = 'see';
   const h = hash2(i, j, seed);
   const h2 = hash2(i, j, seed + 17);
@@ -90,6 +121,12 @@ function groundColor(map, x, z, i, j, seed, out) {
   const drift = valueNoise(x * 0.45, z * 0.45, seed + 31);
   let color = edge > 0.15 ? forestFloor(h, h2, patch, clump) : meadow(h, h2, patch, clump, wild, drift);
   out.kind = edge > 0.15 ? 'wald' : 'wiese';
+  const moder = edge > 0.15 ? moderAt(x, z, edge, h2, seed) : 0;
+  if (moder) {
+    color = MODER_COLOR[moder];
+    out.kind = 'moder';
+    out.moder = moder;
+  }
   // Waldsaum: dunkler, mit Laub
   if (edge > -0.6 && edge <= 0.15 && h < (edge + 0.6) * 0.9) color = h2 < 0.3 ? P.e4 : P.g3;
 
@@ -97,6 +134,7 @@ function groundColor(map, x, z, i, j, seed, out) {
   const dPath = map.sampleLinear(map.pathField, x, z) + (valueNoise(x * 1.3, z * 1.3, seed + 3) - 0.5) * 0.45;
   if (dPath < -0.1) {
     out.path = true;
+    out.moder = 0; // Auf dem festen Weg wächst er nicht (auch nicht im Wald am Spawn)
     out.kind = 'weg';
     // Seit M13 ruhiger: Fahrspuren und helle Flecken als Flächen, wenig Einzelpunkte
     const rut = valueNoise(x * 0.7, z * 0.7, seed + 21);
@@ -107,6 +145,8 @@ function groundColor(map, x, z, i, j, seed, out) {
     else if (h2 < 0.02 && drift > 0.5) color = P.f4; // ein Blatt
   } else if (dPath < 0.2 && clump < 0.55) {
     color = h2 < 0.5 ? P.e4 : P.g3; // abgetretener Saum
+    out.moder = 0;
+    if (out.kind === 'moder') out.kind = 'wald';
   }
 
   // --- Hof: festgetretene Stellen ------------------------------------------
@@ -188,6 +228,10 @@ function detail(c, kind, i, j, a, b, seed) {
       if (q < 0.1) return shade(c, -1);
       if (q > 0.95) return P.s7;
       return c;
+    case 'moder':
+      // Faden: eine Seite heller (feucht glänzend), Knoten mit hellem Punkt
+      if (c === P.a2 && a === 0 && b === 0 && h > 0.5) return P.a3;
+      return q < 0.25 ? shade(c, -1) : c;
     default:
       return c;
   }
@@ -198,7 +242,7 @@ export function createTerrain(seed, map) {
   const height = Math.round((AREA.z1 - AREA.z0) / TEXEL);
   const W2 = width * 2; // Feinzeichnung: 1/32 m je Unterfeld
   const data = new Uint8Array(W2 * height * 2 * 4);
-  const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6), 1/16 m genügt
+  const glowData = new Uint8Array(width * height * 4); // Eigenlicht der Wege (m12-r1, DESIGN 3.6) und des Moders (M15), 1/16 m genügt
   const out = { path: false, kind: 'wiese' };
   for (let j = 0; j < height; j++) {
     const z = AREA.z0 + (j + 0.5) * TEXEL;
@@ -216,10 +260,11 @@ export function createTerrain(seed, map) {
         }
       }
       const k = (j * width + i) * 4;
-      if (out.path) {
-        glowData[k] = (c >> 16) & 255;
-        glowData[k + 1] = (c >> 8) & 255;
-        glowData[k + 2] = c & 255;
+      const glow = out.path ? c : out.moder ? MODER_GLOW[out.moder] : 0;
+      if (glow) {
+        glowData[k] = (glow >> 16) & 255;
+        glowData[k + 1] = (glow >> 8) & 255;
+        glowData[k + 2] = glow & 255;
       }
       glowData[k + 3] = 255;
     }

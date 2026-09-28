@@ -292,21 +292,37 @@ Wort gibt.
 
 ### 4.1 Hintergrund
 
-Vor ein paar Jahren ist die Welt einfach stehen geblieben. Seitdem schlurfen
-**Schlurfer** durch die Wälder: Menschen, die der **Moder** erwischt hat – ein
-Pilzgeflecht, das sie träge, grummelig und nachtaktiv macht. Tagsüber dösen
-sie im Wald, nachts ziehen sie in Scharen los, angelockt von Wärme und
-Stimmen. Wasser meiden sie – deshalb ist die Seeseite sicher. Helles, warmes
-Licht macht sie langsamer.
+Vor drei Herbsten – in einem nassen, warmen Herbst – ist im Waldboden der
+**Moder** aufgeblüht: ein Pilzgeflecht, das unter dem Laub von Wald zu Wald
+wuchs, schneller als jeder Pilz vorher. Wer im Wald schläft oder zu lange
+bleibt, den spinnt er ein: Die Menschen werden schläfrig, grummelig und
+nachtaktiv – **Schlurfer**: bemoost, mit Blümchen und Pilzen im Haar und
+nicht mehr ganz beisammen. Tagsüber dösen sie im Wald, nachts treibt der
+Moder sie los, dorthin, wo es warm und hell ist und Stimmen sind. Helles,
+warmes Licht macht den Moder müde und die Schlurfer langsam (Laternen, das
+Leuchtfeuer). Die Städte sind leer, das Netz ist still; wer übrig ist, lebt
+verstreut an Seen und auf Inseln.
+
+**Warum sie nur über die Wege kommen (M15):** Im Stillwald ist der Boden
+unter dem Laub ein einziges Modergeflecht – weich wie Moos, zäh wie Leim.
+Wer abseits hineintritt, sinkt bis zu den Knien ein, Schlurfer genauso wie
+Mika. Fest ist der Boden nur, wo nichts wächst: auf den alten
+**Holzfällerwegen** (geschottert, damit die Laster durchkamen), auf
+Wildwechseln und der gesperrten Straße nach Moosbach. Man sieht es: Im
+Unterholz liegen violette Matten und Fäden, blasse Moderpilze und
+Hexenringe, die nachts glimmen. **Wasser** spült den Moder ab – die
+Seeseite und die Inseln (Fels und Wind) sind frei; von dort kommt Balduin.
 
 ### 4.2 Der Ort
 
 Eine kleine **Bucht am Stillsee**: ein altes Fischerhaus mit Steg und
-Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Landeinwärts
-steigt der **Stillwald** an – dicht, felsig, voller Hänge. Nur ein paar alte
-**Holzfäller- und Wildpfade** führen hindurch; sie verzweigen sich und laufen
-kurz vor der Bucht zusammen. Über sie kommt die Horde. Auf dem See liegen
-Inseln im Nebel; von dort kommt nur Balduins Boot.
+Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Früher war hier
+die **alte Holzlände**: Die Holzfäller rollten ihre Stämme ins Wasser –
+deshalb laufen alle Wege aus dem Wald genau hier zusammen. Landeinwärts
+steigt der **Stillwald** an – dicht, felsig, voller Hänge, der Boden voller
+Moder. Nur ein paar alte **Holzfäller- und Wildpfade** führen hindurch; sie
+verzweigen sich und laufen kurz vor der Bucht zusammen. Über sie kommt die
+Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
 
 ### 4.3 Hauptfigur
 
@@ -316,8 +332,11 @@ Titelbild wählbar.
 
 ### 4.4 Roter Faden
 
-Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein Zufluchtsort
-für andere Überlebende. Mit Juna wird der alte **Leuchtmast am Steg** wieder
+Mikas Aufgabe, wie sie sie in der Einleitung selbst sagt: **die Nächte
+halten** (Türme neben die Wege, Barrikaden darauf, zur Not selbst am Hof),
+**ein Zuhause bauen** und **Zuflucht sein** für alle, die noch unterwegs
+sind. Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein
+Zufluchtsort für andere Überlebende. Mit Juna wird der alte **Leuchtmast am Steg** wieder
 zum **Leuchtfeuer** über dem See, das alle, die noch unterwegs sind, in die
 Bucht führt und die Horde zurückdrängt. Und irgendwann stellt sich die Frage,
 was Balduin eigentlich mit all den Zombieteilen macht. Danach geht das Spiel
@@ -918,6 +937,28 @@ Requisiten und Natur noch aus groben 1/8-m-Klötzen (OFFENE-FRAGEN 111).
 
 - Balance über zehn und mehr Nächte an den Wegen (Vorschläge liegen beim
   Auftraggeber), Testrunden mit allen Personas, Feinschliff.
+
+### Meilenstein 15 – Geschichte und Einleitung ✓
+
+Vorgezogen (Frage des Auftraggebers: »Wir wissen nicht, warum die Zombies
+nicht durch den Wald kommen, was überhaupt passiert ist und was unsere
+Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
+
+- **Einleitung mit Kamerafahrt:** Beim Einblenden steht die Kamera am
+  Waldrand; Mika erzählt in sechs Zeilen vom Moder, vom Geflecht im
+  Unterholz, von den festen Holzfällerwegen und der alten Holzlände, vom
+  Wasser hinter dem Haus und von ihrer Aufgabe. Die Kamera gleitet dazu vom
+  Spawn über das Unterholz und den Zusammenfluss (mit der Karte der Wege
+  über dem Dialog) zum Haus und zurück zu Mika. Während der Einleitung
+  gibt es keine Anzeigen außer dem Dialog.
+- **Der Moder ist zu sehen:** violette Matten und Fäden im Waldboden,
+  Moderpilze und Hexenringe im Unterholz; nachts glimmt alles schwach
+  (Eigenlicht, keine Lichtquelle).
+- **In der Welt verteilt:** Läuft Mika gegen den Wald, denkt sie einmal am
+  Tag darüber nach (vier Sätze); der Warnpfahl gibt einen Gedanken statt
+  eines Dialogs; Radio Stillwald rät »bleibt auf festem Boden«; Hilde fährt
+  nur auf festen Wegen, Bert erzählt von den geschotterten Holzfällerwegen,
+  Dr. Yusuf, was der Moder ist, Balduin, warum auf den Inseln keiner wächst.
 
 ## 9. Ideen-Parkplatz
 

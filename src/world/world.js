@@ -10,6 +10,7 @@ import { Colliders } from './colliders.js';
 import { createTerrain } from './terrain.js';
 import { createWater } from './water.js';
 import { GameMap } from './map.js';
+import { LAYOUT } from './layout.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
 import { createInterior } from './interior.js';
@@ -59,6 +60,7 @@ export class World {
       spawnGlow: createGlowMaterial(0xffffff), // fahle Laternen an den Spawns (Meilenstein 9)
       pumpkinGlow: createGlowMaterial(0xffffff), // Gesichter der Kürbislaternen (M12)
       torchGlow: createGlowMaterial(0xffffff), // Fackeln an den Wegen (m12-r1)
+      moderGlow: createGlowMaterial(0xffffff), // Kuppen der Moderpilze im Unterholz (M15)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
@@ -196,6 +198,8 @@ export class World {
     L.addGlow(this.materials.pumpkinGlow, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.45, mode: 'lamp', twinkle: true });
     // Fackeln: tagsüber aus (dunkler Kopf), nachts helles Feuer
     L.addGlow(this.materials.torchGlow, { dim: 0x2e1f17, bright: 0xffb347, boost: 1.6, mode: 'lamp', twinkle: true });
+    // Moder (M15): tagsüber blasses Lila, nachts ein kühles Glimmen im Unterholz
+    L.addGlow(this.materials.moderGlow, { dim: 0xa88fd0, bright: 0xc0a0ff, boost: 1.2, mode: 'lamp', twinkle: true });
   }
 
   /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
@@ -280,6 +284,46 @@ export class World {
     }
     const door = this.shelter.door.center;
     return Math.abs(x - door.x) < 0.36 && z < door.z + 0.2 && z > door.z - 0.6 ? 'innen' : null;
+  }
+
+  /**
+   * Blickpunkte der Einleitung (M15): der Waldrand am mittleren Spawn, das
+   * Unterholz neben einer Zuführung (dort sieht man den Moder), der
+   * Zusammenfluss der Wege vor der Bucht und das Haus am See.
+   * @param {'wald'|'unterholz'|'zusammen'|'haus'} key
+   */
+  lookSpot(key) {
+    const m = this.map;
+    if (key === 'wald') {
+      const s = m.spawns.find((sp) => sp.name === 'mitte') || m.spawns[0];
+      return { x: s.x + 7, z: s.z };
+    }
+    if (key === 'unterholz') return this.forestSpot || (this.forestSpot = this.findForestSpot());
+    if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
+    // Haus, Hof und rechts der See
+    const sh = LAYOUT.shelter;
+    return { x: sh.x + 4, z: sh.z + 4.5 };
+  }
+
+  /**
+   * Wo neben einer Zuführung am meisten Waldboden ins Bild passt: Der Weg
+   * liegt unten (über dem Dialog), darüber das Unterholz mit dem Moder.
+   */
+  findForestSpot() {
+    const m = this.map;
+    let best = null;
+    for (const path of m.paths) {
+      if (path.id === 'letzter') continue;
+      for (let k = 0; k < path.points.length; k += 2) {
+        const p = path.points[k];
+        if (p.x < -42 || p.x > -22) continue; // nicht wieder am Spawn (den zeigt schon »wald«)
+        const cz = p.z - 4;
+        let forest = 0;
+        for (let sx = -7; sx <= 7; sx++) for (let sz = -6; sz <= 1; sz++) if (m.edgeDistance(p.x + sx, cz + sz) > 0.8) forest++;
+        if (!best || forest > best.forest) best = { x: p.x, z: cz, forest };
+      }
+    }
+    return best ? { x: best.x, z: best.z } : { x: -36, z: 0 };
   }
 
   /** Wo man vor der Haustür steht (nach dem Hinausgehen). */

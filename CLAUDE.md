@@ -42,6 +42,13 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
   in derselben cozy, herbstlichen Welt.
 - **Balduin kommt nur übers Wasser** (Boot, Steg); Zombie-Überreste (halten
   bis zu drei Tage) sind seine Handelsware, warum er sie will, bleibt offen.
+- **Warum nur über die Wege (M15, DESIGN 4.1):** Der **Moder**, ein
+  Pilzgeflecht im Waldboden, macht Menschen zu Schlurfern und das Unterholz
+  unpassierbar (weich wie Moos, zäh wie Leim). Fest sind nur die alten,
+  geschotterten Holzfällerwege; sie laufen an der alten Holzlände zusammen –
+  Mikas Bucht. Wasser spült den Moder ab, Licht und Wärme machen ihn müde.
+  Mikas Aufgabe: die Nächte halten, ein Zuhause bauen, Zuflucht sein. Neue
+  Inhalte bleiben in dieser Geschichte.
 - **Noch offen (OFFENE-FRAGEN Nr. 66):** Umlenken der Horde durch Bauten und
   die Wegvorschau – bis zur Klärung weder entfernen noch neu entwickeln.
 - Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
@@ -129,6 +136,10 @@ gilt bis auf Weiteres:
 - Gesichter sind Platten je Ausdruck (M12), nie Überlagerungen vor dem Kopf.
   Alles, was vor Mikas Körper liegt (Gesicht, Lider, Laterne, Werkzeug),
   braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
+- **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
+  `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
+  nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
+  mit einer Lichtquelle.
 
 ## Architektur
 
@@ -240,6 +251,12 @@ Grundprinzipien:
   nahm die Seite ringsum dem Spiel sonst den Tastaturfokus (M9.1). Ohne
   Fokus zeigt das Spiel einen Hinweis (`input.lostFocus`); der Klick, der
   den Fokus zurückholt, ist kein Schlag.
+- **Einleitung (M15):** Dialogzeilen mit `blick` lenken die Kamera
+  (`world.lookSpot`, `game.tourFocus`: weich geführt, vor dem Einblenden
+  springt sie), `karte` zeigt die Karte der Wege über dem Dialog
+  (`mapView.drawInset`). Solange die Einleitung läuft (`introRunning`), zeigt
+  das Bild nur den Dialog. Gedanken aus der Welt (`thought` an einer
+  Interaktion, Waldrand) sind Sprechblasen aus `T.geschichte`.
 - **Die Maus wählt nur, wenn sie bewegt wird** (`input.mouse.moved`), sonst
   überschreibt ein ruhender Zeiger die Tastaturwahl. Vorgewählt ist in
   Rückfragen immer die harmlose Antwort (`standard: true` in dialogs.js).
@@ -370,7 +387,14 @@ Grundprinzipien:
    mit der Maus trifft auch nah das richtige Feld (Bilder: nah-tag, nah-haus,
    nah-nacht); ab M13g: alle Modellfamilien draußen (außer der Natur) sind an
    ihrer Geometrie gemessen im Maß 1/32, und die Bildlast im Hof bleibt unter
-   1,5 Mio. Dreiecken.
+   1,5 Mio. Dreiecken; ab M15 (Abschnitt `geschichte`, dazu im Spielstart):
+   die Einleitung fährt mit echten Tasten vom Waldrand über Unterholz,
+   Zusammenfluss (mit der Karte der Wege) und Haus zurück zu Mika, danach
+   folgt die Kamera wieder der Figur; der Moder glimmt im Unterholz, seine
+   Pilze stehen nie im Begehbaren; Mika denkt am Waldrand mit echter Taste
+   einmal am Tag über den Moder nach (am nächsten Tag ein anderer Satz); E am
+   Warnpfahl gibt einen Gedanken, keinen Dialog (Bilder: intro-wege,
+   moder-nacht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -436,7 +460,10 @@ Art, Regen, Wind, Tropfen und Nebel, `setWeather(art, sofort)` erzwingt ein
 Wetter (`null` = wie der Tag), `crows()` nennt Zustand und Sitzplatz der
 Krähen und wie oft sie krächzend aufgeflogen sind, `settleCrows()` setzt sie
 auf ihre Plätze; ab M13g misst `detail()` je Modellfamilie die kleinste
-Kantenlänge der Geometrie (»Voxel je Meter«, 32 = doppelt fein).
+Kantenlänge der Geometrie (»Voxel je Meter«, 32 = doppelt fein); ab M15
+zeigt `camera()` den Blickpunkt der Kamera, die laufende Fahrt der
+Einleitung und die Dialogzeile, `lookSpot(ort)` die Blickpunkte der
+Einleitung (`wald`, `unterholz`, `zusammen`, `haus`).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

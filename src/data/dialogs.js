@@ -1,4 +1,6 @@
-// Dialoge als Daten. Eine Zeile: { s: Sprecher-ID, t: Text, antworten? }.
+// Dialoge als Daten. Eine Zeile: { s: Sprecher-ID, t: Text, antworten?, blick?, karte? }.
+// `blick` (nur in der Einleitung, M15) lenkt die Kamera auf einen Ort der Karte,
+// `karte` zeigt dazu die Karte der Wege über dem Dialog.
 // Eine Antwort: { t: Text, aktion?: Name einer Spielaktion, standard?: true }.
 // `standard` markiert die harmlose Antwort, die vorgewählt ist – schnelles
 // Durchdrücken löst so nie aus Versehen Schlafen, Ausruhen oder Ausbauen aus.
@@ -133,7 +135,7 @@ export const DIALOGE = {
   ],
   hildeTreffen: [
     { s: 'hilde', t: 'Guten Morgen, Kindchen! Post hab ich keine mehr – aber ein Lastenrad voller Kram.' },
-    { s: 'hilde', t: 'Ich fahr die alten Runden ab. Wer noch da ist, bekommt, was er braucht, gegen das, was er übrig hat.' },
+    { s: 'hilde', t: 'Ich fahr die alten Runden ab – nur auf festen Wegen, versteht sich. Wer noch da ist, bekommt, was er braucht, gegen das, was er übrig hat.' },
     { s: 'mika', t: 'Noch jemand hier draußen. Das ist die beste Nachricht seit Wochen.' },
     { s: 'hilde', t: 'Gib mir einen trockenen Schlafplatz, dann bleib ich eine Weile. Ein Zelt tät’s.' },
   ],
@@ -177,7 +179,16 @@ export const DIALOGE = {
             state.survivors?.bert?.stage === 3
               ? errandOf(state, 'bert') === 1
                 ? 'Ein Laternenpfahl neben meinem Zelt. Vorher red ich nicht über Zahnräder. Hmpf.'
-                : pick(['Die Türme stehen wieder gerade. Na ja, fast.', 'Wer hat die Werkbank so eingeräumt? Egal. Ich räum um.', 'Hmpf. Gute Arbeit, die Barrikaden. Hab nur zwei Nägel nachgeschlagen.'], state.time.day)
+                : pick(
+                    [
+                      'Die Türme stehen wieder gerade. Na ja, fast.',
+                      'Wer hat die Werkbank so eingeräumt? Egal. Ich räum um.',
+                      'Hmpf. Gute Arbeit, die Barrikaden. Hab nur zwei Nägel nachgeschlagen.',
+                      // M15: Vorgeschichte
+                      'Die Holzfäller haben ihre Wege geschottert, damit die Laster durchkommen. Heute ist das der einzige feste Boden im Wald. Hmpf. Ironie.',
+                    ],
+                    state.time.day
+                  )
               : 'Schlafplatz gefunden? Nein? Dann schlaf ich eben wieder am Feuer. Hmpf.',
         },
       ],
@@ -196,7 +207,17 @@ export const DIALOGE = {
             state.survivors?.yusuf?.stage === 3
               ? errandOf(state, 'yusuf') === 1
                 ? 'Hast du an die Kamille gedacht? Sechs Fasern aus dem hohen Gras und ein Stück Stoff.'
-                : pick(['Tee? Tee.', 'Kamille, Minze und ein Geheimnis. Mehr verrate ich nicht.', 'Du siehst müde aus. Das ist normal. Alle hier sehen müde aus.'], state.time.day)
+                : pick(
+                    [
+                      'Tee? Tee.',
+                      'Kamille, Minze und ein Geheimnis. Mehr verrate ich nicht.',
+                      'Du siehst müde aus. Das ist normal. Alle hier sehen müde aus.',
+                      // M15: Vorgeschichte
+                      'Der Moder ist ein Pilz. Dunkel, kühl und feucht mag er es – Licht und Wärme machen ihn träge. Und die Schlurfer mit ihm.',
+                      'Die Moderkerne der Anführer … Wenn ich nur ein Mikroskop hätte.',
+                    ],
+                    state.time.day
+                  )
               : 'Ein Zelt wäre schön. Mein Rücken ist nicht mehr der jüngste.',
         },
       ],
@@ -226,11 +247,15 @@ export const DIALOGE = {
     { s: 'mika', t: 'Und wir halten die Nächte durch. Gemeinsam.' },
   ],
 
+  // Einleitung (M15): was passiert ist, warum die Horde nur über die Wege kommt und
+  // was Mika hier vorhat. Die Kamera fährt dazu vom Waldrand über die Wege zum Haus.
   intro: [
-    { s: 'mika', t: 'Ein altes Fischerhaus am See – kaum mehr als eine Notunterkunft, aber ein Dach über dem Kopf und ein richtiges Bett. Nach all den Wochen unterwegs fühlt sich das fast wie Luxus an.' },
-    { s: 'mika', t: 'Wacklig, aber es hält. Und wer auch immer hier vor mir gewohnt hat, hatte ein Herz für Lichterketten.' },
-    { s: 'mika', t: 'Hinter mir nur Wasser. Nachts schlurfen sie aus dem Wald – über die alten Wege von links bis hierher an den Hof.' },
-    { s: 'mika', t: 'Neben die Wege gehören Türme, auf die Wege Barrikaden. Aber erst brauche ich Werkzeug: Am Hackklotz steckt noch eine Axt.' },
+    { s: 'mika', blick: 'wald', t: 'Drei Herbste ist es her, seit der Moder aus dem Waldboden kam. Wen er einspinnt, der wird zum Schlurfer: schläfrig, grummelig – und nachts immer dem Licht und der Wärme nach.' },
+    { s: 'mika', blick: 'unterholz', t: 'Durchs Unterholz kommen sie nicht. Der Boden dort ist ein einziges Modergeflecht, weich wie Moos und zäh wie Leim. Fest sind nur die alten Holzfällerwege.' },
+    { s: 'mika', blick: 'zusammen', karte: true, t: 'Und alle diese Wege laufen hier zusammen, an der alten Holzlände am Stillsee. Früher rollten die Holzfäller hier ihre Stämme ins Wasser.' },
+    { s: 'mika', blick: 'haus', t: 'Hinter mir nur Wasser – und Wasser meiden sie. Dazu ein altes Fischerhaus mit Lichterkette und einem richtigen Bett. Hier bleibe ich.' },
+    { s: 'mika', blick: 'mika', t: 'Tagsüber mache ich es zu einem Zuhause, nachts halte ich die Wege: Türme daneben, Barrikaden darauf. Vielleicht finden ja noch andere her.' },
+    { s: 'mika', t: 'Aber erst brauche ich Werkzeug. Am Hackklotz steckt noch eine Axt.' },
   ],
 
   bettFrueh: [
@@ -252,6 +277,7 @@ export const DIALOGE = {
         ]
       : [
           { s: 'radio', t: '…krrzz… hier ist … Radio Stillwald … falls uns jemand hört …' },
+          { s: 'radio', t: '…bleibt auf festem Boden … nachts Licht an, Türen zu … krrzz…' },
           { s: 'radio', t: '…der alte Mast am Steg … wenn ihn jemand wieder … krrrzzz…' },
           { s: 'mika', t: 'Da war eine Stimme! Da draußen ist noch jemand.' },
         ],

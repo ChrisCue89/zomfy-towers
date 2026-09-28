@@ -14,6 +14,7 @@ const CHARS_PER_SECOND = 72;
 /** Tonhöhe des Tippens je Sprecher (Hz). */
 const VOICE_PITCH = { mika: 540, radio: 300, knopf: 760, hilde: 460, juna: 660, bert: 250, yusuf: 360, schild: 400, balduin: 300 };
 const ANSWER_GUARD = 0.3;
+const BOX_HEIGHT = 74;
 
 export class DialogBox {
   /** @param {import('../core/game.js').Game} game */
@@ -133,6 +134,11 @@ export class DialogBox {
     if (input.pressed('confirm') || input.mouse.clicked) this.advance();
   }
 
+  /** Oberkante des Fensters samt Namensschild (für Bilder darüber, M15). */
+  top(ui) {
+    return ui.height - BOX_HEIGHT - 8 - 13;
+  }
+
   /** @param {import('./ui.js').UICanvas} ui */
   draw(ui) {
     if (!this.active || !this.line) return;
@@ -141,7 +147,7 @@ export class DialogBox {
     const portrait = speaker.portrait ? this.game.portraits[speaker.portrait] : null;
 
     const w = Math.min(ui.width - 24, 440);
-    const h = 74;
+    const h = BOX_HEIGHT;
     const x = Math.round((ui.width - w) / 2);
     const y = ui.height - h - 8;
 

@@ -1149,6 +1149,8 @@ export function createProps({ seed, materials, colliders, map }) {
       const post = add(buildWarnPost(seed + 30 + side, side), x, z, { name: 'Warnpfahl' });
       if (materials.spawnGlow) post.add(createStaticVoxelObject(buildWarnLight(side), materials.spawnGlow, { shadow: 'none', jitter: 0, size: FINE32 }));
       colliders.addCircle(x + 0.0625, z, 0.2, 'warnpfahl');
+      // M15: Ansehen gibt einen Gedanken (nie einen Dialog – hier kommt nachts die Horde)
+      interactions.push({ id: `warnpfahl-${spawn.name}-${side}`, x, z, radius: 1.1, prompt: 'ansehen', thought: 'warnpfahl' });
     }
   }
 
