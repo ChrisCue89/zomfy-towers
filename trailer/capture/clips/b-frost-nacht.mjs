@@ -4,11 +4,11 @@
 // `hud-frost`: ein Einzelbild mit voller Oberfläche (Uhrentafel „Tag 30 von 30 · Schnee 20:42 · Nacht“, Nachtleiste).
 //   node capture/clips/b-frost-nacht.mjs            (ZT_NAME=_probe ZT_FRAMES=1 für Proben; ZT_NOHUD=1 ohne Einzelbild)
 import { Rec } from '../lib.mjs';
-import { prepare, placeTowers } from './b-common.mjs';
+import { prepare, placeTowers, snowCover, hideHudBits } from './b-common.mjs';
 
 const NAME = process.env.ZT_NAME || 'frost-nacht';
 const FRAMES = Number(process.env.ZT_FRAMES || 110);
-const CAM = [-12.6, 0.9];
+const CAM = [-13.6, 0.9];
 
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 30, hour: 20, minute: 29, weather: 'schnee', view: 'nah' });
@@ -37,6 +37,7 @@ await rec.eval(() => {
   Z.teleport(-5.2, 3.4, 4.2); // Mika steht hinter dem Wall, außerhalb des Bildes
   g.nights.enabled = true; // Frostnacht beginnt um 20:30 (Plan: jede Welle über alle drei Wege)
 });
+await snowCover(rec, 0.5); // dünnere Schneedecke (kein Tarnmuster)
 await rec.sim(3); // Nacht beginnt, Welle 1 wird angesagt
 if (!process.env.ZT_NOHUD) {
   // Einzelbild mit voller Oberfläche: Uhrentafel, Nachtleiste
@@ -46,23 +47,25 @@ if (!process.env.ZT_NOHUD) {
   });
   await rec.sim(0.5);
   await rec.eval(() => (window.zomfy.game.hud.toasts.length = 0));
+  await rec.setUi('full');
+  await hideHudBits(rec);
   await rec.clip('hud-frost', { frames: 1, ui: 'full', cam: { keys: [[0, CAM[0], CAM[1]]] }, description: 'Einzelbild mit voller Oberfläche: Uhrentafel „Tag 30 von 30 · Schnee 20:42 · Nacht“, Nachtleiste der Frostnacht („Aus: Nordweg, Mittelweg und Südweg“).' });
   await rec.setUi('world');
 }
-// Vorlauf: die Horde (echte Welle) zieht dichter Pulk auf das Tor zu
+// Vorlauf: die Horde (echte Welle) zieht als dichter Pulk auf das Tor zu – gewartet wird, bis ihre Spitze im Bild ist
 let waited = 0;
-for (let t = 0; t < 400; t++) {
+for (let t = 0; t < 600; t++) {
   await rec.sim(0.5);
   waited += 0.5;
   const c = await rec.eval(() => {
     const zs = window.zomfy.zombies().filter((z) => z.state !== 'dying');
-    return { alive: zs.length, view: zs.filter((z) => z.x > -24 && z.x < -12).length };
+    return { alive: zs.length, view: zs.filter((z) => z.x > -19 && z.x < -8).length, back: zs.filter((z) => z.x > -26 && z.x <= -19).length };
   });
-  if (c.view >= 9) {
+  if (c.view >= 8 && c.back >= 6) {
     console.log('Vorlauf', waited, JSON.stringify(c));
     break;
   }
-  if (t === 399) console.log('Vorlauf: Zeit um', JSON.stringify(c));
+  if (t === 599) console.log('Vorlauf: Zeit um', JSON.stringify(c));
 }
 const r = await rec.clip(NAME, {
   frames: FRAMES,

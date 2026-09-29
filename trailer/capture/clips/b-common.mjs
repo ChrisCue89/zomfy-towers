@@ -115,3 +115,28 @@ export async function findFrame(Rec, scene, detect, { max = 1500, open = {} } = 
   await rec.close();
   return n;
 }
+
+/**
+ * Schneedecke am Boden dünner zeichnen (0 = keine, 1 = wie im Spiel bei Schnee). Das Spiel setzt `uSnow` je Schritt
+ * auf die Wetterstärke; hier wird der Wert nur unmittelbar vor dem Zeichnen überschrieben, damit der Boden nicht wie
+ * ein Tarnmuster aus großen Flecken wirkt. Schneefall (Flocken) bleibt unverändert.
+ */
+export function snowCover(rec, k) {
+  return rec.eval(async (k) => {
+    const { sharedUniforms } = await import('/src/render/materials.js');
+    const g = window.zomfy.game;
+    if (!g.__renderRaw) g.__renderRaw = g.render.bind(g);
+    g.render = () => {
+      sharedUniforms.uSnow.value = Math.min(sharedUniforms.uSnow.value, k);
+      return g.__renderRaw();
+    };
+  }, k);
+}
+
+/** Oberflächenteile ausblenden, die ein Einzelbild mit voller Oberfläche stören (Zielzeile, Einblendung, Hinweis). */
+export function hideHudBits(rec, names = ['drawGoal', 'drawPrompt', 'drawLabels', 'drawGoalMarker', 'drawEdgeMarkers']) {
+  return rec.eval((names) => {
+    const hud = window.zomfy.game.hud;
+    for (const n of names) hud[n] = () => {};
+  }, names);
+}

@@ -4,14 +4,14 @@
 // durch den Schein (geblendet, um 30 % langsamer – das Leuchtfeuer wirkt im Spiel so). Zwei Laternentürme setzen warme Inseln.
 //   node capture/clips/b-leuchtfeuer.mjs            (ZT_NAME=_probe ZT_FRAMES=1 für Proben, ZT_PROBE2=1: Anfang und Ende)
 import { Rec } from '../lib.mjs';
-import { prepare } from './b-common.mjs';
+import { prepare, snowCover } from './b-common.mjs';
 
 const NAME = process.env.ZT_NAME || 'leuchtfeuer';
 const FRAMES = Number(process.env.ZT_FRAMES || 60);
 const MAST = { x: 22.25, z: -1.0 };
 const CAM0 = [20.6, -1.4]; // Anfang: unten am Steg
 const CAMM = [21.1, -5.0];
-const CAM1 = [21.6, -8.6]; // Ende: hoch zur Lampe
+const CAM1 = [21.6, -8.2]; // Ende: hoch zur Lampe
 
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 30, hour: 22, minute: 10, weather: 'schnee', view: 'nah' });
@@ -29,6 +29,7 @@ await rec.eval((MAST) => {
   // ein paar Schlurfer kommen den Steg entlang (zum Haus), mitten durch den Schein
   [[19.6, -1.0], [18.1, -0.9], [16.6, -1.1], [15.2, -1.0]].forEach(([x, z]) => b.zombie('schlurfer', x, z, { hp: 3 }));
 }, MAST);
+await snowCover(rec, 0.5); // dünnere Schneedecke (kein Tarnmuster)
 await rec.sim(2);
 if (process.env.ZT_PROBE2) {
   await rec.clip('_probe', { frames: 1, cam: { keys: [[0, ...CAM0]] } });
