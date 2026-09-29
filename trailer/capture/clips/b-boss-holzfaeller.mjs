@@ -50,7 +50,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -13.6, 0.4], [FRAMES - 1, -13.1, 0.4]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht 5, Ansicht nah. Der Holzfäller (Boss, Lebensbalken oben) steht vor zwei Metall-Barrikadenreihen; ab Bild ~3 warnt ein Ring am Boden, das Wort „holt aus!“ steht über ihm; um Bild ~39 schlägt er zu (Barrikaden zersplittern, Kamerawackeln). Katapulte mit Feuerkürbissen dahinter.',
+  description: 'Nacht 5, Ansicht nah. Der Holzfäller (Boss, Lebensbalken „Der Holzfäller“ oben, Beanie/Axt) steht im Lichtkegel eines Laternenpfahls vor zwei Reihen Metall-Barrikaden. Bild 0-6: Vorbereitung (Gefolge links, Feuerkürbisse fliegen von den Katapulten), ab Bild 6 „holt aus!“ (Wort über dem Kopf und rechts in der Leiste) mit wachsendem orangem Ring am Boden (Bild 8-32), um Bild 34-36 der Schlag: Barrikaden zersplittern (Funken-/Splitterwolke Bild 36-44), Kamerawackeln. Mika rechts unten am Katapult. Beste Schnitte: 6-30 (Ankündigung), 30-44 (Schlag und Splitter).',
 });
 console.log(r.problems);
 await rec.close();

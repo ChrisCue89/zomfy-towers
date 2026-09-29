@@ -14,8 +14,18 @@ const info = await rec.eval(() => {
   z.give({ holz: 60, schrott: 40, stein: 20, fasern: 20, stoff: 20 });
   for (const id of ['bild', 'teekanne', 'wimpel', 'lichterkette', 'stehlampe', 'lesesessel']) z.buyFurniture(id);
   const e = z.interior().entry;
-  z.teleport(310.4, 3.6, Math.PI / 2); // im Wohnraum, links; schaut nach rechts
-  return { entry: e, inside: g.viewInside, bounds: z.interior().bounds, cozy: z.cozy() };
+  // freie Bahn durch den Raum suchen: Zeile z, in der Mika von x=309.9 bis 315.2 ungehindert geht (Möbel stehen im Weg)
+  const col = g.world.colliders;
+  const rows = [];
+  for (let zz = 1.2; zz <= 4.9; zz += 0.1) {
+    let free = true;
+    for (let xx = 309.8; xx <= 315.3; xx += 0.1) if (col.blocks(xx, zz, 0.3)) { free = false; break; }
+    if (free) rows.push(+zz.toFixed(2));
+  }
+  const lane = rows.length ? rows.reduce((b, r) => (Math.abs(r - 3.0) < Math.abs(b - 3.0) ? r : b), rows[0]) : 4.6;
+  window.__lane = lane;
+  z.teleport(310.0, lane, Math.PI / 2); // im Wohnraum, links; schaut nach rechts
+  return { entry: e, inside: g.viewInside, bounds: z.interior().bounds, cozy: z.cozy(), rows, lane };
 });
 console.log(JSON.stringify(info));
 await rec.sim(2);
@@ -32,7 +42,7 @@ if (PROBE) {
     frames: FRAMES,
     ui: 'world',
     cam: { keys: KEYS },
-    each: (i) => { window.__route([[314.9, 3.6]], false, 0.3); },
+    each: (i) => { window.__route([[315.2, window.__lane]], false, 0.3); },
     description: 'Innenraum des Fischerhauses am Abend (21:30, Ansicht drinnen 240 px/m statt der 160 des Spiels, damit der Raum das 1080p-Bild füllt): eingerichtet mit Bild, Teekanne, Wimpeln, Lichterkette, Stehlampe und Lesesessel; Kamin/Feuerschein, warmes Licht. Mika geht (echte Tastensteuerung) von links nach rechts durchs Bild (Profil).',
   });
 }

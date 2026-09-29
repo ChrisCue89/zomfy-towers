@@ -4,7 +4,8 @@
 
 import { W, H, FPS, clamp, lerp, smooth, ramp, pulse } from './util.js';
 import { shot } from './shots.js';
-import { narrate, slam, nameTag, particles, studio, title, fadeToBlack } from './layers.js';
+import { narrate, slam, nameTag, particles, studio, title, fadeToBlack, sticker } from './layers.js';
+import { ditherFill } from './fx.js';
 
 export const DURATION = 60;
 
@@ -25,6 +26,7 @@ export const tb = (k) => T.titel + k * BEAT.titel;
 
 const S = (n) => `/game/screenshots/${n}.png`;
 const STAND = {
+  reaktionen: 'reaktionen', 'hud-frost': 'finale',
   'see-morgen': 'haendler', 'haus-morgen': 'titel', sammeln: 'tag', bauen: 'turm-bauen', einrichten: 'innen', 'feuer-abend': 'abend',
   daemmerung: 'abend', 'wald-moder': 'moder-nacht', 'turm-bauen-nacht': 'nacht', 'turm-feuer': 'horde', barrikade: 'barrikaden', nahkampf: 'nahkampf',
   'reaktion-eisblock': 'reaktionen', 'reaktion-dampf': 'reaktionen', 'reaktion-kleber': 'reaktionen', 'boss-holzfaeller': 'boss', 'champion-beute': 'champion',
@@ -43,18 +45,20 @@ const add = (...l) => layers.push(...l.flat());
 add(studio(0, 2.6));
 
 // ============================================================================
-// AKT I · EIN ZUHAUSE  2,5 – 12,5   (titel, 72 BPM)
+// AKT I · EIN ZUHAUSE  2,5 – 12,5   (titel, 72 BPM: Schlag 0,833 s, Takt 3,33 s)
 // ============================================================================
 add(
-  sh('see-morgen', 2.0, tb(4) - 2.0 + 0.5, { tin: { kind: 'dither', dur: 0.6 }, zoom: [1.04, 1.0] }),
-  sh('haus-morgen', tb(4), tb(8) - tb(4) + 0.4, { tin: { kind: 'dither', dur: 0.5, mode: 'right' } }),
-  sh('sammeln', tb(8), BEAT.titel),
-  sh('bauen', tb(9), BEAT.titel),
-  sh('einrichten', tb(10), BEAT.titel),
-  sh('feuer-abend', tb(11), BEAT.titel + 0.2),
+  // Steg im Morgenlicht, langsam (100 Bilder über 4,3 s)
+  sh('see-morgen', 2.0, tb(4) - 2.0 + 0.5, { speed: 0.78, tin: { kind: 'dither', dur: 0.6 }, zoom: [1.0, 1.06], pan: [[0, 0], [-24, 6]] }),
+  // Mika tritt aus dem Haus und geht zum Feuer
+  sh('haus-morgen', tb(4), tb(8) - tb(4) + 0.4, { from: 6, speed: 0.82, tin: { kind: 'dither', dur: 0.5, mode: 'right' } }),
+  // Tagsüber: sammeln, bauen, einrichten (auf den Schlägen der Spieluhr)
+  sh('sammeln', tb(8), 2 * BEAT.titel, { speed: 0.8 }),
+  sh('bauen', tb(10), BEAT.titel),
+  sh('einrichten', tb(11), BEAT.titel + 0.05),
   // Blick in den Wald: der Moder schaut kurz durchs Fenster (je 4 Bilder)
-  sh('wald-moder', tb(10) + 0.42, 4 / FPS, { from: 62, grade: 'cold' }),
-  sh('wald-moder', tb(11) + 0.32, 4 / FPS, { from: 70, grade: 'cold' }),
+  sh('wald-moder', tb(10) + 0.42, 4 / FPS, { ui: false, from: 40, grade: 'cold' }),
+  sh('wald-moder', tb(11) + 0.32, 4 / FPS, { ui: false, from: 52, grade: 'cold' }),
   particles('leaves', 2.3, 12.5, { count: 22, seed: 4, alpha: 0.9, speed: 0.8 }),
   narrate('Die Welt ist still geworden.', 2.9, 2.6),
   narrate('Am Stillsee brennt noch {Licht.}', 6.2, 2.7),
@@ -65,58 +69,64 @@ add(
 // DIE WENDE  12,5 – 16,0
 // ============================================================================
 add(
-  sh('daemmerung', 12.5, 2.2, { tin: { kind: 'dither', dur: 0.5 } }),
-  sh('wald-moder', 14.5, 1.5 + 0.1, { tin: { kind: 'dither', dur: 0.45, mode: 'right' } }),
+  sh('daemmerung', 12.5, 2.2 + 0.1, { from: 8, tin: { kind: 'dither', dur: 0.5 } }),
+  sh('wald-moder', 14.7, 1.3 + 0.1, { ui: false, from: 46, tin: { kind: 'dither', dur: 0.45, mode: 'right' } }),
   particles('spores', 14.4, 16.0, { count: 34, seed: 2, fi: 0.4, fo: 0.05 }),
-  narrate('Nachts …', 12.7, 1.6, { tone: 'cold', scale: 6 }),
+  narrate('Nachts …', 12.7, 1.6, { tone: 'cold' }),
   narrate('… kommt der Wald zu Besuch.', 14.35, 1.6, { tone: 'cold' }),
 );
 
 // ============================================================================
-// AKT II · DIE NACHT  16,0 – 31,23   (nacht, 126 BPM; Takt = 1,905 s)
+// AKT II · DIE NACHT  16,0 – 31,23   (nacht, 126 BPM; Schlag 0,476 s, Takt 1,905 s)
 // ============================================================================
+const BAR = 4 * BEAT.night;
 add(
-  sh('turm-bauen-nacht', nb(0), 2 * BEAT.night),
-  sh('turm-feuer', nb(2), 2 * BEAT.night),
-  sh('barrikade', nb(4), 4 * BEAT.night),
-  sh('nahkampf', nb(8), 4 * BEAT.night),
-  sh('reaktion-eisblock', nb(12), BEAT.night),
-  sh('reaktion-dampf', nb(13), BEAT.night),
-  sh('reaktion-kleber', nb(14), BEAT.night),
-  sh('turm-feuer', nb(15), BEAT.night, { from: 50 }),
-  sh('boss-holzfaeller', nb(16), 2 * BEAT.night),
-  sh('champion-beute', nb(18), 2 * BEAT.night),
-  sh('lager-tor', nb(20), 2 * BEAT.night),
-  sh('wege-weit', nb(22), 2 * BEAT.night),
-  sh('turm-feuer', nb(24), BEAT.night, { from: 30 }),
-  sh('nahkampf', nb(25), BEAT.night, { from: 40 }),
-  sh('barrikade', nb(26), BEAT.night, { from: 50 }),
-  sh('lager-tor', nb(27), BEAT.night, { from: 50 }),
-  sh('morgenbericht', nb(28), T.zu - nb(28) + 0.4, { tin: { kind: 'dither', dur: 0.7, mode: 'up' }, ui: true }),
-  slam('TÜRME', nb(0), 2 * BEAT.night, { sub: 'neben dem Weg.' }),
-  slam('BARRIKADEN', nb(4), 4 * BEAT.night, { sub: 'darauf.', scale: 12 }),
-  slam('UND DU', nb(8), 4 * BEAT.night, { sub: 'mittendrin.' }),
-  slam('EISBLOCK!', nb(12), BEAT.night, { look: 'ice', scale: 12, letters: false }),
-  slam('KLIRR!', nb(13), BEAT.night, { look: 'ice', scale: 12, letters: false }),
-  slam('DAMPF!', nb(14), BEAT.night, { look: 'white', scale: 12, letters: false }),
-  slam('EIN BOSS', nb(16), 4 * BEAT.night, { sub: 'in jeder fünften Nacht.', look: 'red', scale: 12 }),
-  slam('30 NÄCHTE', nb(20), 4 * BEAT.night, { sub: 'ein Herbst.', scale: 12 }),
+  // Takt 1: Türme neben dem Weg
+  sh('turm-feuer', nb(0), BAR, { from: 0 }),
+  // Takt 2: Barrikaden darauf
+  sh('barrikade', nb(4), BAR, { from: 0 }),
+  // Takt 3: und du mittendrin
+  sh('nahkampf', nb(8), BAR, { from: 4 }),
+  // Takt 4: Reaktionen (drei Wörter des Spiels), dann Türme
+  sh('reaktionen', nb(12), BEAT.night, { from: 4 }),
+  sh('reaktionen', nb(13), BEAT.night, { from: 16 }),
+  sh('reaktionen', nb(14), BEAT.night, { from: 48 }),
+  sh('turm-feuer', nb(15), BEAT.night, { from: 60 }),
+  // Takt 5: ein Boss
+  sh('boss-holzfaeller', nb(16), 2 * BEAT.night, { from: 16 }),
+  sh('lager-tor', nb(18), 2 * BEAT.night, { from: 8 }),
+  // Takt 6: 30 Nächte
+  sh('turm-feuer', nb(20), 2 * BEAT.night, { from: 62 }),
+  sh('lager-tor', nb(22), 2 * BEAT.night, { from: 32 }),
+  // Takt 7: Stakkato im Schlag
+  sh('barrikade', nb(24), BEAT.night, { from: 40 }),
+  sh('nahkampf', nb(25), BEAT.night, { from: 42 }),
+  sh('lager-tor', nb(26), BEAT.night, { from: 0 }),
+  sh('turm-feuer', nb(27), BEAT.night, { from: 20 }),
+  // Takt 8: Morgen. Nacht überstanden.
+  sh('morgenbericht', nb(28), T.zu - nb(28) + 0.4, { tin: { kind: 'dither', dur: 0.7, mode: 'up' }, ui: { rects: [[108, 78, 428, 174]] } }),
+  slam('TÜRME', nb(0), BAR - 0.05, { sub: 'neben dem Weg.' }),
+  slam('BARRIKADEN', nb(4), BAR - 0.05, { sub: 'darauf.', scale: 12 }),
+  slam('UND DU', nb(8), BAR - 0.05, { sub: 'mittendrin.' }),
+  slam('EIN BOSS', nb(16), BAR - 0.05, { sub: 'in jeder fünften Nacht.', look: 'red', scale: 12 }),
+  slam('30 NÄCHTE', nb(20), 2 * BAR - 0.05, { sub: 'ein Herbst.', scale: 12 }),
 );
 
 // ============================================================================
-// AKT III · ZUFLUCHT  31,23 – 41,23   (titel-Mittelteil)
+// AKT III · ZUFLUCHT  31,23 – 41,23   (titel-Mittelteil, Schlag 0,833 s)
 // ============================================================================
 add(
-  sh('hilde-kommt', T.zu, 2 * BEAT.titel + 0.1, { tin: { kind: 'dither', dur: 0.5 } }),
-  sh('leute-feuer', zb(2), 2 * BEAT.titel + 0.1),
-  sh('nah-hilde', zb(4), 0.667),
-  sh('nah-juna', zb(4) + 0.667, 0.667),
-  sh('nah-bert', zb(4) + 1.333, 0.667),
-  sh('nah-yusuf', zb(4) + 2.0, 0.667),
-  sh('nah-knopf', zb(4) + 2.667, 0.667),
-  sh('karten-kamin', zb(8), 2 * BEAT.titel + 0.05),
-  sh('haendler-boot', zb(10), 2 * BEAT.titel + 0.1),
-  narrate('Und du bist nicht {allein.}', T.zu + 0.4, 2.7),
+  sh('leute-feuer', T.zu, 4 * BEAT.titel + 0.1, { speed: 0.6, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.5 } }),
+  sh('nah-hilde', zb(4), 0.667, { from: 4 }),
+  sh('nah-juna', zb(4) + 0.667, 0.667, { from: 4 }),
+  sh('nah-bert', zb(4) + 1.333, 0.667, { from: 4 }),
+  sh('nah-yusuf', zb(4) + 2.0, 0.667, { from: 4 }),
+  sh('nah-knopf', zb(4) + 2.667, 0.667, { from: 4 }),
+  sh('karten-kamin', zb(8), 2 * BEAT.titel + 0.05, { from: 8, ui: false, zoom: [1.86, 1.9], pan: [[0, 70], [0, 60]] }),
+  sticker('karten-kamin', 40, [8, 8, 192, 62], zb(8) + 0.12, 2 * BEAT.titel - 0.1, { x: 372, y: 190, scale: 3 }),
+  sticker('karten-kamin', 40, [244, 294, 152, 42], zb(8) + 0.5, 2 * BEAT.titel - 0.5, { x: W / 2, y: 900, scale: 4, dy: 60 }),
+  sh('haendler-boot', zb(10), 2 * BEAT.titel + 0.1, { from: 34, speed: 0.85 }),
+  narrate('Und du bist nicht {allein.}', T.zu + 0.5, 2.7),
   nameTag('Hilde', 'ehemalige Postbotin', zb(4), 0.667),
   nameTag('Juna', 'Funkbastlerin', zb(4) + 0.667, 0.667),
   nameTag('Bert', 'Baumarkt-Verkäufer', zb(4) + 1.333, 0.667),
@@ -125,26 +135,33 @@ add(
   narrate('Kartenabend am Kamin. Handel am Steg.', zb(8) + 0.2, 3.0),
 );
 
-// ============================================================================
-// AKT IV · FROSTNACHT  41,23 – 51,67   (boss, 138 BPM; Takt = 1,739 s)
-// ============================================================================
+// Luft holen: Bild wird schwarz, nur die Uhrentafel der Frostnacht leuchtet, zwei Herzschläge (40,7 / 41,0)
 add(
-  sh('frost-nacht', bb(0), 8 * BEAT.boss),
-  sh('moderherz', bb(8), 8 * BEAT.boss),
-  sh('leuchtfeuer', bb(16), 4 * BEAT.boss),
-  sh('herz-zerfall', bb(20), T.end - bb(20) + 0.4),
+  { t0: 40.32, t1: T.boss, z: 22, space: 'over', draw(ctx, t) { ditherFill(ctx, '#0d0b18', ramp(t, 40.32, 40.62)); } },
+  sticker('hud-frost', 0, [4, 4, 149, 34], 40.62, T.boss - 40.62, { x: W / 2, y: H / 2, scale: 9, glow: '150,190,255' }),
+);
+
+// ============================================================================
+// AKT IV · FROSTNACHT  41,23 – 51,67   (boss, 138 BPM; Schlag 0,435 s, Takt 1,739 s)
+// ============================================================================
+const BBAR = 4 * BEAT.boss;
+add(
+  sh('frost-nacht', bb(0), 2 * BBAR + 0.05, { from: 0, ui: { rects: [[0, 32, 640, 328], [0, 0, 205, 32], [435, 0, 205, 32]] } }),
+  sh('moderherz', bb(8), 2 * BBAR + 0.05, { from: 0 }),
+  sh('leuchtfeuer', bb(16), BBAR, { from: 0, speed: 0.6 }),
+  sh('herz-zerfall', bb(20), T.end - bb(20) + 0.4, { from: 0 }),
   particles('snow', T.boss, T.end + 0.5, { count: 110, seed: 6, alpha: 0.9, speed: 1.1, wind: 55, z: 6 }),
-  slam('TAG 30 VON 30', bb(0), 4 * BEAT.boss, { look: 'ice', scale: 12, letters: false }),
-  slam('DER ERSTE FROST', bb(4), 4 * BEAT.boss, { look: 'ice', scale: 12 }),
-  slam('DAS MODERHERZ', bb(8), 8 * BEAT.boss, { look: 'violet', scale: 12, sub: 'erwacht.' }),
-  slam('HALTE DAS LICHT.', bb(16), 5 * BEAT.boss, { look: 'gold', scale: 12 }),
+  sticker('hud-frost', 0, [225, 4, 190, 55], bb(1), 2 * BBAR - 0.4, { x: W / 2, y: 118, scale: 3 }),
+  slam('DER ERSTE FROST', bb(0), 2 * BBAR - 0.05, { look: 'ice', scale: 12 }),
+  slam('DAS MODERHERZ', bb(8), 2 * BBAR - 0.05, { look: 'violet', scale: 12, sub: 'erwacht.' }),
+  slam('HALTE DAS LICHT.', bb(16), 2 * BBAR - 0.1, { look: 'gold', scale: 12 }),
 );
 
 // ============================================================================
 // AUSKLANG  51,67 – 60
 // ============================================================================
 add(
-  sh('frost-morgen', T.end + 0.3, 2.2, { tin: { kind: 'dither', dur: 0.7 } }),
+  sh('frost-morgen', T.end + 0.3, 2.2, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.7 } }),
   sh('balduin-dialog', 53.9, 2.3, { tin: { kind: 'dither', dur: 0.4 }, ui: true }),
   narrate('Am Morgen liegt {Schnee.}', 52.1, 1.9),
   title(T.title, DURATION),
@@ -184,7 +201,7 @@ export function gradeAt(t) {
 
 // [zeit, stärke in Pixeln]
 export const shakes = [
-  [T.night, 27], [T.boss, 27], [nb(8), 9], [nb(16), 12], [bb(8), 15], [bb(16), 12], [T.title + 0.66, 9],
+  [T.night, 27], [T.boss, 27], [nb(8), 9], [nb(16) + 22 / 30, 18], [bb(8), 15], [bb(16), 12], [T.title + 0.66, 9],
 ];
 // [zeit, stärke, abklingen]
 const FLASHES = [[T.night, 0.85, 7], [T.boss, 0.8, 7], [nb(8), 0.25, 9], [nb(16), 0.3, 9], [bb(8), 0.35, 8], [bb(16), 0.3, 8], [T.title, 0.35, 4], [T.title + 0.66, 0.25, 5]];

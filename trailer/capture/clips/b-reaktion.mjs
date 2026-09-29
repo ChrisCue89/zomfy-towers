@@ -25,7 +25,8 @@ const SCENES = {
       { type: 'laternenpfahl', i: -13, j: 4 },
     ],
     zombies: [-24.5, -25.6, -26.7],
-    cam: [-17.6, 1.3],
+    cam: [-20.4, 1.3],
+    n: 277, // Bild, in dem das Wort erscheint (aus dem Trockenlauf; das Spiel rechnet deterministisch)
     text: 'Nass (Sprenger) + frostig (Frost-Sprenger) = „Eisblock!“, der Bolzen lässt ihn zerspringen („Klirr!“)',
   },
   dampf: {
@@ -37,7 +38,8 @@ const SCENES = {
       { type: 'laternenpfahl', i: -13, j: -2 },
     ],
     zombies: [-24.5, -25.6, -26.7],
-    cam: [-17.6, 1.3],
+    cam: [-20.4, 1.3],
+    n: 193,
     text: 'Nass (Sprenger) + brennend (Feuerkürbis des Katapults) = „Dampf!“',
   },
 };
@@ -61,7 +63,7 @@ let first = 0;
 for (const name of which) {
   const sc = SCENES[name];
   const detect = new Function(`return () => window.zomfy.words().some((w) => w.startsWith(${JSON.stringify(sc.word)}))`)();
-  const n = await findFrame(Rec, makeScene(sc), detect, { max: 2400 });
+  const n = process.env.ZT_SEARCH || !sc.n ? await findFrame(Rec, makeScene(sc), detect, { max: 2400 }) : sc.n; // ZT_SEARCH=1: neu suchen
   console.log(`${name}: Wort in Bild ${n}`);
   if (n < 0) continue;
   const rec = await Rec.open({ ui: 'world' });

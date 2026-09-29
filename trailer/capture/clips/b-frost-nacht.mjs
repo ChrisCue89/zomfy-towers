@@ -79,7 +79,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, CAM[0], CAM[1]], [FRAMES - 1, CAM[0] + 0.6, CAM[1]]] },
   each: () => { window.__b.keep(); },
-  description: 'Frostnacht (Nacht 30, „Tag 30 von 30“), Schneefall, Ansicht nah, Kamera fest vorm Lagertor (Tor und Wall rechts, Laterne am Tor, Laternenpfähle, Fackeln). Die echte Welle 1 der Frostnacht zieht von links auf das Tor zu, Bolzenwerfer und Feuerkatapulte beiderseits des Weges schießen (Kürbisbögen, Bolzen, Brand).',
+  description: 'Frostnacht (Nacht 30, „Tag 30 von 30“, Schnee), Ansicht nah, Kamera fährt langsam (0,6 m) nach rechts vorm Lagertor (Tor und Wall am rechten Rand). Die ECHTE Frostnacht läuft (Welle 1 und die zweite Welle mit dem Moderherz, Lebensbalken „Das Moderherz“ oben): von links zieht ein dichter Pulk aus Schwärmern, Brummern und Schlurfern den Weg entlang auf die Türme zu (Bild 36-109 mit 15-20 Figuren im Bild, davor 2-6). Zwei Bolzenwerfer (Bolzen sichtbar, Repetierer), zwei Feuer-Katapulte (Kürbisbögen, Brand-Symbole), Laternenpfähle und Fackel als Lichtinseln. Zwei Brummer stehen hinten am Tor. Schneedecke am Boden für die Aufnahme auf 50 % gedünnt, Schneeflocken wie im Spiel. Beste Schnitte: 30-70 und 70-109 (Pulk und Bögen).',
 });
 console.log(r.problems);
 await rec.close();

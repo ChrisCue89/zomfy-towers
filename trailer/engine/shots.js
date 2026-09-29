@@ -13,7 +13,7 @@ const EASE = { smooth, linear: (u) => u, out: easeOut, inOut: easeInOut };
  *   standin = '/game/screenshots/x.png' (nur solange der Clip fehlt), hold = false }
  */
 export function shot(spec) {
-  const s = { from: 0, speed: 1, zoom: [1, 1], pan: [[0, 0], [0, 0]], ease: 'smooth', tin: { kind: 'cut', dur: 0 }, ui: false, ...spec };
+  const s = { from: 0, speed: 1, zoom: [1, 1], pan: [[0, 0], [0, 0]], ease: 'smooth', tin: { kind: 'cut', dur: 0 }, ui: true, ...spec };
   const info = () => infoNow.get(s.clip);
   const index = (t) => {
     const lt = Math.max(0, t - s.at);
@@ -106,8 +106,9 @@ export function shot(spec) {
         g.save();
         g.imageSmoothingEnabled = false;
         if (s.ui.rects) {
-          for (const r of s.ui.rects) g.drawImage(ui, r[0], r[1], r[2], r[3], r[0] * 3, r[1] * 3, r[2] * 3, r[3] * 3);
-        } else g.drawImage(ui, 0, 0, W, H);
+          // Ausschnitte der Oberfläche (Oberflächenpixel) an ihrem Platz
+          for (const r of s.ui.rects) g.drawImage(ui, r[0], r[1], r[2], r[3], dx + r[0] * 3 * z, dy + r[1] * 3 * z, r[2] * 3 * z, r[3] * 3 * z);
+        } else g.drawImage(ui, dx, dy, dw, dh);
         g.restore();
       }
     }
