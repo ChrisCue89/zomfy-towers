@@ -453,6 +453,13 @@ export class Player {
       p.armR.rotation.z = 0.1;
       p.body.rotation.x = 0.28;
       if (p.elbowR) p.elbowR.rotation.x = -0.6 - w * 0.3;
+    } else if (this.seated?.rowing) {
+      // N5: Rudern (die Ankunft) – beide Hände an den Griffen im Takt der Riemen (`phase`)
+      const q = Math.sin(this.seated.phase ?? this.time * this.seated.rowing);
+      p.armR.rotation.x = -1.2 + q * 0.45;
+      p.armR.rotation.z = 0.22;
+      if (p.elbowR) p.elbowR.rotation.x = -0.65 - q * 0.35;
+      p.body.rotation.x = 0.08 - q * 0.12;
     } else if (this.seated) {
       // Die Karten vor der Brust
       p.armR.rotation.x = -1.05;
@@ -514,6 +521,12 @@ export class Player {
       if (p.elbowL) p.elbowL.rotation.x = fore;
       lantern.group.rotation.x = -upper - fore - s * 0.06 * amt + this.lanternSwing;
       lantern.group.rotation.z = Math.sin(this.time * 1.7) * 0.05;
+    } else if (this.seated?.rowing) {
+      // N5: rudern – der linke Arm zieht im selben Takt wie der rechte
+      const q = Math.sin(this.seated.phase ?? this.time * this.seated.rowing);
+      p.armL.rotation.x = -1.2 + q * 0.45;
+      p.armL.rotation.z = -0.22;
+      if (p.elbowL) p.elbowL.rotation.x = -0.65 - q * 0.35;
     } else if (a && a.kind === 'search') {
       p.armL.rotation.x = -0.9 - Math.sin(a.t * 14) * 0.35;
       p.armL.rotation.z = -0.1;

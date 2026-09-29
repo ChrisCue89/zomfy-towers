@@ -33,6 +33,8 @@ import { MIKA } from '../entities/characters.js';
 import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
 import { Trader } from './trader.js';
+import { Arrival } from './arrival.js';
+import { Tutorial } from './tutorial.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
 import { WANDERERS, WANDERER_ORDER } from '../data/wanderers.js';
 import { Furnishing } from './furnishing.js';
@@ -348,6 +350,8 @@ export class Game {
     this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
     this.trader = new Trader(this);
+    this.arrival = new Arrival(this); // N5: Mikas Ankunft mit dem Ruderboot (das Boot bleibt am Steg)
+    this.tutorial = new Tutorial(this); // N5: Edda erklärt – nur mit Einführung
     this.furnishing = new Furnishing(this);
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
@@ -390,7 +394,7 @@ export class Game {
     // Neues Spiel nach dem Neuladen (frische Karte): gleich mit Name und Aussehen los
     const fresh = takeFreshStart();
     if (fresh && !this.worldFromSave) {
-      this.startNewFromTitle(fresh.name, fresh.look, fresh.difficulty);
+      this.startNewFromTitle(fresh.name, fresh.look, fresh.difficulty, fresh.tutorial);
     } else if (CONFIG.showTitle) {
       // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
       this.titleIntro = this.pendingIntro;
@@ -819,7 +823,6 @@ export class Game {
     }
     if (current?.id !== this.goal?.id) {
       this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
-      if (current && !silent && T.funk.ziele[current.id]) this.funk.once(`ziel_${current.id}`, T.funk.ziele[current.id]); // N4
     }
     if (this.goal) {
       const p = current.progress ? current.progress(this) : null;
@@ -828,7 +831,6 @@ export class Game {
       const need = this.stoneNeeded();
       const stone = this.state.inventory.stein || 0;
       this.goal.text = need > stone ? T.ziele.kiesel : T.ziele[current.id];
-      if (need > stone && !silent) this.funk.once('ziel_kiesel', T.funk.ziele.kiesel);
       if (need > stone) this.goal.progress = `(${stone}/${need})`;
     }
   }
@@ -838,9 +840,8 @@ export class Game {
    * alten Stand nur mit ihrem Gruß (einmal im ganzen Spiel).
    */
   funkStart(controls) {
-    const f = this.funk;
-    f.once('start', T.funk.start[0]);
-    if (controls) f.once('steuerung', T.funk.start[1]);
+    this.funk.once('start', T.funk.start[0]);
+    if (controls) this.tutorial.begin(); // N5: der erste Schritt – laufen
   }
 
   /** Der Satz zum Wetter eines Tages (M12). */
@@ -1021,7 +1022,7 @@ export class Game {
     this.sound.play('loot', { pitch: LOOT_PITCH[res] || 880 });
     if (res === 'teile' && !st.flags.fundTeile) {
       st.flags.fundTeile = true;
-      this.funk.say(T.funk.teile);
+      this.tutorial.teach('teile', T.funk.teile); // N5: nur mit Einführung
     }
     if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
       st.flags.fundZahnrad = true;
@@ -1160,7 +1161,7 @@ export class Game {
     else this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
     if (recipe.gives.weapon && !st.flags.ersteWaffe) {
       st.flags.ersteWaffe = true;
-      this.funk.say(T.funk.ausweichen);
+      this.tutorial.teach('ausweichen', T.funk.ausweichen);
     }
     this.sound.play(gives ? 'aufheben' : 'aufwertung');
     this.quietSave();
@@ -1601,7 +1602,7 @@ export class Game {
     this.sound.play('champion');
     if (!this.state.flags.championHinweis) {
       this.state.flags.championHinweis = true;
-      this.funk.say(T.champions.hinweis);
+      this.tutorial.teach('champion', T.champions.hinweis);
     }
   }
 
@@ -1712,7 +1713,7 @@ export class Game {
     st.towerParts[id] = (st.towerParts[id] || 0) + 1;
     if (!st.flags.turmteilHinweis) {
       st.flags.turmteilHinweis = true;
-      this.funk.say(T.turmteile.hinweis);
+      this.tutorial.teach('turmteil', T.turmteile.hinweis);
     }
   }
 
@@ -2174,7 +2175,7 @@ export class Game {
    */
   introLook() {
     if (this.viewInside) return null;
-    if (this.pendingIntro && this.mode === 'play') return 'wald';
+    if (this.pendingIntro && this.mode === 'play') return 'ankunft'; // N5: schon über dem See
     return this.mode === 'dialog' && this.dialog.active ? this.dialog.line?.blick || null : null;
   }
 
@@ -2301,7 +2302,8 @@ export class Game {
   newRound() {
     const { name, look } = this.state.player;
     const difficulty = this.state.difficulty;
-    if (!CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty })) {
+    // N5: Wer einen Herbst gespielt hat, braucht keine Einführung mehr
+    if (!CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial: false })) {
       this.saves.clear();
       this.holdSave = true;
       location.reload();
@@ -2310,16 +2312,17 @@ export class Game {
     this.newGame();
     Object.assign(this.state.player, { name, look });
     this.state.difficulty = difficulty;
+    this.state.tutorial = { on: false };
     this.appliedLook = null;
     this.applyLook();
     this.quietSave();
   }
 
   /** Neues Spiel mit Name und Aussehen. */
-  startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY) {
+  startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY, tutorial = true) {
     // Die Karte gehört noch zum alten Spielstand: einmal neu laden, dann entsteht
     // ein neues Wegenetz und es geht gleich mit diesem Namen weiter
-    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty })) {
+    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial })) {
       this.saves.clear();
       this.holdSave = true;
       location.reload();
@@ -2330,9 +2333,22 @@ export class Game {
     this.newGame();
     Object.assign(this.state.player, { name, look });
     this.state.difficulty = DIFFICULTIES[difficulty] ? difficulty : DEFAULT_DIFFICULTY;
+    this.state.tutorial = { on: tutorial !== false }; // N5: Einführung mit Edda oder ohne
     this.appliedLook = null;
     this.applyLook();
     this.quietSave();
+  }
+
+  /** N5: Nach der Ankunft meldet sich Edda – mit Einführung zeigt sie dabei die Wege. */
+  afterArrival() {
+    this.introRunning = true; // die Fahrt über die Wege: nur Bild und Dialog
+    this.startDialog('eddaErstkontakt', () => {
+      this.introRunning = false;
+      this.state.flags.introGesehen = true;
+      this.state.flags.funk_start = true; // sie hat sich schon vorgestellt
+      this.tutorial.begin();
+      this.quietSave();
+    });
   }
 
   toggleFullscreen() {
@@ -2362,17 +2378,14 @@ export class Game {
       this.slowT -= dt;
       dt *= SLOWMO.scale;
     }
-    if (this.intro.t < this.intro.duration) {
-      this.intro.t += dt;
-      if (this.pendingIntro && this.intro.t > this.intro.duration * 0.7 && this.mode === 'play') {
-        this.pendingIntro = false;
-        this.introRunning = true; // M15: Kamerafahrt, nur Bild und Dialog
-        this.startDialog('intro', () => {
-          this.introRunning = false;
-          this.state.flags.introGesehen = true;
-          this.funkStart(true);
-        });
-      }
+    if (this.intro.t < this.intro.duration) this.intro.t += dt;
+    // N5: Ein neues Spiel beginnt mit der Ankunft – sie hat ihre eigene Titelkarte (statt
+    // »Zomfy Towers, Tag 1«, die sonst kurz aufblendet und wieder schwarz würde); danach
+    // meldet sich Edda (afterArrival)
+    if (this.pendingIntro && this.mode === 'play') {
+      this.pendingIntro = false;
+      this.intro.t = this.intro.duration;
+      this.arrival.start();
     }
 
     switch (this.mode) {
@@ -2481,8 +2494,10 @@ export class Game {
     // M25: Der Abspann zeigt die verschneite Bucht draußen, auch wenn Mika drinnen aufgewacht ist
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
+    this.arrival.update(dt, input); // N5: die Ankunft (und danach schaukelt das Boot am Steg)
     const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
+    else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
     else {
       this.tour = null;
@@ -2491,7 +2506,10 @@ export class Game {
     this.updateCutout();
     this.updateGoals();
     this.hud.update(realDt);
-    if (this.mode === 'play' && !this.introRunning && !this.pendingIntro && !this.cardNight.match) this.funk.update(realDt); // N4
+    if (this.mode === 'play' && !this.introRunning && !this.pendingIntro && !this.cardNight.match) {
+      this.funk.update(realDt); // N4
+      this.tutorial.update(); // N5: Edda erklärt eins nach dem anderen
+    }
     if (this.pendingDelivery) this.showPendingDelivery(); // N4: Lieferkarte, sobald es ruhig ist
   }
 
@@ -2731,14 +2749,14 @@ export class Game {
     } else if (!flags.abendHinweis && h >= 20.1 && h < 23 && !this.player.holdingLantern) {
       // Gedanken statt Dialog: halten das Spiel nie an (m3-r1)
       flags.abendHinweis = true;
-      this.funk.say(T.funk.laterne); // N4: über Funk statt als Gedanke mitten im Bild
+      this.tutorial.teach('laterne', T.funk.laterne); // N4: über Funk statt als Gedanke mitten im Bild
     } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4) && !this.nights.active && this.horde.alive === 0 && this.clock - this.nights.finishedAt > 8) {
       flags.spaetHinweis = true;
-      this.funk.say(T.funk.spaet);
+      this.tutorial.teach('spaet', T.funk.spaet);
     } else if (!flags.ruheHinweis && h >= 12.5 && h < 16.5 && this.horde.alive === 0) {
       // Langer Nachmittag: einmal daran erinnern, dass man die Zeit vorspulen kann (m3-r2)
       flags.ruheHinweis = true;
-      this.funk.say(T.funk.ruhe);
+      this.tutorial.teach('ruhe', T.funk.ruhe);
     }
   }
 
@@ -2958,7 +2976,7 @@ export class Game {
     this.world.weather.drawSnow(ui, frame, dn.night, this.viewInside); // M25
     if (playing) this.builder.drawOverlay(ui);
     // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
-    const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann'; // M25: im Abspann nur Bild und Namen
+    const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann' || this.mode === 'ankunft'; // M25: im Abspann nur Bild und Namen; N5: die Ankunft
     const atTable = Boolean(this.cardNight.match); // M28: am Kartentisch nur die Karten
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
@@ -2971,6 +2989,7 @@ export class Game {
     if (this.mode === 'lieferung') this.deliveryCard.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
     if (this.mode === 'abspann') this.autumn.drawCredits(ui);
+    if (this.mode === 'ankunft') this.arrival.draw(ui); // N5: Kinobalken und Mikas Gedanken
     this.perkChoice.draw(ui);
     this.mapView.draw(ui);
     // Meldungen unter Werkbank, Perk-Wahl und Morgenbericht (m12-r1: »gespeichert« lag auf der Überschrift)
@@ -3161,7 +3180,7 @@ export class Game {
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
       startbild: this.mode === 'splash' ? this.splash.view() : null,
-      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`), tasten: !(this.title.guard > 0), bereit: !(this.title.startGuard > 0) } : null,
+      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`), tasten: !(this.title.guard > 0), bereit: !(this.title.startGuard > 0), erklaerung: this.title.infoRect ? { ...this.title.infoRect } : null } : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
       nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}`, richtung: this.nights.directionText() } : null,
@@ -3285,6 +3304,17 @@ export class Game {
           beute: step(...Object.values(game.loot.meshes)),
           boot: step(game.trader.boat.root),
         };
+      },
+      // N5: die Ankunft und die Einführung
+      arrival: () => {
+        const a = game.arrival;
+        const b = a.boat.root.position;
+        return { active: a.active, phase: a.phase, t: a.t, hold: a.hold, boat: { x: b.x, z: b.z }, seated: Boolean(game.player.seated), rowing: game.player.seated?.rowing || 0, mode: game.mode, lines: a.lines(), focus: { x: a.focus.x, z: a.focus.z } };
+      },
+      startArrival: () => game.arrival.start(),
+      tutorial: () => ({ on: game.tutorial.on, laufen: Boolean(game.state.flags.funk_laufen), gut: Boolean(game.state.flags.funk_laufenGut), goal: game.goal?.id || null, walkFrom: game.tutorial.walkFrom ? { ...game.tutorial.walkFrom } : null }),
+      setTutorial: (on) => {
+        game.state.tutorial = { on: Boolean(on) };
       },
       // N4: Edda über Funk, Balduins Katalog, Lieferung
       funk: () => {

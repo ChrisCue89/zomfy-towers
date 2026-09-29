@@ -172,3 +172,84 @@ export function buildBoat(materials) {
   root.add(mesh);
   return { root };
 }
+
+// --- N5: Mikas Ruderboot ----------------------------------------------------------
+// Mit dem kam Mika im Morgennebel an (die Ankunft, core/arrival.js); danach liegt es
+// nördlich am Steg. Klein und geflickt: helle Planken mit dunklen Fugen, eine
+// Ruderbank, zwei Riemen in Dollen, vorn ein verschnürtes Bündel und eine Konservendose
+// als Schöpfer. Bug nach −x wie bei Balduins Boot, Ursprung Mitte auf der Wasserlinie.
+
+/** Maße in Voxeln (1/32 m): 2,4 m lang, knapp 1 m breit. */
+export const ROWBOAT = { halfLength: 38, halfWidth: 15, seat: 9, oarAt: 1 };
+
+function rowboatModel() {
+  const m = new VoxelModel();
+  const L = ROWBOAT.halfLength;
+  const W = ROWBOAT.halfWidth;
+  for (let x = -L; x <= L; x++) {
+    const u = x / L; // −1 Bug, +1 Heck
+    const half = u < 0 ? W * Math.sqrt(Math.max(0, 1 - u * u)) : W * Math.sqrt(Math.max(0, 1 - u ** 4));
+    const w = Math.round(half);
+    if (w < 1) continue;
+    const sheer = Math.round(11 + (u < 0 ? -u * 4 : u)); // der Bug hebt sich
+    for (let z = -w; z <= w; z++) {
+      const rim = Math.abs(z) >= w - 1 || Math.abs(x) >= L - 1;
+      const floor = 1 + Math.round((Math.abs(z) / w) ** 2 * 3); // gewölbter Boden
+      if (rim) {
+        for (let y = 0; y <= sheer; y++) {
+          const c = y === sheer ? P.e7 : y === sheer - 1 ? P.e3 : (y + 30) % 3 === 0 ? P.e4 : (x + y) % 9 === 0 ? P.e5 : P.e6;
+          m.set(x, y, z, y <= 1 ? P.b1 : c); // unten dunkel wie nasses Holz
+        }
+      } else {
+        m.set(x, floor, z, (x + 40) % 5 === 0 ? P.e4 : P.e5); // Bodenbretter
+        for (let y = 0; y < floor; y++) m.set(x, y, z, P.e3);
+      }
+    }
+  }
+  // Ruderbank und Heckbank
+  m.box(-3, ROWBOAT.seat, -W + 2, 3, ROWBOAT.seat, W - 2, P.e7).box(-3, ROWBOAT.seat - 1, -W + 2, 3, ROWBOAT.seat - 1, W - 2, P.e4);
+  m.box(L - 12, 8, -W + 4, L - 3, 8, W - 4, P.e7);
+  // Dollen an der Bordwand
+  for (const s of [-1, 1]) m.box(-1, 12, s * (W - 1), 1, 13, s * (W - 1), P.s4);
+  // Vorn ein verschnürtes Bündel (Decke und Beutel) und die Dose zum Schöpfen
+  m.ellipsoid(-L + 12, 6, 0, 5, 3.5, 6, (x, y, z) => (z % 4 === 0 ? P.r1 : y > 7 ? P.r3 : P.r2));
+  m.box(-L + 9, 9, -1, -L + 15, 9, 0, P.e2);
+  m.box(L - 8, 9, 5, L - 6, 11, 7, (x, y) => (y === 11 ? P.s7 : P.s5));
+  return m;
+}
+
+/** Ein Riemen: Griff am Ursprung, der Schaft nach außen (+z), am Ende das Blatt. */
+function oarModel() {
+  const m = new VoxelModel();
+  m.box(0, 0, 0, 1, 1, 3, P.e2); // Griff
+  m.box(0, 0, 4, 0, 0, 34, P.e6); // Schaft
+  m.box(-2, 0, 35, 2, 0, 46, (x, y, z) => (z === 46 || Math.abs(x) === 2 ? P.e4 : P.e5)); // Blatt
+  return m;
+}
+
+/**
+ * Mikas Ruderboot mit zwei beweglichen Riemen.
+ * @returns {{root: THREE.Group, oars: THREE.Object3D[]}}
+ */
+export function buildRowboat(materials) {
+  const root = new THREE.Group();
+  root.name = 'Mikas Ruderboot';
+  const mesh = new THREE.Mesh(rowboatModel().toGeometry({ jitter: 0.04, seed: 67, size: U }), materials.world);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.position.set(-U / 2, 0, -U / 2);
+  root.add(mesh);
+  const geo = oarModel().toGeometry({ jitter: 0.02, seed: 68, size: U });
+  const oars = [-1, 1].map((s) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(ROWBOAT.oarAt * U, 13 * U, s * (ROWBOAT.halfWidth - 1) * U);
+    const oar = new THREE.Mesh(geo, materials.world);
+    oar.castShadow = true;
+    oar.position.set(0, 0, -s * 8 * U); // der Griff ragt ein Stück nach innen
+    if (s < 0) oar.rotation.y = Math.PI; // links nach außen gespiegelt
+    pivot.add(oar);
+    root.add(pivot);
+    return pivot;
+  });
+  return { root, oars };
+}

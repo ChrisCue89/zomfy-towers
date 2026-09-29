@@ -24,7 +24,7 @@ import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { newCardState, sanitizeCards } from './cardNight.js';
 
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -49,6 +49,7 @@ export function createNewState(config, mapSeed = 1) {
   return {
     version: SAVE_VERSION,
     difficulty: DEFAULT_DIFFICULTY, // M16: gemuetlich · ausgewogen · wild
+    tutorial: { on: true }, // N5: Einführung mit Edda (auf dem Titelbild abwählbar)
     time: { day: 1, minute: config.time.newGameMinute },
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
@@ -124,6 +125,7 @@ export function sanitizeState(data, config) {
   const out = base;
   if (!data || typeof data !== 'object') return out;
   out.difficulty = DIFFICULTIES[data.difficulty] ? data.difficulty : DEFAULT_DIFFICULTY;
+  out.tutorial = { on: data.tutorial?.on === true }; // N5
   out.time.day = Math.floor(num(data.time?.day, base.time.day, 1, 1e6));
   out.time.minute = num(data.time?.minute, base.time.minute, 0, DAY_MINUTES - 0.001);
   // Drinnen (M11) liegt die Figur weit östlich der Karte im Innenraum

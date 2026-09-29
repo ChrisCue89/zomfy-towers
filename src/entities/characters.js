@@ -10,7 +10,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { createWorldMaterial, createGlowMaterial } from '../render/materials.js';
 import { V } from '../world/layout.js';
 import { hash3 } from '../core/rng.js';
-import { shade, edgeLight, sculpt, roundBox, blob, roundTone } from '../world/voxelKit.js';
+import { shade, edgeLight, sculpt, roundBox, blob, capsule, roundTone } from '../world/voxelKit.js';
 import { HEAD, TORSO, headShape, torsoShape, facePlate, facLids, sculptArm, sculptLeg, sculptCollar } from './figureKit.js';
 
 /** Aussehen der Hauptfigur Mika. */
@@ -265,8 +265,9 @@ function faceColor32(spec, x, y, expr) {
   const shadeS = spec.skinShade;
   const dark = spec.eyes;
   const line = P.r1;
-  // Seitliche Strähnen
-  if (y >= 36 && (x <= -11 || x >= 10)) return spec.hair;
+  // Seitliche Strähnen (N5: bei »Frau« länger, sie rahmen das Gesicht bis zum Mund)
+  const low = spec.body === 'frau' ? 30 : 36;
+  if (y >= low && (x <= -11 || x >= 10)) return spec.hair;
   if (y === 39 && (x <= -10 || x >= 9)) return spec.hair;
   // Brauen: außen x −9..−8 / 7..8, innen −7..−6 / 5..6
   if (y >= 37) {
@@ -294,6 +295,8 @@ function faceColor32(spec, x, y, expr) {
         if (y === 36) return eye ? shadeS : skin;
         return eye ? dark : skin;
       default: {
+        // N5: Wimpern am äußeren Augenwinkel (Frau)
+        if (spec.body === 'frau' && y === 36 && (x === -9 || x === 8)) return dark;
         if (!eye) return skin;
         if ((x === -8 || x === 5) && y === 36) return P.s9; // Lichtpunkt oben links
         return y === 34 ? P.n2 : dark;
@@ -423,6 +426,16 @@ function sculptHead(spec) {
   });
   // Ohren
   for (const ex of [-13.2, 12.2]) sculpt(m, blob(ex, 33.5, -1.2, 1.3, 1.9, 1.5), -15, 31, -4, 14, 36, 1, (x, y) => (y >= 35 ? spec.skin : spec.skinShade));
+  // N5 (Figur »Frau«): schulterlanges Haar über den Ohren und im Nacken, dazu ein kurzer
+  // Zopf, der unter der Mütze hervorschaut – mit einem Haargummi in der Mützenfarbe
+  if (spec.body === 'frau') {
+    const hairDark = shade(spec.hair, -1);
+    const sides = (x, y, z) => Math.min(roundBox(-13.3, 31.5, -3.5, 1.8, 5.2, 7, 1.5)(x, y, z), roundBox(12.3, 31.5, -3.5, 1.8, 5.2, 7, 1.5)(x, y, z));
+    sculpt(m, sides, -16, 26, -12, 15, 37, 4, (x, y, z, n) => (n.y < -0.5 ? hairDark : (x + y * 2) % 5 === 0 ? hairLight : spec.hair));
+    sculpt(m, roundBox(-0.5, 32, -11, 12.2, 5, 3.4, 2.4), -14, 26, -15, 13, 38, -7, (x, y, z, n) => (n.y < -0.5 ? hairDark : (x * 3 + y) % 7 === 0 ? hairLight : spec.hair));
+    sculpt(m, capsule(-0.5, 36, -13.5, -0.5, 27, -16.5, 2.6, 1.7), -4, 24, -20, 3, 39, -11, (x, y, z, n) => ((y + 1) % 3 === 0 ? hairDark : n.x > 0.5 ? hairLight : spec.hair));
+    sculpt(m, blob(-0.5, 34.5, -14.4, 2.2, 1, 2), -3, 33, -17, 2, 36, -12, spec.hat);
+  }
   // Mütze: gerippter Bund, Kuppel mit hellem Streifen, Knubbel, flauschiger Bommel
   sculpt(m, roundBox(-0.5, 45.6, -2.5, 13.6, 2.1, 11.6, 2.6), -15, 44, -15, 14, 47, 10, (x, y, z, n) => {
     if (y === 47 && n.y > 0.3) return spec.hatLight;

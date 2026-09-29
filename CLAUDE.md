@@ -177,6 +177,8 @@ index.html            Einstieg, Importmap, zwei Canvas (Szene + Oberfläche)
 src/main.js           Start, Fehleranzeige
 src/config.js         Alle Stellschrauben + URL-Parameter
 src/core/             game.js (Schleife, Modi), input, events, rng, math,
+                      arrival (die Ankunft: Titelkarte, Ruderboot, Steg,
+                      Funkgerät, N5), tutorial (Einführung mit Edda, N5),
                       state.js (Spielzustand), save.js (Speichern, Migration),
                       inventory (Kosten/Vorrat), builder (Bauleiste, Platzieren,
                       Auswahl, Turm-Ausbau, Reparieren, Abreißen, Hausausbau,
@@ -261,7 +263,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       Wegen, M19), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
                       Laufen, Winken, Bellen, Lächeln), survivorModels (auch
-                      Balduin), dogModel, traderModels (Balduins Boot),
+                      Balduin), dogModel, traderModels (Balduins Boot, Mikas
+                      Ruderboot, N5),
                       crows (Krähen: sitzen, picken, fliegen auf, M12)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
@@ -304,7 +307,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Schlafplätze, M27),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel je Raum, Preise in Zombieteilen,
-                      Gemütlichkeit, N4), looks (Aussehen der
+                      Gemütlichkeit, N4), arrival (Zeiten und Wege der
+                      Ankunft, N5), looks (Figur Frau/Mann, Aussehen der
                       Hauptfigur, erlaubte Namen), weather (Wetter je Tag aus
                       Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
@@ -323,7 +327,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -348,6 +352,17 @@ Grundprinzipien:
   nahm die Seite ringsum dem Spiel sonst den Tastaturfokus (M9.1). Ohne
   Fokus zeigt das Spiel einen Hinweis (`input.lostFocus`); der Klick, der
   den Fokus zurückholt, ist kein Schlag.
+- **Die Ankunft (N5, `core/arrival.js`, `data/arrival.js`):** Ein neues Spiel
+  (`pendingIntro`) startet `arrival.start()` im Modus `ankunft`: Titelkarte,
+  Ruderboot über den See (`buildRowboat`, Mika sitzt mit `player.seat({ rowing
+  })`, Riemen und Arme im Takt `seated.phase`), Weg über den Steg, Funkgerät;
+  gehaltenes Esc (`ARRIVAL.skipHold`) springt ans Ende. `arrival.finish` ruft
+  `game.afterArrival` (Dialog `eddaErstkontakt`). Das Boot bleibt nördlich am
+  Steg (`ARRIVAL.moor`) und schaukelt in ganzen Pixeln. Die Einführung
+  (`state.tutorial.on`, Titelbild) steuert `core/tutorial.js`: Laufen, dann jedes
+  Ziel über `funk.once`; Erklärungen beim ersten Mal nur über `tutorial.teach`
+  (ohne Einführung schweigt Edda dazu, ihre Geschichte spricht sie über
+  `funk.say`).
 - **Einleitung (M15):** Dialogzeilen mit `blick` lenken die Kamera
   (`world.lookSpot`, `game.tourFocus`: weich geführt, vor dem Einblenden
   springt sie), `karte` zeigt die Karte der Wege über dem Dialog
@@ -629,7 +644,7 @@ Grundprinzipien:
 
 1. `node tools/check.mjs --syntax` – Syntax aller Module (schnell).
 2. `node tools/check.mjs` – volle Prüfung im Headless-Chromium:
-   Spielstart mit Intro, Rundgang mit Screenshots (Morgen, Tag, Abend,
+   Spielstart mit Ankunft (Esc gehalten) und Eddas Einleitung, Rundgang mit Screenshots (Morgen, Tag, Abend,
    Nacht, innen, Waldrand, Dialog, Menü, Full HD) nach `screenshots/`,
    Laufen/Kollision, Laterne, Ausruhen, Schriftabdeckung, Schlafen mit
    Rückfrage, Speichern/Laden, kaputter Spielstand; ab Meilenstein 2 mit
@@ -843,7 +858,16 @@ Grundprinzipien:
    der Tür vier Meter geradeaus), Funkgerät → Katalog mit echten Tasten
    (Standuhr bestellen, D blättert, Esc), am nächsten Morgen liefert Balduin und
    die Lieferkarte schließt mit E, Speichern v23 mit Bestellung, Migration
-   v22 → v23 (Bilder: funk, stube-gross, katalog, lieferung).
+   v22 → v23 (Bilder: funk, stube-gross, katalog, lieferung); ab N5 (Abschnitt
+   `ankunft`): im Titelbild mit echten Tasten die Erklärung im Kasten neben der
+   gewählten Zeile (auch die Schwierigkeit), »Einführung« an und aus, »Figur«
+   Frau und Mann (andere Geometrie); die Ankunft läuft Titelkarte → See (Mika
+   rudert, das Boot kommt näher) → Steg → Funkgerät → Edda; mit Einführung
+   zeigt sie Wald und Zusammenfluss, danach »laufen«, nach vier Metern das Lob
+   und das erste Ziel; Esc halten überspringt; ohne Einführung ein kurzer
+   Dialog und keine Schritte; Speichern v24 und Migration v23 → v24 (Bilder:
+   figur-erklaerung, ankunft-karte, ankunft-see, ankunft-steg,
+   edda-erstkontakt).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -965,7 +989,10 @@ die Zeile im Bild und wer warum nicht spielen kann, `cardBegin(id)` lädt ein,
 `cardFinish(sieger)` beendet die laufende Partie, `cardClose(aufgeben)` steht
 vom Tisch auf, `cardAiMove()` zeigt den Zug, den die Regel-KI für Mika wählen würde; ab N4
 zeigt `funk()` laufende Zeile, Warteschlange und Lage des Funk-Felds,
-`catalog()` Seite, Auswahl, Stücke, Bestellungen und die offene Lieferkarte.
+`catalog()` Seite, Auswahl, Stücke, Bestellungen und die offene Lieferkarte;
+ab N5 zeigt `arrival()` Phase, Zeit, Boot, Sitzen und Rudern, Gedanken und den
+Blickpunkt, `startArrival()` beginnt die Ankunft, `tutorial()` zeigt, ob die
+Einführung läuft und welcher Schritt dran ist, `setTutorial(an)` schaltet sie.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

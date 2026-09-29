@@ -5,6 +5,70 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Nachbesserung N5 – Ankunft, Figur und Edda als Einführung ✓
+
+Rückmeldung des Auftraggebers (29.09.2026 abends): »Das Intro muss liebevoll sein
+– unser Charakter kommt auf der Suche nach einem neuen Zuhause dahin. Dann lernen
+wir alles über die Frau mit dem Funkgerät, das ist unser Tutorial. Es muss eine
+Möglichkeit geben, das Tutorial zu überspringen. Alle relevanten Texte müssen
+besser sichtbar sein, nicht in der Mitte, nicht unten.« Dazu die Recherche
+`recherche/intro-tutorial.md` (Intros, Tutorials, Textplatzierung, Figurwahl).
+
+- **Die Ankunft** (OFFENE-FRAGEN 184): Ein neues Spiel beginnt mit einer kurzen
+  Szene statt mit Mikas Erklärung am Waldrand. Esc halten überspringt sie
+  (unten rechts steht es, ein Balken füllt sich).
+  - Zuerst eine Titelkarte im Dunkel; Mikas Gedanken tippen sich ein: »Drei
+    Herbste ist es her, dass der Moder kam. Seitdem bin ich unterwegs.« – »Ich
+    suche keinen sicheren Ort. Ich suche ein Zuhause.«
+  - Dann blendet das Bild gerastert auf: Im Morgennebel rudert Mika in einem
+    kleinen, geflickten Ruderboot von Nordosten über den See. Riemen und Arme
+    ziehen im selben Takt, das Boot schaukelt in ganzen Bildpunkten, oben und
+    unten liegen schwarze Kinobalken, die Gedanken stehen oben im Balken
+    (»Auf dem Wasser sind sie nicht. Wasser meiden sie.«).
+  - Die letzten Meter gleitet das Boot aus. Mika steigt auf den Steg und geht
+    zum Haus, auf der Bank knistert ein altes Funkgerät.
+  - Das Ruderboot bleibt danach nördlich am Steg liegen, Balduin legt weiter
+    südlich an.
+- **Edda meldet sich** (Dialog `eddaErstkontakt`): Das Funkgerät war ihres, das
+  Haus auch – »Du suchst ein Zuhause? Dann bleib. Es ist ein gutes Haus. Aber
+  nachts wird es hier laut.« Mit Einführung zeigt sie, was in M15 Mika selbst
+  erzählte: den Wald, das Unterholz, den Zusammenfluss mit der Karte der Wege
+  und das Haus; die Kamera fährt mit.
+- **Einführung mit Edda oder ohne** (OFFENE-FRAGEN 185), eine neue Zeile im
+  Titelbild. Mit Einführung erklärt Edda über Funk eins nach dem anderen:
+  - erst das Laufen, nach vier Metern ein Lob;
+  - dann jedes Ziel, sobald es an der Reihe ist;
+  - Karte und Ansicht, sobald der erste Turm steht;
+  - jede Sache beim ersten Mal: Zombieteile, Ausweichen, Champions, Turmteile,
+    Laterne, späte Stunde, Ruhe am Nachmittag.
+
+  Ohne Einführung schweigt sie dazu; ihre Geschichte (Haus, erste Nacht,
+  Balduin, Frost) erzählt sie trotzdem. Eine neue Runde nach dem Herbst beginnt
+  ohne Einführung.
+- **Frau oder Mann** (OFFENE-FRAGEN 186), die neue Zeile »Figur« im Titelbild:
+  - Die Frau trägt einen langen Zopf unter der Mütze, mit einem Haargummi in
+    der Mützenfarbe, dazu Seitensträhnen und Wimpern. Der Mann hat das
+    bisherige kurze Haar.
+  - Mützen, Jacken, Haar- und Hautfarben gibt es für beide. Die Texte sprechen
+    Mika weiter mit »du« und dem Namen an.
+  - Neue Spiele beginnen mit der Frau vorgewählt, alte Stände behalten ihre
+    Figur (Mann).
+- **Texte, wo der Blick ist** (OFFENE-FRAGEN 187):
+  - Im Titelbild steht, was die gewählte Zeile bedeutet, auch die
+    Schwierigkeit. Die Erklärung sitzt in einem Kasten mit Goldrahmen und
+    Zipfel direkt links neben der Zeile, hell auf dunkel – nicht mehr
+    hellgrau am unteren Bildrand.
+  - Die Tastenzeile steht im Rahmen des Fensters (Figurseite) bzw. direkt
+    unter den Knöpfen (Hauptseite), warm und mit Kontur.
+  - Auf der Figurseite ist der Schriftzug kleiner, damit das längere Fenster
+    Platz hat.
+- **Spielstand v24** mit Migration: Figur »Mann«, Einführung aus.
+- Prüfabschnitt `ankunft` (Bilder: figur-erklaerung, ankunft-karte, ankunft-see,
+  ankunft-steg, edda-erstkontakt). Der Spielstart der Prüfung überspringt die
+  Ankunft mit gehaltenem Esc und prüft danach Eddas Kamerafahrt. Die Prüfung
+  ändert Flags und Figur am echten Spielstand (`Z.game.state`) – `Z.state()` ist
+  eine Kopie, dort gelöschte Funk-Flags blieben bestehen.
+
 ## Nachbesserung N4 – Probespiel: Edda am Funk, Rücken, Kürbisse, Haus und Katalog ✓
 
 Rückmeldungen aus dem eigenen Probespiel des Auftraggebers (29.09.2026), vor M29

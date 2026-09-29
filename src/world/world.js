@@ -4,6 +4,7 @@
 // dem Startwert der Karte (`mapSeed`, liegt im Spielstand).
 
 import * as THREE from 'three';
+import { ARRIVAL } from '../data/arrival.js';
 import { createWorldMaterial, createGlowMaterial, sharedUniforms } from '../render/materials.js';
 import { damp } from '../core/math.js';
 import { Colliders } from './colliders.js';
@@ -418,6 +419,7 @@ export class World {
     if (key === 'unterholz') return this.forestSpot || (this.forestSpot = this.findForestSpot());
     if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
     if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
+    if (key === 'ankunft') return { x: ARRIVAL.route[0][0], z: ARRIVAL.route[0][1] }; // N5: dort kommt das Boot her
     // Haus, Hof und rechts der See
     const sh = LAYOUT.shelter;
     return { x: sh.x + 4, z: sh.z + 4.5 };

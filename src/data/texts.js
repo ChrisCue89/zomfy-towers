@@ -1441,6 +1441,20 @@ export const T = {
     danach: 'Danke, Mika. Jetzt kann ich bald nach Hause kommen.',
     katalog: 'Das Funkgerät in der Stube erreicht auch Balduins Boot. Aus seinem Katalog bestellst du, er bringt es am nächsten Morgen.',
   },
+  // Die Ankunft (N5): Mikas Gedanken im Dunkel, auf dem See und auf dem Steg
+  ankunft: {
+    karte: ['Drei Herbste ist es her, dass der Moder kam. Seitdem bin ich unterwegs.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
+    see: ['Auf dem Wasser sind sie nicht. Wasser meiden sie.', 'Da vorn … ein Steg. Und ein Haus mit Schornstein.'],
+    steg: ['Leer. Aber jemand hat die Lichterkette hängen lassen.'],
+    funk: 'Da knistert was … ein altes Funkgerät, hier auf der Bank.',
+    ueberspringen: 'Esc halten: überspringen',
+  },
+  // Das Tutorial (N5): Edda, Schritt für Schritt – nur mit Einführung
+  tutorial: {
+    laufen: 'Lauf ein Stück: W, A, S, D. Mit Umschalt rennst du. Keine Sorge, tagsüber bist du hier sicher.',
+    gut: 'Gut so. Du bewegst dich, als wärst du hier schon zu Hause.',
+    karte: 'M zeigt dir alle Wege auf einer Karte. Z holt dich näher heran, noch einmal Z wieder weg.',
+  },
   // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch
   startbild: {
     studio: 'Tales of Cue',
@@ -1486,8 +1500,9 @@ export const T = {
     neu: 'Neues Spiel',
     figur: 'Wer bist du?',
     name: 'Name',
-    aussehen: { hat: 'Mütze', jacket: 'Jacke', hair: 'Haare', skin: 'Haut' },
+    aussehen: { body: 'Figur', hat: 'Mütze', jacket: 'Jacke', hair: 'Haare', skin: 'Haut' },
     werte: {
+      body: { frau: 'Frau', mann: 'Mann' }, // N5
       hat: { orange: 'orange', rot: 'rot', blau: 'blau', lila: 'lila' },
       jacket: { gruen: 'grün', blau: 'blau', rot: 'rot', senf: 'senfgelb' },
       hair: { braun: 'braun', schwarz: 'schwarz', blond: 'blond', rot: 'rot' },
@@ -1495,8 +1510,23 @@ export const T = {
     },
     los: 'Los geht’s!',
     hinweis: 'W/S wählen · E oder Enter bestätigen',
-    hinweisFigur: 'W/S wählen · A/D ändern · E beim Namen: tippen',
+    hinweisFigur: 'W/S wählen · A/D ändern · E bestätigen',
     hinweisName: 'Namen tippen, dann Enter',
+    // N5: Einführung mit Edda – am Anfang abwählbar
+    einfuehrung: 'Einführung',
+    mitEdda: 'mit Edda',
+    ohne: 'ohne',
+    // N5: Erklärungen stehen in einem Kasten direkt an der gewählten Zeile
+    info: {
+      name: 'So nennen dich alle in der Bucht. E: tippen, Enter: fertig.',
+      body: 'Frau oder Mann – das ändert nur die Figur. Mützen und Farben passen zu beiden.',
+      aussehen: 'A/D probiert es gleich an der Figur aus.',
+      einfuehrung: {
+        an: 'Edda erklärt dir über Funk Schritt für Schritt, wie alles geht. Empfohlen beim ersten Spiel.',
+        aus: 'Für alle, die das Spiel schon kennen: Edda meldet sich nur mit ihrer Geschichte.',
+      },
+      los: 'Du kommst im Morgennebel mit dem Ruderboot über den See. Esc überspringt die Ankunft.',
+    },
   },
   menue: {
     titel: 'Pause',

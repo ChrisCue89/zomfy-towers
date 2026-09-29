@@ -2019,6 +2019,60 @@ selbst gelöscht, außer in einer laufenden Nacht.
 **Warum:** Ständig erhobene Laterne und Axt wirkten gehetzt; das Ziehen macht
 jeden Einsatz zu einer kleinen Geste, und die Silhouette bleibt am Tag ruhig.
 
+### 184. Wie beginnt ein neues Spiel? (N5)
+**Entscheidung:** Mit einer **Ankunft**, die man mit gehaltenem Esc überspringen
+kann (rund eine halbe Minute):
+- zuerst eine Titelkarte mit Mikas Gedanken (»Ich suche keinen sicheren Ort. Ich
+  suche ein Zuhause.«);
+- dann rudert Mika im Morgennebel über den See, denn Wasser meiden die
+  Schlurfer;
+- Mika legt am Steg an und geht zum Haus, dort knistert Eddas altes Funkgerät.
+
+Das Ruderboot bleibt am Steg.
+**Warum:** Gemütliche Spiele erzählen eine Ankunft: eine Reise endet an einem
+neuen Zuhause, und jemand empfängt einen freundlich (Recherche, Abschnitt 1).
+Die alte Einleitung erklärte die Lage, bevor man einen Grund hatte, sich für
+sie zu interessieren. Jetzt kommt zuerst das Gefühl (»ein Zuhause«), dann der
+Mensch (Edda), dann die Erklärung. Das Boot erklärt ohne Worte, warum vom
+Wasser keine Gefahr kommt, und kann später wieder gebraucht werden.
+
+### 185. Wie lernt man das Spiel? (N5)
+**Entscheidung:** **Edda ist die Einführung.** Sie zeigt bei der Ankunft die
+Wege (Kamerafahrt) und erklärt danach über Funk:
+- eins nach dem anderen, jeden Schritt, sobald er dran ist;
+- jede Sache erst, wenn man sie zum ersten Mal braucht;
+- nie in der Bildmitte, nie mit Anhalten des Spiels.
+
+»Einführung: mit Edda / ohne« steht auf der Figurseite des Titelbilds. Ohne
+Einführung erzählt Edda nur ihre Geschichte.
+**Warum:** Lernen durch Tun, eine Mechanik nach der anderen und im Zusammenhang
+(Recherche, Abschnitt 2). Wer das Spiel kennt, will nicht noch einmal jeden
+Handgriff hören: Überspringen gehört an den Anfang, gleich neben die Figurwahl.
+
+### 186. Frau oder Mann? (N5)
+**Entscheidung:** Die Figur ist wählbar:
+- **Frau:** langer Zopf unter der Mütze, Seitensträhnen, Wimpern;
+- **Mann:** kurzes Haar, das bisherige Modell.
+
+Das ändert nur die Figur. Alle Mützen und Farben gibt es für beide. Die Texte
+bleiben bei »du« und »Mika«. Alte Spielstände behalten ihre Figur.
+**Warum:** Gute Figurwahl trennt Körper, Aussehen und Anrede und lässt Kleidung
+allen offen (Recherche, Abschnitt 4). Weil Mika nie mit »er« oder »sie«
+angesprochen wird, bleibt die Wahl eine Frage des Aussehens.
+
+### 187. Wo stehen Erklärungen? (N5)
+**Entscheidung:** Dort, wo der Blick gerade ist:
+- Im Titelbild steht die Erklärung der gewählten Zeile in einem Kasten mit
+  Goldrahmen und Zipfel direkt daneben, hell auf dunkel.
+- Die Tasten stehen im Rahmen des Fensters bzw. direkt unter den Knöpfen.
+- Im Spiel bleibt es bei N4: Ziel oben links, Meldungen oben rechts, Edda unten
+  rechts, die Mitte frei.
+- In der Ankunft stehen Mikas Gedanken oben im Kinobalken.
+
+**Warum:** Wichtige Hinweise gehören an die Stelle, die man gerade ansieht, mit
+hohem Kontrast (Recherche, Abschnitt 3). Die Beschreibung der Schwierigkeit
+stand hellgrau am unteren Rand, wo niemand hinsah.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

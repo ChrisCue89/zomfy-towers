@@ -82,6 +82,14 @@ const MIGRATIONS = {
   21: (data) => ({ ...data, version: 22, cards: newCardState() }),
   // v22 -> v23: N4 (Probespiel). Noch nichts bei Balduin bestellt; das Haus ist größer
   // geworden – wer drinnen gespeichert hat, steht jetzt hinter der Haustür.
+  // v23 -> v24: N5 (Ankunft, Figur, Einführung). Alte Stände behalten ihre Figur – das
+  // bisherige Modell ist »Mann« – und brauchen keine Einführung mehr.
+  23: (data) => ({
+    ...data,
+    version: 24,
+    player: { ...(data.player || {}), look: { ...(data.player?.look || {}), body: data.player?.look?.body || 'mann' } },
+    tutorial: { on: false },
+  }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

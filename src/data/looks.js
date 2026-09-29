@@ -1,10 +1,17 @@
-// Aussehen der Hauptfigur (Meilenstein 7): Mütze, Jacke, Haare und Haut zur
-// Wahl. Jede Option ist eine kleine Farbrampe aus der Palette; lookSpec() setzt
+// Aussehen der Hauptfigur (Meilenstein 7): Figur (N5), Mütze, Jacke, Haare und Haut
+// zur Wahl. Jede Option ist eine kleine Farbrampe aus der Palette; lookSpec() setzt
 // sie in die Figur-Beschreibung (MIKA in entities/characters.js) ein.
 
 import { P } from '../render/palette.js';
 
 export const LOOKS = {
+  // N5 (Probespiel): Frau oder Mann – nur die Figur ändert sich (Frisur, Wimpern, Porträt),
+  // alle Texte sprechen Mika mit »du« oder dem Namen an. Alte Stände bleiben »Mann«
+  // (das bisherige Modell mit kurzem Haar), neue beginnen mit »Frau«.
+  body: {
+    frau: { body: 'frau' },
+    mann: { body: 'mann' },
+  },
   hat: {
     orange: { hat: P.f4, hatDark: P.f3, hatLight: P.f5 },
     rot: { hat: P.r3, hatDark: P.r2, hatLight: P.r4 },
@@ -31,9 +38,9 @@ export const LOOKS = {
   },
 };
 
-export const LOOK_KEYS = ['hat', 'jacket', 'hair', 'skin'];
+export const LOOK_KEYS = ['body', 'hat', 'jacket', 'hair', 'skin'];
 
-export const DEFAULT_LOOK = { hat: 'orange', jacket: 'gruen', hair: 'braun', skin: 'mittel' };
+export const DEFAULT_LOOK = { body: 'frau', hat: 'orange', jacket: 'gruen', hair: 'braun', skin: 'mittel' };
 
 /** Figur-Beschreibung mit dem gewählten Aussehen. */
 export function lookSpec(base, look = DEFAULT_LOOK) {

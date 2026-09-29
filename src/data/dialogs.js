@@ -421,13 +421,22 @@ export const DIALOGE = {
 
   // Einleitung (M15): was passiert ist, warum die Horde nur über die Wege kommt und
   // was Mika hier vorhat. Die Kamera fährt dazu vom Waldrand über die Wege zum Haus.
-  intro: [
-    { s: 'mika', blick: 'wald', t: 'Drei Herbste ist es her, seit der Moder aus dem Waldboden kam. Wen er einspinnt, der wird zum Schlurfer: schläfrig, grummelig – und nachts immer dem Licht und der Wärme nach.' },
-    { s: 'mika', blick: 'unterholz', t: 'Durchs Unterholz kommen sie nicht. Der Boden dort ist ein einziges Modergeflecht, weich wie Moos und zäh wie Leim. Fest sind nur die alten Holzfällerwege.' },
-    { s: 'mika', blick: 'zusammen', karte: true, t: 'Und alle diese Wege laufen hier zusammen, an der alten Holzlände am Stillsee. Früher rollten die Holzfäller hier ihre Stämme ins Wasser.' },
-    { s: 'mika', blick: 'haus', t: 'Hinter mir nur Wasser – und Wasser meiden sie. Dazu ein altes Fischerhaus mit Lichterkette und einem richtigen Bett. Hier bleibe ich.' },
-    { s: 'mika', blick: 'mika', t: 'Tagsüber mache ich es zu einem Zuhause, nachts halte ich die Wege: Türme daneben, Barrikaden darauf. Vielleicht finden ja noch andere her.' },
-    { s: 'mika', t: 'Aber erst brauche ich Werkzeug. Am Hackklotz steckt noch eine Axt.' },
+  // N5: Der erste Kontakt nach der Ankunft. Mit Einführung zeigt Edda dabei die Wege (die
+  // Kamera fährt mit, `blick`), ohne Einführung bleibt es beim Kennenlernen.
+  eddaErstkontakt: (state) => [
+    { s: 'edda', t: 'Krrz … Hallo? … Ist da jemand an der Holzlände?' },
+    { s: 'mika', t: 'Ja. Ich bin gerade angekommen, mit dem Boot. Wer spricht da?' },
+    { s: 'edda', t: 'Edda. Das Funkgerät in deiner Hand war mal meins. Das Haus auch.' },
+    { s: 'edda', t: 'Du suchst ein Zuhause? Dann bleib. Es ist ein gutes Haus. Aber nachts wird es hier laut.' },
+    ...(state.tutorial?.on
+      ? [
+          { s: 'edda', blick: 'wald', t: 'Schau nach Westen, in den Wald. Dort ist vor drei Herbsten der Moder aufgeblüht. Wen er einspinnt, der wird zum Schlurfer – und nachts zieht es sie zu Licht und Wärme.' },
+          { s: 'edda', blick: 'unterholz', t: 'Durchs Unterholz kommen sie nicht. Der Boden dort ist ein einziges Geflecht, weich wie Moos und zäh wie Leim. Fest sind nur die alten Holzfällerwege.' },
+          { s: 'edda', blick: 'zusammen', karte: true, t: 'Und alle Wege laufen hier zusammen, an der alten Holzlände. Genau bei dir. Deshalb kommen sie hierher.' },
+          { s: 'edda', blick: 'haus', t: 'Hinter dir nur Wasser, und Wasser meiden sie. Du musst also nur die Wege halten: Türme daneben, Barrikaden darauf.' },
+          { s: 'edda', blick: 'mika', t: 'Tagsüber machst du es dir gemütlich, nachts hältst du durch. Ich bleib am Funkgerät und helfe dir, Schritt für Schritt.' },
+        ]
+      : [{ s: 'edda', t: 'Du siehst aus, als wüsstest du, was du tust. Ich melde mich, wenn es brenzlig wird.' }]),
   ],
 
   bettFrueh: [

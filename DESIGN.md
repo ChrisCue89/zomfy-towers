@@ -351,12 +351,13 @@ Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
 ### 4.3 Hauptfigur
 
 **Mika**, früher Hausmeister\*in in einem Wohnblock, kann fast alles
-reparieren und redet gern mit sich selbst. Name und Aussehen sind auf dem
-Titelbild wählbar.
+reparieren und redet gern mit sich selbst. Name, Figur (Frau oder Mann, N5) und
+Aussehen sind auf dem Titelbild wählbar. Mika kommt mit einem kleinen
+Ruderboot über den See in die Bucht, auf der Suche nach einem Zuhause (N5).
 
 ### 4.4 Roter Faden
 
-Mikas Aufgabe, wie Mika sie in der Einleitung selbst sagt: **die Nächte
+Mikas Aufgabe, wie Edda sie bei der Ankunft über Funk erklärt (N5): **die Nächte
 halten** (Türme neben die Wege, Barrikaden darauf, zur Not selbst am Hof),
 **ein Zuhause bauen** und **Zuflucht sein** für alle, die noch unterwegs
 sind. Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein
@@ -916,7 +917,13 @@ der Klang startet mit der ersten Eingabe.
   Titelbild blendet mit seiner Musik ein. Ein zweiter Druck springt gleich
   weiter. Prüfung und `?test`/`?nointro`/`?notitle` überspringen es.
 - **Titelbild:** großer Schriftzug über der Bucht im Abendlicht.
-  Weiterspielen, Neues Spiel (Name und Aussehen), Einstellungen, Steuerung.
+  Weiterspielen, Neues Spiel, Einstellungen, Steuerung. »Neues Spiel« führt zur
+  Figurseite: Name, Figur (Frau oder Mann), Aussehen, Schwierigkeit und
+  Einführung (mit Edda oder ohne). Was die gewählte Zeile bedeutet, steht in
+  einem Kasten mit Zipfel direkt daneben; die Tasten stehen im Fenster (N5).
+- **Die Ankunft (N5):** Ein neues Spiel beginnt mit einer kurzen Szene –
+  Titelkarte mit Mikas Gedanken, Ruderboot im Morgennebel, Steg, Eddas
+  Funkgerät – danach meldet sich Edda. Esc halten überspringt die Szene.
 - **Einstellungen:** Lautstärke, Musik, Geräusche, Ansicht (nah/weit, M13),
   Pixelgröße, Textgeschwindigkeit – neben dem Spielstand gespeichert.
 
@@ -1113,7 +1120,8 @@ Vorgezogen (Frage des Auftraggebers: »Wir wissen nicht, warum die Zombies
 nicht durch den Wald kommen, was überhaupt passiert ist und was unsere
 Aufgabe ist.«). Siehe 4.1, 4.2, 4.4 und OFFENE-FRAGEN 114.
 
-- **Einleitung mit Kamerafahrt:** Beim Einblenden steht die Kamera am
+- **Einleitung mit Kamerafahrt** (seit N5 erzählt Edda sie nach der
+  Ankunft über Funk): Beim Einblenden steht die Kamera am
   Waldrand; Mika erzählt in sechs Zeilen vom Moder, vom Geflecht im
   Unterholz, von den festen Holzfällerwegen und der alten Holzlände, vom
   Wasser hinter dem Haus und von ihrer Aufgabe. Die Kamera gleitet dazu vom
@@ -1699,6 +1707,15 @@ aus, Werkzeug und Waffe hängen auf dem Rücken und kommen beim Benutzen in die 
 (Nr. 183). Frische Kürbisse. Das Haus ist innen größer (Nr. 182); Möbel und
 Kleinkram bestellt Mika über das Funkgerät aus **Balduins Katalog**, er bringt sie
 am nächsten Morgen, eine Lieferkarte zeigt sie groß (Nr. 181). Spielstand v23.
+#### N5 – Ankunft und Einführung ✓
+
+*Umgesetzt (29.09.2026), nach N4:* Ein neues Spiel beginnt mit Mikas **Ankunft**
+(Nr. 184): Titelkarte, Ruderboot im Morgennebel, Steg, Eddas Funkgerät; Esc
+halten überspringt sie. Dann spricht **Edda**; mit Einführung zeigt sie die Wege
+und erklärt danach Schritt für Schritt über Funk (Nr. 185, abwählbar im
+Titelbild). Die **Figur** ist wählbar, Frau oder Mann (Nr. 186). Erklärungen
+stehen im Titelbild im Kasten an der gewählten Zeile (Nr. 187). Spielstand v24.
+
 #### M29 – Bindung und Alltag
 
 *Ziel:* Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über
