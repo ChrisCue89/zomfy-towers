@@ -40,7 +40,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -17.5, -0.4], [FRAMES - 1, -16.3, -0.4]] },
   each: () => { window.__b.keep(); },
-  description: 'Frostnacht (Tag 30, 22:00), Ansicht nah. Das Moderherz stapft langsam über den Weg, Bolzenwerfer und Feuerkatapult treffen es, Lebensbalken oben. Ab etwa Bild 20 warnt ein Ring am Boden, um Bild 62 brechen die Wurzeln aus (Wackeln, Splitter, Barrikaden fallen).',
+  description: 'Frostnacht (Tag 30, 22:00), Ansicht nah (Kamera etwas nach Norden, damit das ganze Herz ins Bild passt). Das Moderherz (Lebensbalken „Das Moderherz“ oben, Wort „pocht!“) steht vor einer Barrikadenreihe, Bolzen und Feuerkürbisse des Bolzenwerfers und Katapults treffen es. Ab Bild ~20 wächst ein Ring am Boden (Ankündigung der Wurzeln), um Bild 62-66 brechen die Wurzeln aus dem Boden („Wurzeln!“, Funken/Splitter, Kamerawackeln), die Barrikaden zersplittern (fertig ab ca. Bild 90). Mika steht rechts an den Türmen. Beste Schnitte: 0-40 (Herz stapft, Treffer), 40-70 (Ring und Ausbruch), 70-109 (Splitter).',
 });
 console.log(r.problems);
 const end = await rec.eval(() => ({ heart: window.zomfy.autumn().heart, barr: window.zomfy.buildings().filter((b) => b.type === 'barrikade').length }));
