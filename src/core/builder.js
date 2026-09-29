@@ -17,7 +17,7 @@ import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
 import { SURVIVORS } from '../data/survivors.js';
-import { PLACES } from '../data/wanderers.js';
+import { PLACES, ABILITIES } from '../data/wanderers.js';
 import { personOf } from './survivors.js';
 import { knowsBuilding } from '../data/blueprints.js';
 import { TRAP_REARM } from '../data/traps.js';
@@ -402,7 +402,7 @@ export class Builder {
       } else if (b.level < BARRICADE_LEVELS.length - 1) {
         const next = b.level + 1;
         const [name, info] = T.barrikaden[BARRICADE_LEVELS[next].key];
-        options.push(this.option({ id: `stufe${next}`, icon: def.icon, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: BARRICADE_LEVELS[next].cost, buy: true, action: () => this.upgradeBarricade(b) }, inv));
+        options.push(this.option({ id: `stufe${next}`, icon: def.icon, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: this.barricadeUpgradeCost(next), buy: true, action: () => this.upgradeBarricade(b) }, inv));
       }
       options.push(...this.gearOptions(b, inv)); // Zubehör (M17e)
     }
@@ -684,9 +684,16 @@ export class Builder {
   }
 
   /** Barrikade eine Stufe höher (Holz → verstärkt → Metall). */
+  /** Kosten der nächsten Barrikadenstufe – mit Frieda (M29) braucht Metall nur halb so viel Schrott. */
+  barricadeUpgradeCost(level) {
+    const cost = { ...BARRICADE_LEVELS[level].cost };
+    if (cost.schrott && this.game.survivors?.ability('schmieden')) cost.schrott = Math.max(1, Math.ceil(cost.schrott * ABILITIES.schmieden.scrap));
+    return cost;
+  }
+
   upgradeBarricade(b) {
     const next = BARRICADE_LEVELS[b.level + 1];
-    if (!next || !pay(this.game.state.inventory, next.cost)) return;
+    if (!next || !pay(this.game.state.inventory, this.barricadeUpgradeCost(b.level + 1))) return;
     this.game.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * (b.level - 1) });
     this.world.buildings.upgradeBarricade(b);
     this.world.buildings.pop(b, POP.upgrade); // M26

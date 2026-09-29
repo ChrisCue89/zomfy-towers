@@ -2073,6 +2073,19 @@ angesprochen wird, bleibt die Wahl eine Frage des Aussehens.
 hohem Kontrast (Recherche, Abschnitt 3). Die Beschreibung der Schwierigkeit
 stand hellgrau am unteren Rand, wo niemand hinsah.
 
+### 188. Wo stehen die Erinnerungsstücke, und wie sieht man ein Geschenk? (M29)
+**Entscheidung:** In der Stube hängt ein **Erinnerungsregal** mit vier Brettern
+zwischen Fenster und Kamin. Stücke, die zu einem Ort gehören, bekommen ihren
+eigenen Platz: Zapfen und Feder auf der Fensterbank, das Hufeisen (Öffnung nach
+oben) am Kamin, Claras Werkstattschild über der Kommode, Lottes Papierlaterne am
+Fenster. Beim Schenken zeigt eine **Geschenkkarte** das Stück groß wie im
+Katalog, mit grünem Kopf statt Balduins rotem.
+**Warum:** Siebzehn Stücke passen auf kein Bord von anderthalb Metern, und ein
+voller Raum erzählt mehr als eine Vitrine. Die Karte erfüllt den Wunsch aus dem
+Probespiel (»auch was sie uns bringen … gut detailliert sichtbar, wie im
+Katalog«) und macht das Geschenk zu einem kleinen Ereignis, statt es in einer
+Meldung verschwinden zu lassen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

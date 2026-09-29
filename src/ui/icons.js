@@ -584,6 +584,21 @@ const ICONS = {
       '....rrrr....',
     ],
   },
+  // M29: »möchte reden« – eine kleine Sprechblase mit Herz über dem Kopf
+  reden: {
+    legend: { k: P.n1, w: P.s9, r: P.r3 },
+    rows: [
+      '.kkkkkkk.',
+      'kwwwwwwwk',
+      'kwrrwrrwk',
+      'kwrrrrrwk',
+      'kwwrrrwwk',
+      'kwwwrwwwk',
+      '.kkkkkkk.',
+      '..kk.....',
+      '..k......',
+    ],
+  },
   herz: {
     legend: { r: P.r2, R: P.a0, W: P.a1 },
     rows: [

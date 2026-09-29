@@ -1716,7 +1716,7 @@ und erklärt danach Schritt für Schritt über Funk (Nr. 185, abwählbar im
 Titelbild). Die **Figur** ist wählbar, Frau oder Mann (Nr. 186). Erklärungen
 stehen im Titelbild im Kasten an der gewählten Zeile (Nr. 187). Spielstand v24.
 
-#### M29 – Bindung und Alltag
+#### M29 – Bindung und Alltag ✓
 
 *Ziel:* Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über
 Punkte.
@@ -1725,15 +1725,14 @@ Punkte.
 Three Houses, das Fotoalbum in Final Fantasy XV, die Szenenrollen in
 Wildermyth.
 
-- **Ein Abend, eine Aktivität** (Nr. 171), vier stille Stufen, Gesten, drei
-  Bindungsmomente je Figur.
-- **Geteilte Szenen** mit Rollen nach Temperament; morgens reden die Bewohner
-  über die Nacht.
-- **Posten werden reine Unterstützung** (Nr. 175).
-- Die restlichen Wanderer bis zwölf.
-
-*Prüfen:* Stufe steigt über gemeinsame Zeit, Geste sichtbar, Posten ohne
-Schaden (Balance-Durchlauf unverändert).
+*Umgesetzt (29.09.2026):* vier stille Stufen aus gemeinsamer Zeit (Kartenabend,
+Feuer, erstes Gespräch des Tages, Seite an Seite), Gesten (Gruß, Spitzname,
+Platz am Feuer), drei Bindungsmomente je Figur, siebzehn Erinnerungsstücke mit
+Geschenkkarte und Erinnerungsregal (Nr. 188); zwanzig geteilte Szenen mit Rollen
+nach Temperament, morgens über die Nacht und abends am Feuer; Posten nur
+Unterstützung (Leimgläser, Blenden, Flicken, Heilen); die übrigen acht Wanderer
+(zwölf im Pool). Gemeinsam kochen (Nr. 171) folgt mit der Küche in einem
+späteren Meilenstein; Angeln kommt mit M33. Spielstand v25.
 
 #### M30 – Waffenschrank und Übungsplatz
 

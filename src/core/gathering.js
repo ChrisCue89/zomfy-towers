@@ -5,6 +5,7 @@
 import { T } from '../data/texts.js';
 import { SEARCH_LOOT, SEARCH_REGROW_DAYS } from '../world/resources.js';
 import { gain } from './inventory.js';
+import { ABILITIES } from '../data/wanderers.js';
 
 const SWING = { duration: 0.55, hitAt: 0.3 };
 const PICK = { duration: 0.6, hitAt: 0.42 };
@@ -81,7 +82,9 @@ export class Gathering {
 
   deplete(node) {
     const g = this.game;
-    const until = g.state.time.day + node.rules.regrowDays;
+    // M29: Mit Ida (Försterin) wachsen gefällte Bäume schneller nach – mindestens ein Tag bleibt
+    const faster = node.kind === 'baum' && g.survivors?.ability('wald') ? ABILITIES.wald.faster : 0;
+    const until = g.state.time.day + Math.max(1, node.rules.regrowDays - faster);
     g.world.resources.startFall(node, until);
     g.state.world.nodes[node.id] = { until };
     this.repeat = null;

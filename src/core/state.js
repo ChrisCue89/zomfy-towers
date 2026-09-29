@@ -23,8 +23,9 @@ import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { newCardState, sanitizeCards } from './cardNight.js';
+import { newBonds, sanitizeBonds } from '../data/bonds.js';
 
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -96,6 +97,8 @@ export function createNewState(config, mapSeed = 1) {
     autumn: { frost: null, mode: 'herbst', credits: false }, // M25: Tag des ersten Frosts, nach dem Herbst weiter?, Abspann gesehen
     book: freshBook(), // M25, Teil 2: Herbstbuch – Sterne je Nacht, Taten, Schlurferkunde, früh gerufene Wellen
     cards: newCardState(), // M28: Kartenabende – Stufe, Einsätze, Rückseiten, Wettschuld, Menschenkunde
+    bonds: newBonds(), // M29: gemeinsame Zeit je Figur – Stufe, Arten, erzählte Momente
+    scenes: { seen: [] }, // M29: geteilte Szenen, die schon gespielt wurden
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -216,6 +219,8 @@ export function sanitizeState(data, config) {
   }
   out.book.called = Math.floor(num(bk.called, 0, 0, 1e6));
   out.cards = sanitizeCards(data.cards); // M28
+  out.bonds = sanitizeBonds(data.bonds, [...SURVIVOR_ORDER, ...WANDERER_ORDER]); // M29
+  out.scenes = { seen: Array.isArray(data.scenes?.seen) ? data.scenes.seen.filter((id) => typeof id === 'string').slice(-40) : [] };
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

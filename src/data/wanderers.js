@@ -11,7 +11,10 @@
 // (Stufe 4: weitergezogen, zwei bis drei Tage später ein Brief) oder einmal
 // »Bleib noch einen Tag«.
 
-/** Die Wanderer dieses Stands (M27: die ersten vier; M29 bringt die übrigen acht). */
+/**
+ * Die Wanderer (M27: die ersten vier; M29 die übrigen acht). Ein Herbst hat acht
+ * Ankunftstage (ARRIVAL_SLOTS) – jede Runde lernt Mika also acht der zwölf kennen.
+ */
 export const WANDERERS = {
   hannes: {
     name: 'Hannes',
@@ -49,6 +52,79 @@ export const WANDERERS = {
     place: 'nordinsel',
     spot: { x: -5.25, z: 3.5 }, // am Tor, den Blick auf die Wege
   },
+  // --- M29: die übrigen acht ---
+  fiete: {
+    name: 'Fiete',
+    job: 'fischer',
+    ability: 'handel',
+    temper: ['bedaechtig', 'neugierig'],
+    route: 'strand',
+    place: 'hafen',
+    spot: { x: 12.25, z: 1.75 }, // am Steg, den Blick aufs Wasser
+  },
+  ida: {
+    name: 'Ida',
+    job: 'foersterin',
+    ability: 'wald',
+    temper: ['wortkarg', 'vertraeumt'],
+    route: 'weg',
+    place: 'forsthaus',
+    spot: { x: -3.75, z: -6.25 }, // bei den Bäumen hinter dem Hackklotz
+  },
+  rosa: {
+    name: 'Rosa',
+    job: 'koechin',
+    ability: 'kochen',
+    temper: ['herzlich', 'ungeduldig'],
+    route: 'weg',
+    place: 'farm',
+    spot: { x: 1.75, z: 0.75 }, // am Feuer, beim Kessel
+  },
+  anton: {
+    name: 'Anton',
+    job: 'musiker',
+    ability: 'musik',
+    temper: ['vertraeumt', 'herzlich'],
+    route: 'strand',
+    place: 'ferienlager',
+    spot: { x: 5.75, z: 4.25 }, // an der Bank, mit Blick auf den See
+  },
+  emil: {
+    name: 'Emil',
+    job: 'gaertner',
+    ability: 'garten',
+    temper: ['bedaechtig', 'herzlich'],
+    route: 'weg',
+    place: 'farm',
+    spot: { x: -5.75, z: -7.75 }, // beim Beet
+  },
+  frieda: {
+    name: 'Frieda',
+    job: 'schmiedin',
+    ability: 'schmieden',
+    temper: ['stolz', 'verlaesslich'],
+    route: 'weg',
+    place: 'muehle',
+    spot: { x: 0.25, z: -7.25 }, // hinter der Werkbank
+  },
+  mara: {
+    name: 'Mara',
+    job: 'spaeherin',
+    ability: 'spaehen',
+    temper: ['ungeduldig', 'neugierig'],
+    route: 'weg',
+    place: 'kloster',
+    spot: { x: -6.25, z: 5.75 }, // am Wall, den Blick auf die Wege
+  },
+  paula: {
+    name: 'Paula',
+    job: 'naeherin',
+    ability: 'naehen',
+    temper: ['verlaesslich', 'stolz'],
+    route: 'strand',
+    place: 'kloster',
+    spot: { x: 3.25, z: 6.25 }, // bei den Zelten
+  },
 };
 
 export const WANDERER_ORDER = Object.keys(WANDERERS);
@@ -59,12 +135,28 @@ export const WANDERER_ORDER = Object.keys(WANDERERS);
  *   schrauben  Clara: Türme flicken ein Viertel billiger, Basteln braucht ein Teil weniger
  *   licht      Lotte: alle Lichtinseln ein Viertel größer (Licht macht den Moder müde)
  *   fallen     Greta: verbrauchte Fallen stehen am Morgen wieder
+ *   handel     Fiete: Balduin legt bei jedem Tausch von Rohstoffen `extra` drauf
+ *   wald       Ida: Bäume wachsen `faster` Tage schneller nach (mindestens einer)
+ *   kochen     Rosa: die Suppe gibt `soupHp` statt SOUP.maxHp Leben bis zum Morgen
+ *   musik      Anton: spielt abends am Feuer – morgens `cozy` Gemütlichkeit mehr
+ *   garten     Emil: Beete tragen `extra` Fasern mehr je Ernte
+ *   schmieden  Frieda: Metallbarrikaden kosten nur `scrap` des Schrotts
+ *   spaehen    Mara: meldet morgens die Wege der Nacht; der Nachtplan hängt ab `planFrom` Uhr
+ *   naehen     Paula: Umgeworfenes im Lager steht morgens wieder
  */
 export const ABILITIES = {
   flicken: { share: 0.5 },
   schrauben: { repair: 0.75, tinker: 1 },
   licht: { radius: 1.25 },
   fallen: { rearm: true },
+  handel: { extra: 1 },
+  wald: { faster: 1 },
+  kochen: { soupHp: 40 },
+  musik: { cozy: 2 },
+  garten: { extra: 2 },
+  schmieden: { scrap: 0.5 },
+  spaehen: { planFrom: 17 },
+  naehen: { raise: true },
 };
 
 /** Ankunftstage (OFFENE-FRAGEN 161): je ±1 aus dem Startwert der Karte. */
@@ -120,7 +212,7 @@ export function freePlaces(state) {
 }
 
 /** Die sicheren Orte des Netzwerks (M32 baut es aus). */
-export const SAFE_PLACES = ['nordinsel', 'forsthaus', 'farm', 'leuchtturm', 'ferienlager'];
+export const SAFE_PLACES = ['nordinsel', 'forsthaus', 'farm', 'leuchtturm', 'ferienlager', 'hafen', 'muehle', 'kloster'];
 
 /** Der erste Brief kommt so viele Tage nach dem Weiterbringen. */
 export const LETTER_DELAY = [2, 3];
@@ -176,4 +268,16 @@ export function arrivalPlan(seed, ids, from = 1) {
     last = day;
   }
   return plan;
+}
+
+/**
+ * M29: Ältere Pläne (M27: vier Wanderer) um die neuen ergänzen. Bestehende Einträge
+ * bleiben, wie sie sind; wer noch nicht im Plan steht, bekommt ab `from` einen der
+ * freien Plätze – nie am Tag neben einer anderen Ankunft.
+ */
+export function extendPlan(plan, seed, ids, from) {
+  const have = new Set(plan.map((p) => p.id));
+  const taken = plan.map((p) => p.day);
+  const fresh = arrivalPlan(seed ^ 0x29a1, ids.filter((id) => !have.has(id)), from).filter((p) => taken.every((d) => Math.abs(d - p.day) > 1));
+  return [...plan, ...fresh].sort((a, b) => a.day - b.day);
 }

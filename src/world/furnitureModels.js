@@ -81,15 +81,16 @@ function stehlampe() {
   const glow = new VoxelModel();
   // Leselampe neben dem Sessel: Fuß, Stange, Schirm
   const d = 90; // N4: mit dem Kamin verschoben
-  m.box(163 + d, FLOOR, 13, 166 + d, FLOOR, 16, P.s2);
-  m.box(164 + d, FLOOR + 1, 14, 165 + d, FLOOR + 22, 15, P.s3);
-  glow.box(161 + d, FLOOR + 23, 11, 168 + d, FLOOR + 27, 18, (x, y, z) => {
-    const edge = (x === 161 + d || x === 168 + d) && (z === 11 || z === 18);
+  const e = 19; // M29: an die Südwestecke des Sessels – über ihm hängt das Erinnerungsregal
+  m.box(163 + d, FLOOR, 13 + e, 166 + d, FLOOR, 16 + e, P.s2);
+  m.box(164 + d, FLOOR + 1, 14 + e, 165 + d, FLOOR + 22, 15 + e, P.s3);
+  glow.box(161 + d, FLOOR + 23, 11 + e, 168 + d, FLOOR + 27, 18 + e, (x, y, z) => {
+    const edge = (x === 161 + d || x === 168 + d) && (z === 11 + e || z === 18 + e);
     if (edge) return null;
-    if (y === FLOOR + 27 && (x === 161 + d || x === 168 + d || z === 11 || z === 18)) return null;
+    if (y === FLOOR + 27 && (x === 161 + d || x === 168 + d || z === 11 + e || z === 18 + e)) return null;
     return P.f6;
   });
-  return { model: m, glow, collider: { x0: 162 + d, z0: 12, x1: 168 + d, z1: 18 } };
+  return { model: m, glow, collider: { x0: 162 + d, z0: 12 + e, x1: 168 + d, z1: 18 + e } };
 }
 
 function lesesessel() {

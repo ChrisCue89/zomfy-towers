@@ -170,8 +170,9 @@ export class Npcs {
         const pz = player.z - n.z;
         n.near = px * px + pz * pz < 9;
         // Wer sitzt (Kartentisch, M28), bleibt dem Tisch zugewandt – sonst drehte sich das
-        // Gegenüber zu Mika über Eck und zeigte der Kamera nur noch das Profil
-        const seated = n.sitTarget > 0 && n.restFacing !== null;
+        // Gegenüber zu Mika über Eck und zeigte der Kamera nur noch das Profil. Wer am Feuer
+        // im Gespräch ist (M29), schaut sein Gegenüber an.
+        const seated = (n.sitTarget > 0 || n.talking) && n.restFacing !== null;
         if (n.near && !seated) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
         else if (n.restFacing !== null) n.facing = dampAngle(n.facing, n.restFacing, 3, dt);
       }

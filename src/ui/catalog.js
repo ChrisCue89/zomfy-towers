@@ -3,12 +3,14 @@
 // Das Fenster sieht aus wie ein Versandkatalog – links die Seiten (ein Raum je Seite)
 // und die Stücke, rechts das gewählte Stück groß wie auf einem Katalogfoto. Dieselben
 // Bilder zeigt die Lieferkarte am Morgen: Was Balduin bringt, sieht man einmal groß.
+// M29: Dieselbe Karte zeigt, was die Bewohner Mika schenken (ihr Erinnerungsstück).
 
 import { P, hexToCss } from '../render/palette.js';
 import { renderVoxelPortrait } from '../render/portrait.js';
 import { VoxelModel } from '../render/voxel.js';
 import { FURNITURE, FURNITURE_ORDER, CATALOG_ROOMS } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
+import { buildKeepsake } from '../world/keepsakeModels.js';
 import { T } from '../data/texts.js';
 import { measure, wrap, drawText, LINE_HEIGHT } from './font.js';
 import { drawIcon } from './icons.js';
@@ -28,6 +30,7 @@ const RED_DARK = hexToCss(P.r1);
 const WHITE = hexToCss(P.s9);
 const GOLD = hexToCss(P.f6);
 const PHOTO_BG = hexToCss(P.e7);
+const GREEN = hexToCss(P.g3); // Kopf der Geschenkkarte (M29)
 
 const pictures = new Map();
 
@@ -70,7 +73,18 @@ export function itemPicture(id) {
   if (pictures.has(id)) return pictures.get(id);
   const spec = FURNITURE_MODELS[id]?.();
   if (!spec) return null;
-  const model = photoModel(spec, id);
+  return pictureOf(id, photoModel(spec, id));
+}
+
+/** M29: Foto eines Erinnerungsstücks (keepsakeModels.js) für die Geschenkkarte. */
+export function keepsakePicture(item) {
+  const key = `andenken:${item}`;
+  if (pictures.has(key)) return pictures.get(key);
+  return pictureOf(key, buildKeepsake(item));
+}
+
+/** Ein Modell so groß wie möglich aufs Foto (ganze Pixel je Voxel), einmal gerechnet und gemerkt. */
+function pictureOf(key, model) {
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
@@ -103,12 +117,12 @@ export function itemPicture(id) {
   const canvas = renderVoxelPortrait(model, { size, top: 2, ...fit });
   const used = (maxY - minY + 1) * fit.f + (maxZ - minZ + 1) * fit.t + 4;
   const pic = { canvas, used };
-  pictures.set(id, pic);
+  pictures.set(key, pic);
   return pic;
 }
 
-/** Katalogfoto in einen Rahmen zeichnen: helles Fotopapier, Bild mittig. */
-function drawPhoto(ctx, id, x, y) {
+/** Katalogfoto in einen Rahmen zeichnen: helles Fotopapier, Bild mittig (`pic` aus itemPicture/keepsakePicture). */
+function drawPhoto(ctx, pic, x, y) {
   ctx.fillStyle = LINE;
   ctx.fillRect(x - 1, y - 1, PIC.w + 10, PIC.h + 10);
   ctx.fillStyle = WHITE;
@@ -118,7 +132,6 @@ function drawPhoto(ctx, id, x, y) {
   // leichte Lichtstufen auf dem Hintergrund (gestuft, nicht weich)
   ctx.fillStyle = PAPER_DARK;
   ctx.fillRect(x + 4, y + 4 + PIC.h - 22, PIC.w, 22);
-  const pic = itemPicture(id);
   if (!pic) return;
   const used = Math.min(PIC.h, pic.used);
   const dy = Math.max(0, Math.round((PIC.h - used) / 2));
@@ -299,7 +312,7 @@ export class Catalog {
     const id = L.rows[this.focus]?.id;
     if (id) {
       const ph = L.photo;
-      drawPhoto(ctx, id, ph.x, ph.y);
+      drawPhoto(ctx, itemPicture(id), ph.x, ph.y);
       const tx = ph.x;
       let ty = ph.y + PIC.h + 13;
       drawText(ctx, T.moebel[id][0], tx, ty, INK);
@@ -365,6 +378,7 @@ export class DeliveryCard {
   draw(ui) {
     if (!this.isOpen) return;
     const id = this.items[this.k];
+    const gift = typeof id === 'object' ? id : null; // M29: ein Geschenk { gift, from, name }
     const ctx = ui.ctx;
     const K = T.katalog;
     const w = PIC.w + 40;
@@ -379,14 +393,15 @@ export class DeliveryCard {
     ctx.fillRect(x - 1, y - 1 + dy, w + 2, h + 2);
     ctx.fillStyle = PAPER;
     ctx.fillRect(x, y + dy, w, h);
-    ctx.fillStyle = RED;
+    ctx.fillStyle = gift ? GREEN : RED;
     ctx.fillRect(x, y + dy, w, 18);
-    const title = this.items.length > 1 ? `${K.lieferung} · ${this.k + 1}/${this.items.length}` : K.lieferung;
+    const head = gift ? T.bindung.karte.titel(gift.name) : K.lieferung;
+    const title = this.items.length > 1 ? `${head} · ${this.k + 1}/${this.items.length}` : head;
     drawText(ctx, title, x + Math.round((w - measure(title)) / 2), y + 3 + dy, WHITE);
-    drawPhoto(ctx, id, x + 16, y + 24 + dy);
-    const name = T.moebel[id][0];
+    drawPhoto(ctx, gift ? keepsakePicture(gift.gift) : itemPicture(id), x + 16, y + 24 + dy);
+    const name = gift ? T.bindung.karte.namen[gift.gift] : T.moebel[id][0];
     drawText(ctx, name, x + Math.round((w - measure(name)) / 2), y + PIC.h + 38 + dy, INK);
-    const room = K.steht(FURNITURE[id].room);
+    const room = gift ? T.bindung.karte.wo[gift.gift] || T.bindung.karte.regal : K.steht(FURNITURE[id].room);
     drawText(ctx, room, x + Math.round((w - measure(room)) / 2), y + PIC.h + 38 + LINE_HEIGHT + dy, INK_SOFT);
     const hint = this.k + 1 < this.items.length ? K.weiter : K.fertig;
     drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);

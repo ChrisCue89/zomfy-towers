@@ -5,6 +5,8 @@
 // kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
 // Rückfrage liegt „Lieber nicht“ dort, wo eben noch „Neues Spiel“ stand.
 
+import { PEOPLE, personOf } from '../core/survivors.js';
+import { KEEPSAKES } from '../data/bonds.js';
 import { SPRECHER } from '../data/dialogs.js';
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
@@ -251,21 +253,35 @@ export class Menu {
       );
       count = T.buch.kundeZaehler(book.kindsKnown, KIND_ORDER.length);
     } else if (this.page === 'menschen') {
-      // M28: Menschenkunde – je Figur die Abende, der Einsatz und Mikas Verdacht
+      // M28/M29: Menschenkunde – je Mensch, wie nah ihr euch seid (ein Wort, keine Zahl), das
+      // Erinnerungsstück, die Kartenabende und Mikas Verdacht
       const kt = T.karten;
-      rows = this.game.cardNight.bookRows().map((r) => ({
-        id: r.id,
-        label: SPRECHER_NAMES[r.id] || r.id,
-        right: `${r.won} : ${r.lost}`,
-        color: COLORS.text,
-        rightColor: COLORS.textDim,
-        detail: [
-          ...lines(kt.buch.abende(r.played, r.won, r.lost), COLORS.text),
-          ...lines(`${kt.buch.stueck(kt.stuecke[r.stake])}${r.stakeWon ? ` – ${kt.buch.stueckDa}` : ''}`, r.stakeWon ? COLORS.gold : COLORS.textDim),
-          ...lines(r.note || kt.buch.unbekannt, r.note ? COLORS.textWarm : COLORS.textDim, true),
-        ],
-      }));
-      empty = lines(kt.buch.leer, COLORS.textDim);
+      const tb = T.bindung.buch;
+      const g = this.game;
+      const cardRows = Object.fromEntries(g.cardNight.bookRows().map((r) => [r.id, r]));
+      const ids = [...PEOPLE.filter((id) => g.survivors.resident(id)), ...Object.keys(cardRows).filter((id) => !PEOPLE.includes(id))];
+      rows = ids.map((id) => {
+        const r = cardRows[id];
+        const resident = PEOPLE.includes(id);
+        const stage = resident ? g.bonds.stage(id) : 0;
+        const k = KEEPSAKES[id];
+        const gift = k && (g.state.bonds?.[id]?.moment || 0) >= 3;
+        return {
+          id,
+          label: SPRECHER_NAMES[id] || personOf(id)?.name || id,
+          right: resident ? T.bindung.stufen[stage] : `${r.won} : ${r.lost}`,
+          color: COLORS.text,
+          rightColor: resident && stage >= 2 ? COLORS.gold : COLORS.textDim,
+          detail: [
+            ...(resident ? lines(tb.stufe[stage], stage ? COLORS.text : COLORS.textDim) : []),
+            ...(gift ? lines(tb.stueck(T.bindung.stuecke[k.item]), COLORS.gold) : []),
+            ...(r ? lines(kt.buch.abende(r.played, r.won, r.lost), COLORS.text) : []),
+            ...(r ? lines(`${kt.buch.stueck(kt.stuecke[r.stake])}${r.stakeWon ? ` – ${kt.buch.stueckDa}` : ''}`, r.stakeWon ? COLORS.gold : COLORS.textDim) : []),
+            ...(r ? lines(r.note || kt.buch.unbekannt, r.note ? COLORS.textWarm : COLORS.textDim, true) : []),
+          ],
+        };
+      });
+      empty = lines(tb.leer, COLORS.textDim);
     } else {
       rows = book.album().map((a) => ({
         id: String(a.id),

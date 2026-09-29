@@ -12,6 +12,7 @@ import { bossOfNight, BOSS_ORDER as BOSS_TYPES, FINALE_BOSS } from '../data/boss
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { HOUSE_LEVELS, BUILDINGS } from '../data/buildings.js';
 import { towerStatsOf } from '../data/towers.js';
+import { ABILITIES } from '../data/wanderers.js';
 
 /** So viele Spielminuten vor der Nacht sagt Mika, wenn am Weg der ersten Welle kein Turm steht. */
 const COVER_WARN_AHEAD = 60;
@@ -144,6 +145,11 @@ export class Nights {
    * in jeder Pause die nächsten Wellen – Uhrzeit und Wege; ist Juna eingezogen,
    * auch die schweren Arten (wie ihr Funkspruch am Morgen). Null = nichts zeigen.
    */
+  /** So lange vor der Nacht hängt der Nachtplan – mit Mara (M29, Späherin) schon ab 17 Uhr. */
+  planAhead() {
+    return this.game.survivors?.ability('spaehen') ? Math.max(PLAN_AHEAD, NIGHT_START - (ABILITIES.spaehen.planFrom - 6) * 60) : PLAN_AHEAD;
+  }
+
   planView() {
     const g = this.game;
     const st = g.state;
@@ -154,7 +160,7 @@ export class Nights {
       if (!this.canCall()) return null; // während einer Welle genügt die Nachtleiste
       plan = this.plan;
       from = this.state.wave;
-    } else if (this.state.n !== st.time.day && minute >= NIGHT_START - PLAN_AHEAD && minute < NIGHT_START) {
+    } else if (this.state.n !== st.time.day && minute >= NIGHT_START - this.planAhead() && minute < NIGHT_START) {
       plan = this.planFor(st.time.day);
     } else return null;
     const juna = Boolean(g.survivors?.resident('juna'));
@@ -342,6 +348,7 @@ export class Nights {
       g.sound.play('morgen');
       g.feel?.('letzterSchlurfer'); // M26: der letzte fällt in Zeitlupe
       g.survivors?.onNightEnd(); // Bert flickt die Türme
+      g.bonds?.onNightWon(); // M29: Seite an Seite – wer auf dem Posten stand
       g.offerBlueprint?.('nacht'); // M19: nach jeder gewonnenen Nacht ein Bauplan zur Wahl
     } else {
       st.stats.nightsLost = (st.stats.nightsLost || 0) + 1;

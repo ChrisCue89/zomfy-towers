@@ -134,6 +134,10 @@ export class Survivors {
     const def = personOf(id);
     const feast = this.resident(id) ? this.game.posts?.feastSpot(id) : null; // M23: Fest am Feuer
     if (feast) return { ...this.freeSpot(feast.x, feast.z, 0.28), facing: feast.facing };
+    const scene = this.resident(id) ? this.game.scenes?.spotOf(id) : null; // M29: zu zweit am Feuer im Gespräch
+    if (scene) return { ...this.freeSpot(scene.x, scene.z, 0.28), facing: scene.facing };
+    const fire = this.resident(id) ? this.game.bonds?.fireSpot(id) : null; // M29: abends zu Mika ans Feuer
+    if (fire) return { ...this.freeSpot(fire.x, fire.z, 0.28), facing: fire.facing };
     // M27: Gäste sitzen am Gästeplatz beim Feuer
     if (def.wanderer && this.stage(id) === 2) {
       const g = GUEST_SPOTS[this.st[id].guest || 0];
@@ -416,6 +420,9 @@ export class Survivors {
       });
       return;
     }
+    // M29: Wartet ein Bindungsmoment, erzählt die Figur ihn statt des gewohnten Gesprächs
+    if (this.resident(id) && g.bonds.talk(id)) return;
+    g.bonds.onTalk(id);
     g.startDialog(id, (aktion) => this.onAnswer(id, aktion));
   }
 
@@ -644,6 +651,8 @@ export class Survivors {
       g.startDialog(`${id}Entscheidung`, (aktion) => this.onAnswer(id, aktion));
       return;
     }
+    if (this.resident(id) && g.bonds.talk(id)) return; // M29: ein Bindungsmoment wartet
+    g.bonds.onTalk(id);
     g.startDialog(id, (aktion) => this.onAnswer(id, aktion));
   }
 
@@ -791,7 +800,32 @@ export class Survivors {
       }
       if (n) lines.push({ text: T.wanderer.fallenNeu(n) });
     }
+    // M29: Anton hat abends gespielt (die Gemütlichkeit rechnet furnishing.morning)
+    if (this.ability('musik')) lines.push({ text: T.wanderer.musik });
+    // M29: Mara ist die Wege abgelaufen – woher kommt die Horde heute Nacht?
+    if (this.ability('spaehen')) {
+      const plan = g.nights.planFor(day);
+      const all = [];
+      for (const w of plan.waves) for (const e of w.entries) if (!all.includes(e)) all.push(e);
+      if (all.length && plan.waves[0]) lines.push({ text: T.wanderer.spaeht(T.horde.kurzListe(['nord', 'mitte', 'sued'].filter((e) => all.includes(e))), T.horde.kurzListe(plan.waves[0].entries)) });
+    }
     st.world.buildings = g.world.buildings.toState();
+  }
+
+  /** Paula (M29): Was die Horde im Lager umgeworfen hat, steht morgens wieder (vor den Zelten und Gaben). */
+  raiseFallen(lines) {
+    if (!this.ability('naehen')) return;
+    const g = this.game;
+    let n = 0;
+    for (const b of g.world.buildings.list) {
+      if (!BUILDINGS[b.type].raid || !b.broken) continue;
+      g.world.buildings.rebuildBarricade(b);
+      n++;
+    }
+    if (!n) return;
+    g.state.world.buildings = g.world.buildings.toState();
+    g.world.refreshInteractions();
+    lines.push({ text: T.wanderer.aufgestellt(n) });
   }
 
   // --- Oma Hilde: Tauschen ------------------------------------------------------------
@@ -828,6 +862,7 @@ export class Survivors {
     const g = this.game;
     const st = g.state;
     const lines = [];
+    this.raiseFallen(lines); // M29: Paula stellt Umgeworfenes wieder auf
     this.checkTents();
     for (const [id, gift] of Object.entries(MORNING_GIFTS)) {
       if (!this.resident(id)) continue;

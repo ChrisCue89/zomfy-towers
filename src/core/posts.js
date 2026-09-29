@@ -171,12 +171,11 @@ export class Posts {
       return;
     }
     if (role.kind === 'glas') {
-      // Hilde: ein Einmachglas auf den nächsten Schlurfer im Umkreis
+      // Hilde: ein Leimglas auf den nächsten Schlurfer im Umkreis – klebt, tut nicht weh (M29)
       if (this.timers[id] > 0) return;
       const target = this.nearest(c, role.radius);
       if (!target) return;
       this.timers[id] = role.every;
-      g.horde.damage(target, role.damage, { source: 'turm', kind: 'glas' });
       g.horde.slow(target, role.slow, role.slowTime);
       g.effects.splat(target.x, 0.9, target.z, 'honig', 10, 0.8);
       g.sound.play('klirr', { x: target.x, z: target.z, volume: 0.6 });
@@ -218,7 +217,7 @@ export class Posts {
     return best;
   }
 
-  /** Juna zündet das Leuchtfeuer (Taste J): betäubt, blendet und holt aus dem Nebel. */
+  /** Juna zündet das Leuchtfeuer (Taste J): blendet und holt aus dem Nebel (betäubt nicht, M29). */
   junaFlash() {
     const g = this.game;
     if (!this.onDuty('juna')) {
@@ -235,7 +234,6 @@ export class Posts {
     let hit = 0;
     for (const z of g.horde.inRange(c.x, c.z, role.radius)) {
       if (z.state === 'dying') continue;
-      g.horde.stun(z, role.stun, true);
       g.horde.status(z, 'geblendet', role.blind);
       g.horde.reveal(z, role.blind);
       hit++;

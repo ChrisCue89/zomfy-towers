@@ -36,13 +36,15 @@ import { Trader } from './trader.js';
 import { Arrival } from './arrival.js';
 import { Tutorial } from './tutorial.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
-import { WANDERERS, WANDERER_ORDER } from '../data/wanderers.js';
+import { WANDERERS, WANDERER_ORDER, ABILITIES } from '../data/wanderers.js';
 import { Furnishing } from './furnishing.js';
 import { Posts } from './posts.js';
 import { Quests } from './quests.js';
 import { Autumn } from './autumn.js';
 import { Book } from './book.js';
 import { CardNight } from './cardNight.js';
+import { Bonds } from './bonds.js';
+import { Scenes } from './scenes.js';
 import { CardTable } from '../ui/cardTable.js';
 import { view, aiMove, STYLES } from './cards.js';
 import { STAR_KEYS } from '../data/book.js';
@@ -358,6 +360,8 @@ export class Game {
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
     this.book = new Book(this); // M25, Teil 2: Herbstbuch (Sterne, Taten, Schlurferkunde, Turmalbum)
     this.cardNight = new CardNight(this); // M28: Kartenabend »Letzte Runde«
+    this.bonds = new Bonds(this); // M29: Bindung – gemeinsame Zeit, stille Stufen, Momente
+    this.scenes = new Scenes(this); // M29: geteilte Szenen – morgens über die Nacht, abends am Feuer
     this.cardTable = new CardTable(this);
     this.portraits = renderPortraits();
 
@@ -524,6 +528,7 @@ export class Game {
     this.posts.apply();
     this.trader.apply();
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
+    this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -880,7 +885,10 @@ export class Game {
       else if (aktion === 'katalog') this.openCatalog(); // N4: Balduins Katalog über Funk
       else if (aktion === 'edda') this.startDialog('eddaFunk');
       else if (aktion === 'radioHoeren') this.startDialog('radioHoeren');
-      else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
+      else if (REST_TARGET[aktion]) {
+        if (id === 'lagerfeuer') this.bonds.atFire(); // M29: abends am Feuer – Freunde setzen sich dazu
+        this.startRest(REST_TARGET[aktion]);
+      }
       if (onDone) onDone(aktion);
     });
   }
@@ -965,7 +973,7 @@ export class Game {
     st.player.soup = st.time.day;
     st.player.hp = this.combat.maxHp;
     this.sound.play('aufwertung');
-    this.hud.toast(T.meldungen.suppe(SOUP.maxHp), 'herz', 3.2);
+    this.hud.toast(T.meldungen.suppe(this.combat.soupHp()), 'herz', 3.2);
     this.quietSave();
   }
 
@@ -1001,7 +1009,11 @@ export class Game {
         b.day = day;
         this.state.world.buildings = this.world.buildings.toState();
         this.effects.chips(c.x, 0.3, c.z, b.type === 'holzlager' ? 'holz' : 'gras', 8);
-        this.gathering.give(BUILDINGS[b.type].harvest, c.x, 0.9, c.z);
+        // M29: Mit Emil (Gärtner) tragen die Beete mehr
+        const extra = b.type === 'beet' && this.survivors.ability('garten') ? ABILITIES.garten.extra : 0;
+        const harvest = { ...BUILDINGS[b.type].harvest };
+        if (extra) harvest.fasern = (harvest.fasern || 0) + extra;
+        this.gathering.give(harvest, c.x, 0.9, c.z);
       },
     });
   }
@@ -1312,7 +1324,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
     if (bitte) extra.push({ text: bitte });
@@ -2434,6 +2446,7 @@ export class Game {
           this.state.report = null;
           this.mode = 'play';
           if (rep?.won) this.funk.once('ersteNacht', T.funk.ersteNacht); // N4: die erste gehaltene Nacht
+          this.scenes.morning(this.scenes.eventsOf(rep)); // M29: zwei Bewohner reden über die Nacht
           this.autumn.afterReport(); // M25: nach der Frostnacht läuft der Abspann
         }
         this.player.idle(dt);
@@ -2487,6 +2500,8 @@ export class Game {
     this.quests.update(dt);
     this.autumn.update(this.mode === 'play' ? dt : 0);
     if (this.mode === 'play') this.book.update(dt); // M25: gelungene Taten eintragen
+    if (this.mode === 'play') this.bonds.update(); // M29: die Vertrauten grüßen morgens
+    this.scenes.update(dt); // M29: zwei Bewohner reden miteinander
     this.updateSound(dt);
     const radius = upgradeValue(this.state, 'radius') * perkValue(this.state, 'sammler');
     this.loot.update(this.mode === 'play' ? dt : 0, this.player.position, radius, (res, x, y, z) => this.collectLoot(res, x, y, z), absoluteMinute(this.state.time));
@@ -3667,6 +3682,7 @@ export class Game {
         game.state.survivors[id].stage = stage;
         game.survivors.placeAll(true);
         game.survivors.refreshInteractions();
+        game.survivors.onAbilitiesChanged(); // dauerhafte Fähigkeiten (Lottes Licht) gleich setzen
       },
       talkTo: (id) => game.survivors.talk(id),
       /** Wie die Antwort »Das Zelt dort ist für dich« (mit Auftrag). */
@@ -3711,6 +3727,35 @@ export class Game {
         return true;
       },
       cardClose: (resign = false) => game.cardNight.close(resign),
+      // M29: Bindung – Stufe, gemeinsame Zeit, Arten, erzählte Momente, wartender Moment
+      bonds: () => Object.fromEntries([...SURVIVOR_ORDER, ...WANDERER_ORDER].map((id) => {
+        const b = game.state.bonds?.[id];
+        return [id, { stage: game.bonds.stage(id), word: game.bonds.stageWord(id), pts: b?.pts || 0, kinds: { ...(b?.kinds || {}) }, moment: b?.moment || 0, wants: game.bonds.wantsTalk(id), name: game.bonds.callName(id) }];
+      })),
+      bondAdd: (id, kind) => game.bonds.add(id, kind),
+      setBond: (id, pts) => {
+        game.bonds.entry(id).pts = pts;
+        return game.bonds.stage(id);
+      },
+      keepsakes: () => game.bonds.keepsakes(),
+      // M29: geteilte Szenen – gewählt, laufend (Zeile), gespielt, Anlässe; Sprechblasen im Bild
+      scenes: () => {
+        const sc = game.scenes;
+        const cur = sc.running || sc.pending;
+        const npc = (id) => {
+          const n = game.survivors.npcs.list.get(id);
+          return n ? { x: n.x, z: n.z, facing: n.facing, talking: Boolean(n.talking), walking: Boolean(n.target) } : null;
+        };
+        return {
+          pending: sc.pending ? { id: sc.pending.scene.id, cast: [...sc.pending.cast] } : null,
+          running: sc.running ? { id: sc.running.scene.id, cast: [...sc.running.cast], line: sc.running.k } : null,
+          people: cur ? cur.cast.map(npc) : [],
+          seen: [...(game.state.scenes?.seen || [])],
+          events: [...sc.events],
+          bubbles: game.hud.bubbles.map((b) => ({ id: [...game.survivors.npcs.list].find(([, n]) => n === b.n)?.[0] || null, text: b.text })),
+        };
+      },
+      sceneMorning: (events) => game.scenes.morning(events),
       cardAiMove: () => {
         const m = game.cardNight.match;
         if (!m?.g) return null;
@@ -3735,7 +3780,7 @@ export class Game {
       nextMorning: () => {
         game.state.time.day += 1;
         game.state.time.minute = 60;
-        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning()].map((l) => ({ text: l.text }));
+        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages
       },
       /** Der offene Dialog: Zeile, Sprecher, Antworten (mit Aktion) und die vorgewählte. */
       dialogInfo: () => {

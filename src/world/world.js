@@ -14,7 +14,8 @@ import { GameMap } from './map.js';
 import { LAYOUT } from './layout.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
-import { createInterior } from './interior.js';
+import { createInterior, INTERIOR_FLOOR } from './interior.js';
+import { VoxelModel } from '../render/voxel.js';
 import { createProps } from './props.js';
 import { BuildGrid } from './grid.js';
 import { ResourceNodes } from './resources.js';
@@ -31,6 +32,8 @@ import { FLASH_TIME } from '../data/skills.js';
 import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { STAKES } from '../data/cards.js';
+import { KEEPSAKES, KEEPSAKE_SPOTS, KEEPSAKE_BOARDS } from '../data/bonds.js';
+import { buildKeepsake } from './keepsakeModels.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
 const KICK_COLORS = [P.f3, P.f4, P.f5, P.r3, P.e5].map((c) => new THREE.Color(c)); // aufstiebendes Laub (M12)
@@ -291,8 +294,8 @@ export class World {
       y: 0,
       top: (TABLE_TOP + 1) * V32,
       opp: { x: t.x - 0.125, z: t.z - 0.625, facing: 0, seatY: 9 * V32 },
-      // Mika sitzt über Eck an der Ostseite: Säße Mika südlich, verdeckte der Kopf (von hinten
-      // gesehen) Tisch und Gegenüber – die Kamera blickt ja über Mikas Schulter nach Norden
+      // Mika sitzt über Eck an der Ostseite: Säße sie südlich, verdeckte ihr Kopf (von hinten
+      // gesehen) Tisch und Gegenüber – die Kamera blickt ja über ihre Schulter nach Norden
       mika: { x: t.x + 0.875, z: t.z, facing: -Math.PI / 2, seatY: 9 * V32 },
       look: { x: t.x + 0.375, z: t.z + 1.5 }, // die Kamera schaut 1 m voraus: Tisch im oberen Drittel
       inside,
@@ -364,6 +367,56 @@ export class World {
       o.position.set(m.x0 + ((k + 0.5) / ids.length) * (m.x1 - m.x0), m.y, m.z);
       o.visible = won;
     });
+  }
+
+  /**
+   * Erinnerungsstücke in der Stube (M29): Wer mit Mika eng geworden ist, hat ihr sein Stück
+   * geschenkt. Das Bord über der Kommode erscheint mit dem ersten Stück.
+   */
+  refreshKeepsakes(list) {
+    const U16 = 1 / 16;
+    const { x: ox, z: oz } = LAYOUT.interior;
+    const at = (o, s) => o.position.set(ox + s.x * U16, (s.y - INTERIOR_FLOOR) * U16, oz + s.z * U16);
+    if (!this.keepsakeGroup) {
+      this.keepsakeGroup = new THREE.Group();
+      this.keepsakeGroup.name = 'Erinnerungsbord';
+      this.scene.add(this.keepsakeGroup);
+      this.keepsakeItems = {};
+      // Das Erinnerungsregal: vier Bretter mit Winkeln, im Maß des Innenraums (N4: größere Stube)
+      const m = new VoxelModel();
+      for (const b of KEEPSAKE_BOARDS) {
+        m.box(b.x0, b.y - 1, 4, b.x1, b.y - 1, 8, (x, y, z) => (z === 8 ? P.e4 : x % 5 === 0 ? P.e4 : P.e5));
+        for (const bx of [b.x0 + 2, b.x1 - 2]) m.box(bx, b.y - 4, 4, bx, b.y - 2, 4, P.e3).box(bx, b.y - 2, 5, bx, b.y - 2, 7, P.e3);
+      }
+      this.keepsakeBoards = createStaticVoxelObject(m, this.materials.world, { size: U16, shadow: 'none', seed: this.seed });
+      this.keepsakeBoards.position.set(ox, -INTERIOR_FLOOR * U16, oz);
+      this.keepsakeGroup.add(this.keepsakeBoards);
+      // Die Schnur der Papierlaterne
+      const cord = new VoxelModel();
+      const lan = KEEPSAKE_SPOTS.papierlaterne;
+      cord.box(Math.round(lan.x), Math.round(lan.y + 5), Math.round(lan.z), Math.round(lan.x), lan.hang, Math.round(lan.z), P.s2);
+      this.keepsakeCord = createStaticVoxelObject(cord, this.materials.world, { size: U16, shadow: 'none', seed: this.seed });
+      this.keepsakeCord.position.set(ox, -INTERIOR_FLOOR * U16, oz);
+      this.keepsakeGroup.add(this.keepsakeCord);
+    }
+    let onBoard = 0;
+    for (const id of Object.keys(KEEPSAKES)) {
+      const item = KEEPSAKES[id].item;
+      const has = list.includes(id);
+      if (!has && !this.keepsakeItems[item]) continue;
+      const o = (this.keepsakeItems[item] ||= this.keepsakeObject(item));
+      at(o, KEEPSAKE_SPOTS[item]);
+      o.visible = has;
+      if (has && KEEPSAKE_SPOTS[item].board) onBoard++;
+    }
+    this.keepsakeBoards.visible = onBoard > 0;
+    this.keepsakeCord.visible = list.includes('lotte');
+  }
+
+  keepsakeObject(item) {
+    const o = createStaticVoxelObject(buildKeepsake(item), this.materials.world, { size: 1 / 32, shadow: 'none', seed: this.seed });
+    this.keepsakeGroup.add(o);
+    return o;
   }
 
   /** Lichtinseln der Lampen im Innenraum (Herd, Nachttisch, Werkstatt, Lager). */

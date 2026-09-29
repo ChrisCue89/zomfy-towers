@@ -2,20 +2,24 @@
 // Hochsitz neben dem Weg und helfen dort auf ihre Art. Knopf braucht keinen
 // Posten – er hütet den Hof. Niemand wird besiegt: Wer zu viel abbekommt, zieht
 // sich ins Haus zurück. Hier wird balanciert.
+//
+// Seit M29 (OFFENE-FRAGEN 175) helfen Posten nur noch, ohne zu kämpfen: Bewohner
+// sind keine kostenlosen Türme, die Horde wird ohne sie balanciert. Zu den Waffen
+// greifen sie erst nach der Lagerglocke (M31).
 
 /**
  * Rollen auf dem Posten:
  *   flicken      Bert: Barrikaden, Wall und Tor im Umkreis bekommen `heal` Leben je s
- *   glas         Hilde: alle `every` s ein Einmachglas auf den nächsten Schlurfer im
- *                Umkreis – `damage`, klebrig (`slow` für `slowTime` s)
- *   leuchtfeuer  Juna: auf Tastendruck (J) ein heller Stoß – betäubt `stun` s, blendet
- *                `blind` s, holt aus dem Nebel; danach `cooldown` s Pause
+ *   glas         Hilde: alle `every` s ein Leimglas auf den nächsten Schlurfer im
+ *                Umkreis – kein Schaden, nur klebrig (`slow` für `slowTime` s)
+ *   leuchtfeuer  Juna: auf Tastendruck (J) ein heller Stoß – blendet `blind` s und
+ *                holt aus dem Nebel (betäubt nicht); danach `cooldown` s Pause
  *   arzt         Dr. Yusuf: Mika im Umkreis heilt `heal` je s, Türme im Umkreis `towerHeal`
  */
 export const POST_ROLES = {
   bert: { kind: 'flicken', radius: 4.5, heal: 6 },
-  hilde: { kind: 'glas', radius: 5.5, every: 1.8, damage: 6, slow: 0.45, slowTime: 3 },
-  juna: { kind: 'leuchtfeuer', radius: 6, stun: 1.5, blind: 4, cooldown: 30 },
+  hilde: { kind: 'glas', radius: 5.5, every: 1.8, slow: 0.5, slowTime: 4 },
+  juna: { kind: 'leuchtfeuer', radius: 6, blind: 5, cooldown: 30 },
   yusuf: { kind: 'arzt', radius: 6, heal: 3, towerHeal: 4 },
 };
 export const POST_ORDER = ['bert', 'hilde', 'juna', 'yusuf'];

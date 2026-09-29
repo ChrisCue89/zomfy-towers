@@ -17,6 +17,7 @@ import { blueprintOptions } from '../data/blueprints.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
 import { FLAWLESS } from '../data/risk.js';
+import { ABILITIES } from '../data/wanderers.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 
@@ -339,8 +340,10 @@ export class Trader {
         const [name, info] = T.turmteile[o.part];
         return { ...common, icon: o.part, name: T.haendler.vorrat(name, left), info, gives: { part: o.part } };
       }
-      const [res, n] = Object.entries(o.get)[0];
-      return { ...common, icon: res, name: left === null ? T.menge(n, res) : T.haendler.vorrat(T.menge(n, res), left), info: T.haendler.info[key], gives: { inventory: o.get } };
+      // M29: Mit Fiete im Lager legt Balduin bei Rohstoffen etwas drauf (sie kennen sich von früher)
+      const [res, base] = Object.entries(o.get)[0];
+      const n = base + (this.game.survivors?.ability('handel') ? ABILITIES.handel.extra : 0);
+      return { ...common, icon: res, name: left === null ? T.menge(n, res) : T.haendler.vorrat(T.menge(n, res), left), info: T.haendler.info[key], gives: { inventory: { [res]: n } } };
     });
   }
 

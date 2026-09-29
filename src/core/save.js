@@ -7,7 +7,7 @@ import { BUILDINGS } from '../data/buildings.js';
 import { towerInvested, towerBuildCost } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
-import { WANDERER_ORDER, arrivalPlan } from '../data/wanderers.js';
+import { WANDERER_ORDER, arrivalPlan, extendPlan } from '../data/wanderers.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -90,6 +90,14 @@ const MIGRATIONS = {
     player: { ...(data.player || {}), look: { ...(data.player?.look || {}), body: data.player?.look?.body || 'mann' } },
     tutorial: { on: false },
   }),
+  // v24 -> v25: M29 (Bindung und Alltag). Noch keine gemeinsame Zeit gezählt – wer schon lange
+  // da ist, fängt trotzdem bei »fremd« an; die Stufen wachsen über das, was man zusammen tut.
+  // Dazu kommen die acht neuen Wanderer in die freien Plätze des Ankunftsplans.
+  24: (data) => {
+    const plan = Array.isArray(data.guests?.plan) ? data.guests.plan.filter((p) => p && typeof p.id === 'string' && Number.isFinite(p.day)) : [];
+    const guests = { ...(data.guests || {}), plan: extendPlan(plan, (data.world?.mapSeed ?? 0) >>> 0, WANDERER_ORDER, (data.time?.day || 1) + 1) };
+    return { ...data, version: 25, bonds: {}, scenes: { seen: [] }, guests };
+  },
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

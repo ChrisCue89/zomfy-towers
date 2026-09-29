@@ -240,6 +240,7 @@ export class CardNight {
     else person.lost++;
     c.evenings++;
     c.lastDay = g.state.time.day;
+    g.bonds?.add(m.id, 'karten'); // M29: ein Abend zusammen – ob gewonnen oder verloren
     const reward = { stake: null, back: null, duty: null };
     if (won && !c.stakes.includes(pl.stake)) {
       c.stakes.push(pl.stake);

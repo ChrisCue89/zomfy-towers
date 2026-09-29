@@ -16,6 +16,7 @@ import { U, INTERIOR_FLOOR } from '../world/interior.js';
 import { pay, canAfford } from './inventory.js';
 import { hoursOf } from './state.js';
 import { houseCozy } from '../data/buildings.js';
+import { ABILITIES } from '../data/wanderers.js';
 
 export class Furnishing {
   /** @param {import('./game.js').Game} game */
@@ -145,7 +146,8 @@ export class Furnishing {
   morning() {
     const g = this.game;
     const st = g.state;
-    const cozy = this.cozy;
+    // M29: Hat Anton abends am Feuer gespielt, schlafen alle gemütlicher
+    const cozy = this.cozy + (g.survivors?.ability('musik') ? ABILITIES.musik.cozy : 0);
     if (cozy <= 0) return [];
     g.combat.gainXp(cozy);
     const rested = cozy >= COZY.rested;

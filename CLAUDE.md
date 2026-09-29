@@ -190,7 +190,11 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Stufe 3/6/9, M16), towerRanks (Türme mit Geschichte:
                       Erfahrung, Rang, Wimpel, Name, Turm der Nacht, M16),
                       posts (Posten auf den Hochsitzen, Knopf im Hof,
-                      Rückzug, Fest am Feuer, M23), quests (Nebenaufträge:
+                      Rückzug, Fest am Feuer, M23; seit M29 nur
+                      Unterstützung), bonds (Bindung: gemeinsame Zeit, stille
+                      Stufen, Gesten, Momente, Erinnerungsstücke, M29), scenes
+                      (geteilte Szenen: morgens über die Nacht, abends am
+                      Feuer, M29), quests (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
                       (Herbstbuch: Sterne, Taten, Herbstschmuck,
@@ -248,6 +252,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       furnitureModels (Möbel im Wohnraum des Innenraums),
                       questModels (Fundstücke der Nebenaufträge, M23),
                       cardModels (Klapptisch, Hackklötze, Einsätze, M28),
+                      keepsakeModels (die siebzehn Erinnerungsstücke, M29),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
@@ -291,6 +296,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       angekündigte Angriffe, Zerfallen, M22),
                       posts (Rollen auf dem Posten, Knopf, Nerven, Fest,
                       M23), quests (Nebenaufträge, Belohnungen, M23),
+                      bonds (Stufen, Arten gemeinsamer Zeit, Spitznamen,
+                      Erinnerungsstücke und ihre Plätze, M29), scenes
+                      (Szenen mit Rollen nach Temperament, Anlässe, M29),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -559,6 +567,24 @@ Grundprinzipien:
   Fähigkeiten über `survivors.ability(art)`; Lottes Licht über
   `lightPools.setScale`. `PEOPLE`/`personOf` (core/survivors.js) statt
   `SURVIVOR_ORDER`/`SURVIVORS`, wo alle Menschen gemeint sind.
+- **Bindung und Szenen (M29, `core/bonds.js`, `core/scenes.js`):**
+  `state.bonds[id]` hält `pts` (gemeinsame Zeit), `kinds` (wie oft je Art),
+  `last` (Tag je Art) und `moment` (erzählte Momente, 0–3). `bonds.add(id, art)`
+  zählt eine Art höchstens einmal am Tag (`BOND_KINDS`: erstes Mal `first`,
+  danach `again`); Stufen aus `BOND_STAGES`, nie als Zahl im Bild. Quellen:
+  `cardNight.settle` (karten), `survivors.talk` → `bonds.onTalk` (reden),
+  `game.startDialog` beim Ausruhen am Lagerfeuer → `bonds.atFire` (feuer,
+  Freunde setzen sich über `bonds.fireSpot`), `nights` → `bonds.onNightWon`
+  (nacht). Ein wartender Moment (`wantsTalk`) zeigt über dem Kopf »möchte
+  reden« und geht beim Ansprechen vor (`bonds.talk`, Dialoge
+  `${id}Moment1..3`); der dritte ruft `giveKeepsake`: Geschenkkarte über
+  `game.pendingDelivery` (Eintrag `{ gift, from, name }` in `DeliveryCard`) und
+  `world.refreshKeepsakes` (Plätze in `KEEPSAKE_SPOTS`, Regal
+  `KEEPSAKE_BOARDS`). Geteilte Szenen (`data/scenes.js`) besetzen Rollen nach
+  Temperament (`CORE_TEMPERS`, `WANDERERS[id].temper`); `scenes.morning(anlässe)`
+  nach dem Bericht, abends von selbst; die beiden gehen ans Feuer
+  (`survivors.standSpot` fragt `scenes.spotOf`) und reden in `hud.bubble`,
+  sobald Mika nah ist. `state.scenes.seen` merkt Gespieltes.
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -867,7 +893,17 @@ Grundprinzipien:
    und das erste Ziel; Esc halten überspringt; ohne Einführung ein kurzer
    Dialog und keine Schritte; Speichern v24 und Migration v23 → v24 (Bilder:
    figur-erklaerung, ankunft-karte, ankunft-see, ankunft-steg,
-   edda-erstkontakt).
+   edda-erstkontakt); ab M29 (Abschnitt `bindung`): das erste Gespräch des Tages
+   zählt einmal, ein Kartenabend macht vertraut und über dem Kopf steht »möchte
+   reden«, E erzählt den Moment statt des Gesprächs, morgens grüßt Hilde (beim
+   Spitznamen, sobald befreundet), abends setzt sie sich zu Mika ans Feuer, der
+   dritte Moment zeigt die Geschenkkarte (E schließt sie) und stellt das
+   Posthorn ins Erinnerungsregal, die Menschenkunde nennt die Stufe; nach dem
+   Durchbruch gehen zwei Bewohner ans Feuer und reden erst, wenn Mika dazukommt,
+   am selben Morgen nicht noch einmal; Speichern v25 und Migration v24 → v25;
+   im Abschnitt `gemeinsam` blendet Juna nur noch und Hildes Leimgläser machen
+   keinen Schaden (Bilder: bindung-zeichen, bindung-feuer, geschenk,
+   erinnerungsbord).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -992,7 +1028,12 @@ zeigt `funk()` laufende Zeile, Warteschlange und Lage des Funk-Felds,
 `catalog()` Seite, Auswahl, Stücke, Bestellungen und die offene Lieferkarte;
 ab N5 zeigt `arrival()` Phase, Zeit, Boot, Sitzen und Rudern, Gedanken und den
 Blickpunkt, `startArrival()` beginnt die Ankunft, `tutorial()` zeigt, ob die
-Einführung läuft und welcher Schritt dran ist, `setTutorial(an)` schaltet sie.
+Einführung läuft und welcher Schritt dran ist, `setTutorial(an)` schaltet sie;
+ab M29 zeigt `bonds()` je Person Stufe, Wort, gemeinsame Zeit, Arten, Momente,
+ob ein Moment wartet und wie sie Mika ruft, `bondAdd(id, art)` zählt gemeinsame
+Zeit, `setBond(id, punkte)` setzt sie, `keepsakes()` nennt die geschenkten
+Stücke, `scenes()` die gewählte und laufende Szene samt Sprechblasen,
+`sceneMorning(anlässe)` stellt die Morgenszene.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

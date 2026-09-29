@@ -100,6 +100,7 @@ export class Hud {
     this.gateAlarm = 0; // … und die Tor-Marke, wenn Tor oder Wall angegriffen werden (M17)
     this.gateSpot = null; // wo (Mitte des getroffenen Abschnitts)
     this.speech = null; // { text, time, duration }
+    this.bubbles = []; // M29: Sprechblasen der Bewohner { n, text, time, duration }
     this.banner = null; // { text, time }
     this.bannerBottom = null; // Unterkante des Banners (für die Meldungen)
     this.goalBox = { on: false, x: 0, y: 0, w: 0, h: 17 }; // Rahmen der Zielzeile (dieses Bild)
@@ -265,6 +266,8 @@ export class Hud {
 
   update(dt) {
     this.time += dt;
+    for (const b of this.bubbles) b.time += dt;
+    this.bubbles = this.bubbles.filter((b) => b.time < b.duration && b.n.model.root.visible);
     for (const t of this.toasts) t.time += dt;
     this.toasts = this.toasts.filter((t) => t.time < t.duration);
     for (const f of this.floaters) f.t += dt;
@@ -326,6 +329,8 @@ export class Hud {
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
     if (show.prompt) this.drawActionProgress(ui);
+    if (show.prompt) this.drawBondMarks(ui); // M29: »möchte reden«
+    if (show.prompt) this.drawBubbles(ui); // M29: Grüße und Szenen der Bewohner
     if (show.prompt) this.drawSpeech(ui);
     if (show.hotbar) this.drawHotbar(ui);
     if (show.prompt) this.drawSkills(ui);
@@ -1028,6 +1033,62 @@ export class Hud {
       return { x, y: Math.round(Math.min(ui.height - h - 60, foot.y + 6)), w, h, lines, at: foot, below: true };
     }
     return { x, y, w, h, lines, at, below: false };
+  }
+
+  /** Sprechblase über einer Figur (M29): `n` ist der NPC (x, y, z), `duration` in s. */
+  bubble(n, text, duration = 3) {
+    const same = this.bubbles.find((b) => b.n === n);
+    if (same) {
+      same.text = text;
+      same.time = 0;
+      same.duration = duration;
+      return;
+    }
+    this.bubbles.push({ n, text, time: 0, duration });
+    if (this.bubbles.length > 4) this.bubbles.shift();
+  }
+
+  /** Sprechblasen der Bewohner: klein, über dem Kopf, sie weichen einander nach oben aus. */
+  drawBubbles(ui) {
+    const placed = [];
+    for (const b of this.bubbles) {
+      if (b.duration - b.time < 0.3 && Math.floor(b.time * 12) % 2 === 0) continue;
+      const n = b.n;
+      const at = this.game.worldToUi(n.x, (n.y || 0) + (n.dog ? 0.9 : 2.0), n.z);
+      if (at.x < -8 || at.x > ui.width + 8 || at.y < 8 || at.y > ui.height) continue; // Figur nicht im Bild (drinnen, am Rand)
+      const maxW = Math.min(ui.width - 8, 150);
+      const lines = measure(b.text) + 12 > maxW ? wrap(b.text, maxW - 12) : [b.text];
+      const w = Math.max(...lines.map((l) => measure(l))) + 10;
+      const h = 4 + lines.length * LINE_HEIGHT;
+      const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
+      let y = Math.round(at.y - h - 3);
+      for (const r of placed) if (x < r.x + r.w && x + w > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y) y = r.y - h - 3;
+      y = Math.max(62, y);
+      // Wie Mikas Gedanken: liegt dort der Nachtplan oder eine Meldung, steht die Blase unter den Füßen
+      const hit = (r) => x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h + 2 > r.y;
+      const below = (this.planRect && hit(this.planRect)) || this.toastRects(ui).some(hit);
+      if (below) y = Math.round(Math.min(ui.height - h - 60, this.game.worldToUi(n.x, n.y || 0, n.z).y + 5));
+      placed.push({ x, y, w, h });
+      ui.panel(x, y, w, h, { fill: COLORS.fillLight });
+      lines.forEach((l, k) => ui.text(l, x + 5, y + 1 + k * LINE_HEIGHT, COLORS.text));
+      const tx = Math.round(Math.min(x + w - 6, Math.max(x + 5, at.x)));
+      ui.rect(tx - 1, below ? y : y + h - 1, 3, 1, COLORS.outline);
+      ui.rect(tx, below ? y - 1 : y + h, 1, 1, COLORS.outline);
+    }
+  }
+
+  /** Über wem ein Bindungsmoment wartet (M29): eine kleine Sprechblase mit Herz, sanft wippend. */
+  drawBondMarks(ui) {
+    const g = this.game;
+    if (!g.bonds || g.viewInside) return;
+    for (const [id, n] of g.survivors.npcs.list) {
+      if (!n.model.root.visible || !g.bonds.wantsTalk(id) || g.posts?.onDuty(id)) continue;
+      if (this.bubbles.some((b) => b.n === n)) continue;
+      const at = g.worldToUi(n.x, (n.y || 0) + (n.dog ? 1.0 : 2.05), n.z);
+      if (at.x < -8 || at.x > ui.width + 8 || at.y < 8 || at.y > ui.height) continue;
+      const bob = Math.round(Math.sin(this.time * 3 + n.x) * 1.5);
+      drawIcon(ui.ctx, 'reden', Math.round(at.x - 4), Math.round(at.y - 10 + bob));
+    }
   }
 
   drawSpeech(ui) {

@@ -27,6 +27,15 @@ export const SPRECHER = {
   clara: { name: 'Clara', portrait: 'clara' },
   lotte: { name: 'Lotte', portrait: 'lotte' },
   greta: { name: 'Greta', portrait: 'greta' },
+  // M29: die übrigen acht
+  fiete: { name: 'Fiete', portrait: 'fiete' },
+  ida: { name: 'Ida', portrait: 'ida' },
+  rosa: { name: 'Rosa', portrait: 'rosa' },
+  anton: { name: 'Anton', portrait: 'anton' },
+  emil: { name: 'Emil', portrait: 'emil' },
+  frieda: { name: 'Frieda', portrait: 'frieda' },
+  mara: { name: 'Mara', portrait: 'mara' },
+  paula: { name: 'Paula', portrait: 'paula' },
   edda: { name: 'Edda', portrait: 'edda' }, // N4: nur über Funk, als altes Foto
 };
 
@@ -407,6 +416,172 @@ export const DIALOGE = {
       'Die Pfeife? Von meinem Mann. Rauch nicht. Halt sie nur.',
       'Du redest viel. Ist gut. Einer muss.',
     ]),
+  // --- M29: Fiete, der alte Fischer ---
+  fieteTreffen: [
+    { s: 'fiete', t: 'Moin. Fiete. Hab am Strand gesessen und auf ein Boot gewartet. Kam keins. Kam dein Feuer.' },
+    { s: 'fiete', t: 'Früher bin ich jeden Morgen rausgefahren. Hab mal einen Hecht gefangen – so lang wie ein Ruder.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer, Fiete.' },
+    { s: 'fiete', t: 'Gern. Spielt hier jemand Karten? Ich frag nur. Ich bin ganz schlecht.' },
+  ],
+  fieteEntscheidung: (state) =>
+    decision(state, 'fiete', [
+      { s: 'fiete', t: 'Gut geschlafen. Euer Feuer knackt wie der Ofen auf meinem alten Kutter.' },
+      { s: 'fiete', t: 'Wenn ich bleibe, rede ich mit Balduin – mit mir handelt er anständig, wir kennen uns von früher. Sonst geh ich zum alten Hafen. Da liegen noch Boote.' },
+    ]),
+  fiete: (state) =>
+    resident(state, 'fiete', [
+      'Der Hecht? War so lang wie zwei Ruder. Mindestens.',
+      'Balduin und ich haben früher um Heringe gefeilscht. Er hat immer verloren. Er weiß es nur nicht.',
+      'Karten heute Abend? Ich bin ganz schlecht, ehrlich.',
+      'Der See hat sich verändert. Die Enten nicht. Frech wie immer.',
+      'Knoten halten, wenn man sie richtig macht. Freundschaften auch.',
+    ]),
+  // --- Ida, die Försterin ---
+  idaTreffen: [
+    { s: 'ida', t: 'Hallo. Ida. Ich war Försterin, drüben im Revier am Nordufer.' },
+    { s: 'ida', t: 'Der Moder frisst den Waldboden. Aber die alten Bäume stehen noch. Die sind zäher als wir.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer, Ida.' },
+    { s: 'ida', t: 'Danke. (legt die Hand an einen Stamm) Ist doch in Ordnung, Gustav, oder?' },
+    { s: 'mika', t: '… Gustav?' },
+    { s: 'ida', t: 'Die Buche. Sie heißt Gustav.' },
+  ],
+  idaEntscheidung: (state) =>
+    decision(state, 'ida', [
+      { s: 'ida', t: 'Gustav hat die Nacht gut überstanden. Ich auch.' },
+      { s: 'ida', t: 'Wenn ich bleibe, pflege ich eure Bäume – dann wachsen sie schneller nach, wenn du fällst. Sonst geh ich zum Forsthaus. Da braucht man mich auch.' },
+    ]),
+  ida: (state) =>
+    resident(state, 'ida', [
+      'Die Eiche am Weg heißt Hedwig. Sie mag keinen Wind.',
+      'Du darfst ruhig Bäume fällen. Ich pflanze nach. Das ist ein Tausch.',
+      'Im Wald war es früher nie still. Hier bei euch hör ich es wieder – das Knacken, das Rascheln.',
+      'Der Moder mag keine Wurzeln. Wurzeln halten fest. Wie wir.',
+      'Gustav lässt grüßen.',
+    ]),
+  // --- Rosa, die Köchin ---
+  rosaTreffen: [
+    { s: 'rosa', t: 'Hallo! Oh, ein Feuer! Wer kocht hier? Du? Lass mal riechen. (schnuppert) Hm. Fehlt Salz.' },
+    { s: 'mika', t: 'Ich hab noch gar nichts gekocht.' },
+    { s: 'rosa', t: 'Eben. Rosa, Köchin. Ich hatte ein Gasthaus am Südufer, bis der Moder die Speisekammer gefressen hat.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer.' },
+    { s: 'rosa', t: 'Gern – und morgen früh gibt’s was Warmes. Keine Widerrede.' },
+  ],
+  rosaEntscheidung: (state) =>
+    decision(state, 'rosa', [
+      { s: 'rosa', t: 'Guten Morgen! Ich hab schon Tee gemacht. Und Brei. Und mir Sorgen, weil ihr so wenig esst.' },
+      { s: 'rosa', t: 'Wenn ich bleibe, wird eure Suppe eine richtige Suppe – die gibt Kraft für die ganze Nacht. Sonst gehe ich zur Alten Farm. Da gibt es Hühner.' },
+    ]),
+  rosa: (state) =>
+    resident(state, 'rosa', [
+      'Probier mal. (reicht einen Löffel) … Fehlt Salz, oder?',
+      'Wer hungrig kämpft, kämpft schlecht. Das ist Wissenschaft.',
+      'Bert isst alles. Das ist schön und gleichzeitig beleidigend.',
+      'Kürbis geht für alles: Suppe, Kuchen, Brot. Nur nicht für Kaffee. Hab ich probiert.',
+      'In meinem Gasthaus stand auf jedem Tisch eine Kerze. Hier ist das Feuer die Kerze.',
+    ]),
+  // --- Anton, der Musiker ---
+  antonTreffen: [
+    { s: 'anton', t: 'Guten Abend! Anton, Musiker. Na ja, fahrender Musiker. Na ja, gehender.' },
+    { s: 'anton', t: '(zieht die Quetschkommode auf) Ein Feuer, ein See, eine Bucht voller Barrikaden … Das wird ein Lied.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer, Anton.' },
+    { s: 'anton', t: 'Mit Vergnügen. Ich spiel auch ganz leise. Versprochen.' },
+  ],
+  antonEntscheidung: (state) =>
+    decision(state, 'anton', [
+      { s: 'anton', t: 'Guten Morgen! Ich hab die ganze Nacht an einer Strophe gefeilt. Sie reimt sich auf „Barrikade“.' },
+      { s: 'anton', t: 'Wenn ich bleibe, spiele ich abends am Feuer – dann schlaft ihr alle gemütlicher. Sonst ziehe ich zum Ferienlager. Kinder sind ein dankbares Publikum.' },
+    ]),
+  anton: (state) =>
+    resident(state, 'anton', [
+      'Die Schlurfer schlurfen im Dreivierteltakt. Hast du das gemerkt? Walzer!',
+      'Bert singt mit, wenn er denkt, dass keiner zuhört. Bass. Gar nicht schlecht.',
+      'Ein Lied über Knopf? In Arbeit. Bisher besteht es nur aus Bellen.',
+      'Die Quetschkommode hat meinem Großvater gehört. Sie hat mehr Hochzeiten gesehen als ich.',
+      'Musik vertreibt keine Schlurfer. Aber die Angst. Das ist fast dasselbe.',
+    ]),
+  // --- Emil, der Gärtner ---
+  emilTreffen: [
+    { s: 'emil', t: 'Guten Tag. Emil. Gärtner. Ich bin … ganz … langsam hergekommen.' },
+    { s: 'emil', t: 'Die Schlurfer sind schneller als ich. Aber ich hab Geduld. Die haben keine.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer, Emil.' },
+    { s: 'emil', t: 'Gern. Darf ich mir morgen eure Beete ansehen? Ich sehe da … Möglichkeiten.' },
+  ],
+  emilEntscheidung: (state) =>
+    decision(state, 'emil', [
+      { s: 'emil', t: 'Morgen. Ich hab mir den Boden angesehen. Er ist gut. Er weiß es nur noch nicht.' },
+      { s: 'emil', t: 'Wenn ich bleibe, tragen eure Beete mehr, und für Dr. Yusufs Tee zieh ich Kräuter. Sonst geh ich zur Alten Farm – deren Garten braucht Hilfe.' },
+    ]),
+  emil: (state) =>
+    resident(state, 'emil', [
+      'Kompost ist das Geheimnis. Alles wird wieder Erde, und aus Erde wird alles.',
+      'Ein Kürbis braucht vier Monate. Ich hab Zeit.',
+      'Die Ringelblumen am Beet? Hab ich gesetzt. Nur für die Augen.',
+      'Rosa sagt, meinen Kräutern fehlt Salz. Kräuter brauchen kein Salz.',
+      'Der Moder und ich wollen beide in die Erde. Nur frag ich vorher.',
+    ]),
+  // --- Frieda, die Schmiedin ---
+  friedaTreffen: [
+    { s: 'frieda', t: 'HALLO! Oh. Zu laut? Tut mir leid. Schmiede. Da wird man ein bisschen taub.' },
+    { s: 'frieda', t: 'Frieda. Ich hatte eine Schmiede an der Wassermühle, bis der Moder das Wasserrad gefressen hat.' },
+    { s: 'frieda', t: '(klopft an eine Barrikade) Holz. Hm. Das kann ich besser.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer.' },
+    { s: 'frieda', t: 'Gern. Ich schlafe wie ein Amboss.' },
+  ],
+  friedaEntscheidung: (state) =>
+    decision(state, 'frieda', [
+      { s: 'frieda', t: 'MORGEN! Oh – Morgen. Ich hab von Eisen geträumt.' },
+      { s: 'frieda', t: 'Wenn ich bleibe, schmiede ich eure Metallbarrikaden – mit halb so viel Schrott. Sonst geh ich zurück zur Wassermühle. Vielleicht dreht sich das Rad wieder, wenn einer hilft.' },
+    ]),
+  frieda: (state) =>
+    resident(state, 'frieda', [
+      'Das richte ich mit dem Hammer. Alles richte ich mit dem Hammer.',
+      'Clara und ich streiten, ob man Schrauben braucht. Braucht man nicht. Man braucht Nieten.',
+      'Gutes Eisen singt, wenn man draufschlägt. Deine Barrikaden singen jetzt.',
+      'Kleine Hände für eine Schmiedin, sagen die Leute. Die Leute sagen viel, wenn der Tag lang ist.',
+      'Schrott ist nur Eisen, das eine zweite Chance braucht.',
+    ]),
+  // --- Mara, die Späherin ---
+  maraTreffen: [
+    { s: 'mara', t: 'Ich bin Mara. Ich hab euch drei Tage lang beobachtet. Von der Kuppe da oben.' },
+    { s: 'mika', t: 'Drei Tage?' },
+    { s: 'mara', t: 'Siebenundvierzig Barrikaden gezählt. Zwölf Türme. Einen Hund, der schnarcht. Ihr haltet durch – das wollte ich wissen, bevor ich klopfe.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer.' },
+    { s: 'mara', t: 'Gern. Ich schlafe mit einem Auge offen. Das andere gehört euch.' },
+  ],
+  maraEntscheidung: (state) =>
+    decision(state, 'mara', [
+      { s: 'mara', t: 'Die Horde kam gestern zuerst über den Weg, den ich vorhergesagt hab. Nur so nebenbei.' },
+      { s: 'mara', t: 'Wenn ich bleibe, lauf ich jeden Morgen die Wege ab – dann weißt du früh, woher sie kommen. Sonst geh ich zum Kloster am Hang. Von dort sieht man drei Täler.' },
+    ]),
+  mara: (state) =>
+    resident(state, 'mara', [
+      'Schon gesehen. Alles schon gesehen. Außer Bert beim Tanzen. Das will ich noch sehen.',
+      'Vierzehn Schlurfer am Mittelweg heute Nacht. Oder fünfzehn. Einer war ein Busch.',
+      'Karten zeichnen ist einfach. Man muss nur überall gewesen sein.',
+      'Die Krähen hier sind gute Späher. Ich hab mit ihnen einen Vertrag.',
+      'Ich war schon überall. Hier bin ich am liebsten.',
+    ]),
+  // --- Paula, die Näherin ---
+  paulaTreffen: [
+    { s: 'paula', t: 'Guten Abend. Paula. Halt mal still.' },
+    { s: 'mika', t: 'Was …?' },
+    { s: 'paula', t: '(zieht einen Faden durch) So. Dein Ärmel hatte ein Loch. Jetzt nicht mehr. Ich war Schneiderin in der Stadt – jetzt flicke ich, was die Welt zerreißt.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer, Paula.' },
+    { s: 'paula', t: 'Danke, mein Kind. Ich hab mein Nähzeug dabei. Ich bin nie unnütz.' },
+  ],
+  paulaEntscheidung: (state) =>
+    decision(state, 'paula', [
+      { s: 'paula', t: 'Morgen. Ich hab heute Nacht zwei Socken gestopft. Nicht meine.' },
+      { s: 'paula', t: 'Wenn ich bleibe, stelle ich jeden Morgen wieder auf, was die Horde umgeworfen hat, und flicke die Zelte. Sonst geh ich zum Kloster am Hang. Die Schwestern brauchen eine Nadel.' },
+    ]),
+  paula: (state) =>
+    resident(state, 'paula', [
+      'Halt still. (näht) So. Jetzt kannst du weiter.',
+      'Bert hat drei Löcher in der Schürze. Er sagt, das sind Lüftungsschlitze.',
+      'Eine Naht hält nur, wenn man jeden Stich ernst nimmt.',
+      'Ich flicke alles. Nur Herzen nicht. Die heilen von allein, wenn man sie lässt.',
+      'Mein Fingerhut ist aus Silber. Der Rest von mir ist aus Geduld.',
+    ]),
   funkturm1: [{ s: 'juna', t: 'Die Beine stehen wieder gerade, die Leiter hält. Von da oben sieht man über den ganzen See!' }],
   funkturm2: [
     { s: 'juna', t: 'Hörst du das? Rauschen … und dazwischen Stimmen. Da draußen sind noch mehr!' },
@@ -656,5 +831,342 @@ export const DIALOGE = {
         state.time.day
       ),
     },
+  ],
+  // --- M29: Bindungsmomente – je Figur drei (vertraut, befreundet, eng). Sie spielen beim
+  // nächsten Ansprechen nach dem Aufstieg; der dritte endet mit dem Erinnerungsstück.
+  // Keine Pronomen für Mika (Name und Aussehen sind frei wählbar).
+  // --- Knopf ------------------------------------------------------------------------
+  knopfMoment1: [
+    { s: 'mika', t: 'Knopf trottet heran und legt mir den Kopf aufs Knie. Einfach so, ohne Stock, ohne Bitte.' },
+    { s: 'knopf', t: 'Wuff.' },
+    { s: 'mika', t: 'Ja. Ich hab dich auch gern.' },
+  ],
+  knopfMoment2: [
+    { s: 'mika', t: 'Knopf sitzt am Tor und schaut in den Wald. Bei jedem Knacken zucken die Ohren.' },
+    { s: 'mika', t: 'Jemand hat ihm den Knopf ans Halsband genäht. Mit rotem Garn, ganz ordentlich. Ob er auf diesen Jemand wartet?' },
+    { s: 'knopf', t: '(leise) Wuff.' },
+    { s: 'mika', t: 'Du passt auf uns auf. Und wir auf dich. Abgemacht?' },
+    { s: 'mika', t: 'Knopf lehnt sich an mein Bein. Das heißt wohl ja.' },
+  ],
+  knopfMoment3: [
+    { s: 'mika', t: 'Knopf kommt mit etwas im Maul und legt es mir feierlich vor die Füße: ein Tennisball, grau vor Alter, weich vom Kauen.' },
+    { s: 'knopf', t: 'Wuff!' },
+    { s: 'mika', t: 'Dein Schatz? Für mich?' },
+    { s: 'mika', t: 'Er schiebt ihn mit der Nase noch ein Stück näher. Dann legt er sich daneben und seufzt. Sehr zufrieden.' },
+    { s: 'mika', t: 'Der Ball bekommt einen Ehrenplatz im Regal. Knopf wird das jeden Abend kontrollieren.' },
+  ],
+
+  // --- Oma Hilde --------------------------------------------------------------------
+  hildeMoment1: [
+    { s: 'hilde', t: 'Kindchen, komm mal her. Du hast da einen Faden am Ärmel.' },
+    { s: 'hilde', t: '(zupft) So. Auf meiner Runde hab ich immer was gerichtet. Einen Kragen, eine Fahrradklingel, einen Streit.' },
+    { s: 'mika', t: 'Einen Streit?' },
+    { s: 'hilde', t: 'Die Leute reden mit der Post, Kindchen. Und die Post hört zu. Vierzig Jahre lang.' },
+  ],
+  hildeMoment2: [
+    { s: 'hilde', t: 'Weißt du, was ich am meisten vermisse? Nicht die Leute. Die sind ja noch da, irgendwo, hoffentlich.' },
+    { s: 'hilde', t: 'Den letzten Brief. Der steckte noch in meiner Tasche, als der Moder kam. An Frau Lindqvist, Am Seeufer 4.' },
+    { s: 'hilde', t: 'Aufgemacht hab ich ihn nie. Das tut man nicht.' },
+    { s: 'mika', t: 'Vielleicht ist sie noch da. Irgendwo am Ufer.' },
+    { s: 'hilde', t: 'Vielleicht. Wenn Juna mal jemanden am See erreicht, frag ich nach. So lange trag ich ihn eben weiter.' },
+  ],
+  hildeMoment3: [
+    { s: 'hilde', t: 'Mikachen. Setz dich. Ich hab was für dich.' },
+    { s: 'hilde', t: 'Mein Posthorn. Hing vierzig Jahre am Lenker und hat jeden Morgen getrötet, ob die Leute wollten oder nicht.' },
+    { s: 'mika', t: 'Das kann ich nicht annehmen.' },
+    { s: 'hilde', t: 'Doch. Jetzt bringst du den Leuten, was sie brauchen. Nur dass sie zu dir kommen.' },
+    { s: 'hilde', t: 'Und wenn du mal nicht weiterweißt: einmal tröten. Das hilft. Meistens den anderen.' },
+  ],
+
+  // --- Juna -------------------------------------------------------------------------
+  junaMoment1: [
+    { s: 'juna', t: 'Psst! Hör mal. (dreht am Knopf) Da. Hinter dem Rauschen.' },
+    { s: 'mika', t: 'Ich höre … Rauschen.' },
+    { s: 'juna', t: 'Ganz leise. Jemand pfeift. Seit drei Nächten, immer dieselbe Melodie.' },
+    { s: 'juna', t: 'Ich pfeif jetzt zurück. Vielleicht denkt der andere, er ist verrückt. Aber vielleicht freut er sich.' },
+  ],
+  junaMoment2: [
+    { s: 'juna', t: 'Käpt’n? Darf ich dir was sagen, ohne dass du es weitererzählst?' },
+    { s: 'juna', t: 'Radio Stillwald – das gab es wirklich. Mein Vater hat es gemacht, aus dem Keller, jeden Abend um acht.' },
+    { s: 'juna', t: 'Als der Moder kam, hat er gesagt: Sende weiter, egal was passiert. Dann ist er losgegangen, Hilfe holen.' },
+    { s: 'mika', t: 'Und du sendest.' },
+    { s: 'juna', t: 'Jeden Abend um acht. Wenn er irgendwo ein Radio hat, weiß er, dass ich noch da bin. (lacht, ein bisschen zu laut) Na ja. Und jetzt weiß er auch, dass es hier Kürbisse gibt.' },
+  ],
+  junaMoment3: [
+    { s: 'juna', t: 'Käpt’n! Hand auf. Augen zu. Nicht schummeln!' },
+    { s: 'juna', t: 'Das ist die erste Röhre, die ich ganz allein repariert hab. Mit neun. Mein Vater hat sie mir an einer Schnur umgehängt wie eine Medaille.' },
+    { s: 'mika', t: 'Juna … die brauchst du doch.' },
+    { s: 'juna', t: 'Nee. Die ist durchgebrannt, schon ewig. Aber sie hat einmal geleuchtet, weil ich was richtig gemacht hab.' },
+    { s: 'juna', t: 'Genau wie hier. Stell sie irgendwohin, wo ich sie seh. Dann weiß ich immer, wo zu Hause ist.' },
+  ],
+
+  // --- Bert -------------------------------------------------------------------------
+  bertMoment1: [
+    { s: 'bert', t: 'Hmpf. Deine Säge. Stumpf.' },
+    { s: 'bert', t: '(feilt) Dreißig Jahre Baumarkt. Weißt du, wie oft ich das gesagt hab? „Stumpf. Das ist nicht die Säge, das ist der Mensch.“' },
+    { s: 'mika', t: 'Und – war es der Mensch?' },
+    { s: 'bert', t: 'Immer. (reicht die Säge zurück) Jetzt nicht mehr. Gern geschehen.' },
+  ],
+  bertMoment2: [
+    { s: 'bert', t: 'Setz dich. Nein, da nicht. Der Klotz wackelt.' },
+    { s: 'bert', t: 'Ich hatte eine Frau. Marianne. Die hat gesagt, ich rede mit Schrauben mehr als mit Menschen.' },
+    { s: 'bert', t: 'Hatte recht. Schrauben widersprechen nicht. Menschen gehen fort.' },
+    { s: 'mika', t: 'Wohin ist sie gegangen?' },
+    { s: 'bert', t: 'Zu ihrer Schwester in die Stadt. Vor dem Moder. Weiß nicht, ob sie angekommen ist. (lange Pause) Hmpf. Genug geredet. Die Barrikade da vorn ist schief.' },
+  ],
+  bertMoment3: [
+    { s: 'bert', t: 'Hier. Nimm. Frag nicht.' },
+    { s: 'mika', t: 'Ein Namensschild? „Bert – Ihr Fachberater. Fragen Sie mich!“' },
+    { s: 'bert', t: 'Dreißig Jahre am Kittel. Die Leute haben gefragt. Ich hab geantwortet. Meistens: „Gang sieben.“' },
+    { s: 'bert', t: 'Hier fragt mich auch wieder jemand. Das ist … hmpf. Das ist gut.' },
+    { s: 'mika', t: 'Danke, Bert.' },
+    { s: 'bert', t: 'Gang sieben. Falls du was brauchst.' },
+  ],
+
+  // --- Dr. Yusuf --------------------------------------------------------------------
+  yusufMoment1: [
+    { s: 'yusuf', t: 'Zeig mal deine Hand. Nein, die andere. Ah. Eine Schwiele vom Axtstiel.' },
+    { s: 'yusuf', t: 'Pferde kriegen so etwas am Widerrist. Ich empfehle Ringelblumensalbe und weniger Holzhacken.' },
+    { s: 'mika', t: 'Und was empfehlen Sie, wenn man das Holz braucht?' },
+    { s: 'yusuf', t: 'Dann Ringelblumensalbe. Das mit dem Holzhacken war ohnehin nur als Scherz gemeint.' },
+  ],
+  yusufMoment2: [
+    { s: 'yusuf', t: 'Ich hatte eine Praxis im Dorf hinter dem Wald. Hunde, Katzen, einmal ein Esel mit Liebeskummer.' },
+    { s: 'yusuf', t: 'Als der Moder kam, habe ich die Tiere freigelassen. Alle. Die Käfige offen, die Tür offen. Lauft.' },
+    { s: 'yusuf', t: 'Manchmal frage ich mich, ob das richtig war.' },
+    { s: 'mika', t: 'Knopf ist auch irgendwo losgelaufen. Und jetzt ist er hier.' },
+    { s: 'yusuf', t: '(schaut zu Knopf hinüber) … Ja. Ja, das ist er. Danke. Das hilft mehr als jeder Tee.' },
+  ],
+  yusufMoment3: [
+    { s: 'yusuf', t: 'Ich möchte dir etwas schenken. Es ist albern. Das ist der Sinn der Sache.' },
+    { s: 'mika', t: 'Ein Hut? Mit einem … Plüschschaf obendrauf?' },
+    { s: 'yusuf', t: 'Mein Doktorhut. Die Kollegen haben ihn gebastelt, als ich fertig war. Das Schaf war meine erste Patientin.' },
+    { s: 'yusuf', t: 'Ich habe ihn aus dem Dorf mitgenommen statt einer zweiten Hose. Man muss Prioritäten setzen.' },
+    { s: 'yusuf', t: 'Stell ihn ins Regal. Wenn es schwer wird, schau ihn an. Niemand kann traurig bleiben, wenn ein Schaf auf ihn herabblickt.' },
+  ],
+
+  // --- Hannes -----------------------------------------------------------------------
+  hannesMoment1: [
+    { s: 'hannes', t: '(klopft an deinen Türrahmen) Hm. Kiefer. Hat sich gesetzt. Hält noch fünfzig Jahre.' },
+    { s: 'mika', t: 'Klopfst du eigentlich auf alles?' },
+    { s: 'hannes', t: 'Holz redet, wenn man anklopft. Menschen auch, nur leiser.' },
+    { s: 'hannes', t: '(klopft sanft an Mikas Schulter) Hm. Hält auch noch fünfzig Jahre. Mindestens.' },
+  ],
+  hannesMoment2: [
+    { s: 'hannes', t: 'Auf der Walz darf man seinem Heimatort nicht näher als fünfzig Kilometer kommen. Drei Jahre und einen Tag.' },
+    { s: 'hannes', t: 'Ich hatte noch vier Monate. Dann wär ich heimgegangen, mit dem Wanderbuch voller Stempel.' },
+    { s: 'hannes', t: 'Jetzt gibt es den Ort nicht mehr. Der Moder hat ihn eingewickelt wie ein Päckchen.' },
+    { s: 'mika', t: 'Dann bist du jetzt für immer auf der Walz?' },
+    { s: 'hannes', t: 'Oder angekommen. (klopft auf den Balken) Kommt drauf an, wie man’s sieht. Ich seh’s gerade ganz gut.' },
+  ],
+  hannesMoment3: [
+    { s: 'hannes', t: 'Ich hab gesagt, den Hobel geb ich nicht her. Hab ich gesagt, oder?' },
+    { s: 'mika', t: 'Hast du.' },
+    { s: 'hannes', t: 'Er war von meinem Großvater. Der hat gesagt: Gib ihn dem, bei dem du bleiben willst.' },
+    { s: 'hannes', t: 'Also. Nimm. Und wehe, du hobelst damit Kürbisse.' },
+  ],
+
+  // --- Clara ------------------------------------------------------------------------
+  claraMoment1: [
+    { s: 'clara', t: 'Boss! Hör dir das an. (tippt an den Turm) Hörst du? Nichts! Er quietscht nicht mehr.' },
+    { s: 'mika', t: 'Hat er vorher gequietscht?' },
+    { s: 'clara', t: 'In C-Dur. Jetzt schnurrt er. Ich hab ihm gesagt, dass er ein guter Turm ist. Und ihn geölt. Vor allem geölt.' },
+  ],
+  claraMoment2: [
+    { s: 'clara', t: 'Meine Werkstatt war eine alte Tankstelle. Über der Tür stand noch „Super bleifrei“. Die Leute dachten, das bin ich.' },
+    { s: 'clara', t: 'Ich hab alles repariert. Fahrräder, Toaster, einmal ein Herz aus Blech für ein Kind, das weinen musste.' },
+    { s: 'clara', t: 'Dann ist das Dach eingebrochen, und der Moder kam durch die Ritzen. Ich hab nur das Schild gerettet.' },
+    { s: 'mika', t: 'Welches Schild?' },
+    { s: 'clara', t: '„Hier wird nichts weggeworfen.“ Hing über der Werkbank. Ich glaub, das hier ist auch so ein Ort. Ihr werft auch nichts weg. Nicht mal Leute.' },
+  ],
+  claraMoment3: [
+    { s: 'clara', t: 'Boss, ich brauch zwei Hände und einen Nagel. Du bist die Hände.' },
+    { s: 'clara', t: '(hält das Schild hoch) „Hier wird nichts weggeworfen.“ Es gehört über deine Tür. Oder ins Regal. Aber gut sichtbar.' },
+    { s: 'mika', t: 'Das ist doch dein Schild.' },
+    { s: 'clara', t: 'Deshalb. Mein Schild hängt da, wo ich zu Hause bin. So einfach ist Mechanik.' },
+  ],
+
+  // --- Lotte ------------------------------------------------------------------------
+  lotteMoment1: [
+    { s: 'lotte', t: 'Mika! Ich hab was gefunden! (kramt) Moment. Ich hab was gefunden und dann … hier! Nein. Das ist ein Keks.' },
+    { s: 'lotte', t: 'Egal. Willst du den Keks? Er ist nur ein bisschen zerbrochen. Glück bringt er trotzdem.' },
+    { s: 'mika', t: 'Kekse bringen Glück?' },
+    { s: 'lotte', t: 'Zerbrochene schon. Dann kann man teilen. (bricht ihn in zwei) Siehst du? Schon wirkt es.' },
+  ],
+  lotteMoment2: [
+    { s: 'lotte', t: 'Weißt du, warum ich so viel verliere? Meine Oma hat gesagt, ich hab Löcher in den Taschen und im Kopf.' },
+    { s: 'lotte', t: 'Aber eins hab ich nie verloren: die Laterne, die sie mir gefaltet hat. Die trag ich immer.' },
+    { s: 'lotte', t: 'In der ersten Nacht mit dem Moder war es so dunkel, dass ich dachte, ich verliere mich selbst. Dann hab ich die Laterne angezündet.' },
+    { s: 'mika', t: 'Und dann?' },
+    { s: 'lotte', t: 'Dann war ich wieder da. So einfach ist Licht. Deshalb mach ich es immer weiter.' },
+  ],
+  lotteMoment3: [
+    { s: 'lotte', t: 'Die ganze Nacht hab ich gefaltet. Und nur zweimal die Schere verloren!' },
+    { s: 'lotte', t: '(hält eine Papierlaterne hoch, orange wie ein Kürbis) Für dich. Mit einem Fenster in Form von … einem Hund. Ungefähr.' },
+    { s: 'mika', t: 'Das ist Knopf!' },
+    { s: 'lotte', t: 'Siehst du, du erkennst ihn! Dann hab ich es richtig gemacht. Eine Laterne ist für den, bei dem man sich nicht verliert.' },
+  ],
+
+  // --- Greta ------------------------------------------------------------------------
+  gretaMoment1: [
+    { s: 'greta', t: 'Komm. Leise.' },
+    { s: 'mika', t: '(flüstert) Was ist da?' },
+    { s: 'greta', t: 'Reh. Am Schilf. Erstes seit dem Moder.' },
+    { s: 'mika', t: 'Es lebt noch was da draußen.' },
+    { s: 'greta', t: 'Ja. Nicht nur Schlurfer. Wollt ich dir zeigen.' },
+  ],
+  gretaMoment2: [
+    { s: 'greta', t: 'Die Pfeife. Du hast gefragt.' },
+    { s: 'greta', t: 'Mein Mann. Karl. Hat mir Fallen beigebracht. Und Geduld.' },
+    { s: 'greta', t: 'Er ist im Wald geblieben. Am ersten Abend. Hat die anderen rausgebracht. Sich selbst nicht.' },
+    { s: 'mika', t: 'Das tut mir leid, Greta.' },
+    { s: 'greta', t: 'Mir auch. (lange Pause) Du erinnerst mich an ihn. Redest mehr. Aber sonst.' },
+  ],
+  gretaMoment3: [
+    { s: 'greta', t: 'Hier.' },
+    { s: 'mika', t: 'Die Feder von deinem Hut?' },
+    { s: 'greta', t: 'Eichelhäher. Hat Karl gefunden. Bringt Glück, hat er gesagt.' },
+    { s: 'greta', t: 'Hat gewirkt. Ich bin hier.' },
+    { s: 'greta', t: 'Jetzt du.' },
+  ],
+  // M29: die übrigen acht
+  fieteMoment1: [
+    { s: 'fiete', t: 'Komm mal mit zum Steg. Nur kurz.' },
+    { s: 'mika', t: 'Was ist denn?' },
+    { s: 'fiete', t: 'Nichts. Das ist es ja. Kein Schlurfer, kein Sturm, nur Wasser. So hab ich das früher jeden Morgen gehabt.' },
+    { s: 'fiete', t: 'Danke, dass ich das wieder hab.' },
+  ],
+  fieteMoment2: [
+    { s: 'fiete', t: 'Der Hecht. Ich muss dir was gestehen.' },
+    { s: 'fiete', t: 'Er war so lang wie meine Hand. Und ich hab ihn wieder reingeworfen, weil er mich so traurig angeguckt hat.' },
+    { s: 'mika', t: 'Und das Ruder?' },
+    { s: 'fiete', t: 'Hab ich erfunden. Aber die Geschichte wird jedes Jahr besser, findest du nicht?' },
+  ],
+  fieteMoment3: [
+    { s: 'fiete', t: 'Hier. Meine Knotentafel. Hat vierzig Jahre auf dem Kutter gehangen.' },
+    { s: 'fiete', t: 'Palstek, Webeleinstek, Achtknoten. Jeder hält was anderes.' },
+    { s: 'mika', t: 'Und welcher hält uns?' },
+    { s: 'fiete', t: 'Keiner davon. Uns hält was Besseres. Häng sie irgendwo hin, wo du sie siehst.' },
+  ],
+  idaMoment1: [
+    { s: 'ida', t: 'Komm her. Schau mal an den Stumpf.' },
+    { s: 'mika', t: 'Ein Trieb. Ganz klein.' },
+    { s: 'ida', t: 'Der Baum, den du letzte Woche gefällt hast. Er kommt wieder.' },
+    { s: 'ida', t: 'Ich wollte, dass du das siehst. Nicht alles, was fällt, ist fort.' },
+  ],
+  idaMoment2: [
+    { s: 'ida', t: 'Ich hatte ein Revier. Vierhundert Hektar. Jeden Baum kannte ich.' },
+    { s: 'ida', t: 'Als der Moder kam, bin ich geblieben, bis es nicht mehr ging. Ich hab mich verabschiedet.' },
+    { s: 'mika', t: 'Von jedem Baum?' },
+    { s: 'ida', t: 'Von den wichtigen. Es hat drei Tage gedauert.' },
+  ],
+  idaMoment3: [
+    { s: 'ida', t: 'Der hier ist für dich.' },
+    { s: 'ida', t: 'Ein Zapfen von der ältesten Tanne im Revier. Dreihundert Jahre. Sie hat alles überstanden.' },
+    { s: 'ida', t: 'Wenn wir hier fertig sind, stecken wir die Samen in die Erde. Zusammen.' },
+    { s: 'mika', t: 'Versprochen.' },
+  ],
+  rosaMoment1: [
+    { s: 'rosa', t: 'Mund auf.' },
+    { s: 'mika', t: 'Was ist das?' },
+    { s: 'rosa', t: 'Kürbisplätzchen. Das Rezept meiner Mutter. Ich hab sie seit dem Moder nicht mehr gebacken. Und? Und?' },
+    { s: 'mika', t: 'Wunderbar.' },
+    { s: 'rosa', t: 'Fehlt Salz. Aber wunderbar.' },
+  ],
+  rosaMoment2: [
+    { s: 'rosa', t: 'Weißt du, warum ich koche? Weil man dabei nicht nachdenken muss.' },
+    { s: 'rosa', t: 'Am ersten Abend mit dem Moder hab ich für dreißig Leute gekocht. Es kamen vier.' },
+    { s: 'rosa', t: 'Hier kommen alle. Jeden Abend. Das ist mein Glück.' },
+  ],
+  rosaMoment3: [
+    { s: 'rosa', t: 'Hier. Mein Rezeptheft. Omas Brühe, Mutters Plätzchen, meine Kürbissuppe. Mit Fettflecken.' },
+    { s: 'mika', t: 'Das kann ich nicht annehmen.' },
+    { s: 'rosa', t: 'Doch. Ein Rezept, das niemand kocht, ist nur Papier. Du kochst es. Mit Salz.' },
+  ],
+  antonMoment1: [
+    { s: 'anton', t: 'Hör mal. Ich hab was für dich geschrieben.' },
+    { s: 'anton', t: '(spielt eine kleine Melodie, leise und ein bisschen schief)' },
+    { s: 'mika', t: 'Das ist … schön.' },
+    { s: 'anton', t: 'Es heißt „Mika hält die Nacht“. Der Text fehlt noch. Auf Mika reimt sich nichts.' },
+  ],
+  antonMoment2: [
+    { s: 'anton', t: 'Ich hab früher in großen Sälen gespielt. Hunderte Leute.' },
+    { s: 'anton', t: 'Hier sind es eine Handvoll und ein Hund. Und es ist das beste Publikum, das ich je hatte.' },
+    { s: 'mika', t: 'Warum?' },
+    { s: 'anton', t: 'Weil hier keiner zuhört, weil er bezahlt hat. Sondern weil er es braucht.' },
+  ],
+  antonMoment3: [
+    { s: 'anton', t: 'Hier. Meine erste Mundharmonika. Damit hab ich angefangen, mit sieben.' },
+    { s: 'anton', t: 'Sie kann nur eine Tonleiter, und die ist schief. Aber sie hat mich hierher gebracht.' },
+    { s: 'anton', t: 'Spiel drauf, wenn es still wird. Dann weiß ich, dass du an uns denkst.' },
+  ],
+  emilMoment1: [
+    { s: 'emil', t: 'Psst. Hier. Knie dich hin.' },
+    { s: 'emil', t: 'Siehst du? Der erste Kürbis, den ich hier gesetzt hab. Er hat eine Blüte.' },
+    { s: 'mika', t: 'Mitten im Herbst?' },
+    { s: 'emil', t: 'Er weiß nicht, dass es zu spät ist. Das gefällt mir an ihm.' },
+  ],
+  emilMoment2: [
+    { s: 'emil', t: 'Meine Frau hatte den schönsten Garten im Dorf. Rosen, so groß wie Kohlköpfe.' },
+    { s: 'emil', t: 'Als der Moder kam, haben wir die Rosen in Töpfe gesetzt und mitgenommen. Sie hat es nicht geschafft. Die Rosen schon.' },
+    { s: 'emil', t: '… Eine davon steht jetzt bei euch am Beet. Hab ich gar nicht erzählt, oder?' },
+  ],
+  emilMoment3: [
+    { s: 'emil', t: 'Hier. Kürbissamen. Von meinen besten.' },
+    { s: 'emil', t: 'Im Frühling steckst du sie in die Erde. Dann gibt es wieder Kürbisse. Und Laternen. Und Suppe.' },
+    { s: 'mika', t: 'Im Frühling … ob wir den erleben?' },
+    { s: 'emil', t: 'Deswegen geb ich sie dir. Damit du daran denkst, dass er kommt.' },
+  ],
+  friedaMoment1: [
+    { s: 'frieda', t: 'Hier, halt mal.' },
+    { s: 'mika', t: 'Ein Nagel?' },
+    { s: 'frieda', t: 'Der erste, den ich hier geschmiedet hab. Er ist schief.' },
+    { s: 'frieda', t: 'Die erste Arbeit an einem neuen Ort teilt man. Alte Schmiederegel. Jetzt ist es unser Nagel.' },
+  ],
+  friedaMoment2: [
+    { s: 'frieda', t: 'Mein Vater war Schmied, sein Vater auch. Alle haben gesagt, eine Tochter kann das nicht.' },
+    { s: 'frieda', t: 'Ich hab die Schmiede dann zwanzig Jahre geführt. Jetzt ist sie weg.' },
+    { s: 'mika', t: 'Das tut mir leid.' },
+    { s: 'frieda', t: 'Muss es nicht. Eine Schmiede ist ein Feuer und zwei Hände. Das Feuer habt ihr. Die Hände hab ich.' },
+  ],
+  friedaMoment3: [
+    { s: 'frieda', t: 'Hier. Ein Hufeisen. Hab ich nur für dich gemacht.' },
+    { s: 'frieda', t: 'Man hängt es über die Tür, die Öffnung nach oben – dann fällt das Glück nicht raus.' },
+    { s: 'mika', t: 'Und wenn es falsch herum hängt?' },
+    { s: 'frieda', t: 'Dann richte ich es. Mit dem Hammer.' },
+  ],
+  maraMoment1: [
+    { s: 'mara', t: 'Komm mit, schnell. Schau da rüber, über den Wald.' },
+    { s: 'mika', t: 'Rauch?' },
+    { s: 'mara', t: 'Ein Kochfeuer. Weit hinten. Da leben noch Leute.' },
+    { s: 'mara', t: 'Ich wollte, dass du es zuerst weißt: Wir sind nicht allein.' },
+  ],
+  maraMoment2: [
+    { s: 'mara', t: 'Ich bin früher nie irgendwo geblieben. Ein Ort, drei Tage, weiter.' },
+    { s: 'mara', t: 'Mein Vater hat gesagt: Wer stehen bleibt, verliert. Ich glaube, er hatte nur Angst vor Abschieden.' },
+    { s: 'mika', t: 'Und du?' },
+    { s: 'mara', t: 'Ich zähle die Tage hier nicht mehr. Das ist neu.' },
+  ],
+  maraMoment3: [
+    { s: 'mara', t: 'Hier. Mein Kompass. Er hat mich überallhin geführt.' },
+    { s: 'mara', t: 'Die Nadel zeigt nach Norden. Aber ich weiß jetzt, wo mein Zuhause ist.' },
+    { s: 'mara', t: 'Behalt ihn. Ich brauch ihn nicht mehr.' },
+  ],
+  paulaMoment1: [
+    { s: 'paula', t: 'Komm her. Arme hoch.' },
+    { s: 'mika', t: 'Paula?' },
+    { s: 'paula', t: 'Ein Schal. Aus den Resten von allen hier. Das Blau ist von Junas Jacke, das Rot von Berts Kappe.' },
+    { s: 'paula', t: 'Jetzt trägst du alle ein bisschen mit dir herum.' },
+  ],
+  paulaMoment2: [
+    { s: 'paula', t: 'Ich hatte eine Werkstatt voller Stoffe. Seide, Samt, Tweed.' },
+    { s: 'paula', t: 'Weißt du, was ich am Ende mitgenommen habe? Eine Nadel, einen Faden, einen Fingerhut.' },
+    { s: 'paula', t: 'Mehr braucht man nicht. Alles andere findet sich. So wie ihr.' },
+  ],
+  paulaMoment3: [
+    { s: 'paula', t: 'Hier. Ein Kissen. Aus allen Flicken, die ich hier gemacht habe.' },
+    { s: 'paula', t: 'Jeder Flicken ist ein Riss, den wir überstanden haben. Das Karierte war dein Ärmel nach der ersten Nacht.' },
+    { s: 'mika', t: 'Es ist wunderschön.' },
+    { s: 'paula', t: 'Es ist geflickt. Das ist schöner.' },
   ],
 };

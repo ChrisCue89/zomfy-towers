@@ -13,6 +13,7 @@ import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } fro
 import { BUILDINGS, SOUP, BENCH, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
 import { FEEL } from '../data/feel.js';
+import { ABILITIES } from '../data/wanderers.js';
 
 const REGEN_RATE = 4;
 const ROLL = { duration: 0.3, speed: 7, cooldown: 0.75, invulnerable: 0.34 };
@@ -36,12 +37,17 @@ export class Combat {
 
   get maxHp() {
     const st = this.game.state;
-    const soup = st.player.soup === st.time.day ? SOUP.maxHp : 0; // Suppe aus der Küche (M11)
+    const soup = st.player.soup === st.time.day ? this.soupHp() : 0; // Suppe aus der Küche (M11)
     return upgradeValue(st, 'leben') + (this.game.survivors?.maxHpBonus() || 0) + soup; // Hildes Schal
   }
 
   get hp() {
     return this.game.state.player.hp;
+  }
+
+  /** Wie viel Leben die Suppe bis zum Morgen dazugibt – mit Rosa (M29) mehr. */
+  soupHp() {
+    return this.game.survivors?.ability('kochen') ? ABILITIES.kochen.soupHp : SOUP.maxHp;
   }
 
   /** Womit Mika gerade zuschlägt (Name aus weapons.js). */

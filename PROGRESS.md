@@ -5,6 +5,66 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 29 – Bindung und Alltag ✓
+
+Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über Punkte
+(DESIGN 8, OFFENE-FRAGEN 162, 171, 175).
+
+- **Vier stille Stufen** (Nr. 171): fremd, vertraut, befreundet, eng – ohne Zahl
+  im Bild und ohne Verfall. Gemeinsame Zeit entsteht beim Kartenabend (das erste
+  Mal zählt drei, danach eins), abends am Feuer (Mika ruht sich am Lagerfeuer
+  aus), im ersten Gespräch des Tages und Seite an Seite (auf dem Hochsitz, die
+  Nacht gehalten). Jede Art zählt höchstens einmal am Tag, eine neue Art mehr als
+  eine Wiederholung.
+- **Gesten:** Wer vertraut ist, grüßt morgens beim Vorbeigehen (Sprechblase,
+  Winken; Knopf bellt). Befreundete rufen Mika beim Spitznamen (»Mikachen«,
+  »Käpt’n«, »Frischling« …) und setzen sich abends zu Mika ans Feuer (bis zu
+  zwei).
+- **Drei Bindungsmomente je Figur** (51 Gespräche): Über dem Kopf steht ein
+  warmes Zeichen (»möchte reden«), E erzählt den Moment statt des gewohnten
+  Gesprächs.
+- **Erinnerungsstücke:** Der dritte Moment schenkt Mika das Stück der Person,
+  siebzehn eigene Modelle (Knopfs Tennisball, Hildes Posthorn, Junas erste Röhre
+  …). Eine **Geschenkkarte** zeigt es groß wie im Katalog (Wunsch aus dem
+  Probespiel: »auch was sie uns bringen«). Die meisten stehen im neuen
+  **Erinnerungsregal** zwischen Fenster und Kamin (vier Bretter), andere haben
+  ihren eigenen Platz: Zapfen und Feder auf der Fensterbank, das Hufeisen am
+  Kamin, Claras Schild über der Kommode, Lottes Papierlaterne am Fenster. Die
+  Stehlampe steht dafür jetzt an der Südwestecke des Sessels.
+- **Geteilte Szenen** (Nr. 162): Morgens nach dem Bericht gehen zwei Bewohner ans
+  Feuer und reden über die Nacht (Durchbruch, makellos, Boss, Regen, Nebel,
+  verloren), abends zwischen 17 und 19:30 Uhr über Gott und die Welt. Die Rollen
+  werden nach Temperament besetzt, gesprochen wird in Sprechblasen, sobald Mika
+  näher als 7 m ist, nie als Dialog. Ein Gedächtnis verhindert Wiederholungen.
+  Zwanzig Szenen, vierzehn davon am Morgen.
+- **Posten helfen nur noch** (Nr. 175): Hilde wirft Leimgläser (klebrig, kein
+  Schaden), Juna blendet und holt aus dem Nebel, betäubt aber nicht mehr, Bert
+  flickt, Dr. Yusuf heilt, Knopf hütet weiter den Hof. Der Balance-Durchlauf
+  rechnet ohnehin ohne Posten.
+- **Die übrigen acht Wanderer** (zwölf im Pool, acht je Herbst, Nr. 161):
+  - Fiete, Fischer: Balduin legt bei jedem Tausch etwas drauf.
+  - Ida, Försterin: Bäume wachsen schneller nach.
+  - Rosa, Köchin: Die Suppe gibt 40 Leben.
+  - Anton, Musiker: Er spielt abends am Feuer, morgens gibt es Gemütlichkeit +2.
+  - Emil, Gärtner: Die Beete tragen zwei Fasern mehr.
+  - Frieda, Schmiedin: Metallbarrikaden brauchen den halben Schrott.
+  - Mara, Späherin: Sie läuft morgens die Wege ab, der Nachtplan hängt ab 17 Uhr.
+  - Paula, Näherin: Was umgeworfen wurde, steht morgens wieder.
+
+  Jede und jeder hat eine eigene Figur und ein eigenes Porträt, Temperamente,
+  einen Herkunftsort (neu: Alter Hafen, Wassermühle, Kloster am Hang),
+  Gespräche, Entscheidung und Briefe.
+- **Herbstbuch, Menschenkunde:** die Stufe als Satz (»Ihr seid befreundet.«) und
+  das Erinnerungsstück.
+- **Spielstand v25** mit Migration: Alle beginnen bei »fremd«, die acht neuen
+  Wanderer kommen auf freie Tage des Ankunftsplans.
+- Prüfabschnitt `bindung` (Bilder: bindung-zeichen, bindung-feuer, geschenk,
+  erinnerungsbord). Der Abschnitt `gemeinsam` prüft Leimgläser und das Blenden.
+  Der Abschnitt `gaeste` rechnet mit dem größeren Ankunftsplan (acht statt vier)
+  und klickt die längeren Dialoge der Wanderer bis zum Ende durch; `setSurvivor`
+  der Prüfschnittstelle setzt die dauerhaften Fähigkeiten gleich (Lottes Licht),
+  `nextMorning` setzt auch die Grüße des Tages zurück.
+
 ## Nachbesserung N5 – Ankunft, Figur und Edda als Einführung ✓
 
 Rückmeldung des Auftraggebers (29.09.2026 abends): »Das Intro muss liebevoll sein
