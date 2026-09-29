@@ -49,9 +49,13 @@ export const T = {
     teile: 'Zombieteile',
     zahnraeder: 'Zahnräder',
     moderkerne: 'Moderkerne',
+    // M30: Munition – sie gehört allen
+    patronen: 'Patronen',
+    schrot: 'Schrot',
+    leuchtkugeln: 'Leuchtkugeln',
   },
   /** Einzahl (»1 Zahnrad«), sonst wie oben. */
-  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' },
+  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern', patronen: 'Patrone', leuchtkugeln: 'Leuchtkugel' },
   /** Menge mit passendem Namen: »1 Zahnrad«, »3 Zahnräder«. */
   menge: (n, res) => `${n} ${(n === 1 && T.ressourcenEins[res]) || T.ressourcen[res] || res}`,
   gegenstaende: {
@@ -63,6 +67,14 @@ export const T = {
     rechen: 'Rechen',
     faeustlinge: 'Fäustlinge',
     leer: 'Leere Hände',
+    // M30: aus dem Waffenschrank
+    jagdgewehr: 'Jagdgewehr',
+    doppelflinte: 'Doppelflinte',
+    pistole: 'Pistole',
+    signalpistole: 'Signalpistole',
+    spaltaxt: 'Spaltaxt',
+    mistgabel: 'Mistgabel',
+    schlaeger: 'Baseballschläger',
   },
   bauten: {
     bolzen: 'Bolzenwerfer',
@@ -83,6 +95,7 @@ export const T = {
     zelt: 'Schlafzelt',
     schlafhuette: 'Schlafhütte', // M27: zwei Schlafplätze
     hochsitz: 'Hochsitz', // M23
+    uebungsplatz: 'Übungsplatz', // M30
     // M17: Wall und Tor des Lagers
     wall3: 'Wall',
     wall4: 'Wall',
@@ -121,6 +134,7 @@ export const T = {
     laternenturm: 'Stärkt Türme in seinem Licht.',
     reparieren: 'Flickt Zuhause, Türme und Barrikaden.',
     werkbank: 'Werkzeuge bauen, Überschuss verwerten.',
+    uebungsplatz: 'Hier üben die Bewohner – jeden Tag eine Person, zwei Stunden lang. Wer geübt ist, hält im Notfall länger durch.',
     barrikade: 'Nur auf den Weg: Die Horde bleibt hängen und schlägt darauf ein.',
     // M19
     glockenturm: 'Ein Glockenschlag betäubt alles ringsum kurz.',
@@ -176,6 +190,8 @@ export const T = {
     schrottAusHolz: 'Holz zu Schrott verwerten',
     schrottAusStein: 'Stein zu Schrott verwerten',
     stoffAusFasern: 'Fasern zu Stoff weben',
+    schrot: 'Schrot gießen',
+    leuchtkugeln: 'Leuchtkugeln drehen',
   },
   rezeptInfo: {
     spitzhacke: 'Damit lassen sich große Felsen abbauen.',
@@ -186,6 +202,8 @@ export const T = {
     schrottAusHolz: '3 Holz werden zu 1 Schrott.',
     schrottAusStein: '2 Stein werden zu 1 Schrott.',
     stoffAusFasern: '4 Fasern werden zu 1 Stoff.',
+    schrot: 'Munition für die Doppelflinte: 2 Schrott werden zu 4 Schrot.',
+    leuchtkugeln: 'Für die Signalpistole: 2 Leuchtkugeln aus Schrott und Fasern.',
   },
   bauleiste: {
     reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten', schmuck: 'Schmuck' },
@@ -617,6 +635,8 @@ export const T = {
     auswaehlen: 'Auswählen',
     ernten: 'Ernten',
     holzNehmen: 'Holz nehmen',
+    ueben: 'Üben lassen', // M30: Übungsplatz
+    waffenschrank: 'Waffenschrank öffnen', // M30
     brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
     heuteLeer: 'Heute leer – morgen wieder',
     leerBald: 'Leer – in ein, zwei Tagen wieder',
@@ -1487,6 +1507,54 @@ export const T = {
     laufen: 'Lauf ein Stück: W, A, S, D. Mit Umschalt rennst du. Keine Sorge, tagsüber bist du hier sicher.',
     gut: 'Gut so. Du bewegst dich, als wärst du hier schon zu Hause.',
     karte: 'M zeigt dir alle Wege auf einer Karte. Z holt dich näher heran, noch einmal Z wieder weg.',
+  },
+  // M30: Waffenschrank, Schusswaffen und Übungsplatz
+  waffen: {
+    schrank: 'Waffenschrank',
+    untertitel: 'Von Eddas Großvater gebaut. Die Munition gehört allen.',
+    zu: 'Abgeschlossen. Edda weiß bestimmt, wo der Schlüssel ist.',
+    schluessel: 'Du hast die erste Nacht gehalten. Dann darfst du auch an den Schrank in der Stube – der Schlüssel liegt hinter dem losen Stein am Kaminsims. Geh sorgsam damit um. Und die Munition gehört allen.',
+    info: {
+      jagdgewehr: 'Trifft weit und genau und durchschlägt einen Schlurfer. Ein Schuss, dann nachladen.',
+      doppelflinte: 'Zwei Läufe, ein Fächer aus Schrot: nah verheerend, weit harmlos. Stößt zurück.',
+      pistole: 'Sechs Schuss, schnell zur Hand. Die Allzweckwaffe.',
+      signalpistole: 'Eine Leuchtkugel blendet, macht Licht und holt aus dem Nebel. Licht macht den Moder müde.',
+      spaltaxt: 'Schwer und langsam, spaltet alles. Berts Liebling.',
+      mistgabel: 'Hält auf Abstand und stößt zurück – die sicherste Waffe.',
+      schlaeger: 'Schnell und leicht, betäubt kurz.',
+    },
+    fuerDieHand: 'Für die Hand – ohne Munition',
+    munition: (name, n) => `${name}: ${n} im Vorrat`,
+    magazin: (n) => (n === 1 ? 'Ein Schuss, dann nachladen' : `${n} Schuss im Magazin`),
+    reichweite: (m) => `Reichweite ${m} m`,
+    laut: 'Laut: Der Knall lockt Schlurfer an.',
+    notfall: (name) => `Im Notfall: ${name}`,
+    niemand: 'Im Notfall: niemand',
+    beiMika: 'bei Mika',
+    imSchrank: 'im Schrank',
+    hinweis: 'W/S wählen · E nehmen oder zurücklegen · Q: wer im Notfall · Esc',
+    genommen: (name) => `${name} ist jetzt in der Schnellleiste.`,
+    zurueck: (name) => `${name} liegt wieder im Schrank.`,
+    leisteVoll: 'Die Schnellleiste ist voll – leg erst etwas zurück.',
+    leer: 'Klick. Leer.',
+    nachladen: 'Nachladen …',
+    patronenInfo: 'Für Jagdgewehr und Pistole. Balduin fragt nicht, wofür – und du ihn auch nicht.',
+    hinweisSchiessen: 'Zielen mit der Maus, schießen mit einem Klick. Leer lädt von selbst nach, solange Munition da ist. Aber denk dran: Der Knall lockt sie an, und jede Patrone, die du verschießt, fehlt den anderen.',
+    // Übungsplatz
+    uebenFrage: 'Wer übt heute?',
+    uebenIch: (name) => `${name} – und ich übe mit`,
+    uebenAllein: (name) => name,
+    uebenNiemand: 'Heute nicht.',
+    uebenKeiner: 'Heute hat schon jeder geübt – oder es wohnt noch niemand hier.',
+    uebenZuSpaet: 'Geübt wird tagsüber: von acht Uhr an, und um fünf ist Schluss.',
+    uebenLos: (name) => `${name} geht zum Übungsplatz.`,
+    uebenLaeuft: (name) => `${name} übt gerade.`,
+    uebenAntwort: (name, stufe) => `${name} (${stufe})`,
+    uebenFertig: (name, stufe) => `${name} hat geübt – ${stufe}.`,
+    uebenStufe: (name, n) => `${name} ist jetzt geübter: Stufe ${n} von 3.`,
+    uebenPatronen: 'Drei Patronen für die Dosen.',
+    stufe: (n, rest) => (rest === null ? 'ganz geübt' : `Übung ${n} von 3, noch ${rest} bis zur nächsten`),
+    buch: (n) => ['Hat noch nie geübt.', 'Ein wenig geübt.', 'Geübt.', 'Sehr geübt.'][n],
   },
   // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch
   startbild: {

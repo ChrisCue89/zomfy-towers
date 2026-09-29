@@ -32,7 +32,12 @@ const SPLAT = {
   // M20: Feuerwerk (bunt) und Nebel der Nebelleuchte
   feuerwerk: [c(P.r4), c(P.f7), c(P.b5), c(P.g7), c(P.a4), c(0xfff6d8)],
   nebel: [c(0xe8eef4), c(0xd8e2ea), c(0xf4f8fc)],
+  // M30: Treffer einer Kugel – violette Sporen und Laub, nie Blut; Leuchtkugel rot-weiß
+  sporen: [c(P.d3), c(P.d4), c(P.a2), c(P.g6), c(P.e6)],
+  leucht: [c(0xfff6d8), c(P.r4), c(P.f7), c(P.a1)],
 };
+const MUZZLE = { feuer: [c(0xfff6d8), c(P.f8), c(P.f7), c(P.f6)], leucht: [c(0xfff6d8), c(P.r4), c(P.a1)] };
+const SMOKE = [c(P.s7), c(P.s8), c(P.s6)];
 
 export class Effects {
   /** @param {import('./particles.js').Particles} particles */
@@ -193,6 +198,56 @@ export class Effects {
       lift: 1.5,
       windFactor: 0.5,
     });
+  }
+
+  /**
+   * Mündungsfeuer (M30): ein heller Stoß nach vorn, der nach zwei Bildern verlischt,
+   * dazu eine kleine Rauchwolke, die langsam aufsteigt.
+   */
+  muzzle(x, y, z, nx, nz, kind = 'feuer') {
+    const r = this.rng;
+    const colors = MUZZLE[kind] || MUZZLE.feuer;
+    for (let i = 0; i < 5; i++) {
+      const s = r.range(1.5, 4.5);
+      const side = r.range(-0.6, 0.6);
+      this.particles.spawn({
+        x: x + nx * 0.05,
+        y,
+        z: z + nz * 0.05,
+        vx: (nx - nz * side) * s,
+        vy: r.range(-0.3, 0.6),
+        vz: (nz + nx * side) * s,
+        life: r.range(0.05, 0.08), // zwei Bilder
+        size0: i < 2 ? 5 : 3,
+        size1: 2,
+        color0: colors[i % colors.length],
+        alpha0: 1,
+        alpha1: 1,
+        drag: 3,
+        lift: 0,
+        windFactor: 0,
+      });
+    }
+    for (let i = 0; i < 4; i++) {
+      this.particles.spawn({
+        x: x + nx * r.range(0.05, 0.25),
+        y: y + r.range(-0.03, 0.05),
+        z: z + nz * r.range(0.05, 0.25),
+        vx: nx * r.range(0.2, 0.6) + r.range(-0.15, 0.15),
+        vy: r.range(0.25, 0.55),
+        vz: nz * r.range(0.2, 0.6) + r.range(-0.15, 0.15),
+        life: r.range(0.7, 1.1),
+        size0: 2,
+        size1: 5,
+        color0: SMOKE[i % SMOKE.length],
+        alpha0: 0.75,
+        alpha1: 0,
+        drag: 1.8,
+        lift: 0.35,
+        windFactor: 0.8,
+        round: true,
+      });
+    }
   }
 
   /** Staubwolke am Boden (Bauen, Abreißen, Ausbau). */

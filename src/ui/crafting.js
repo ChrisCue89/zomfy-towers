@@ -82,7 +82,7 @@ export class CraftingMenu {
       const karten = !g.cardNight.blocked('balduin') ? [{ id: 'karten', cards: true, icon: 'buch', name: T.karten.einladenBalduin, info: T.karten.titel, cost: {}, gives: {}, affordable: true }] : [];
       return [...g.trader.offers(), ...(bitte ? [bitte] : []), ...karten, bye];
     }
-    const list = RECIPES.map((r) => {
+    const list = RECIPES.filter((r) => !r.arms || g.state.arms?.unlocked).map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
     });

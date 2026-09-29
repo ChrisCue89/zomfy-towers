@@ -134,6 +134,8 @@ export class Survivors {
     const def = personOf(id);
     const feast = this.resident(id) ? this.game.posts?.feastSpot(id) : null; // M23: Fest am Feuer
     if (feast) return { ...this.freeSpot(feast.x, feast.z, 0.28), facing: feast.facing };
+    const drill = this.resident(id) ? this.game.training?.spotOf(id) : null; // M30: auf dem Übungsplatz
+    if (drill) return { ...this.freeSpot(drill.x, drill.z, 0.28), facing: drill.facing };
     const scene = this.resident(id) ? this.game.scenes?.spotOf(id) : null; // M29: zu zweit am Feuer im Gespräch
     if (scene) return { ...this.freeSpot(scene.x, scene.z, 0.28), facing: scene.facing };
     const fire = this.resident(id) ? this.game.bonds?.fireSpot(id) : null; // M29: abends zu Mika ans Feuer
@@ -741,9 +743,9 @@ export class Survivors {
     this.npcs.setBedrolls(GUEST_SPOTS, used);
   }
 
-  /** Hat ein Bewohner diese Fähigkeit? (M27) */
+  /** Hat ein Bewohner diese Fähigkeit? (M27) – wer gerade übt, dessen Fähigkeit ruht (M30) */
   ability(kind) {
-    return WANDERER_ORDER.some((id) => WANDERERS[id].ability === kind && this.resident(id));
+    return WANDERER_ORDER.some((id) => WANDERERS[id].ability === kind && this.resident(id) && !this.game.training?.busy(id));
   }
 
   /** Fähigkeiten, die dauerhaft wirken (Lottes Licht), neu setzen. */

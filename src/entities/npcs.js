@@ -218,6 +218,17 @@ export class Npcs {
     if (n.wave > 0) {
       p.armR.rotation.x = -2.6;
       p.armR.rotation.z = 0.25 + Math.sin(n.wave * 14) * 0.35;
+    } else if (n.practice) {
+      // M30: Übung – im Anschlag auf die Dosen (Rückstoß beim Schuss) oder ein Hieb auf die Strohpuppe
+      const q = n.practice.t;
+      if (n.practice.kind === 'schuss') {
+        p.armR.rotation.x = -1.5 + Math.max(0, 1 - q / 0.1) * 0.35;
+        p.armL.rotation.x = -1.3;
+        p.armR.rotation.z = 0.2;
+      } else {
+        p.armR.rotation.x = q < 0.12 ? -2.6 : q < 0.3 ? -2.6 + ((q - 0.12) / 0.18) * 2.3 : -0.3 - Math.min(1, (q - 0.3) / 1.2) * 0.2;
+        p.armR.rotation.z = 0.1;
+      }
     } else {
       p.armR.rotation.z = damp(p.armR.rotation.z, 0, 8, dt);
     }

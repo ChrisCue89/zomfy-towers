@@ -54,7 +54,7 @@ export const INTERIOR_EXTENT = { minX: LAYOUT.interior.x, maxX: LAYOUT.interior.
  * N4: feste Plätze im Wohnraum (Voxel des Innenraums) – Kamin, Kommode mit Funkgerät,
  * Tisch und Schlafecke. Die Möbel (furnitureModels.js) und der Katalog richten sich danach.
  */
-export const WOHN = { x0: 212, x1: 367, kamin: 274, kommode: 216, tisch: { x: 226, z: 60 }, bett: 342 };
+export const WOHN = { x0: 212, x1: 367, kamin: 274, kommode: 216, tisch: { x: 226, z: 60 }, bett: 342, schrank: 326 }; // M30: Waffenschrank statt Nachttisch
 /** N4: Plätze in Küche und Schlafzimmer, vom Westrand des Raums aus gezählt. */
 const KUECHE = { herd: 26, spuele: 58, buffet: 84, tisch: { x: 26, z: 60 } };
 const SCHLAF = { schrank: 70 };
@@ -243,6 +243,38 @@ function dresser(m, x0, seed) {
   return { x0, x1 };
 }
 
+/**
+ * M30: Waffenschrank von Eddas Großvater – Eichenholz mit Kranz und Sockel, grün
+ * ausgeschlagen, unten eine Schublade, vorn zwei Glastüren (nur Rahmen und zwei helle
+ * Spiegelungen, damit man die Waffen sieht). Die Waffen selbst sind eigene Modelle
+ * (world.refreshCabinet): Was Mika herausnimmt, fehlt im Schrank.
+ */
+function gunCabinet(m, x0) {
+  const x1 = x0 + 15;
+  const mid = x0 + 8;
+  m.box(x0, FLOOR, 4, x1, FLOOR + 37, 11, (x, y, z) => {
+    if (y >= FLOOR + 36) return y === FLOOR + 37 ? P.e5 : P.e3; // Kranz
+    if (y <= FLOOR + 1) return P.e2; // Sockel
+    if (x === x0 || x === x1 || z === 4) return (y + x) % 7 === 0 ? P.e3 : P.e4;
+    if (y <= FLOOR + 7) return z === 11 ? (y === FLOOR + 4 ? P.e3 : P.e5) : P.e4; // Schublade
+    if (z === 5) return P.t1; // grüner Filz hinten
+    return null;
+  });
+  m.set(mid, FLOOR + 5, 12, P.s6).set(mid - 1, FLOOR + 5, 12, P.s6); // Knauf der Schublade
+  m.box(x0 + 1, FLOOR + 8, 6, x1 - 1, FLOOR + 8, 10, P.e5); // Boden der Waffenkammer
+  // Türen: Rahmen, Mittelsteg, Scharniere, Schlüsselloch; zwei Spiegelungen im Glas
+  for (let y = FLOOR + 8; y <= FLOOR + 35; y++) {
+    for (const x of [x0, x1, mid]) m.set(x, y, 11, P.e5);
+  }
+  m.box(x0, FLOOR + 8, 11, x1, FLOOR + 8, 11, P.e5).box(x0, FLOOR + 35, 11, x1, FLOOR + 35, 11, P.e5);
+  m.set(mid + 1, FLOOR + 20, 12, P.f6).set(mid - 1, FLOOR + 20, 12, P.s6); // Schlüsselloch mit Messing
+  for (let k = 0; k < 5; k++) {
+    m.set(x0 + 2 + k, FLOOR + 30 - k, 11, P.s9);
+    m.set(mid + 2 + k, FLOOR + 32 - k, 11, P.s8);
+  }
+  return { x0, x1 };
+}
+
 /** Tisch mit zwei Stühlen. */
 function table(m, x0, z0) {
   const x1 = x0 + 23;
@@ -343,13 +375,10 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   plant(m, 358, 100, seed + 9);
   // Schlafecke, solange es kein Schlafzimmer gibt (danach steht dort eine Truhe)
   let bedBox = null;
-  const nx = WOHN.bett - 12; // Nachttisch links vom Bett
+  const cab = gunCabinet(m, WOHN.schrank); // M30: wo früher der Nachttisch stand
   if (level < 3) {
     bedBox = bed(m, WOHN.bett, 4, seed);
     windowFrame(m, glass, WOHN.bett + 2, WOHN.bett + 17, 24, 37, seed + 1, [P.b3, P.b2]);
-    // Nachttisch mit Kerze
-    m.box(nx, FLOOR, 6, nx + 7, FLOOR + 9, 12, (x, y) => (y === FLOOR + 9 ? P.e6 : x === nx + 3 ? P.e3 : P.e5));
-    m.box(nx + 3, FLOOR + 10, 9, nx + 4, FLOOR + 13, 10, P.a4);
   } else {
     windowFrame(m, glass, WOHN.bett + 2, WOHN.bett + 17, 20, 37, seed + 1, [P.b3, P.b2]);
     // Truhe unter dem Fenster
@@ -401,7 +430,6 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   // Kerzen
   const candles = new VoxelModel();
   candles.set(kamin.x0 + 4, FLOOR + 27, 8, 0xffffff).set(kamin.x0 + 27, FLOOR + 26, 8, 0xffffff);
-  if (level < 3) candles.set(nx + 3, FLOOR + 14, 9, 0xffffff);
   candles.merge(fx.glow);
   group.add(mesh(candles, materials.candle, { shadow: false, jitter: 0 }));
   if (fx.flame.cells.size) group.add(mesh(fx.flame, materials.flame, { shadow: false, jitter: 0 }));
@@ -443,16 +471,16 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   box(kamin.x0 - 8, 12, kamin.x0 - 1, 17, 'holzkorb');
   box(216, 100, 221, 105, 'pflanze');
   box(358, 100, 363, 105, 'pflanze');
-  if (bedBox) {
-    box(bedBox.x0, 4, bedBox.x1, bedBox.z1, 'bett');
-    box(nx, 6, nx + 7, 12, 'nachttisch');
-  } else box(WOHN.bett, 4, WOHN.bett + 23, 14, 'truhe');
+  if (bedBox) box(bedBox.x0, 4, bedBox.x1, bedBox.z1, 'bett');
+  else box(WOHN.bett, 4, WOHN.bett + 23, 14, 'truhe');
+  box(cab.x0, 4, cab.x1, 12, 'waffenschrank');
   for (const r of rooms) for (const c of ROOM_COLLIDERS[r.id]?.(r) || []) box(...c);
 
   // --- Interaktionen (nur von drinnen) ------------------------------------------------
   const interactions = [
     { id: 'kamin', x: wx(kamin.x0 + 16), z: wz(16), radius: 1.5, prompt: 'kamin', dialog: 'kamin', inside: true },
     { id: 'radio', x: wx(dres.x0 + 7), z: wz(12), radius: 1.3, prompt: 'radio', dialog: 'radio', inside: true },
+    { id: 'waffenschrank', x: wx(cab.x0 + 8), z: wz(14), radius: 1.1, prompt: 'waffenschrank', action: 'armory', inside: true }, // M30
   ];
   let wakeSpot;
   if (bedBox) {
@@ -491,6 +519,8 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
     cardAnchor: { x: wx(kamin.x0 + 16), z: wz(30) },
     // M28: Kaminsims – vorn an der Kante stehen die gewonnenen Einsätze
     mantel: { x0: wx(kamin.x0 + 1), x1: wx(kamin.x1), z: wz(12.5), y: 23 * U },
+    // M30: Waffenschrank – Innenraum für die Waffen (world.refreshCabinet)
+    cabinet: { x0: cab.x0, x1: cab.x1 },
     // Lichtinseln für Lampen ohne eigenes Punktlicht (nachts, siehe lightPools.js)
     pools: rooms.flatMap((r) => (ROOM_POOLS[r.id]?.(r) || []).map(([vx, vz, radius]) => ({ x: wx(vx), z: wz(vz), radius }))),
   };

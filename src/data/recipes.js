@@ -11,4 +11,7 @@ export const RECIPES = [
   { id: 'schrottAusHolz', icon: 'schrott', cost: { holz: 3 }, gives: { inventory: { schrott: 1 } } },
   { id: 'schrottAusStein', icon: 'schrott', cost: { stein: 2 }, gives: { inventory: { schrott: 1 } } }, // m5-r1: 3 : 1 lohnte sich nie
   { id: 'stoffAusFasern', icon: 'stoff', cost: { fasern: 4 }, gives: { inventory: { stoff: 1 } } },
+  // M30: Munition für den Waffenschrank (erst, wenn er offen ist)
+  { id: 'schrot', icon: 'schrot', cost: { schrott: 2 }, gives: { inventory: { schrot: 4 } }, arms: true },
+  { id: 'leuchtkugeln', icon: 'leuchtkugeln', cost: { schrott: 1, fasern: 1 }, gives: { inventory: { leuchtkugeln: 2 } }, arms: true },
 ];

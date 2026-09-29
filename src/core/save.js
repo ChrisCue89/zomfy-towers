@@ -8,6 +8,7 @@ import { towerInvested, towerBuildCost } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { WANDERER_ORDER, arrivalPlan, extendPlan } from '../data/wanderers.js';
+import { newArms } from '../data/arms.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -98,6 +99,9 @@ const MIGRATIONS = {
     const guests = { ...(data.guests || {}), plan: extendPlan(plan, (data.world?.mapSeed ?? 0) >>> 0, WANDERER_ORDER, (data.time?.day || 1) + 1) };
     return { ...data, version: 25, bonds: {}, scenes: { seen: [] }, guests };
   },
+  // v25 -> v26: M30 (Waffenschrank und Übungsplatz). Der Schrank ist zu – wer die erste Nacht
+  // schon gehalten hat, findet den Schlüssel gleich (Edda sagt, wo); noch niemand hat geübt.
+  25: (data) => ({ ...data, version: 26, arms: newArms(), training: {} }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

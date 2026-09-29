@@ -65,6 +65,10 @@ import { Menu } from '../ui/menu.js';
 import { BuildBar } from '../ui/buildbar.js';
 import { CraftingMenu } from '../ui/crafting.js';
 import { Catalog, DeliveryCard } from '../ui/catalog.js';
+import { Armory } from '../ui/armory.js';
+import { Arms } from './arms.js';
+import { Training } from './training.js';
+import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
 import { MapView } from '../ui/mapView.js';
@@ -234,6 +238,7 @@ export class Game {
     this.crafting = new CraftingMenu(this);
     this.catalog = new Catalog(this); // N4: Balduins Katalog über das Funkgerät
     this.deliveryCard = new DeliveryCard(this); // N4: was Balduin bringt, einmal groß
+    this.armory = new Armory(this); // M30: der Waffenschrank in der Stube
     this.pendingDelivery = null;
     this.report = new ReportPanel(this);
     this.perkChoice = new PerkChoice(this);
@@ -355,6 +360,8 @@ export class Game {
     this.arrival = new Arrival(this); // N5: Mikas Ankunft mit dem Ruderboot (das Boot bleibt am Steg)
     this.tutorial = new Tutorial(this); // N5: Edda erklärt – nur mit Einführung
     this.furnishing = new Furnishing(this);
+    this.arms = new Arms(this); // M30: Schusswaffen, Munition, Hülsen, Leuchtkugeln
+    this.training = new Training(this); // M30: der Übungsplatz – jeden Tag übt eine Person
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -529,6 +536,7 @@ export class Game {
     this.trader.apply();
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
+    this.world.refreshCabinet(this.state.arms.taken); // M30: was noch im Waffenschrank steht
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -899,8 +907,10 @@ export class Game {
     else if (it.action === 'takeAxe') this.takeAxe();
     else if (it.action === 'enterHouse') this.startPassage('innen');
     else if (it.action === 'swing') this.startSwing();
+    else if (it.action === 'armory') this.openArmory(); // M30
     else if (it.use === 'werkbank') this.openCrafting();
     else if (it.use === 'bank') this.useBench();
+    else if (it.use === 'ueben') this.training.offer(); // M30: Wer übt heute?
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -1064,6 +1074,23 @@ export class Game {
     this.catalog.close();
     this.mode = 'play';
     this.useLockUntil = this.clock + 0.3; // ein schnelles E danach funkt nicht gleich wieder
+  }
+
+  /** M30: Der Waffenschrank in der Stube – zu, bis Edda nach der ersten Nacht sagt, wo der Schlüssel liegt. */
+  openArmory() {
+    if (!this.state.arms.unlocked) {
+      this.hud.say(T.waffen.zu, 4);
+      return;
+    }
+    this.builder.cancel();
+    this.armory.open();
+    this.mode = 'schrank';
+  }
+
+  closeArmory() {
+    this.armory.close();
+    this.mode = 'play';
+    this.useLockUntil = this.clock + 0.3;
   }
 
   /** N4: Balduin legt an (oder hat die Kiste mittags am Steg gelassen): Bestelltes kommt ins Haus. */
@@ -1325,6 +1352,7 @@ export class Game {
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
     const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
+    this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
     if (bitte) extra.push({ text: bitte });
@@ -2430,6 +2458,10 @@ export class Game {
         this.catalog.update(input, realDt);
         this.player.idle(dt);
         break;
+      case 'schrank': // M30: der Waffenschrank
+        this.armory.update(input, realDt);
+        this.player.idle(dt);
+        break;
       case 'lieferung': // N4: die Lieferkarte
         if (this.deliveryCard.update(input, realDt)) this.mode = 'play';
         this.player.idle(dt);
@@ -2622,17 +2654,19 @@ export class Game {
     const wantsAttack = rest === 'click' || (this.attackHeld && input.mouse.down) || this.attackQueued;
     if (wantsAttack && !this.builder.placement) {
       const act = this.player.action;
-      if (!act && !this.player.swingReady) {
+      const gun = Boolean(GUNS[this.player.heldTool]); // M30: Schusswaffe in der Hand – schießen statt schlagen
+      const ready = gun ? this.arms.ready : this.player.swingReady;
+      if (!act && !ready) {
         if (rest === 'click') this.attackQueued = true; // Takt der Waffe: gleich danach
       } else if (!act) {
         this.attackQueued = false;
         const ground = this.pointerGround(this._ground || (this._ground = new THREE.Vector3()));
         const pp = this.player.position;
         const target = this.builder.pointerZombie;
-        if (target) this.combat.attack(target.x - pp.x, target.z - pp.z);
-        else if (ground && this.input.mouse.inside) this.combat.attack(ground.x - pp.x, ground.z - pp.z);
-        else this.combat.attack(Math.sin(this.player.facing), Math.cos(this.player.facing));
-      } else if (rest === 'click' && act.kind === 'swing') this.attackQueued = true;
+        const [dx, dz] = target ? [target.x - pp.x, target.z - pp.z] : ground && this.input.mouse.inside ? [ground.x - pp.x, ground.z - pp.z] : [Math.sin(this.player.facing), Math.cos(this.player.facing)];
+        if (gun) this.arms.shoot(dx, dz);
+        else this.combat.attack(dx, dz);
+      } else if (rest === 'click' && (act.kind === 'swing' || act.kind === 'shoot')) this.attackQueued = true;
     }
     // Neue Stufe: Perk-Wahl öffnen (das Spiel hält an) – nicht mitten im
     // Getümmel, sonst wählt ein Schlag- oder Ausweich-Druck ungesehen eine Karte
@@ -2686,6 +2720,8 @@ export class Game {
     this.towers.update(dt);
     this.traps.update(dt); // Fallen (M19)
     this.combat.update(dt);
+    this.arms.update(dt); // M30: Nachladen, Hülsen, Leuchtkugeln, der Schlüssel zum Schrank
+    this.training.update(dt); // M30: wer gerade übt
     this.skills.update(dt);
     this.updateCamp(dt);
     if (this.mode !== 'play') return;
@@ -2990,6 +3026,7 @@ export class Game {
     this.world.weather.drawRain(ui, frame, dn.night, this.viewInside);
     this.world.weather.drawSnow(ui, frame, dn.night, this.viewInside); // M25
     if (playing) this.builder.drawOverlay(ui);
+    this.arms.draw(ui); // M30: Leuchtspuren der Schüsse
     // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
     const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann' || this.mode === 'ankunft'; // M25: im Abspann nur Bild und Namen; N5: die Ankunft
     const atTable = Boolean(this.cardNight.match); // M28: am Kartentisch nur die Karten
@@ -3001,6 +3038,7 @@ export class Game {
     if (playing) this.builder.drawGhostLabel(ui); // M26: über der Tafel der Bauleiste
     this.crafting.draw(ui);
     if (this.mode === 'katalog') this.catalog.draw(ui); // N4
+    if (this.mode === 'schrank') this.armory.draw(ui); // M30
     if (this.mode === 'lieferung') this.deliveryCard.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
     if (this.mode === 'abspann') this.autumn.drawCredits(ui);
@@ -3738,6 +3776,18 @@ export class Game {
         return game.bonds.stage(id);
       },
       keepsakes: () => game.bonds.keepsakes(),
+      // M30: Waffenschrank, Schießen, Übungsplatz
+      arms: () => game.arms.info(),
+      unlockArms: () => {
+        game.state.stats.nightsWon = Math.max(1, game.state.stats.nightsWon);
+        return game.arms.checkUnlock();
+      },
+      takeArm: (id) => game.arms.toggleTake(id),
+      shoot: (dx, dz) => game.arms.shoot(dx, dz),
+      armory: () => ({ open: game.armory.isOpen, focus: game.armory.focus, note: game.armory.note?.text || null, mode: game.mode, owner: game.armory.ownerOf(['jagdgewehr', 'doppelflinte', 'pistole', 'signalpistole', 'spaltaxt', 'mistgabel', 'schlaeger'][game.armory.focus]) }),
+      cabinetShown: () => Object.fromEntries(Object.entries(game.world.cabinetItems || {}).map(([id, o]) => [id, o.visible])),
+      training: () => game.training.info(),
+      startTraining: (id) => game.training.start(id),
       // M29: geteilte Szenen – gewählt, laufend (Zeile), gespielt, Anlässe; Sprechblasen im Bild
       scenes: () => {
         const sc = game.scenes;

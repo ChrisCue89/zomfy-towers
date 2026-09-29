@@ -24,8 +24,9 @@ import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { newCardState, sanitizeCards } from './cardNight.js';
 import { newBonds, sanitizeBonds } from '../data/bonds.js';
+import { AMMO, newArms, sanitizeArms, sanitizeTraining } from '../data/arms.js';
 
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -55,7 +56,8 @@ export function createNewState(config, mapSeed = 1) {
     // rested/tea: Tag, an dem Mika ausgeschlafen ist bzw. Kräutertee bekam (Meilenstein 6)
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
     player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, soup: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
-    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0 },
+    // M30: Munition (patronen, schrot, leuchtkugeln) liegt ebenfalls im Vorrat – sie gehört allen
+    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0, patronen: 0, schrot: 0, leuchtkugeln: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
@@ -99,6 +101,10 @@ export function createNewState(config, mapSeed = 1) {
     cards: newCardState(), // M28: Kartenabende – Stufe, Einsätze, Rückseiten, Wettschuld, Menschenkunde
     bonds: newBonds(), // M29: gemeinsame Zeit je Figur – Stufe, Arten, erzählte Momente
     scenes: { seen: [] }, // M29: geteilte Szenen, die schon gespielt wurden
+    // M30: Waffenschrank – aufgeschlossen?, was Mika herausgenommen hat, wer im Notfall was
+    // nimmt, Schuss im Magazin je Schusswaffe; Übung je Person { level, done, day }
+    arms: newArms(),
+    training: {},
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -145,7 +151,7 @@ export function sanitizeState(data, config) {
   out.player.soup = Math.floor(num(data.player?.soup, 0, 0, 1e6)); // Tag der letzten Suppe (M11)
   out.player.name = cleanName(data.player?.name);
   out.player.look = Object.fromEntries(LOOK_KEYS.map((k) => [k, LOOKS[k][data.player?.look?.[k]] ? data.player.look[k] : DEFAULT_LOOK[k]]));
-  for (const r of RESOURCES) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
+  for (const r of [...RESOURCES, ...AMMO]) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   for (const id of TOWER_PART_IDS) out.towerParts[id] = Math.floor(num(data.towerParts?.[id], 0, 0, 99));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
@@ -221,6 +227,8 @@ export function sanitizeState(data, config) {
   out.cards = sanitizeCards(data.cards); // M28
   out.bonds = sanitizeBonds(data.bonds, [...SURVIVOR_ORDER, ...WANDERER_ORDER]); // M29
   out.scenes = { seen: Array.isArray(data.scenes?.seen) ? data.scenes.seen.filter((id) => typeof id === 'string').slice(-40) : [] };
+  out.arms = sanitizeArms(data.arms, [...SURVIVOR_ORDER, ...WANDERER_ORDER]); // M30
+  out.training = sanitizeTraining(data.training, [...SURVIVOR_ORDER, ...WANDERER_ORDER]);
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

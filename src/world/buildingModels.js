@@ -467,6 +467,63 @@ export function buildHochsitz(seed) {
 }
 
 /**
+ * Übungsplatz (M30, OFFENE-FRAGEN 169): handgemacht, nicht militärisch – hinten ein
+ * Lattenzaun mit Blechdosen, links Heuballen mit einer Kürbis-Zielscheibe, rechts eine
+ * Strohpuppe mit Kochtopf-Helm auf ihrem Pfahl. 3 × 2 m, Maß 1/32.
+ */
+export function buildTrainingGround(seed) {
+  const m = new VoxelModel();
+  // Lattenzaun hinten: Pfosten, zwei Latten, auf der oberen stehen Dosen
+  for (const x of [-46, -26, -6, 14]) m.box(x, 0, -30, x + 1, 26, -29, (xx, y) => (y < 2 ? P.e2 : (y + xx) % 7 === 0 ? P.e3 : P.e4));
+  m.box(-46, 12, -31, 15, 13, -31, (x) => (x % 9 === 0 ? P.e4 : P.e5));
+  m.box(-46, 22, -31, 15, 23, -30, (x) => (x % 11 === 0 ? P.e4 : P.e6));
+  const cans = [[-42, P.s6], [-34, P.r3], [-27, P.s7], [-19, P.b3], [-11, P.s6], [-3, P.f5], [5, P.s7]];
+  for (const [x, c] of cans) {
+    m.box(x, 24, -31, x + 2, 28, -30, (xx, y) => (y === 28 ? P.s8 : y === 26 ? P.s9 : c)); // Dose mit Etikett und Deckel
+  }
+  // Heuballen: zwei unten, einer oben, mit Schnüren
+  const bale = (x0, y0, z0) =>
+    m.box(x0, y0, z0, x0 + 15, y0 + 9, z0 + 10, (x, y, z) => {
+      if (x === x0 + 4 || x === x0 + 11) return P.e5; // Schnur
+      const h = hash3(x >> 1, y, z >> 1, seed);
+      if (y === y0 + 9 || z === z0 + 10) return h > 0.6 ? P.e9 : P.e8;
+      return h > 0.75 ? P.f6 : h > 0.35 ? P.e8 : P.e7;
+    });
+  bale(-44, 0, -14);
+  bale(-27, 0, -14);
+  bale(-36, 10, -14);
+  // Kürbis-Zielscheibe auf dem oberen Ballen: weißer Ring, roter Punkt
+  m.ellipsoid(-28, 25, -9, 6.5, 5.5, 5.5, (x, y, z) => {
+    const r = Math.hypot(x + 28, y - 25);
+    if (z >= -5) {
+      if (r < 1.6) return P.r3;
+      if (r > 2.8 && r < 4) return P.s9;
+    }
+    return x % 3 === 0 ? P.f3 : P.f4;
+  });
+  m.box(-28, 30, -9, -28, 32, -9, P.g3); // Stiel
+  // Strohpuppe: Pfahl, Querholz als Arme, Rumpf aus Sackleinen, Kopf mit Kochtopf
+  m.box(26, 0, -2, 27, 44, -1, (x, y) => (y < 2 ? P.e2 : P.e4));
+  m.box(14, 34, -2, 39, 35, -1, P.e4); // Querholz
+  m.box(20, 18, -5, 33, 36, 3, (x, y, z) => {
+    if ((x === 20 || x === 33) && (z === -5 || z === 3)) return null;
+    if (y === 26 && z === 3) return P.e5; // Kordel um den Bauch
+    return hash3(x >> 1, y >> 1, z, seed) > 0.8 ? P.e5 : P.e7;
+  });
+  for (const x of [15, 16, 37, 38]) m.box(x, 30, -2, x, 33, -1, P.f6); // Stroh aus den Ärmeln
+  m.ellipsoid(26.5, 42, -1.5, 5.5, 5, 5, (x, y, z) => (z >= 2 && (x === 24 || x === 29) && y === 42 ? P.n1 : z >= 2 && y === 40 && x >= 25 && x <= 28 ? P.e3 : P.e8));
+  m.box(21, 46, -6, 32, 49, 3, (x, y, z) => (y === 46 ? P.s3 : (x === 21 || x === 32 || z === -6 || z === 3) ? P.s4 : null)); // Kochtopf
+  m.box(22, 49, -5, 31, 49, 2, P.s5).set(20, 47, -2, P.s2).set(33, 47, -2, P.s2); // Boden, Griffe
+  // Ein paar Strohhalme am Boden
+  for (let k = 0; k < 14; k++) {
+    const x = Math.floor(hash3(k, 1, 2, seed) * 80) - 40;
+    const z = Math.floor(hash3(k, 3, 4, seed) * 40) - 8;
+    m.set(x, 0, z, k % 3 ? P.e8 : P.f6);
+  }
+  return m;
+}
+
+/**
  * Moderlocke (M24): ein Haufen Überreste um einen fauligen Kürbis, darüber an
  * einem Pfahl ein Jutesack – und obendrauf sprießt schon der Moder
  * (pflaumenviolett, glimmende Knoten im Glüh-Modell).
@@ -635,6 +692,7 @@ export const BUILDING_MODELS = {
   beet: { model: buildGardenPlot },
   bank: { model: buildBench },
   hochsitz: { model: buildHochsitz },
+  uebungsplatz: { model: buildTrainingGround }, // M30
   moderlocke: { model: buildModerlocke, glow: buildModerlockeGlow }, // M24
   // Herbstschmuck aus dem Herbstbuch (M25): die Modelle der Herbst-Requisiten (decoModels.js)
   kuerbis: { model: buildPumpkinPair },

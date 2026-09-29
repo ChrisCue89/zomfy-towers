@@ -21,6 +21,14 @@ export const ITEMS = {
   pfanne: { icon: 'pfanne', tool: true, weapon: true },
   rechen: { icon: 'rechen', tool: true, weapon: true },
   faeustlinge: { icon: 'faeustlinge', tool: true, weapon: true, plural: true },
+  // M30: aus dem Waffenschrank – `gun`: schießt (Munition in data/arms.js)
+  jagdgewehr: { icon: 'jagdgewehr', tool: true, weapon: true, gun: true },
+  doppelflinte: { icon: 'doppelflinte', tool: true, weapon: true, gun: true },
+  pistole: { icon: 'pistole', tool: true, weapon: true, gun: true },
+  signalpistole: { icon: 'signalpistole', tool: true, weapon: true, gun: true },
+  spaltaxt: { icon: 'spaltaxt', tool: true, weapon: true },
+  mistgabel: { icon: 'mistgabel', tool: true, weapon: true },
+  schlaeger: { icon: 'schlaeger', tool: true, weapon: true },
 };
 
 export const HOTBAR_SIZE = 8;

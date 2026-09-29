@@ -121,6 +121,7 @@ export class Player {
       onCancel: options.onCancel || null,
       cancelable: options.cancelable ?? kind === 'search', // Loslaufen bricht ab
       freeAfterHit: options.freeAfterHit || false, // nach dem Treffer bricht Loslaufen den Rest ab
+      long: options.long || false, // M30: lange Waffe – beide Hände am Gewehr
     };
     if (options.face) this.facing = Math.atan2(options.face.x - this.position.x, options.face.z - this.position.z);
     return true;
@@ -419,6 +420,13 @@ export class Player {
       p.armR.rotation.z = 0.12;
       p.body.rotation.x = q > hit * 0.8 && q < hit + 0.15 ? 0.12 : 0;
       if (p.elbowR) p.elbowR.rotation.x = q < hit * 0.8 ? -0.5 * easeOut(q / (hit * 0.8)) : lerp(-0.5, 0, Math.min(1, (q - hit * 0.8) / (hit * 0.2))); // ausholen, dann strecken
+    } else if (a && a.kind === 'shoot') {
+      // M30: Schuss – Arm gestreckt nach vorn im Anschlag, im ersten Augenblick ruckt er hoch (Rückstoß)
+      const kick = Math.max(0, 1 - a.t / 0.09);
+      p.armR.rotation.x = -1.5 + kick * 0.35;
+      p.armR.rotation.z = a.long ? 0.28 : 0.08;
+      if (p.elbowR) p.elbowR.rotation.x = 0;
+      p.body.rotation.x = -0.05 * kick;
     } else if (a && a.kind === 'wurf') {
       // Kürbiswurf (M16): über Kopf ausholen, beim Loslassen weit nach vorn
       const q = a.t / a.duration;
@@ -521,6 +529,11 @@ export class Player {
       if (p.elbowL) p.elbowL.rotation.x = fore;
       lantern.group.rotation.x = -upper - fore - s * 0.06 * amt + this.lanternSwing;
       lantern.group.rotation.z = Math.sin(this.time * 1.7) * 0.05;
+    } else if (a && a.kind === 'shoot' && a.long && !this.holdingLantern) {
+      // M30: lange Waffe – die linke Hand stützt den Vorderschaft
+      p.armL.rotation.x = -1.35 + Math.max(0, 1 - a.t / 0.09) * 0.3;
+      p.armL.rotation.z = -0.42;
+      if (p.elbowL) p.elbowL.rotation.x = -0.35;
     } else if (this.seated?.rowing) {
       // N5: rudern – der linke Arm zieht im selben Takt wie der rechte
       const q = Math.sin(this.seated.phase ?? this.time * this.seated.rowing);

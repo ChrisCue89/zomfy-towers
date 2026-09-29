@@ -514,6 +514,117 @@ function fineTool32(name, coarse) {
   return edgeLight(m);
 }
 
+// --- M30: die Waffen aus dem Waffenschrank, gleich im Maß 1/32 gebaut --------------------
+// Der Griff liegt in der Hand wie die Stiele der Werkzeuge (x 0–3, z 0–3); was nach vorn
+// zeigt, liegt bei −y. Beim Zielen hebt Mika den Arm: Dann zeigt −y nach vorn und +z nach
+// oben – Lauf und Visier liegen deshalb bei +z über der Hand. Kolben und Knauf ragen nach +y.
+
+/** Pistole: dunkler Schlitten mit hellem Grat, Holzgriff, Abzugsbügel. */
+function buildPistol32() {
+  const m = new VoxelModel();
+  m.box(1, -3, 0, 2, 1, 3, (x, y, z) => (z === 0 ? P.e2 : (y + z) % 3 === 0 ? P.e4 : P.e3)); // Griff
+  m.box(1, -11, 4, 2, 1, 5, (x, y, z) => (z === 5 ? P.s4 : P.s2)); // Schlitten und Lauf
+  m.box(1, -11, 4, 2, -11, 5, P.n1); // Mündung
+  m.set(1, 2, 5, P.s3).set(2, 2, 5, P.s3); // Hahn
+  m.box(1, -5, 3, 2, -4, 3, P.s1).set(1, -6, 3, P.s1).set(2, -6, 3, P.s1); // Abzugsbügel
+  m.set(1, -10, 6, P.s5); // Korn
+  return m;
+}
+
+/** Signalpistole: dick, leuchtend orange, mit gelbem Band und weiter Mündung (Junas Waffe). */
+function buildFlareGun32() {
+  const m = new VoxelModel();
+  m.box(1, -3, 0, 2, 1, 3, (x, y, z) => (z === 0 ? P.f1 : P.f2)); // Griff
+  m.box(0, -10, 4, 3, 1, 6, (x, y, z) => (y === -4 ? P.f6 : z === 6 ? P.f5 : P.f3)); // Lauf mit Band
+  m.box(1, -10, 5, 2, -10, 5, P.n1); // Mündung
+  m.box(0, -11, 4, 3, -11, 6, (x, y, z) => ((x === 0 || x === 3) && (z === 4 || z === 6) ? null : P.f2)); // Ring
+  m.set(1, 2, 6, P.s3).set(2, 2, 6, P.s3); // Hahn
+  m.box(1, -5, 3, 2, -4, 3, P.s1);
+  return m;
+}
+
+/** Jagdgewehr: Holzschaft mit Kolben nach hinten, langer dunkler Lauf, Zielfernrohr. */
+function buildRifle32() {
+  const m = new VoxelModel();
+  m.box(1, -2, 0, 2, 9, 3, (x, y, z) => (y >= 6 ? (z === 0 ? P.e3 : P.e5) : y % 4 === 0 ? P.e4 : P.e5)); // Kolben und Griff
+  m.box(1, 10, 0, 2, 10, 3, P.e2); // Kappe
+  m.box(1, -14, 2, 2, -3, 3, (x, y) => (y % 5 === 0 ? P.e4 : P.e5)); // Vorderschaft
+  m.box(1, -30, 4, 2, 2, 4, (x, y) => (y === -30 ? P.n1 : P.s3)); // Lauf
+  m.box(1, -30, 5, 2, 2, 5, (x, y) => (y === -30 ? P.n1 : P.s4));
+  m.box(1, -6, 6, 2, 1, 7, (x, y, z) => (z === 7 ? P.s3 : P.s1)).set(1, -7, 7, P.b4).set(2, 2, 7, P.b3); // Zielfernrohr, Linsen glänzen
+  m.box(1, -4, 3, 2, -3, 3, P.s1); // Abzugsbügel
+  return m;
+}
+
+/** Doppelflinte: zwei Läufe nebeneinander, kurzer Holzschaft. */
+function buildShotgun32() {
+  const m = new VoxelModel();
+  m.box(1, -2, 0, 2, 7, 3, (x, y, z) => (y >= 4 ? (z === 0 ? P.e2 : P.e4) : P.e4)); // Kolben und Griff
+  m.box(1, 8, 0, 2, 8, 3, P.e1);
+  m.box(1, -10, 2, 2, -3, 3, P.e5); // Vorderschaft
+  m.box(0, -24, 4, 3, 2, 5, (x, y, z) => (y === -24 ? (x === 0 || x === 3 ? P.n1 : P.s3) : z === 5 ? (x === 1 || x === 2 ? P.s2 : P.s4) : P.s3)); // zwei Läufe
+  m.box(0, 0, 4, 3, 2, 6, (x, y, z) => (z === 6 ? P.s5 : P.s3)); // Verschluss
+  m.box(1, -4, 3, 2, -3, 3, P.s1);
+  return m;
+}
+
+/** Spaltaxt (Berts): langer Stiel, schwerer roter Keil mit blanker Schneide. */
+function buildMaul32() {
+  const m = new VoxelModel();
+  m.box(1, -27, 1, 2, 2, 2, (x, y) => (y === 2 ? P.e3 : y % 6 === 0 ? P.e5 : P.e6)); // Stiel
+  m.box(1, -3, 0, 2, 0, 3, P.e2); // Griffband
+  m.box(0, -33, -2, 3, -26, 5, (x, y, z) => {
+    if (z >= 5) return P.s8; // Schneide
+    if (z === 4) return P.s6;
+    if (z <= -1) return P.s3; // Nacken
+    return (x + y) % 5 === 0 ? P.r1 : P.r2;
+  });
+  m.remove(0, -33, 4, 0, -33, 5).remove(3, -33, 4, 3, -33, 5).remove(0, -26, 4, 0, -26, 5).remove(3, -26, 4, 3, -26, 5); // Keil abgerundet
+  return m;
+}
+
+/** Mistgabel: langer Stiel, Zwinge, vier Zinken. */
+function buildPitchfork32() {
+  const m = new VoxelModel();
+  m.box(1, -31, 1, 2, 5, 2, (x, y) => (y % 7 === 0 ? P.e5 : P.e6)); // Stiel
+  m.box(1, -33, 0, 2, -32, 3, P.s4); // Zwinge
+  m.box(1, -34, -4, 2, -34, 7, P.s4); // Querstück
+  for (const z of [-4, -1, 2, 5]) m.box(1, -44, z, 2, -35, z + 1, (x, y) => (y <= -43 ? P.s8 : P.s5)); // Zinken
+  return m;
+}
+
+/** Baseballschläger: Knauf, umwickelter Griff, heller Schlagteil mit Kerben. */
+function buildBat32() {
+  const m = new VoxelModel();
+  m.box(0, 1, 0, 3, 2, 3, P.e4); // Knauf
+  m.box(1, -7, 1, 2, 0, 2, (x, y) => (y % 2 ? P.n2 : P.n3)); // Griffband
+  m.box(1, -13, 1, 2, -8, 2, P.e7);
+  m.box(0, -28, 0, 3, -14, 3, (x, y, z) => {
+    if ((x === 0 || x === 3) && (z === 0 || z === 3) && (y === -28 || y === -14)) return null; // rund
+    if (y === -21 && z === 3) return P.r3; // roter Streifen
+    return (x + y + z) % 7 === 0 ? P.e6 : P.e7;
+  });
+  m.set(3, -24, 2, P.e5).set(0, -18, 1, P.e5); // Kerben
+  return m;
+}
+
+/** M30: die Waffen des Schranks (Modelle im Maß 1/32 – auch für Fotos und den Schrank). */
+export const ARMS_MODELS32 = {
+  jagdgewehr: buildRifle32,
+  doppelflinte: buildShotgun32,
+  pistole: buildPistol32,
+  signalpistole: buildFlareGun32,
+  spaltaxt: buildMaul32,
+  mistgabel: buildPitchfork32,
+  schlaeger: buildBat32,
+};
+
+/** Eine Waffe des Schranks als fertiges Modell (mit Kantenlicht). */
+export function armsModel(id) {
+  const make = ARMS_MODELS32[id];
+  return make ? edgeLight(make()) : null;
+}
+
 /**
  * Baut eine animierbare Figur.
  * @returns {{root: THREE.Group, parts: object, lantern: object}}
@@ -654,6 +765,19 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     mesh.visible = false;
     hand.add(mesh);
     tools[name] = mesh;
+  }
+
+  // M30: die Waffen aus dem Waffenschrank (nur in der feinen Figur)
+  if (d32) {
+    for (const name of Object.keys(ARMS_MODELS32)) {
+      const mesh = new THREE.Mesh(armsModel(name).toGeometry({ jitter: 0.02, seed, size: V / 4 }), material);
+      mesh.castShadow = true;
+      mesh.renderOrder = 2;
+      mesh.position.set(-0.5 * V, 0, -0.5 * V);
+      mesh.visible = false;
+      hand.add(mesh);
+      tools[name] = mesh;
+    }
   }
 
   // N4 (Probespiel): Werkzeug bzw. Waffe steckt auf dem Rücken, schräg, der Kopf ragt über

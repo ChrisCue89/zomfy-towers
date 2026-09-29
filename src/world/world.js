@@ -14,7 +14,8 @@ import { GameMap } from './map.js';
 import { LAYOUT } from './layout.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
-import { createInterior, INTERIOR_FLOOR } from './interior.js';
+import { createInterior, INTERIOR_FLOOR, WOHN } from './interior.js';
+import { armsModel } from '../entities/characters.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createProps } from './props.js';
 import { BuildGrid } from './grid.js';
@@ -367,6 +368,48 @@ export class World {
       o.position.set(m.x0 + ((k + 0.5) / ids.length) * (m.x1 - m.x0), m.y, m.z);
       o.visible = won;
     });
+  }
+
+  /**
+   * M30: Die langen Waffen im Waffenschrank der Stube, aufrecht im Gestell (Kolben unten,
+   * Mündung oben, die Seite zu uns) – was Mika mitgenommen hat, fehlt. Die Pistolen liegen
+   * in der Schublade. Plätze in 1/16 m des Innenraums: hinten drei, vorn zwei.
+   */
+  refreshCabinet(taken) {
+    const U16 = 1 / 16;
+    const { x: ox, z: oz } = LAYOUT.interior;
+    if (!this.cabinetGroup) {
+      this.cabinetGroup = new THREE.Group();
+      this.cabinetGroup.name = 'Waffenschrank';
+      this.scene.add(this.cabinetGroup);
+      this.cabinetItems = {};
+      const s = WOHN.schrank;
+      const rack = { mistgabel: [s + 3, 6], jagdgewehr: [s + 8, 6], schlaeger: [s + 13, 6], doppelflinte: [s + 5.5, 8.5], spaltaxt: [s + 10.5, 8.5] };
+      for (const [id, [x, z]] of Object.entries(rack)) {
+        // Aufrecht: Kolben (+y) nach unten, Mündung (−y) nach oben, die Oberseite (+z) zur Seite
+        const src = armsModel(id);
+        const m = new VoxelModel();
+        src.forEach((vx, vy, vz, c) => m.set(vz, -vy, vx, c));
+        let x0 = Infinity;
+        let x1 = -Infinity;
+        let y0 = Infinity;
+        let z0 = Infinity;
+        let z1 = -Infinity;
+        m.forEach((vx, vy, vz) => {
+          x0 = Math.min(x0, vx);
+          x1 = Math.max(x1, vx);
+          y0 = Math.min(y0, vy);
+          z0 = Math.min(z0, vz);
+          z1 = Math.max(z1, vz);
+        });
+        const o = createStaticVoxelObject(m, this.materials.world, { size: 1 / 32, shadow: 'none', seed: this.seed });
+        // Unterkante auf dem Boden des Gestells (Voxel FLOOR + 9 im 1/16-Maß), mittig auf dem Platz
+        o.position.set(ox + x * U16 - ((x0 + x1 + 1) / 2) / 32, (INTERIOR_FLOOR + 9 - INTERIOR_FLOOR) * U16 - y0 / 32, oz + z * U16 - ((z0 + z1 + 1) / 2) / 32);
+        this.cabinetGroup.add(o);
+        this.cabinetItems[id] = o;
+      }
+    }
+    for (const [id, o] of Object.entries(this.cabinetItems)) o.visible = !taken.includes(id);
   }
 
   /**

@@ -16,6 +16,7 @@ export const BOND_STAGES = [0, 3, 8, 15];
  *   reden   das erste Gespräch des Tages
  *   nacht   Seite an Seite: auf dem Posten, die Nacht gehalten
  *   angeln  am Steg (M33)
+ *   ueben   zusammen am Übungsplatz (M30)
  */
 export const BOND_KINDS = {
   karten: { first: 3, again: 1, daily: true },
@@ -24,6 +25,7 @@ export const BOND_KINDS = {
   reden: { first: 0.5, again: 0.5, daily: true },
   nacht: { first: 1, again: 0.5, daily: true },
   angeln: { first: 3, again: 1, daily: true },
+  ueben: { first: 2, again: 1, daily: true }, // M30: am Übungsplatz, Mika war dabei
 };
 
 /** Wer eine Bindung haben kann: die Stammfiguren und alle Wanderer (Knopf ist ein Hund, aber auch ein Freund). */

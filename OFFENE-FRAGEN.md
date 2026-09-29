@@ -2086,6 +2086,23 @@ Probespiel (»auch was sie uns bringen … gut detailliert sichtbar, wie im
 Katalog«) und macht das Geschenk zu einem kleinen Ereignis, statt es in einer
 Meldung verschwinden zu lassen.
 
+### 189. Wann öffnet der Waffenschrank, und woher kommt die Munition? (M30)
+**Entscheidung:**
+- Der Schrank ist zu, bis die erste Nacht gehalten ist. Dann sagt Edda, wo der
+  Schlüssel liegt, und im Vorrat liegen 6 Patronen, 4 Schrot und 2 Leuchtkugeln.
+- Patronen gibt es bei Balduin (6 für 5 Zombieteile, zweimal am Tag), Schrot und
+  Leuchtkugeln an der Werkbank.
+- Mika kann jede Waffe nehmen; die Munition teilen sich alle.
+- Ein Schuss lockt im Umkreis an, lange Waffen weiter als die Pistole.
+- Der Übungsplatz ist ein Bau (einmal), geübt wird tagsüber von acht bis fünf,
+  zwei Spielstunden, eine Person am Tag.
+
+**Warum:** In der ersten Nacht soll man die Türme und die Horde kennenlernen,
+nicht das Schießen. Danach ist der Schrank ein Geschenk mit Geschichte (Eddas
+Großvater), und knappe, geteilte Munition macht aus jedem Schuss eine Wahl: Was Mika
+verschießt, fehlt, wenn die Glocke läutet (Nr. 168). Der Lärm ist die zweite
+Gegenseite, damit Schießen nie die bessere Axt ist.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

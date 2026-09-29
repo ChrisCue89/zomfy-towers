@@ -149,6 +149,17 @@ export class Crows {
     c.startle = -1;
   }
 
+  /** M30: Ein Knall – alle sitzenden Krähen im Umkreis fliegen krächzend auf. */
+  startle(x, z, r) {
+    let n = 0;
+    for (const c of this.list) {
+      if (c.state !== 'sitzt' || Math.hypot(c.pos.x - x, c.pos.z - z) > r) continue;
+      this.flee(c, { x, z }, n === 0);
+      n++;
+    }
+    return n;
+  }
+
   /** Auffliegen, weg von der Störung, dann über den Wald im Nordwesten. */
   flee(c, from, caw) {
     const away = new THREE.Vector3(c.pos.x - from.x, 0, c.pos.z - from.z);

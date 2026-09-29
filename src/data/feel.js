@@ -25,6 +25,11 @@ export const FEEL = {
   bossFaellt: { stop: 0.15, trauma: 0.75, slow: 0.4 },
   herzFaellt: { stop: 0.22, trauma: 1, slow: 0.6 },
   letzterSchlurfer: { slow: 0.45 }, // der letzte Schlurfer der Nacht fällt
+  // M30: Schüsse – Rückstoß als gerichteter Stoß gegen die Schussrichtung; nur ein Treffer hält an
+  schuss: { trauma: 0.3, kick: 1 }, // Pistole, Signalpistole
+  schussSchwer: { trauma: 0.45, kick: 2 }, // Jagdgewehr, Doppelflinte
+  schussTreffer: { stop: 0.04, trauma: 0.35, kick: 1, bits: 8 },
+  schussSchwerTreffer: { stop: 0.07, trauma: 0.5, kick: 2, bits: 12 },
 };
 
 /**

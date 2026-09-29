@@ -65,6 +65,10 @@ export const WEAPONS = {
     cost: { stoff: 3, fasern: 4, schrott: 2 },
     upgrades: [{ schrott: 10 }, { schrott: 18, zahnraeder: 1 }],
   },
+  // M30: aus dem Waffenschrank (OFFENE-FRAGEN 168) – nicht baubar, ohne Aufwertung
+  spaltaxt: { icon: 'spaltaxt', damage: 22, rate: 1.4, reach: 1.6, arc: 60, targets: 3, push: 0.8, stun: 0, cabinet: true }, // Berts: schwer, spaltet
+  mistgabel: { icon: 'mistgabel', damage: 13, rate: 1.5, reach: 2.5, arc: 35, targets: 2, push: 1.2, stun: 0, cabinet: true }, // weit, stößt zurück, die sicherste
+  schlaeger: { icon: 'schlaeger', damage: 15, rate: 2.5, reach: 1.5, arc: 60, targets: 2, push: 0.6, stun: 0.45, cabinet: true }, // schnell, betäubt kurz
 };
 
 /** Waffen, die man bauen kann (Reihenfolge in Werkbank und Bauleiste). */
@@ -81,6 +85,7 @@ export function weaponStats(id, state) {
   const w = WEAPONS[id];
   if (!w) return null;
   if (id === 'axt' || id === 'spitzhacke') return state.tools[id] ? w : null;
+  if (w.cabinet) return state.arms?.taken?.includes(id) ? w : null; // M30: aus dem Schrank genommen
   if (!w.cost) return w;
   const level = state.weapons?.[id] || 0;
   if (!level) return null;

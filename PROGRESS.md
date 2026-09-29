@@ -5,6 +5,76 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 30 – Waffenschrank und Übungsplatz ✓
+
+Die Bewohner können sich wehren, wenn es sein muss, und Mika bekommt echte Waffen mit
+einer Gegenseite (DESIGN 8, OFFENE-FRAGEN 168, 169, 189).
+
+- **Der Waffenschrank** (Nr. 168) steht in der Stube, wo früher der Nachttisch stand:
+  - Eichenholz, grün ausgeschlagen, Glastüren mit zwei Spiegelungen, unten eine
+    Schublade.
+  - Im Gestell stehen Jagdgewehr, Doppelflinte, Mistgabel, Spaltaxt und
+    Baseballschläger aufrecht, die Pistolen liegen in der Schublade. Was Mika
+    herausnimmt, fehlt im Gestell.
+  - Er ist zu, bis die erste Nacht gehalten ist. Dann sagt Edda über Funk, wo der
+    Schlüssel liegt (hinter dem losen Stein am Kaminsims), und im Vorrat liegen
+    6 Patronen, 4 Schrot und 2 Leuchtkugeln.
+  - Das Fenster sieht aus wie der Schrank selbst: dunkles Holz, grüner Filz,
+    ein Messingschild. Links stehen die sieben Waffen, rechts die gewählte groß
+    als Foto, dazu Munition, Magazin, Reichweite, »Laut« und wer sie im Notfall
+    nimmt.
+  - E nimmt eine Waffe heraus oder legt sie zurück. Q wechselt, wer sie im
+    Notfall bekommt. Voreingestellt sind Hilde mit der Doppelflinte, Bert mit
+    der Spaltaxt, Juna mit der Signalpistole; Dr. Yusuf nimmt keine, er
+    verarztet.
+- **Mika schießt:**
+  - Mit einer Schusswaffe in der Hand schießt ein Klick in Richtung des Zeigers
+    (Schlurfer unter dem Zeiger zuerst). Mika hebt den Arm in den Anschlag, lange
+    Waffen stützt die linke Hand.
+  - Das Magazin lädt von selbst nach, solange Munition da ist. Leer klickt es
+    komisch (»Klick. Leer.«).
+  - Die Schnellleiste zeigt die Schuss im Magazin und den Vorrat.
+  - Die vier Schusswaffen:
+    - Jagdgewehr: 12 m, durchschlägt einen Schlurfer.
+    - Doppelflinte: ein Fächer aus sechs Kugeln, nah verheerend, stößt zurück.
+    - Pistole: sechs Schuss, die Allzweckwaffe.
+    - Signalpistole: Die Leuchtkugel brennt 12 s als Lichtinsel, blendet und
+      holt aus dem Nebel.
+  - Mistgabel, Spaltaxt und Baseballschläger sind Nahkampfwaffen mit eigenen
+    Werten (weit und stoßend, schwer, schnell und kurz betäubend).
+- **Wucht:**
+  - Mündungsfeuer über zwei Bilder, Rauch, eine Leuchtspur.
+  - Eine Hülse fliegt rechts heraus, hüpft und bleibt bis zum Morgen liegen.
+  - Rückstoß als Kamerastoß gegen die Schussrichtung, ein Trefferstopp nur bei
+    einem Treffer.
+  - Ein tiefer Knall, dessen Hall zweimal über den See zurückrollt. Die Krähen
+    fliegen auf, Knopf bellt.
+  - Treffer sprühen violette Sporen und Laub, nie Blut.
+- **Lärm:** Ein Schuss lockt die Schlurfer im Umkreis an (Pistole 11 m, Flinte
+  14, Gewehr 16, Signalpistole 8). Sie suchen acht Sekunden lang nach Mika; Wall
+  und Tor halten sie trotzdem auf.
+- **Munition gehört allen** und liegt im Vorrat:
+  - Balduin verkauft Patronen (6 für 5 Zombieteile, zweimal am Tag).
+  - An der Werkbank entstehen Schrot (2 Schrott → 4) und Leuchtkugeln
+    (Schrott und Fasern → 2).
+  - Beides gibt es erst, wenn der Schrank offen ist.
+- **Der Übungsplatz** (Nr. 169) wird im Reiter Einrichten gebaut: Lattenzaun mit
+  Blechdosen, Heuballen mit Kürbis-Zielscheibe, Strohpuppe mit Kochtopf-Helm.
+  - E fragt »Wer übt heute?«. Vorgewählt ist »Heute nicht.«, zur Wahl stehen
+    alle Bewohner, die heute noch nicht geübt haben.
+  - Die Person geht hin und übt zwei Spielstunden. Wer eine Schusswaffe für den
+    Notfall hat, schießt auf die Dosen (drei Patronen, sonst übt sie an der
+    Puppe), die anderen schlagen auf die Puppe ein. Ihre Fähigkeit ruht solange.
+  - Geübt wird von acht Uhr an, um fünf ist Schluss.
+  - Nach 2, 3 und 4 Übungen steigt die Stufe (0–3): +20 Leben, +8
+    Treffsicherheit, −10 Schreck je Stufe, dazu ein Profil je Figur. Das wirkt,
+    sobald die Lagerglocke läutet (M31).
+  - Bleibt Mika dabei, zählt es als gemeinsame Zeit (Bindung »ueben«).
+- **Spielstand v26** mit Migration: Der Schrank ist zu. Wer die erste Nacht
+  schon gehalten hat, findet den Schlüssel gleich nach dem Laden; noch niemand
+  hat geübt.
+- Prüfabschnitt `waffen` (Bilder: waffenschrank, schuss, uebungsplatz).
+
 ## Meilenstein 29 – Bindung und Alltag ✓
 
 Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über Punkte

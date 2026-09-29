@@ -1146,6 +1146,15 @@ export class Hud {
         const icon = ITEMS[item].icon;
         const size = iconSize(icon);
         drawIcon(ui.ctx, icon, sx + Math.floor((SLOT - size.w) / 2), sy + Math.floor((SLOT - size.h) / 2));
+        // M30: Schusswaffe – Schuss im Magazin (unten links), leer rot
+        if (ITEMS[item].gun) {
+          const arms = this.game.arms;
+          const mag = arms.mag(item);
+          const reserve = arms.reserve(item);
+          const text = arms.reload?.id === item ? '-' : String(mag); // beim Nachladen ein Strich
+          drawTiny(ui.ctx, text, sx + 2, sy + SLOT - 7, mag > 0 ? COLORS.text : reserve > 0 ? COLORS.gold : COLORS.red);
+          drawTiny(ui.ctx, reserve, sx + SLOT - 2 - 4 * String(reserve).length, sy + SLOT - 7, COLORS.textDim);
+        }
       }
       drawTiny(ui.ctx, i + 1, sx + 2, sy + 2, isSelected ? COLORS.gold : COLORS.textDim);
       this.slotRects.push({ x: sx, y: sy, w: SLOT, h: SLOT });

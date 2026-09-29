@@ -32,6 +32,9 @@ import { BOSS_ATTACKS } from '../data/bosses.js';
 import { zombieParts, ZOMBIE_TYPES, podModel } from './zombieModels.js';
 import { damp, dampAngle } from '../core/math.js';
 
+/** M30: So lange sucht ein Schlurfer nach Mika, nachdem er einen Schuss gehört hat (s). */
+const NOISE_TIME = 8;
+
 /** Jagd hinter einem Hindernis: nach so vielen Sekunden ohne Durchkommen aufgeben … */
 const CHASE_GIVE_UP = 2.5;
 /** … und so lange nicht wieder auf Mika losgehen. */
@@ -659,6 +662,23 @@ export class Horde {
     this.cb.onBossTelegraph?.(z, kind);
   }
 
+  /**
+   * M30: Ein Knall – wer ihn im Umkreis r hört, sucht eine Weile nach Mika (die Nähe, ab der
+   * er jagt, wächst auf seine Entfernung). Wall und Tor halten trotzdem auf. Gibt die Zahl zurück.
+   */
+  noise(x, z, r) {
+    let n = 0;
+    for (const zo of this.list) {
+      if (zo.state === 'dying' || zo.state === 'enter' || zo.y < -0.5) continue;
+      const d = Math.hypot(zo.x - x, zo.z - z);
+      if (d > r) continue;
+      zo.alertT = NOISE_TIME;
+      zo.alertR = d + 1;
+      n++;
+    }
+    return n;
+  }
+
   /** Steht ein Schlurfer näher als r (m)? Ohne Liste, für jeden Schritt (N4: die Waffe bleibt gezogen). */
   anyNear(x, z, r) {
     const r2 = r * r;
@@ -815,11 +835,14 @@ export class Horde {
       // dazwischen stehen, M17: dann geht er weiter zum Tor und schlägt es ein. In der
       // Schlupftür steht sie beiden Seiten offen.)
       const walled = campShut && (z.x < campX - 1.05 ? player.x > campX : z.x > campX && player.x < campX - 1.05);
-      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < z.aggro && !walled) {
+      // M30: Wer einen Schuss gehört hat, sucht eine Weile auch aus größerer Entfernung nach Mika
+      if (z.alertT > 0) z.alertT -= dt;
+      const aggro = z.alertT > 0 ? Math.max(z.aggro, z.alertR) : z.aggro;
+      if (z.state !== 'enter' && !(z.noChase > 0) && player.alive && !player.inside && pd < aggro && !walled) {
         z.state = 'chase';
         z.lureBy = 0; // Mika geht vor der Vogelscheuche (M19)
       }
-      else if (z.state === 'chase' && (pd > z.aggro * 2 || player.inside || !player.alive || walled)) this.endChase(z);
+      else if (z.state === 'chase' && (pd > aggro * 2 || player.inside || !player.alive || walled)) this.endChase(z);
 
       // Im Lager (M17d): Wer hinter Wall und Tor steht, wirft um, was dort steht
       if (campX !== null && z.state !== 'enter' && z.x > campX + 0.2) {

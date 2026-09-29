@@ -194,7 +194,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Unterstützung), bonds (Bindung: gemeinsame Zeit, stille
                       Stufen, Gesten, Momente, Erinnerungsstücke, M29), scenes
                       (geteilte Szenen: morgens über die Nacht, abends am
-                      Feuer, M29), quests (Nebenaufträge:
+                      Feuer, M29), arms (Waffenschrank, Schießen, Munition,
+                      Hülsen, Leuchtkugeln, Lärm, M30), training (Übungsplatz:
+                      wer übt, Stufen, M30), quests (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
                       (Herbstbuch: Sterne, Taten, Herbstschmuck,
@@ -279,6 +281,7 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       (Morgenbericht), perkChoice (Perk-Wahl), cardTable
                       (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
                       (Startbild, N2), title (Titelbild, Name und Aussehen),
+                      armory (Fenster des Waffenschranks, M30),
                       funk (Edda über Funk: Comic-Feld unten rechts, N4),
                       catalog (Balduins Katalog und Lieferkarte, N4)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -299,6 +302,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       bonds (Stufen, Arten gemeinsamer Zeit, Spitznamen,
                       Erinnerungsstücke und ihre Plätze, M29), scenes
                       (Szenen mit Rollen nach Temperament, Anlässe, M29),
+                      arms (Schusswaffen, Munition, Notfallwaffen, Übung und
+                      Profile, M30),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -335,7 +340,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -585,6 +590,24 @@ Grundprinzipien:
   nach dem Bericht, abends von selbst; die beiden gehen ans Feuer
   (`survivors.standSpot` fragt `scenes.spotOf`) und reden in `hud.bubble`,
   sobald Mika nah ist. `state.scenes.seen` merkt Gespieltes.
+- **Waffen und Übung (M30, `core/arms.js`, `core/training.js`, `data/arms.js`):**
+  Schusswaffen stehen in `GUNS` (Magazin, Nachladen, Takt, Schaden, Reichweite,
+  Kugeln und Streuung, `pierce`, Lärm, Kamerastoß), die Nahkampfwaffen des Schranks
+  als `WEAPONS` mit `cabinet` (`weaponStats` nur, wenn Mika sie genommen hat). Hält
+  Mika eine Schusswaffe (`ITEMS[id].gun`), ruft der Klick `arms.shoot` statt
+  `combat.attack`: Strahlen durch die Horde (`arms.ray`), Aktion `shoot` (Pose in
+  `player.js`), `effects.muzzle`, Leuchtspur (`arms.draw`), Hülse
+  (`InstancedMesh`, bis `arms.morning`), `horde.noise` (Schlurfer im Umkreis
+  bekommen `alertT`/`alertR`), `crows.startle`, Knopf bellt. Munition liegt in
+  `state.inventory` (`AMMO`), das Magazin in `state.arms.mag`. Der Schrank
+  (`WOHN.schrank`, Einblendung `waffenschrank`, Modus `schrank`) öffnet sich nach
+  `ARMS_UNLOCK_NIGHTS` gehaltenen Nächten (`arms.checkUnlock`);
+  `world.refreshCabinet` zeigt im Gestell, was noch da ist. `state.arms.notfall`
+  sagt, wer im Notfall welche Waffe nimmt (für M31). Der Übungsplatz (`use:
+  'ueben'`) startet über den Dialog `uebungsplatz` `training.start(id)`: Die
+  Person steht an `training.spotOf` (vor `scenes` in `survivors.standSpot`), ihre
+  Fähigkeit ruht (`survivors.ability`), nach `TRAINING.hours` zählt
+  `state.training[id]` (`level`, `done`, `day`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -903,7 +926,16 @@ Grundprinzipien:
    am selben Morgen nicht noch einmal; Speichern v25 und Migration v24 → v25;
    im Abschnitt `gemeinsam` blendet Juna nur noch und Hildes Leimgläser machen
    keinen Schaden (Bilder: bindung-zeichen, bindung-feuer, geschenk,
-   erinnerungsbord).
+   erinnerungsbord); ab M30 (Abschnitt `waffen`): der Waffenschrank ist vor der
+   ersten gehaltenen Nacht zu, danach sagt Edda, wo der Schlüssel liegt, und im
+   Vorrat liegt Munition; E öffnet ihn, S S E nimmt die Pistole, Q wechselt den
+   Notfall, im Gestell fehlt, was Mika genommen hat; ein echter Klick lädt nach,
+   der nächste trifft (Magazin sinkt, Leuchtspur, Hülse), der Knall lockt einen
+   Schlurfer aus 9 m, leer klickt es; die Leuchtkugel macht Licht und blendet,
+   die Doppelflinte trifft im Fächer; am Übungsplatz übt Hilde mit echten Tasten
+   zwei Spielstunden (Mika dabei: gemeinsame Zeit), nach der zweiten Übung Stufe
+   1; Speichern v26 und Migration v25 → v26 (Bilder: waffenschrank, schuss,
+   uebungsplatz).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1033,7 +1065,12 @@ ab M29 zeigt `bonds()` je Person Stufe, Wort, gemeinsame Zeit, Arten, Momente,
 ob ein Moment wartet und wie sie Mika ruft, `bondAdd(id, art)` zählt gemeinsame
 Zeit, `setBond(id, punkte)` setzt sie, `keepsakes()` nennt die geschenkten
 Stücke, `scenes()` die gewählte und laufende Szene samt Sprechblasen,
-`sceneMorning(anlässe)` stellt die Morgenszene.
+`sceneMorning(anlässe)` stellt die Morgenszene; ab M30 zeigt `arms()` Schrank,
+Genommenes, Notfall, Magazine, Munition, Schüsse, Hülsen, Leuchtkugeln, Spuren
+und den letzten Lärm, `unlockArms()` schließt auf, `takeArm(id)` nimmt oder legt
+zurück, `shoot(dx, dz)` schießt, `armory()` zeigt das offene Fenster,
+`cabinetShown()` was im Gestell steht, `training()` die laufende Übung, Kandidaten
+und Stufen, `startTraining(id)` beginnt eine Übung.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

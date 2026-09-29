@@ -1734,7 +1734,7 @@ Unterstützung (Leimgläser, Blenden, Flicken, Heilen); die übrigen acht Wander
 (zwölf im Pool). Gemeinsam kochen (Nr. 171) folgt mit der Küche in einem
 späteren Meilenstein; Angeln kommt mit M33. Spielstand v25.
 
-#### M30 – Waffenschrank und Übungsplatz
+#### M30 – Waffenschrank und Übungsplatz ✓
 
 *Ziel:* Die Bewohner können sich wehren, wenn es sein muss – und Mika bekommt
 eine echte Waffe mit Gegenseite.
@@ -1742,14 +1742,16 @@ eine echte Waffe mit Gegenseite.
 *Vorbild:* Death Road to Canada, Enter the Gungeon, Nuclear Throne (Wucht),
 State of Decay 2 (Waffenschrank).
 
-- **Waffenschrank** im Haus mit sieben Waffen (Nr. 168), eine Notfallwaffe je
-  Person.
-- **Mika mit Schusswaffe:** in der Schnellleiste; die Munition teilt sie mit
-  der Gemeinschaft (Patronen von Balduin, Schrot an der Werkbank); laute
-  Waffen locken Schlurfer an.
-- **Übungsplatz** mit Übung 0–3 (Nr. 169).
-
-*Prüfen:* Schuss mit echter Taste, Munition sinkt, Anlocken, Übung steigt.
+*Umgesetzt (29.09.2026):*
+- Der Waffenschrank in der Stube mit sieben Waffen und einer Notfallwaffe je
+  Person; er öffnet sich nach der ersten gehaltenen Nacht (Nr. 189).
+- Mika schießt: Magazin, Nachladen, Mündungsfeuer, Hülsen bis zum Morgen,
+  Leuchtspur, Sporen statt Blut, Lärm lockt an.
+- Munition für alle: Patronen von Balduin, Schrot und Leuchtkugeln von der
+  Werkbank.
+- Der Übungsplatz mit Übung 0–3; wer übt, dessen Fähigkeit ruht. Übt Mika mit,
+  zählt es als gemeinsame Zeit.
+- Spielstand v26.
 
 #### M31 – Die Lagerglocke
 

@@ -197,7 +197,7 @@ export class Builder {
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz']); // M23: der Hochsitz gehört zu den Überlebenden
+    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz', 'uebungsplatz']); // M23: der Hochsitz gehört zu den Überlebenden; M30: der Übungsplatz
     // M27: Die Schlafhütte gibt es erst mit dem Schlafzimmer (Zuhause-Stufe 3)
     const hut = options.find((o) => o.id === 'schlafhuette');
     if (hut && (this.game.state.world.houseLevel || 1) < BUILDINGS.schlafhuette.house) Object.assign(hut, { disabled: true, locked: true, disabledText: T.wanderer.huetteAb });

@@ -234,6 +234,34 @@ const SFX = {
     s.noise(t, 0.09, { type: 'highpass', freq: 900, peak: 0.4 * v, out: o });
     for (let k = 1; k < 6; k++) s.noise(t + k * 0.045 + Math.random() * 0.02, 0.02, { type: 'bandpass', freq: 2500 + Math.random() * 2000, q: 2, peak: 0.1 * v, out: o });
   },
+  // M30: Schüsse – ein tiefer Knall, dann rollt der Hall zweimal über den See zurück
+  schuss: (s, t, v, o) => {
+    s.noise(t, 0.12, { type: 'lowpass', freq: 2600, freqEnd: 480, peak: 0.55 * v, out: o });
+    s.tone('sine', 112, t, 0.28, { freqEnd: 40, peak: 0.5 * v, out: o });
+    s.noise(t + 0.26, 0.32, { type: 'lowpass', freq: 700, freqEnd: 280, attack: 0.03, peak: 0.12 * v, out: o });
+    s.noise(t + 0.6, 0.4, { type: 'lowpass', freq: 480, freqEnd: 220, attack: 0.05, peak: 0.05 * v, out: o });
+  },
+  schrot: (s, t, v, o) => {
+    s.noise(t, 0.16, { type: 'lowpass', freq: 1900, freqEnd: 360, peak: 0.6 * v, out: o });
+    s.tone('sine', 86, t, 0.34, { freqEnd: 34, peak: 0.6 * v, out: o });
+    s.noise(t + 0.3, 0.36, { type: 'lowpass', freq: 600, freqEnd: 240, attack: 0.03, peak: 0.13 * v, out: o });
+    s.noise(t + 0.68, 0.42, { type: 'lowpass', freq: 420, freqEnd: 200, attack: 0.05, peak: 0.05 * v, out: o });
+  },
+  leuchtschuss: (s, t, v, o) => {
+    s.noise(t, 0.07, { type: 'lowpass', freq: 1500, peak: 0.3 * v, out: o });
+    s.noise(t + 0.03, 0.7, { type: 'highpass', freq: 2200, freqEnd: 3800, attack: 0.05, peak: 0.1 * v, out: o });
+    s.tone('triangle', 880, t + 0.05, 0.55, { freqEnd: 1480, peak: 0.035 * v, out: o });
+  },
+  // Leeres Magazin: klick – klick – dü (komisch, nicht bedrohlich)
+  leer: (s, t, v, o) => {
+    s.tone('square', 1500, t, 0.018, { peak: 0.05 * v, filter: 3200, out: o });
+    s.tone('square', 1150, t + 0.11, 0.018, { peak: 0.05 * v, filter: 3200, out: o });
+    s.tone('sine', 330, t + 0.24, 0.28, { freqEnd: 196, peak: 0.07 * v, out: o });
+  },
+  nachladen: (s, t, v, o) => {
+    s.noise(t, 0.04, { type: 'bandpass', freq: 1800, q: 2, peak: 0.16 * v, out: o });
+    s.noise(t + 0.2, 0.05, { type: 'bandpass', freq: 1100, q: 2, peak: 0.2 * v, out: o });
+  },
   // Ölspur fängt Feuer: Wummern und Fauchen
   flammen: (s, t, v, o) => {
     s.tone('sine', 80, t, 0.4, { freqEnd: 40, peak: 0.22 * v, out: o });
@@ -242,7 +270,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { schuss: 0.05, schrot: 0.1, leer: 0.3, ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

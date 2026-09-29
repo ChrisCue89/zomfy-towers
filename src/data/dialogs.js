@@ -11,6 +11,15 @@ import { TRADES, ERRANDS } from './survivors.js';
 import { WANDERERS, freePlaces } from './wanderers.js';
 import { T } from './texts.js';
 import { cardsOffered } from './cards.js';
+import { stepsLeft } from './arms.js';
+
+// M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
+const UEBEN_ORDER = ['hilde', 'juna', 'bert', 'yusuf', ...Object.keys(WANDERERS)];
+const personName = (id) => SPRECHER[id]?.name || id;
+const restUebungen = (t) => stepsLeft(t);
+function uebenKandidaten(state) {
+  return UEBEN_ORDER.filter((id) => (state.survivors?.[id]?.stage || 0) >= 3 && state.training?.[id]?.day !== state.time.day && stepsLeft(state.training?.[id]) !== null).slice(0, 6);
+}
 
 export const SPRECHER = {
   mika: { name: 'Mika', portrait: 'mika' },
@@ -626,6 +635,17 @@ export const DIALOGE = {
   ],
 
   // N4: Das Funkgerät in der Stube – Balduins Katalog, Edda oder das Radio
+  // M30: Übungsplatz – wer übt heute? (nur, wer eingezogen ist und heute noch nicht geübt hat)
+  uebungsplatz: (state) => {
+    const people = uebenKandidaten(state);
+    return [
+      {
+        s: 'mika',
+        t: T.waffen.uebenFrage,
+        antworten: [...people.map((id) => ({ t: T.waffen.uebenAntwort(personName(id), T.waffen.stufe(state.training?.[id]?.level || 0, restUebungen(state.training?.[id]))), aktion: `ueben:${id}` })), { t: T.waffen.uebenNiemand, standard: true }],
+      },
+    ];
+  },
   radio: (state) => [
     {
       s: 'mika',

@@ -37,6 +37,8 @@ export const BUILDINGS = {
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1, raid: 30 },
   // M23: Hochsitz neben dem Weg – nachts bezieht ein eingezogener Überlebender dort Posten (Reiter Einrichten)
   hochsitz: { w: 1, d: 1, cost: { holz: 10, schrott: 3 }, icon: 'hochsitz', post: true, max: 4, height: 2.4 },
+  // M30: Übungsplatz – Heuballen, Kürbis-Zielscheibe, Strohpuppe, Dosen auf dem Zaun (Reiter Einrichten, einmal)
+  uebungsplatz: { w: 3, d: 2, cost: { holz: 12, fasern: 6, schrott: 2 }, icon: 'uebungsplatz', use: 'ueben', max: 1, height: 1.6, raid: 40 },
   // Herbstschmuck (M25): Belohnungen aus dem Herbstbuch – nur zum Schönmachen
   kuerbis: { w: 1, d: 1, cost: { fasern: 2 }, icon: 'kuerbis', deco: true, max: 6, height: 0.6 },
   laubhaufen: { w: 2, d: 1, cost: { fasern: 1 }, icon: 'laubhaufen', deco: true, max: 4, height: 0.4 },

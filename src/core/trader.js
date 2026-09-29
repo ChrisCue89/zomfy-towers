@@ -18,6 +18,7 @@ import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
 import { FLAWLESS } from '../data/risk.js';
 import { ABILITIES } from '../data/wanderers.js';
+import { AMMO_TRADE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 
@@ -312,6 +313,12 @@ export class Trader {
     if (st.risk?.treasure) {
       const [name, info] = T.wagnis.schatzAngebot;
       list.push({ id: 'tausch-schatz', key: 'schatz', cost: FLAWLESS.price, trade: true, icon: 'kiste', name, info, gives: { rare: FLAWLESS.rarity }, affordable: canAfford(st.inventory, FLAWLESS.price) });
+    }
+    // M30: Patronen für den Waffenschrank – nur ein paar am Tag, sie gehören allen
+    if (st.arms?.unlocked) {
+      const left = Math.max(0, AMMO_TRADE.perDay - this.soldToday('patronen'));
+      const n = AMMO_TRADE.gives.patronen;
+      list.push({ id: 'tausch-patronen', key: 'patronen', cost: AMMO_TRADE.cost, trade: true, icon: 'patronen', name: T.haendler.vorrat(T.menge(n, 'patronen'), left), info: T.waffen.patronenInfo, gives: { inventory: { patronen: n } }, owned: left === 0, ownedText: T.haendler.ausverkauft, affordable: left > 0 && canAfford(st.inventory, AMMO_TRADE.cost) });
     }
     return list;
   }
