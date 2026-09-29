@@ -32,7 +32,7 @@ await rec.eval(() => {
 await rec.sim(5);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -23, 1.6], [FRAMES - 1, -21.8, 1.6]] },
+  cam: { keys: [[0, -26.2, 1.4], [FRAMES - 1, -24.8, 1.4]] },
   each: () => { window.__b.keep(); },
   description: 'Nacht, Bolzenwerfer (Repetierer), Kürbiskatapult (Feuer), Sprenger (Frost) und Laternenturm am letzten Wegabschnitt; ein Trupp Schlurfer mit Brummer läuft von links herein.',
 });

@@ -44,7 +44,7 @@ export async function openBrowser(gameDir) {
   const page = await browser.newPage();
   const problems = [];
   page.on('console', (m) => {
-    if (['error', 'warning'].includes(m.type())) problems.push(`${m.type()}: ${m.text()}`);
+    if (['error', 'warning'].includes(m.type()) && !m.location().url.endsWith('favicon.ico')) problems.push(`${m.type()}: ${m.text()}`);
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   await page.goto(`${srv.url}audio.html`);
@@ -54,12 +54,9 @@ export async function openBrowser(gameDir) {
     /** Aufgabe rechnen: { l, r, n, … } */
     async render(name, params = {}) {
       const r = await page.evaluate(([n, p]) => window.renderTask(n, p), [name, params]);
-      if (r && r.ch) {
-        r.l = decode(r.ch[0]);
-        r.r = decode(r.ch[1]);
-        delete r.ch;
-      }
-      return r;
+      const dec = (p) => ({ ...p, l: decode(p.ch[0]), r: decode(p.ch[1]), ch: undefined });
+      if (r.parts) r.parts = r.parts.map(dec);
+      return r.ch ? { ...r, ...dec(r) } : r;
     },
     async close() {
       await browser.close();
