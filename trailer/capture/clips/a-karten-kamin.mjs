@@ -3,6 +3,8 @@ import { openDay, setupCamp } from './_common.mjs';
 
 const FRAMES = 60;
 const rec = await openDay({ hour: 18, minute: 40, day: 8, weather: 'regen', view: 'weit' });
+// Innen 240 px/m (3 x 80: bleibt auf dem Pixelraster): bei 1080p füllt der Raum sonst nur die Mitte des Bildes
+await rec.eval(async () => { const { CONFIG } = await import('/src/config.js'); CONFIG.render.interiorPxPerMeter = 240; });
 console.log('lager', JSON.stringify(await setupCamp(rec, { ids: ['bert'], tents: [[-5, -3]] })));
 const begin = await rec.eval(() => {
   const z = window.zomfy;

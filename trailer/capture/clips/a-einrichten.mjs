@@ -1,10 +1,12 @@
-// Clip `einrichten`: Innenraum (Zuhause), warmes Licht, Möbel, Mika geht durchs Bild. Ansicht drinnen (160 px/m).
+// Clip `einrichten`: Innenraum (Zuhause), warmes Licht, Möbel, Mika geht durchs Bild. Ansicht drinnen (240 px/m).
 import { openDay, installWalker, camAt } from './_common.mjs';
 
 const FRAMES = 40;
 const PROBE = process.env.PROBE;
 
 const rec = await openDay({ hour: 21, minute: 30, day: 4, weather: 'klar', view: 'weit' });
+// Innen 240 px/m (3 x 80: bleibt auf dem Pixelraster): bei 1080p füllt der Raum sonst nur die Mitte des Bildes
+await rec.eval(async () => { const { CONFIG } = await import('/src/config.js'); CONFIG.render.interiorPxPerMeter = 240; });
 await installWalker(rec);
 const info = await rec.eval(() => {
   const z = window.zomfy;
@@ -31,7 +33,7 @@ if (PROBE) {
     ui: 'world',
     cam: { keys: KEYS },
     each: (i) => { window.__route([[314.9, 3.6]], false, 0.3); },
-    description: 'Innenraum des Fischerhauses am Abend (21:30, Ansicht drinnen 160 px/m): eingerichtet mit Bild, Teekanne, Wimpeln, Lichterkette, Stehlampe und Lesesessel; Kamin/Feuerschein, warmes Licht. Mika geht (echte Tastensteuerung) von links nach rechts durchs Bild (Profil).',
+    description: 'Innenraum des Fischerhauses am Abend (21:30, Ansicht drinnen 240 px/m statt der 160 des Spiels, damit der Raum das 1080p-Bild füllt): eingerichtet mit Bild, Teekanne, Wimpeln, Lichterkette, Stehlampe und Lesesessel; Kamin/Feuerschein, warmes Licht. Mika geht (echte Tastensteuerung) von links nach rechts durchs Bild (Profil).',
   });
 }
 console.log('problems', rec.problems);
