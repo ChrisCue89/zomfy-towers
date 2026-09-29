@@ -9,8 +9,9 @@ import { prepare } from './b-common.mjs';
 const NAME = process.env.ZT_NAME || 'leuchtfeuer';
 const FRAMES = Number(process.env.ZT_FRAMES || 60);
 const MAST = { x: 22.25, z: -1.0 };
-const CAM0 = [19.6, 1.4]; // Anfang: unten am Steg
-const CAM1 = [20.9, -2.1]; // Ende: hoch zur Lampe
+const CAM0 = [20.6, -1.4]; // Anfang: unten am Steg
+const CAMM = [21.1, -5.0];
+const CAM1 = [21.6, -8.6]; // Ende: hoch zur Lampe
 
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 30, hour: 22, minute: 10, weather: 'schnee', view: 'nah' });
@@ -30,7 +31,8 @@ await rec.eval((MAST) => {
 await rec.sim(2);
 if (process.env.ZT_PROBE2) {
   await rec.clip('_probe', { frames: 1, cam: { keys: [[0, ...CAM0]] } });
-  await rec.clip('_probe', { frames: 1, first: 1, cam: { keys: [[0, ...CAM1]] } });
+  await rec.clip('_probe', { frames: 1, first: 1, cam: { keys: [[0, ...CAMM]] } });
+  await rec.clip('_probe', { frames: 1, first: 2, cam: { keys: [[0, ...CAM1]] } });
   await rec.close();
   process.exit(0);
 }
@@ -38,7 +40,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, ...CAM0], [FRAMES - 1, ...CAM1]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht im Schneetreiben (Tag 30, 22:10), Ansicht nah. Der Leuchtmast am Ende des Stegs leuchtet (Stufe 3, Leuchtfeuer); langsame Kamerafahrt vom Steg aufwärts zur Lampe. Die Lichtinsel des Leuchtfeuers wurde für die Aufnahme an den Mast verlegt; vier Schlurfer laufen den Steg entlang durch den Schein (geblendet, langsamer). Mika steht am Stegansatz.',
+  description: 'Nacht im Schneetreiben (Tag 30, 22:10), Ansicht nah. Der Leuchtmast am Ende des Stegs leuchtet (Stufe 3, Leuchtfeuer); Kamerafahrt (Neigung nach oben) vom Steg am Mastfuß entlang aufwärts zur Lampe, sie erreicht das weiße Lampenglas ganz oben im Bild ab etwa Bild 45. Die Lichtinsel des Leuchtfeuers wurde für die Aufnahme an den Mast verlegt; vier Schlurfer laufen den Steg entlang durch den Schein (geblendet, langsamer). Mika steht am Stegansatz.',
 });
 console.log(r.problems);
 await rec.close();

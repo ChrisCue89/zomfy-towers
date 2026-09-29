@@ -43,7 +43,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -8.8, 1.5], [FRAMES - 1, -8.4, 1.5]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Ansicht nah. Die Horde (Brummer, Schlurfer, Flitzer) schlägt das Lagertor (Bohlenwand) ein; Dornen sprühen Funken, die Laterne am Tor leuchtet; hinter dem Wall werfen zwei Feuer-Katapulte Kürbisse, Mika steht am Hof.',
+  description: 'Nacht, Ansicht nah. Ein Brummer mit Trupp (Beanie, Brand-Symbole über den Köpfen) drängt sich am Lagertor (Bohlenwand, senkrechtes Band in Bildmitte; Dornen, Laterne und Glocke am Tor) zusammen und schlägt es ein; das Tor hält den ganzen Clip (625/650). Zwei Feuer-Katapulte hinter dem Wall werfen Kürbisse (Bögen, Bild 0-15, 45-59), Laternenpfahl und Laterne am Tor als Lichtinseln, Mika steht rechts am Hof. Die linke Bildhälfte ist leerer Weg. Beste Schnitte: 0-30, 40-59.',
 });
 console.log(r.problems);
 const st = await rec.eval(() => window.zomfy.camp().find((c) => c.type === 'tor'));
