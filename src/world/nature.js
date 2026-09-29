@@ -21,6 +21,10 @@ export const LEAVES = {
 };
 import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL, shadowGeometry } from '../render/staticMesh.js';
 import { FINE, shade } from './voxelKit.js';
+import { SIGNAL_SPOTS } from '../data/network.js';
+
+/** M32: Steht eine Insel-Tanne vor einem Signalfeuer (südlich davon, zur Kamera hin)? */
+const hidesFire = (x, z, s) => Math.abs(x - s.x) < 1.8 && z - s.z > -0.6 && z - s.z < 2.6; // die Krone reicht gut einen Meter zur Seite
 
 // --- Modelle ---------------------------------------------------------------
 
@@ -605,13 +609,20 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
       }
     }
   }
-  // Inseln im See: ein paar Tannen und Felsen
+  // Inseln im See: ein paar Tannen und Felsen. M32: Vor den Stellen der Signalfeuer wächst
+  // keine Tanne – der Zufall wird trotzdem gleich oft gezogen (sonst verschöbe sich alles danach)
+  const fireSpots = Object.values(SIGNAL_SPOTS);
   for (const isl of ISLANDS) {
     const n = Math.max(1, Math.round(isl.r * 1.3));
     for (let k = 0; k < n; k++) {
       const a = rng.range(0, Math.PI * 2);
       const r = rng.range(0, isl.r * 0.5);
-      scatter.place(`fir${rng.int(0, 2)}`, snapV(isl.x + Math.cos(a) * r), snapV(isl.z + Math.sin(a) * r * 0.8), rng.int(0, 3));
+      const fx = snapV(isl.x + Math.cos(a) * r);
+      const fz = snapV(isl.z + Math.sin(a) * r * 0.8);
+      const kind = rng.int(0, 2);
+      const turns = rng.int(0, 3);
+      if (fireSpots.some((f) => hidesFire(fx, fz, f))) continue;
+      scatter.place(`fir${kind}`, fx, fz, turns);
       trees++;
     }
     scatter.place(`rock${rng.int(0, 3)}`, snapV(isl.x + isl.r * 0.6), snapV(isl.z + isl.r * 0.35), rng.int(0, 3));

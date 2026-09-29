@@ -262,5 +262,6 @@ export function renderPortraits() {
     knopf: dogPortrait(),
     ...Object.fromEntries(WANDERER_ORDER.map((id) => [id, portrait32(id)])), // M27: die Wanderer
     edda: eddaPortrait(), // N4: nur als altes Foto bekannt
+    eddaHeute: portrait32('edda'), // M32: zu Hause, in Farbe, das Haar silbern
   };
 }

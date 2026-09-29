@@ -37,6 +37,8 @@ const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
 const BARK_AHEAD = 12; // Spielminuten vor einer Welle bellt Knopf
 const POST_FACING = -Math.PI / 4; // auf dem Hochsitz: Blick nach Südwesten (zu Weg und Wald, halb zur Kamera, M23)
+const VISIT_SPOT = { x: 2.1, z: -0.6, facing: -2.2 }; // M32: Besuch sitzt südöstlich am Feuer, dem Feuer zugewandt
+const EDDA_SPOT = { x: 21.25, z: -0.5, facing: Math.PI / 2 }; // M32: Edda an der Südecke des Stegendes beim alten Funkturm (Juna steht am Mast weiter nördlich), Blick übers Wasser
 /** Alle Menschen der Bucht: die Stammbesetzung, dann die Wanderer (M27). */
 export const PEOPLE = [...SURVIVOR_ORDER, ...WANDERER_ORDER];
 const isWanderer = (id) => Boolean(WANDERERS[id]);
@@ -133,6 +135,23 @@ export class Survivors {
       const w = WANDERERS[id];
       if (announce) this.game.hud.say(T.wanderer.ankunft[w.route](w.name, T.wanderer.berufe[w.job]), 6);
     }
+    // M32: Eine Eingeladene kommt zurück – als Gast am Feuer, die Entscheidung ist gleich fällig
+    const back = this.game.post?.arrivals();
+    if (back) {
+      const s = this.st[back];
+      s.stage = 2;
+      s.guest = this.freeGuestSpot();
+      s.due = day - 1;
+      s.extra = false;
+      s.day = day;
+      any = true;
+      this.leaving.delete(back);
+      this.placeOne(back, out, true);
+      if (announce) {
+        this.game.hud.say(T.netz.wiederDa(WANDERERS[back].name), 6);
+        this.game.sound.memorial(back); // ihr Motiv
+      }
+    }
     if (any) this.refreshInteractions();
     return any;
   }
@@ -188,7 +207,43 @@ export class Survivors {
   placeAll(jump) {
     const out = this.isOutsideTime();
     for (const id of PEOPLE) this.placeOne(id, out, jump);
+    this.placeEdda(out, jump);
     this.updateBedrolls();
+  }
+
+  /** M32: Ist Edda zu Hause? (am Morgen nach dem Herbst, `state.edda.home`) */
+  eddaHome() {
+    const e = this.game.state.edda;
+    return Boolean(e?.home) && this.game.state.time.day >= e.home;
+  }
+
+  /** M32: Edda steht tagsüber am Ende des Stegs beim alten Funkturm und schaut übers Wasser. */
+  placeEdda(out, jump) {
+    if (!this.eddaHome()) {
+      if (this.npcs.list.has('edda')) this.npcs.setVisible('edda', false);
+      return;
+    }
+    const n = this.npcs.get('edda', false);
+    n.model.root.visible = out;
+    n.sitTarget = 0;
+    n.y = null;
+    if (!out) return;
+    n.restFacing = EDDA_SPOT.facing;
+    if (jump) this.npcs.place(n, EDDA_SPOT.x, EDDA_SPOT.z, EDDA_SPOT.facing);
+    else this.npcs.walkTo(n, EDDA_SPOT.x, EDDA_SPOT.z);
+  }
+
+  /** M32: Mit Edda reden – beim ersten Mal ihre Heimkehr, danach je Tag etwas anderes. */
+  talkEdda() {
+    const g = this.game;
+    const e = g.state.edda;
+    if (!e.met) {
+      e.met = true;
+      g.sound.memorial('edda'); // die Spieluhr spielt ihr Motiv
+      g.startDialog('eddaHeimkehr', () => g.quietSave());
+      return;
+    }
+    g.startDialog('eddaDa');
   }
 
   /** Kartenabend (M28): `id` sitzt am Tisch (spot mit seatY) – oder steht wieder auf (null). */
@@ -228,6 +283,19 @@ export class Survivors {
     if (this.game.defense?.controls(id)) return; // M31: kämpft gerade nach der Lagerglocke
     const def = personOf(id);
     const stage = this.stage(id);
+    // M32: Wer von früher zu Besuch ist, sitzt tagsüber am Feuer
+    if (stage === 4 && !this.leaving.has(id) && this.game.post?.visitorToday() === id) {
+      const n = this.npcs.get(id, false);
+      n.model.root.visible = out;
+      n.sitTarget = 0;
+      n.y = null;
+      if (!out) return;
+      const c = { ...this.freeSpot(VISIT_SPOT.x, VISIT_SPOT.z, 0.28), facing: VISIT_SPOT.facing };
+      n.restFacing = c.facing;
+      if (jump) this.npcs.place(n, c.x, c.z, c.facing);
+      else this.npcs.walkTo(n, c.x, c.z);
+      return;
+    }
     // M27: Weitergezogene gehen noch bis zum Tor bzw. zum Strand, dann sind sie fort (M31: Gefallene sind nicht mehr da)
     if (stage === 0 || stage === 5 || (stage === 4 && !this.leaving.has(id))) {
       this.npcs.setVisible(id, false);
@@ -265,13 +333,18 @@ export class Survivors {
 
   refreshInteractions() {
     const list = [];
+    const visitor = this.game.post?.visitorToday() || null; // M32: Besuch am Festtag
     for (const id of PEOPLE) {
       const stage = this.stage(id);
-      if (stage === 0 || stage >= 4) continue;
+      if (stage === 0 || (stage >= 4 && id !== visitor)) continue;
       const n = this.npcs.list.get(id);
       if (!n) continue;
-      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: personOf(id).prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) && !this.game.defense?.controls(id) });
+      // M32: Knopf nur aus der Nähe – er streunt umher und nahm sonst Briefkasten und Gästen das E weg
+      const dog = Boolean(personOf(id).dog);
+      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: dog ? 0.9 : 1.35, prompt: personOf(id).prompt, npc: id, dog, enabled: n.model.root.visible && !this.onPost(id) && !this.game.defense?.controls(id) });
     }
+    const edda = this.eddaHome() ? this.npcs.list.get('edda') : null; // M32: Edda ist zu Hause
+    if (edda) list.push({ id: 'npc-edda', x: edda.x, z: edda.z, radius: 1.35, prompt: 'ansprechen', npc: 'edda', enabled: edda.model.root.visible });
     this.interactions = list;
     this.game.world.npcInteractions = list;
     this.game.world.refreshInteractions();
@@ -419,6 +492,7 @@ export class Survivors {
 
   talk(id) {
     const g = this.game;
+    if (id === 'edda') return this.talkEdda(); // M32
     const stage = this.stage(id);
     if (isWanderer(id)) {
       this.talkWanderer(id);
@@ -686,6 +760,10 @@ export class Survivors {
     const g = this.game;
     const s = this.st[id];
     const stage = this.stage(id);
+    if (stage === 4) {
+      g.startDialog('besuch'); // M32: zu Besuch am Festtag
+      return;
+    }
     if (stage === 1) {
       g.startDialog(`${id}Treffen`, () => {
         if (s.stage !== 1) return;
@@ -816,11 +894,6 @@ export class Survivors {
     for (const id of WANDERER_ORDER) {
       const s = this.st[id];
       const w = WANDERERS[id];
-      // Briefe von Weitergezogenen
-      if (s.stage === 4 && !s.read && day >= (s.letter || 0)) {
-        s.read = true;
-        lines.push({ text: `${T.wanderer.brief(w.name, T.wanderer.vomOrt[w.place])} ${T.wanderer.briefe[id]}` });
-      }
       // Wer gestern ankam und nicht angesprochen wurde, hat sich selbst ans Feuer gesetzt
       if (s.stage === 1 && day > (s.day || 0)) {
         s.stage = 2;

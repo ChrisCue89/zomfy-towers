@@ -5,6 +5,74 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 32 – Netzwerk und Wiedersehen ✓
+
+Wer weitergezogen ist, bleibt in der Welt (DESIGN 8, OFFENE-FRAGEN 164, 170, 191).
+
+- **Briefe** (Oma Hilde):
+  - Zwei, drei Tage nach dem Weiterziehen liegt morgens ein Brief im Briefkasten
+    am Hofeingang, neun bis zwölf Tage danach ein zweiter mit Neuigkeiten vom
+    Ort. Höchstens eine Nachricht je Morgen.
+  - Wohnt Hilde im Lager, bringt sie die Post (»Hilde hat die Post gebracht …«),
+    sonst Balduin.
+  - Der Briefkasten hat jetzt eine Fahne. Solange Post darin liegt, steht sie
+    und ein Brief schaut heraus; sonst liegt der Arm waagerecht an der Seite.
+  - E am Briefkasten zeigt jeden Brief als Karte: Luftpostpapier mit feinen
+    Linien und Briefmarke, das Porträt des Absenders in Farbe, »von Hannes aus
+    dem Forsthaus«, der Tag und der Brief. Die Spieluhr spielt das Motiv des
+    Absenders.
+  - Gelesene Briefe stehen im Herbstbuch auf der neuen Seite »Post« (Briefe von
+    unterwegs). Der leere Briefkasten verweist darauf.
+- **Pakete** (Balduin): Fünf bis acht Tage nach dem Weiterziehen bringt Balduin
+  beim Anlegen ein Paket vom Ort mit Rohstoffen oder Munition. Das Forsthaus
+  schickt 14 Holz und 4 Fasern, der Leuchtturm Leuchtkugeln und Schrott, der
+  Hafen Schrott und Patronen. Die Lieferkarte zeigt den verschnürten Karton mit
+  Anhänger und den Inhalt.
+- **Stimmen** (Juna): Wohnt Juna im Lager und hat jemand schon geschrieben, hat
+  das Funkgerät in der Stube die Wahl »Die anderen«. Je Tag meldet sich eine
+  Stimme von unterwegs (zwei Sätze je Person).
+- **Besuch**: Am Festmorgen (M23) kommt jemand von früher ans Feuer, sitzt dort
+  den Tag über und erzählt (eine Zeile je Person).
+- **Rückkehr**: Ist ein Schlafplatz frei, nimmt Balduin im Handelsfenster eine
+  Einladung mit (3 Zombieteile Fährgeld). Am nächsten Morgen sitzt die Person
+  wieder als Gast am Feuer, die Entscheidung ist gleich fällig.
+- **Signalfeuer** in der Frostnacht:
+  - Für jeden Ort, an dem jemand von euch lebt, brennt auf den Inseln im See ein
+    Feuer: Steinring, Zelt aus Scheiten, Wimpel, Flamme mit Eigenlicht und
+    Lichtinsel. Die Leute sind hinübergerudert, damit die Bucht es sieht.
+  - Jeder Ort schickt einmal eine kleine Hilfe (Holz, Leuchtkugeln, Patronen …).
+  - Die Karte (M) zeigt die Feuer mit Ortsnamen. Am Morgen sind sie
+    heruntergebrannt.
+- **Motive**: Jede Figur hat ein kurzes Motiv, vier bis sieben Töne in
+  e-Moll/G-Dur. Die Spieluhr spielt es beim Brief, bei der Rückkehr, bei Eddas
+  Heimkehr und am Erinnerungsbrett (M31).
+- **Edda kommt nach Hause**:
+  - Wer nach dem Herbst weiterspielt, findet Edda am nächsten Morgen im ersten
+    Schnee am Ende des Stegs beim alten Funkturm. Der Bericht sagt: »Im
+    Morgengrauen hat ein Ruderboot am Steg angelegt …«.
+  - Zum ersten Mal sieht man sie in Farbe, mit silbernem Zopfkranz.
+  - Beim ersten Ansprechen erzählt sie von ihrer Heimkehr, danach sagt sie je Tag
+    einen anderen Satz.
+- Nebenbei: Das Herbstbuch ist breiter und hat Platz für sechs Reiter.
+- Nebenbei: Knopf spricht man nur noch aus der Nähe an (0,9 m), und er geht bei E
+  nicht mehr vor – der streunende Hund nahm sonst dem Briefkasten und den Gästen am
+  Feuer das E weg. Edda steht an der Südecke des Stegendes, Juna weiter am Mast.
+- **Spielstand v28** mit Migration: Briefe, die schon kamen, liegen im
+  Herbstbuch. Wer nach dem Herbst schon weiterspielt, bekommt Edda am nächsten
+  Morgen.
+- Prüfabschnitt `netzwerk` (Bilder: brief, paket, signalfeuer, signalkarte,
+  edda-daheim). Die Abschnitte `netzwerk`, `gaeste` und `ueberlebende` sind
+  bestanden. Beim ersten Lauf und beim Ansehen der Bilder behoben:
+  - Am Briefkasten und bei Gästen am Feuer nahm Knopf das E weg (siehe oben), am
+    Stegende Juna das Gespräch mit Edda.
+  - In der Frostnacht brennen Feuer auch für die, die unterwegs von selbst
+    weitergezogen sind – die Prüfung erwartete nur zwei.
+  - Auf der Karte lagen »Leuchtturm« und »Ferienlager« übereinander und ragten
+    über den Rand: Die Namen bleiben jetzt in der Karte und rücken auseinander.
+  - Das Feuer der Nordinsel verdeckten Tannen: Vor den Stellen der Signalfeuer
+    wächst keine Insel-Tanne mehr (der Zufall der Natur bleibt gleich). Für das
+    Bild gibt es im Test-Modus `lookAt(x, z)` (fester Blickpunkt der Kamera).
+
 ## Meilenstein 31 – Die Lagerglocke ✓
 
 Die schwerste Entscheidung der Nacht: allein halten oder alle rufen (DESIGN 8,

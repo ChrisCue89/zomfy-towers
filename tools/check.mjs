@@ -215,6 +215,7 @@ async function runBrowserChecks() {
     if (want('bindung')) await runBondChecks(browser, url);
     if (want('waffen')) await runArmsChecks(browser, url);
     if (want('glocke')) await runBellChecks(browser, url);
+    if (want('netzwerk')) await runNetworkChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -365,8 +366,8 @@ async function runViewChecks(browser, url) {
  * mehrere Wege, Schwierigkeit (Budget), Welle rufen (N) mit Mutbonus,
  * Zeitraffer (B), Mikas Fähigkeiten (Rechtsklick, X; Wahl auf Stufe 3),
  * Ausholen mit Risiko, Türme mit Erfahrung, Rang, Wimpel und Namen, Turm der
- * Nacht im Morgenbericht, Schwierigkeit im Pausenmenü, Speichern v27 und
- * Migration v10 → v27 – alles mit echten Tasten und Mausklicks.
+ * Nacht im Morgenbericht, Schwierigkeit im Pausenmenü, Speichern v28 und
+ * Migration v10 → v28 – alles mit echten Tasten und Mausklicks.
  */
 async function runNight16Checks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Nacht in der Hand (M16)');
@@ -675,8 +676,8 @@ async function runNight16Checks(browser, url) {
   checkMessages(session);
   await session.context.close();
 
-  // Migration v10 → v27: Schwierigkeit »ausgewogen«, Laternenblitz auf Platz 1; Türme ohne Geschichte laden
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v10 → v27', {
+  // Migration v10 → v28: Schwierigkeit »ausgewogen«, Laternenblitz auf Platz 1; Türme ohne Geschichte laden
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v10 → v28', {
     init: () => {
       if (sessionStorage.getItem('zomfy-v10')) return;
       localStorage.setItem(
@@ -695,8 +696,8 @@ async function runNight16Checks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ st: window.zomfy.state(), turm: window.zomfy.towerRanks()[0] || null }));
-  if (m.st.version === 27 && m.st.difficulty === 'ausgewogen' && m.st.skills.slots[0] === 'laternenblitz' && m.st.skills.slots[1] === null && m.st.skillChoice?.mode === 'lernen' && m.turm?.xp === 0 && m.turm.rang === 1) note(`✓ Migration: Spielstand v10 wird zu v27 (Schwierigkeit ausgewogen, Laternenblitz auf Platz 1, auf Stufe 4 wartet die Fähigkeiten-Wahl; ${m.turm.name} ist ein neuer Turm)`);
-  else fail(`Migration v10 → v27: ${JSON.stringify({ v: m.st.version, d: m.st.difficulty, skills: m.st.skills, choice: m.st.skillChoice, turm: m.turm })}`);
+  if (m.st.version === 28 && m.st.difficulty === 'ausgewogen' && m.st.skills.slots[0] === 'laternenblitz' && m.st.skills.slots[1] === null && m.st.skillChoice?.mode === 'lernen' && m.turm?.xp === 0 && m.turm.rang === 1) note(`✓ Migration: Spielstand v10 wird zu v28 (Schwierigkeit ausgewogen, Laternenblitz auf Platz 1, auf Stufe 4 wartet die Fähigkeiten-Wahl; ${m.turm.name} ist ein neuer Turm)`);
+  else fail(`Migration v10 → v28: ${JSON.stringify({ v: m.st.version, d: m.st.difficulty, skills: m.st.skills, choice: m.st.skillChoice, turm: m.turm })}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -1011,7 +1012,7 @@ async function runPlaytest16Checks(browser, url) {
  * Werkbank tagsüber mit echten Tasten wieder aufbauen, das Tor zur Palisade
  * ausbauen; Zubehör an einer Barrikadenreihe mit echten Tasten (Dornen,
  * Laterne, Pechkessel), das im Kampf wirkt; die Alarmglocke läutet, Bert
- * flickt; Speichern v27 und Migration v11 → v27 (Bilder: lager, lager-nacht,
+ * flickt; Speichern v28 und Migration v11 → v28 (Bilder: lager, lager-nacht,
  * zubehoer).
  */
 async function runCampChecks(browser, url) {
@@ -1276,7 +1277,7 @@ async function runCampChecks(browser, url) {
   await z(() => window.zomfy.killAllZombies());
   await step(1500);
 
-  // 9) Speichern v27: Stufe, Zubehör und Umgeworfenes bleiben nach dem Neuladen
+  // 9) Speichern v28: Stufe, Zubehör und Umgeworfenes bleiben nach dem Neuladen
   await z((b) => {
     const Z = window.zomfy;
     Z.setTime(10, 0);
@@ -1290,13 +1291,13 @@ async function runCampChecks(browser, url) {
   const gTor = geladen.camp.find((b) => b.type === 'tor');
   const gBank = geladen.bs.find((b) => b.type === 'werkbank');
   const gBar = geladen.bs.find((b) => b.id === reihe.bar.id);
-  if (geladen.v === 27 && gTor.level === 2 && gTor.gear.join() === 'glocke' && gBank?.broken && gBar?.gear?.join() === 'dornen,laterne,pech' && gBar.level === 3) note('✓ Speichern v27: Palisade, Zubehör und die umgeworfene Werkbank bleiben nach dem Neuladen');
-  else fail(`Speichern v27 (Lager): ${JSON.stringify({ v: geladen.v, tor: gTor, bank: gBank, bar: gBar })}`);
+  if (geladen.v === 28 && gTor.level === 2 && gTor.gear.join() === 'glocke' && gBank?.broken && gBar?.gear?.join() === 'dornen,laterne,pech' && gBar.level === 3) note('✓ Speichern v28: Palisade, Zubehör und die umgeworfene Werkbank bleiben nach dem Neuladen');
+  else fail(`Speichern v28 (Lager): ${JSON.stringify({ v: geladen.v, tor: gTor, bank: gBank, bar: gBar })}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v11 → v27: Ein alter Stand bekommt den Weidenzaun mit Tor; ein Turm auf der Linie kommt in den Vorrat
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v11 → v27', {
+  // Migration v11 → v28: Ein alter Stand bekommt den Weidenzaun mit Tor; ein Turm auf der Linie kommt in den Vorrat
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v11 → v28', {
     init: () => {
       if (sessionStorage.getItem('zomfy-v11')) return;
       localStorage.setItem(
@@ -1316,9 +1317,9 @@ async function runCampChecks(browser, url) {
   });
   const m = await alt.page.evaluate(() => ({ st: window.zomfy.state(), camp: window.zomfy.camp(), meldungen: window.zomfy.game.hud.toasts.map((t) => t.text) }));
   const tuerme = m.st.world.buildings.filter((b) => b.type === 'bolzen');
-  if (m.st.version === 27 && m.camp.length === 7 && m.camp.every((b) => b.level === 1) && tuerme.length === 1 && tuerme[0].i === -6 && m.st.inventory.schrott > 7 && m.meldungen.some((t) => t.startsWith('Mika hat einen Weidenzaun'))) {
-    note(`✓ Migration: Spielstand v11 wird zu v27 – der Weidenzaun mit Tor steht, der Turm auf der Linie liegt wieder im Vorrat (Schrott 7 → ${m.st.inventory.schrott}), der daneben bleibt`);
-  } else fail(`Migration v11 → v27: ${JSON.stringify({ v: m.st.version, camp: m.camp.length, tuerme, inv: m.st.inventory, meldungen: m.meldungen })}`);
+  if (m.st.version === 28 && m.camp.length === 7 && m.camp.every((b) => b.level === 1) && tuerme.length === 1 && tuerme[0].i === -6 && m.st.inventory.schrott > 7 && m.meldungen.some((t) => t.startsWith('Mika hat einen Weidenzaun'))) {
+    note(`✓ Migration: Spielstand v11 wird zu v28 – der Weidenzaun mit Tor steht, der Turm auf der Linie liegt wieder im Vorrat (Schrott 7 → ${m.st.inventory.schrott}), der daneben bleibt`);
+  } else fail(`Migration v11 → v28: ${JSON.stringify({ v: m.st.version, camp: m.camp.length, tuerme, inv: m.st.inventory, meldungen: m.meldungen })}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -1331,7 +1332,7 @@ async function runCampChecks(browser, url) {
  * Schwachstelle (geblendet + Bolzen), Splitter (frostig + Streukürbis),
  * Klebekürbis (matschig + Kürbis) –, jede mit echten Türmen am Weg; jede
  * Entdeckung steht im Notizbuch (Pausenmenü, echte Tasten); Regen macht alle
- * nass, Nebel kürzt die Reichweite; Speichern v27 und Migration v12 → v27
+ * nass, Nebel kürzt die Reichweite; Speichern v28 und Migration v12 → v28
  * (Bilder: reaktionen, notizbuch).
  */
 async function runReactionChecks(browser, url) {
@@ -1468,18 +1469,18 @@ async function runReactionChecks(browser, url) {
     note(`✓ Notizbuch: Esc, S, E öffnen es – „${buch.lines[0]}“, je Reaktion Name und Tag; S wählt Glut, darunter was geschieht und Yusufs Notiz (${buch.h} Zeilen hoch)`);
   else fail(`Notizbuch: ${JSON.stringify(buch)}`);
 
-  // Speichern v27: das Notizbuch bleibt
+  // Speichern v28: das Notizbuch bleibt
   await z(() => window.zomfy.save());
   await page.reload({ timeout: 120000 });
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await z(() => ({ v: window.zomfy.state().version, notes: window.zomfy.notes() }));
-  if (geladen.v === 27 && Object.keys(geladen.notes).length === 6) note('✓ Speichern v27: Das Notizbuch bleibt nach dem Neuladen');
-  else fail(`Speichern v27 (Notizbuch): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && Object.keys(geladen.notes).length === 6) note('✓ Speichern v28: Das Notizbuch bleibt nach dem Neuladen');
+  else fail(`Speichern v28 (Notizbuch): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v12 → v27: Das Notizbuch beginnt leer
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v12 → v27', {
+  // Migration v12 → v28: Das Notizbuch beginnt leer
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v12 → v28', {
     init: () => {
       if (sessionStorage.getItem('zomfy-v12')) return;
       localStorage.setItem(
@@ -1498,8 +1499,8 @@ async function runReactionChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, notes: window.zomfy.notes(), camp: window.zomfy.camp().length }));
-  if (m.v === 27 && Object.keys(m.notes).length === 0 && m.camp === 7) note('✓ Migration: Spielstand v12 wird zu v27 – das Notizbuch beginnt leer, das Lager steht');
-  else fail(`Migration v12 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && Object.keys(m.notes).length === 0 && m.camp === 7) note('✓ Migration: Spielstand v12 wird zu v28 – das Notizbuch beginnt leer, das Lager steht');
+  else fail(`Migration v12 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -1511,7 +1512,7 @@ async function runReactionChecks(browser, url) {
  * zurück, Bienen stechen durch Panzer, die Vogelscheuche lockt, fällt um und
  * wird geflickt –, fünf Fallen (sperren den Weg nie; Stachelbrett, Leim,
  * Kletten, Knallerbsen, Ölspur mit Feuer), neu richten, die Mühle mahlt,
- * Balduins Bauplan, Speichern v27 und Migration v13 → v27 (Bilder: bauplan,
+ * Balduins Bauplan, Speichern v28 und Migration v13 → v28 (Bilder: bauplan,
  * spielzeug, fallen).
  */
 async function runToyChecks(browser, url) {
@@ -1799,13 +1800,13 @@ async function runToyChecks(browser, url) {
   if (muehle.n === 3 && muehle.dazu === 3) note('✓ Mühle (M19): Das Windrad mit Richtung Mühle mahlt 3 Schrott am Tag');
   else fail(`Mühle: ${JSON.stringify(muehle)}`);
 
-  // 6) Speichern v27: Baupläne bleiben
+  // 6) Speichern v28: Baupläne bleiben
   await z(() => window.zomfy.save());
   await page.reload({ timeout: 120000 });
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await z(() => ({ v: window.zomfy.state().version, b: window.zomfy.blueprints(), fallen: window.zomfy.traps().list.length }));
-  if (geladen.v === 27 && geladen.b.known.length === 9 && geladen.b.tabs.includes('fallen') && geladen.fallen > 0) note(`✓ Speichern v27: ${geladen.b.known.length} Baupläne und ${geladen.fallen} Fallen bleiben nach dem Neuladen`);
-  else fail(`Speichern v27: ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.b.known.length === 9 && geladen.b.tabs.includes('fallen') && geladen.fallen > 0) note(`✓ Speichern v28: ${geladen.b.known.length} Baupläne und ${geladen.fallen} Fallen bleiben nach dem Neuladen`);
+  else fail(`Speichern v28: ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
@@ -1833,8 +1834,8 @@ async function runToyChecks(browser, url) {
   checkMessages(markt);
   await markt.context.close();
 
-  // Migration v13 → v27: Wer schon Nächte gewonnen hat, darf gleich wählen
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v13 → v27', {
+  // Migration v13 → v28: Wer schon Nächte gewonnen hat, darf gleich wählen
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v13 → v28', {
     init: () => {
       if (sessionStorage.getItem('zomfy-v13')) return;
       localStorage.setItem(
@@ -1855,8 +1856,8 @@ async function runToyChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, b: window.zomfy.blueprints(), notes: window.zomfy.notes() }));
-  if (m.v === 27 && m.b.known.length === 0 && m.b.choice?.options.length === 3 && m.notes.eisblock === 4) note(`✓ Migration: Spielstand v13 wird zu v27 – nach drei gewonnenen Nächten wartet gleich ein Bauplan (${m.b.choice.options.join(', ')}), das Notizbuch bleibt`);
-  else fail(`Migration v13 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.b.known.length === 0 && m.b.choice?.options.length === 3 && m.notes.eisblock === 4) note(`✓ Migration: Spielstand v13 wird zu v28 – nach drei gewonnenen Nächten wartet gleich ein Bauplan (${m.b.choice.options.join(', ')}), das Notizbuch bleibt`);
+  else fail(`Migration v13 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -1867,7 +1868,7 @@ async function runToyChecks(browser, url) {
  * machen daraus die Kürbisballiste auf beiden Feldern (Moderkern weg, Rezept
  * im Werkstattbuch, Banner); ihr Bolzen durchschlägt eine Reihe; übereinander
  * entsteht die Nebelleuchte (nass, geblendet); das Werkstattbuch mit Esc, S, E;
- * Speichern v27 und Migration v14 → v27 (Bilder: mischturm, werkstattbuch).
+ * Speichern v28 und Migration v14 → v28 (Bilder: mischturm, werkstattbuch).
  */
 async function runMixChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Mischtürme (M20)', {
@@ -2038,7 +2039,7 @@ async function runMixChecks(browser, url) {
   if (buch.screen === 'recipes' && buch.count === '2 von 8 Rezepten' && buch.lines[0] === 'Kürbisballiste · gebaut an Tag 4' && buch.lines[1] === '???' && buch.detail.some((l) => l.includes('Bolzenwerfer + Kürbiskatapult')) && buch.h <= 270) note(`✓ Werkstattbuch (M20): Esc, S, E – „${buch.count}“, je Rezept Name und Tag, unentdeckte als „???“ (${buch.h} Zeilen hoch)`);
   else fail(`Werkstattbuch: ${JSON.stringify({ ...buch, vorBuch })}`);
 
-  // Speichern v27: Mischtürme und Werkstattbuch bleiben
+  // Speichern v28: Mischtürme und Werkstattbuch bleiben
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -2047,13 +2048,13 @@ async function runMixChecks(browser, url) {
     const list = Z.buildings();
     return { v: Z.state().version, mix: list.filter((b) => b.type === 'kuerbisballiste' || b.type === 'nebelleuchte').map((b) => ({ type: b.type, turns: b.turns, level: b.level, from: (b.from || []).map((f) => f.t).join('+') })), rezepte: Z.recipes() };
   });
-  if (geladen.v === 27 && geladen.mix.length === 2 && geladen.mix.some((m) => m.type === 'nebelleuchte' && m.turns === 1) && geladen.mix.every((m) => m.from.includes('+')) && Object.keys(geladen.rezepte).length === 2) note('✓ Speichern v27: Mischtürme (samt Herkunft) und Werkstattbuch bleiben nach dem Neuladen');
-  else fail(`Speichern v27 (Mischtürme): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.mix.length === 2 && geladen.mix.some((m) => m.type === 'nebelleuchte' && m.turns === 1) && geladen.mix.every((m) => m.from.includes('+')) && Object.keys(geladen.rezepte).length === 2) note('✓ Speichern v28: Mischtürme (samt Herkunft) und Werkstattbuch bleiben nach dem Neuladen');
+  else fail(`Speichern v28 (Mischtürme): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v14 → v27: Das Werkstattbuch beginnt leer
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v14 → v27', {
+  // Migration v14 → v28: Das Werkstattbuch beginnt leer
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v14 → v28', {
     init: () => {
       const s = {
         version: 14,
@@ -2068,8 +2069,8 @@ async function runMixChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, rezepte: window.zomfy.recipes(), plans: window.zomfy.state().blueprints, notes: window.zomfy.notes() }));
-  if (m.v === 27 && Object.keys(m.rezepte).length === 0 && m.plans.includes('glockenturm') && m.notes.eisblock === 3) note('✓ Migration: Spielstand v14 wird zu v27 – das Werkstattbuch beginnt leer, Baupläne und Notizbuch bleiben');
-  else fail(`Migration v14 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && Object.keys(m.rezepte).length === 0 && m.plans.includes('glockenturm') && m.notes.eisblock === 3) note('✓ Migration: Spielstand v14 wird zu v28 – das Werkstattbuch beginnt leer, Baupläne und Notizbuch bleiben');
+  else fail(`Migration v14 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -2082,7 +2083,7 @@ async function runMixChecks(browser, url) {
  * dem Kopf, fällt und lässt eine Fundkiste liegen; mit echter Taste läuft Mika
  * hin, die Kiste platzt auf (Turmteil und Beute). Drei gleiche Teile ergeben an
  * der Werkbank eines der nächsten Seltenheit, Balduin verkauft eine Wundertüte.
- * Speichern v27 (auch ein lebender Champion) und Migration v15 → v27
+ * Speichern v28 (auch ein lebender Champion) und Migration v15 → v28
  * (Bilder: champion, fundkiste).
  */
 async function runShineChecks(browser, url) {
@@ -2255,7 +2256,7 @@ async function runShineChecks(browser, url) {
   if (tuete.offers.includes('wundertuete') && tuete.ok && !tuete.nochmal && tuete.plus === 1) note('✓ Wundertüte (M21): Balduin verkauft eine am Tag – darin ein zufälliges Turmteil');
   else fail(`Wundertüte: ${JSON.stringify(tuete)}`);
 
-  // 7) Speichern v27: Teile am Turm und ein lebender Champion bleiben
+  // 7) Speichern v28: Teile am Turm und ein lebender Champion bleiben
   await z(() => {
     const Z = window.zomfy;
     const col = Z.pathColumn(-40);
@@ -2269,13 +2270,13 @@ async function runShineChecks(browser, url) {
     const Z = window.zomfy;
     return { v: Z.state().version, parts: Z.buildings().find((b) => b.id === id)?.parts, champs: Z.champions().map((c) => ({ name: c.name, traits: c.traits, armor: c.armor })) };
   }, turm?.id);
-  if (geladen.v === 27 && geladen.parts?.join() === 'kupferspule,brennglas' && geladen.champs.length === 1 && geladen.champs[0].name === 'Rostige Rita' && geladen.champs[0].traits.join() === 'flink,gepanzert' && geladen.champs[0].armor >= 6) note('✓ Speichern v27: zwei Turmteile am Turm und ein lebender Champion (Name, Merkmale) bleiben nach dem Neuladen');
-  else fail(`Speichern v27 (Glanz): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.parts?.join() === 'kupferspule,brennglas' && geladen.champs.length === 1 && geladen.champs[0].name === 'Rostige Rita' && geladen.champs[0].traits.join() === 'flink,gepanzert' && geladen.champs[0].armor >= 6) note('✓ Speichern v28: zwei Turmteile am Turm und ein lebender Champion (Name, Merkmale) bleiben nach dem Neuladen');
+  else fail(`Speichern v28 (Glanz): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v15 → v27: aus dem einen Turmteil wird die Liste
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v15 → v27', {
+  // Migration v15 → v28: aus dem einen Turmteil wird die Liste
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v15 → v28', {
     init: () => {
       const s = {
         version: 15,
@@ -2290,8 +2291,8 @@ async function runShineChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, turm: window.zomfy.buildings().find((b) => b.type === 'bolzen'), muenze: window.zomfy.state().towerParts.gluecksmuenze }));
-  if (m.v === 27 && m.turm?.parts?.join() === 'fernrohr' && m.turm.part === undefined && m.muenze === 1) note('✓ Migration: Spielstand v15 wird zu v27 – das Fernrohr steckt jetzt im ersten Fach, die Glücksmünze liegt im Vorrat');
-  else fail(`Migration v15 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.turm?.parts?.join() === 'fernrohr' && m.turm.part === undefined && m.muenze === 1) note('✓ Migration: Spielstand v15 wird zu v28 – das Fernrohr steckt jetzt im ersten Fach, die Glücksmünze liegt im Vorrat');
+  else fail(`Migration v15 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -3174,7 +3175,7 @@ async function runSaveChecks(browser, url) {
     else fail(`Bett: vor der Nacht Modus „${vorNacht.mode}“, nach der Nacht „${asleep}“`);
     await first.page.waitForFunction(() => window.zomfy.mode !== 'sleep', null, { timeout: 240000 });
     const saved = await first.page.evaluate(() => JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || 'null'));
-    if (saved && saved.time.day === 2 && saved.version === 27 && Number.isFinite(saved.world.mapSeed)) note(`✓ Schlafen: Tag 2 begonnen und gespeichert (v27, Karte ${saved.world.mapSeed})`);
+    if (saved && saved.time.day === 2 && saved.version === 28 && Number.isFinite(saved.world.mapSeed)) note(`✓ Schlafen: Tag 2 begonnen und gespeichert (v28, Karte ${saved.world.mapSeed})`);
     else fail(`Schlafen: kein gültiger Spielstand nach dem Schlafen (${JSON.stringify(saved)})`);
     const bericht = await first.page.evaluate(() => window.zomfy.mode);
     if (bericht === 'report') note('✓ Morgenbericht: nach dem Aufwachen zeigt er die Nacht');
@@ -3188,7 +3189,7 @@ async function runSaveChecks(browser, url) {
     const drinnenGeladen = await first.page.evaluate(() => window.zomfy.interior().inside);
     if (reloaded.time.day === 2 && Math.abs(reloaded.time.minute - 30) < 5 && drinnenGeladen) note('✓ Laden: Spielstand nach Neuladen wiederhergestellt (Tag 2, 06:30, Mika drinnen am Bett)');
     else fail(`Laden: falscher Zustand nach Neuladen (Tag ${reloaded.time.day}, Minute ${reloaded.time.minute}, drinnen ${drinnenGeladen})`);
-    // Migration v9 → v27: Wer im alten Haus stand, steht jetzt im Innenraum hinter der Tür
+    // Migration v9 → v28: Wer im alten Haus stand, steht jetzt im Innenraum hinter der Tür
     await first.page.evaluate(() => {
       window.zomfy.game.quietSave = () => {}; // beim Neuladen nicht über den alten Stand speichern
       const st = window.zomfy.state();
@@ -3198,8 +3199,8 @@ async function runSaveChecks(browser, url) {
     await first.page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
     await settle(first.page, 10);
     const v9 = await first.page.evaluate(() => ({ v: window.zomfy.state().version, p: window.zomfy.state().player, i: window.zomfy.interior() }));
-    if (v9.v === 27 && v9.i.inside && Math.hypot(v9.p.x - v9.i.entry.x, v9.p.z - v9.i.entry.z) < 0.5) note('✓ Migration: Spielstand v9 wird zu v27 – wer im alten Haus stand, steht jetzt drinnen hinter der Tür');
-    else fail(`Migration v9 → v27: ${JSON.stringify(v9)}`);
+    if (v9.v === 28 && v9.i.inside && Math.hypot(v9.p.x - v9.i.entry.x, v9.p.z - v9.i.entry.z) < 0.5) note('✓ Migration: Spielstand v9 wird zu v28 – wer im alten Haus stand, steht jetzt drinnen hinter der Tür');
+    else fail(`Migration v9 → v28: ${JSON.stringify(v9)}`);
     checkMessages(first);
     await first.context.close();
 
@@ -3581,8 +3582,8 @@ async function runBuildChecks(browser, url) {
     },
   });
   const migriert = await old.page.evaluate(() => window.zomfy.state());
-  if (migriert.version === 27 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
-    note('✓ Migration: Spielstand v1 wird zu v27 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
+  if (migriert.version === 28 && migriert.time.day === 3 && migriert.inventory.zahnraeder === 2 && !migriert.hotbar.slots.includes('laterne') && migriert.world.houseLevel === 1 && migriert.world.homeHp === 300) {
+    note('✓ Migration: Spielstand v1 wird zu v28 (Technik -> Zahnräder, Laterne auf F, Zuhause 300)');
   } else fail(`Migration: ${JSON.stringify(migriert)}`);
   checkMessages(old);
   await old.context.close();
@@ -3610,8 +3611,8 @@ async function runBuildChecks(browser, url) {
   });
   const v3 = await v2.page.evaluate(() => window.zomfy.state());
   const nurLager = v3.world.buildings.length === 7 && v3.world.buildings.every((b) => ['tor', 'wall3', 'wall4'].includes(b.type));
-  if (v3.version === 27 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && nurLager && v3.inventory.holz === 15 && v3.inventory.schrott === 9) {
-    note('✓ Migration: Spielstand v2 wird zu v27 (Leben, Zuhause, Stufe 1; die alte Barrikade gibt es als Holz zurück, Tor und Wall stehen)');
+  if (v3.version === 28 && v3.time.day === 4 && v3.player.hp === 100 && v3.player.level === 1 && v3.world.homeHp === 300 && nurLager && v3.inventory.holz === 15 && v3.inventory.schrott === 9) {
+    note('✓ Migration: Spielstand v2 wird zu v28 (Leben, Zuhause, Stufe 1; die alte Barrikade gibt es als Holz zurück, Tor und Wall stehen)');
   } else fail(`Migration v2: ${JSON.stringify(v3)}`);
   checkMessages(v2);
   await v2.context.close();
@@ -3622,7 +3623,7 @@ async function runBuildChecks(browser, url) {
  * Wege vor dem Hof zusammenlaufen; die Horde bleibt auf den Wegen; Barrikaden
  * quer über den Weg halten sie auf und zerbrechen zu Trümmern, die sich
  * tagsüber wieder aufbauen und ausbauen lassen; Überreste halten drei Tage;
- * tagsüber nur einzelne Schlurfer; die Übersichtskarte (M); Speichern v27 mit
+ * tagsüber nur einzelne Schlurfer; die Übersichtskarte (M); Speichern v28 mit
  * dem Startwert der Karte und Migration v7 → v8. Feste Simulationsschritte.
  */
 async function runPathChecks(browser, url) {
@@ -3804,7 +3805,7 @@ async function runPathChecks(browser, url) {
   checkMessages(session);
   await session.context.close();
 
-  // Speichern v27: Der Startwert der Karte liegt im Spielstand und gilt nach dem Laden
+  // Speichern v28: Der Startwert der Karte liegt im Spielstand und gilt nach dem Laden
   const eins = await openGame(browser, `${url}index.html?test&map=123`, 'Karte speichern', {
     init: () => {
       if (!sessionStorage.getItem('zomfy-m9')) {
@@ -3826,8 +3827,8 @@ async function runPathChecks(browser, url) {
   await zwei.goto(`${url}index.html?test`, { timeout: 180000 });
   await zwei.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const nachLaden = await zwei.evaluate(() => ({ info: window.zomfy.mapInfo(), v: window.zomfy.state().version, seed: window.zomfy.state().world.mapSeed }));
-  if (vorLaden.seed === 123 && nachLaden.seed === 123 && nachLaden.info.seed === 123 && nachLaden.v === 27 && JSON.stringify(nachLaden.info.merge) === JSON.stringify(vorLaden.merge)) note('✓ Speichern v27: Startwert der Karte im Spielstand – nach dem Laden dasselbe Wegenetz');
-  else fail(`Speichern v27: ${JSON.stringify({ vorLaden, nachLaden })}`);
+  if (vorLaden.seed === 123 && nachLaden.seed === 123 && nachLaden.info.seed === 123 && nachLaden.v === 28 && JSON.stringify(nachLaden.info.merge) === JSON.stringify(vorLaden.merge)) note('✓ Speichern v28: Startwert der Karte im Spielstand – nach dem Laden dasselbe Wegenetz');
+  else fail(`Speichern v28: ${JSON.stringify({ vorLaden, nachLaden })}`);
   if (meldungen.length) fail(`Karte laden: Konsolenmeldungen ${meldungen.join(' | ')}`);
   await eins.context.close();
 
@@ -3867,8 +3868,8 @@ async function runPathChecks(browser, url) {
   // M17: Tor und Wall kommen in jedem Stand dazu – hier zählen die eigenen Bauten
   const typen = m.st.world.buildings.filter((b) => !['tor', 'wall3', 'wall4'].includes(b.type)).map((b) => b.type).sort().join(',');
   const zelt = m.st.world.buildings.find((b) => b.type === 'zelt');
-  if (m.st.version === 27 && Number.isFinite(m.st.world.mapSeed) && typen === 'werkbank,zelt' && zelt?.id === 4 && m.st.survivors.hilde.tent === 4 && m.st.inventory.holz >= 8 && m.st.inventory.schrott > 12 && m.st.inventory.teile === 7 && m.st.flags.wrackLeer && Math.hypot(m.st.player.x - 5.5, m.st.player.z + 3) < 1 && m.meldungen.some((t) => t.startsWith('Neue Karte'))) {
-    note(`✓ Migration: v7 wird zu v27 – neue Karte (${m.st.world.mapSeed}), Turm und Barrikade erstattet (Holz ${m.st.inventory.holz}, Schrott ${m.st.inventory.schrott}), Werkbank und Hildes Zelt in der Bucht neu aufgestellt`);
+  if (m.st.version === 28 && Number.isFinite(m.st.world.mapSeed) && typen === 'werkbank,zelt' && zelt?.id === 4 && m.st.survivors.hilde.tent === 4 && m.st.inventory.holz >= 8 && m.st.inventory.schrott > 12 && m.st.inventory.teile === 7 && m.st.flags.wrackLeer && Math.hypot(m.st.player.x - 5.5, m.st.player.z + 3) < 1 && m.meldungen.some((t) => t.startsWith('Neue Karte'))) {
+    note(`✓ Migration: v7 wird zu v28 – neue Karte (${m.st.world.mapSeed}), Turm und Barrikade erstattet (Holz ${m.st.inventory.holz}, Schrott ${m.st.inventory.schrott}), Werkbank und Hildes Zelt in der Bucht neu aufgestellt`);
   } else fail(`Migration v7: ${JSON.stringify({ v: m.st.version, seed: m.st.world.mapSeed, typen, zelt, hilde: m.st.survivors.hilde, inv: m.st.inventory, flags: m.st.flags, p: m.st.player, meldungen: m.meldungen })}`);
   checkMessages(alt);
   await alt.context.close();
@@ -4425,8 +4426,8 @@ async function runSurvivorChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await z(() => window.zomfy.state());
-  if (geladen.version === 27 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v27: Überlebende, Möbel und Leuchtmast bleiben nach dem Neuladen');
-  else fail(`Speichern v27: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
+  if (geladen.version === 28 && geladen.survivors.hilde.stage === 3 && geladen.world.furniture.length === 6 && geladen.world.tower === 3) note('✓ Speichern v28: Überlebende, Möbel und Leuchtmast bleiben nach dem Neuladen');
+  else fail(`Speichern v28: ${JSON.stringify({ v: geladen.version, s: geladen.survivors, f: geladen.world.furniture, t: geladen.world.tower })}`);
   checkMessages(session);
   await session.context.close();
 
@@ -4444,8 +4445,8 @@ async function runSurvivorChecks(browser, url) {
     },
   });
   const m = await v4.page.evaluate(() => ({ state: window.zomfy.state(), tabs: window.zomfyView().bauleiste }));
-  if (m.state.version === 27 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
-    note('✓ Migration: Spielstand v4 wird zu v27 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
+  if (m.state.version === 28 && m.state.world.survivorsStart === 6 && Object.values(m.state.survivors).every((s) => s.stage === 0) && m.state.weapons.pfanne === 1 && m.state.player.name === 'Mika' && m.state.player.look.hat === 'orange') {
+    note('✓ Migration: Spielstand v4 wird zu v28 (Überlebende kommen ab dem nächsten Tag, Waffen bleiben)');
   } else fail(`Migration v4: ${JSON.stringify(m.state)}`);
   checkMessages(v4);
   await v4.context.close();
@@ -4455,7 +4456,7 @@ async function runSurvivorChecks(browser, url) {
  * Meilenstein 8 (seit M9 an der Bucht): Das Bootswrack gibt nur einmal etwas
  * her, Schrotthaufen alle zwei Tage. Balduin kommt ab Tag 2 morgens mit dem Boot
  * an den Steg, handelt bis Mittag Zombieteile gegen Rohstoffe (echte Tasten im
- * Handelsfenster), Vorrat je Tag, Speichern v27 und Migration v6 → v8.
+ * Handelsfenster), Vorrat je Tag, Speichern v28 und Migration v6 → v8.
  */
 async function runTraderChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Händler', {
@@ -4638,7 +4639,7 @@ async function runTraderChecks(browser, url) {
   if (geht.phase === 'geht' && weg.phase === 'weg' && !weg.visible) note('✓ Balduin: um 12 Uhr legt er ab, nachmittags ist er fort');
   else fail(`Balduin geht: ${JSON.stringify({ geht: geht.phase, weg })}`);
 
-  // Speichern v27: Vorrat des Tages und Flags bleiben
+  // Speichern v28: Vorrat des Tages und Flags bleiben
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -4646,8 +4647,8 @@ async function runTraderChecks(browser, url) {
     window.__zomfyHold = true;
   });
   const geladen = await state();
-  if (geladen.version === 27 && geladen.world.trader.day === 3 && geladen.world.trader.sold.zahnrad === 2 && geladen.flags.wrackLeer && geladen.flags.balduinGetroffen) note('✓ Speichern v27: Balduins Vorrat, Bootswrack und Bekanntschaft bleiben nach dem Neuladen');
-  else fail(`Speichern v27: ${JSON.stringify({ v: geladen.version, trader: geladen.world.trader, flags: geladen.flags })}`);
+  if (geladen.version === 28 && geladen.world.trader.day === 3 && geladen.world.trader.sold.zahnrad === 2 && geladen.flags.wrackLeer && geladen.flags.balduinGetroffen) note('✓ Speichern v28: Balduins Vorrat, Bootswrack und Bekanntschaft bleiben nach dem Neuladen');
+  else fail(`Speichern v28: ${JSON.stringify({ v: geladen.version, trader: geladen.world.trader, flags: geladen.flags })}`);
 
   // Meilenstein 10: besondere Turmteile. An Tag 4 bietet Balduin eine Glücksmünze an;
   // eingebaut über die Turm-Auswahl (Taste der Kachel). Abschüsse dieses Turms lassen
@@ -4717,8 +4718,8 @@ async function runTraderChecks(browser, url) {
   });
   await step(100);
   const laterneKacheln = await z(() => window.zomfy.buildbarLayout().tiles.map((t) => t.id));
-  if (kauf.angebote.includes('gluecksmuenze') && kauf.gekauft && kauf.vorrat === 1 && turmTeil.res === 'ok' && eingebaut.teil === 'gluecksmuenze' && eingebaut.vorrat === 0 && muenze.lebend === 0 && muenze.teile >= 3 && nachLaden.v === 27 && nachLaden.teil === 'gluecksmuenze' && laterne.res === 'ok' && laterneKacheln.includes('teil-fernrohr') && !laterneKacheln.includes('teil-gluecksmuenze')) {
-    note(`✓ Turmteile: Balduin bietet an Tag 4 eine Glücksmünze an, eine Taste baut sie in den Bolzenwerfer ein – ${muenze.teile} Zombieteile von drei Schlurfern, nach dem Neuladen steckt sie noch (v27); der Laternenturm nimmt ein Fernrohr, aber keine Münze`);
+  if (kauf.angebote.includes('gluecksmuenze') && kauf.gekauft && kauf.vorrat === 1 && turmTeil.res === 'ok' && eingebaut.teil === 'gluecksmuenze' && eingebaut.vorrat === 0 && muenze.lebend === 0 && muenze.teile >= 3 && nachLaden.v === 28 && nachLaden.teil === 'gluecksmuenze' && laterne.res === 'ok' && laterneKacheln.includes('teil-fernrohr') && !laterneKacheln.includes('teil-gluecksmuenze')) {
+    note(`✓ Turmteile: Balduin bietet an Tag 4 eine Glücksmünze an, eine Taste baut sie in den Bolzenwerfer ein – ${muenze.teile} Zombieteile von drei Schlurfern, nach dem Neuladen steckt sie noch (v28); der Laternenturm nimmt ein Fernrohr, aber keine Münze`);
   } else fail(`Turmteile: ${JSON.stringify({ kauf, turmTeil: { res: turmTeil.res, id: turmTeil.id }, kachel, eingebaut, muenze, nachLaden, laterne, laterneKacheln })}`);
   checkMessages(session);
   await session.context.close();
@@ -4736,7 +4737,7 @@ async function runTraderChecks(browser, url) {
     },
   });
   const m = await v6.page.evaluate(() => window.zomfy.state());
-  if (m.version === 27 && m.flags.wrackLeer && m.inventory.teile === 0 && m.inventory.schrott === 12 && m.world.trader.day === 0 && m.player.name === 'Kira') note('✓ Migration: Spielstand v6 wird zu v27 (Wrack schon ausgeräumt, Zombieteile bei null)');
+  if (m.version === 28 && m.flags.wrackLeer && m.inventory.teile === 0 && m.inventory.schrott === 12 && m.world.trader.day === 0 && m.player.name === 'Kira') note('✓ Migration: Spielstand v6 wird zu v28 (Wrack schon ausgeräumt, Zombieteile bei null)');
   else fail(`Migration v6: ${JSON.stringify({ v: m.version, flags: m.flags, inv: m.inventory, trader: m.world.trader })}`);
   checkMessages(v6);
   await v6.context.close();
@@ -4896,8 +4897,8 @@ async function runCombatChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
   const geladen = await state();
-  if (geladen.version === 27 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
-    note(`✓ Speichern v27: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
+  if (geladen.version === 28 && geladen.weapons.pfanne === 2 && geladen.player.level === gespeichert.player.level && Object.keys(geladen.perks).length >= 1) {
+    note(`✓ Speichern v28: Waffen, Stufe ${geladen.player.level} und Perks bleiben nach dem Neuladen`);
   } else fail(`Speichern v4: vorher ${JSON.stringify({ w: gespeichert.weapons, l: gespeichert.player.level, p: gespeichert.perks })}, nachher ${JSON.stringify({ v: geladen.version, w: geladen.weapons, l: geladen.player.level, p: geladen.perks })}`);
   checkMessages(session);
   await session.context.close();
@@ -5476,7 +5477,7 @@ async function runFixChecks(browser, url) {
  * Morgen am Feuer, die Türme treffen nachts härter, der Bericht erzählt von den
  * Posten. Morgens bittet Hilde um ihr Garn: E am Wrack erledigt den Auftrag
  * (Bauplan zur Wahl); Junas Antennenteile liegen neben den Wegen; Balduins
- * Bitte steht im Handelsfenster. Speichern v27 und Migration v16 → v27
+ * Bitte steht im Handelsfenster. Speichern v28 und Migration v16 → v28
  * (Bilder: posten, fest, auftrag).
  */
 async function runTogetherChecks(browser, url) {
@@ -5709,7 +5710,7 @@ async function runTogetherChecks(browser, url) {
   if (antenne.bitte?.startsWith('Juna bittet') && antenne.items.length === 3 && antenne.items.every((it) => it.walk && it.x <= -14 && it.weg >= 1) && antenne.goal?.progress === '(1/3)') note(`✓ Antennenteile (M23): drei liegen neben den Wegen (x ${antenne.items.map((it) => Math.round(it.x)).join(', ')}), eins aufgesammelt – Ziel (1/3)`);
   else fail(`Antennenteile: ${JSON.stringify(antenne)}`);
 
-  // 12) Speichern v27: Posten, laufender Auftrag und Fest bleiben nach dem Neuladen
+  // 12) Speichern v28: Posten, laufender Auftrag und Fest bleiben nach dem Neuladen
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -5718,13 +5719,13 @@ async function runTogetherChecks(browser, url) {
     const Z = window.zomfy;
     return { v: Z.state().version, post: Z.buildings().find((b) => b.id === id)?.post ?? null, q: Z.quests(), feast: Z.state().feast };
   }, sJ?.id);
-  if (geladen.v === 27 && geladen.post === 'juna' && geladen.q.active?.id === 'antenne' && geladen.q.active.got.length === 1 && geladen.q.items.length === 2 && geladen.q.done.join() === 'garn,balduin' && geladen.feast === 6) note('✓ Speichern v27: Junas Hochsitz, der laufende Auftrag (ein Antennenteil gefunden) und das Fest bleiben nach dem Neuladen');
-  else fail(`Speichern v27 (Gemeinsam): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.post === 'juna' && geladen.q.active?.id === 'antenne' && geladen.q.active.got.length === 1 && geladen.q.items.length === 2 && geladen.q.done.join() === 'garn,balduin' && geladen.feast === 6) note('✓ Speichern v28: Junas Hochsitz, der laufende Auftrag (ein Antennenteil gefunden) und das Fest bleiben nach dem Neuladen');
+  else fail(`Speichern v28 (Gemeinsam): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v16 → v27: noch kein Auftrag, kein Fest
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v16 → v27', {
+  // Migration v16 → v28: noch kein Auftrag, kein Fest
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v16 → v28', {
     init: () => {
       const s = {
         version: 16,
@@ -5738,8 +5739,8 @@ async function runTogetherChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, q: window.zomfy.state().quests, feast: window.zomfy.state().feast, turm: window.zomfy.buildings().find((b) => b.type === 'bolzen') }));
-  if (m.v === 27 && m.q && m.q.active === null && m.q.done.length === 0 && m.feast === 0 && m.turm?.parts?.join() === 'fernrohr') note('✓ Migration: Spielstand v16 wird zu v27 – noch kein Nebenauftrag, kein Fest, der Turm behält sein Fernrohr');
-  else fail(`Migration v16 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.q && m.q.active === null && m.q.done.length === 0 && m.feast === 0 && m.turm?.parts?.join() === 'fernrohr') note('✓ Migration: Spielstand v16 wird zu v28 – noch kein Nebenauftrag, kein Fest, der Turm behält sein Fernrohr');
+  else fail(`Migration v16 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -5751,8 +5752,8 @@ async function runTogetherChecks(browser, url) {
  * die mehr Beute trägt; hält die Nacht, wird die Locke zur Fundkiste. Eine
  * makellose Nacht bringt einen Bonus, nach drei in Folge hat Balduin einen
  * Schatz dabei; ein Treffer am Zuhause bricht die Serie. Gespartes Schrott
- * wächst über Nacht – nach einem Durchbruch nicht. Speichern v27 und Migration
- * v17 → v27 (Bilder: moderlocke, bericht-wagnis).
+ * wächst über Nacht – nach einem Durchbruch nicht. Speichern v28 und Migration
+ * v17 → v28 (Bilder: moderlocke, bericht-wagnis).
  */
 async function runRiskChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Wagnis und Vorrat (M24)', {
@@ -5952,7 +5953,7 @@ async function runRiskChecks(browser, url) {
     note(`✓ Tote Optionen (M24): Die Pfanne durchschlägt den Panzer des Brummers (${optionen.pfanne} statt ${optionen.schaufel} mit der Schaufel), nach der Bank schlägt Mika fester (${optionen.schaufelBank}); das Holzlager baut morgens eine Barrikade wieder auf – »${optionen.zeile}«`);
   } else fail(`Tote Optionen: ${JSON.stringify(optionen)}`);
 
-  // 6) Speichern v27: Serie und Schatz bleiben
+  // 6) Speichern v28: Serie und Schatz bleiben
   await z(() => {
     const Z = window.zomfy;
     Z.game.state.risk = { streak: 2, treasure: true };
@@ -5965,13 +5966,13 @@ async function runRiskChecks(browser, url) {
     const s = window.zomfy.state();
     return { v: s.version, risk: s.risk };
   });
-  if (geladen.v === 27 && geladen.risk?.streak === 2 && geladen.risk.treasure === true) note('✓ Speichern v27: die Serie makelloser Nächte und Balduins Schatz bleiben nach dem Neuladen');
-  else fail(`Speichern v27 (Wagnis): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.risk?.streak === 2 && geladen.risk.treasure === true) note('✓ Speichern v28: die Serie makelloser Nächte und Balduins Schatz bleiben nach dem Neuladen');
+  else fail(`Speichern v28 (Wagnis): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v17 → v27: keine Serie, kein Schatz
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v17 → v27', {
+  // Migration v17 → v28: keine Serie, kein Schatz
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v17 → v28', {
     init: () => {
       const s = {
         version: 17,
@@ -5986,8 +5987,8 @@ async function runRiskChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, risk: window.zomfy.state().risk, quests: window.zomfy.state().quests }));
-  if (m.v === 27 && m.risk?.streak === 0 && m.risk.treasure === false && m.quests.done.join() === 'garn') note('✓ Migration: Spielstand v17 wird zu v27 – noch keine Serie, kein Schatz, erledigte Aufträge bleiben');
-  else fail(`Migration v17 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.risk?.streak === 0 && m.risk.treasure === false && m.quests.done.join() === 'garn') note('✓ Migration: Spielstand v17 wird zu v28 – noch keine Serie, kein Schatz, erledigte Aufträge bleiben');
+  else fail(`Migration v17 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -6000,7 +6001,7 @@ async function runRiskChecks(browser, url) {
  * Herz, zerfällt die Horde, die Nacht ist gehalten, der erste Frost ist da:
  * Schnee am Morgen, der Moder glimmt nicht mehr. Nach dem Morgenbericht (echte
  * Taste) läuft der Abspann, danach die Wahl (echte Tasten): weiterspielen –
- * Nacht 31 würfelt sich neu. Speichern v27, neue Runde, Migration v18 → v27
+ * Nacht 31 würfelt sich neu. Speichern v28, neue Runde, Migration v18 → v28
  * (Bilder: finale, abspann, schnee).
  */
 async function runFinaleChecks(browser, url) {
@@ -6163,7 +6164,7 @@ async function runFinaleChecks(browser, url) {
   if (weiter.rogue && !weiter.finale && !weiter.herz && weiter.arten >= 5 && weiter.label === 'Tag 31') note(`✓ Weiterspielen (M25): Nacht 31 würfelt sich neu – ${weiter.arten} Arten, Wege je Welle ${weiter.wege.join('/')}; die Uhr zeigt nur noch »${weiter.label}«`);
   else fail(`Weiterspielen: ${JSON.stringify(weiter)}`);
 
-  // 5) Speichern v27: Frost, Wahl und Abspann bleiben; eine neue Runde beginnt wieder bei Tag 1
+  // 5) Speichern v28: Frost, Wahl und Abspann bleiben; eine neue Runde beginnt wieder bei Tag 1
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -6178,13 +6179,13 @@ async function runFinaleChecks(browser, url) {
     g.autumn.choose('neu');
     return { day: g.state.time.day, frost: g.state.autumn.frost, name: g.state.player.name === name };
   });
-  if (geladen.v === 27 && geladen.autumn?.frost === 30 && geladen.autumn.mode === 'weiter' && geladen.autumn.credits && runde.day === 1 && runde.frost === null && runde.name) note('✓ Speichern v27: der erste Frost, »weiterspielen« und der gesehene Abspann bleiben; eine neue Runde beginnt wieder bei Tag 1 (der Name bleibt)');
-  else fail(`Speichern v27 und neue Runde: ${JSON.stringify({ geladen, runde })}`);
+  if (geladen.v === 28 && geladen.autumn?.frost === 30 && geladen.autumn.mode === 'weiter' && geladen.autumn.credits && runde.day === 1 && runde.frost === null && runde.name) note('✓ Speichern v28: der erste Frost, »weiterspielen« und der gesehene Abspann bleiben; eine neue Runde beginnt wieder bei Tag 1 (der Name bleibt)');
+  else fail(`Speichern v28 und neue Runde: ${JSON.stringify({ geladen, runde })}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v18 → v27: noch kein Frost – auch nach Tag 30 kommt die Frostnacht noch
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v18 → v27', {
+  // Migration v18 → v28: noch kein Frost – auch nach Tag 30 kommt die Frostnacht noch
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v18 → v28', {
     init: () => {
       const s = {
         version: 18,
@@ -6198,8 +6199,8 @@ async function runFinaleChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, autumn: window.zomfy.state().autumn, risk: window.zomfy.state().risk, finale: window.zomfy.game.nights.planFor(33).finale }));
-  if (m.v === 27 && m.autumn?.frost === null && m.autumn.mode === 'herbst' && m.risk.streak === 1 && m.finale) note('✓ Migration: Spielstand v18 wird zu v27 – noch kein Frost; wer schon über Tag 30 ist, bekommt die Frostnacht in der nächsten Nacht');
-  else fail(`Migration v18 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.autumn?.frost === null && m.autumn.mode === 'herbst' && m.risk.streak === 1 && m.finale) note('✓ Migration: Spielstand v18 wird zu v28 – noch kein Frost; wer schon über Tag 30 ist, bekommt die Frostnacht in der nächsten Nacht');
+  else fail(`Migration v18 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -6210,8 +6211,8 @@ async function runFinaleChecks(browser, url) {
  * Taten mit Meldung, nach drei Taten der erste Herbstschmuck im Reiter
  * »Schmuck« (Tab, Q, Mausklick), das Herbstbuch im Pausenmenü mit echten
  * Tasten (Esc, S, E, D/A blättern): Taten, Schlurferkunde mit Dr. Yusufs
- * Notiz, Turmalbum mit dem Turm der Nacht; Speichern v27 und Migration
- * v19 → v27 (Bilder: sterne, herbstbuch, schlurferkunde, schmuck).
+ * Notiz, Turmalbum mit dem Turm der Nacht; Speichern v28 und Migration
+ * v19 → v28 (Bilder: sterne, herbstbuch, schlurferkunde, schmuck).
  */
 async function runBookChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Herbstbuch (M25, Teil 2)', {
@@ -6406,7 +6407,7 @@ async function runBookChecks(browser, url) {
   if (ok) note(`✓ Herbstbuch (M25): Esc, S, E öffnen es – „${taten.count}“; D blättert zur Schlurferkunde („${kunde.count}“, Dr. Yusufs Notiz) und zum Turmalbum (${album.rows[0].split('|')[0]}, einmal Turm der Nacht), A zurück (${taten.h} Zeilen hoch)`);
   else fail(`Herbstbuch: ${JSON.stringify({ taten, kunde, album, zurueck, zu })}`);
 
-  // 5) Speichern v27: Sterne, Taten, Arten, gerufene Wellen, der Turm der Nacht und der Schmuck bleiben
+  // 5) Speichern v28: Sterne, Taten, Arten, gerufene Wellen, der Turm der Nacht und der Schmuck bleiben
   await z(() => window.zomfy.save());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
@@ -6416,13 +6417,13 @@ async function runBookChecks(browser, url) {
     const turm = s.world.buildings.find((b) => b.type === 'bolzen');
     return { v: s.version, book: s.book, best: turm?.best || 0, schmuck: s.world.buildings.filter((b) => ['kuerbis', 'kuerbislaterne', 'regentonne', 'laubhaufen'].includes(b.type)).length, tabs: window.zomfy.game.builder.tabs() };
   });
-  if (geladen.v === 27 && geladen.book.stars[nacht.n] === 3 && Object.keys(geladen.book.deeds).length === 3 && geladen.book.kinds.schlurfer === 1 && geladen.book.called === 10 && geladen.best === 1 && geladen.schmuck >= 4 && geladen.tabs.includes('schmuck')) note(`✓ Speichern v27: Sterne, Taten, Schlurferkunde, gerufene Wellen, der Turm der Nacht und ${geladen.schmuck} Stück Herbstschmuck bleiben nach dem Neuladen`);
-  else fail(`Speichern v27 (Herbstbuch): ${JSON.stringify(geladen)}`);
+  if (geladen.v === 28 && geladen.book.stars[nacht.n] === 3 && Object.keys(geladen.book.deeds).length === 3 && geladen.book.kinds.schlurfer === 1 && geladen.book.called === 10 && geladen.best === 1 && geladen.schmuck >= 4 && geladen.tabs.includes('schmuck')) note(`✓ Speichern v28: Sterne, Taten, Schlurferkunde, gerufene Wellen, der Turm der Nacht und ${geladen.schmuck} Stück Herbstschmuck bleiben nach dem Neuladen`);
+  else fail(`Speichern v28 (Herbstbuch): ${JSON.stringify(geladen)}`);
   checkMessages(session);
   await session.context.close();
 
-  // Migration v19 → v27: Das Buch beginnt leer; was der Stand schon erfüllt, trägt es leise ein
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v19 → v27', {
+  // Migration v19 → v28: Das Buch beginnt leer; was der Stand schon erfüllt, trägt es leise ein
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Migration v19 → v28', {
     init: () => {
       const s = {
         version: 19,
@@ -6437,8 +6438,8 @@ async function runBookChecks(browser, url) {
     },
   });
   const m = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, book: window.zomfy.book(), meldungen: window.zomfy.game.hud.toasts.map((t) => t.text) }));
-  if (m.v === 27 && m.book.total === 0 && m.book.done === 1 && m.book.deeds.ersteNacht === 6 && Object.keys(m.book.kinds).length === 0 && !m.meldungen.some((t) => t.startsWith('Herbstbuch'))) note('✓ Migration: Spielstand v19 wird zu v27 – das Herbstbuch beginnt ohne Sterne und Arten; „Die erste Nacht“ steht still schon drin');
-  else fail(`Migration v19 → v27: ${JSON.stringify(m)}`);
+  if (m.v === 28 && m.book.total === 0 && m.book.done === 1 && m.book.deeds.ersteNacht === 6 && Object.keys(m.book.kinds).length === 0 && !m.meldungen.some((t) => t.startsWith('Herbstbuch'))) note('✓ Migration: Spielstand v19 wird zu v28 – das Herbstbuch beginnt ohne Sterne und Arten; „Die erste Nacht“ steht still schon drin');
+  else fail(`Migration v19 → v28: ${JSON.stringify(m)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -6739,7 +6740,7 @@ async function runFeelChecks(browser, url) {
  * Plätze belegt, bietet der Wanderer, der am längsten da ist, an zu gehen; die
  * Schlafhütte gibt zwei Plätze (erst ab Zuhause-Stufe 3); die Fähigkeiten wirken
  * (Hannes flickt, Greta stellt Fallen, Lotte vergrößert die Lichtinseln, Clara
- * flickt Türme billiger); Speichern v27 und Migration v20 → v27.
+ * flickt Türme billiger); Speichern v28 und Migration v20 → v28.
  * Bilder: gaeste, gast-dialog, schlafhuette.
  */
 async function runGuestChecks(browser, url) {
@@ -6908,7 +6909,7 @@ async function runGuestChecks(browser, url) {
       Z.setTime(22, 0);
       lines.push(...Z.nextMorning().map((l) => l.text));
     }
-    return lines.filter((t) => t.startsWith('Ein Brief'));
+    return lines.filter((t) => t.includes('Brief von')); // M32: der Brief liegt im Briefkasten
   });
   if (letter.length === 1) note(`✓ Gäste: Ein Brief kommt – »${letter[0]}«`);
   else fail(`Gäste: Brief ${JSON.stringify(letter)}`);
@@ -6956,19 +6957,19 @@ async function runGuestChecks(browser, url) {
   if (abil.scale > 1.2 && abil.hp[1] > abil.hp[0] && abil.lines.some((t) => t.startsWith('Hannes'))) note(`✓ Gäste: Fähigkeiten wirken – Lichtinseln ×${abil.scale}, Hannes flickt die Barrikade (${abil.hp[0]} → ${abil.hp[1]})`);
   else fail(`Gäste: Fähigkeiten ${JSON.stringify(abil)}`);
 
-  // 7) Speichern v27 und Laden
+  // 7) Speichern v28 und Laden
   const saved = await z(() => {
     window.zomfy.save();
     const raw = JSON.parse(localStorage.getItem('zomfy-towers.spielstand'));
     return { version: raw.version, plan: raw.guests?.plan?.length, hannes: raw.survivors?.hannes?.stage };
   });
-  if (saved.version === 27 && saved.plan >= 4) note('✓ Gäste: Speichern v27 mit Ankunftsplan und Wanderern');
+  if (saved.version === 28 && saved.plan >= 4) note('✓ Gäste: Speichern v28 mit Ankunftsplan und Wanderern');
   else fail(`Gäste: Speichern ${JSON.stringify(saved)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 8) Migration v20 → v27: alter Stand an Tag 14 – Ankünfte erst ab Tag 15, alle Wanderer noch unterwegs
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Gäste: Migration v20 → v27', {
+  // 8) Migration v20 → v28: alter Stand an Tag 14 – Ankünfte erst ab Tag 15, alle Wanderer noch unterwegs
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Gäste: Migration v20 → v28', {
     init: () => {
       const s = {
         version: 20,
@@ -6983,8 +6984,8 @@ async function runGuestChecks(browser, url) {
     },
   });
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, g: window.zomfy.guests() }));
-  const migOk = mig.v === 27 && mig.g.plan.length >= 3 && mig.g.plan.every((p) => p.day >= 15) && ['hannes', 'clara', 'lotte', 'greta'].every((id) => mig.g.people[id]?.stage === 0);
-  if (migOk) note(`✓ Gäste: Migration v20 → v27 – ein Stand an Tag 14 bekommt Ankünfte ab Tag 15 (${mig.g.plan.map((p) => p.day).join(', ')})`);
+  const migOk = mig.v === 28 && mig.g.plan.length >= 3 && mig.g.plan.every((p) => p.day >= 15) && ['hannes', 'clara', 'lotte', 'greta'].every((id) => mig.g.people[id]?.stage === 0);
+  if (migOk) note(`✓ Gäste: Migration v20 → v28 – ein Stand an Tag 14 bekommt Ankünfte ab Tag 15 (${mig.g.plan.map((p) => p.day).join(', ')})`);
   else fail(`Gäste: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
@@ -6996,7 +6997,7 @@ async function runGuestChecks(browser, url) {
  * mit echten Tasten, seine Erklärung, eine Karte offen (A/D, 2, E) und eine verdeckt
  * (3, Q), die KI zieht mit Bedenkzeit, der Abend endet mit dem Einsatz (Berts
  * Grinsekürbis auf dem Kaminsims) und einer Wettschuld am Morgen; Menschenkunde im
- * Herbstbuch; bei Regen am Kamin; Speichern v27 und Migration v21 → v27.
+ * Herbstbuch; bei Regen am Kamin; Speichern v28 und Migration v21 → v28.
  * Bilder: kartenabend, kartentisch, kartensieg, kartenabend-kamin, menschenkunde.
  */
 async function runCardChecks(browser, url) {
@@ -7189,19 +7190,19 @@ async function runCardChecks(browser, url) {
   if (kamin.ok && kamin.spot === 'kamin' && drinnen.inside && drinnen.mode === 'karten') note('✓ Karten: bei Regen steht der Tisch drinnen am Kamin');
   else fail(`Karten: Kamin ${JSON.stringify({ kamin, drinnen })}`);
 
-  // 9) Speichern v27
+  // 9) Speichern v28
   const saved = await z(() => {
     window.zomfy.save();
     const raw = JSON.parse(localStorage.getItem('zomfy-towers.spielstand'));
     return { v: raw.version, stakes: raw.cards?.stakes, evenings: raw.cards?.evenings };
   });
-  if (saved.v === 27 && saved.stakes?.includes('grinsekuerbis') && saved.evenings === 2) note('✓ Karten: Speichern v27 mit Einsätzen und Abenden');
+  if (saved.v === 28 && saved.stakes?.includes('grinsekuerbis') && saved.evenings === 2) note('✓ Karten: Speichern v28 mit Einsätzen und Abenden');
   else fail(`Karten: Speichern ${JSON.stringify(saved)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 10) Migration v21 → v27
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Karten: Migration v21 → v27', {
+  // 10) Migration v21 → v28
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Karten: Migration v21 → v28', {
     init: () => {
       const s = {
         version: 21,
@@ -7215,7 +7216,7 @@ async function runCardChecks(browser, url) {
     },
   });
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, cards: window.zomfy.state().cards }));
-  if (mig.v === 27 && mig.cards?.evenings === 0 && mig.cards.back === 'laub') note('✓ Karten: Migration v21 → v27 – noch kein Abend, Rückseite Herbstlaub');
+  if (mig.v === 28 && mig.cards?.evenings === 0 && mig.cards.back === 'laub') note('✓ Karten: Migration v21 → v28 – noch kein Abend, Rückseite Herbstlaub');
   else fail(`Karten: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
@@ -7226,8 +7227,8 @@ async function runCardChecks(browser, url) {
  * Texte nicht hellgrau unten«): Titelbild mit Figur (Frau/Mann) und Einführung, jede
  * Erklärung im Kasten an ihrer Zeile; die Ankunft mit dem Ruderboot in ihren Phasen, Esc
  * gehalten überspringt; Eddas erster Kontakt mit der Fahrt über die Wege; das Tutorial
- * (laufen, dann das erste Ziel); ohne Einführung nur die Geschichte; Speichern v27 und
- * Migration v23 → v27.
+ * (laufen, dann das erste Ziel); ohne Einführung nur die Geschichte; Speichern v28 und
+ * Migration v23 → v28.
  * Bilder: figur-erklaerung, ankunft-karte, ankunft-see, ankunft-steg, edda-erstkontakt.
  */
 async function runArrivalChecks(browser, url) {
@@ -7402,7 +7403,7 @@ async function runArrivalChecks(browser, url) {
   if (kurz === 5 && !ohne.flags.includes('funk_laufen') && !ohne.flags.includes('funk_ziel_axt') && !ohne.f.queue.length) note(`✓ Ohne Einführung (N5): Edda stellt sich vor (${kurz} Zeilen), danach keine Erklärungen und kein Ziel über Funk`);
   else fail(`Ohne Einführung: ${JSON.stringify({ kurz, ohne })}`);
 
-  // 5) Speichern v27: Figur und Einführung bleiben
+  // 5) Speichern v28: Figur und Einführung bleiben
   await z(() => {
     const Z = window.zomfy;
     Z.game.state.player.look.body = 'mann'; // der echte Stand – Z.state() ist eine Kopie
@@ -7412,13 +7413,13 @@ async function runArrivalChecks(browser, url) {
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 180000 });
   const saved = await z(() => ({ v: window.zomfy.state().version, body: window.zomfy.state().player.look.body, tut: window.zomfy.state().tutorial }));
-  if (saved.v === 27 && saved.body === 'mann' && saved.tut.on === true) note('✓ Ankunft (N5): Speichern v27 mit Figur und Einführung');
+  if (saved.v === 28 && saved.body === 'mann' && saved.tut.on === true) note('✓ Ankunft (N5): Speichern v28 mit Figur und Einführung');
   else fail(`N5 Speichern: ${JSON.stringify(saved)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 6) Migration v23 → v27: alte Stände behalten ihre Figur (Mann) und brauchen keine Einführung
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Ankunft: Migration v23 → v27', {
+  // 6) Migration v23 → v28: alte Stände behalten ihre Figur (Mann) und brauchen keine Einführung
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Ankunft: Migration v23 → v28', {
     init: () => {
       const s = {
         version: 23,
@@ -7432,8 +7433,297 @@ async function runArrivalChecks(browser, url) {
     },
   });
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, look: window.zomfy.state().player.look, tut: window.zomfy.state().tutorial, a: window.zomfy.arrival() }));
-  if (mig.v === 27 && mig.look.body === 'mann' && mig.look.hat === 'blau' && mig.tut.on === false && !mig.a.active) note('✓ Ankunft (N5): Migration v23 → v27 – die Figur bleibt (Mann, blaue Mütze), keine Einführung, keine Ankunft');
+  if (mig.v === 28 && mig.look.body === 'mann' && mig.look.hat === 'blau' && mig.tut.on === false && !mig.a.active) note('✓ Ankunft (N5): Migration v23 → v28 – die Figur bleibt (Mann, blaue Mütze), keine Einführung, keine Ankunft');
   else fail(`N5 Migration: ${JSON.stringify(mig)}`);
+  checkMessages(alt);
+  await alt.context.close();
+}
+
+/**
+ * M32: Netzwerk und Wiedersehen – morgens Post im Briefkasten (Fahne, echte Taste, Briefkarte),
+ * ein Paket von Balduin, Stimmen über Junas Funkgerät, Besuch zum Fest, eine Einladung bringt
+ * jemanden zurück, Signalfeuer auf den Inseln in der Frostnacht (auch auf der Karte), Edda kommt
+ * nach dem Herbst nach Hause (echte Taste), die Seite »Post« im Herbstbuch, Speichern v28,
+ * Migration v27 → v28 (Bilder: brief, paket, signalfeuer, signalkarte, edda-daheim).
+ */
+async function runNetworkChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Netzwerk (M32)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m32')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m32', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  const answer = async (pick) => {
+    for (let k = 0; k < 12; k++) {
+      const d = await z(() => window.zomfy.dialogInfo?.() || null);
+      if (!d || !d.open) return false;
+      if (d.answers?.length) {
+        for (let w = 0; w < 30 && !(await z(() => window.zomfy.game.dialog.complete)); w++) await step(200);
+        await step(400);
+        const c = await z(() => window.zomfy.dialogInfo());
+        const i = c.answers.findIndex((a) => a.aktion === pick || a.t === pick);
+        if (i < 0) return false;
+        for (let s = 0; s < Math.abs(i - c.choice); s++) await tap(i > c.choice ? 'KeyS' : 'KeyW');
+        await tap('KeyE');
+        return true;
+      }
+      await tap('KeyE');
+    }
+    return false;
+  };
+  const closeDialog = async () => {
+    for (let k = 0; k < 24 && (await z(() => window.zomfy.dialogInfo().open)); k++) await tap('KeyE');
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    const Z = window.zomfy;
+    Z.quietChoices();
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'werkbankGebaut', 'blitzHinweis']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setDay(10);
+    for (const id of ['hilde', 'juna']) Z.setSurvivor(id, 3);
+    // Hannes ist vor zwei Tagen ins Forsthaus weitergezogen, sein Brief ist für morgen fällig
+    Object.assign(Z.game.state.survivors.hannes, { stage: 4, day: 3, gone: 8, letter: 11, read: false, tent: null, guest: null });
+    Z.game.survivors.placeAll(true);
+    Z.setTime(22, 0);
+  });
+  await step(300);
+
+  // 1) Morgens liegt Post im Briefkasten – Hilde hat sie gebracht, die Fahne ist oben
+  const morgen = await z(() => ({ lines: window.zomfy.nextMorning().map((l) => l.text), post: window.zomfy.post() }));
+  const postZeile = morgen.lines.find((t) => t.includes('Brief von Hannes'));
+  if (postZeile?.startsWith('Hilde hat die Post gebracht') && morgen.post.box.length === 1 && morgen.post.box[0].from === 'hannes' && morgen.post.flag) note(`✓ Netzwerk (M32): morgens liegt Post im Briefkasten, die Fahne ist oben (»${postZeile}«)`);
+  else fail(`Netzwerk: Post am Morgen ${JSON.stringify({ lines: morgen.lines, box: morgen.post.box, flag: morgen.post.flag })}`);
+
+  // 2) E am Briefkasten (echte Taste): die Briefkarte, danach ist die Fahne unten
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setTime(9, 0);
+    const m = Z.game.world.interactions.find((q) => q.id === 'briefkasten');
+    Z.teleport(m.x + 0.2, m.z + 0.8, Math.PI);
+  });
+  await step(500);
+  await z(() => {
+    window.zomfy.game.funk.clear();
+    window.zomfy.game.hud.speech = null;
+  });
+  const vorE = await z(() => window.zomfy.game.currentInteraction?.id || null);
+  await tap('KeyE');
+  await step(400);
+  const brief = await z(() => window.zomfy.post());
+  await page.screenshot({ path: join(SHOTS, 'brief.png') });
+  note('  Screenshot: screenshots/brief.png');
+  await tap('KeyE');
+  await step(300);
+  const gelesen = await z(() => ({ post: window.zomfy.post(), seen: Boolean(window.zomfy.state().flags.briefkastenGesehen) }));
+  if (vorE === 'briefkasten' && brief.mode === 'lieferung' && brief.card?.letter === 'hannes' && brief.card.kind === 'brief' && gelesen.post.mode === 'play' && !gelesen.post.flag && gelesen.post.box.length === 0 && gelesen.post.read.length === 1 && gelesen.seen) note('✓ Netzwerk: E am Briefkasten zeigt den Brief als Karte (Porträt, Ort, Tag), danach ist die Fahne unten');
+  else fail(`Netzwerk: Briefkasten ${JSON.stringify({ vorE, brief: { mode: brief.mode, card: brief.card }, danach: { mode: gelesen.post.mode, flag: gelesen.post.flag, box: gelesen.post.box, read: gelesen.post.read } })}`);
+
+  // 3) Ein Paket vom Ort: Balduin bringt es mit, die Lieferkarte zeigt, was darin war
+  const paket = await z(() => {
+    const Z = window.zomfy;
+    Z.setDay(16);
+    Z.setTime(9, 30);
+    const before = { ...Z.game.state.inventory };
+    const items = Z.game.deliverOrders();
+    Z.game.showPendingDelivery();
+    return { items, before, after: { ...Z.game.state.inventory }, post: Z.post() };
+  });
+  await step(300);
+  await page.screenshot({ path: join(SHOTS, 'paket.png') });
+  note('  Screenshot: screenshots/paket.png');
+  await tap('KeyE');
+  await step(300);
+  const parcel = paket.items.find((it) => it && it.parcel === 'hannes');
+  if (parcel && paket.after.holz === paket.before.holz + 14 && paket.after.fasern === paket.before.fasern + 4 && paket.post.mode === 'lieferung' && paket.post.card?.parcel === 'hannes' && paket.post.sent.includes('hannes:paket')) note('✓ Netzwerk: ein Paket aus dem Forsthaus kommt mit Balduin (14 Holz, 4 Fasern) – die Lieferkarte zeigt es');
+  else fail(`Netzwerk: Paket ${JSON.stringify({ items: paket.items, holz: [paket.before.holz, paket.after.holz], fasern: [paket.before.fasern, paket.after.fasern], mode: paket.post.mode, card: paket.post.card, sent: paket.post.sent })}`);
+
+  // 4) Stimmen: Mit Juna im Lager hat das Funkgerät die Wahl »Die anderen«
+  await z(() => window.zomfy.game.startDialog('radio'));
+  await step(200);
+  const funk = await z(() => window.zomfy.dialogInfo());
+  const gewaehlt = await answer('stimmen');
+  await step(200);
+  let stimme = null;
+  for (let k = 0; k < 6 && !stimme; k++) {
+    const d = await z(() => window.zomfy.dialogInfo());
+    if (d.speaker === 'hannes') stimme = d.text;
+    else await tap('KeyE');
+  }
+  await closeDialog();
+  if (funk.answers.some((a) => a.aktion === 'stimmen') && gewaehlt && stimme?.includes('Hannes')) note(`✓ Netzwerk: mit Juna im Lager empfängt das Funkgerät »Die anderen« – ${stimme}`);
+  else fail(`Netzwerk: Stimmen ${JSON.stringify({ answers: funk.answers, gewaehlt, stimme })}`);
+
+  // 5) Besuch zum Fest: Hannes sitzt am Feuer, E spricht ihn an
+  const fest = await z(() => {
+    const Z = window.zomfy;
+    Z.game.state.feast = Z.game.state.time.day + 1;
+    const lines = Z.nextMorning().map((l) => l.text);
+    Z.setTime(10, 0);
+    Z.game.survivors.placeAll(true);
+    Z.game.survivors.refreshInteractions();
+    const n = Z.game.survivors.npcs.list.get('hannes');
+    return { lines, visitor: Z.post().visitor, n: n ? { x: n.x, z: n.z, visible: n.model.root.visible } : null };
+  });
+  let besuch = null;
+  if (fest.n) {
+    await z(([x, zz]) => window.zomfy.teleport(x - 0.3, zz + 0.9, Math.PI), [fest.n.x, fest.n.z]);
+    await step(500);
+    const it = await z(() => window.zomfy.game.currentInteraction?.id || null);
+    await tap('KeyE');
+    await step(300);
+    besuch = { it, d: await z(() => window.zomfy.dialogInfo()) };
+    await closeDialog();
+  }
+  if (fest.visitor === 'hannes' && fest.lines.some((t) => t.startsWith('Zum Fest ist Hannes')) && fest.n?.visible && besuch?.it === 'npc-hannes' && besuch.d.speaker === 'hannes') note(`✓ Netzwerk: zum Fest kommt Hannes zu Besuch ans Feuer – »${besuch.d.text}«`);
+  else fail(`Netzwerk: Besuch ${JSON.stringify({ fest, besuch })}`);
+
+  // 6) Rückkehr: Ist ein Platz frei, nimmt Balduin eine Einladung mit – am Morgen ist Hannes wieder da
+  const einladung = await z(() => {
+    const Z = window.zomfy;
+    Z.give({ holz: 30, stoff: 10, fasern: 10, teile: 10 });
+    const zelt = Z.build('zelt', -4, 6);
+    const rows = Z.tradeRows();
+    const ok = Z.trade('einladung');
+    const invite = Z.post().invite;
+    const lines = Z.nextMorning().map((l) => l.text);
+    const s = Z.state().survivors.hannes;
+    return { zelt, rows: rows.filter((r) => r.includes('einladung')), ok, invite, lines, stage: s.stage, due: s.due, day: Z.state().time.day, speech: Z.game.hud.speech?.text || null };
+  });
+  if (einladung.rows.includes('tausch-einladung-hannes') && einladung.ok && einladung.invite?.id === 'hannes' && einladung.stage === 2 && einladung.due < einladung.day && einladung.speech?.includes('wieder da')) note(`✓ Netzwerk: Balduin nimmt eine Einladung mit (ein Platz ist frei) – am nächsten Morgen ist Hannes wieder da (»${einladung.speech}«), die Entscheidung ist gleich fällig`);
+  else fail(`Netzwerk: Einladung ${JSON.stringify(einladung)}`);
+
+  // 7) Frostnacht: Auf den Inseln brennen Signalfeuer – je Ort eines, jeder Ort schickt etwas
+  const frost = await z(() => {
+    const Z = window.zomfy;
+    const s = Z.game.state.survivors;
+    Object.assign(s.clara, { stage: 4, day: 5, gone: 25, letter: 27, read: true, tent: null, guest: null });
+    Object.assign(s.greta, { stage: 4, day: 6, gone: 26, letter: 28, read: true, tent: null, guest: null });
+    Z.game.survivors.placeAll(true);
+    Z.setDay(30);
+    Z.setTime(21, 30);
+    const before = Z.game.state.inventory.leuchtkugeln || 0;
+    Z.game.autumn.beginNight(30);
+    return { post: Z.post(), places: Z.game.post.places().length, before, after: Z.game.state.inventory.leuchtkugeln || 0, toast: Z.game.hud.toasts.map((t) => t.text).find((t) => t.includes('Signalfeuer')) || null };
+  });
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(16.0, -1.25, Math.PI);
+    Z.lookAt(19.5, -8.0); // die Nordinsel mit ihrem Feuer (vom Stegende aus verdeckt es der Leuchtmast)
+    Z.game.funk.clear();
+    Z.game.hud.speech = null;
+  });
+  await step(900);
+  await z(() => {
+    window.zomfy.game.hud.toasts.length = 0;
+    window.zomfy.game.funk.clear();
+  });
+  await step(50);
+  await page.screenshot({ path: join(SHOTS, 'signalfeuer.png') });
+  note('  Screenshot: screenshots/signalfeuer.png');
+  await z(() => window.zomfy.lookAt(null));
+  await tap('KeyM');
+  await step(300);
+  const karte = await z(() => window.zomfy.game.mode);
+  await page.screenshot({ path: join(SHOTS, 'signalkarte.png') });
+  note('  Screenshot: screenshots/signalkarte.png');
+  await tap('KeyM');
+  await step(200);
+  // Je Ort eines – auch für die, die unterwegs von selbst weitergezogen sind (M27: volle Plätze)
+  if (frost.post.fires.includes('leuchtturm') && frost.post.fires.includes('nordinsel') && frost.post.fires.length === new Set(frost.post.fires).size && frost.post.fires.length === frost.places && frost.after === frost.before + 2 && frost.toast && karte === 'karte') note(`✓ Netzwerk: in der Frostnacht brennen auf den Inseln ${frost.post.fires.length} Signalfeuer (je Ort eines: ${frost.post.fires.join(', ')}), auch auf der Karte – »${frost.toast}«`);
+  else fail(`Netzwerk: Signalfeuer ${JSON.stringify({ fires: frost.post.fires, places: frost.places, before: frost.before, after: frost.after, toast: frost.toast, karte })}`);
+
+  // 8) Nach dem Herbst kommt Edda nach Hause: am Ende des Stegs, E spricht sie an (echte Taste)
+  const heim = await z(() => {
+    const Z = window.zomfy;
+    const au = Z.game.state.autumn;
+    au.frost = 30;
+    au.credits = true;
+    Z.game.autumn.choose('weiter');
+    const home = Z.game.state.edda.home;
+    const lines = Z.nextMorning().map((l) => l.text);
+    Z.setTime(10, 0);
+    Z.game.world.setSignalFires([]);
+    Z.game.survivors.placeAll(true);
+    Z.game.survivors.refreshInteractions();
+    return { home, lines, post: Z.post() };
+  });
+  await z(([x, zz]) => {
+    const Z = window.zomfy;
+    Z.teleport(x - 0.7, zz, Math.PI / 2); // Juna steht am Mast weiter nördlich
+    Z.game.funk.clear();
+    Z.game.hud.speech = null;
+    Z.game.hud.toasts.length = 0;
+  }, [heim.post.edda.x ?? 20.5, heim.post.edda.z ?? -1]);
+  await step(600);
+  const eddaIt = await z(() => window.zomfy.game.currentInteraction?.id || null);
+  await tap('KeyE');
+  await step(900);
+  const eddaDlg = await z(() => window.zomfy.dialogInfo());
+  await z(() => window.zomfy.teleport(19.9, -0.55, Math.PI / 2)); // fürs Bild neben Edda, nicht vor ihr
+  await step(100);
+  await page.screenshot({ path: join(SHOTS, 'edda-daheim.png') });
+  note('  Screenshot: screenshots/edda-daheim.png');
+  await closeDialog();
+  await z(() => window.zomfy.talkTo('edda'));
+  await step(200);
+  const eddaDa = await z(() => ({ d: window.zomfy.dialogInfo(), met: window.zomfy.state().edda.met }));
+  await closeDialog();
+  if (heim.home === 31 && heim.lines.some((t) => t.includes('Edda ist nach Hause gekommen')) && heim.post.edda.athome && heim.post.edda.visible && eddaIt === 'npc-edda' && eddaDlg.speaker === 'eddaHier' && eddaDa.met && eddaDa.d.speaker === 'eddaHier') note(`✓ Netzwerk: nach dem Herbst ist Edda am nächsten Morgen zu Hause – sie steht am Ende des Stegs, E: »${eddaDlg.text}«`);
+  else fail(`Netzwerk: Edda ${JSON.stringify({ home: heim.home, lines: heim.lines, edda: heim.post.edda, eddaIt, eddaDlg, eddaDa })}`);
+
+  // 9) Das Herbstbuch bekommt die Seite »Post«
+  const buch = await z(() => {
+    const menu = window.zomfy.game.menu;
+    const pages = menu.bookPages();
+    menu.page = 'post';
+    menu.bookCache = null;
+    const rows = menu.bookData().rows.map((r) => r.label);
+    menu.page = 'taten';
+    menu.bookCache = null;
+    return { pages, rows };
+  });
+  if (buch.pages.includes('post') && buch.rows.includes('Hannes')) note('✓ Herbstbuch: die Seite »Post« – Briefe von unterwegs');
+  else fail(`Herbstbuch: Post ${JSON.stringify(buch)}`);
+
+  // 10) Speichern v28 und Neuladen
+  await z(() => window.zomfy.game.quietSave());
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.__zomfyStep, null, { timeout: 30000 });
+  await z(() => {
+    window.__zomfyHold = true;
+  });
+  await step(300);
+  const geladen = await z(() => ({ v: window.zomfy.state().version, post: window.zomfy.post() }));
+  if (geladen.v === 28 && geladen.post.read.length === 1 && geladen.post.sent.includes('hannes:paket') && geladen.post.edda.athome && geladen.post.edda.met && geladen.post.edda.visible) note('✓ Netzwerk: Speichern v28 – Briefe, Pakete und Edda zu Hause bleiben nach dem Neuladen');
+  else fail(`Netzwerk: Speichern ${JSON.stringify(geladen)}`);
+  checkMessages(session);
+  await session.context.close();
+
+  // 11) Migration v27 → v28: der Brief von früher liegt im Herbstbuch, nach dem Herbst kommt Edda
+  const alt = await openGame(browser, `${url}index.html?test&playtest`, 'Netzwerk: Migration', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m32-mig')) {
+        localStorage.clear();
+        localStorage.setItem('zomfy-towers.spielstand', JSON.stringify({ version: 27, difficulty: 'ausgewogen', time: { day: 33, minute: 180 }, player: { x: 4, z: 2, hp: 90, name: 'Kira' }, inventory: { holz: 5 }, world: { houseLevel: 1, homeHp: 300, buildings: [] }, stats: { nightsWon: 20 }, flags: { introGesehen: true }, autumn: { frost: 30, mode: 'weiter', credits: true }, survivors: { ida: { stage: 4, day: 9, gone: 14, letter: 16, read: true } } }));
+        sessionStorage.setItem('zomfy-m32-mig', '1');
+      }
+    },
+  });
+  await alt.page.evaluate(() => window.__zomfyStep(300));
+  const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, post: window.zomfy.post() }));
+  if (mig.v === 28 && mig.post.read.length === 1 && mig.post.read[0].from === 'ida' && mig.post.read[0].day === 16 && mig.post.box.length === 0 && mig.post.edda.home === 34 && !mig.post.edda.athome) note('✓ Netzwerk: Migration v27 → v28 – Idas Brief liegt im Herbstbuch, Edda kommt am nächsten Morgen');
+  else fail(`Netzwerk: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
 }
@@ -7444,7 +7734,7 @@ async function runArrivalChecks(browser, url) {
  * tippt fertig und schließt; Nachtplan und Meldungen stehen rechts. Die Laterne geht
  * morgens aus. Das Haus ist größer. Über das Funkgerät in der Stube bestellt Mika mit
  * echten Tasten aus Balduins Katalog; am nächsten Morgen bringt er es, die Lieferkarte
- * zeigt es groß, dann steht es im Haus. Speichern v27 und Migration v22 → v27.
+ * zeigt es groß, dann steht es im Haus. Speichern v28 und Migration v22 → v28.
  * Bilder: funk, katalog, lieferung, stube-gross.
  */
 async function runPlaytestFixChecks(browser, url) {
@@ -7579,20 +7869,20 @@ async function runPlaytestFixChecks(browser, url) {
   if (karte.mode === 'lieferung' && karte.card === 'standuhr' && danach.c.mode === 'play' && danach.c.owned.includes('standuhr') && !danach.c.orders.length && danach.obj) note('✓ Lieferung (N4): am Morgen bringt Balduin die Standuhr – die Karte zeigt sie groß, E schließt, sie steht in der Stube');
   else fail(`Lieferung: ${JSON.stringify({ karte, danach })}`);
 
-  // 6) Speichern v27 mit einer offenen Bestellung
+  // 6) Speichern v28 mit einer offenen Bestellung
   const saved = await z(() => {
     window.zomfy.game.furnishing.order('flickenteppich');
     window.zomfy.save();
     const raw = JSON.parse(localStorage.getItem('zomfy-towers.spielstand'));
     return { v: raw.version, orders: raw.world?.orders, furniture: raw.world?.furniture };
   });
-  if (saved.v === 27 && saved.orders?.[0]?.id === 'flickenteppich' && saved.furniture?.includes('standuhr')) note('✓ Probespiel (N4): Speichern v27 mit Bestellung und geliefertem Stück');
+  if (saved.v === 28 && saved.orders?.[0]?.id === 'flickenteppich' && saved.furniture?.includes('standuhr')) note('✓ Probespiel (N4): Speichern v28 mit Bestellung und geliefertem Stück');
   else fail(`N4 Speichern: ${JSON.stringify(saved)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 7) Migration v22 → v27: keine Bestellungen, wer drinnen stand, steht hinter der neuen Haustür
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Probespiel: Migration v22 → v27', {
+  // 7) Migration v22 → v28: keine Bestellungen, wer drinnen stand, steht hinter der neuen Haustür
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Probespiel: Migration v22 → v28', {
     init: () => {
       const s = {
         version: 22,
@@ -7609,7 +7899,7 @@ async function runPlaytestFixChecks(browser, url) {
     const e = window.zomfy.interior().entry;
     return { v: st.version, orders: st.world.orders, furniture: st.world.furniture, d: Math.hypot(st.player.x - e.x, st.player.z - e.z), inside: window.zomfy.interior().inside };
   });
-  if (mig.v === 27 && Array.isArray(mig.orders) && !mig.orders.length && mig.furniture.includes('lesesessel') && mig.d < 1 && mig.inside) note('✓ Probespiel (N4): Migration v22 → v27 – keine Bestellungen, die Möbel bleiben, Mika steht hinter der neuen Haustür');
+  if (mig.v === 28 && Array.isArray(mig.orders) && !mig.orders.length && mig.furniture.includes('lesesessel') && mig.d < 1 && mig.inside) note('✓ Probespiel (N4): Migration v22 → v28 – keine Bestellungen, die Möbel bleiben, Mika steht hinter der neuen Haustür');
   else fail(`N4 Migration: ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
@@ -7622,7 +7912,7 @@ async function runPlaytestFixChecks(browser, url) {
  * gewohnten Gesprächs; ab »vertraut« grüßt die Figur morgens (Sprechblase), ab
  * »befreundet« beim Spitznamen und setzt sich abends zu Mika ans Feuer; der dritte Moment
  * bringt das Erinnerungsstück aufs Bord in der Stube; die Menschenkunde zeigt die Stufe
- * als Wort; Speichern v27 und Migration v24 → v27.
+ * als Wort; Speichern v28 und Migration v24 → v28.
  * Bilder: bindung-zeichen, bindung-feuer, geschenk, erinnerungsbord.
  */
 async function runBondChecks(browser, url) {
@@ -7857,19 +8147,19 @@ async function runBondChecks(browser, url) {
     note(`✓ Szenen: nach dem Durchbruch gehen ${chosen.pending.cast.join(' und ')} ans Feuer, einander zugewandt; erst als Mika dazukommt, reden sie (»${firstLine}«), danach ist die Szene gespielt und kommt am selben Morgen nicht noch einmal`);
   else fail(`Szenen: ${JSON.stringify({ chosen, waiting, talking, after, again })}`);
 
-  // 9) Speichern v27 (auch die gespielten Szenen)
+  // 9) Speichern v28 (auch die gespielten Szenen)
   const saved = await z(() => {
     window.zomfy.save();
     const raw = JSON.parse(localStorage.getItem('zomfy-towers.spielstand'));
     return { v: raw.version, hilde: raw.bonds?.hilde, seen: raw.scenes?.seen };
   });
-  if (saved.v === 27 && saved.hilde?.moment === 3 && saved.hilde.pts >= 15 && saved.seen?.length === 1) note('✓ Bindung: Speichern v27 mit gemeinsamer Zeit, erzählten Momenten und gespielten Szenen');
+  if (saved.v === 28 && saved.hilde?.moment === 3 && saved.hilde.pts >= 15 && saved.seen?.length === 1) note('✓ Bindung: Speichern v28 mit gemeinsamer Zeit, erzählten Momenten und gespielten Szenen');
   else fail(`Bindung: Speichern ${JSON.stringify(saved)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 10) Migration v24 → v27: alle beginnen bei »fremd«
-  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Bindung: Migration v24 → v27', {
+  // 10) Migration v24 → v28: alle beginnen bei »fremd«
+  const alt = await openGame(browser, `${url}index.html?test&map=3`, 'Bindung: Migration v24 → v28', {
     init: () => {
       const s = {
         version: 22,
@@ -7884,7 +8174,7 @@ async function runBondChecks(browser, url) {
     },
   });
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, bonds: window.zomfy.state().bonds, hilde: window.zomfy.bonds().hilde }));
-  if (mig.v === 27 && mig.bonds && Object.values(mig.bonds).every((b) => !b.pts && !b.moment) && mig.hilde.word === 'fremd') note('✓ Bindung: Migration v24 → v27 – alle beginnen bei »fremd«');
+  if (mig.v === 28 && mig.bonds && Object.values(mig.bonds).every((b) => !b.pts && !b.moment) && mig.hilde.word === 'fremd') note('✓ Bindung: Migration v24 → v28 – alle beginnen bei »fremd«');
   else fail(`Bindung: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
@@ -7899,8 +8189,8 @@ async function runBondChecks(browser, url) {
  * sinkt, eine Hülse bleibt liegen, eine Leuchtspur, der Knall lockt einen Schlurfer aus
  * 9 m; leer klickt es nur. Die Leuchtkugel macht Licht und blendet, die Doppelflinte trifft
  * im Fächer. Am Übungsplatz übt Hilde (echte Tasten) zwei Spielstunden, Mika ist dabei
- * (gemeinsame Zeit); nach der zweiten Übung ist sie geübter. Speichern v27 und
- * Migration v25 → v27. Bilder: waffenschrank, schuss, uebungsplatz.
+ * (gemeinsame Zeit); nach der zweiten Übung ist sie geübter. Speichern v28 und
+ * Migration v25 → v28. Bilder: waffenschrank, schuss, uebungsplatz.
  */
 async function runArmsChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&playtest`, 'Waffen (M30)', {
@@ -8135,7 +8425,7 @@ async function runArmsChecks(browser, url) {
     else fail(`Waffen: Stufe ${JSON.stringify(zwei)}`);
   }
 
-  // 9) Speichern v27 und Neuladen
+  // 9) Speichern v28 und Neuladen
   await z(() => window.zomfy.game.quietSave());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.__zomfyStep, null, { timeout: 30000 });
@@ -8144,12 +8434,12 @@ async function runArmsChecks(browser, url) {
   });
   await step(300);
   const geladen2 = await z(() => ({ v: window.zomfy.state().version, a: window.zomfy.arms(), t: window.zomfy.training(), shown: window.zomfy.cabinetShown() }));
-  if (geladen2.v === 27 && geladen2.a.unlocked && geladen2.a.taken.includes('pistole') && geladen2.t.data.hilde?.level === 1 && geladen2.shown.doppelflinte === false) note('✓ Waffen: Speichern v27 – Schrank offen, die genommenen Waffen fehlen im Gestell, Hildes Übung bleibt');
+  if (geladen2.v === 28 && geladen2.a.unlocked && geladen2.a.taken.includes('pistole') && geladen2.t.data.hilde?.level === 1 && geladen2.shown.doppelflinte === false) note('✓ Waffen: Speichern v28 – Schrank offen, die genommenen Waffen fehlen im Gestell, Hildes Übung bleibt');
   else fail(`Waffen: Speichern ${JSON.stringify(geladen2)}`);
   checkMessages(session);
   await session.context.close();
 
-  // 10) Migration v25 → v27
+  // 10) Migration v25 → v28
   const alt = await openGame(browser, `${url}index.html?test&playtest`, 'Waffen: Migration', {
     init: () => {
       if (!sessionStorage.getItem('zomfy-m30-mig')) {
@@ -8161,7 +8451,7 @@ async function runArmsChecks(browser, url) {
   });
   await alt.page.evaluate(() => window.__zomfyStep(300));
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, a: window.zomfy.arms(), t: window.zomfy.training() }));
-  if (mig.v === 27 && mig.a.unlocked && mig.a.ammo.patronen === 6 && Object.keys(mig.t.data).length === 0) note('✓ Waffen: Migration v25 → v27 – wer die erste Nacht schon hatte, findet den Schlüssel gleich; noch niemand hat geübt');
+  if (mig.v === 28 && mig.a.unlocked && mig.a.ammo.patronen === 6 && Object.keys(mig.t.data).length === 0) note('✓ Waffen: Migration v25 → v28 – wer die erste Nacht schon hatte, findet den Schlüssel gleich; noch niemand hat geübt');
   else fail(`Waffen: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
@@ -8176,7 +8466,7 @@ async function runArmsChecks(browser, url) {
  * wer zu Boden geht, steht mit E wieder auf; ohne »Verluste« bleibt nur die Waffe im Laub
  * (Balduin bringt Ersatz), mit »Verluste« fällt jemand – nie auf »Gemütlich«; Entwarnung;
  * der Morgen erzählt es und verteilt Wunden; das Erinnerungsbrett am Steg mit echter Taste
- * (Laterne, Karte), die Seite im Herbstbuch; Speichern v27 und Migration v26 → v27
+ * (Laterne, Karte), die Seite im Herbstbuch; Speichern v28 und Migration v26 → v28
  * (Bilder: glocke-tafel, glocke-kampf, glocke-aufhelfen, erinnerung, erinnerungsbrett).
  */
 async function runBellChecks(browser, url) {
@@ -8449,7 +8739,7 @@ async function runBellChecks(browser, url) {
   if (buch.pages.includes('erinnerung') && buch.rows.includes('Juna')) note('✓ Herbstbuch: die Seite »Erinnerung« – Die mit uns waren');
   else fail(`Herbstbuch Erinnerung: ${JSON.stringify(buch)}`);
 
-  // 14) Speichern v27 und Neuladen
+  // 14) Speichern v28 und Neuladen
   await z(() => window.zomfy.game.quietSave());
   await page.reload();
   await page.waitForFunction(() => window.zomfy && window.__zomfyStep, null, { timeout: 30000 });
@@ -8458,12 +8748,12 @@ async function runBellChecks(browser, url) {
   });
   await step(300);
   const geladen = await z(() => ({ v: window.zomfy.state().version, b: window.zomfy.bell(), mem: window.zomfy.memorial(), stage: window.zomfy.state().survivors.juna.stage }));
-  if (geladen.v === 27 && geladen.b.fallen.length === 1 && geladen.b.wounds.bert?.kind === 'schwer' && geladen.b.lost.includes('doppelflinte') && geladen.mem.shown && geladen.stage === 5 && geladen.b.night === 5) note('✓ Lagerglocke: Speichern v27 – die Gefallene, Berts Wunde, die verlorene Doppelflinte und das Erinnerungsbrett bleiben');
+  if (geladen.v === 28 && geladen.b.fallen.length === 1 && geladen.b.wounds.bert?.kind === 'schwer' && geladen.b.lost.includes('doppelflinte') && geladen.mem.shown && geladen.stage === 5 && geladen.b.night === 5) note('✓ Lagerglocke: Speichern v28 – die Gefallene, Berts Wunde, die verlorene Doppelflinte und das Erinnerungsbrett bleiben');
   else fail(`Lagerglocke: Speichern ${JSON.stringify({ v: geladen.v, fallen: geladen.b.fallen, wounds: geladen.b.wounds, lost: geladen.b.lost, mem: geladen.mem, stage: geladen.stage })}`);
   checkMessages(session);
   await session.context.close();
 
-  // 15) Migration v26 → v27: auf »Gemütlich« keine Verluste, noch nie geläutet
+  // 15) Migration v26 → v28: auf »Gemütlich« keine Verluste, noch nie geläutet
   const alt = await openGame(browser, `${url}index.html?test&playtest`, 'Lagerglocke: Migration', {
     init: () => {
       if (!sessionStorage.getItem('zomfy-m31-mig')) {
@@ -8475,7 +8765,7 @@ async function runBellChecks(browser, url) {
   });
   await alt.page.evaluate(() => window.__zomfyStep(300));
   const mig = await alt.page.evaluate(() => ({ v: window.zomfy.state().version, b: window.zomfy.bell(), st: window.zomfy.state() }));
-  if (mig.v === 27 && mig.st.losses === false && mig.b.fallen.length === 0 && mig.b.night === 0 && Object.keys(mig.b.wounds).length === 0 && mig.b.lost.length === 0) note('✓ Lagerglocke: Migration v26 → v27 – auf »Gemütlich« keine Verluste, noch nie geläutet, niemand verwundet');
+  if (mig.v === 28 && mig.st.losses === false && mig.b.fallen.length === 0 && mig.b.night === 0 && Object.keys(mig.b.wounds).length === 0 && mig.b.lost.length === 0) note('✓ Lagerglocke: Migration v26 → v28 – auf »Gemütlich« keine Verluste, noch nie geläutet, niemand verwundet');
   else fail(`Lagerglocke: Migration ${JSON.stringify({ v: mig.v, losses: mig.st.losses, b: { fallen: mig.b.fallen, night: mig.b.night, wounds: mig.b.wounds, lost: mig.b.lost } })}`);
   checkMessages(alt);
   await alt.context.close();

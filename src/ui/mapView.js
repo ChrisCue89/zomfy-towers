@@ -210,6 +210,23 @@ export class MapView {
     ui.rect(me.x - 2, me.y - 2, 5, 5, COLORS.outline);
     ui.rect(me.x - 1, me.y - 1, 3, 3, Math.floor(this.t * 3) % 2 ? COLORS.text : COLORS.gold);
 
+    // M32: Signalfeuer der Frostnacht auf den Inseln – ein flackernder Punkt mit dem Ort. Die
+    // Namen bleiben in der Karte (sonst links vom Punkt) und rücken auseinander, wenn zwei
+    // Feuer nah beieinander brennen
+    const placed = [];
+    const right = ox + W * k - 2;
+    for (const f of [...(g.world.signalSpots || [])].sort((a, c) => a.z - c.z)) {
+      const p = at(f.x, f.z);
+      ui.rect(p.x - 2, p.y - 2, 5, 5, COLORS.outline);
+      ui.rect(p.x - 1, p.y - 1, 3, 3, Math.floor(this.t * 5 + f.x) % 2 ? COLORS.gold : hexToCss(P.f4));
+      const name = T.wanderer.orte[f.place] || f.place;
+      const w = measure(name);
+      const box = { x: p.x + 4 + w > right ? p.x - 4 - w : p.x + 4, y: p.y - LINE_HEIGHT + 2, w, h: LINE_HEIGHT - 1 };
+      for (let n = 0; n < 4 && placed.some((q) => box.x < q.x + q.w && q.x < box.x + box.w && box.y < q.y + q.h && q.y < box.y + box.h); n++) box.y += LINE_HEIGHT - 1;
+      placed.push(box);
+      ui.text(name, box.x, box.y, COLORS.textWarm, { outline: COLORS.outline });
+    }
+
     // Zuhause
     const home = at(LAYOUT.shelter.x + 2.5, LAYOUT.shelter.z - 1.2);
     const label = T.karte.zuhause;

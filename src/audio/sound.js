@@ -11,6 +11,7 @@
 //             Boot kommt (M9.1)
 
 import { Music } from './music.js';
+import { motifOf } from '../data/motifs.js';
 import { SOUND_VARY, SOUND_FIXED } from '../data/feel.js';
 
 const VOICES = 32; // höchstens so viele Effekte gleichzeitig
@@ -492,10 +493,10 @@ export class Sound {
     }
   }
 
-  /** M31: die Spieluhr am Erinnerungsbrett (eine Wendung je Person). */
-  memorial(variant = 0) {
+  /** M31/M32: die Spieluhr mit dem Motiv einer Person (Erinnerungsbrett, Brief, Rückkehr). */
+  memorial(id = null) {
     if (!this.ready || !this.music) return false;
-    this.music.memorial(variant);
+    this.music.memorial(motifOf(id));
     this.memorials = (this.memorials || 0) + 1;
     return true;
   }

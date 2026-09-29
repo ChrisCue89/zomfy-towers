@@ -10,6 +10,7 @@ import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { WANDERER_ORDER, arrivalPlan, extendPlan } from '../data/wanderers.js';
 import { newArms } from '../data/arms.js';
 import { LOSSES_DEFAULT, newBell } from '../data/bell.js';
+import { newPost } from '../data/network.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -115,6 +116,17 @@ const MIGRATIONS = {
     losses: data.difficulty !== 'gemuetlich' && (LOSSES_DEFAULT[data.difficulty] ?? true),
     arms: { ...(data.arms || newArms()), lost: [] },
   }),
+  // v27 -> v28: M32 (Netzwerk). Briefe, die schon kamen, liegen im Herbstbuch (Seite »Post«);
+  // wer nach dem Herbst schon weiterspielt, bekommt Edda am nächsten Morgen nach Hause.
+  27: (data) => {
+    const post = newPost();
+    for (const id of WANDERER_ORDER) {
+      const s = data.survivors?.[id];
+      if (s?.stage === 4 && s.read === true) post.read.push({ from: id, kind: 'brief', day: Number.isFinite(s.letter) ? s.letter : Number.isFinite(s.gone) ? s.gone : 1 });
+    }
+    const after = data.autumn?.frost && data.autumn?.mode === 'weiter';
+    return { ...data, version: 28, post, edda: { home: after ? (data.time?.day || 1) + 1 : 0, met: false } };
+  },
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

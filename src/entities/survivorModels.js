@@ -853,6 +853,8 @@ export function survivorParts32(id) {
         leg: balduinLeg32(s),
       };
     }
+    case 'edda':
+      return eddaParts32(); // M32: Edda kommt nach dem Herbst nach Hause
     default:
       return wandererParts32(id); // M27: die Wanderer
   }

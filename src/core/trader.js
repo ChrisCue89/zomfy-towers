@@ -17,7 +17,8 @@ import { blueprintOptions } from '../data/blueprints.js';
 import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
 import { FLAWLESS } from '../data/risk.js';
-import { ABILITIES } from '../data/wanderers.js';
+import { ABILITIES, WANDERERS } from '../data/wanderers.js';
+import { POST } from '../data/network.js';
 import { AMMO_TRADE, ARMS_REPLACE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
@@ -327,6 +328,11 @@ export class Trader {
       for (const id of lost) {
         list.push({ id: `tausch-ersatz-${id}`, key: 'ersatz', cost: ARMS_REPLACE.cost, trade: true, icon: id, name: T.waffen.ersatz(T.gegenstaende[id]), info: T.waffen.ersatzInfo, gives: { arm: id }, owned: left === 0, ownedText: T.haendler.ausverkauft, affordable: left > 0 && canAfford(st.inventory, ARMS_REPLACE.cost) });
       }
+    }
+    // M32: Ist ein Platz frei, nimmt Balduin eine Einladung mit – am nächsten Morgen ist die Person wieder da
+    for (const id of this.game.post?.invitable() || []) {
+      const w = WANDERERS[id];
+      list.push({ id: `tausch-einladung-${id}`, key: 'einladung', cost: POST.inviteCost, trade: true, icon: 'brief', name: T.netz.einladung(w.name), info: T.netz.einladungInfo(T.wanderer.zumOrt[w.place], w.name), gives: { invite: id }, affordable: canAfford(st.inventory, POST.inviteCost) });
     }
     return list;
   }

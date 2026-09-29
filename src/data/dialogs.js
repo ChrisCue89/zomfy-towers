@@ -46,6 +46,7 @@ export const SPRECHER = {
   mara: { name: 'Mara', portrait: 'mara' },
   paula: { name: 'Paula', portrait: 'paula' },
   edda: { name: 'Edda', portrait: 'edda' }, // N4: nur über Funk, als altes Foto
+  eddaHier: { name: 'Edda', portrait: 'eddaHeute' }, // M32: nach dem Herbst zu Hause, silbernes Haar
 };
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
@@ -153,6 +154,16 @@ function withRest(lines, state) {
   if (!answers) return lines;
   const last = lines[lines.length - 1];
   return [...lines.slice(0, -1), { ...last, antworten: answers }];
+}
+
+/** M32: Weitergezogene, deren erster Brief schon da war (für Stimmen über Funk). */
+function weitergezogen(state) {
+  return Object.keys(WANDERERS).filter((id) => state.survivors?.[id]?.stage === 4 && state.survivors[id].read);
+}
+
+/** M32: Hört man über Junas Funkgerät die anderen? (Juna eingezogen, jemand weitergezogen) */
+function stimmenBereit(state) {
+  return state.survivors?.juna?.stage === 3 && weitergezogen(state).length > 0;
 }
 
 export const DIALOGE = {
@@ -653,12 +664,38 @@ export const DIALOGE = {
       antworten: [
         ...(state.flags?.balduinGetroffen ? [{ t: 'Balduin – den Katalog', aktion: 'katalog' }] : []),
         { t: 'Edda …?', aktion: 'edda' },
+        ...(stimmenBereit(state) ? [{ t: T.netz.stimmenFrage, aktion: 'stimmen' }] : []), // M32: mit Juna hört man die anderen
         { t: 'Radio hören', aktion: 'radioHoeren' },
         { t: 'Niemanden.', standard: true },
       ],
     },
   ],
   // N4: Edda meldet sich – mal knapp, mal mit einem Stück ihrer Geschichte
+  // M32: Edda kommt nach dem Herbst nach Hause – am Ende des Stegs beim alten Funkturm
+  eddaHeimkehr: (state) => [
+    { s: 'eddaHier', t: 'Na? Erkennst du mich ohne das Rauschen?' },
+    { s: 'mika', t: 'Edda! Du bist … echt.' },
+    { s: 'eddaHier', t: 'Ziemlich echt, ja. Und ziemlich durchgefroren. Ich bin die halbe Nacht gerudert – von da drüben, wo man euer Feuer sieht.' },
+    { s: 'eddaHier', t: `Ich hab dir jeden Abend zugehört, ${state.player?.name || 'Mika'}. Wie du das Tor geflickt hast. Wie du die Leute aufgenommen hast. Ich wusste nicht, ob ich mich zurücktraue.` },
+    { s: 'eddaHier', t: 'Das Haus riecht nach Suppe. Früher roch es nach Fisch und Teer. Das hier ist besser.' },
+    { s: 'mika', t: 'Es ist dein Haus. Soll ich …' },
+    { s: 'eddaHier', t: 'Es ist unser Haus. Ich nehm den Sessel am Kamin, der knarzt so schön. Und tagsüber steh ich hier und schau aufs Wasser – das hab ich am meisten vermisst.' },
+    { s: 'eddaHier', t: 'Das Funkgerät behältst du. Irgendwer da draußen braucht jetzt jemanden, der zuhört.' },
+  ],
+  eddaDa: (state) => [
+    pick(
+      [
+        { s: 'eddaHier', t: 'Der See ist ruhig heute. Ich hab sogar sein Brummeln im Winter vermisst.' },
+        { s: 'eddaHier', t: 'Hier hat mein Großvater gestanden und nach den Booten geschaut. Jetzt steh ich hier und schau nach euch.' },
+        { s: 'eddaHier', t: 'Der alte Funkturm. Wir hatten eine Sendung, »Radio Stillwald«. Drei Hörer. Einer davon war Balduin.' },
+        { s: 'eddaHier', t: 'Wenn abends auf den Inseln ein Licht angeht, winke ich. Man weiß ja nie.' },
+        { s: 'eddaHier', t: 'Du hast aus meiner Holzlände ein Zuhause gemacht. Für viele. Weißt du das eigentlich?' },
+        { s: 'eddaHier', t: 'Der Moder schläft jetzt. Im Frühjahr wacht er wieder auf – aber dann sind wir auch wach.' },
+        { s: 'eddaHier', t: 'Balduin schuldet mir immer noch einen Tanz. Ich hab ihn gestern daran erinnert. Er hat so getan, als hätte er einen Motorschaden.' },
+      ],
+      state.time.day,
+    ),
+  ],
   eddaFunk: (state) => [
     { s: 'mika', t: 'Edda? Bist du da?' },
     pick(
@@ -674,6 +711,27 @@ export const DIALOGE = {
       state.time.day
     ),
   ],
+  // M32: Juna hat das Funkgerät auf die sicheren Orte gestellt – je Tag meldet sich jemand
+  stimmen: (state) => {
+    const ids = weitergezogen(state);
+    if (!ids.length) return [{ s: 'radio', t: '…krrrzzz…' }, { s: 'mika', t: T.netz.stimmenLeer }];
+    const day = state.time.day;
+    const id = ids[day % ids.length];
+    const lines = T.netz.stimmen[id] || [T.netz.stimmeAlle];
+    return [
+      { s: 'radio', t: '…krrz… …pssh…' },
+      { s: id, t: lines[Math.floor(day / ids.length) % lines.length] },
+      { s: 'mika', t: pick(['Ich halte die Taste und sage nur: »Hier auch alles gut.«', 'Ich muss lächeln. Das Rauschen klingt gleich ein bisschen wärmer.', '»Wir hören dich!« Ob sie es hört? Bestimmt.'], day) },
+    ];
+  },
+  // M32: Zum Fest ist jemand von früher gekommen
+  besuch: (state) => {
+    const id = state.post?.visit?.id;
+    return [
+      { s: id || 'mika', t: (id && T.netz.besuchZeile[id]) || T.netz.besuchAlle },
+      { s: 'mika', t: pick(['Schön, dass du da bist. Setz dich, es gibt Tee.', 'Du hast uns gefehlt. Erzähl – wie ist es dort?', 'Bleib bis heute Abend. Das Feuer ist groß genug für alle.'], state.time.day) },
+    ];
+  },
   radioHoeren: (state) =>
     state.flags.radioGehoert
       ? [
@@ -747,7 +805,9 @@ export const DIALOGE = {
   ],
 
   briefkasten: (state) =>
-    state.flags.briefkastenGesehen
+    state.post?.read?.length
+      ? [{ s: 'mika', t: 'Leer. Die Briefe von unterwegs liegen im Herbstbuch, auf der Seite »Post«.' }] // M32
+      : state.flags.briefkastenGesehen
       ? [{ s: 'mika', t: 'Immer noch leer. Aber nachsehen macht trotzdem Spaß.' }]
       : [{ s: 'mika', t: 'Der Briefkasten ist leer. Noch.' }],
 

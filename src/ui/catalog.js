@@ -32,6 +32,15 @@ const GOLD = hexToCss(P.f6);
 const PHOTO_BG = hexToCss(P.e7);
 const GREEN = hexToCss(P.g3); // Kopf der Geschenkkarte (M29)
 const DUSK = hexToCss(P.d1); // Kopf der Erinnerungskarte (M31)
+// M32: Briefe (Luftpost) und Pakete
+const LETTER = hexToCss(P.s9);
+const LETTER_LINE = hexToCss(P.s8);
+const AIRMAIL = hexToCss(P.b2);
+const AIRMAIL_LIGHT = hexToCss(P.b4);
+const PARCEL = hexToCss(P.e5);
+const PARCEL_DARK = hexToCss(P.e3);
+const PARCEL_LIGHT = hexToCss(P.e7);
+const STRING = hexToCss(P.s7);
 
 const sepias = new Map();
 
@@ -389,6 +398,8 @@ export class DeliveryCard {
     if (!this.isOpen) return;
     const id = this.items[this.k];
     if (id && typeof id === 'object' && id.memorial) return this.drawMemorial(ui, id); // M31
+    if (id && typeof id === 'object' && id.letter) return this.drawLetter(ui, id); // M32
+    if (id && typeof id === 'object' && id.parcel) return this.drawParcel(ui, id); // M32
     const gift = typeof id === 'object' ? id : null; // M29: ein Geschenk { gift, from, name }
     const ctx = ui.ctx;
     const K = T.katalog;
@@ -475,5 +486,131 @@ export class DeliveryCard {
     }
     const hint = this.k + 1 < this.items.length ? T.katalog.weiter : E.fertig;
     drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);
+  }
+
+  /** Rahmen einer Karte (Schatten, Papier, farbiger Kopf mit Titel); gibt Lage und Versatz zurück. */
+  cardFrame(ui, w, h, paper, headColor, title) {
+    const ctx = ui.ctx;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2) - 6;
+    const dy = Math.round((1 - Math.min(1, this.openT / 0.18)) * 10);
+    ui.ditherFill?.(0.35);
+    ctx.fillStyle = LINE;
+    ctx.fillRect(x + 3, y + 3 + dy, w, h);
+    ctx.fillRect(x - 1, y - 1 + dy, w + 2, h + 2);
+    ctx.fillStyle = paper;
+    ctx.fillRect(x, y + dy, w, h);
+    ctx.fillStyle = headColor;
+    ctx.fillRect(x, y + dy, w, 18);
+    const head = this.items.length > 1 ? `${title} · ${this.k + 1}/${this.items.length}` : title;
+    drawText(ctx, head, x + Math.round((w - measure(head)) / 2), y + 3 + dy, WHITE);
+    return { x, y: y + dy, dy };
+  }
+
+  /**
+   * M32: Ein Brief von jemandem, der weitergezogen ist – Luftpostpapier mit feinen Linien, eine
+   * Briefmarke, das Porträt des Absenders (in Farbe), Ort und Tag, dann der Brief.
+   */
+  drawLetter(ui, m) {
+    const ctx = ui.ctx;
+    const N = T.netz;
+    const w = 256;
+    const text = (m.kind === 'brief2' ? N.zweite[m.letter] : T.wanderer.briefe[m.letter]) || N.stimmeAlle;
+    const lines = wrap(text, w - 30);
+    const h = 104 + (2 + lines.length) * LINE_HEIGHT + 22;
+    const { x, y } = this.cardFrame(ui, w, h, LETTER, AIRMAIL, N.brief);
+    for (let i = 0; i < w; i += 8) {
+      ctx.fillStyle = (i >> 3) % 2 ? RED : AIRMAIL_LIGHT; // Luftpost-Rand
+      ctx.fillRect(x + i, y + 18, 5, 2);
+    }
+    // Briefmarke oben rechts: gezackter Rand, ein Kürbis
+    const sx = x + w - 30;
+    const sy = y + 26;
+    ctx.fillStyle = WHITE;
+    ctx.fillRect(sx, sy, 20, 24);
+    ctx.fillStyle = LETTER;
+    for (let k = 0; k < 20; k += 4) {
+      ctx.fillRect(sx + k + 1, sy, 2, 1);
+      ctx.fillRect(sx + k + 1, sy + 23, 2, 1);
+    }
+    ctx.fillStyle = hexToCss(P.d4);
+    ctx.fillRect(sx + 3, sy + 3, 14, 18);
+    drawIcon(ctx, 'kuerbis', sx + 4, sy + 6);
+    // Das Porträt (in Farbe, weißer Rand)
+    const pic = this.game.portraits?.[m.letter];
+    const pw = 60;
+    const px = x + Math.round((w - pw - 8) / 2);
+    const py = y + 26;
+    ctx.fillStyle = LINE;
+    ctx.fillRect(px - 1, py - 1, pw + 10, pw + 10);
+    ctx.fillStyle = WHITE;
+    ctx.fillRect(px, py, pw + 8, pw + 8);
+    ctx.fillStyle = PHOTO_BG;
+    ctx.fillRect(px + 4, py + 4, pw, pw);
+    if (pic) ctx.drawImage(pic, 0, 0, pic.width, pic.height, px + 4 + Math.round((pw - pic.width) / 2), py + 4 + Math.round((pw - pic.height) / 2), pic.width, pic.height);
+    let ty = py + pw + 14;
+    const from = N.von(m.name, T.wanderer.vomOrt[m.place] || '');
+    drawText(ctx, from, x + Math.round((w - measure(from)) / 2), ty, INK);
+    ty += LINE_HEIGHT;
+    const day = N.tag(m.day);
+    drawText(ctx, day, x + Math.round((w - measure(day)) / 2), ty, INK_SOFT);
+    ty += LINE_HEIGHT + 4;
+    for (const line of lines) {
+      ctx.fillStyle = LETTER_LINE; // Linien des Briefpapiers
+      ctx.fillRect(x + 12, ty + LINE_HEIGHT - 2, w - 24, 1);
+      drawText(ctx, line, x + 15, ty, INK);
+      ty += LINE_HEIGHT;
+    }
+    const hint = this.k + 1 < this.items.length ? T.katalog.weiter : N.gelesen;
+    drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15, INK_SOFT);
+  }
+
+  /** M32: Ein Paket von einem Ort – Karton mit Schnur und Anhänger, darunter, was darin war. */
+  drawParcel(ui, m) {
+    const ctx = ui.ctx;
+    const N = T.netz;
+    const w = 236;
+    const title = wrap(N.paket(m.name, T.wanderer.vomOrt[m.place] || ''), w - 24);
+    const h = 26 + 58 + 10 + (title.length + 1) * LINE_HEIGHT + 6 + 14 + 22;
+    const { x, y } = this.cardFrame(ui, w, h, PAPER, PARCEL_DARK, N.paketTitel);
+    // Der Karton
+    const bw = 72;
+    const bh = 50;
+    const bx = x + Math.round((w - bw) / 2);
+    const by = y + 28;
+    ctx.fillStyle = LINE;
+    ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    ctx.fillStyle = PARCEL;
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = PARCEL_LIGHT;
+    ctx.fillRect(bx, by, bw, 12); // Deckel im Licht
+    ctx.fillStyle = PARCEL_DARK;
+    ctx.fillRect(bx, by + 12, bw, 1);
+    ctx.fillStyle = STRING; // Schnur über Kreuz, oben eine Schleife
+    ctx.fillRect(bx + Math.round(bw / 2) - 1, by, 2, bh);
+    ctx.fillRect(bx, by + 28, bw, 2);
+    ctx.fillRect(bx + Math.round(bw / 2) - 6, by - 4, 5, 4);
+    ctx.fillRect(bx + Math.round(bw / 2) + 1, by - 4, 5, 4);
+    ctx.fillStyle = WHITE; // Anhänger mit dem Anfangsbuchstaben
+    ctx.fillRect(bx + 8, by + 32, 18, 12);
+    drawText(ctx, (m.name || '?')[0], bx + 13, by + 32, INK);
+    let ty = by + bh + 10;
+    for (const line of title) {
+      drawText(ctx, line, x + Math.round((w - measure(line)) / 2), ty, INK);
+      ty += LINE_HEIGHT;
+    }
+    drawText(ctx, N.paketDabei, x + Math.round((w - measure(N.paketDabei)) / 2), ty, INK_SOFT);
+    ty += LINE_HEIGHT + 6;
+    // Was darin war: Symbol und Anzahl je Vorrat
+    const entries = Object.entries(m.gives || {});
+    const widths = entries.map(([, n]) => 14 + measure(`+${n}`) + 8);
+    let cx = x + Math.round((w - widths.reduce((a, b) => a + b, 0)) / 2);
+    entries.forEach(([res, n], k) => {
+      drawIcon(ctx, res, cx, ty + 1);
+      drawText(ctx, `+${n}`, cx + 14, ty, INK);
+      cx += widths[k];
+    });
+    const hint = this.k + 1 < this.items.length ? T.katalog.weiter : T.katalog.fertig;
+    drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15, INK_SOFT);
   }
 }

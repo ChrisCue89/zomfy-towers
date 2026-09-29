@@ -69,6 +69,7 @@ import { Armory } from '../ui/armory.js';
 import { Arms } from './arms.js';
 import { Training } from './training.js';
 import { Defense } from './defense.js';
+import { Post } from './post.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
 import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
@@ -369,6 +370,7 @@ export class Game {
     this.arms = new Arms(this); // M30: Schusswaffen, Munition, Hülsen, Leuchtkugeln
     this.training = new Training(this); // M30: der Übungsplatz – jeden Tag übt eine Person
     this.defense = new Defense(this); // M31: die Lagerglocke – alle zu den Waffen
+    this.post = new Post(this); // M32: Briefe, Pakete, Stimmen, Besuch, Rückkehr, Signalfeuer
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -547,6 +549,8 @@ export class Game {
     this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
     this.defense.reset(); // M31: ein halber Kampf wird nicht gespeichert
     this.world.setMemorial(st.fallen, this.state.time.day); // M31: das Erinnerungsbrett am Steg
+    this.world.setMailFlag(this.post.waiting); // M32: Fahne oben, solange Post im Briefkasten liegt
+    this.world.setSignalFires(this.nights.active && this.autumn.planMode(st.night.n) === 'finale' ? this.post.places() : []);
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -902,6 +906,7 @@ export class Game {
       else if (aktion === 'suppe') this.cookSoup();
       else if (aktion === 'katalog') this.openCatalog(); // N4: Balduins Katalog über Funk
       else if (aktion === 'edda') this.startDialog('eddaFunk');
+      else if (aktion === 'stimmen') this.startDialog('stimmen'); // M32: die anderen über Junas Funk
       else if (aktion === 'radioHoeren') this.startDialog('radioHoeren');
       else if (REST_TARGET[aktion]) {
         if (id === 'lagerfeuer') this.bonds.atFire(); // M29: abends am Feuer – Freunde setzen sich dazu
@@ -924,6 +929,7 @@ export class Game {
     else if (it.use === 'ueben') this.training.offer(); // M30: Wer übt heute?
     else if (it.use === 'glocke') this.defense.press(); // M31: ein Druck sagt, warum nicht – halten läutet
     else if (it.memorial) this.lightMemorial(); // M31: das Erinnerungsbrett am Steg
+    else if (it.mailbox) this.post.open(); // M32: Briefe als Karten (leer: der alte Gedanke)
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -951,8 +957,7 @@ export class Game {
     if (this.memorialEvening() && st.fallen.some((f) => f.lit !== day)) {
       for (const f of st.fallen) f.lit = day;
       this.world.setMemorial(st.fallen, day);
-      const first = st.fallen[st.fallen.length - 1].id;
-      this.sound.memorial(first.length + first.charCodeAt(0));
+      this.sound.memorial(st.fallen[st.fallen.length - 1].id); // ihr Motiv (M32)
       const p = this.world.props.memorialPos;
       this.effects.splat(p.x + 0.3, 0.4, p.z + 0.35, 'funken', 8, 0.5);
       this.hud.toast(T.erinnerung.angezuendet, 'kuerbislaterne', 3);
@@ -1136,7 +1141,7 @@ export class Game {
 
   /** N4: Balduin legt an (oder hat die Kiste mittags am Steg gelassen): Bestelltes kommt ins Haus. */
   deliverOrders() {
-    const items = this.furnishing.deliver();
+    const items = [...this.furnishing.deliver(), ...this.post.parcels()]; // M32: dazu Pakete von den Orten
     if (items.length) this.pendingDelivery = [...(this.pendingDelivery || []), ...items];
     return items;
   }
@@ -1229,6 +1234,16 @@ export class Game {
       this.world.refreshCabinet(this.arms.missing());
       this.hud.toast(T.waffen.ersatzDa(T.gegenstaende[id]), id, 3.2);
       this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
+    if (recipe.gives.invite) {
+      // M32: Balduin nimmt die Einladung mit – morgen früh ist die Person wieder da (als Gast am Feuer)
+      const id = recipe.gives.invite;
+      this.post.invite(id);
+      this.trader.sold(recipe);
+      this.hud.toast(T.netz.eingeladen(WANDERERS[id]?.name || id), 'brief', 3.5);
+      this.sound.play('aufheben');
       this.quietSave();
       return true;
     }
@@ -1403,7 +1418,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
     this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
@@ -1427,6 +1442,7 @@ export class Game {
   onNewDay() {
     this.defense.heal(); // M31: abgelaufene Wunden heilen, aus »schwer verletzt« wird eine Narbe
     this.world.setMemorial(this.state.fallen, this.state.time.day); // die Laterne am Brett ist aus
+    this.world.setSignalFires([]); // M32: die Signalfeuer der Frostnacht sind heruntergebrannt
     this.world.lightPools.restore(Infinity); // M22: der Morgen zündet alle Lichter wieder an
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
@@ -2612,6 +2628,7 @@ export class Game {
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
+    else if (this.testLook) this.rig.update(dt, this.testLook, ZERO); // nur Prüfung: fester Blickpunkt fürs Bild
     else {
       this.tour = null;
       this.rig.update(dt, this.player.position, this.player.velocity);
@@ -2848,8 +2865,12 @@ export class Game {
       if (this.milled) this.hud.toast(T.muehle.gemahlen(this.milled), 'windrad', 4); // M19
       // M31: Was die Lagerglocke gebracht hat, erzählt der Bericht (oder eine Meldung)
       const bell = this.defense.morning();
-      if (bell.length && this.state.report) this.state.report.extra = [...(this.state.report.extra || []), ...bell];
-      else for (const line of bell) this.hud.toast(line.text, 'lagerglocke', 5);
+      const mail = this.post.morning(); // M32: Post im Briefkasten, Besuch, Edda
+      if ((bell.length || mail.length) && this.state.report) this.state.report.extra = [...(this.state.report.extra || []), ...bell, ...mail];
+      else {
+        for (const line of bell) this.hud.toast(line.text, 'lagerglocke', 5);
+        for (const line of mail) this.hud.toast(line.text, 'brief', 5);
+      }
       // Wach geblieben: Der Morgenbericht kommt trotzdem (m12-r1: er kam nur nach dem Schlafen)
       if (this.state.report && this.mode === 'play') this.showReport();
     }
@@ -3057,6 +3078,7 @@ export class Game {
 
   /** Text der Einblendung. Sessel und Bank sagen tagsüber gleich, dass man dort ausruhen kann (m3-r2). */
   promptText(it) {
+    if (it.mailbox && this.post.waiting) return T.aktionen.postHolen; // M32
     if (it.memorial) return this.memorialEvening() && !this.state.fallen.every((f) => f.lit === this.state.time.day) ? T.aktionen.erinnerung : T.aktionen.erinnerungAnsehen; // M31
     if ((it.id === 'sessel' || it.use === 'bank') && !this.nights.active && canRest(this.state)) return T.aktionen.ausruhen;
     return T.aktionen[it.prompt];
@@ -3483,6 +3505,10 @@ export class Game {
       },
       setTime(hours, minutes = 0) {
         game.state.time.minute = (((hours - 6) * 60 + minutes) % DAY_MINUTES + DAY_MINUTES) % DAY_MINUTES;
+      },
+      /** Kamera auf einen festen Punkt (nur fürs Bild, `null` folgt wieder Mika). */
+      lookAt(x, z) {
+        game.testLook = x === null || x === undefined ? null : new THREE.Vector3(x, 0, z);
       },
       teleport(x, z, facing = 0) {
         Object.assign(game.state.player, { x, z, facing });
@@ -3957,7 +3983,22 @@ export class Game {
         game.state.time.day += 1;
         game.state.time.minute = 60;
         game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
-        return [...game.defense.morning(), ...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages
+        return [...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post
+      },
+      /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
+      post: () => {
+        const e = game.survivors.npcs.list.get('edda');
+        const card = game.mode === 'lieferung' ? game.deliveryCard.items[game.deliveryCard.k] || null : null;
+        return {
+          ...game.post.info(),
+          flag: Boolean(game.world.mailFlag),
+          places: game.post.places(),
+          fires: (game.world.signalSpots || []).map((f) => f.place),
+          visitor: game.post.visitorToday(),
+          edda: { ...game.state.edda, athome: game.survivors.eddaHome(), visible: Boolean(e?.model.root.visible), x: e?.x ?? null, z: e?.z ?? null },
+          card: card && typeof card === 'object' ? { ...card } : card,
+          mode: game.mode,
+        };
       },
       /** Der offene Dialog: Zeile, Sprecher, Antworten (mit Aktion) und die vorgewählte. */
       dialogInfo: () => {

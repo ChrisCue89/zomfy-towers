@@ -28,8 +28,8 @@ const NOTE_TEXT_W = NOTES_W - 24;
  * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
  * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
  */
-const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust
-const BOOK_W = 350;
+const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'post', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust, M32: »Post« mit dem ersten Brief
+const BOOK_W = 420; // M32: Platz für sechs Reiter
 const BOOK_ROW = 13;
 const BOOK_ROWS = 8;
 const BOOK_TEXT_W = BOOK_W - 24;
@@ -230,9 +230,10 @@ export class Menu {
     this.game.sound.play('klick');
   }
 
-  /** Die Seiten des Herbstbuchs – »Erinnerung« (M31) erst, wenn jemand gefallen ist. */
+  /** Die Seiten des Herbstbuchs – »Erinnerung« (M31) erst, wenn jemand gefallen ist, »Post« (M32) mit dem ersten Brief. */
   bookPages() {
-    return this.game.state.fallen?.length ? BOOK_PAGES : BOOK_PAGES.filter((p) => p !== 'erinnerung');
+    const st = this.game.state;
+    return BOOK_PAGES.filter((p) => (p !== 'erinnerung' || st.fallen?.length) && (p !== 'post' || st.post?.read?.length));
   }
 
   /** Zeilen, Beschreibungen und Zähler der aufgeschlagenen Seite (einmal je Seite berechnet). */
@@ -304,6 +305,24 @@ export class Menu {
         };
       });
       empty = lines(tb.leer, COLORS.textDim);
+    } else if (this.page === 'post') {
+      // M32: Briefe von unterwegs – Absender, Tag, der Brief selbst, der Ort
+      const N = T.netz;
+      rows = [...(this.game.state.post?.read || [])].reverse().map((m, k) => {
+        const who = personOf(m.from);
+        const place = T.wanderer.vomOrt[who?.place] || '';
+        const text = m.kind === 'brief2' ? N.zweite[m.from] : T.wanderer.briefe[m.from];
+        return {
+          id: `post-${k}`,
+          label: `${who?.name || m.from}${m.kind === 'brief2' ? ' (2)' : ''}`,
+          right: N.tag(m.day),
+          color: COLORS.text,
+          rightColor: COLORS.textDim,
+          detail: [...lines(text || N.stimmeAlle, COLORS.textWarm), ...lines(N.buchOrt(place, m.day), COLORS.textDim, true)],
+        };
+      });
+      count = N.buchTitel;
+      empty = lines(N.buchLeer, COLORS.textDim);
     } else if (this.page === 'erinnerung') {
       // M31: Die mit uns waren – Name, Tage in der Bucht, die Zeile, die bleibt, das Erinnerungsstück
       const E = T.erinnerung;

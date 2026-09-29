@@ -232,6 +232,24 @@ export class World {
     this.refreshInteractions();
   }
 
+  /** M32: Fahne am Briefkasten – oben, solange Post darin liegt. */
+  setMailFlag(on) {
+    this.mailFlag = Boolean(on);
+    this.props.setMailFlag(on);
+  }
+
+  /**
+   * M32: Signalfeuer auf den Inseln (Frostnacht) – je Ort eines mit Lichtinsel; eine leere
+   * Liste löscht sie wieder (am Morgen). Liefert die Stellen (für die Karte).
+   */
+  setSignalFires(places) {
+    const spots = this.props.setSignalFires(places);
+    for (const pool of this.signalPools || []) this.lightPools.remove(pool);
+    this.signalPools = spots.map((s) => this.lightPools.add(s.x, s.z + 0.25, 2.4));
+    this.signalSpots = spots;
+    return spots;
+  }
+
   setTowerStage(stage, beaconRange = 9) {
     this.props.setTowerStage(stage);
     if (stage >= 3 && !this.beaconPool) {
@@ -631,7 +649,9 @@ export class World {
       // Wall und Tor (M17) treten hinter Quellen, Bauten und Menschen zurück: Ihr Bereich
       // reicht weit ins Lager – der junge Baum am Wall wurde sonst zum »Auswählen«
       const camp = it.camp ? 1.0 : 0;
-      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) + (rest ? 0.35 : 0) + camp - (it.npc ? 1.0 : 0) - (it.priority ? 0.6 : 0);
+      // Menschen gehen vor, Knopf nicht (M32: der streunende Hund nahm sonst dem Briefkasten das E)
+      const person = it.npc && !it.dog ? 1.0 : 0;
+      const score = d - facingDot * 0.5 + (flavor ? 0.6 : 0) + (rest ? 0.35 : 0) + camp - person - (it.priority ? 0.6 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = it;

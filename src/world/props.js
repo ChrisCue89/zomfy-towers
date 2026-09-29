@@ -12,6 +12,7 @@ import { BAY } from './map.js';
 import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { FINE, FINE32, shade, logX, logZ, stoneBlob, box2 } from './voxelKit.js';
 import { buildRainBarrel, buildPumpkin, buildJackOLantern, buildLeafPile } from './decoModels.js';
+import { SIGNAL_SPOTS } from '../data/network.js';
 
 // --- Modelle --------------------------------------------------------------------
 
@@ -377,8 +378,12 @@ function buildSign(seed) {
   return m;
 }
 
-/** Briefkasten (M13g, 1/32 m): blau, runder Deckel, Klappe mit Rahmen, Namensschild und Griff, ein Brief schaut heraus, rotes Fähnchen. */
-function buildMailbox() {
+/**
+ * Briefkasten (M13g, 1/32 m): blau, runder Deckel, Klappe mit Rahmen, Namensschild und Griff.
+ * M32: Mit Post (`flagUp`) schaut ein Brief heraus und das rote Fähnchen steht, sonst liegt der
+ * Arm waagerecht an der Seite und das Fähnchen hängt vorn herab.
+ */
+function buildMailbox(flagUp = false) {
   const m = new VoxelModel();
   m.box(0, 0, -2, 3, 33, 1, (x, y) => (x === 0 ? P.e5 : y % 11 === 0 ? P.e3 : P.e4));
   m.box(-1, 30, -3, 4, 33, 2, (x, y) => (y === 33 ? P.e4 : P.e3)); // Halter
@@ -398,11 +403,52 @@ function buildMailbox() {
       for (let z = -8; z <= 7; z++) m.set(x, y, z, z === 7 ? P.b1 : x < 0 ? P.b5 : y === 45 + h ? P.b4 : P.b3);
     }
   }
-  m.box(0, 44, 8, 4, 46, 8, (x, y) => (y === 44 ? P.s7 : P.a4)); // Brief
   m.box(1, 41, 8, 2, 42, 8, P.s6); // Griff
-  m.box(8, 36, -2, 9, 53, -1, (x) => (x === 8 ? P.s6 : P.s5)); // Fähnchen
-  m.box(8, 46, 0, 9, 53, 5, (x, y) => (y === 53 ? P.r4 : y === 46 ? P.r2 : P.r3));
+  if (flagUp) {
+    m.box(0, 44, 8, 4, 46, 8, (x, y) => (y === 44 ? P.s7 : P.a4)); // Brief
+    m.box(8, 36, -2, 9, 53, -1, (x) => (x === 8 ? P.s6 : P.s5)); // Fähnchen oben: Post ist da
+    m.box(8, 46, 0, 9, 53, 5, (x, y) => (y === 53 ? P.r4 : y === 46 ? P.r2 : P.r3));
+  } else {
+    m.box(8, 38, -6, 9, 39, 6, (x) => (x === 8 ? P.s6 : P.s5)); // Arm waagerecht an der Seite
+    m.box(8, 32, 1, 9, 37, 6, (x, y) => (y === 37 ? P.r3 : y === 32 ? P.r1 : P.r2)); // Fähnchen hängt
+  }
   return m;
+}
+
+/**
+ * M32: Signalfeuer auf einer Insel (1/32 m) – ein Steinring, ein Zelt aus Scheiten und ein
+ * Stab mit Wimpel; `glow` ist die Flamme (Eigenlicht, kein Punktlicht).
+ */
+function buildSignalFire(seed) {
+  const model = new VoxelModel();
+  const glow = new VoxelModel();
+  // Steinring
+  for (let a = 0; a < 16; a++) {
+    const x = Math.round(Math.cos((a / 16) * Math.PI * 2) * 9);
+    const z = Math.round(Math.sin((a / 16) * Math.PI * 2) * 7);
+    const tone = hash3(a, 0, 0, seed) < 0.4 ? P.s4 : P.s5;
+    model.box(x - 1, 0, z - 1, x + 1, 3, z + 1, (xx, y) => (y === 3 ? P.s6 : tone));
+  }
+  // Scheite als Zelt, oben zusammengebunden
+  const logs = [[-7, -4], [6, -5], [-6, 5], [7, 4], [0, -7], [0, 6]];
+  logs.forEach(([x, z], k) => model.line(x, 2, z, 0, 30, 0, k % 2 ? P.e3 : P.e4, 2));
+  model.box(-1, 26, -1, 1, 28, 1, P.e6); // Strick
+  // Stab mit Wimpel dahinter (nach Norden versetzt)
+  model.box(10, 0, -9, 11, 52, -8, (x) => (x === 10 ? P.e4 : P.e3));
+  model.box(12, 44, -9, 19, 51, -9, (x, y) => ((x + y) % 5 === 0 ? P.f6 : y >= 48 ? P.f4 : P.f3));
+  // Flamme: breit unten, spitz oben, mit Zungen
+  for (let y = 4; y <= 44; y++) {
+    const t = (y - 4) / 40;
+    const r = Math.round(8 * (1 - t) ** 0.8);
+    for (let x = -r; x <= r; x++) {
+      for (let z = -r; z <= r; z++) {
+        if (x * x + z * z > r * r + 1) continue;
+        if (y > 30 && hash3(x, y >> 1, z, seed + 3) < 0.35) continue; // Zungen
+        glow.set(x, y, z, 0xffffff);
+      }
+    }
+  }
+  return { model, glow };
 }
 
 function buildClothesline(seed, spanVoxels) {
@@ -1083,9 +1129,17 @@ export function createProps({ seed, materials, colliders, map }) {
   colliders.addCircle(sign.x + 0.125, sign.z + 0.125, 0.2);
   interactions.push({ id: 'schild', x: sign.x, z: sign.z, radius: 1.4, prompt: 'lesen', dialog: 'schild' });
   const mail = LAYOUT.mailbox;
-  add(buildMailbox(), mail.x, mail.z, { name: 'Briefkasten' });
+  const mailEmpty = add(buildMailbox(false), mail.x, mail.z, { name: 'Briefkasten' });
+  const mailFull = add(buildMailbox(true), mail.x, mail.z, { name: 'Briefkasten' });
+  mailFull.visible = false; // M32: Fahne oben, sobald Post da ist (setMailFlag)
   colliders.addCircle(mail.x, mail.z, 0.2);
-  interactions.push({ id: 'briefkasten', x: mail.x, z: mail.z, radius: 1.2, prompt: 'nachsehen', dialog: 'briefkasten' });
+  interactions.push({ id: 'briefkasten', x: mail.x, z: mail.z, radius: 1.2, prompt: 'nachsehen', mailbox: true });
+
+  // M32: Signalfeuer auf den Inseln (Frostnacht) – gebaut erst, wenn eins brennt
+  const signalGroup = new THREE.Group();
+  signalGroup.name = 'Signalfeuer';
+  group.add(signalGroup);
+  const signalFires = new Map(); // Ort -> Objekt
 
   // Wäscheleine
   const cl = LAYOUT.clothesline;
@@ -1233,6 +1287,31 @@ export function createProps({ seed, materials, colliders, map }) {
         b.object.visible = k === n;
         if (b.glow) b.glow.visible = k === n && lit;
       }
+    },
+    /** M32: Fahne am Briefkasten – oben, solange Post darin liegt. */
+    setMailFlag(on) {
+      mailFull.visible = !!on;
+      mailEmpty.visible = !on;
+    },
+    /** M32: Signalfeuer an den Orten `places` zeigen (die übrigen aus); liefert ihre Stellen. */
+    setSignalFires(places) {
+      const out = [];
+      for (const place of places) {
+        const spot = SIGNAL_SPOTS[place];
+        if (!spot) continue;
+        if (!signalFires.has(place)) {
+          const built = buildSignalFire(seed + 200 + signalFires.size);
+          const object = createStaticVoxelObject(built.model, materials.world, { seed, size: FINE32, shadow: 'coarse4' });
+          if (materials.torchGlow) object.add(createStaticVoxelObject(built.glow, materials.torchGlow, { size: FINE32, shadow: 'none', jitter: 0 }));
+          object.position.set(spot.x, 0, spot.z);
+          object.name = `Signalfeuer ${place}`;
+          signalGroup.add(object);
+          signalFires.set(place, object);
+        }
+        out.push({ place, x: spot.x, z: spot.z });
+      }
+      for (const [place, object] of signalFires) object.visible = places.includes(place);
+      return out;
     },
     /** Funkturm-Ausbau zeigen (0 = Stumpf, 3 = Leuchtfeuer). */
     setTowerStage(stage) {

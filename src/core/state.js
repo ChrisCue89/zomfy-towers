@@ -26,8 +26,9 @@ import { newCardState, sanitizeCards } from './cardNight.js';
 import { newBonds, sanitizeBonds } from '../data/bonds.js';
 import { AMMO, newArms, sanitizeArms, sanitizeTraining } from '../data/arms.js';
 import { LOSSES_DEFAULT, newBell, sanitizeWounds } from '../data/bell.js';
+import { newPost, sanitizePost } from '../data/network.js';
 
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 28;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -114,6 +115,10 @@ export function createNewState(config, mapSeed = 1) {
     scars: {},
     fallen: [],
     losses: LOSSES_DEFAULT[DEFAULT_DIFFICULTY],
+    // M32: das Netzwerk – Briefkasten, gelesene Briefe, verschickte Pakete und zweite Briefe
+    // (`id:art`), Einladung, Besuch zum Fest, Signalfeuer; Edda (ab welchem Tag zu Hause, begrüßt)
+    post: newPost(),
+    edda: { home: 0, met: false },
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -254,6 +259,8 @@ export function sanitizeState(data, config) {
     : [];
   out.losses = typeof data.losses === 'boolean' ? data.losses : LOSSES_DEFAULT[out.difficulty] ?? true;
   if (out.difficulty === 'gemuetlich') out.losses = false;
+  out.post = sanitizePost(data.post); // M32
+  out.edda = { home: Math.floor(num(data.edda?.home, 0, 0, 1e6)), met: data.edda?.met === true };
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

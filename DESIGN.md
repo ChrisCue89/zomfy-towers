@@ -1771,19 +1771,21 @@ Gedenkwand), Darkest Dungeon (der Treffer auf null tötet nie).
 *Prüfen:* Glocke nur nach einem Durchbruch und einmal je Nacht, Rettung mit
 echter Taste, Tod nur nach der Glocke und nie auf »Gemütlich«, Speichern.
 
-#### M32 – Netzwerk und Wiedersehen
+#### M32 – Netzwerk und Wiedersehen ✓
 
 *Ziel:* Wer weitergezogen ist, bleibt in der Welt.
 
 *Vorbild:* die Briefe in Death Stranding, die Post in Stardew Valley, die
 Enklaven in State of Decay 2.
 
-- **Briefe** (Oma Hilde), **Pakete** (Balduin), **Stimmen** (Juna), Besuche und
-  Rückkehr (Nr. 164).
-- In der Frostnacht leuchten die **Signalfeuer**; jede Figur hat ihr Motiv in
-  der Musik.
+- **Briefe** im Briefkasten mit Fahne (Oma Hilde bringt sie), **Pakete** mit
+  Balduin, **Stimmen** über Junas Funkgerät, **Besuch** zum Fest und
+  **Rückkehr** über Balduins Einladung (Nr. 164, 191).
+- In der Frostnacht brennen **Signalfeuer** auf den Inseln; jede Figur hat ihr
+  **Motiv** in der Spieluhr; nach dem Herbst kommt **Edda nach Hause**.
 
-*Prüfen:* Brief und Paket kommen, Rückkehr, Signalfeuer in der Frostnacht.
+*Prüfen:* Brief und Paket kommen, Rückkehr, Signalfeuer in der Frostnacht, Edda
+zu Hause (Abschnitt `netzwerk`).
 
 #### M33 – Angeln am Steg, Licht und Schwellen
 

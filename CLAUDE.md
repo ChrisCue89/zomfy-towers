@@ -198,7 +198,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Hülsen, Leuchtkugeln, Lärm, M30), training (Übungsplatz:
                       wer übt, Stufen, M30), defense (Lagerglocke: Läuten,
                       Kampf der Bewohner, Aufhelfen, Wunden, Verluste,
-                      Bericht, M31), quests (Nebenaufträge:
+                      Bericht, M31), post (Netzwerk: Briefkasten, Pakete,
+                      Stimmen, Besuch, Rückkehr, Signalfeuer, M32), quests
+                      (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
                       (Herbstbuch: Sterne, Taten, Herbstschmuck,
@@ -235,7 +237,9 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       als eigenes Bild: Räume je Stufe, Licht, Tür, M11),
                       props (Steg, Leuchtmast, Wrack,
                       Warnpfähle, Herbstschmuck: Kürbisse, Kürbislaternen,
-                      Laubhaufen, Treibholz, Sitzplätze der Krähen), weather
+                      Laubhaufen, Treibholz, Sitzplätze der Krähen,
+                      Briefkasten mit Fahne, Signalfeuer auf den Inseln,
+                      M32), weather
                       (Wetter in der Welt: Licht, Wind, Nebelbänke, Laub,
                       Atem, Regen im Bild, M12), colliders, daynight, lights,
                       particles (auch trudelndes Laub mit Boden),
@@ -307,6 +311,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       arms (Schusswaffen, Munition, Notfallwaffen, Übung und
                       Profile, verlorene Waffen, M30/M31), bell (Lagerglocke,
                       Kampf der Bewohner, Wunden, »Verluste«, M31),
+                      network (Netzwerk: Zeiten, Pakete, Stellen und Hilfe der
+                      Signalfeuer, M32), motifs (Motive der Figuren für die
+                      Spieluhr, M32),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -630,6 +637,30 @@ Grundprinzipien:
   Meldungen) lesen sie. Wie stark jemand hilft, sagt `survivors.strength(id)`
   (0/0,5/1); `ability(art)` gibt die Stärke zurück. `state.losses` gilt nur, wenn
   die Schwierigkeit nicht »Gemütlich« ist (`defense.losses`).
+- **Netzwerk und Wiedersehen (M32, `core/post.js`, `data/network.js`,
+  `data/motifs.js`):**
+  - `state.post` hält den Briefkasten (`box`), Gelesenes (`read`, Seite »Post« im
+    Herbstbuch), Verschicktes (`sent`: `id:brief2`, `id:paket`), die Einladung,
+    den Besuch zum Fest und ob die Signalfeuer schon Hilfe brachten.
+  - Briefe: `post.morning()` läuft im Morgenbericht und auch, wenn Mika wach
+    bleibt. Es legt höchstens eine Nachricht in den Kasten und setzt die Fahne
+    (`world.setMailFlag`). Der erste Brief kommt über
+    `survivors[id].letter`/`read` aus M27. Die Einblendung am Briefkasten hat
+    `mailbox: true`; `post.open` zeigt Karten in `DeliveryCard` (Art `letter`).
+  - Pakete bringt `game.deliverOrders` (`post.parcels`, Karte `parcel`).
+  - Die Stimmen sind ein Dialog (`stimmen`) über das Funkgerät.
+  - Der Besuch sitzt über `VISIT_SPOT` am Feuer (`post.visitorToday`).
+  - Balduins Einladung ist ein Angebot mit `gives.invite`; die Rückkehr läuft über
+    `survivors.arrive` (`post.arrivals`).
+  - Signalfeuer: In der Frostnacht zündet `autumn.beginNight` sie an
+    (`post.signalFires` → `world.setSignalFires`). Sie stehen an den Stellen
+    `SIGNAL_SPOTS` auf den Inseln, mit Lichtinseln; `world.signalSpots` liefert
+    sie für die Karte. `onNewDay` löscht sie.
+  - Motive (`motifOf`) spielt `sound.memorial(id)`.
+  - Edda: `autumn.choose('weiter')` setzt `state.edda.home` auf den nächsten Tag.
+    `survivors.placeEdda` stellt sie tagsüber ans Stegende (`EDDA_SPOT`, Figur aus
+    `eddaParts32`). `talkEdda` führt zu `eddaHeimkehr` bzw. `eddaDa` (Sprecher
+    `eddaHier`, Porträt `eddaHeute`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -969,7 +1000,16 @@ Grundprinzipien:
    Bert ist schwer verletzt, Balduin bringt Ersatz; abends zündet E die Laterne am
    Brett an, die Karte zeigt Juna; die Seite »Erinnerung« im Herbstbuch; Speichern
    v27 und Migration v26 → v27 (Bilder: glocke-tafel, glocke-kampf,
-   glocke-aufhelfen, erinnerung, erinnerungsbrett).
+   glocke-aufhelfen, erinnerung, erinnerungsbrett); ab M32 (Abschnitt
+   `netzwerk`): morgens liegt Post im Briefkasten (Hilde hat sie gebracht, die
+   Fahne ist oben), E am Briefkasten (echte Taste) zeigt die Briefkarte, danach
+   ist die Fahne unten; ein Paket aus dem Forsthaus kommt mit Balduin; mit Juna
+   hat das Funkgerät »Die anderen«; zum Fest sitzt Hannes zu Besuch am Feuer;
+   Balduin nimmt eine Einladung mit, am Morgen ist Hannes wieder da; in der
+   Frostnacht brennen zwei Signalfeuer auf den Inseln, auch auf der Karte; nach
+   dem Herbst steht Edda am Stegende (echte Taste); die Seite »Post« im
+   Herbstbuch; Speichern v28 und Migration v27 → v28 (Bilder: brief, paket,
+   signalfeuer, signalkarte, edda-daheim).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1110,8 +1150,12 @@ Narben, Gefallene, verlorene Waffen, den Bericht und die Stärke je Bewohner,
 `ringBell()` läutet ohne Taste, `breach()` setzt einen Durchbruch, `hitPerson(id,
 n)` trifft jemanden, `setLosses(an)` stellt »Verluste«, `fallPerson(id)` lässt
 jemanden fallen, `memorial()` zeigt das Erinnerungsbrett (Einblendung, Lichtinsel,
-Spieluhr).
-`window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
+Spieluhr); ab M32 zeigt `post()` Briefkasten, Gelesenes, Verschicktes,
+Einladung, Besuch, Fahne, Signalfeuer, Edda und die offene Karte
+(`nextMorning()` bringt auch die Post).
+`window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
+`lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
+wieder Mika, M32).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

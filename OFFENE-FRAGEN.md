@@ -2122,6 +2122,37 @@ statt einer Sperre machen sichtbar, was Mika den anderen wegnimmt. Wunden im
 Spielstand verhindern, dass man den Morgen »zurücklädt« (Nr. 166: sofort
 gespeichert).
 
+### 191. Das Netzwerk im Einzelnen (M32)
+**Entscheidung:**
+- **Briefe:** Die Post liegt im Briefkasten am Hofeingang, nicht im Bericht. Der
+  Bericht sagt nur, dass etwas da ist; lesen muss man selbst (eine Karte je
+  Brief, danach im Herbstbuch).
+- **Zeiten:** Ein zweiter Brief kommt nach neun bis zwölf Tagen, ein Paket nach
+  fünf bis acht Tagen mit Balduins nächstem Anlegen. Beide Zeiten stehen fest aus
+  Name und Tag, damit Neuladen nichts ändert. Wer ein zweites Mal weiterzieht,
+  schreibt keinen zweiten ersten Brief.
+- **Stimmen** gibt es nur mit Juna (Funkerin) und nur von Leuten, die schon
+  geschrieben haben.
+- **Besuch:** Zum Fest kommt jede Person höchstens einmal.
+- **Rückkehr:** Die Einladung kostet drei Zombieteile Fährgeld und geht nur, wenn
+  ein Platz frei ist. Wer zurückkommt, ist Gast am Feuer und entscheidet gleich,
+  ohne einen zweiten Tag Warten.
+- **Signalfeuer:** Sie brennen auf den drei Felsinseln, denn die Orte selbst
+  liegen hinter dem Kartenrand. Die Leute sind hinübergerudert, damit die Bucht
+  es sieht. Die Hilfe der Orte kommt einmal, auch wenn die Frostnacht wiederholt
+  werden muss.
+- **Edda** kommt am Morgen nach der Wahl »Hierbleiben« nach Hause. Sie nimmt
+  keinen Schlafplatz: Sie wohnt im Haus, steht tagsüber am Stegende und hilft
+  nachts nicht.
+
+**Warum:**
+- Briefe, die man selbst holt, sind ein kleiner Moment am Morgen (Animal
+  Crossing, Stardew Valley) statt einer weiteren Berichtszeile.
+- Feste Tage statt Zufall machen den Spielstand verlässlich.
+- Die Inseln sind das einzige »Drüben«, das man im Bild sieht.
+- Edda als Bewohnerin mit Platz und Fähigkeit hätte die Balance der Plätze
+  verändert. Sie ist Belohnung und Abschluss der Geschichte, kein Werkzeug.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

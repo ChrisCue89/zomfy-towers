@@ -286,6 +286,24 @@ const ICONS = {
     ],
   },
   // M31: Lagerglocke – Galgen aus Treibholz, Bronzeglocke, Seil mit Knoten
+  // M32: Brief (Luftpost-Umschlag mit rotem Siegel)
+  brief: {
+    legend: { k: P.n1, w: P.s9, W: P.s8, s: P.s6, r: P.r3, R: P.r4, b: P.b3 },
+    rows: [
+      '............',
+      'kkkkkkkkkkkk',
+      'kbWwwwwwwWbk',
+      'kssWwwwwWssk',
+      'kwwsWwwWswwk',
+      'kwwwsrRswwwk',
+      'kwwwwrrwwwwk',
+      'kwwwwwwwwwwk',
+      'kbwwwwwwwwbk',
+      'kkkkkkkkkkkk',
+      '............',
+      '............',
+    ],
+  },
   lagerglocke: {
     legend: { k: P.n1, w: P.s6, W: P.s5, b: P.e5, B: P.e7, h: P.f7, r: P.e8 },
     rows: [

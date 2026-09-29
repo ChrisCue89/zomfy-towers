@@ -73,6 +73,7 @@ export class Autumn {
     if (this.planMode(n) === 'finale') {
       this.game.hud.toast(T.herbst.frostnacht, 'warnung', 7);
       this.game.funk?.once('frost', T.funk.frost); // N4: Edda ist näher, als man denkt
+      this.game.post?.signalFires(); // M32: auf den Inseln brennt für jeden Weitergezogenen ein Feuer
     }
   }
 
@@ -242,6 +243,8 @@ export class Autumn {
     const g = this.game;
     if (answer === 'weiter') {
       this.st.mode = 'weiter';
+      const edda = g.state.edda; // M32: »bald komme ich nach Hause« – am nächsten Morgen ist sie da
+      if (edda && !edda.home) edda.home = g.state.time.day + 1;
       g.hud.toast(T.herbst.weiterGewaehlt, 'mond', 6);
       g.quietSave();
     } else if (answer === 'neu') {
