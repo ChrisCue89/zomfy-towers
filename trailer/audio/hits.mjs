@@ -52,7 +52,7 @@ export function buildHits({ masterInfo = null, sfxInfo = null } = {}) {
     { t: T.title, name: 'titel-figur', strength: 'weich', note: 'Spieluhr G–H–D–G; Akkord Gadd9 bei +0,6 s' },
   ].map((x) => ({ ...x, t: r4(x.t), frame: Math.round(x.t * FPS) }));
   const silences = [
-    { name: 'luft-holen-1', start: 40.6, end: r4(T.boss), sound: 'Musik weg (Ausblendung 40,5–40,78), Herzschläge bei 40,7 (+ zweiter Schlag 40,9) und 41,0; der Einschlag bei 41,233 folgt 0,23 s danach' },
+    { name: 'luft-holen-1', start: 40.6, end: r4(T.boss), sound: 'Musik weg (Ausblendung 40,5–40,78), zwei einzelne Herzschläge bei 40,7 und 41,0; der Einschlag bei 41,233 folgt 0,23 s danach' },
     { name: 'luft-holen-2', start: r4(T.bossEnd), end: T.morning, sound: 'Schlussschlag des Boss bei 51,668 (klingt ~0,3 s aus), dann nur leiser Wind, ab ≈ 52,6 Vogel; 52,2 setzt die Spieluhr ein' },
   ];
   return {
@@ -69,7 +69,7 @@ export function buildHits({ masterInfo = null, sfxInfo = null } = {}) {
     silences,
     heartbeats: {
       wende: R(hb.times), // Abstände 0,9 → 0,45 s; der nächste »Schlag« ist der Einschlag bei 16,0 (jeweils + 0,2 s zweiter Schlag)
-      stille: R(HEART_SILENCE), // 40,7 (mit zweitem Schlag bei 40,9) und 41,0
+      stille: R(HEART_SILENCE), // 40,7 und 41,0 (je ein einzelner Schlag)
     },
     cues: {
       jingle: R([0, 0.15, 0.3, 0.45]), // Glocken G–H–D–G; Akkord bei 0,6; Glitzern ab 1,15

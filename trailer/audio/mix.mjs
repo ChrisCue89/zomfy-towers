@@ -182,7 +182,7 @@ export function mixStems(raw, opts = {}) {
     const b = place(raw[id]);
     const db = gainTo(b, cfg);
     log.push(`${id}: ${db.toFixed(1)} dB`);
-    bedParts.push(scaled(b, db));
+    bedParts.push(scaled(b, db, fadeOut(T.end - 1.0, T.end)));
   }
   const bed = sum(bedParts);
 

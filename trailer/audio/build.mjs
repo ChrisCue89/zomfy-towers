@@ -11,7 +11,7 @@ import { GAME_DIR, AUDIO } from '../config.mjs';
 import { openBrowser } from './browser.mjs';
 import { SR, TOTAL_SAMPLES } from './score.mjs';
 import { mixStems, master } from './mix.mjs';
-import { writeWav16, writeWavFloat, Meter, shortTermRms, toDb } from './dsp.mjs';
+import { writeWav16, writeWavFloat, shortTermRms } from './dsp.mjs';
 import { buildHits } from './hits.mjs';
 import { verify, spectrograms } from './verify.mjs';
 
@@ -98,5 +98,8 @@ const hits = buildHits({ masterInfo: info, sfxInfo });
 writeFileSync(join(outDir, 'hits.json'), JSON.stringify(hits, null, 1));
 say('hits.json geschrieben');
 
-if (!flag('no-verify')) await verify(join(outDir, 'trailer.wav'), out, { say });
+if (!flag('no-verify')) {
+  const checks = await verify(join(outDir, 'trailer.wav'), out, { say });
+  if (checks.some((c) => !c.ok)) process.exitCode = 1;
+}
 if (flag('spectro')) await spectrograms(join(outDir, 'trailer.wav'), join(outDir, 'check'), { say });

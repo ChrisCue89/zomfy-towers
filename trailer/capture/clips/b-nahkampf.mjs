@@ -20,8 +20,8 @@ await rec.eval(() => {
   g.player.facing = -Math.PI / 2;
   // vier Schlurfer und ein Flitzer kommen aus dem Westen über den Hof
   const b = window.__b;
-  const list = [['schlurfer', -3.3, 0.2], ['schlurfer', -4.2, -0.7], ['schlurfer', -4.6, 0.9], ['flitzer', -6.4, 0.2], ['schlurfer', -5.3, -0.2]];
-  for (const [t, x, z] of list) b.zombie(t, x, z, { hp: 1.7 });
+  const list = [['schlurfer', -1.5, -0.35], ['schlurfer', -1.8, 0.45], ['schlurfer', -2.6, -0.1], ['schlurfer', -3.3, 0.6], ['flitzer', -4.6, -0.3]];
+  for (const [t, x, z] of list) b.zombie(t, x, z, { hp: t === 'flitzer' ? 1.0 : 0.6 });
   // Nacht gilt als schon geplant: nur diese Schlurfer sind noch übrig – fällt der letzte, ist sie gehalten
   g.nights.beginNight(g.state.time.day);
   g.state.night.wave = g.nights.plan.waves.length;
@@ -48,9 +48,9 @@ await rec.eval(() => {
     const dx = best.x - p.x;
     const dz = best.z - p.z;
     // ausweichen: ein Zombie steht ganz nah und holt gerade aus
-    if (!rolled && i > 20 && bd < 1.0 && best.attackAnim > 0 && g.combat.canRoll) {
+    if (!rolled && i >= 30 && g.combat.canRoll) {
       rolled = true;
-      inp.down.add(dz > 0 ? 'KeyW' : 'KeyS');
+      inp.down.add('KeyS'); // Ausweichrolle nach Süden
       inp.pressedCodes.add('Space');
       return;
     }
@@ -66,7 +66,7 @@ await rec.eval(() => {
     }
   };
 });
-await rec.sim(1.2);
+await rec.sim(0.2);
 if (process.env.ZT_DRY) {
   // Trockenlauf ohne Bilder: Ablauf des Autopiloten protokollieren
   const log = await rec.eval((n) => {

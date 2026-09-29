@@ -8,7 +8,7 @@
 
 import { Sound } from '/game/src/audio/sound.js';
 import { Music, hz } from '/game/src/audio/music.js';
-import { SR, DURATION, T, BAR, BPM, TITEL_MID_OFFSET, heartbeatsTransition, HEART_SILENCE } from '/score.mjs';
+import { SR, DURATION, T, BAR, BPM, heartbeatsTransition, HEART_SILENCE } from '/score.mjs';
 
 // --- Zufall ---------------------------------------------------------------------------------
 
@@ -421,8 +421,8 @@ tasks['trans-heart'] = async () => {
   // Wende: Abstand 0,9 → 0,45 s, lauter werdend; der letzte »Schlag« ist der Einschlag
   const hb = heartbeatsTransition();
   hb.times.forEach((t, k) => beat(t, 0.55 + 0.75 * (k / (hb.times.length - 1))));
-  // Stille vor dem Boss: zwei Schläge (der zweite ohne »dub« – der Einschlag folgt 0,23 s später)
-  beat(HEART_SILENCE[0], 0.9, true);
+  // Stille vor dem Boss: zwei einzelne, langsame Schläge (ohne »dub«) – der Einschlag folgt 0,23 s nach dem zweiten
+  beat(HEART_SILENCE[0], 0.9, false);
   beat(HEART_SILENCE[1], 1.1, false);
   const buf = await ctx.startRendering();
   return { parts: [pack(buf, ...SPAN_TRANS), pack(buf, 40.3, 42.0)] };
@@ -521,8 +521,9 @@ tasks['bed-waves'] = async () => {
     s.noise(t, dur, { type: 'lowpass', freq: 900, freqEnd: 330, q: 0.6, attack: dur * 0.38, peak, out });
     s.noise(t + 0.15, dur * 0.8, { type: 'bandpass', freq: 2300, freqEnd: 1200, q: 0.5, attack: dur * 0.36, peak: peak * 0.22, out });
   };
-  [[0.1, 5.2, 1, -0.5], [5.9, 5.6, 1.2, 0.5], [11.2, 4.2, 0.9, -0.4]].forEach((a) => wave(...a));
-  [[51.9, 5.4, 0.9, 0.5], [57.3, 4.6, 1.0, -0.5]].forEach((a) => wave(...a));
+  // Spitze jeweils 38 % nach dem Beginn; die letzte Welle vor der Wende ebbt bis 12,5 s auf −50 dB ab
+  [[0.1, 5.2, 1, -0.5], [5.4, 5.4, 1.2, 0.5], [9.6, 3.6, 0.9, -0.4]].forEach((a) => wave(...a));
+  [[51.9, 5.4, 0.9, 0.5], [56.3, 4.4, 1.0, -0.5]].forEach((a) => wave(...a));
   return pack(await ctx.startRendering());
 };
 

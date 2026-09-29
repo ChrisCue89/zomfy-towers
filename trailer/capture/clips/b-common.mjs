@@ -90,3 +90,27 @@ export function placeTowers(rec, list) {
     return out;
   }, list);
 }
+
+/**
+ * Trockenlauf: Szene aufbauen und Bild für Bild simulieren (ohne Zeichnen), bis `detect` (Funktion im
+ * Spiel) wahr wird. Gibt die Bildnummer zurück (oder −1). Danach wird mit derselben, festen Schrittfolge
+ * neu aufgebaut, und der Clip beginnt `lead` Bilder vor dem Ereignis – so ist das Wort/der Schlag im Bild.
+ */
+export async function findFrame(Rec, scene, detect, { max = 1500, open = {} } = {}) {
+  const rec = await Rec.open({ ui: 'world', ...open });
+  await scene(rec);
+  const n = await rec.eval(
+    ([src, max]) => {
+      const fn = new Function(`return (${src})`)();
+      for (let f = 0; f < max; f++) {
+        window.__b.keep();
+        window.__sim(1);
+        if (fn()) return f + 1;
+      }
+      return -1;
+    },
+    [detect.toString(), max]
+  );
+  await rec.close();
+  return n;
+}
