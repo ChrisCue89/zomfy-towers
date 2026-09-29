@@ -15,7 +15,7 @@ await rec.eval(() => {
 
 // Figur, Blickrichtung, Geste (Bild), Kameraversatz (Figur unten-mittig, leicht aus der Mitte)
 const SHOTS = [
-  { name: 'nah-hilde', id: 'hilde', facing: 0.4, gesture: ['summen', 2.0, 4], dx: 0.35, dz: -1.05, drift: 0.35, desc: 'Oma Hilde (Postbotin) steht vor ihrem Zelt am Hofeingang, summt zufrieden und wiegt den Kopf (Bild 4-34), lächelt.' },
+  { name: 'nah-hilde', id: 'hilde', at: [-3.9, -4.85], facing: 0.35, gesture: ['summen', 2.0, 4], dx: 0.35, dz: -1.05, drift: 0.35, desc: 'Oma Hilde (Postbotin) steht vor ihrem Zelt am Hofeingang, summt zufrieden und wiegt den Kopf (Bild 4-34), lächelt.' },
   { name: 'nah-juna', id: 'juna', facing: -0.5, gesture: ['winken', 1.4, 3], dx: 0.4, dz: -1.05, drift: 0.35, desc: 'Juna (Funkbastlerin) am Leuchtmast am Ende des Stegs, See und Mast im Hintergrund; winkt (Bild 3-45).' },
   { name: 'nah-bert', id: 'bert', facing: 0.2, gesture: ['bart', 1.8, 4], dx: 0.35, dz: -1.05, drift: 0.35, desc: 'Bert (Handwerker mit Schnauzer und Warnweste) am Hackklotz, kratzt sich nachdenklich am Kinn (Bild 4-58). Holzstapel/Haus im Hintergrund.' },
   { name: 'nah-yusuf', id: 'yusuf', facing: -0.3, gesture: ['brille', 1.6, 4], dx: -0.3, dz: -1.05, drift: 0.35, desc: 'Dr. Yusuf (Arzt) am Feuer neben dem Sessel, rückt die Brille zurecht (Bild 4-52). Warmes Licht, Feuer daneben.' },
@@ -30,6 +30,10 @@ for (const s of SHOTS) {
     z.teleport(-14, 4, 0); // Mika weit weg: niemand dreht sich zu ihr
     g.survivors.placeAll(true);
     const n = g.survivors.npcs.list.get(a.id);
+    // die anderen aus dem Bild nehmen (nur die Figur des Clips bleibt sichtbar)
+    for (const [id, o] of g.survivors.npcs.list) if (id !== a.id) o.model.root.visible = false;
+    if (a.at) g.survivors.npcs.place(n, a.at[0], a.at[1], a.facing);
+    n.model.root.visible = true;
     n.gestures.length = 0;
     n.facing = a.facing;
     n.restFacing = a.facing;
