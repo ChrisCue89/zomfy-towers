@@ -22,6 +22,7 @@ await rec.eval((MAST) => {
   g.world.props.beaconPos.x = MAST.x - 0.6; // Lichtinsel des Leuchtfeuers an den Steg (nur für die Aufnahme)
   g.world.props.beaconPos.z = MAST.z + 0.3;
   Z.setTowerStage(3); // Leuchtmast = Leuchtfeuer
+  g.world.lightPools.setScale(1.6); // größere Lichtinseln (wie mit Lottes Laternen)
   Z.teleport(16.6, 2.6, 4.2);
   g.player.facing = Math.PI / 2;
   const b = window.__b;
