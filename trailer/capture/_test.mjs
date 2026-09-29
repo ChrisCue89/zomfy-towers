@@ -1,0 +1,10 @@
+import { Rec } from './lib.mjs';
+const rec = await Rec.open({ ui: 'world' });
+await rec.eval(() => { window.zomfy.setHorde(false); window.zomfy.teleport(5, -3, 0); });
+await rec.sim(1);
+const r = await rec.clip('_test', { frames: 6, cam: { keys: [[0, 2, 0], [5, 6, 0]] }, ui: 'world', description: 'Test' });
+console.log(r, rec.problems);
+const st = await rec.eval(() => ({ mode: window.__uiMode, frame: window.zomfy.frame, now: performance.now() }));
+console.log(st);
+await rec.close();
+process.exit(0);
