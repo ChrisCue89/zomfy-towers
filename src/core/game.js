@@ -2732,7 +2732,7 @@ export class Game {
     // Startbild (N2): Es deckt alles zu – die Szene ruht, bis es ausblendet
     // (die ersten Bilder zeichnet sie noch, damit alle Shader schon übersetzt sind)
     if (!(this.mode === 'splash' && this.splash.hidesScene)) {
-      this.horde.render();
+      this.horde.render(this.rig.camera); // M25c: nur, wer im Bild steht
       this.towers.render();
       this.loot.render();
       sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);

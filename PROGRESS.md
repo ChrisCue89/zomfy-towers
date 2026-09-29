@@ -41,6 +41,13 @@ geplant waren rund 730 bzw. 900 Schlurfer.
     Durchbrüche in Nacht 28 und in der Frostnacht (das Herz erstarrt mit 57 %).
     Die Nächte 13–30 sind ohne den frühen Champion gemessen, die ersten zwölf
     mit ihm nachgemessen.
+- **Leistung:** In späten Nächten lief jeder Schlurfer der Karte durch die
+  Grafikkarte, auch weit außerhalb des Bilds (Instanzen einer Art kennen kein
+  Culling): 25,6 Mio. Dreiecke bei 563 Schlurfern. Jetzt schreibt
+  `horde.render` nur, wer im Sichtfeld steht (plus 2,5 m Rand) – 3,5 Mio.
+  Dreiecke in derselben Szene, bei 68 Schlurfern 1,6 statt 4,4 Mio. Die
+  Simulation braucht dort 11 ms je Schritt (im Container), gut die Hälfte davon
+  für das Abstandhalten der Schlurfer (jeder mit jedem) – vorerst so gelassen.
 - **Prüfung:** Abschnitt `fragen` prüft die Grenzen (vier Kapseln, die
   Warteschlange wartet bei vollem Bild und holt nach, aus einer Kapsel schlüpft
   dann nichts), `glanz` den Champion in Nacht 2 auf »Wild«; der Prüfpunkt der

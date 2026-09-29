@@ -75,6 +75,15 @@ const TINT = {
 const championTint = new THREE.Color();
 /** Nebelwelle (M22): Wer nicht im Licht steht, von dem sieht man nur die Augen. */
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
+/**
+ * Gezeichnet wird nur, wer im Bild steht – mit so viel Rand (m) für Schatten, Umriss
+ * und das Einrasten der Kamera (M25c: in späten Nächten zeichnete das Bild sonst jeden
+ * Schlurfer der Karte, über 25 Mio. Dreiecke bei 560 Schlurfern).
+ */
+const VIEW_MARGIN = 2.5;
+const _frustum = new THREE.Frustum();
+const _viewProj = new THREE.Matrix4();
+const _sphere = new THREE.Sphere();
 
 /** Unsichtbares Gerüst einer Art: Gelenke als Object3D, Teile als Anker. */
 class Rig {
@@ -1203,24 +1212,34 @@ export class Horde {
     }
   }
 
-  /** Haltung berechnen und in die Instanzen schreiben. */
-  render() {
+  /**
+   * Haltung berechnen und in die Instanzen schreiben.
+   * @param {THREE.Camera} [camera] nur zeichnen, was sie sieht (M25c; ohne Kamera: alle)
+   */
+  render(camera = null) {
     const counts = {};
     const living = {};
     for (const type of ZOMBIE_TYPES) counts[type] = 0;
+    const frustum = camera ? _frustum.setFromProjectionMatrix(_viewProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)) : null;
     // Erst die Lebenden, dann die Sterbenden: Umrisse zeigen nur die Lebenden
     // (wer im Boden versinkt, soll nicht als Umriss durch die Erde schimmern).
     const order = this._order || (this._order = []);
     order.length = 0;
     for (const z of this.list) if (z.state !== 'dying') order.push(z);
     for (const type of ZOMBIE_TYPES) living[type] = 0;
-    for (const z of order) living[z.type] = Math.min(MAX_PER_TYPE, living[z.type] + 1);
     for (const z of this.list) if (z.state === 'dying') order.push(z);
     for (const z of order) {
       const kind = this.kinds[z.type];
       const k = counts[z.type];
       if (k >= MAX_PER_TYPE) continue;
+      if (frustum) {
+        const s = z.def.scale * (z.size || 1);
+        _sphere.center.set(z.x, z.y + s, z.z);
+        _sphere.radius = 1.2 * s + VIEW_MARGIN;
+        if (!frustum.intersectsSphere(_sphere)) continue;
+      }
       counts[z.type]++;
+      if (z.state !== 'dying') living[z.type]++; // die Lebenden kommen zuerst: nur sie bekommen einen Umriss
       this.pose(kind.rig, z);
       kind.rig.root.updateMatrixWorld(true);
       let tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;

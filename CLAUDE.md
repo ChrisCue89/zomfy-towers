@@ -515,6 +515,10 @@ Grundprinzipien:
   `PixelRenderer` zeichnet die Schattenkarte in einem eigenen Durchgang
   (`shadowMap.autoUpdate = false`), die Hauptkamera sieht Ebene 1 nie.
 - Viele gleiche Modelle als `InstancedMesh` in 12-m-Blöcken (Culling).
+- **Die Horde zeichnet nur, wer im Bild steht** (`horde.render(camera)`:
+  Sichtfeld der Kamera plus 2,5 m Rand, M25c). Instanzen einer Art kennen kein
+  Culling – vorher lief in späten Nächten jeder Schlurfer der Karte durch die
+  Grafikkarte (25,6 Mio. Dreiecke bei 563 Schlurfern, jetzt 3,5 Mio.).
 - Keine Allokationen pro Bild in heißen Pfaden (Vektoren wiederverwenden).
 
 ## Prüfablauf (nach jeder Änderung am Spielcode, vor jedem Commit)
