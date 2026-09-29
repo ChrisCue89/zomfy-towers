@@ -48,7 +48,7 @@ await scene(rec);
 await rec.sim(Math.max(0, n - LEAD) / 30);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -13.4, 1.6], [FRAMES - 1, -12.9, 1.6]] },
+  cam: { keys: [[0, -13.6, 0.4], [FRAMES - 1, -13.1, 0.4]] },
   each: () => { window.__b.keep(); },
   description: 'Nacht 5, Ansicht nah. Der Holzfäller (Boss, Lebensbalken oben) steht vor zwei Metall-Barrikadenreihen; ab Bild ~3 warnt ein Ring am Boden, das Wort „holt aus!“ steht über ihm; um Bild ~39 schlägt er zu (Barrikaden zersplittern, Kamerawackeln). Katapulte mit Feuerkürbissen dahinter.',
 });

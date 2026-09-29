@@ -48,7 +48,7 @@ console.log('Herz', heart);
 await rec.sim(0.6);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -18.4, 1.7], [FRAMES - 1, -17.2, 1.5]] },
+  cam: { keys: [[0, -18.6, -0.3], [FRAMES - 1, -17.6, -0.3]] },
   each: (i) => {
     window.__b.keep();
     if (i === 8) window.zomfy.killZombie(window.__heart, 'turm');

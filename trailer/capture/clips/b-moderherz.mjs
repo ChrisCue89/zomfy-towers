@@ -13,10 +13,10 @@ const COL = -15; // Barrikadenreihe vor dem Herz
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 30, hour: 22, minute: 0, view: 'nah' });
 const towers = await placeTowers(rec, [
-  { type: 'bolzen', i: -13, j: -2, level: 3, spec: 'B', xp: 520 },
-  { type: 'katapult', i: -12, j: 4, level: 3, spec: 'A', xp: 200 },
-  { type: 'laternenpfahl', i: -17, j: -2 },
-  { type: 'laternenpfahl', i: -17, j: 4 },
+  { type: 'bolzen', i: -14, j: -2, level: 3, spec: 'B', xp: 520 },
+  { type: 'katapult', i: -13, j: 4, level: 3, spec: 'A', xp: 200 },
+  { type: 'laternenpfahl', i: -19, j: -2 },
+  { type: 'laternenpfahl', i: -19, j: 4 },
 ]);
 console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
 const ids = await rec.eval((COL) => {
@@ -30,7 +30,7 @@ const ids = await rec.eval((COL) => {
       ids.push(b.id);
     } else ids.push(r);
   }
-  Z.teleport(-10.6, 4.9, 0);
+  Z.teleport(-11.2, 3.6, 0);
   const id = Z.spawnHeart(-19, Z.game.world.pathing.trace('mitte').find((p) => p.x > -19).z);
   return { ids, id };
 }, COL);
@@ -38,7 +38,7 @@ console.log(JSON.stringify(ids));
 await rec.sim(4.3); // kurz vor der Ankündigung der Wurzeln (erster Angriff nach 5 s)
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -16.6, 1.5], [FRAMES - 1, -15.4, 1.5]] },
+  cam: { keys: [[0, -17.5, -0.4], [FRAMES - 1, -16.3, -0.4]] },
   each: () => { window.__b.keep(); },
   description: 'Frostnacht (Tag 30, 22:00), Ansicht nah. Das Moderherz stapft langsam über den Weg, Bolzenwerfer und Feuerkatapult treffen es, Lebensbalken oben. Ab etwa Bild 20 warnt ein Ring am Boden, um Bild 62 brechen die Wurzeln aus (Wackeln, Splitter, Barrikaden fallen).',
 });

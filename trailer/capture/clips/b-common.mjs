@@ -25,6 +25,7 @@ export async function prepare(rec, { day = 4, hour = 21, minute = 0, weather = '
     window.__b = {
       /** vor jedem Bild: Dialoge und Wahlen wegräumen, damit die Zeit läuft */
       keep() {
+        g.hud.nightBarBottom = 4; // ohne Nachtleiste (Oberfläche `world`) sitzt der Lebensbalken des Bosses sonst im Nichts
         if (g.dialog.active) Z.finishDialog();
         if (g.mode === 'perk') {
           const id = g.perkChoice.options[0];

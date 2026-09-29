@@ -546,43 +546,67 @@ tasks['bed-animals'] = async () => {
  * Jeder Eintrag { t, name, x?, z?, lx?, lz?, volume?, rate? } wird mit den Rezepten des Spiels (sound.js,
  * `play`) gerechnet: Dämpfung, Stereolage, Streuung und Mindestabstand (MIN_GAP) macht `play` selbst.
  * `@caw`, `@bird`, `@cricket`: Umgebungsklänge; `@whoosh`, `@boom`: Trailer-Bausteine.
+ *
+ * Gerechnet wird in Blöcken von 3 s (je eigener Kontext, 1 s Vorlauf für `@whoosh`, 4 s Nachklang) und in JS
+ * aufaddiert: Im Spiel hängt jeder verklungene Effekt sich ab, hier stünden Tausende Knoten 60 s lang im Graphen.
  */
 tasks.sfx = async ({ events }) => {
-  const { ctx, s, m } = env(DURATION, 401);
+  const CHUNK = 3;
+  const PRE = 1;
+  const TAIL = 4;
+  const N = Math.round(DURATION * SR);
+  const acc = [new Float32Array(N), new Float32Array(N)];
   const sorted = events.slice().sort((a, b) => a.t - b.t);
-  let played = 0;
+  const lastAbs = new Map(); // MIN_GAP über die Blöcke hinweg (absolute Zeit)
   const skipped = [];
-  for (const e of sorted) {
-    s.voices = 0; // im Spiel zählen laufende Stimmen; hier läuft nichts »ab«
-    s.lastVary = null;
-    s.listener = { x: e.lx ?? 0, z: e.lz ?? 0 };
-    if (e.name.startsWith('@')) {
-      const kind = e.name.slice(1);
-      clock(ctx, e.t);
-      const dir = e.x !== undefined ? Math.max(-1, Math.min(1, (e.x - (e.lx ?? 0)) / 10)) : rnd(-0.6, 0.6);
-      if (kind === 'caw') s.caw(e.t, dir, (e.volume ?? 1) * 3);
-      else if (kind === 'bird') s.bird(e.t);
-      else if (kind === 'cricket') s.cricket(e.t);
-      else if (kind === 'whoosh') s.noise(e.t - 0.6, 0.7, { type: 'bandpass', freq: 500, freqEnd: 4500, q: 0.8, attack: 0.6, peak: 0.16 * (e.volume ?? 1), out: s.sfxBus });
-      else if (kind === 'boom') impact(s, m, e.t, 0.7 * (e.volume ?? 1), ctx.destination);
-      else {
-        skipped.push({ t: e.t, name: e.name, why: 'unbekannter Umgebungsklang' });
+  let played = 0;
+  for (let c0 = 0, k = 0; c0 < DURATION; c0 += CHUNK, k++) {
+    const chunk = sorted.filter((e) => e.t >= c0 && e.t < c0 + CHUNK);
+    if (!chunk.length) continue;
+    const origin = c0 - PRE; // Zeit 0 des Blockkontexts (ganze Sekunden: sample-genau)
+    const { ctx, s, m } = env(PRE + CHUNK + TAIL, 401 + k);
+    for (const e of chunk) {
+      const lt = e.t - origin;
+      s.voices = 0; // im Spiel zählen laufende Stimmen; hier läuft nichts »ab«
+      s.lastVary = null;
+      s.listener = { x: e.lx ?? 0, z: e.lz ?? 0 };
+      if (e.name.startsWith('@')) {
+        const kind = e.name.slice(1);
+        clock(ctx, lt);
+        const dir = e.x !== undefined ? Math.max(-1, Math.min(1, (e.x - (e.lx ?? 0)) / 10)) : rnd(-0.6, 0.6);
+        if (kind === 'caw') s.caw(lt, dir, (e.volume ?? 1) * 3);
+        else if (kind === 'bird') s.bird(lt);
+        else if (kind === 'cricket') s.cricket(lt);
+        else if (kind === 'whoosh') s.noise(lt - 0.6, 0.7, { type: 'bandpass', freq: 500, freqEnd: 4500, q: 0.8, attack: 0.6, peak: 0.16 * (e.volume ?? 1), out: s.sfxBus });
+        else if (kind === 'boom') impact(s, m, lt, 0.7 * (e.volume ?? 1), ctx.destination);
+        else {
+          skipped.push({ t: e.t, name: e.name, why: 'unbekannter Umgebungsklang' });
+          continue;
+        }
+        played++;
         continue;
       }
-      played++;
-      continue;
+      const now = lt - 0.005;
+      clock(ctx, now);
+      s.last = new Map();
+      if (lastAbs.has(e.name)) s.last.set(e.name, lastAbs.get(e.name) - origin);
+      const opt = {};
+      for (const key of ['x', 'z', 'volume', 'pitch', 'rate']) if (e[key] !== undefined) opt[key] = e[key];
+      s.play(e.name, opt);
+      if (s.last.has(e.name)) lastAbs.set(e.name, s.last.get(e.name) + origin);
+      if (s.lastVary) played++; // play() setzt lastVary erst, wenn der Effekt wirklich klingt
+      else if (!s.last.has(e.name)) skipped.push({ t: e.t, name: e.name, why: 'Effekt unbekannt' });
+      else if (s.last.get(e.name) !== now) skipped.push({ t: e.t, name: e.name, why: 'Mindestabstand (MIN_GAP)' });
+      else skipped.push({ t: e.t, name: e.name, why: 'zu weit weg (Hörweite 16 m) oder zu leise' });
     }
-    const now = e.t - 0.005;
-    clock(ctx, now);
-    const opt = {};
-    for (const k of ['x', 'z', 'volume', 'pitch', 'rate']) if (e[k] !== undefined) opt[k] = e[k];
-    s.play(e.name, opt);
-    if (s.lastVary) played++; // play() setzt lastVary erst, wenn der Effekt wirklich klingt
-    else if (!s.last.has(e.name)) skipped.push({ t: e.t, name: e.name, why: 'Effekt unbekannt' });
-    else if (s.last.get(e.name) !== now) skipped.push({ t: e.t, name: e.name, why: 'Mindestabstand (MIN_GAP)' });
-    else skipped.push({ t: e.t, name: e.name, why: 'zu weit weg (Hörweite 16 m) oder zu leise' });
+    const buf = await ctx.startRendering();
+    const off = Math.round(origin * SR);
+    for (let c = 0; c < 2; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = Math.max(0, -off); i < d.length && off + i < N; i++) acc[c][off + i] += d[i];
+    }
   }
-  const r = pack(await ctx.startRendering());
+  const r = pack({ length: N, getChannelData: (c) => acc[c] });
   r.played = played;
   r.skipped = skipped;
   return r;
