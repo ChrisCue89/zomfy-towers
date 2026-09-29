@@ -25,15 +25,15 @@ await rec.eval(() => {
   // ein dichter Trupp über die Breite des Weges, in der Mitte ein Brummer
   const rows = [0.3, 1.5, 2.7];
   for (let k = 0; k < 15; k++) {
-    const x = -33.5 + Math.floor(k / 3) * 1.5 + (k % 3) * 0.35;
+    const x = -35 + Math.floor(k / 3) * 1.6 + (k % 3) * 0.35;
     b.zombie(k === 7 ? 'brummer' : k % 5 === 4 ? 'flitzer' : 'schlurfer', x, rows[k % 3] + (k % 2) * 0.25, { hp: 2.5 });
   }
 });
-await rec.sim(5);
+await rec.sim(4.5);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -17, 1.5], [FRAMES - 1, -14.5, 1.5]] },
-  each: () => { window.__b.keep(); window.__b.hold(21, 0); },
+  cam: { keys: [[0, -18.8, 1.5], [FRAMES - 1, -17.4, 1.5]] },
+  each: () => { window.__b.keep(); },
   description: 'Nacht, Bolzenwerfer (Repetierer), Kürbiskatapult (Feuer), Sprenger (Frost) und Laternenturm am letzten Wegabschnitt; ein Trupp Schlurfer mit Brummer läuft von links herein.',
 });
 console.log(r.problems);

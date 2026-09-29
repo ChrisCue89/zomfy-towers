@@ -69,4 +69,5 @@ window.__png = async () => {
   return btoa(s);
 };
 window.__duration = edit.DURATION;
+window.__shots = () => edit.layers.filter((l) => l.kind === 'shot').map((l) => ({ clip: l.spec.clip, at: l.spec.at, dur: l.spec.dur, from: l.spec.from, speed: l.spec.speed }));
 setup();

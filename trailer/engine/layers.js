@@ -6,6 +6,7 @@ import { drawPx, textWidth } from './text.js';
 import { C } from './palette.js';
 import { scrim, leaves, snow, spores, embers, sparkle, lantern, lightPool, ditherFill } from './fx.js';
 import { measure } from './vendor/font.js';
+import { uiUrl, peek, infoNow } from './assets.js';
 
 const over = (t0, t1, z, draw) => ({ t0, t1, z, space: 'over', draw });
 
@@ -187,6 +188,7 @@ export function title(t0, t1, { url = null } = {}) {
       const flare = pulse(lt, 0.66, 3.2);
       lightPool(ctx, W / 2, H / 2 - 40, 640 + flare * 300, '255,190,100', (0.22 + 0.5 * flare) * a);
       const S = 15;
+      lantern(ctx, W / 2, H / 2 - 270 - (1 - Math.min(1, backOut(ramp(lt, 0.5, 0.8)))) * 40, 6, ramp(lt, 0.55, 0.8) * (0.85 + 0.15 * Math.sin(lt * 8)) * a);
       const full = 'ZOMFY TOWERS';
       let start = 0;
       groups.forEach((g, gi) => {
@@ -215,4 +217,36 @@ export function title(t0, t1, { url = null } = {}) {
 /** Schwarzblende im Raster am Ende/Anfang. */
 export function fadeToBlack(t0, t1, out = true) {
   return { t0, t1, z: 100, space: 'over', draw(ctx, t) { ditherFill(ctx, '#0d0b18', out ? ramp(t, t0, t1) : 1 - ramp(t, t0, t1)); } };
+}
+
+/**
+ * UI-Sticker: ein Ausschnitt der echten Spieloberfläche (Oberflächen-Ebene eines Clips, 640×360),
+ * vergrößert und mit Schwung eingeblendet – die Tafeln des Spiels als Grafikelement.
+ * o: { clip, frame, rect:[x,y,w,h] (Oberflächenpixel), x, y (Mitte, Bildpixel), scale (ganzzahlig), pop, glow }
+ */
+export function sticker(clip, frame, rect, at, dur, { x = W / 2, y = H / 2, scale = 6, dx = 0, dy = 0, glow = null, hold = 0.0 } = {}) {
+  const url = uiUrl(clip, frame);
+  return {
+    t0: at, t1: at + dur, z: 24, space: 'over',
+    needs: () => [url],
+    draw(ctx, t) {
+      const ui = peek(url);
+      const lt = t - at;
+      const a = fade(t, at, at + dur, 0.06, 0.12);
+      const p = backOut(ramp(lt, 0, 0.24));
+      const s = Math.max(1, Math.round(lerp(scale * 1.6, scale, clamp(p, 0, 1.1))));
+      const [rx, ry, rw, rh] = rect;
+      const w = rw * s;
+      const h = rh * s;
+      const cx = Math.round(x + dx * (1 - easeOut(ramp(lt, 0, 0.3))) );
+      const cy = Math.round(y + dy * (1 - easeOut(ramp(lt, 0, 0.3))));
+      if (glow) lightPool(ctx, cx, cy, Math.max(w, h) * 0.8, glow, 0.35 * a);
+      if (!ui) return;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(ui, rx, ry, rw, rh, cx - w / 2, cy - h / 2, w, h);
+      ctx.restore();
+    },
+  };
 }

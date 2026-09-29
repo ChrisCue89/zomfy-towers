@@ -52,6 +52,9 @@ add(
   sh('bauen', tb(9), BEAT.titel),
   sh('einrichten', tb(10), BEAT.titel),
   sh('feuer-abend', tb(11), BEAT.titel + 0.2),
+  // Blick in den Wald: der Moder schaut kurz durchs Fenster (je 4 Bilder)
+  sh('wald-moder', tb(10) + 0.42, 4 / FPS, { from: 62, grade: 'cold' }),
+  sh('wald-moder', tb(11) + 0.32, 4 / FPS, { from: 70, grade: 'cold' }),
   particles('leaves', 2.3, 12.5, { count: 22, seed: 4, alpha: 0.9, speed: 0.8 }),
   narrate('Die Welt ist still geworden.', 2.9, 2.6),
   narrate('Am Stillsee brennt noch {Licht.}', 6.2, 2.7),

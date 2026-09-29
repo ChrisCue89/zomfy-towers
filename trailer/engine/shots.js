@@ -17,7 +17,15 @@ export function shot(spec) {
   const info = () => infoNow.get(s.clip);
   const index = (t) => {
     const lt = Math.max(0, t - s.at);
-    const fi = s.from + lt * FPS * s.speed;
+    let lf = lt * FPS * s.speed;
+    if (s.hold) {
+      // Standbild: ab Bild hold.at bleibt der Clip hold.frames Bilder stehen
+      const h = s.hold;
+      const rel = s.from + lf;
+      if (rel >= h.at + h.frames) lf -= h.frames;
+      else if (rel >= h.at) lf = h.at - s.from;
+    }
+    const fi = s.from + lf;
     const n = info()?.frames;
     const cap = n ? n - 1 : Infinity;
     const i = Math.min(cap, Math.floor(fi));
@@ -84,6 +92,13 @@ export function shot(spec) {
       g.globalAlpha = 1;
     }
     g.restore();
+    if (s.grade === 'cold') {
+      g.save();
+      g.globalCompositeOperation = 'multiply';
+      g.fillStyle = 'rgba(96,120,200,0.55)';
+      g.fillRect(0, 0, W, H);
+      g.restore();
+    }
     if (s.ui && info()) {
       const [i] = index(t);
       const ui = peek(uiUrl(s.clip, i));
