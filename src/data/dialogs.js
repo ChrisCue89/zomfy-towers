@@ -8,6 +8,8 @@
 
 import { TOWERS } from './towers.js';
 import { TRADES, ERRANDS } from './survivors.js';
+import { WANDERERS, freePlaces } from './wanderers.js';
+import { T } from './texts.js';
 
 export const SPRECHER = {
   mika: { name: 'Mika', portrait: 'mika' },
@@ -19,6 +21,11 @@ export const SPRECHER = {
   bert: { name: 'Bert', portrait: 'bert' },
   yusuf: { name: 'Dr. Yusuf', portrait: 'yusuf' },
   balduin: { name: 'Balduin', portrait: 'balduin' },
+  // M27: die Wanderer
+  hannes: { name: 'Hannes', portrait: 'hannes' },
+  clara: { name: 'Clara', portrait: 'clara' },
+  lotte: { name: 'Lotte', portrait: 'lotte' },
+  greta: { name: 'Greta', portrait: 'greta' },
 };
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
@@ -26,10 +33,9 @@ export const SPRECHER = {
 const RES_NAMES = { holz: 'Holz', stein: 'Stein', fasern: 'Fasern', stoff: 'Stoff', schrott: 'Schrott', teile: 'Zombieteile', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' };
 const amount = (res) => Object.entries(res).map(([r, n]) => `${n} ${RES_NAMES[r] || r}`).join(', ');
 
-/** Steht ein Zelt leer? (Zelte in den Bauten, Bewohner in state.survivors; umgeworfene zählen nicht) */
+/** Ist ein Schlafplatz frei? (M27: Zelte, Schlafhütte, Dachkammer – umgeworfene zählen nicht) */
 function freeTent(state) {
-  const used = new Set(Object.values(state.survivors || {}).map((s) => s.tent).filter((t) => t !== null && t !== undefined));
-  return (state.world?.buildings || []).some((b) => b.type === 'zelt' && !b.broken && !used.has(b.id));
+  return freePlaces(state) > 0;
 }
 
 /** Antworten für Gäste und Bewohner: einziehen (wenn ein Zelt frei ist), Extras, Tschüss. */
@@ -61,6 +67,43 @@ function withAnswers(lines, answers) {
 }
 
 const pick = (list, n) => list[((n % list.length) + list.length) % list.length];
+
+// --- Wanderer (M27) ------------------------------------------------------------------
+
+/** Wer unter den Bewohnern würde Platz machen? Der Wanderer, der am längsten da ist. */
+function wouldLeave(state, guest) {
+  const list = Object.keys(WANDERERS).filter((id) => id !== guest && state.survivors?.[id]?.stage === 3);
+  list.sort((a, b) => (state.survivors[a].day || 0) - (state.survivors[b].day || 0));
+  return list[0] || null;
+}
+
+/**
+ * Die Entscheidung am Morgen (M27, OFFENE-FRAGEN 163): bleiben (wenn ein Platz
+ * frei ist), sonst Platz machen lassen (ein Bewohner zieht aus eigenem Grund
+ * weiter), weiterbringen oder – einmal – noch einen Tag. Vorgewählt ist immer
+ * das Harmlose: noch einen Tag bzw. »Ich überlege noch«.
+ */
+function decision(state, id, lines) {
+  const w = WANDERERS[id];
+  const s = state.survivors?.[id] || {};
+  const out = [...lines];
+  const answers = [];
+  if (freePlaces(state) > 0) answers.push({ t: T.wanderer.bleiben(w.name), aktion: 'bleiben' });
+  else {
+    out.push({ s: 'mika', t: T.wanderer.vollBemerkung });
+    const other = wouldLeave(state, id);
+    if (other) answers.push({ t: T.wanderer.platzMachen(WANDERERS[other].name, T.wanderer.zumOrt[WANDERERS[other].place]), aktion: 'platzMachen' });
+  }
+  answers.push({ t: T.wanderer.weiterbringen(T.wanderer.zumOrt[w.place]), aktion: 'weiterbringen' });
+  answers.push(s.extra ? { t: T.wanderer.ueberlegen, standard: true } : { t: T.wanderer.nochEinTagAntwort, aktion: 'nochEinTag', standard: true });
+  return withAnswers(out, answers);
+}
+
+/** Bewohner (M27): eine Zeile je Tag. Als Gast vor der Entscheidung: noch am Feuer. */
+function resident(state, id, lines) {
+  if (state.survivors?.[id]?.stage === 2) return [{ s: id, t: T.wanderer.wartenZeile }];
+  return [{ s: id, t: pick(lines, (state.time?.day || 1) + id.length) }];
+}
 
 /** Uhrzeit in Stunden (0..24) aus dem Spielzustand. */
 const hourOf = (state) => (6 + (state.time.minute || 0) / 60) % 24;
@@ -259,6 +302,87 @@ export const DIALOGE = {
     { s: 'yusuf', t: 'Wunderbar. Eine Bitte hätte ich: Für meinen Tee fehlt Kamille.' },
     { s: 'yusuf', t: 'Sie wächst im hohen Gras. Sechs Fasern und ein Stück Stoff als Beutel – dann wird der Tee richtig gut.' },
   ],
+  // --- Die Wanderer (M27): ankommen, am Feuer übernachten, am Morgen die Entscheidung ---
+  hannesTreffen: [
+    { s: 'hannes', t: 'Moin. Hannes, Zimmermann auf Wanderschaft. Drei Jahre und einen Tag – das Jahr mit dem Moder zählt doppelt, finde ich.' },
+    { s: 'hannes', t: '(klopft an den Torpfosten) Hm. Fichte. Ordentlich gesetzt. Nur der hier wackelt ein bisschen.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer. Morgen sehen wir weiter.' },
+    { s: 'hannes', t: 'Mehr verlang ich nicht. Ein Feuer und ein Dach aus Sternen.' },
+  ],
+  hannesEntscheidung: (state) =>
+    decision(state, 'hannes', [
+      { s: 'hannes', t: 'Laute Nacht. Aber eure Barrikaden haben gehalten – ich hab sie ächzen hören, und gehalten haben sie trotzdem.' },
+      { s: 'hannes', t: 'Wenn ihr mich wollt, bleib ich. Nachts flick ich, was die Horde ankratzt. Wenn nicht, ist’s auch recht: Im Forsthaus am Nordufer sucht man immer eine Hand.' },
+    ]),
+  hannes: (state) =>
+    resident(state, 'hannes', [
+      'Die Barrikade links hat geknarzt. Jetzt nicht mehr. Gern geschehen.',
+      '(klopft auf den Tisch) Hm. Hohl. Wusst ich’s doch.',
+      'Mein Meister hat gesagt: Zweimal messen, einmal sägen. Die Horde misst gar nicht. Deshalb gewinnen wir.',
+      'Das ist mein Hobel. Älter als ich. Den geb ich nicht her.',
+      'Auf der Walz darf man seinem Zuhause nicht zu nahe kommen. Meins gibt’s nicht mehr. Also ist das hier jetzt … nah genug.',
+    ]),
+  // --- Clara ---
+  claraTreffen: [
+    { s: 'clara', t: 'Hallo! Ist das da ein Bolzenwerfer? Selbst gebaut? Wer hat die Feder so gespannt – großartig. Und völlig falsch.' },
+    { s: 'clara', t: 'Clara, Mechanikerin. Ich laufe am Strand entlang, seit der Moder das Dach meiner Werkstatt gefressen hat.' },
+    { s: 'mika', t: 'Du kannst heute Nacht am Feuer schlafen.' },
+    { s: 'clara', t: 'Super. Darf ich vorher kurz mit deinen Türmen reden? Die sehen einsam aus.' },
+  ],
+  claraEntscheidung: (state) =>
+    decision(state, 'clara', [
+      { s: 'clara', t: 'Ich hab die halbe Nacht den Türmen zugehört. Einer quietscht in C-Dur. Das lässt sich richten.' },
+      { s: 'clara', t: 'Ich würde bleiben – dann wird Flicken billiger, und beim Basteln spar ich dir Teile. Sonst geh ich zum alten Leuchtturm. Da soll eine Werkstatt sein.' },
+    ]),
+  clara: (state) =>
+    resident(state, 'clara', [
+      'Ich hab dem Katapult einen Spitznamen gegeben. Er mag ihn nicht. Er gewöhnt sich dran.',
+      'Schraubenschlüssel sind wie Freunde: Man braucht immer den, der gerade woanders liegt.',
+      'Psst. Ich rede gerade mit dem Laternenturm. Er ist schüchtern.',
+      'Bring mir Zahnräder, dann bau ich dir … irgendwas. Überraschung.',
+      'In meiner Werkstatt hing ein Schild: „Hier wird nichts weggeworfen.“ Das Schild hab ich noch.',
+    ]),
+  // --- Lotte ---
+  lotteTreffen: [
+    { s: 'lotte', t: 'Oh! Licht! Ihr habt Licht! Entschuldigung – ich bin Lotte. Ich mache Laternen. Also, früher. Jetzt trag ich eine.' },
+    { s: 'lotte', t: 'Licht macht den Moder müde, wusstest du das? Man sieht es an den Pilzen. Sie ducken sich.' },
+    { s: 'mika', t: 'Bleib heute Nacht am Feuer. Da ist es hell.' },
+    { s: 'lotte', t: 'Am Feuer. Das ist die schönste Laterne von allen.' },
+  ],
+  lotteEntscheidung: (state) =>
+    decision(state, 'lotte', [
+      { s: 'lotte', t: 'Guten Morgen! Ich hab meinen zweiten Handschuh verloren. Und dafür einen Stern gefunden. Na ja, einen Knopf. Er glänzt.' },
+      { s: 'lotte', t: 'Wenn ich bleibe, bastle ich an euren Lampen – dann leuchten sie weiter. Sonst gehe ich zum Ferienlager am See. Da sind Kinder, und Kinder brauchen Laternen.' },
+    ]),
+  lotte: (state) =>
+    resident(state, 'lotte', [
+      'Hat jemand meine Schere gesehen? Und den Kleber? Und … ach, hier. Alles in meiner Tasche.',
+      'Jede Lichtinsel hier ist ein Stück größer geworden. Das merkt keiner. Die Schlurfer schon.',
+      'Die Laterne an meinem Gürtel hat meine Oma gefaltet. Papier, Draht und ganz viel Geduld.',
+      'Weißt du, was das Schönste an Laternen ist? Man trägt das Licht zu jemandem hin.',
+      'Heute hab ich nur einmal was verloren. Rekord!',
+    ]),
+  // --- Greta ---
+  gretaTreffen: [
+    { s: 'greta', t: 'Greta. Jägerin.' },
+    { s: 'mika', t: '… und?' },
+    { s: 'greta', t: 'Spuren gelesen. Eure Wege. Viele Schlurfer. Gute Fallen. Falsch gestellt.' },
+    { s: 'mika', t: 'Du kannst heute Nacht am Feuer bleiben.' },
+    { s: 'greta', t: 'Danke.' },
+  ],
+  gretaEntscheidung: (state) =>
+    decision(state, 'greta', [
+      { s: 'greta', t: 'Unruhige Nacht. Zwei Fallen ausgelöst. Gut so.' },
+      { s: 'greta', t: 'Ich bleibe, wenn ihr wollt. Stell die Fallen jeden Morgen neu. Sonst: Nordinsel. Mein Bruder.' },
+    ]),
+  greta: (state) =>
+    resident(state, 'greta', [
+      'Fallen stehen.',
+      'Wind dreht. Nacht wird kalt.',
+      'Schlurfer schleifen den linken Fuß. Immer den linken. Merkwürdig.',
+      'Die Pfeife? Von meinem Mann. Rauch nicht. Halt sie nur.',
+      'Du redest viel. Ist gut. Einer muss.',
+    ]),
   funkturm1: [{ s: 'juna', t: 'Die Beine stehen wieder gerade, die Leiter hält. Von da oben sieht man über den ganzen See!' }],
   funkturm2: [
     { s: 'juna', t: 'Hörst du das? Rauschen … und dazwischen Stimmen. Da draußen sind noch mehr!' },

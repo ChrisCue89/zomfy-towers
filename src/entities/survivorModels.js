@@ -14,7 +14,7 @@
 
 import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
-import { shade, sculpt, capsule, roundBox, roundTone } from '../world/voxelKit.js';
+import { shade, sculpt, capsule, roundBox, roundTone, blob, subtract } from '../world/voxelKit.js';
 import { HEAD, TORSO, onFace, onChest, sculptHeadBase, facePlate, facLids, sculptEars, sculptTorsoBase, sculptCollar, sculptArm, sculptLeg } from './figureKit.js';
 
 /** Gesicht auf der Vorderseite (z = 3): Augen, Brauen, Wangen, Mund. */
@@ -854,6 +854,329 @@ export function survivorParts32(id) {
       };
     }
     default:
+      return wandererParts32(id); // M27: die Wanderer
+  }
+}
+
+// --- Die Wanderer (M27) im Maß 1/32 ----------------------------------------------------
+// Aus demselben Baukasten wie die Stammbesetzung; jede Figur hat ein Merkmal,
+// das man schon von Weitem liest (OFFENE-FRAGEN 162):
+//   Hannes (Zimmerer)          – breiter schwarzer Hut, Weste mit Perlmuttknöpfen,
+//                                rotes Halstuch, kurzer Vollbart
+//   Clara (Mechanikerin)       – blauer Overall, Schweißbrille auf der Stirn,
+//                                roter Pferdeschwanz, Schraubenschlüssel
+//   Lotte (Laternenmacherin)   – rosa Mantel, langer bunter Strickschal, blonde
+//                                Zöpfe, kleine Laterne am Gürtel
+//   Greta (Jägerin)            – grüne Lodenjacke, Filzhut mit Feder, graue Haare,
+//                                Fernglas vor der Brust, Kniebundhose
+
+export const HANNES = {
+  skin: P.h3,
+  skinShade: P.h2,
+  cheek: P.a0,
+  eyes: P.n1,
+  brow: P.e1,
+  hair: P.e2,
+  beard: P.e2,
+  beardLight: P.e4,
+  hat: P.n1,
+  hatDark: P.n0,
+  hatLight: P.n2,
+  band: P.s3,
+  shirt: P.s9,
+  shirtDark: P.s7,
+  vest: P.n2,
+  vestDark: P.n1,
+  buttons: P.s8,
+  scarf: P.r3,
+  scarfDark: P.r1,
+  pants: P.n2,
+  pantsDark: P.n1,
+  boots: P.e1,
+};
+
+export const CLARA = {
+  skin: P.h3,
+  skinShade: P.h2,
+  cheek: P.a1,
+  eyes: P.n1,
+  brow: P.r1,
+  hair: P.r3,
+  hairDark: P.r2,
+  overall: P.b3,
+  overallDark: P.b2,
+  goggles: P.s3,
+  lens: P.a6,
+  strap: P.e2,
+  wrench: P.s6,
+  rag: P.r4,
+  patch: P.f5,
+  boots: P.e2,
+};
+
+export const LOTTE = {
+  skin: P.h4,
+  skinShade: P.h3,
+  cheek: P.a1,
+  eyes: P.n1,
+  brow: P.e6,
+  hair: P.e8,
+  hairDark: P.e7,
+  ribbon: P.a6,
+  coat: P.a0,
+  coatDark: P.d4,
+  scarf: [P.f6, P.a6, P.f4, P.a3],
+  lanternFrame: P.s3,
+  lanternGlass: P.f7,
+  tights: P.d2,
+  shoes: P.e2,
+};
+
+export const GRETA = {
+  skin: P.h3,
+  skinShade: P.h2,
+  cheek: P.r4,
+  eyes: P.n1,
+  brow: P.s5,
+  hair: P.s7,
+  hairDark: P.s5,
+  hat: P.t2,
+  hatDark: P.t1,
+  hatLight: P.t3,
+  feather: P.s9,
+  featherTip: P.n2,
+  jacket: P.t3,
+  jacketDark: P.t2,
+  buttons: P.e3,
+  glass: P.s2,
+  glassLight: P.s5,
+  strap: P.e2,
+  breeches: P.e4,
+  breechesDark: P.e3,
+  socks: P.s6,
+  boots: P.e2,
+};
+
+/** Breitkrempiger Hut (Zimmermann): Krempe als flache Scheibe, darauf die Krone mit Band. */
+function wideHat32(m, { color, dark, light, band, brim = 16, crown = 7 }) {
+  const disc = (x, y, z) => Math.max(Math.hypot(x + 0.5, (z + 2.5) * 1.08) - brim, Math.abs(y - 44.5) - 0.9);
+  sculpt(m, disc, -brim - 1, 43, -brim - 4, brim, 46, brim, (x, y, z) => {
+    const r = Math.hypot(x + 0.5, (z + 2.5) * 1.08);
+    if (r > brim - 1.2) return y >= 45 ? color : dark; // Rand der Krempe
+    return y >= 45 ? light : dark;
+  });
+  sculpt(m, roundBox(-0.5, 46 + crown / 2, -2.5, 9.6, crown / 2, 8.4, 2.8), -11, 45, -12, 10, 47 + crown, 7, (x, y, z, n) => {
+    if (y <= 47) return band;
+    if (n.y > 0.7) return (x + z) % 4 === 0 ? color : light;
+    return n.x > 0.6 || n.z < -0.6 ? dark : color;
+  });
+  return m;
+}
+
+function hannesHead32(s) {
+  const m = baseHead32(s, { beard: true });
+  // Kurzer, dichter Vollbart um das Kinn
+  for (let x = -9; x <= 8; x++) {
+    for (let y = 26; y <= 29; y++) {
+      const z0 = HEAD.front(x, Math.max(28, y));
+      if (z0 === undefined) continue;
+      if (y === 26 && (x < -6 || x > 5)) continue;
+      m.set(x, y, z0 + (y < 28 ? 0 : 1), beard32(s, x, y));
+    }
+  }
+  return wideHat32(m, { color: s.hat, dark: s.hatDark, light: s.hatLight, band: s.band });
+}
+
+function hannesTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    // Weiße Staude in der Mitte, darüber die schwarze Cordweste
+    if (front && x >= -3 && x <= 2 && y >= 15) return x === -3 || x === 2 ? s.shirtDark : s.shirt;
+    if (y <= 13) return s.vestDark;
+    if (Math.abs(n.x) > 0.75 && y >= 22) return s.shirt; // Ärmelansatz
+    const rib = (x + 13) % 2 === 0 && n.z > 0.2;
+    return rib ? s.vestDark : roundTone(s.vest, n, { light: 0 });
+  });
+  // Zwei Reihen Perlmuttknöpfe
+  for (const y of [15, 18, 21, 24]) {
+    onChest(m, -5, y, 1, s.buttons);
+    onChest(m, 4, y, 1, s.buttons);
+  }
+  // Rotes Halstuch mit Knoten und Zipfeln
+  sculptCollar(m, s.scarf, { r: 1.5 });
+  for (const [x, y] of [[-1, 25], [0, 25], [-1, 24], [0, 24], [-2, 23], [1, 23], [-2, 22], [1, 22]]) onChest(m, x, y, 1, y >= 24 ? s.scarf : s.scarfDark);
+  return m;
+}
+
+function claraHead32(s) {
+  const m = baseHead32(s);
+  // Hoher Pferdeschwanz: Gummi oben am Hinterkopf, dann in einem Bogen nach hinten unten
+  sculpt(m, capsule(-0.5, 44, -9, -0.5, 36, -17, 3.2, 2.2), -5, 33, -21, 4, 48, -6, (x, y, z, n) => ((x + y) % 4 === 0 ? s.hairDark : n.y > 0.5 ? shade(s.hair, 1) : s.hair));
+  sculpt(m, capsule(-0.5, 44.5, -8.5, -0.5, 44.5, -9.5, 2.4), -4, 42, -12, 3, 47, -6, P.f5); // Haargummi
+  // Schweißbrille auf der Stirn: Band ringsum, vorn zwei runde Gläser
+  for (let x = -12; x <= 11; x++) {
+    for (const y of [41, 42]) {
+      const z = HEAD.front(x, y);
+      if (z === undefined) continue;
+      m.set(x, y, z + 1, s.strap);
+    }
+  }
+  for (const cx of [-6, 5]) {
+    for (let x = cx - 3; x <= cx + 3; x++) {
+      for (let y = 40; y <= 44; y++) {
+        const d = Math.hypot(x - cx, (y - 42) * 1.2);
+        if (d > 3.3) continue;
+        const z = (HEAD.front(Math.max(-12, Math.min(11, x)), Math.min(y, 43)) ?? 5) + 2;
+        m.set(x, y, z, d > 2.2 ? s.goggles : d < 1 ? P.s9 : s.lens);
+      }
+    }
+  }
+  return m;
+}
+
+function claraTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && (x === -1 || x === 0) && y >= 14) return y % 3 === 0 ? P.s6 : s.overallDark; // Reißverschluss
+    if (y === 13 || y === 12) return s.overallDark; // Gürtel
+    return roundTone(s.overall, n, { light: 0 });
+  });
+  sculptCollar(m, s.overallDark, { r: 1.6 });
+  // Brusttasche mit Schraubenschlüssel, Namensschild, Lappen an der Hüfte
+  for (let x = 3; x <= 8; x++) for (let y = 18; y <= 22; y++) onChest(m, x, y, 1, y === 22 || x === 3 || x === 8 ? s.overallDark : s.overall);
+  for (let y = 21; y <= 26; y++) onChest(m, 5, y, 2, y >= 25 ? P.s7 : s.wrench);
+  onChest(m, 4, 26, 2, s.wrench).set(6, 26, (TORSO.front(6, 26) ?? 7) + 2, s.wrench);
+  for (let x = -8; x <= -4; x++) for (let y = 20; y <= 21; y++) onChest(m, x, y, 1, s.patch);
+  for (let y = 9; y <= 14; y++) m.set(-12, y, 3 - (y % 2), s.rag).set(-12, y, 4 - (y % 2), shade(s.rag, -1));
+  return m;
+}
+
+function lotteHead32(s) {
+  const m = baseHead32(s);
+  // Zwei Zöpfe hinter den Ohren, geflochten, mit Schleifen an den Enden
+  for (const side of [-1, 1]) {
+    const x = side < 0 ? -12.5 : 11.5;
+    sculpt(m, capsule(x, 36, -3, x + side * 0.8, 24, -2, 2.1, 1.7), x - 4, 22, -7, x + 4, 38, 2, (px, py) => ((py + (side > 0 ? 1 : 0)) % 3 === 0 ? s.hairDark : s.hair));
+    sculpt(m, blob(x + side * 0.8, 23.5, -1.5, 2.2, 1.4, 1.6), x - 4, 21, -5, x + 4, 25, 2, s.ribbon);
+  }
+  // Mittelscheitel oben
+  for (let z = -8; z <= 5; z++) if (m.has(-1, 44, z)) m.set(-1, 44, z, s.hairDark);
+  return m;
+}
+
+function lotteTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && (x === -2 || x === 1) && y % 4 === 2 && y >= 14 && y <= 22) return P.s8; // Knebelknöpfe
+    if (y <= 13) return s.coatDark;
+    return roundTone(s.coat, n, { light: 0 });
+  });
+  // Langer Strickschal: dick um den Hals, ein Ende hängt vorn bis zur Hüfte
+  const stripe = (i) => s.scarf[((i % s.scarf.length) + s.scarf.length) % s.scarf.length];
+  sculptCollar(m, (x, y) => stripe(Math.floor((x + 13) / 3)), { r: 2.4, ring: 8 });
+  for (let y = 12; y <= 25; y++) {
+    for (let x = 3; x <= 6; x++) onChest(m, x, y, 2, y === 12 ? P.s8 : stripe(Math.floor(y / 3)));
+    if (y === 12) for (const x of [3, 5]) onChest(m, x, 11, 2, P.s8); // Fransen
+  }
+  // Kleine Laterne am Gürtel (links)
+  sculpt(m, roundBox(-13.5, 12, 3, 2, 2.6, 2, 0.6), -16, 9, 0, -11, 15, 6, (x, y, z, n) => (y >= 14 || y <= 9 || Math.abs(n.x) > 0.7 ? s.lanternFrame : s.lanternGlass));
+  m.set(-14, 16, 3, s.lanternFrame).set(-13, 16, 3, s.lanternFrame);
+  return m;
+}
+
+function gretaHead32(s) {
+  const m = baseHead32(s);
+  // Kurzes graues Haar mit Knoten im Nacken
+  m.ellipsoid(-0.5, 33, -14, 3.5, 3, 2.4, (x, y) => ((x + y) % 3 === 0 ? s.hairDark : s.hair));
+  // Filzhut mit schmaler Krempe, eingedellter Krone, Band und Feder
+  const disc = (x, y, z) => Math.max(Math.hypot(x + 0.5, (z + 2.5) * 1.05) - 13.5, Math.abs(y - 44.5) - 0.8);
+  sculpt(m, disc, -15, 43, -18, 14, 46, 13, (x, y) => (y >= 45 ? s.hatLight : s.hatDark));
+  sculpt(m, subtract(roundBox(-0.5, 48.5, -2.5, 9, 4.5, 8, 3), roundBox(-0.5, 53.2, -2.5, 2, 1.2, 6, 1)), -11, 45, -12, 10, 53, 7, (x, y, z, n) => {
+    if (y <= 46) return s.hatDark; // Band
+    return n.y > 0.7 ? s.hatLight : n.x > 0.6 || n.z < -0.6 ? s.hatDark : s.hat;
+  });
+  // Feder rechts am Band, schräg nach hinten
+  for (let i = 0; i <= 7; i++) m.set(10 + Math.floor(i / 4), 47 + i, -1 - i, i >= 6 ? s.featherTip : s.feather);
+  return m;
+}
+
+function gretaTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && (x === -1 || x === 0)) return s.jacketDark; // Knopfleiste
+    if (y <= 13) return s.jacketDark;
+    if (front && y >= 14 && y <= 17 && ((x >= -9 && x <= -4) || (x >= 3 && x <= 8))) return y === 17 ? s.jacketDark : shade(s.jacket, 1); // Taschen
+    return roundTone(s.jacket, n, { light: 0 });
+  });
+  sculptCollar(m, s.jacketDark, { r: 1.8 });
+  for (const y of [15, 19, 23]) onChest(m, 0, y, 1, s.buttons);
+  // Fernglas vor der Brust am Riemen
+  for (let x = -7; x <= 6; x++) if (x === -7 || x === 6) for (let y = 21; y <= 26; y++) onChest(m, x, y, 1, s.strap);
+  for (const cx of [-4, 2]) {
+    sculpt(m, capsule(cx, 19.5, 9.5, cx, 16.5, 9.5, 1.9), cx - 3, 14, 7, cx + 3, 22, 12, (x, y) => (y >= 21 ? s.glassLight : y <= 15 ? P.s8 : s.glass));
+  }
+  return m;
+}
+
+/** Teile eines Wanderers im Maß 1/32 (für npcs.js und die Porträts). */
+function wandererParts32(id) {
+  switch (id) {
+    case 'hannes': {
+      const s = HANNES;
+      return {
+        skin: s.skin,
+        head: hannesHead32(s),
+        faces: faceSet32(s, { beard: true }),
+        lids: lids32(s),
+        torso: hannesTorso32(s),
+        arm: baseArm32({ sleeve: s.shirt, sleeveDark: s.shirtDark, cuff: s.shirtDark, skin: s.skin, skinShade: s.skinShade }),
+        leg: baseLeg32({ shoe: s.boots, shoeLight: P.e2, low: s.pantsDark, high: { light: s.pants, dark: s.pantsDark } }),
+      };
+    }
+    case 'clara': {
+      const s = CLARA;
+      return {
+        skin: s.skin,
+        head: claraHead32(s),
+        faces: faceSet32(s),
+        lids: lids32(s),
+        torso: claraTorso32(s),
+        arm: baseArm32({ sleeve: s.overall, sleeveDark: s.overallDark, cuff: s.overallDark, skin: s.skin, skinShade: s.skinShade, forearm: s.skin }),
+        leg: baseLeg32({ shoe: s.boots, shoeLight: P.e3, low: s.overallDark, high: { light: s.overall, dark: s.overallDark }, patch: s.patch }),
+      };
+    }
+    case 'lotte': {
+      const s = LOTTE;
+      return {
+        skin: s.skin,
+        head: lotteHead32(s),
+        faces: faceSet32(s),
+        lids: lids32(s),
+        torso: lotteTorso32(s),
+        arm: baseArm32({ sleeve: s.coat, sleeveDark: s.coatDark, cuff: s.scarf[1], skin: s.skin, skinShade: s.skinShade }),
+        leg: baseLeg32({ shoe: s.shoes, shoeLight: P.e3, low: s.tights, high: { light: s.coat, dark: s.coatDark }, top: s.coat }),
+      };
+    }
+    case 'greta': {
+      const s = GRETA;
+      return {
+        skin: s.skin,
+        head: gretaHead32(s),
+        faces: faceSet32(s),
+        lids: lids32(s),
+        torso: gretaTorso32(s),
+        arm: baseArm32({ sleeve: s.jacket, sleeveDark: s.jacketDark, cuff: s.jacketDark, skin: s.skin, skinShade: s.skinShade }),
+        leg: baseLeg32({ shoe: s.boots, shoeLight: P.e3, low: s.socks, high: { light: s.breeches, dark: s.breechesDark }, cuff: s.socks, laces: P.e5 }),
+      };
+    }
+    default:
       return null;
   }
+}
+
+/** Schlafsack am Gästeplatz (M27): Unterlage, gesteppter Sack, Kissen, karierte Decke, Blechbecher. */
+export function bedrollModel() {
+  const m = new VoxelModel();
+  m.box(-11, 0, -26, 10, 0, 23, (x, y, z) => ((x + z) % 7 === 0 ? P.e4 : P.e5));
+  sculpt(m, roundBox(-0.5, 2.5, -2, 9.5, 2.6, 21, 2.2), -11, 1, -24, 10, 5, 20, (x, y, z, n) => (z % 6 === 0 ? P.r1 : n.y > 0.6 ? P.r3 : P.r2));
+  sculpt(m, roundBox(-0.5, 3, -21.5, 8, 2.8, 4, 2), -10, 1, -26, 9, 6, -17, (x, y, z, n) => (n.y > 0.5 ? P.s9 : P.s8));
+  m.box(-10, 5, 12, 9, 7, 19, (x, y, z) => ((((x + 20) >> 2) + (z >> 2)) % 2 ? P.b3 : P.b4));
+  m.box(13, 0, -6, 15, 4, -4, (x, y) => (y === 4 ? P.s6 : P.s4));
+  return m;
 }

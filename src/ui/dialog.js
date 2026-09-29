@@ -136,20 +136,35 @@ export class DialogBox {
 
   /** Oberkante des Fensters samt Namensschild (für Bilder darüber, M15). */
   top(ui) {
-    return ui.height - BOX_HEIGHT - 8 - 13;
+    const h = this.active && this.line ? this.boxLayout(ui).h : BOX_HEIGHT;
+    return ui.height - h - 8 - 13;
+  }
+
+  /**
+   * Maße des Fensters für die aktuelle Zeile. Brauchen Text und Antworten mehr Platz,
+   * wächst es nach oben – schon beim Tippen, damit es nicht springt (M27: drei Zeilen
+   * und drei Antworten ragten unten hinaus, der Tastenhinweis lag auf einer Antwort).
+   */
+  boxLayout(ui) {
+    const line = this.line;
+    const speaker = SPRECHER[line.s] || { name: '', portrait: null };
+    const portrait = speaker.portrait ? this.game.portraits[speaker.portrait] : null;
+    const w = Math.min(ui.width - 24, 440);
+    const x = Math.round((ui.width - w) / 2);
+    const tx = portrait ? x + 8 + 56 + 8 : x + 10;
+    const lines = wrap(line.t, x + w - 10 - tx);
+    const answers = line.antworten?.length || 0;
+    // Text, Abstand, Antworten, darunter die Zeile mit dem Tastenhinweis
+    const need = answers ? 10 + lines.length * LINE_HEIGHT + answers * (LINE_HEIGHT + 1) + 13 : 0;
+    const h = Math.max(BOX_HEIGHT, need);
+    return { speaker, portrait, w, h, x, y: ui.height - h - 8, tx, lines };
   }
 
   /** @param {import('./ui.js').UICanvas} ui */
   draw(ui) {
     if (!this.active || !this.line) return;
     const line = this.line;
-    const speaker = SPRECHER[line.s] || { name: '', portrait: null };
-    const portrait = speaker.portrait ? this.game.portraits[speaker.portrait] : null;
-
-    const w = Math.min(ui.width - 24, 440);
-    const h = BOX_HEIGHT;
-    const x = Math.round((ui.width - w) / 2);
-    const y = ui.height - h - 8;
+    const { speaker, portrait, w, h, x, y, lines } = this.boxLayout(ui);
 
     // Namensschild
     if (speaker.name) {
@@ -166,9 +181,7 @@ export class DialogBox {
       ui.ctx.drawImage(portrait, x + 8 + Math.floor((size - portrait.width) / 2), y + 9 + Math.floor((size - portrait.height) / 2));
       tx = x + 8 + size + 8;
     }
-    const textWidth = x + w - 10 - tx;
     const visible = line.t.slice(0, Math.floor(this.shown));
-    const lines = wrap(line.t, textWidth);
     // Sichtbaren Teil zeilenweise ausgeben (Umbruch vom vollständigen Text,
     // damit Wörter beim Tippen nicht springen).
     let remaining = visible.length;

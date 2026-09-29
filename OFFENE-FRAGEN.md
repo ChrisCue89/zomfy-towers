@@ -1939,6 +1939,19 @@ Minute: Würde jeder Turmtreffer anhalten oder wackeln, wäre die Nacht ein
 Dauerbeben, und das Feld wäre nicht mehr lesbar. Deshalb spürt man nur, was Mika
 selbst tut oder was die Nacht entscheidet.
 
+### 178. Wie kommen Gäste an, und was, wenn niemand entscheidet? (M27)
+**Entscheidung:** Der Plan der Ankünfte steht beim Spielstart im Spielstand
+(gleiche Karte, gleiche Reihenfolge; Neuladen würfelt nichts neu). Wer ankommt
+und nicht angesprochen wird, setzt sich am nächsten Morgen selbst ans Feuer.
+Die Entscheidung ist am Morgen nach der Nacht am Feuer fällig; vorgewählt ist
+»Bleib noch einen Tag« (einmal je Gast) bzw. danach »Ich überlege noch«. Wer
+einen ganzen Tag nach der fälligen Entscheidung noch am Feuer sitzt, zieht am
+nächsten Morgen von selbst zu seinem Ort weiter (mit Brief). Die Schlafhütte heißt so, weil »Hütte« im Spiel
+schon das Zuhause ist; das Gästezimmer ist eine **Dachkammer** über dem Lager
+(Zuhause-Stufe 5 ist das Lager). **Warum:** Niemand wird weggeschickt, aber
+niemand blockiert ewig den Gästeplatz; ohne Entscheidung passiert etwas
+Freundliches statt nichts.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

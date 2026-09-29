@@ -5,6 +5,55 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 27 – Gäste und Plätze ✓
+
+Zweiter Schritt des Plans »Zuflucht sein« (DESIGN.md 8, OFFENE-FRAGEN 161–164).
+
+- **Vier Wanderer** mit eigener Figur aus dem Baukasten (N1) und eigenem
+  Porträt: **Hannes**, Zimmermann auf Wanderschaft (breiter schwarzer Hut,
+  Weste mit Perlmuttknöpfen, rotes Halstuch – flickt jeden Morgen die halben
+  Schäden an den Holzbarrikaden), **Clara**, Mechanikerin (blauer Overall,
+  Schweißbrille auf der Stirn, roter Pferdeschwanz – Türme flicken ein Viertel
+  billiger, Basteln ein Teil weniger), **Lotte**, Laternenmacherin (rosa Mantel,
+  bunter Strickschal, Zöpfe, Laterne am Gürtel – alle Lichtinseln ein Viertel
+  größer, auch für Nebelwelle und Laternenhexe) und **Greta**, Jägerin
+  (Lodenjacke, Filzhut mit Feder, Fernglas – stellt verbrauchte Fallen jeden
+  Morgen neu). Je Figur ein eigener Ton: Hannes klopft auf alles, Clara redet
+  mit den Türmen, Lotte verliert Dinge, Greta spricht in drei Wörtern.
+- **Ankünfte aus dem Startwert:** Wer wann kommt, steht im Spielstand (Tage
+  7–24, nie in einer Bossnacht, nie am Festmorgen, nie zwei Tage
+  hintereinander) – über den Weg durchs Tor oder unten am Strand.
+- **Gästeplatz am Feuer:** Angesprochen, übernachtet der Wanderer am Feuer
+  (Schlafsack mit Kissen, karierter Decke, Blechbecher). Wer nicht
+  angesprochen wird, setzt sich am nächsten Morgen selbst ans Feuer.
+- **Die Entscheidung am Morgen:** »Bleib bei uns« (wenn ein Platz frei ist),
+  »Ich bringe dich …« (zum Forsthaus, Leuchtturm, Ferienlager oder zur
+  Nordinsel – mit Proviant und einer Laterne, die Figur geht durch die
+  Schlupftür bzw. am Strand fort) oder einmal »Bleib noch einen Tag«
+  (vorgewählt, harmlos). Sind alle Plätze belegt, bietet der Wanderer, der am
+  längsten da ist, an zu gehen – dann bleibt der Neue. Wer sich nach dem
+  fälligen Tag nicht entscheiden lässt, zieht am Morgen danach von selbst
+  weiter. Niemand wird weggeschickt.
+- **Briefe:** Zwei, drei Tage nach dem Abschied steht ein Brief im
+  Morgenbericht (»Nordinsel. Bruder lebt. Fische beißen. Fallen stehen.
+  Danke.«).
+- **Plätze:** Zelte bis fünf, die neue **Schlafhütte** (Blockhütte mit Ofen,
+  zwei Plätze, erst ab dem Schlafzimmer) und die **Dachkammer** über dem Lager
+  (Zuhause-Stufe 5, ein Platz) – höchstens acht Menschen plus Knopf.
+- Das Ziel-Feld sagt, wer am Feuer auf eine Antwort wartet; Abspann und
+  Herbstbuch zählen die Wanderer mit.
+- **Spielstand v21** mit Migration: Ein alter Stand bekommt die Ankünfte ab dem
+  nächsten Tag.
+- Prüfabschnitt `gaeste` (Bilder: gaeste, gast-dialog, schlafhuette).
+- Bei der Durchsicht nachgebessert: Mikas Gedanke weicht den Meldungen aus
+  (»Schlafhütte gebaut« lag auf »Hannes könnte ins freie Zelt ziehen«) – er
+  steht dann unter den Füßen und bleibt dort, bis er verklingt, statt mitten
+  im Lesen zu springen. Das Dialogfenster wächst nach oben, wenn Text und
+  Antworten mehr Platz brauchen (bei drei Zeilen und drei Antworten ragte die
+  dritte unten hinaus, der Tastenhinweis lag auf einer Antwort). Die
+  Gästeplätze am Feuer liegen links vom Nordbalken und hinter dem Ohrensessel,
+  beide ganz im Bild.
+
 ## Meilenstein 26 – Wucht und Schliff ✓
 
 Erster Schritt des Plans »Zuflucht sein« (DESIGN.md 8) und des Auftrags

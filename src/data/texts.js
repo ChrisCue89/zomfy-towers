@@ -8,6 +8,7 @@ const LAGER_DINGE = {
   bank: ['Eine Sitzbank', 'einer Sitzbank'],
   holzlager: ['Ein Holzlager', 'einem Holzlager'],
   zelt: ['Ein Schlafzelt', 'einem Schlafzelt'],
+  schlafhuette: ['Die Schlafhütte', 'der Schlafhütte'], // M27
   laternenpfahl: ['Ein Laternenpfahl', 'einem Laternenpfahl'],
   vogelscheuche: ['Die Vogelscheuche', 'der Vogelscheuche'], // M19: fällt um, wenn die Gelockten sie zerschlagen
 };
@@ -80,6 +81,7 @@ export const T = {
     ausbau: [null, null, 'Zur Hütte ausbauen', 'Schlafzimmer unterm Dach', 'Werkstatt anbauen', 'Lager anbauen'],
     hausStufe: [null, 'Notunterkunft', 'Hütte', 'Hütte mit Schlafzimmer', 'Haus mit Werkstatt', 'Fischerhaus'],
     zelt: 'Schlafzelt',
+    schlafhuette: 'Schlafhütte', // M27: zwei Schlafplätze
     hochsitz: 'Hochsitz', // M23
     // M17: Wall und Tor des Lagers
     wall3: 'Wall',
@@ -155,12 +157,13 @@ export const T = {
       'Anbau mit Küche (Suppe kochen), Veranda, stabilere Wände.',
       'Ein eigenes Schlafzimmer unterm Dach: Gemütlichkeit +2, stabilere Wände.',
       'Eine Werkstatt mit Werkbank – auch nachts im Warmen basteln.',
-      'Ein trockenes Lager: Nach einer verlorenen Nacht fehlt nur halb so viel.',
+      'Ein trockenes Lager: Nach einer verlorenen Nacht fehlt nur halb so viel. Darüber eine Dachkammer für einen Gast.',
     ],
     abriss: 'Gibt das ganze Material zurück.',
     abrissTurm: 'Gibt 70 % der Kosten zurück.',
     abrissBewohnt: (name) => `Hier schläft ${name}. Gibt das ganze Material zurück.`,
     zelt: 'Ein Schlafplatz für eine Überlebende oder einen Überlebenden.',
+    schlafhuette: 'Zwei Schlafplätze unter einem Dach, mit Ofen – ab dem Schlafzimmer (Zuhause-Stufe 3).', // M27
     holzlager: 'Scheite unterm Dach: jeden Tag 3 Holz – und morgens baut es zwei zerschlagene Barrikaden wieder auf.',
     hochsitz: 'Neben den Weg: Nachts bezieht jemand hier Posten – auswählen, wer.', // M23
   },
@@ -652,6 +655,50 @@ export const T = {
     tee: 'Dr. Yusuf hat Kräutertee gekocht – heute heilt Mika schneller.',
     funk: (wellen, arten) => `Juna hat am Funk mitgehört: Heute Nacht kommen ${wellen} Wellen – ${arten}.`,
     verarztet: 'Dr. Yusuf verarztet Mika – weiter geht’s!',
+  },
+  // M27: Die Wanderer – ankommen, am Feuer übernachten, bleiben oder weiterziehen, Briefe
+  wanderer: {
+    ankunft: {
+      weg: (name, beruf) => `Am Tor steht jemand mit einem Bündel: ${name}, ${beruf}.`,
+      strand: (name, beruf) => `Unten am Strand winkt jemand: ${name}, ${beruf}.`,
+    },
+    berufe: { zimmerer: 'Zimmermann', mechanikerin: 'Mechanikerin', laternenmacherin: 'Laternenmacherin', jaegerin: 'Jägerin' },
+    faehigkeit: {
+      flicken: 'flickt jeden Morgen die halben Schäden an den Holzbarrikaden',
+      schrauben: 'Türme flicken kostet ein Viertel weniger, Basteln ein Teil weniger',
+      licht: 'alle Lichtinseln leuchten ein Viertel weiter',
+      fallen: 'stellt verbrauchte Fallen jeden Morgen neu',
+    },
+    orte: { nordinsel: 'Nordinsel', forsthaus: 'Forsthaus', farm: 'Alte Farm', leuchtturm: 'Leuchtturm', ferienlager: 'Ferienlager' },
+    zumOrt: { nordinsel: 'zur Nordinsel', forsthaus: 'zum Forsthaus', farm: 'zur Alten Farm', leuchtturm: 'zum Leuchtturm', ferienlager: 'zum Ferienlager' },
+    vomOrt: { nordinsel: 'von der Nordinsel', forsthaus: 'aus dem Forsthaus', farm: 'von der Alten Farm', leuchtturm: 'vom Leuchtturm', ferienlager: 'aus dem Ferienlager' },
+    amFeuer: (name) => `${name} übernachtet am Feuer. Morgen früh sprecht ihr darüber, wie es weitergeht.`,
+    wartet: (name) => `${name} wartet am Feuer auf deine Antwort.`,
+    bleibt: (name, was) => `${name} bleibt – ${was}.`,
+    keinPlatz: 'Alle Schlafplätze sind belegt. Ein Zelt, die Schlafhütte oder die Dachkammer schaffen Platz.',
+    weiter: (name, ort) => `Mika packt ${name} Proviant und eine Laterne ein. Gute Reise ${ort}!`,
+    selbstAmFeuer: (name) => `${name} hat sich gestern Abend ans Feuer gesetzt und wartet auf dich.`,
+    selbstWeiter: (name, ort) => `${name} wollte euch nicht zur Last fallen und ist ${ort} weitergezogen.`,
+    nochEinTag: (name) => `${name} bleibt noch einen Tag am Feuer. Tee ist genug da.`,
+    platzGemacht: (alt, ort, neu) => `${alt} zieht ${ort} weiter – ${neu} bekommt den Platz.`,
+    brief: (name, ort) => `Ein Brief von ${name} ${ort}:`,
+    briefe: {
+      hannes: '„Das Forsthaus steht. Die Leute sind brummig, das Dach war undicht – jetzt nicht mehr. Ich klopfe jeden Morgen auf die Balken und denk an eure Bucht.“',
+      clara: '„Der Leuchtturm hat eine Werkstatt, und die Werkstatt hat jetzt mich. Die Lampe oben dreht sich wieder. Wenn du nachts übers Wasser schaust: Das bin ich.“',
+      lotte: '„Im Ferienlager basteln wir jeden Abend Laternen. Die Kinder haben eine für dich gemacht – schief und wunderschön. Ich hab sie verloren. Ich mach eine neue.“',
+      greta: '„Nordinsel. Bruder lebt. Fische beißen. Fallen stehen. Danke.“',
+    },
+    geflickt: (n) => `Hannes hat ${n === 1 ? 'eine Barrikade' : `${n} Barrikaden`} geflickt.`,
+    fallenNeu: (n) => `Greta hat ${n === 1 ? 'eine Falle' : `${n} Fallen`} neu gestellt.`,
+    // Antworten in der Entscheidung
+    bleiben: (name) => `Bleib bei uns, ${name}.`,
+    platzMachen: (alt, ort) => `${alt} würde ${ort} gehen – dann bleibst du`,
+    weiterbringen: (ort) => `Ich bringe dich ${ort}.`,
+    nochEinTagAntwort: 'Bleib noch einen Tag.',
+    ueberlegen: 'Ich überlege noch.',
+    vollBemerkung: 'Alle Schlafplätze sind belegt.',
+    wartenZeile: 'Ich wärm mich noch ein bisschen am Feuer. Morgen reden wir, ja?',
+    huetteAb: 'Erst mit dem Schlafzimmer (Zuhause-Stufe 3)',
   },
   // Meilenstein 8: Balduin, der Händler
   haendler: {

@@ -284,6 +284,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Zeitlupe, Federn der Bauten, Klangstreuung, M26),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
+                      wanderers (Wanderer: Beruf, Fähigkeit, Weg, sicherer
+                      Ort, Tagesplatz; Ankunftsplan aus dem Startwert,
+                      Schlafplätze, M27),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
                       furniture (Möbel, Gemütlichkeit), looks (Aussehen der
                       Hauptfigur, erlaubte Namen), weather (Wetter je Tag aus
@@ -508,6 +511,21 @@ Grundprinzipien:
   Bauten mit `deco`). Der Turm der Nacht bekommt einen Strich (`b.best`,
   `towerRanks.crown`). Das Pausenmenü zeigt das Buch (`menu.bookData`, Seiten
   `taten`/`kunde`/`album`, A/D blättern). Werte in `data/book.js`.
+- **Gäste und Plätze (M27, `data/wanderers.js`, `core/survivors.js`):** Zu den
+  fünf Stammfiguren kommen Wanderer nach `state.guests.plan` (beim Spielstart
+  aus dem Startwert gewürfelt, gespeichert). `state.survivors[id].stage`: 0
+  unterwegs, 1 angekommen, 2 Gast am Feuer (`guest` = Gästeplatz, `due` = Tag,
+  ab dem die Entscheidung fällig ist, `extra` = »noch einen Tag« schon
+  genutzt), 3 eingezogen (`tent` = Bau-ID oder 'zimmer', `slot` in der
+  Schlafhütte), 4 weitergezogen (`gone`, `letter` = Tag des Briefs, `read`).
+  `survivors.places()`/`freePlace()` zählen Zelte, Schlafhütten (je zwei) und
+  die Dachkammer (Zuhause-Stufe 5); `data/wanderers.freePlaces(state)` rechnet
+  dasselbe für die Dialoge. Die Entscheidung (`${id}Entscheidung` in
+  dialogs.js) bietet nie »wegschicken« an, sondern Weiterbringen; bei vollen
+  Plätzen macht der am längsten anwesende Wanderer das Angebot zu gehen.
+  Fähigkeiten über `survivors.ability(art)`; Lottes Licht über
+  `lightPools.setScale`. `PEOPLE`/`personOf` (core/survivors.js) statt
+  `SURVIVOR_ORDER`/`SURVIVORS`, wo alle Menschen gemeint sind.
 - **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
   { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
@@ -749,7 +767,15 @@ Grundprinzipien:
    Turm setzt gestaucht auf und steht danach genau, 80 Schlurfer auf einem Fleck
    laufen über das Raster auseinander, Treffer klingen gestreut, »Blitze: sanft«,
    Baugeist auf dem Weg mit ✗, Einstellungen mit Wackeln und Blitze, Bildzeiten
-   p50/p95/p99 mit vielen Schlurfern (Bilder: baugeist, einstellungen).
+   p50/p95/p99 mit vielen Schlurfern (Bilder: baugeist, einstellungen); ab M27
+   (Abschnitt `gaeste`): Ankunftsplan (Tage 7–24, keine Bossnacht, kein
+   Festmorgen, nie zwei Tage hintereinander), Ankunft am geplanten Tag, E spricht
+   den Wanderer an – Gast am Feuer mit Schlafsack, am Morgen »Bleib bei uns« mit
+   echten Tasten (vorgewählt das Harmlose), bei vollen Plätzen kein »Bleib«, aber
+   das Angebot eines Bewohners, »Weiterbringen«, ein Brief nach zwei, drei Tagen,
+   Schlafhütte erst ab Zuhause-Stufe 3 mit zwei Plätzen, die Fähigkeiten
+   (Lichtinseln größer, Hannes flickt), Speichern v21, Migration v20 → v21
+   (Bilder: gaeste, gast-dialog, schlafhuette).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -861,7 +887,11 @@ ein; ab M26 zeigt `feel()` Trauma, Stoß, Versatz, Trefferstopp, Zeitlupe, die
 letzten Rückmeldungen, ob die Shader vorübersetzt sind und die zuletzt gestreute
 Klangfarbe, `feelEvent(ereignis, o)` löst eine Rückmeldung aus, `buildScale(id)`
 zeigt das Federn eines Baus, `perfSample(schritte, jedesNte)` misst Bildzeiten
-(p50/p95/p99 von Simulation und Zeichnen).
+(p50/p95/p99 von Simulation und Zeichnen); ab M27 zeigt `guests()` Plan,
+Menschen, freie Plätze, Schlafsäcke, Sichtbarkeit und wer gerade fortgeht,
+`nextMorning()` springt zum nächsten Morgen (Zeilen wie im Bericht),
+`dialogInfo()` zeigt den offenen Dialog mit Antworten und Vorwahl,
+`buildOptionsFor(reiter)` die Kacheln eines Reiters.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

@@ -65,13 +65,14 @@ export class LightPools {
     this.group.name = 'Lichtinseln';
     // Wo es nachts hell ist (M22: Nebelwelle – nur im Licht sieht man die Horde)
     this.spots = [];
+    this.scale = 1; // M27: Lottes Laternen – alle Lichtinseln größer (auch für Nebel und Laternenhexe)
     this.group.renderOrder = 2;
     scene.add(this.group);
   }
 
   add(x, z, radius) {
     const mesh = new THREE.Mesh(this.geometry, this.material);
-    mesh.scale.set(radius * 2, 1, radius * 2);
+    mesh.scale.set(radius * 2 * this.scale, 1, radius * 2 * this.scale);
     mesh.position.set(x, 0.02, z);
     mesh.renderOrder = 2;
     const glow = new THREE.Mesh(this.geometry, this.addMaterial);
@@ -90,7 +91,7 @@ export class LightPools {
     const make = (material, order) => {
       const mesh = new THREE.InstancedMesh(this.geometry, material, points.length);
       const m = new THREE.Matrix4();
-      points.forEach((p, i) => mesh.setMatrixAt(i, m.makeScale(radius * 2, 1, radius * 2).setPosition(p.x, 0.02, p.z)));
+      points.forEach((p, i) => mesh.setMatrixAt(i, m.makeScale(radius * 2 * this.scale, 1, radius * 2 * this.scale).setPosition(p.x, 0.02, p.z)));
       mesh.instanceMatrix.needsUpdate = true;
       mesh.renderOrder = order;
       mesh.frustumCulled = false;
@@ -108,9 +109,23 @@ export class LightPools {
     this.spots = this.spots.filter((s) => s.mesh !== mesh);
   }
 
+  /**
+   * Alle Lichtinseln größer oder wieder normal (M27: Lotte, die Laternenmacherin).
+   * @param {number} k Faktor auf den Radius
+   */
+  setScale(k) {
+    if (k === this.scale) return;
+    this.scale = k;
+    for (const s of this.spots) {
+      if (s.i === undefined) s.mesh.scale.set(s.r * 2 * k, 1, s.r * 2 * k);
+      else if (!s.off) this.show(s, true);
+    }
+  }
+
   /** Liegt die Stelle in einer Lichtinsel? (M22) */
   litAt(x, z) {
-    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= s.r * s.r) return true;
+    const k = this.scale * this.scale;
+    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= s.r * s.r * k) return true;
     return false;
   }
 
@@ -147,7 +162,7 @@ export class LightPools {
       return;
     }
     // Instanzen (Fackeln): auf null schrumpfen bzw. zurück an ihren Platz, die Flamme mit
-    const pool = on ? _m.makeScale(s.r * 2, 1, s.r * 2).setPosition(s.x, 0.02, s.z) : ZERO;
+    const pool = on ? _m.makeScale(s.r * 2 * this.scale, 1, s.r * 2 * this.scale).setPosition(s.x, 0.02, s.z) : ZERO;
     s.mesh.setMatrixAt(s.i, pool);
     s.mesh.instanceMatrix.needsUpdate = true;
     const glow = s.mesh.children[0];

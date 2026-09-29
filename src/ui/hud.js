@@ -1011,10 +1011,14 @@ export class Hud {
     const h = 5 + lines.length * LINE_HEIGHT;
     const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
     const y = Math.round(Math.max(62, at.y - h - 1)); // nie über Uhr und Ziel
-    // Liegt dort die Tafel des Nachtplans (gleiches Bild, schon gezeichnet), steht der Gedanke
-    // unter den Füßen – sonst verdeckten sie sich (M25, Frostnacht)
+    // Liegt dort die Tafel des Nachtplans (gleiches Bild, schon gezeichnet) oder eine Meldung,
+    // steht der Gedanke unter den Füßen – sonst verdeckten sie sich (M25, Frostnacht; M27:
+    // »Schlafhütte gebaut« lag auf »Hannes könnte ins freie Zelt ziehen«). Einmal unten,
+    // bleibt er dort, bis er verklingt – er springt nicht mitten im Lesen.
+    const hit = (r) => x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h + 2 > r.y;
     const pr = this.planRect;
-    if (pr && x < pr.x + pr.w && x + w > pr.x && y < pr.y + pr.h && y + h + 2 > pr.y) {
+    if (s.below || (pr && hit(pr)) || this.toastRects(ui).some(hit)) {
+      s.below = true;
       const foot = this.game.worldToUi(p.x, p.y - (s.who ? 1.6 : 0), p.z);
       return { x, y: Math.round(Math.min(ui.height - h - 60, foot.y + 6)), w, h, lines, at: foot, below: true };
     }
@@ -1209,6 +1213,19 @@ export class Hud {
     ui.inset(x + 4, y + 3, 11, 11, { fill: prompt.dim ? COLORS.textDim : COLORS.textWarm, border: COLORS.outline });
     ui.text(T.tasten.benutzen, x + 7, y + 1, COLORS.outline);
     ui.text(label, x + 19, y + 2, prompt.dim ? COLORS.textDim : COLORS.text);
+  }
+
+  /** Oberkante der Meldungen im Spiel: unter dem Ziel, dem Banner und dem Nachtplan. */
+  toastTop() {
+    return Math.max(64, (this.bannerBottom || 0) + 4, (this.planBottom || 0) + 4);
+  }
+
+  /** Wo die Meldungen im Spiel liegen (wie `drawToasts` sie legt) – für die Sprechblase (M27). */
+  toastRects(ui, y = this.toastTop()) {
+    return this.toasts.map((t, k) => {
+      const w = measure(t.text) + (t.icon ? 26 : 12);
+      return { x: Math.round((ui.width - w) / 2), y: y + k * 21, w, h: 18 };
+    });
   }
 
   /** Meldungen untereinander, ab Höhe `y` (Standard: unter dem Ziel). */

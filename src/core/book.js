@@ -6,7 +6,7 @@
 
 import { T } from '../data/texts.js';
 import { DEEDS, DECO_ORDER, DEEDS_PER_DECO, BOOK_BOSSES, KIND_ORDER, ALBUM_SIZE } from '../data/book.js';
-import { SURVIVOR_ORDER } from '../data/survivors.js';
+import { PEOPLE } from './survivors.js';
 import { REACTION_ORDER } from '../data/reactions.js';
 import { MIX_ORDER } from '../data/mixes.js';
 import { BUILDINGS } from '../data/buildings.js';
@@ -87,7 +87,7 @@ export class Book {
       case 'called':
         return this.st.called;
       case 'residents':
-        return SURVIVOR_ORDER.filter((id) => id !== 'knopf' && (st.survivors[id]?.stage || 0) >= 3).length;
+        return PEOPLE.filter((id) => id !== 'knopf' && st.survivors[id]?.stage === 3).length; // M27: auch die Wanderer
       case 'notes':
         return REACTION_ORDER.filter((k) => st.notes?.[k]).length;
       case 'recipes':

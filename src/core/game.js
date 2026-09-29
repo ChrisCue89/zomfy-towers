@@ -34,6 +34,7 @@ import { lookSpec } from '../data/looks.js';
 import { Survivors } from './survivors.js';
 import { Trader } from './trader.js';
 import { SURVIVORS, SURVIVOR_ORDER, BEACON } from '../data/survivors.js';
+import { WANDERERS, WANDERER_ORDER } from '../data/wanderers.js';
 import { Furnishing } from './furnishing.js';
 import { Posts } from './posts.js';
 import { Quests } from './quests.js';
@@ -1671,11 +1672,12 @@ export class Game {
     const st = this.state;
     const id = recipe.gives.tinker;
     const next = PART_RARITIES[PART_RARITIES.indexOf(TOWER_PARTS[id]?.rarity) + 1];
-    if (!next || !((st.towerParts[id] || 0) >= TINKER_COUNT)) {
+    const need = TINKER_COUNT - this.survivors.tinkerDiscount(); // M27: Clara spart ein Teil
+    if (!next || !((st.towerParts[id] || 0) >= need)) {
       this.hud.toast(T.meldungen.zuTeuer, null, 1.8);
       return false;
     }
-    st.towerParts[id] -= TINKER_COUNT;
+    st.towerParts[id] -= need;
     const got = this.loot.rng.pick(partsOfRarity(next));
     this.gainPart(got);
     this.hud.toast(T.werkbank.gebastelt(T.turmteile[got][0], T.turmteile.seltenheit[next]), got, 3.5);
@@ -2863,7 +2865,7 @@ export class Game {
     // Meldungen unter Werkbank, Perk-Wahl und Morgenbericht (m12-r1: »gespeichert« lag auf der Überschrift)
     // Meldungen weichen offenen Fenstern aus – auch der Karte (m16-r1: »Bald
     // kommt die Horde« lag auf dem Nordweg)
-    let toastY = Math.max(64, (this.hud.bannerBottom || 0) + 4, (this.hud.planBottom || 0) + 4);
+    let toastY = this.hud.toastTop();
     if (this.crafting.isOpen) toastY = this.crafting.bottom(ui);
     else if (this.mapView.isOpen) toastY = this.mapView.bottom(ui);
     else if (this.perkChoice.isOpen) toastY = this.perkChoice.bottom(ui);
@@ -3535,6 +3537,33 @@ export class Game {
       beaconSlow: (x, z) => game.survivors.beaconSlow(x, z),
       arrive: () => game.survivors.arrive(true),
       morning: () => [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning()].map((l) => l.text),
+      // M27: Gäste und Plätze
+      guests: () => {
+        const sv = game.survivors;
+        const people = {};
+        for (const id of [...SURVIVOR_ORDER, ...WANDERER_ORDER]) people[id] = game.state.survivors[id] ? { ...game.state.survivors[id] } : null;
+        return {
+          plan: (game.state.guests?.plan || []).map((p) => ({ ...p, name: WANDERERS[p.id]?.name })),
+          people,
+          free: sv.places().filter((p) => !p.broken).length - [...SURVIVOR_ORDER, ...WANDERER_ORDER].filter((id) => game.state.survivors[id]?.stage === 3 && game.state.survivors[id]?.tent !== null && game.state.survivors[id]?.tent !== undefined).length,
+          bedrolls: sv.npcs.bedrolls ? sv.npcs.bedrolls.filter((m) => m.visible).length : 0,
+          visible: Object.fromEntries(WANDERER_ORDER.map((id) => [id, Boolean(sv.npcs.list.get(id)?.model.root.visible)])),
+          leaving: [...sv.leaving.keys()],
+          lightScale: game.world.lightPools.scale,
+        };
+      },
+      /** Der nächste Morgen (ohne Schlafen): Tag weiter, 07:00, Morgenzeilen wie im Bericht. */
+      nextMorning: () => {
+        game.state.time.day += 1;
+        game.state.time.minute = 60;
+        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning()].map((l) => ({ text: l.text }));
+      },
+      /** Der offene Dialog: Zeile, Sprecher, Antworten (mit Aktion) und die vorgewählte. */
+      dialogInfo: () => {
+        const d = game.dialog;
+        return { open: Boolean(d.active), speaker: d.line?.s || null, text: d.line?.t || null, answers: d.active && d.line?.antworten ? d.line.antworten.map((a) => ({ t: a.t, aktion: a.aktion || null, standard: Boolean(a.standard) })) : [], choice: d.choice };
+      },
+      buildOptionsFor: (tab) => game.builder.options(tab).map(({ id, affordable, disabled, disabledText }) => ({ id, affordable, disabled: Boolean(disabled), disabledText: disabledText || null })),
       // Meilenstein 8: Balduin, der Händler
       trader: () => {
         const n = game.trader.npc;

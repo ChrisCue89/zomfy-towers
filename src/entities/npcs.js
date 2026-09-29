@@ -3,7 +3,7 @@
 // wo jemand steht und ob er zu sehen ist, entscheidet core/survivors.js.
 
 import * as THREE from 'three';
-import { survivorParts32 } from './survivorModels.js';
+import { survivorParts32, bedrollModel } from './survivorModels.js';
 import { buildDog, poseDog } from './dogModel.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
@@ -264,5 +264,32 @@ export class Npcs {
   setVisible(id, visible) {
     const n = this.list.get(id);
     if (n) n.model.root.visible = visible;
+  }
+
+  /**
+   * Schlafsäcke an den Gästeplätzen (M27): einmal angelegt, sichtbar, solange
+   * dort ein Gast übernachtet.
+   * @param {Array<{x:number, z:number, facing:number}>} spots
+   * @param {Set<number>} used Indizes der belegten Plätze
+   */
+  setBedrolls(spots, used) {
+    if (!this.bedrolls) {
+      const geo = bedrollModel().toGeometry({ jitter: 0.02, seed: 5, size: U });
+      const material = createWorldMaterial({ selfLight: 0.2 });
+      this.bedrolls = spots.map((s) => {
+        const mesh = new THREE.Mesh(geo, material);
+        // hinter dem Sitzplatz, vom Feuer weg
+        const bx = s.x - Math.sin(s.facing) * 0.8;
+        const bz = s.z - Math.cos(s.facing) * 0.8;
+        mesh.position.set(Math.round(bx * 8) / 8, this.world.heightAt(bx, bz), Math.round(bz * 8) / 8);
+        mesh.rotation.y = Math.round(s.facing / (Math.PI / 2)) * (Math.PI / 2); // nur 90°-Drehungen (Pixelraster)
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.visible = false;
+        this.group.add(mesh);
+        return mesh;
+      });
+    }
+    this.bedrolls.forEach((mesh, i) => (mesh.visible = used.has(i)));
   }
 }

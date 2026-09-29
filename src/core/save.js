@@ -6,6 +6,7 @@ import { BUILDINGS } from '../data/buildings.js';
 import { towerInvested, towerBuildCost } from '../data/towers.js';
 import { LAYOUT } from '../world/layout.js';
 import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
+import { WANDERER_ORDER, arrivalPlan } from '../data/wanderers.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -74,6 +75,9 @@ const MIGRATIONS = {
   // über Tag 30 hinaus spielt, bekommt die Frostnacht noch (in der nächsten Nacht).
   // v19 -> v20: M25, Teil 2 (Herbstbuch). Sterne, Arten und gerufene Wellen beginnen bei null;
   // Taten, die der Stand schon erfüllt, trägt das Buch nach dem Laden leise ein.
+  // v20 -> v21: M27 (Gäste und Plätze). Die Wanderer sind noch unterwegs; ihre Ankünfte
+  // beginnen frühestens morgen – ein alter Stand verpasst keinen, und keiner steht plötzlich da.
+  20: (data) => ({ ...data, version: 21, guests: { plan: arrivalPlan((data.world?.mapSeed ?? 0) >>> 0, WANDERER_ORDER, (data.time?.day || 1) + 1) } }),
   19: (data) => ({ ...data, version: 20, book: { stars: {}, deeds: {}, kinds: {}, called: 0 } }),
   18: (data) => ({ ...data, version: 19, autumn: { frost: null, mode: 'herbst', credits: false } }),
   // v17 -> v18: M24 (Wagnis und Vorrat). Noch keine makellose Nacht in Folge, kein Schatz.

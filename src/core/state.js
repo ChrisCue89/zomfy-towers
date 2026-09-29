@@ -7,6 +7,7 @@ import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPON_ORDER } from '../data/weapons.js';
 import { PERKS, PERK_IDS } from '../data/perks.js';
 import { SURVIVOR_ORDER } from '../data/survivors.js';
+import { WANDERERS, WANDERER_ORDER, arrivalPlan } from '../data/wanderers.js';
 import { FURNITURE } from '../data/furniture.js';
 import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, cleanName } from '../data/looks.js';
 import { TRADER_OFFERS } from '../data/trader.js';
@@ -22,7 +23,7 @@ import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -77,7 +78,9 @@ export function createNewState(config, mapSeed = 1) {
     // mapSeed: Startwert des Wegenetzes (M9); relocate: Bauten eines alten Stands neu aufstellen
     world: { mapSeed: mapSeed >>> 0, relocate: false, houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
     // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
-    survivors: Object.fromEntries(SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }])), // errand: 0 offen, 1 läuft, 2 erledigt
+    // M27: Wanderer dazu – stage 4 weitergezogen; tent: Bau-ID oder 'zimmer' (Dachkammer), slot: Platz in der Schlafhütte
+    survivors: Object.fromEntries([...SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }]), ...WANDERER_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, slot: 0 }])]), // errand: 0 offen, 1 läuft, 2 erledigt
+    guests: { plan: arrivalPlan(mapSeed, WANDERER_ORDER) }, // M27: Ankünfte der Wanderer aus dem Startwert
     // Die Nacht des Tages n: laufende Welle, geschafft?, Bilanz für den Morgenbericht
     night: { n: 0, wave: 0, done: true, won: false, kills: 0, loot: {}, homeStart: 300 },
     horde: [], // lebende Schlurfer (zum Weiterspielen nach dem Neuladen)
@@ -307,9 +310,21 @@ export function sanitizeState(data, config) {
   if (w.trader?.sold && typeof w.trader.sold === 'object') {
     for (const [k, v] of Object.entries(w.trader.sold)) if (TRADER_OFFERS[k] && Number.isFinite(v)) out.world.trader.sold[k] = Math.floor(num(v, 0, 0, 99));
   }
+  const tentOf = (s) => (s.tent === 'zimmer' ? 'zimmer' : Number.isFinite(s.tent) ? Math.floor(s.tent) : null); // M27: auch die Dachkammer
   for (const id of SURVIVOR_ORDER) {
     const s = data.survivors?.[id] || {};
-    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: Number.isFinite(s.tent) ? Math.floor(s.tent) : null, errand: Math.floor(num(s.errand, 0, 0, 2)) };
+    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), errand: Math.floor(num(s.errand, 0, 0, 2)) };
   }
+  // M27: Wanderer (4 = weitergezogen, mit Brief) und der Plan ihrer Ankünfte
+  const opt = (v) => (Number.isFinite(v) ? Math.floor(v) : null);
+  for (const id of WANDERER_ORDER) {
+    const s = data.survivors?.[id] || {};
+    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 4)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), guest: Number.isFinite(s.guest) ? Math.floor(num(s.guest, 0, 0, 1)) : null, due: opt(s.due), extra: s.extra === true, gone: opt(s.gone), letter: opt(s.letter), read: s.read === true };
+  }
+  out.guests = {
+    plan: Array.isArray(data.guests?.plan)
+      ? data.guests.plan.filter((p) => p && WANDERERS[p.id] && Number.isFinite(p.day)).map((p) => ({ id: p.id, day: Math.floor(num(p.day, 7, 1, 1e6)) }))
+      : arrivalPlan(out.world.mapSeed, WANDERER_ORDER, out.time.day + 1),
+  };
   return out;
 }

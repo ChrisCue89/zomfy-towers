@@ -17,6 +17,8 @@ import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
 import { ITEMS } from '../data/items.js';
 import { SURVIVORS } from '../data/survivors.js';
+import { PLACES } from '../data/wanderers.js';
+import { personOf } from './survivors.js';
 import { knowsBuilding } from '../data/blueprints.js';
 import { TRAP_REARM } from '../data/traps.js';
 import { LURE } from '../data/risk.js';
@@ -195,7 +197,10 @@ export class Builder {
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.placeOptions(['zelt', 'holzlager', 'hochsitz']); // M23: der Hochsitz gehört zu den Überlebenden
+    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz']); // M23: der Hochsitz gehört zu den Überlebenden
+    // M27: Die Schlafhütte gibt es erst mit dem Schlafzimmer (Zuhause-Stufe 3)
+    const hut = options.find((o) => o.id === 'schlafhuette');
+    if (hut && (this.game.state.world.houseLevel || 1) < BUILDINGS.schlafhuette.house) Object.assign(hut, { disabled: true, locked: true, disabledText: T.wanderer.huetteAb });
     for (const o of this.game.furnishing.options()) options.push(this.option({ ...o, buy: true }, inv));
     const tower = this.game.survivors.towerOption();
     if (tower) options.push(this.option(tower, inv));
@@ -426,8 +431,8 @@ export class Builder {
     // Hochsitz (M23): wer bezieht nachts den Posten?
     if (def.post) options.push(...this.postOptions(b));
     // Bewohntes Zelt: vor dem Abriss sagen, wer darin schläft (m6-r1)
-    const guest = b.type === 'zelt' ? this.game.survivors.occupant(b.id) : null;
-    const guestName = guest ? SURVIVORS[guest].name : null;
+    const sleepers = PLACES[b.type] ? this.game.survivors.occupants(b.id) : []; // M27: auch die Schlafhütte (zwei)
+    const guestName = sleepers.length ? sleepers.map((id) => personOf(id).name).join(' und ') : null;
     options.push({
       id: `abriss-${b.id}`,
       icon: 'abriss',
@@ -718,7 +723,10 @@ export class Builder {
     }
     const missingHp = (maxHpOf(b) - b.hp) / maxHpOf(b);
     if (missingHp <= 0) return null;
-    if (def.tower) return { holz: Math.max(1, Math.ceil(missingHp * 4)), schrott: Math.max(1, Math.ceil(missingHp * 4)) };
+    if (def.tower) {
+      const f = this.game.survivors.towerRepairFactor(); // M27: Clara flickt Türme billiger
+      return { holz: Math.max(1, Math.ceil(missingHp * 4 * f)), schrott: Math.max(1, Math.ceil(missingHp * 4 * f)) };
+    }
     return { holz: Math.max(1, Math.ceil(missingHp * 3)) };
   }
 
@@ -1158,7 +1166,7 @@ export class Builder {
     const { w, d } = footprint(b.type, b.turns);
     this.game.effects.dust(b.i + w / 2, b.j + d / 2, 1.5);
     this.game.hud.toast(T.meldungen.abgerissen(T.bauten[b.type]), 'abriss', 2.2);
-    if (b.type === 'zelt') this.game.survivors.checkTents();
+    if (PLACES[b.type]) this.game.survivors.checkTents(); // M27: Zelte und Schlafhütte
     this.game.quietSave();
   }
 

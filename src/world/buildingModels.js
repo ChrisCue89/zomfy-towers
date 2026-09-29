@@ -524,9 +524,111 @@ function clipped(src, x0, x1, z0, z1) {
   return m;
 }
 
+/**
+ * Schlafhütte (M27): kleine Blockhütte für zwei Bewohner (2 × 2 Felder,
+ * x −32..31, z −32..31). Rundhölzer mit hellen Oberkanten, an den Ecken
+ * überstehende Balkenköpfe mit Jahresringen, ein Sockel aus Feldsteinen. Vorn
+ * (Süden, zur Kamera) die Tür aus Brettern mit Riegel und ein Fenster mit
+ * Blumenkasten, das nachts warm leuchtet; darüber ein Satteldach aus Schindeln
+ * mit Moos und Laub, ein Ofenrohr.
+ */
+export function buildCabin(seed) {
+  const m = new VoxelModel();
+  const X0 = -27;
+  const X1 = 26;
+  const Z0 = -22;
+  const Z1 = 21;
+  const TOP = 49; // Oberkante der Wände
+  // Sockel aus Feldsteinen
+  m.box(X0 - 1, 0, Z0 - 1, X1 + 1, 3, Z1 + 1, (x, y, z) => {
+    const h = hash3(x >> 2, y >> 1, z >> 2, seed);
+    if ((x + (y >> 1) * 3) % 7 === 0 || y === 3) return P.s3;
+    return h < 0.35 ? P.s4 : h < 0.8 ? P.s5 : P.s6;
+  });
+  // Rundhölzer: je 6 Reihen hoch, oben hell, unten dunkel; Süd- und Nordwand längs x, Ost und West längs z
+  const log = (u, y, seed2) => {
+    const r = (y - 4) % 6;
+    if (r === 5) return P.e7; // Oberkante fängt Licht
+    if (r === 0) return P.e3; // Fuge
+    const grain = hash3(u >> 3, (y - 4) / 6 | 0, 3, seed2) < 0.12 && r === 2;
+    return grain ? P.e4 : r >= 3 ? P.e6 : P.e5;
+  };
+  for (let y = 4; y <= TOP; y++) {
+    m.box(X0, y, Z1, X1, y, Z1, (x) => log(x, y, seed)); // Süd
+    m.box(X0, y, Z0, X1, y, Z0, (x) => log(x, y, seed + 1)); // Nord
+    m.box(X0, y, Z0, X0, y, Z1, (x, yy, z) => log(z, y, seed + 2)); // West
+    m.box(X1, y, Z0, X1, y, Z1, (x, yy, z) => log(z, y, seed + 3)); // Ost
+  }
+  m.box(X0 + 1, 4, Z0 + 1, X1 - 1, 4, Z1 - 1, P.e3); // Dielenboden (sieht man durch die Tür)
+  // Balkenköpfe an den Ecken: stehen vor, Stirnseite mit Ringen
+  for (const [cx, cz] of [[X0, Z1], [X1, Z1], [X0, Z0], [X1, Z0]]) {
+    for (let y = 4; y <= TOP; y += 6) {
+      for (let k = 1; k <= 3; k++) {
+        const out = cz === Z1 ? cz + k : cz - k;
+        for (let dy = 1; dy <= 4; dy++) m.set(cx, y + dy, out, k === 3 && cz === Z1 ? (dy === 2 || dy === 3 ? P.e8 : P.e6) : P.e5);
+      }
+    }
+  }
+  // Tür (Bretter senkrecht, Riegel, Griff), leicht eingelassen
+  const DX0 = -9;
+  const DX1 = 4;
+  m.remove(DX0, 4, Z1, DX1, 36, Z1);
+  m.box(DX0 - 1, 4, Z1 + 1, DX1 + 1, 37, Z1 + 1, (x, y) => (x === DX0 - 1 || x === DX1 + 1 || y === 37 ? P.e3 : null));
+  m.box(DX0, 4, Z1, DX1, 36, Z1, (x, y) => {
+    if (y === 12 || y === 30) return P.e3; // Querriegel
+    if ((x - DX0) % 5 === 0) return P.e4; // Fuge zwischen Brettern
+    return hash3(x >> 1, y >> 3, 5, seed) < 0.2 ? P.e5 : P.e6;
+  });
+  m.set(DX1 - 2, 20, Z1 + 1, P.s6).set(DX1 - 2, 21, Z1 + 1, P.s4); // Griff
+  // Fenster rechts: Rahmen, Sprossenkreuz, dunkles Glas (nachts leuchtet es, buildCabinGlow)
+  const WX0 = 11;
+  const WX1 = 21;
+  const WY0 = 20;
+  const WY1 = 33;
+  m.box(WX0 - 1, WY0 - 1, Z1 + 1, WX1 + 1, WY1 + 1, Z1 + 1, (x, y) => (x === WX0 - 1 || x === WX1 + 1 || y === WY0 - 1 || y === WY1 + 1 ? P.e7 : null));
+  m.box(WX0, WY0, Z1, WX1, WY1, Z1, (x, y) => (x === 16 || y === 27 ? P.e7 : y >= 30 && x <= 13 ? P.n4 : P.n2));
+  // Blumenkasten unter dem Fenster mit Astern
+  m.box(WX0 - 1, WY0 - 5, Z1 + 1, WX1 + 1, WY0 - 2, Z1 + 3, (x, y) => (y === WY0 - 2 ? P.e2 : P.e4));
+  for (let x = WX0; x <= WX1; x += 2) m.set(x, WY0 - 1, Z1 + 2, hash3(x, 1, 1, seed) < 0.5 ? P.a3 : P.a1).set(x + 1, WY0 - 1, Z1 + 2, P.g5);
+  // Giebel (Ost und West): senkrechte Bretter bis unter den First
+  for (let y = TOP + 1; y <= TOP + 20; y++) {
+    const half = Math.round((TOP + 21 - y) * 1.1);
+    for (const x of [X0, X1]) m.box(x, y, -half, x, y, Math.min(half, Z1), (xx, yy, z) => ((z + 40) % 5 === 0 ? P.e4 : P.e5));
+  }
+  // Satteldach, First längs x: nach Süden (zur Kamera) und Norden geneigt, Schindeln mit Moos und Laub
+  const shingle = (x, y, z, row) => {
+    const u = x + (row % 2) * 3;
+    if (u % 6 === 0) return P.e3; // Fuge
+    const h = hash3(x >> 2, row, z >> 3, seed + 9);
+    if (h < 0.08) return hash3(x, row, 4, seed) < 0.5 ? P.f4 : P.f5; // Laub
+    if (h < 0.2) return P.g3; // Moos
+    return row % 2 ? P.e4 : P.e5;
+  };
+  for (let z = -31; z <= 30; z++) {
+    const d = Math.abs(z + 0.5);
+    const y = TOP + 22 - Math.round(d * 0.72);
+    const row = Math.floor(d / 4);
+    m.box(-32, y, z, 31, y, z, (x) => (d > 29 ? P.e3 : shingle(x, y, z, row)));
+    m.box(-32, y - 1, z, 31, y - 1, z, P.e3); // Unterseite
+  }
+  m.box(-32, TOP + 22, -1, 31, TOP + 23, 0, (x, y) => (y === TOP + 23 ? P.e6 : P.e4)); // Firstbalken
+  // Ofenrohr mit Hut
+  m.box(18, TOP + 12, -8, 21, TOP + 28, -5, (x, y) => (y >= TOP + 26 ? P.s2 : x === 18 ? P.s4 : P.s3));
+  m.box(17, TOP + 29, -9, 22, TOP + 29, -4, P.s2);
+  return m;
+}
+
+/** Das Fenster der Schlafhütte leuchtet nachts (Glühmaterial, keine Lichtquelle). */
+export function buildCabinGlow() {
+  const m = new VoxelModel();
+  for (let x = 11; x <= 21; x++) for (let y = 20; y <= 33; y++) if (x !== 16 && y !== 27) m.set(x, y, 22, 0xffffff);
+  return m;
+}
+
 export const BUILDING_MODELS = {
   holzlager: { model: buildWoodpile },
   zelt: { model: buildTent, glow: buildTentGlow },
+  schlafhuette: { model: buildCabin, glow: buildCabinGlow, pool: { y: 1.0, radius: 2.2 } }, // M27
   werkbank: { model: buildWorkbench, glow: buildWorkbenchGlow },
   barrikade: { model: (seed) => buildBarricade(seed, 1) }, // Stufen und Trümmer: buildings.js
   laternenpfahl: { model: buildLampPost, glow: buildLampPostGlow, pool: { y: 1.3, radius: 3.0 } },

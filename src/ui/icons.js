@@ -1763,6 +1763,23 @@ const ICONS = {
       '.kkkkkkkkkk.',
     ],
   },
+  // M27: Schlafhütte – Blockhütte mit Satteldach, Tür und warmem Fenster
+  schlafhuette: {
+    legend: { k: P.e1, R: P.e4, r: P.e3, w: P.e6, W: P.e7, d: P.e2, f: P.f6 },
+    rows: [
+      '.....kk.....',
+      '....kRRk....',
+      '...kRrRRk...',
+      '..kRRRRrRk..',
+      '.kRrRRRRRRk.',
+      'kkkkkkkkkkkk',
+      '.kwWwWwWwWk.',
+      '.kWwddwffWk.',
+      '.kwWddWffwk.',
+      '.kWwddwWwWk.',
+      '.kkkkkkkkkk.',
+    ],
+  },
   // Baugeist (M26): passt – passt nicht, dazu die Farbe (nie Farbe allein)
   passt: {
     legend: { g: P.g9, k: P.n0 },

@@ -5,7 +5,8 @@
 import { P, hexToRgb, nearestPaletteHex } from './palette.js';
 import { VoxelModel } from './voxel.js';
 import { buildFineBustModel, MIKA } from '../entities/characters.js';
-import { survivorParts } from '../entities/survivorModels.js';
+import { survivorParts, survivorParts32 } from '../entities/survivorModels.js';
+import { WANDERER_ORDER } from '../data/wanderers.js';
 import { dogModels } from '../entities/dogModel.js';
 
 const TOP_SHADE = 1.08;
@@ -25,7 +26,9 @@ function css(hex) {
  * @param {VoxelModel} model
  * @param {{size?: number, top?: number, w?: number, t?: number, f?: number}} options
  *   w/t/f: Pixel je Voxel für Breite, Oberseite und Vorderseite (Welt: 5/3/4;
- *   feine Modelle der Überlebenden: 4/1/3, damit der Kopf ins Fenster passt)
+ *   feine Modelle der Überlebenden: 4/1/3, damit der Kopf ins Fenster passt;
+ *   Figuren im Maß 1/32 (M27): 2/1/1,5 – die Reihen wechseln dann zwischen
+ *   einem und zwei Pixeln, gerundet auf ganze Pixel)
  * @returns {HTMLCanvasElement}
  */
 export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f = 4 } = {}) {
@@ -38,10 +41,12 @@ export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f
   for (const [x, y, z] of cells) {
     minX = Math.min(minX, x * w);
     maxX = Math.max(maxX, x * w + w);
-    minY = Math.min(minY, -f * (y + 1) + t * z);
+    minY = Math.min(minY, Math.round(-f * (y + 1)) + t * z);
   }
   const offsetX = Math.round((size - (maxX - minX)) / 2) - minX;
   const offsetY = top - minY;
+  // Oberkante der Reihe y (ganze Pixel – bei f = 1,5 wechseln die Reihen zwischen 1 und 2 px)
+  const rowTop = (y) => Math.round(-f * (y + 1));
 
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -51,7 +56,8 @@ export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f
   cells.sort((a, b) => a[2] - b[2] || a[1] - b[1]);
   for (const [x, y, z, c] of cells) {
     const sx = x * w + offsetX;
-    const topY = -f * (y + 1) + t * z + offsetY;
+    const topY = rowTop(y) + t * z + offsetY;
+    const rowH = rowTop(y - 1) - rowTop(y);
     if (!model.has(x, y + 1, z) && t > 0) {
       ctx.fillStyle = css(shadeHex(c, TOP_SHADE));
       ctx.fillRect(sx, topY, w, t);
@@ -59,7 +65,7 @@ export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f
     if (!model.has(x, y, z + 1)) {
       const covered = model.has(x, y + 1, z + 1);
       ctx.fillStyle = css(shadeHex(c, covered ? FRONT_SHADE * AO_FRONT : FRONT_SHADE));
-      ctx.fillRect(sx, topY + t, w, f);
+      ctx.fillRect(sx, topY + t, w, rowH);
     }
   }
 
@@ -90,6 +96,20 @@ function buildRadioModel() {
   m.set(-3, 8, 0, P.s4).set(2, 8, 0, P.s4);
   for (let i = 0; i < 5; i++) m.set(3 + Math.floor(i / 2), 7 + i, -1, P.s5);
   return m;
+}
+
+/**
+ * Brustbild im Maß 1/32 (M27): der runde Kopf aus dem Figuren-Baukasten (N1)
+ * mit der Gesichtsplatte – so sehen die Wanderer im Dialog aus wie in der Welt.
+ */
+function portrait32(id) {
+  const parts = survivorParts32(id);
+  const bust = new VoxelModel();
+  const add = (model) => model.forEach((x, y, z, c) => y >= 20 && bust.set(x, y, z, c));
+  add(parts.torso);
+  add(parts.head);
+  if (parts.faces) add(parts.faces.normal);
+  return renderVoxelPortrait(bust, { top: 1, w: 2, t: 1, f: 1.5 });
 }
 
 /** Brustbild einer Überlebenden-Figur (feines Modell, flachere Projektion). */
@@ -146,5 +166,6 @@ export function renderPortraits() {
     yusuf: survivorPortrait('yusuf'),
     balduin: balduinPortrait(),
     knopf: dogPortrait(),
+    ...Object.fromEntries(WANDERER_ORDER.map((id) => [id, portrait32(id)])), // M27: die Wanderer
   };
 }

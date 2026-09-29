@@ -1603,7 +1603,19 @@ das Trauma-Modell von Squirrel Eiserloh.
 *Prüfen:* Tabelle vollständig, »Wackeln aus« ohne Versatz, Bildzeiten einer
 dichten Nacht, Baugeist mit Grund.
 
-#### M27 – Gäste und Plätze
+#### M27 – Gäste und Plätze ✓
+
+*Umgesetzt (29.09.2026):* Vier Wanderer – **Hannes** (Zimmermann, flickt jeden
+Morgen die halben Holzschäden), **Clara** (Mechanikerin, Türme flicken und
+Basteln billiger), **Lotte** (Laternenmacherin, alle Lichtinseln ein Viertel
+größer) und **Greta** (Jägerin, stellt verbrauchte Fallen neu) – kommen nach einem
+Plan aus dem Startwert (Tage 7–24) über den Weg oder den Strand. Angesprochen
+übernachten sie am **Gästeplatz** am Feuer (Schlafsack); am Morgen entscheidet
+Mika: **»Bleib bei uns«**, **»Ich bringe dich …«** (mit Proviant und Laterne, zwei,
+drei Tage später kommt ein **Brief**) oder einmal »Bleib noch einen Tag«. Sind
+alle Plätze belegt, bietet der am längsten Anwesende an zu gehen. Plätze: Zelte
+bis fünf, die neue **Schlafhütte** (zwei) und die **Dachkammer** (Stufe 5).
+Spielstand v21. Die übrigen acht Wanderer folgen in M29.
 
 *Ziel:* Die Bucht wird ein Zufluchtsort: Menschen kommen, und Mika entscheidet,
 wer bleibt – ohne je jemanden wegzuschicken.

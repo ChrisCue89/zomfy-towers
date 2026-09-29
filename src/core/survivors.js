@@ -9,18 +9,38 @@
 //   je Nacht, bevor sie zu Boden geht.
 // Menschen sind tagsüber draußen (06:30–20:15), nachts im Zelt; Knopf liegt
 // nachts am Feuer.
+//
+// M27: Dazu kommen die Wanderer (data/wanderers.js) an den Tagen aus dem
+// Startwert der Karte: ankommen (1) → ansprechen: Gast am Feuer (2, eine Nacht
+// am Gästeplatz) → am Morgen die Entscheidung: bleiben (3, braucht einen freien
+// Schlafplatz – Zelt, Hütte, Gästezimmer), weiterbringen (4, zwei, drei Tage
+// später kommt ein Brief) oder einmal »noch einen Tag«. Ist alles voll, bietet
+// ein Wanderer unter den Bewohnern an, Platz zu machen. Niemand wird
+// weggeschickt: Wer sich nicht entscheiden lassen will, zieht nach dem zweiten
+// Morgen von selbst weiter.
 
 import { T } from '../data/texts.js';
 import { SURVIVORS, SURVIVOR_ORDER, TOWER_STAGES, BEACON, TRADES, MORNING_GIFTS, BERT_REPAIR, YUSUF_TEA, ERRANDS } from '../data/survivors.js';
 import { Npcs } from '../entities/npcs.js';
 import { hoursOf } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, maxHpOf } from '../data/buildings.js';
+import { WANDERERS, WANDERER_ORDER, ABILITIES, ARRIVE_SPOTS, GUEST_SPOTS, EXIT_ROUTES, PLACES, GUEST_ROOM_LEVEL, LETTER_DELAY } from '../data/wanderers.js';
 
 const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
 const BARK_AHEAD = 12; // Spielminuten vor einer Welle bellt Knopf
 const POST_FACING = -Math.PI / 4; // auf dem Hochsitz: Blick nach Südwesten (zu Weg und Wald, halb zur Kamera, M23)
+/** Alle Menschen der Bucht: die Stammbesetzung, dann die Wanderer (M27). */
+export const PEOPLE = [...SURVIVOR_ORDER, ...WANDERER_ORDER];
+const isWanderer = (id) => Boolean(WANDERERS[id]);
+
+/** Stammdaten einer Figur – für Wanderer aus data/wanderers.js zusammengesetzt. */
+export function personOf(id) {
+  if (SURVIVORS[id]) return SURVIVORS[id];
+  const w = WANDERERS[id];
+  return w ? { name: w.name, tent: true, prompt: 'ansprechen', arrive: ARRIVE_SPOTS[w.route], spot: w.spot, wanderer: true } : null;
+}
 
 /** »Schlurfer, Flitzer und ein Brummer« – was in einer Nacht kommt (für Junas Funkspruch). */
 export function nightMix(plan) {
@@ -44,6 +64,7 @@ export class Survivors {
     this.greeted = new Set(); // wer Mika bei der Ankunft schon zugewinkt hat
     this.outside = null; // sind die Menschen gerade draußen?
     this.whistled = null; // Pfiff (M16): { t, back } – Knopf rennt hin, bellt, trabt zurück
+    this.leaving = new Map(); // M27: wer gerade fortgeht – id -> noch zu gehende Wegpunkte
   }
 
   get st() {
@@ -66,6 +87,7 @@ export class Survivors {
     this.outside = null;
     this.placeAll(true);
     this.refreshInteractions();
+    this.onAbilitiesChanged(); // M27: Lottes Licht nach dem Laden
   }
 
   // --- Ankunft ----------------------------------------------------------------------
@@ -85,17 +107,38 @@ export class Survivors {
       this.placeOne(id, out, true);
       if (announce) this.game.hud.say(T.ueberlebende.ankunft[id], 5);
     }
+    // M27: Wanderer nach dem Plan aus dem Startwert
+    for (const { id, day: due } of this.guests.plan || []) {
+      const s = this.st[id];
+      if (!s || s.stage !== 0 || day < due) continue;
+      s.stage = 1;
+      s.day = day;
+      any = true;
+      this.placeOne(id, out, true);
+      const w = WANDERERS[id];
+      if (announce) this.game.hud.say(T.wanderer.ankunft[w.route](w.name, T.wanderer.berufe[w.job]), 6);
+    }
     if (any) this.refreshInteractions();
     return any;
+  }
+
+  /** Gäste, Weitergezogene und der Plan der Ankünfte (M27). */
+  get guests() {
+    return this.game.state.guests;
   }
 
   // --- Stellen und Sichtbarkeit -----------------------------------------------------
 
   /** Wo steht jemand gerade (Ankunftsort, fester Platz, am Festmorgen am Feuer – frei von Bauten)? */
   standSpot(id) {
-    const def = SURVIVORS[id];
+    const def = personOf(id);
     const feast = this.resident(id) ? this.game.posts?.feastSpot(id) : null; // M23: Fest am Feuer
     if (feast) return { ...this.freeSpot(feast.x, feast.z, 0.28), facing: feast.facing };
+    // M27: Gäste sitzen am Gästeplatz beim Feuer
+    if (def.wanderer && this.stage(id) === 2) {
+      const g = GUEST_SPOTS[this.st[id].guest || 0];
+      return { ...this.freeSpot(g.x, g.z, 0.28), facing: g.facing };
+    }
     const want = this.stage(id) === 1 ? def.arrive : def.spot;
     return this.freeSpot(want.x, want.z, def.dog ? 0.2 : 0.28);
   }
@@ -123,15 +166,19 @@ export class Survivors {
   /** Alle Figuren an ihre Stelle setzen (jump) bzw. dorthin laufen lassen. */
   placeAll(jump) {
     const out = this.isOutsideTime();
-    for (const id of SURVIVOR_ORDER) this.placeOne(id, out, jump);
+    for (const id of PEOPLE) this.placeOne(id, out, jump);
+    this.updateBedrolls();
   }
 
   placeOne(id, out, jump) {
-    const def = SURVIVORS[id];
-    if (this.stage(id) === 0) {
+    const def = personOf(id);
+    const stage = this.stage(id);
+    // M27: Weitergezogene gehen noch bis zum Tor bzw. zum Strand, dann sind sie fort
+    if (stage === 0 || (stage === 4 && !this.leaving.has(id))) {
       this.npcs.setVisible(id, false);
       return;
     }
+    if (stage === 4) return; // läuft gerade fort (update)
     const n = this.npcs.get(id, def.dog);
     // M23: Auf dem Hochsitz (abends bis morgens) – oben auf der Plattform, Blick zum Weg
     const post = !def.dog && this.game.posts?.onDuty(id) ? this.game.posts.postOf(id) : null;
@@ -163,11 +210,12 @@ export class Survivors {
 
   refreshInteractions() {
     const list = [];
-    for (const id of SURVIVOR_ORDER) {
-      if (this.stage(id) === 0) continue;
+    for (const id of PEOPLE) {
+      const stage = this.stage(id);
+      if (stage === 0 || stage === 4) continue;
       const n = this.npcs.list.get(id);
       if (!n) continue;
-      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: SURVIVORS[id].prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) });
+      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: personOf(id).prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) });
     }
     this.interactions = list;
     this.game.world.npcInteractions = list;
@@ -195,7 +243,8 @@ export class Survivors {
     }
     // Neu angekommen: winkt, sobald Mika in der Nähe ist
     const p = g.player.position;
-    for (const id of SURVIVOR_ORDER) {
+    this.updateLeaving();
+    for (const id of PEOPLE) {
       if (this.stage(id) !== 1 || this.greeted.has(id)) continue;
       const n = this.npcs.list.get(id);
       if (!n || !n.model.root.visible || Math.hypot(n.x - p.x, n.z - p.z) > 6) continue;
@@ -316,6 +365,10 @@ export class Survivors {
   talk(id) {
     const g = this.game;
     const stage = this.stage(id);
+    if (isWanderer(id)) {
+      this.talkWanderer(id);
+      return;
+    }
     if (stage === 1) {
       g.startDialog(`${id}Treffen`, (aktion) => {
         const s = this.st[id];
@@ -335,6 +388,11 @@ export class Survivors {
 
   onAnswer(id, aktion) {
     const g = this.game;
+    if (isWanderer(id)) {
+      this.decide(id, aktion);
+      g.quietSave();
+      return;
+    }
     if (aktion === 'einziehen') {
       // Kaum eingezogen, gleich eine Bitte (der Auftrag steht dann im Ziel-Feld)
       if (this.moveIn(id) && ERRANDS[id] && !this.st[id].errand) {
@@ -387,9 +445,11 @@ export class Survivors {
     }
   }
 
-  /** Für das Ziel-Feld: laufender Auftrag, sonst der nächste Schritt am Funkturm. */
+  /** Für das Ziel-Feld: ein Gast wartet auf Antwort (M27), laufender Auftrag, sonst der nächste Schritt am Funkturm. */
   errandGoal() {
     const st = this.game.state;
+    const waiting = WANDERER_ORDER.find((id) => this.decisionDue(id));
+    if (waiting) return { id: `gast-${waiting}`, text: T.wanderer.wartet(WANDERERS[waiting].name), progress: null };
     for (const id of SURVIVOR_ORDER) {
       const def = ERRANDS[id];
       if (!def || this.st[id].errand !== 1) continue;
@@ -410,71 +470,288 @@ export class Survivors {
   /** Nach dem Kennenlernen: Wo schläft der Gast? */
   tentHint(id) {
     if (!SURVIVORS[id].tent) return;
-    this.game.hud.say(this.freeTent() ? T.ueberlebende.zeltFrei(SURVIVORS[id].name) : T.ueberlebende.zeltBauen, 5);
+    this.game.hud.say(this.freePlace() ? T.ueberlebende.zeltFrei(SURVIVORS[id].name) : T.ueberlebende.zeltBauen, 5);
   }
 
-  // --- Zelte und Einzug -------------------------------------------------------------
+  // --- Schlafplätze und Einzug (M27: Zelte, die Hütte, das Gästezimmer) -----------------
 
   tents() {
     return this.game.world.buildings.list.filter((b) => b.type === 'zelt');
   }
 
-  /** Wer schläft in diesem Zelt? (id oder null) */
-  occupant(tentId) {
-    return SURVIVOR_ORDER.find((id) => this.st[id].tent === tentId) || null;
+  /**
+   * Alle Schlafplätze: je Zelt einer, je Hütte zwei, das Gästezimmer ab
+   * Zuhause-Stufe 5 einer. `id` ist der Bau (oder 'zimmer'), `slot` der Platz darin.
+   */
+  places() {
+    const list = [];
+    for (const b of this.game.world.buildings.list) {
+      const n = PLACES[b.type];
+      if (!n) continue;
+      for (let slot = 0; slot < n; slot++) list.push({ id: b.id, slot, broken: Boolean(b.broken), type: b.type });
+    }
+    if ((this.game.state.world.houseLevel || 1) >= GUEST_ROOM_LEVEL) list.push({ id: 'zimmer', slot: 0, broken: false, type: 'zimmer' });
+    return list;
   }
 
-  /** Ein Zelt, das noch niemandem gehört und steht (oder null; umgeworfen zählt nicht, M17d). */
+  /** Wer schläft hier? (erste id oder null – bei der Hütte ggf. zwei, siehe occupants) */
+  occupant(placeId) {
+    return this.occupants(placeId)[0] || null;
+  }
+
+  occupants(placeId) {
+    return PEOPLE.filter((id) => this.st[id]?.tent === placeId && this.stage(id) === 3);
+  }
+
+  /** Ein Schlafplatz, der noch niemandem gehört und steht (oder null; umgeworfen zählt nicht, M17d). */
+  freePlace() {
+    const used = new Set(PEOPLE.filter((id) => this.st[id] && this.st[id].tent !== null && this.st[id].tent !== undefined).map((id) => `${this.st[id].tent}|${this.st[id].slot || 0}`));
+    return this.places().find((p) => !p.broken && !used.has(`${p.id}|${p.slot}`)) || null;
+  }
+
+  /** Alt (M6): ein freies Zelt – heißt jetzt: ein freier Schlafplatz. */
   freeTent() {
-    const used = new Set(SURVIVOR_ORDER.map((id) => this.st[id].tent).filter((t) => t !== null && t !== undefined));
-    return this.tents().find((b) => !used.has(b.id) && !b.broken) || null;
+    return this.freePlace();
   }
 
-  /** Liegt das Zelt dieses Bewohners umgeworfen da (M17d)? Dann bringt er morgens nichts. */
+  /** Liegt das Zelt (die Hütte) dieses Bewohners umgeworfen da (M17d)? Dann bringt er morgens nichts. */
   tentDown(id) {
     const tent = this.st[id].tent;
-    if (tent === null || tent === undefined) return false;
+    if (tent === null || tent === undefined || tent === 'zimmer') return false;
     return Boolean(this.game.world.buildings.get(tent)?.broken);
   }
 
   moveIn(id) {
     const g = this.game;
     const s = this.st[id];
-    if (SURVIVORS[id].tent) {
-      const tent = this.freeTent();
-      if (!tent) {
-        g.hud.say(T.ueberlebende.zeltBauen, 4);
+    const def = personOf(id);
+    if (def.tent) {
+      const place = this.freePlace();
+      if (!place) {
+        g.hud.say(isWanderer(id) ? T.wanderer.keinPlatz : T.ueberlebende.zeltBauen, 4);
         return false;
       }
-      s.tent = tent.id;
+      s.tent = place.id;
+      s.slot = place.slot;
     }
     s.stage = 3;
-    g.hud.toast(T.ueberlebende.eingezogen(SURVIVORS[id].name), SURVIVORS[id].dog ? 'pfote' : 'zelt', 3.5);
-    if (SURVIVORS[id].dog) g.hud.say(T.ueberlebende.knopfHilft, 5); // wie er hilft, stand nirgends (m6-r1)
+    s.guest = null;
+    g.hud.toast(T.ueberlebende.eingezogen(def.name), def.dog ? 'pfote' : 'zelt', 3.5);
+    if (def.dog) g.hud.say(T.ueberlebende.knopfHilft, 5); // wie er hilft, stand nirgends (m6-r1)
+    if (isWanderer(id)) g.hud.say(T.wanderer.bleibt(def.name, T.wanderer.faehigkeit[WANDERERS[id].ability]), 6);
     g.sound.play('glocke');
+    this.onAbilitiesChanged();
     this.placeAll(false);
     return true;
   }
 
-  /** Zelte, die es nicht mehr gibt (abgerissen): Bewohner werden wieder Gäste. */
+  /** Schlafplätze, die es nicht mehr gibt (abgerissen): Bewohner werden wieder Gäste. */
   checkTents() {
-    const ids = new Set(this.tents().map((b) => b.id));
-    for (const id of SURVIVOR_ORDER) {
+    const exists = new Set(this.places().map((p) => `${p.id}|${p.slot}`));
+    for (const id of PEOPLE) {
       const s = this.st[id];
-      if (s.tent === null || s.tent === undefined || ids.has(s.tent)) continue;
+      if (!s || s.tent === null || s.tent === undefined || exists.has(`${s.tent}|${s.slot || 0}`)) continue;
       s.tent = null;
+      s.slot = 0;
       if (s.stage === 3) {
         s.stage = 2;
-        this.game.hud.say(T.ueberlebende.ohneZelt(SURVIVORS[id].name), 4);
+        if (isWanderer(id)) s.guest = this.freeGuestSpot();
+        this.game.hud.say(T.ueberlebende.ohneZelt(personOf(id).name), 4);
+        this.onAbilitiesChanged();
       }
     }
   }
 
-  /** Wird ein Gast gerade ein Zelt beziehen können? (Hinweis nach dem Bauen) */
+  /** Wird ein Gast gerade einen Platz beziehen können? (Hinweis nach dem Bauen) */
   onBuilt(type) {
-    if (type !== 'zelt') return;
-    const guest = SURVIVOR_ORDER.find((id) => SURVIVORS[id].tent && this.stage(id) === 2);
-    if (guest) this.game.hud.say(T.ueberlebende.zeltFrei(SURVIVORS[guest].name), 5);
+    if (!PLACES[type]) return;
+    const guest = PEOPLE.find((id) => personOf(id)?.tent && this.stage(id) === 2);
+    if (guest) this.game.hud.say(T.ueberlebende.zeltFrei(personOf(guest).name), 5);
+  }
+
+  // --- Wanderer (M27) ---------------------------------------------------------------
+
+  /** Ist die Entscheidung fällig? (am Morgen nach der Nacht am Feuer) */
+  decisionDue(id) {
+    const s = this.st[id];
+    return this.stage(id) === 2 && this.game.state.time.day > (s.due ?? s.day ?? 0);
+  }
+
+  /** Freier Gästeplatz am Feuer (0 oder 1). */
+  freeGuestSpot() {
+    const used = new Set(WANDERER_ORDER.filter((id) => this.stage(id) === 2).map((id) => this.st[id].guest));
+    return used.has(0) ? 1 : 0;
+  }
+
+  talkWanderer(id) {
+    const g = this.game;
+    const s = this.st[id];
+    const stage = this.stage(id);
+    if (stage === 1) {
+      g.startDialog(`${id}Treffen`, () => {
+        if (s.stage !== 1) return;
+        s.stage = 2;
+        s.guest = this.freeGuestSpot();
+        s.due = g.state.time.day; // am nächsten Morgen fällig
+        this.placeAll(false);
+        this.refreshInteractions();
+        g.hud.say(T.wanderer.amFeuer(WANDERERS[id].name), 5);
+        g.quietSave();
+      });
+      return;
+    }
+    if (this.decisionDue(id)) {
+      g.startDialog(`${id}Entscheidung`, (aktion) => this.onAnswer(id, aktion));
+      return;
+    }
+    g.startDialog(id, (aktion) => this.onAnswer(id, aktion));
+  }
+
+  /** Wer unter den Bewohnern würde für einen Gast Platz machen? (der Wanderer, der am längsten da ist) */
+  wouldLeave(guestId) {
+    const list = WANDERER_ORDER.filter((id) => id !== guestId && this.stage(id) === 3);
+    list.sort((a, b) => (this.st[a].day || 0) - (this.st[b].day || 0));
+    return list[0] || null;
+  }
+
+  /** Antwort in der Entscheidung. */
+  decide(id, aktion) {
+    const g = this.game;
+    const s = this.st[id];
+    const w = WANDERERS[id];
+    if (aktion === 'bleiben') this.moveIn(id);
+    else if (aktion === 'weiterbringen') this.forward(id);
+    else if (aktion === 'nochEinTag') {
+      s.extra = true;
+      s.due = g.state.time.day;
+      g.hud.say(T.wanderer.nochEinTag(w.name), 5);
+    } else if (aktion === 'platzMachen') {
+      const other = this.wouldLeave(id);
+      if (!other) return;
+      const place = { tent: this.st[other].tent, slot: this.st[other].slot || 0 };
+      this.forward(other, 'platz');
+      s.tent = place.tent;
+      s.slot = place.slot;
+      s.stage = 3;
+      s.guest = null;
+      g.hud.say(T.wanderer.platzGemacht(WANDERERS[other].name, T.wanderer.zumOrt[WANDERERS[other].place], w.name), 7);
+      g.sound.play('glocke');
+      this.onAbilitiesChanged();
+      this.placeAll(false);
+    }
+    this.refreshInteractions();
+  }
+
+  /**
+   * Weiterbringen: Proviant und eine Laterne, dann geht die Figur zum Tor bzw.
+   * zum Strand. Zwei, drei Tage später kommt ein Brief (Netzwerk, M32 baut es aus).
+   * @param {'mika'|'selbst'|'platz'} [why]
+   */
+  forward(id, why = 'mika') {
+    const g = this.game;
+    const s = this.st[id];
+    const w = WANDERERS[id];
+    const day = g.state.time.day;
+    s.stage = 4;
+    s.tent = null;
+    s.slot = 0;
+    s.guest = null;
+    s.gone = day;
+    s.letter = day + LETTER_DELAY[(id.length + day) % LETTER_DELAY.length];
+    s.read = false;
+    if (why === 'mika') g.hud.say(T.wanderer.weiter(w.name, T.wanderer.zumOrt[w.place]), 6);
+    this.onAbilitiesChanged();
+    // Die Figur geht noch bis zum Tor bzw. zum Strand
+    const n = this.npcs.list.get(id);
+    if (n && n.model.root.visible) {
+      this.leaving.set(id, EXIT_ROUTES[w.route].map((p) => ({ ...p })));
+      n.wave = 1.4;
+    } else this.npcs.setVisible(id, false);
+    this.refreshInteractions();
+  }
+
+  /** Wer fortgeht, geht seine Wegpunkte ab (durch die Schlupftür, am Strand entlang) und ist dann fort. */
+  updateLeaving() {
+    for (const [id, route] of this.leaving) {
+      const n = this.npcs.list.get(id);
+      if (n && n.target) continue;
+      if (n && n.wave <= 0 && route.length) {
+        const p = route.shift();
+        this.npcs.walkTo(n, p.x, p.z);
+        continue;
+      }
+      if (n && n.wave > 0) continue; // erst zu Ende winken
+      this.leaving.delete(id);
+      this.npcs.setVisible(id, false);
+    }
+  }
+
+  /** Die Schlafsäcke am Feuer: sichtbar, solange dort ein Gast übernachtet. */
+  updateBedrolls() {
+    const used = new Set(WANDERER_ORDER.filter((id) => this.stage(id) === 2).map((id) => this.st[id].guest || 0));
+    this.npcs.setBedrolls(GUEST_SPOTS, used);
+  }
+
+  /** Hat ein Bewohner diese Fähigkeit? (M27) */
+  ability(kind) {
+    return WANDERER_ORDER.some((id) => WANDERERS[id].ability === kind && this.resident(id));
+  }
+
+  /** Fähigkeiten, die dauerhaft wirken (Lottes Licht), neu setzen. */
+  onAbilitiesChanged() {
+    this.game.world.lightPools.setScale?.(this.ability('licht') ? ABILITIES.licht.radius : 1);
+  }
+
+  /** Morgens: Briefe, Hannes flickt, Greta stellt Fallen, Unentschlossene ziehen weiter. */
+  wandererMorning(lines) {
+    const g = this.game;
+    const st = g.state;
+    const day = st.time.day;
+    for (const id of WANDERER_ORDER) {
+      const s = this.st[id];
+      const w = WANDERERS[id];
+      // Briefe von Weitergezogenen
+      if (s.stage === 4 && !s.read && day >= (s.letter || 0)) {
+        s.read = true;
+        lines.push({ text: `${T.wanderer.brief(w.name, T.wanderer.vomOrt[w.place])} ${T.wanderer.briefe[id]}` });
+      }
+      // Wer gestern ankam und nicht angesprochen wurde, hat sich selbst ans Feuer gesetzt
+      if (s.stage === 1 && day > (s.day || 0)) {
+        s.stage = 2;
+        s.guest = this.freeGuestSpot();
+        s.due = s.day;
+        lines.push({ text: T.wanderer.selbstAmFeuer(w.name) });
+      }
+      // Wer einen ganzen Tag nach der fälligen Entscheidung noch am Feuer sitzt, zieht von selbst weiter
+      if (s.stage === 2 && day > (s.due ?? s.day ?? 0) + 1) {
+        this.forward(id, 'selbst');
+        lines.push({ text: T.wanderer.selbstWeiter(w.name, T.wanderer.zumOrt[w.place]) });
+      }
+    }
+    // Hannes: Holzbarrikaden flicken (die Hälfte der Schäden)
+    if (this.ability('flicken')) {
+      let n = 0;
+      for (const b of g.world.buildings.list) {
+        if (b.type !== 'barrikade' || b.broken || (b.level || 1) > 2) continue;
+        const max = maxHpOf(b);
+        if (b.hp >= max - 0.5) continue;
+        b.hp = Math.min(max, b.hp + (max - b.hp) * ABILITIES.flicken.share);
+        g.world.buildings.refreshLook(b);
+        n++;
+      }
+      if (n) lines.push({ text: T.wanderer.geflickt(n) });
+    }
+    // Greta: verbrauchte Fallen neu stellen
+    if (this.ability('fallen')) {
+      let n = 0;
+      for (const b of g.world.buildings.list) {
+        if (!BUILDINGS[b.type].trap || !b.broken) continue;
+        g.world.buildings.rebuildBarricade(b);
+        n++;
+      }
+      if (n) lines.push({ text: T.wanderer.fallenNeu(n) });
+    }
+    st.world.buildings = g.world.buildings.toState();
   }
 
   // --- Oma Hilde: Tauschen ------------------------------------------------------------
@@ -531,6 +808,7 @@ export class Survivors {
       const plan = g.nights.planFor(st.time.day);
       lines.push({ text: T.ueberlebende.funk(plan.waves.length, nightMix(plan)) });
     }
+    this.wandererMorning(lines); // M27
     this.arrive(true);
     this.greeted.clear();
     this.outside = null;
@@ -550,9 +828,19 @@ export class Survivors {
     this.game.state.world.buildings = this.game.world.buildings.toState();
   }
 
-  /** Bert: Reparieren kostet weniger. */
+  /** Bert: Reparieren kostet weniger (Clara flickt Türme noch billiger, siehe towerRepairFactor). */
   repairFactor() {
     return this.resident('bert') ? BERT_REPAIR.costFactor : 1;
+  }
+
+  /** Clara (M27): Türme flicken kostet ein Viertel weniger. */
+  towerRepairFactor() {
+    return this.ability('schrauben') ? ABILITIES.schrauben.repair : 1;
+  }
+
+  /** Basteln (M21): Mit Clara braucht es ein Teil weniger. */
+  tinkerDiscount() {
+    return this.ability('schrauben') ? ABILITIES.schrauben.tinker : 0;
   }
 
   /** Dr. Yusufs Tee: schnelleres Heilen am selben Tag. */

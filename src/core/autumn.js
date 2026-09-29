@@ -6,7 +6,7 @@
 import { AUTUMN, FINALE, isFinaleNight, isRogueNight, isSnowDay } from '../data/autumn.js';
 import { DEEDS } from '../data/book.js';
 import { T } from '../data/texts.js';
-import { SURVIVOR_ORDER, SURVIVORS } from '../data/survivors.js';
+import { PEOPLE, personOf } from './survivors.js';
 import { ENTRY_NAMES } from '../world/pathing.js';
 import { P, hexToCss } from '../render/palette.js';
 import { COLORS } from '../ui/ui.js';
@@ -180,7 +180,7 @@ export class Autumn {
     const C = T.herbst.abspann;
     const lines = [{ text: C.titel, big: true }, { text: C.untertitel, dim: true }, { gap: true }];
     lines.push({ text: C.bucht, head: true }, { text: st.player.name || 'Mika' });
-    const people = SURVIVOR_ORDER.filter((id) => (st.survivors[id]?.stage || 0) >= 2).map((id) => SURVIVORS[id].name);
+    const people = PEOPLE.filter((id) => { const k = st.survivors[id]?.stage || 0; return k >= 2 && k <= 3; }).map((id) => personOf(id).name); // M27: auch die Wanderer, die geblieben sind
     for (const name of people) lines.push({ text: name });
     lines.push({ text: C.balduin }, { gap: true });
     const towers = this.game.world.buildings.towers.filter((b) => (b.kills || 0) > 0).sort((a, b) => (b.kills || 0) - (a.kills || 0)).slice(0, 3);

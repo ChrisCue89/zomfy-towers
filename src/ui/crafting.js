@@ -86,9 +86,10 @@ export class CraftingMenu {
     });
     // Basteln (M21): drei gleiche Turmteile ergeben eines der nächsten Seltenheit – nur, was man hat
     const parts = g.state.towerParts;
-    for (const id of TOWER_PART_IDS.filter((p) => (parts[p] || 0) >= TINKER_COUNT && nextRarity(p)).slice(0, TINKER_ROWS)) {
+    const need = TINKER_COUNT - (this.game.survivors?.tinkerDiscount() || 0); // M27: mit Clara ein Teil weniger
+    for (const id of TOWER_PART_IDS.filter((p) => (parts[p] || 0) >= need && nextRarity(p)).slice(0, TINKER_ROWS)) {
       const name = T.turmteile[id][0];
-      list.push({ id: `basteln-${id}`, icon: id, name: T.werkbank.basteln(name), info: T.werkbank.bastelnInfo(T.turmteile.seltenheit[nextRarity(id)]), cost: { [id]: TINKER_COUNT }, stock: parts, gives: { tinker: id }, affordable: true });
+      list.push({ id: `basteln-${id}`, icon: id, name: T.werkbank.basteln(name), info: T.werkbank.bastelnInfo(T.turmteile.seltenheit[nextRarity(id)]), cost: { [id]: need }, stock: parts, gives: { tinker: id }, affordable: true });
     }
     return list;
   }

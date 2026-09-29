@@ -46,7 +46,9 @@ export const BUILDINGS = {
   // M11: Holzlager – Scheite unter einem Pultdach, jeden Tag 2 Holz zum Mitnehmen
   // M24 (Balance): 3 statt 2 Holz, und jeden Morgen baut es aus seinem Vorrat bis zu `rebuild` zerschlagene Barrikaden wieder auf
   holzlager: { w: 2, d: 1, cost: { holz: 6, stein: 2 }, icon: 'holzlager', use: 'ernten', prompt: 'holzNehmen', harvest: { holz: 3 }, rebuild: 2, max: 2, height: 1.4, raid: 45 },
-  zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 4, height: 1.4, raid: 50 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
+  zelt: { w: 2, d: 2, cost: { holz: 6, stoff: 2 }, icon: 'zelt', max: 5, height: 1.4, raid: 50 }, // M27: fünf (vier für die Stammbesetzung, eins für einen Wanderer)
+  // M27: Schlafhütte – zwei Schlafplätze, erst ab dem Schlafzimmer (Zuhause-Stufe `house`)
+  schlafhuette: { w: 2, d: 2, cost: { holz: 24, stein: 8, stoff: 4 }, icon: 'schlafhuette', max: 1, house: 3, height: 2.4, raid: 80 }, // m6-r1: 8 Holz, 3 Stoff reichten Mira fünf Tage lang nicht
   // M19: Fallen auf den Wegen (begehbar; hp = wie lange sie halten, Werte in traps.js)
   stachelbrett: { w: 1, d: 1, cost: { holz: 2, schrott: 2 }, icon: 'stachelbrett', trap: true, onPath: true, repeat: true, hp: 30, height: 0.2 },
   // M24: Moderlocke – auf den Weg nahe einem Spawn: dort in der Nacht mehr Horde und Beute (data/risk.js)
