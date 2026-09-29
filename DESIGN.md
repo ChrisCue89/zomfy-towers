@@ -284,10 +284,13 @@ Wort gibt.
 - Eigene Schrift mit Umlauten; warme, dunkle Pflaumentöne mit Holzrahmen und
   cremefarbener Schrift.
 - **Oben links:** Tag, Uhrzeit, Tageszeit; darunter das aktuelle Ziel.
-  **Oben rechts:** Vorrat. **Oben Mitte (nachts):** Welle und
+  **Oben rechts:** Vorrat, darunter der Nachtplan und die Meldungen (alle
+  rechtsbündig, N4). **Oben Mitte (nachts):** Welle und
   Standfestigkeit des Zuhauses.
 - **Unten links:** Laterne (Taste F) und Schnellleiste (8 Plätze).
-  **Unten rechts:** Bauleiste. Lebensbalken der Figur über der
+  **Unten rechts:** Bauleiste, darüber das **Funk-Feld** (N4): Edda erklärt im
+  Comic-Stil – ihr Foto, daneben eine Sprechblase, in die sich der Text tippt.
+  Hinweise stehen nie mitten im Bild. Lebensbalken der Figur über der
   Schnellleiste.
 - Beim Bauen zeigt ein Geistermodell auf dem Raster, ob es passt: Türme
   grün neben den Wegen, rot auf einem Weg; Barrikaden grün nur auf einem Weg.
@@ -353,7 +356,7 @@ Titelbild wählbar.
 
 ### 4.4 Roter Faden
 
-Mikas Aufgabe, wie sie sie in der Einleitung selbst sagt: **die Nächte
+Mikas Aufgabe, wie Mika sie in der Einleitung selbst sagt: **die Nächte
 halten** (Türme neben die Wege, Barrikaden darauf, zur Not selbst am Hof),
 **ein Zuhause bauen** und **Zuflucht sein** für alle, die noch unterwegs
 sind. Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein
@@ -373,6 +376,7 @@ als endlose Verteidigung mit immer stärkeren Nächten weiter.
 | **Baumarkt-Bert** | Brummiger Ex-Verkäufer | Reparaturen, Barrikaden, nachts flickt er |
 | **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee |
 | **Balduin** | Händler mit Boot (zieht nie ein) | Kommt übers Wasser, legt am Steg an, tauscht Zombieteile gegen Material – und sagt nicht, wofür |
+| **Edda** | Frühere Besitzerin der Holzlände, nur über Funk (N4) | Erklärt das Spiel unten rechts im Funk-Feld, deutet ihre Geschichte an; wo sie ist, bleibt offen bis zum Wiedersehen (M32, OFFENE-FRAGEN 180) |
 
 Überlebende kommen tagsüber an – über die Wege, am Ufer entlang oder mit
 Balduins Boot.
@@ -562,6 +566,13 @@ Werkbank in der Werkstatt.
 - **Einrichten und Dekorieren:** Möbel drinnen, Deko draußen (Kürbisse,
   Laternen, Blumenkästen, Wimpel). Gemütlichkeit bringt jeden Morgen
   Erfahrung, ab 5 ist Mika »ausgeschlafen« (bis Mittag schneller).
+- **Größer und aus dem Katalog (N4):** Innen ist das Haus 6,75 m tief, jeder
+  Raum anderthalbmal so breit wie in M11 (die Stube 9,7 m, Durchgänge 2 m).
+  Möbel und Kleinkram bestellt Mika über das **Funkgerät in der Stube** aus
+  **Balduins Katalog**: 24 Stücke auf fünf Seiten (je Raum, ab dessen
+  Ausbaustufe), jedes mit großem Foto, bezahlt in Zombieteilen (6–24),
+  höchstens vier unterwegs. Balduin bringt sie am nächsten Morgen, eine
+  Lieferkarte zeigt jedes Stück groß (OFFENE-FRAGEN 181, 182).
 - **Garten und Gewächshaus:** Beete geben täglich Fasern, später Kräuter
   und Kürbisse.
 - Abreißen gibt Material zurück (Zuhause-Bauten ganz, Türme und Barrikaden
@@ -747,9 +758,14 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 - Die Figur ist die **letzte Verteidigung** am Hof – und kann an den Wegen
   aushelfen, wo eine Barrikade wankt.
 - **Angriff** mit der linken Maustaste in Richtung des Mauszeigers; gedrückt
-  halten schlägt weiter. Mika schlägt mit dem, was sie in der Hand hat
-  (Waffe, Axt, Spitzhacke, sonst Fäuste); knapp außer Reichweite macht sie
-  einen **Ausfallschritt**.
+  halten schlägt weiter. Mika schlägt mit dem, was gerade in der Hand liegt
+  (Waffe, Axt, Spitzhacke, sonst Fäuste); knapp außer Reichweite folgt ein
+  **Ausfallschritt**.
+- **Auf dem Rücken (N4):** Werkzeug und Waffe hängen schräg auf dem Rücken und
+  kommen erst beim Schlagen, Fällen oder Abbauen in die Hand; 2,6 s danach
+  steckt Mika sie wieder weg, außer ein Schlurfer ist näher als 5 m. Die
+  Laterne brennt nur nach F und geht am hellen Morgen (07:30) aus
+  (OFFENE-FRAGEN 183).
 - **Ausweichen** mit der Leertaste: kurze Rolle, dabei unverwundbar.
 - **Waffen** an der Werkbank, zweimal aufwertbar (Reiter »Figur«):
 
@@ -824,7 +840,8 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
 - **Handel** im Fenster der Werkbank (»Balduins Boot«): Zombieteile gegen
   Schrott (immer), dazu täglich wechselnde Angebote – Holz, Stein, Fasern,
   Stoff, Zahnräder, manchmal ein Moderkern, **besondere Turmteile**,
-  **Upgrades und Werkzeuge**, später Saatgut und Möbel. Manches nur in
+  **Upgrades und Werkzeuge**, später Saatgut; Möbel über seinen Katalog
+  (N4, 6.8). Manches nur in
   kleiner Menge am Tag. Gelegentlich bringt er einen Nebenauftrag mit.
   Turmteile (6.9) gibt es an geraden Tagen ab Tag 4, eines am Tag, reihum:
   Glücksmünze (10 Teile), Fernrohr, Schmierfett (je 12 Teile).
@@ -1673,6 +1690,15 @@ Totten.
 *Prüfen:* Regeln im Simulator, Fairness (vertauschte verdeckte Karten ändern
 den Zug der KI nicht), eine Partie mit echten Tasten, Belohnung.
 
+#### N4 – Probespiel des Auftraggebers ✓
+
+*Umgesetzt (29.09.2026), vor M29 eingeschoben:* Hinweise spricht **Edda** über
+Funk im Comic-Feld unten rechts (Nr. 180), Vorrat, Nachtplan und Meldungen stehen
+rechtsbündig in der rechten Spalte. Die Laterne brennt nur nach F und geht morgens
+aus, Werkzeug und Waffe hängen auf dem Rücken und kommen beim Benutzen in die Hand
+(Nr. 183). Frische Kürbisse. Das Haus ist innen größer (Nr. 182); Möbel und
+Kleinkram bestellt Mika über das Funkgerät aus **Balduins Katalog**, er bringt sie
+am nächsten Morgen, eine Lieferkarte zeigt sie groß (Nr. 181). Spielstand v23.
 #### M29 – Bindung und Alltag
 
 *Ziel:* Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über

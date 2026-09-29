@@ -103,6 +103,11 @@ export class Npcs {
       pull: null,
       near: false, // Mika steht nah dabei (dann lächeln sie, M12)
     };
+    // N4: nach dem Nebel (1,5) zeichnen, vor Mikas Umriss (1,75) – sonst flackert der Nebel
+    // an den Beinen, wenn jemand durch eine Nebelbank läuft
+    model.root.traverse((o) => {
+      if (o.isMesh) o.renderOrder = 1.6;
+    });
     model.root.visible = false;
     this.group.add(model.root);
     this.list.set(id, n);

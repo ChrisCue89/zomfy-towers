@@ -643,12 +643,34 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     tools[name] = mesh;
   }
 
+  // N4 (Probespiel): Werkzeug bzw. Waffe steckt auf dem Rücken, schräg, der Kopf ragt über
+  // die rechte Schulter. Gezogen wird erst beim Benutzen (player.js). Dieselbe Geometrie
+  // wie in der Hand, um die Mitte gedreht.
+  const backTools = {};
+  const backMount = new THREE.Group();
+  backMount.position.set(0, (d32 ? 10 : 5 * k) * U, (d32 ? -10.5 : -5 * k) * U);
+  backMount.rotation.set(0, Math.PI, Math.PI - 0.62);
+  torso.add(backMount);
+  for (const [name, mesh] of Object.entries(tools)) {
+    const g = mesh.geometry;
+    g.computeBoundingBox();
+    const c = g.boundingBox.getCenter(new THREE.Vector3());
+    const b = new THREE.Mesh(g, material);
+    b.castShadow = true;
+    b.userData.gear = true; // setLook tauscht nur die Körperteile
+    b.position.set(-c.x, -c.y, -c.z);
+    b.visible = false;
+    backMount.add(b);
+    backTools[name] = b;
+  }
+
   return {
     root,
     material,
     parts: { body, torso, head, armL, armR, legL, legR, elbowL, elbowR, kneeL, kneeR, hand, handL, eyelids, faces },
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
     tools,
+    backTools,
   };
 }
 

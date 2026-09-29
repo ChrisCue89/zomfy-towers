@@ -258,8 +258,9 @@ export class Hud {
     this.itemLabel = { text, time: 1.8 };
   }
 
-  showHint(text, duration = 12) {
-    this.hint = { text, time: duration };
+  /** N4: Hinweise gehen über Funk (Edda unten rechts), nicht mehr mitten ins Bild. */
+  showHint(text) {
+    this.game.funk?.say(text);
   }
 
   update(dt) {
@@ -407,6 +408,7 @@ export class Hud {
     const x0 = ui.width - total - 4;
     // Schmales Fenster: Vorrat unter Uhr und Ziel statt daneben
     const y = x0 < 130 ? (this.goalBox.on ? this.goalBox.y + this.goalBox.h + 4 : 42) : 4;
+    this.resRect = { x: x0, y, w: total, h: 20 }; // N4: darunter hängen Nachtplan und Meldungen
     ui.panel(x0, y, total, 20);
     let x = x0 + 6;
     const hovered = [];
@@ -558,16 +560,19 @@ export class Hud {
     if (view.lure) hints.push(T.wagnis.planLocke(T.horde.richtungKurz[view.lure])); // M24
     const w = Math.max(measure(title), ...hints.map((l) => measure(l)), ...lines.map((l) => measure(l))) + 14;
     const h = 16 + lines.length * 11 + (hints.length ? 4 + hints.length * 11 : 2);
-    const x = Math.round(ui.width / 2 - w / 2);
-    let y = Math.max(this.nightBarBottom + 4, this.bannerBottom ? this.bannerBottom + 2 : 0, 40);
-    // m16-r1: nicht über die Zielzeile – liegt sie darunter, rückt die Tafel unter sie
+    // N4 (Probespiel): nicht mehr mitten im Bild – rechts oben unter dem Vorrat
+    const x = ui.width - w - 4;
+    const r = this.resRect;
+    let y = Math.max(r && r.x + r.w > x ? r.y + r.h + 4 : 4, this.bannerBottom && x < ui.width / 2 + 120 ? this.bannerBottom + 2 : 0);
+    // m16-r1: nicht über die Zielzeile (bei schmalem Fenster liegt sie womöglich darunter)
     const gb = this.goalBox;
     if (gb.on && x < gb.x + gb.w + 4 && y < gb.y + gb.h + 2) y = gb.y + gb.h + 4;
     this.planRect = { x, y, w, h };
+    const cx = x + w / 2;
     ui.panel(x, y, w, h);
-    ui.textCentered(title, ui.width / 2, y + 3, COLORS.gold);
+    ui.textCentered(title, cx, y + 3, COLORS.gold);
     lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 && !view.evening ? COLORS.textWarm : COLORS.text));
-    hints.forEach((l, k) => ui.textCentered(l, ui.width / 2, y + 16 + lines.length * 11 + 1 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.textDim));
+    hints.forEach((l, k) => ui.textCentered(l, cx, y + 16 + lines.length * 11 + 1 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.textDim));
     this.planBottom = y + h; // Meldungen erscheinen darunter
   }
 
@@ -1219,15 +1224,17 @@ export class Hud {
   }
 
   /** Oberkante der Meldungen im Spiel: unter dem Ziel, dem Banner und dem Nachtplan. */
+  /** N4: Meldungen stehen rechts unter Vorrat und Nachtplan, nicht mehr mitten im Bild. */
   toastTop() {
-    return Math.max(64, (this.bannerBottom || 0) + 4, (this.planBottom || 0) + 4);
+    const r = this.resRect;
+    return Math.max(r ? r.y + r.h + 4 : 28, (this.planBottom || 0) + 4);
   }
 
   /** Wo die Meldungen im Spiel liegen (wie `drawToasts` sie legt) – für die Sprechblase (M27). */
   toastRects(ui, y = this.toastTop()) {
     return this.toasts.map((t, k) => {
       const w = measure(t.text) + (t.icon ? 26 : 12);
-      return { x: Math.round((ui.width - w) / 2), y: y + k * 21, w, h: 18 };
+      return { x: ui.width - w - 4, y: y + k * 21, w, h: 18 };
     });
   }
 
@@ -1238,8 +1245,8 @@ export class Hud {
       const slide = Math.min(1, t.time / 0.18);
       const out = t.duration - t.time < 0.35 && Math.floor(t.time * 12) % 2 === 0;
       if (!out) {
-        const x = Math.round((ui.width - w) / 2);
-        const yy = Math.round(y - (1 - slide) * 6);
+        const x = ui.width - w - 4 + Math.round((1 - slide) * 8); // N4: rechts, gleitet von rechts herein
+        const yy = y;
         ui.panel(x, yy, w, 18);
         let tx = x + 6;
         if (t.icon) {

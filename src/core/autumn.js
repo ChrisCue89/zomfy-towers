@@ -70,7 +70,10 @@ export class Autumn {
     this.heart = null;
     this.heartFell = false;
     this.frostNow = false;
-    if (this.planMode(n) === 'finale') this.game.hud.toast(T.herbst.frostnacht, 'warnung', 7);
+    if (this.planMode(n) === 'finale') {
+      this.game.hud.toast(T.herbst.frostnacht, 'warnung', 7);
+      this.game.funk?.once('frost', T.funk.frost); // N4: Edda ist näher, als man denkt
+    }
   }
 
   /** Das Herz ist da: Banner, Hinweis, erste Phase. */
@@ -228,6 +231,7 @@ export class Autumn {
     this.credits = null;
     this.st.credits = true;
     g.mode = 'play';
+    g.funk?.once('danach', T.funk.danach); // N4: nach dem Herbst – bald kommt sie nach Hause (M32)
     g.quietSave();
     // »Neue Runde« fragt noch einmal nach – vorgewählt ist das Bleiben
     g.startDialog('nachDemHerbst', (a) => (a === 'neu' ? g.startDialog('neueRundeSicher', (b) => this.choose(b === 'neu' ? 'neu' : 'weiter')) : this.choose('weiter')));

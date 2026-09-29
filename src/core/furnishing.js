@@ -1,18 +1,19 @@
 // Einrichten (Meilenstein 6): Möbel machen das Zuhause gemütlich. Gekaufte
-// Stücke stehen an festen Plätzen im Wohnraum des Innenraums
+// Stücke stehen an festen Plätzen in ihren Räumen des Innenraums
 // (world/furnitureModels.js, seit Meilenstein 11), die Summe ihrer
 // Gemütlichkeit bringt jeden Morgen Erfahrung und – ab 5 – »ausgeschlafen«
-// (schneller unterwegs bis Mittag). Die Bauleiste bietet immer das nächste
-// fehlende Stück an (Reiter »Einrichten«).
+// (schneller unterwegs bis Mittag). Seit N4 bestellt Mika sie über das
+// Funkgerät aus Balduins Katalog (ui/catalog.js); er bringt sie am nächsten
+// Morgen mit dem Boot (`orders`, `deliver`).
 
 import { T } from '../data/texts.js';
-import { FURNITURE, FURNITURE_ORDER, COZY, coziness, MAX_COZY } from '../data/furniture.js';
+import { FURNITURE, COZY, coziness, MAX_COZY, ROOM_LEVEL, ORDER_MAX } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { createGlowMaterial, createWorldMaterial } from '../render/materials.js';
 import { LAYOUT } from '../world/layout.js';
 import { U, INTERIOR_FLOOR } from '../world/interior.js';
-import { pay } from './inventory.js';
+import { pay, canAfford } from './inventory.js';
 import { hoursOf } from './state.js';
 import { houseCozy } from '../data/buildings.js';
 
@@ -64,25 +65,66 @@ export class Furnishing {
     this.objects.delete(id);
   }
 
-  /** Nächstes fehlendes Stück in der Reihenfolge (oder null). */
-  nextPiece() {
-    return FURNITURE_ORDER.find((id) => !this.owned.includes(id)) || null;
+  /** N4: Bestellungen bei Balduin (unterwegs bis zum nächsten Morgen). */
+  get orders() {
+    return (this.game.state.world.orders ||= []);
   }
 
-  /** Optionen für den Reiter »Einrichten«. */
+  /** Der Reiter »Einrichten« zeigt seit N4 keine Möbel mehr – die kommen aus Balduins Katalog. */
   options() {
-    const out = [];
-    const next = this.nextPiece();
-    if (next) {
-      out.push({ id: `moebel-${next}`, icon: 'moebel', name: T.moebel[next][0], info: `${T.moebel[next][1]} ${T.moebel.gemuetlich(FURNITURE[next].cozy)}`, cost: FURNITURE[next].cost, action: () => this.buy(next) });
-    } else {
-      out.push({ id: 'moebel-fertig', icon: 'moebel', name: T.moebel.alles, info: T.moebel.allesInfo, cost: {}, disabled: true, disabledText: T.moebel.alles });
+    return [];
+  }
+
+  /**
+   * N4: Kann Mika dieses Stück bestellen? 'ok' oder der Grund:
+   * imHaus · bestellt · raum (Zimmer noch nicht gebaut) · braucht (Knopf fehlt) · voll · teuer
+   */
+  orderState(id) {
+    const def = FURNITURE[id];
+    const st = this.game.state;
+    if (this.owned.includes(id)) return 'imHaus';
+    if (this.orders.some((o) => o.id === id)) return 'bestellt';
+    if ((st.world.houseLevel || 1) < ROOM_LEVEL[def.room]) return 'raum';
+    if (def.needs && !this.game.survivors.resident(def.needs)) return 'braucht';
+    if (this.orders.length >= ORDER_MAX) return 'voll';
+    if (!canAfford(st.inventory, def.cost)) return 'teuer';
+    return 'ok';
+  }
+
+  /** N4: Bestellen – bezahlt wird gleich, Balduin bringt es am nächsten Morgen. */
+  order(id) {
+    const why = this.orderState(id);
+    if (why !== 'ok') {
+      this.game.sound.play('klick');
+      return why;
     }
-    const knopf = this.game.survivors.resident('knopf');
-    if (knopf && !this.owned.includes('koerbchen')) {
-      out.push({ id: 'moebel-koerbchen', icon: 'koerbchen', name: T.moebel.koerbchen[0], info: `${T.moebel.koerbchen[1]} ${T.moebel.gemuetlich(1)}`, cost: FURNITURE.koerbchen.cost, action: () => this.buy('koerbchen') });
+    const g = this.game;
+    pay(g.state.inventory, FURNITURE[id].cost);
+    this.orders.push({ id, day: g.state.time.day });
+    g.hud.toast(T.katalog.bestelltToast(T.moebel[id][0]), 'moebel', 3);
+    g.sound.play('funk');
+    g.quietSave();
+    return 'ok';
+  }
+
+  /**
+   * N4: Balduin legt an – was gestern oder früher bestellt wurde, trägt er hinein.
+   * Gibt die gelieferten Stücke zurück (für die Lieferkarte).
+   */
+  deliver() {
+    const g = this.game;
+    const day = g.state.time.day;
+    const due = this.orders.filter((o) => o.day < day).map((o) => o.id);
+    if (!due.length) return [];
+    g.state.world.orders = this.orders.filter((o) => o.day >= day);
+    for (const id of due) {
+      if (this.owned.includes(id)) continue;
+      this.owned.push(id);
+      this.attach(id);
     }
-    return out;
+    g.hud.toast(T.katalog.geliefert(due.map((id) => T.moebel[id][0]).join(', ')), 'moebel', 5);
+    g.quietSave();
+    return due;
   }
 
   buy(id) {

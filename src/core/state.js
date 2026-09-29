@@ -24,7 +24,7 @@ import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { newCardState, sanitizeCards } from './cardNight.js';
 
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 23;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -77,7 +77,7 @@ export function createNewState(config, mapSeed = 1) {
     // survivorsStart: Tag, ab dem die Ankunftstage der Überlebenden zählen (alte Stände)
     // trader: was Balduin am Tag `day` schon verkauft hat (Vorrat der Sonderangebote, M8)
     // mapSeed: Startwert des Wegenetzes (M9); relocate: Bauten eines alten Stands neu aufstellen
-    world: { mapSeed: mapSeed >>> 0, relocate: false, houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
+    world: { mapSeed: mapSeed >>> 0, relocate: false, houseLevel: 1, homeHp: 300, buildings: [], nodes: {}, searched: {}, dayEvents: null, tower: 0, furniture: [], orders: [], tradeDay: 0, yusufNight: 0, survivorsStart: 0, trader: { day: 0, sold: {} } },
     // Überlebende: stage 0 unterwegs, 1 angekommen, 2 zu Gast, 3 eingezogen; tent = Bau-ID
     // M27: Wanderer dazu – stage 4 weitergezogen; tent: Bau-ID oder 'zimmer' (Dachkammer), slot: Platz in der Schlafhütte
     survivors: Object.fromEntries([...SURVIVOR_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, errand: 0 }]), ...WANDERER_ORDER.map((id) => [id, { stage: 0, day: 0, tent: null, slot: 0 }])]), // errand: 0 offen, 1 läuft, 2 erledigt
@@ -306,6 +306,12 @@ export function sanitizeState(data, config) {
   }
   out.world.tower = Math.floor(num(w.tower, 0, 0, 3));
   out.world.furniture = Array.isArray(w.furniture) ? [...new Set(w.furniture.filter((id) => typeof id === 'string' && FURNITURE[id]))] : [];
+  // N4: Bestellungen aus Balduins Katalog – nur Stücke, die es gibt, die noch nicht im Haus stehen, je einmal
+  const ordered = new Set();
+  out.world.orders = (Array.isArray(w.orders) ? w.orders : [])
+    .filter((o) => o && typeof o.id === 'string' && FURNITURE[o.id] && !out.world.furniture.includes(o.id) && !ordered.has(o.id) && ordered.add(o.id))
+    .slice(0, 8)
+    .map((o) => ({ id: o.id, day: Number.isFinite(o.day) ? Math.max(0, Math.floor(o.day)) : 0 }));
   out.world.tradeDay = Math.floor(num(w.tradeDay, 0, 0, 1e6));
   out.world.yusufNight = Math.floor(num(w.yusufNight, 0, 0, 1e6));
   out.world.survivorsStart = Math.floor(num(w.survivorsStart, 0, 0, 1e6));

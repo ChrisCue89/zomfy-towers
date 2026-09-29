@@ -23,29 +23,41 @@ import { LAYOUT } from './layout.js';
 
 export const U = 1 / 16; // feines Maß
 const FLOOR = 2; // erste freie Voxelschicht über dem Boden
-const DEPTH = 84; // z 0..3 Rückwand, 4..79 Raum, 80..83 Vorderwand
+// N4 (Probespiel 29.09.: »man stößt sich an allem«): Das Haus ist größer geworden –
+// 6,75 statt 4,75 m tief, die Räume anderthalbmal so breit, die Durchgänge breiter.
+// Die Möbel behalten ihre Größe und bekommen Luft.
+const DEPTH = 116; // z 0..3 Rückwand, 4..111 Raum, 112..115 Vorderwand
 const WALL_H = 44; // Rückwand bis y 45 (2,75 m)
 const TOP = FLOOR + WALL_H - 1;
 const CUT = 12; // Seiten- und Trennwände, abgeschnitten (0,75 m)
 const FRONT = 6; // Vorderwand (0,375 m)
-const INNER_Z1 = 79; // letzte Zeile des Raums vor der Vorderwand
-const PASS = { z0: 36, z1: 55 }; // Durchgänge in den Trennwänden
-const ENTRY = { x0: 192, x1: 207 }; // Haustür in der Vorderwand des Wohnraums
+const INNER_Z1 = 111; // letzte Zeile des Raums vor der Vorderwand
+const PASS = { z0: 48, z1: 79 }; // Durchgänge in den Trennwänden (2 m breit)
+const ENTRY = { x0: 282, x1: 297 }; // Haustür in der Vorderwand des Wohnraums, gegenüber dem Kamin
 
 /** Räume von West nach Ost; `level` = ab welcher Ausbaustufe es ihn gibt. */
 export const ROOMS = [
-  { id: 'werkstatt', level: 4, x0: 4, x1: 71 },
-  { id: 'kueche', level: 2, x0: 76, x1: 143 },
-  { id: 'wohnraum', level: 1, x0: 148, x1: 251 },
-  { id: 'schlafzimmer', level: 3, x0: 256, x1: 323 },
-  { id: 'lager', level: 5, x0: 328, x1: 387 },
+  { id: 'werkstatt', level: 4, x0: 4, x1: 103 },
+  { id: 'kueche', level: 2, x0: 108, x1: 207 },
+  { id: 'wohnraum', level: 1, x0: 212, x1: 367 },
+  { id: 'schlafzimmer', level: 3, x0: 372, x1: 471 },
+  { id: 'lager', level: 5, x0: 476, x1: 563 },
 ];
 
 /** Wo man drinnen hinter der Haustür steht (Weltkoordinaten, auch für die Migration v9 → v10). */
 export const INTERIOR_ENTRY = { x: LAYOUT.interior.x + ((ENTRY.x0 + ENTRY.x1 + 1) / 2) * U, z: LAYOUT.interior.z + (INNER_Z1 - 6) * U };
 
 /** So weit reicht der Innenraum höchstens (alle Räume), für die Prüfung gespeicherter Stände. */
-export const INTERIOR_EXTENT = { minX: LAYOUT.interior.x, maxX: LAYOUT.interior.x + 392 * U, minZ: LAYOUT.interior.z, maxZ: LAYOUT.interior.z + DEPTH * U };
+export const INTERIOR_EXTENT = { minX: LAYOUT.interior.x, maxX: LAYOUT.interior.x + 568 * U, minZ: LAYOUT.interior.z, maxZ: LAYOUT.interior.z + DEPTH * U };
+
+/**
+ * N4: feste Plätze im Wohnraum (Voxel des Innenraums) – Kamin, Kommode mit Funkgerät,
+ * Tisch und Schlafecke. Die Möbel (furnitureModels.js) und der Katalog richten sich danach.
+ */
+export const WOHN = { x0: 212, x1: 367, kamin: 274, kommode: 216, tisch: { x: 226, z: 60 }, bett: 342 };
+/** N4: Plätze in Küche und Schlafzimmer, vom Westrand des Raums aus gezählt. */
+const KUECHE = { herd: 26, spuele: 58, buffet: 84, tisch: { x: 26, z: 60 } };
+const SCHLAF = { schrank: 70 };
 
 /** Die Räume einer Ausbaustufe (immer zusammenhängend um den Wohnraum). */
 export function roomsOf(level) {
@@ -311,35 +323,39 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   // Vorderwand (niedrig) mit der Haustür im Wohnraum
   for (let x = xW; x <= xE; x++) {
     if (x >= ENTRY.x0 && x <= ENTRY.x1) continue;
-    for (let z = 80; z < DEPTH; z++) for (let y = FLOOR; y < FLOOR + FRONT; y++) m.set(x, y, z, y === FLOOR + FRONT - 1 ? P.e1 : z === DEPTH - 1 ? P.e3 : P.e4);
+    for (let z = INNER_Z1 + 1; z < DEPTH; z++) for (let y = FLOOR; y < FLOOR + FRONT; y++) m.set(x, y, z, y === FLOOR + FRONT - 1 ? P.e1 : z === DEPTH - 1 ? P.e3 : P.e4);
   }
-  m.box(ENTRY.x0 - 1, FLOOR, 80, ENTRY.x0 - 1, FLOOR + FRONT + 2, 83, P.e2).box(ENTRY.x1 + 1, FLOOR, 80, ENTRY.x1 + 1, FLOOR + FRONT + 2, 83, P.e2);
+  m.box(ENTRY.x0 - 1, FLOOR, INNER_Z1 + 1, ENTRY.x0 - 1, FLOOR + FRONT + 2, DEPTH - 1, P.e2).box(ENTRY.x1 + 1, FLOOR, INNER_Z1 + 1, ENTRY.x1 + 1, FLOOR + FRONT + 2, DEPTH - 1, P.e2);
   // Fußmatte innen an der Tür
-  m.box(ENTRY.x0 + 1, FLOOR, 72, ENTRY.x1 - 1, FLOOR, 79, (x, y, z) => (x === ENTRY.x0 + 1 || x === ENTRY.x1 - 1 || z === 72 || z === 79 ? P.e3 : (x + z) % 2 ? P.f5 : P.e7));
+  const mz = INNER_Z1 - 7;
+  m.box(ENTRY.x0 + 1, FLOOR, mz, ENTRY.x1 - 1, FLOOR, INNER_Z1, (x, y, z) => (x === ENTRY.x0 + 1 || x === ENTRY.x1 - 1 || z === mz || z === INNER_Z1 ? P.e3 : (x + z) % 2 ? P.f5 : P.e7));
 
   // --- Wohnraum (Stufe 1): Kamin, Kommode mit Radio, Tisch, Bettecke --------------------
-  const kamin = fireplace(m, 184, seed);
-  const dres = dresser(m, 150, seed);
-  windowFrame(m, glass, 168, 181, 20, 37, seed, [P.r3, P.r2]);
-  // Der Tisch steht eine Armlänge von der Trennwand weg – bei x = 154 versperrte er den
-  // Durchgang zur Küche (m12-r1: Theo kam nicht hinein; die Teekanne rückt mit)
-  const tab = table(m, 162, 44);
-  rug(m, 180, 18, 219, 41, [P.r1, P.r3, P.f4, P.f6]);
-  woodBasket(m, 176, 12);
-  plant(m, 150, 68, seed);
+  // N4: 9,75 m breit – der Kamin mitten an der Rückwand, die Haustür ihm gegenüber
+  const kamin = fireplace(m, WOHN.kamin, seed);
+  const dres = dresser(m, WOHN.kommode, seed);
+  windowFrame(m, glass, 236, 249, 20, 37, seed, [P.r3, P.r2]);
+  // Der Tisch steht eine Armlänge von der Trennwand weg (m12-r1: der Durchgang zur Küche bleibt frei)
+  const tab = table(m, WOHN.tisch.x, WOHN.tisch.z);
+  rug(m, kamin.x0 - 4, 18, kamin.x1 + 4, 49, [P.r1, P.r3, P.f4, P.f6]);
+  woodBasket(m, kamin.x0 - 8, 12);
+  plant(m, 216, 100, seed);
+  plant(m, 358, 100, seed + 9);
   // Schlafecke, solange es kein Schlafzimmer gibt (danach steht dort eine Truhe)
   let bedBox = null;
+  const nx = WOHN.bett - 12; // Nachttisch links vom Bett
   if (level < 3) {
-    bedBox = bed(m, 226, 4, seed);
-    windowFrame(m, glass, 228, 243, 24, 37, seed + 1, [P.b3, P.b2]);
+    bedBox = bed(m, WOHN.bett, 4, seed);
+    windowFrame(m, glass, WOHN.bett + 2, WOHN.bett + 17, 24, 37, seed + 1, [P.b3, P.b2]);
     // Nachttisch mit Kerze
-    m.box(216, FLOOR, 6, 223, FLOOR + 9, 12, (x, y) => (y === FLOOR + 9 ? P.e6 : x === 219 ? P.e3 : P.e5));
-    m.box(219, FLOOR + 10, 9, 220, FLOOR + 13, 10, P.a4);
+    m.box(nx, FLOOR, 6, nx + 7, FLOOR + 9, 12, (x, y) => (y === FLOOR + 9 ? P.e6 : x === nx + 3 ? P.e3 : P.e5));
+    m.box(nx + 3, FLOOR + 10, 9, nx + 4, FLOOR + 13, 10, P.a4);
   } else {
-    windowFrame(m, glass, 228, 243, 20, 37, seed + 1, [P.b3, P.b2]);
+    windowFrame(m, glass, WOHN.bett + 2, WOHN.bett + 17, 20, 37, seed + 1, [P.b3, P.b2]);
     // Truhe unter dem Fenster
-    m.box(226, FLOOR, 5, 249, FLOOR + 9, 14, (x, y, z) => (y === FLOOR + 9 ? P.e5 : y === FLOOR + 6 || x === 226 || x === 249 ? P.e3 : P.e4));
-    m.box(236, FLOOR + 4, 15, 239, FLOOR + 6, 15, P.s6);
+    const tx0 = WOHN.bett;
+    m.box(tx0, FLOOR, 5, tx0 + 23, FLOOR + 9, 14, (x, y, z) => (y === FLOOR + 9 ? P.e5 : y === FLOOR + 6 || x === tx0 || x === tx0 + 23 ? P.e3 : P.e4));
+    m.box(tx0 + 10, FLOOR + 4, 15, tx0 + 13, FLOOR + 6, 15, P.s6);
   }
 
   // Weitere Räume (Stufen 2–5): eigene Einrichtung; Feuer und Lampen leuchten separat
@@ -385,7 +401,7 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   // Kerzen
   const candles = new VoxelModel();
   candles.set(kamin.x0 + 4, FLOOR + 27, 8, 0xffffff).set(kamin.x0 + 27, FLOOR + 26, 8, 0xffffff);
-  if (level < 3) candles.set(219, FLOOR + 14, 9, 0xffffff);
+  if (level < 3) candles.set(nx + 3, FLOOR + 14, 9, 0xffffff);
   candles.merge(fx.glow);
   group.add(mesh(candles, materials.candle, { shadow: false, jitter: 0 }));
   if (fx.flame.cells.size) group.add(mesh(fx.flame, materials.flame, { shadow: false, jitter: 0 }));
@@ -418,18 +434,19 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
       box(x0, PASS.z1 + 1, x0 + 3, DEPTH - 1, 'wand');
     }
   });
-  box(xW, 80, ENTRY.x0 - 1, DEPTH - 1, 'wand');
-  box(ENTRY.x1 + 1, 80, xE, DEPTH - 1, 'wand');
+  box(xW, INNER_Z1 + 1, ENTRY.x0 - 1, DEPTH - 1, 'wand');
+  box(ENTRY.x1 + 1, INNER_Z1 + 1, xE, DEPTH - 1, 'wand');
   box(ENTRY.x0 - 2, DEPTH + 3, ENTRY.x1 + 2, DEPTH + 5, 'wand'); // hinter der Tür geht es nur nach draußen
   box(kamin.x0 + 2, 4, kamin.x1 - 2, 12, 'kamin');
   box(dres.x0, 4, dres.x1, 11, 'kommode');
   box(tab.x0, tab.z0 - 6, tab.x1, tab.z1 + 5, 'tisch');
-  box(176, 12, 183, 17, 'holzkorb');
-  box(150, 68, 155, 73, 'pflanze');
+  box(kamin.x0 - 8, 12, kamin.x0 - 1, 17, 'holzkorb');
+  box(216, 100, 221, 105, 'pflanze');
+  box(358, 100, 363, 105, 'pflanze');
   if (bedBox) {
     box(bedBox.x0, 4, bedBox.x1, bedBox.z1, 'bett');
-    box(216, 6, 223, 12, 'nachttisch');
-  } else box(226, 4, 249, 14, 'truhe');
+    box(nx, 6, nx + 7, 12, 'nachttisch');
+  } else box(WOHN.bett, 4, WOHN.bett + 23, 14, 'truhe');
   for (const r of rooms) for (const c of ROOM_COLLIDERS[r.id]?.(r) || []) box(...c);
 
   // --- Interaktionen (nur von drinnen) ------------------------------------------------
@@ -475,7 +492,7 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
     // M28: Kaminsims – vorn an der Kante stehen die gewonnenen Einsätze
     mantel: { x0: wx(kamin.x0 + 1), x1: wx(kamin.x1), z: wz(12.5), y: 23 * U },
     // Lichtinseln für Lampen ohne eigenes Punktlicht (nachts, siehe lightPools.js)
-    pools: rooms.flatMap((r) => (ROOM_POOLS[r.id] || []).map(([vx, vz, radius]) => ({ x: wx(vx), z: wz(vz), radius }))),
+    pools: rooms.flatMap((r) => (ROOM_POOLS[r.id]?.(r) || []).map(([vx, vz, radius]) => ({ x: wx(vx), z: wz(vz), radius }))),
   };
 }
 
@@ -485,29 +502,30 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
 // Koordinaten im Voxel-Raster des Innenraums; Rückwand bis z = 3, Vorderwand ab z = 80.
 
 const ROOM_BUILDERS = {
-  /** Küche (Stufe 2): Herd, Anrichte, Spülstein mit Pumpe unterm Fenster, Tisch mit Kürbissen. */
+  /** Küche (Stufe 2): Herd, Anrichte, Spülstein mit Pumpe unterm Fenster, Tisch mit Kürbissen, Buffet. */
   kueche(m, glass, r, seed, fx) {
+    const o = r.x0 - 76; // N4: Küche um 32 Voxel nach Osten, anderthalbmal so breit
     // Anrichte mit Schränken und heller Arbeitsplatte
-    m.box(77, FLOOR, 4, 96, FLOOR + 11, 11, (x, y, z) => {
-      if (z === 11 && (x === 86 || y === FLOOR + 5)) return P.e3;
-      if (z === 11 && (x === 84 || x === 88) && y === FLOOR + 8) return P.s6;
+    m.box(o + 77, FLOOR, 4, o + 96, FLOOR + 11, 11, (x, y, z) => {
+      if (z === 11 && (x === o + 86 || y === FLOOR + 5)) return P.e3;
+      if (z === 11 && (x === o + 84 || x === o + 88) && y === FLOOR + 8) return P.s6;
       return y === FLOOR ? P.e3 : P.e5;
     });
-    m.box(77, FLOOR + 12, 4, 96, FLOOR + 12, 12, P.e7);
-    m.box(80, FLOOR + 13, 7, 87, FLOOR + 13, 11, P.e6); // Schneidebrett
-    m.ellipsoid(84, FLOOR + 14.5, 9, 3, 1.6, 2, P.e7); // Brot
-    m.box(90, FLOOR + 13, 6, 92, FLOOR + 16, 8, P.a5).box(93, FLOOR + 13, 6, 95, FLOOR + 15, 8, P.f5); // Gläser
+    m.box(o + 77, FLOOR + 12, 4, o + 96, FLOOR + 12, 12, P.e7);
+    m.box(o + 80, FLOOR + 13, 7, o + 87, FLOOR + 13, 11, P.e6); // Schneidebrett
+    m.ellipsoid(o + 84, FLOOR + 14.5, 9, 3, 1.6, 2, P.e7); // Brot
+    m.box(o + 90, FLOOR + 13, 6, o + 92, FLOOR + 16, 8, P.a5).box(o + 93, FLOOR + 13, 6, o + 95, FLOOR + 15, 8, P.f5); // Gläser
     // Regal mit Einmachgläsern, darüber Kräuterbündel an einer Leiste
-    m.box(78, FLOOR + 25, 4, 95, FLOOR + 25, 8, P.e4);
-    for (let x = 79; x <= 93; x += 3) m.box(x, FLOOR + 26, 5, x + 1, FLOOR + 28, 7, [P.f5, P.a0, P.g6, P.r3, P.f6][(x / 3) % 5 | 0]);
-    m.box(78, FLOOR + 38, 4, 95, FLOOR + 38, 5, P.e3);
+    m.box(o + 78, FLOOR + 25, 4, o + 95, FLOOR + 25, 8, P.e4);
+    for (let x = 79; x <= 93; x += 3) m.box(o + x, FLOOR + 26, 5, o + x + 1, FLOOR + 28, 7, [P.f5, P.a0, P.g6, P.r3, P.f6][(x / 3) % 5 | 0]);
+    m.box(o + 78, FLOOR + 38, 4, o + 95, FLOOR + 38, 5, P.e3);
     for (let x = 79; x <= 94; x += 4) {
       const c = [P.g5, P.g6, P.a2, P.f6][(x / 4) % 4 | 0];
-      m.box(x, FLOOR + 33, 5, x + 1, FLOOR + 37, 5, c);
-      m.set(x, FLOOR + 32, 5, c);
+      m.box(o + x, FLOOR + 33, 5, o + x + 1, FLOOR + 37, 5, c);
+      m.set(o + x, FLOOR + 32, 5, c);
     }
     // Gusseiserner Herd mit Backofentür, Feuerloch, Topf, Kessel und Ofenrohr
-    const hx = 99;
+    const hx = r.x0 + KUECHE.herd;
     m.box(hx, FLOOR, 4, hx + 23, FLOOR + 13, 13, (x, y, z) => {
       if (y === FLOOR + 13) return (x + z) % 6 === 0 ? P.s3 : P.s2;
       if (z === 13 && x >= hx + 3 && x <= hx + 12 && y >= FLOOR + 3 && y <= FLOOR + 10) return x === hx + 3 || x === hx + 12 || y === FLOOR + 3 || y === FLOOR + 10 ? P.s5 : P.s1;
@@ -523,29 +541,46 @@ const ROOM_BUILDERS = {
     m.set(hx + 15, FLOOR + 16, 8, P.r3).set(hx + 16, FLOOR + 17, 8, P.r3);
     m.box(hx + 12, FLOOR + 17, 8, hx + 13, FLOOR + 17, 9, P.s4);
     // Spülstein mit Handpumpe unter dem Fenster
-    windowFrame(m, glass, 127, 140, 22, 37, seed + 3, [P.a4, P.s8]);
-    m.box(125, FLOOR, 4, 142, FLOOR + 10, 11, (x, y, z) => (y === FLOOR + 10 ? P.s7 : (x + y) % 5 === 0 ? P.s5 : P.s6));
-    m.remove(127, FLOOR + 8, 5, 140, FLOOR + 10, 10);
-    m.box(127, FLOOR + 7, 5, 140, FLOOR + 7, 10, P.b4); // Wasser
-    m.box(131, FLOOR + 11, 5, 132, FLOOR + 19, 6, P.s3);
-    m.box(129, FLOOR + 17, 7, 131, FLOOR + 17, 7, P.s3); // Auslauf
-    m.line(132, FLOOR + 19, 5, 136, FLOOR + 22, 5, P.s4); // Schwengel
-    // Küchentisch mit Kürbissen, Brotkorb und Hocker
-    for (const [lx, lz] of [[97, 45], [118, 45], [97, 56], [118, 56]]) m.box(lx, FLOOR, lz, lx, FLOOR + 11, lz, P.e3);
-    m.box(96, FLOOR + 12, 44, 119, FLOOR + 13, 57, (x, y, z) => (y === FLOOR + 13 ? (z % 4 === 3 ? P.e6 : P.e7) : P.e5));
-    for (const [cx, cz, rad] of [[102, 49, 3.2], [108, 52, 2.4]]) {
+    const sx = r.x0 + KUECHE.spuele;
+    windowFrame(m, glass, sx + 2, sx + 15, 22, 37, seed + 3, [P.a4, P.s8]);
+    m.box(sx, FLOOR, 4, sx + 17, FLOOR + 10, 11, (x, y, z) => (y === FLOOR + 10 ? P.s7 : (x + y) % 5 === 0 ? P.s5 : P.s6));
+    m.remove(sx + 2, FLOOR + 8, 5, sx + 15, FLOOR + 10, 10);
+    m.box(sx + 2, FLOOR + 7, 5, sx + 15, FLOOR + 7, 10, P.b4); // Wasser
+    m.box(sx + 6, FLOOR + 11, 5, sx + 7, FLOOR + 19, 6, P.s3);
+    m.box(sx + 4, FLOOR + 17, 7, sx + 6, FLOOR + 17, 7, P.s3); // Auslauf
+    m.line(sx + 7, FLOOR + 19, 5, sx + 11, FLOOR + 22, 5, P.s4); // Schwengel
+    // Küchenbuffet in der Ostecke: unten Türen, oben ein offenes Bord mit Tellern und Tassen
+    const bx = r.x0 + KUECHE.buffet;
+    m.box(bx, FLOOR, 4, bx + 14, FLOOR + 12, 12, (x, y, z) => {
+      if (y === FLOOR + 12) return P.e6;
+      if (z === 12 && (x === bx + 7 || y === FLOOR + 6)) return P.e3;
+      if (z === 12 && (x === bx + 5 || x === bx + 9) && y === FLOOR + 9) return P.s6;
+      return (x + y) % 9 === 0 ? P.e4 : P.e5;
+    });
+    m.box(bx, FLOOR + 13, 4, bx + 14, FLOOR + 30, 5, (x, y) => (y === FLOOR + 21 || y === FLOOR + 30 || x === bx || x === bx + 14 ? P.e4 : P.e3));
+    for (let k = 0; k < 4; k++) {
+      m.box(bx + 2 + k * 3, FLOOR + 22, 6, bx + 3 + k * 3, FLOOR + 26, 6, k % 2 ? P.b4 : P.s9); // Teller
+      m.box(bx + 2 + k * 3, FLOOR + 14, 6, bx + 3 + k * 3, FLOOR + 16, 7, [P.a0, P.f5, P.b3, P.g6][k]); // Tassen
+    }
+    // Küchentisch mit Kürbissen, Brotkorb und zwei Hockern
+    const tx = r.x0 + KUECHE.tisch.x;
+    const tz = KUECHE.tisch.z;
+    for (const [lx, lz] of [[tx + 1, tz + 1], [tx + 22, tz + 1], [tx + 1, tz + 12], [tx + 22, tz + 12]]) m.box(lx, FLOOR, lz, lx, FLOOR + 11, lz, P.e3);
+    m.box(tx, FLOOR + 12, tz, tx + 23, FLOOR + 13, tz + 13, (x, y, z) => (y === FLOOR + 13 ? (z % 4 === 3 ? P.e6 : P.e7) : P.e5));
+    for (const [cx, cz, rad] of [[tx + 6, tz + 5, 3.2], [tx + 12, tz + 8, 2.4]]) {
       m.ellipsoid(cx, FLOOR + 14 + rad * 0.8, cz, rad, rad * 0.8, rad, (x) => ((x - cx) % 2 === 0 ? P.f4 : P.f5));
       m.box(cx, FLOOR + 14 + Math.ceil(rad * 1.6), cz, cx, FLOOR + 15 + Math.ceil(rad * 1.6), cz, P.g4);
     }
-    m.box(112, FLOOR + 14, 47, 117, FLOOR + 16, 52, (x, y, z) => (y === FLOOR + 16 && x > 112 && x < 117 && z > 47 && z < 52 ? P.e8 : (x + z) % 2 ? P.e5 : P.e4));
-    m.box(104, FLOOR, 60, 109, FLOOR + 7, 64, (x, y, z) => (y === FLOOR + 7 ? P.e6 : (x === 104 || x === 109) && (z === 60 || z === 64) ? P.e3 : null));
+    m.box(tx + 16, FLOOR + 14, tz + 3, tx + 21, FLOOR + 16, tz + 8, (x, y, z) => (y === FLOOR + 16 && x > tx + 16 && x < tx + 21 && z > tz + 3 && z < tz + 8 ? P.e8 : (x + z) % 2 ? P.e5 : P.e4));
+    for (const hx0 of [tx + 4, tx + 14]) m.box(hx0, FLOOR, tz + 17, hx0 + 5, FLOOR + 7, tz + 21, (x, y, z) => (y === FLOOR + 7 ? P.e6 : (x === hx0 || x === hx0 + 5) && (z === tz + 17 || z === tz + 21) ? P.e3 : null));
   },
 
   /** Schlafzimmer (Stufe 3): Doppelbett unterm Fenster, Nachttisch mit Lampe, Kleiderschrank. */
   schlafzimmer(m, glass, r, seed, fx) {
-    windowFrame(m, glass, 282, 297, 27, 37, seed + 4, [P.a1, P.a0]);
-    const x0 = 276;
-    const x1 = 303;
+    const o = r.x0 - 256; // N4: um 116 Voxel nach Osten, der Schrank rückt weiter weg
+    windowFrame(m, glass, o + 282, o + 297, 27, 37, seed + 4, [P.a1, P.a0]);
+    const x0 = o + 276;
+    const x1 = o + 303;
     m.box(x0, FLOOR, 4, x1, FLOOR + 17, 5, (x, y) => (y >= FLOOR + 16 || x === x0 || x === x1 ? P.e2 : (x - x0) % 4 === 0 ? P.e3 : P.e4)); // Kopfteil
     m.box(x0, FLOOR + 18, 4, x1, FLOOR + 18, 5, (x) => ((x - x0) % 3 === 1 ? P.e3 : null));
     m.box(x0, FLOOR, 6, x1, FLOOR + 3, 39, (x, y, z) => (y === FLOOR + 3 ? P.e4 : (x === x0 || x === x1) && (z === 6 || z === 39) ? P.e2 : P.e3));
@@ -556,18 +591,19 @@ const ROOM_BUILDERS = {
     m.box(x0 + 3, FLOOR + 7, 7, x0 + 12, FLOOR + 9, 12, P.a4).box(x1 - 12, FLOOR + 7, 7, x1 - 3, FLOOR + 9, 12, P.s9); // Kissen
     m.box(x0 + 14, FLOOR + 8, 24, x0 + 17, FLOOR + 9, 27, P.r3); // Buch auf der Decke
     // Nachttisch mit Lampe
-    m.box(266, FLOOR, 6, 273, FLOOR + 10, 13, (x, y, z) => (y === FLOOR + 10 ? P.e6 : z === 13 && y === FLOOR + 5 ? P.e3 : P.e5));
-    m.box(268, FLOOR + 11, 8, 271, FLOOR + 11, 11, P.s3).box(269, FLOOR + 12, 9, 270, FLOOR + 16, 10, P.s4);
-    fx.glow.box(267, FLOOR + 17, 7, 272, FLOOR + 20, 12, (x, y, z) => ((x === 267 || x === 272) && (z === 7 || z === 12) ? null : 0xffffff));
+    m.box(o + 266, FLOOR, 6, o + 273, FLOOR + 10, 13, (x, y, z) => (y === FLOOR + 10 ? P.e6 : z === 13 && y === FLOOR + 5 ? P.e3 : P.e5));
+    m.box(o + 268, FLOOR + 11, 8, o + 271, FLOOR + 11, 11, P.s3).box(o + 269, FLOOR + 12, 9, o + 270, FLOOR + 16, 10, P.s4);
+    fx.glow.box(o + 267, FLOOR + 17, 7, o + 272, FLOOR + 20, 12, (x, y, z) => ((x === o + 267 || x === o + 272) && (z === 7 || z === 12) ? null : 0xffffff));
     // Kleiderschrank
-    m.box(307, FLOOR, 4, 322, FLOOR + 33, 13, (x, y, z) => {
+    const k = r.x0 + SCHLAF.schrank;
+    m.box(k, FLOOR, 4, k + 15, FLOOR + 33, 13, (x, y, z) => {
       if (y === FLOOR + 33 || y === FLOOR) return P.e3;
-      if (z === 13 && (x === 314 || x === 315)) return P.e3;
-      if (z === 13 && (x === 313 || x === 316) && y === FLOOR + 17) return P.s6;
+      if (z === 13 && (x === k + 7 || x === k + 8)) return P.e3;
+      if (z === 13 && (x === k + 6 || x === k + 9) && y === FLOOR + 17) return P.s6;
       return (x + y) % 11 === 0 ? P.e4 : P.e5;
     });
-    m.box(309, FLOOR + 34, 6, 314, FLOOR + 36, 11, P.a4); // Hutschachtel
-    rug(m, 272, 43, 307, 55, [P.b1, P.b3, P.a4, P.b5]);
+    m.box(k + 2, FLOOR + 34, 6, k + 7, FLOOR + 36, 11, P.a4); // Hutschachtel
+    rug(m, o + 272, 47, o + 307, 61, [P.b1, P.b3, P.a4, P.b5]);
   },
 
   /** Werkstatt (Stufe 4): Werkbank mit Werkzeugwand, Bretterstapel, Sägebock, Nagelfass. */
@@ -591,31 +627,36 @@ const ROOM_BUILDERS = {
     m.box(23, FLOOR + 34, 6, 29, FLOOR + 35, 12, P.s3);
     fx.glow.box(25, FLOOR + 33, 8, 27, FLOOR + 33, 10, 0xffffff);
     // Fenster, darunter der Bretterstapel
-    windowFrame(m, glass, 50, 63, 22, 37, seed + 5, null);
-    for (let k = 0; k < 5; k++) m.box(48, FLOOR + k * 2, 5 + (k % 2), 67, FLOOR + k * 2 + 1, 13 + (k % 2), (x, y, z) => (x === 48 || x === 67 ? P.e8 : [P.e5, P.e6, P.e4][(k + y) % 3]));
+    windowFrame(m, glass, 60, 73, 22, 37, seed + 5, null);
+    for (let k = 0; k < 5; k++) m.box(58, FLOOR + k * 2, 5 + (k % 2), 77, FLOOR + k * 2 + 1, 13 + (k % 2), (x, y, z) => (x === 58 || x === 77 ? P.e8 : [P.e5, P.e6, P.e4][(k + y) % 3]));
     // Sägebock mit Brett
-    for (const bx of [20, 34]) {
-      m.line(bx, FLOOR, 44, bx + 1, FLOOR + 9, 47, P.e3);
-      m.line(bx, FLOOR, 51, bx + 1, FLOOR + 9, 48, P.e3);
+    for (const bx of [28, 42]) {
+      m.line(bx, FLOOR, 58, bx + 1, FLOOR + 9, 61, P.e3);
+      m.line(bx, FLOOR, 65, bx + 1, FLOOR + 9, 62, P.e3);
     }
-    m.box(18, FLOOR + 10, 46, 37, FLOOR + 10, 49, P.e6);
-    for (const [sx, sz] of [[24, 52], [29, 55], [33, 50], [21, 57]]) m.set(sx, FLOOR, sz, P.e8); // Späne
+    m.box(26, FLOOR + 10, 60, 45, FLOOR + 10, 63, P.e6);
+    for (const [sx, sz] of [[32, 66], [37, 69], [41, 64], [29, 71]]) m.set(sx, FLOOR, sz, P.e8); // Späne
     // Nagelfass
-    m.cylinder(60.5, 40.5, FLOOR, FLOOR + 11, 4.2, (x, y) => (y % 5 === 2 ? P.s3 : P.e4));
-    m.cylinder(60.5, 40.5, FLOOR + 12, FLOOR + 12, 3.2, P.s5);
+    m.cylinder(88.5, 40.5, FLOOR, FLOOR + 11, 4.2, (x, y) => (y % 5 === 2 ? P.s3 : P.e4));
+    m.cylinder(88.5, 40.5, FLOOR + 12, FLOOR + 12, 3.2, P.s5);
+    // N4: Farbregal in der Ostecke – Dosen, Pinsel, ein Glas Nägel
+    m.box(86, FLOOR, 4, 101, FLOOR + 24, 9, (x, y) => (x === 86 || x === 101 || (y - FLOOR) % 8 === 0 ? P.e3 : null));
+    for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) m.box(88 + j * 3, FLOOR + 1 + k * 8, 5, 89 + j * 3, FLOOR + 4 + k * 8, 7, [P.r3, P.b3, P.g5, P.f5, P.s6, P.a2][(j + k * 2) % 6]);
   },
 
   /** Lager (Stufe 5): Regale, Fässer, Kistenstapel, Säcke, eine Laterne. */
   lager(m, glass, r, seed, fx) {
+    const o = r.x0 - 328; // N4: um 148 Voxel nach Osten, eine Regalwand mehr
     // Regalwand mit vier Böden
-    m.box(330, FLOOR, 4, 385, FLOOR + 37, 10, (x, y, z) => {
-      if (x === 330 || x === 385 || (x - 330) % 14 === 0) return P.e3;
+    const rx1 = o + 413;
+    m.box(o + 330, FLOOR, 4, rx1, FLOOR + 37, 10, (x, y, z) => {
+      if (x === o + 330 || x === rx1 || (x - o - 330) % 14 === 0) return P.e3;
       if ((y - FLOOR) % 9 === 0) return P.e4;
       return null;
     });
     for (let shelf = 0; shelf < 4; shelf++) {
       const y0 = FLOOR + 1 + shelf * 9;
-      for (let x = 332; x <= 382; x += 6) {
+      for (let x = o + 332; x <= rx1 - 3; x += 6) {
         const h = hash3(x, shelf, 0, seed);
         if (h < 0.2) continue;
         if (h < 0.5) m.box(x, y0, 5, x + 4, y0 + 5, 9, (xx, yy) => (yy === y0 + 5 ? P.e6 : (xx + yy) % 3 ? P.e5 : P.e4)); // Kiste
@@ -624,46 +665,65 @@ const ROOM_BUILDERS = {
       }
     }
     // Fässer
-    for (const cx of [338.5, 348.5]) {
+    for (const cx of [o + 338.5, o + 348.5]) {
       m.cylinder(cx, 22.5, FLOOR, FLOOR + 13, 4.6, (x, y) => (y === FLOOR + 2 || y === FLOOR + 11 ? P.s3 : (x + y) % 3 ? P.e4 : P.e5));
       m.cylinder(cx, 22.5, FLOOR + 14, FLOOR + 14, 3.6, P.e3);
     }
     // Kistenstapel
     for (const [cx, cy, cz] of [[364, 0, 16], [374, 0, 16], [364, 0, 26], [374, 0, 27], [369, 9, 20]]) {
-      m.box(cx, FLOOR + cy, cz, cx + 8, FLOOR + cy + 8, cz + 8, (x, y, z) => (x === cx || x === cx + 8 || y === FLOOR + cy + 8 || y === FLOOR + cy ? P.e3 : (x + z) % 4 === 0 ? P.e4 : P.e5));
+      const bx = o + cx;
+      m.box(bx, FLOOR + cy, cz, bx + 8, FLOOR + cy + 8, cz + 8, (x, y, z) => (x === bx || x === bx + 8 || y === FLOOR + cy + 8 || y === FLOOR + cy ? P.e3 : (x + z) % 4 === 0 ? P.e4 : P.e5));
     }
     // Säcke
-    for (const [sx, sz, h] of [[352, 52, 4], [358, 54, 3.5], [355, 59, 3.2]]) m.ellipsoid(sx, FLOOR + h, sz, 3.6, h, 3, (x, y) => (y > FLOOR + h * 1.4 ? P.e7 : P.e8));
+    for (const [sx, sz, h] of [[352, 62, 4], [358, 64, 3.5], [355, 69, 3.2]]) m.ellipsoid(o + sx, FLOOR + h, sz, 3.6, h, 3, (x, y) => (y > FLOOR + h * 1.4 ? P.e7 : P.e8));
     // Laterne an einem Haken
-    m.box(357, FLOOR + 30, 30, 357, TOP + 2, 30, P.s2);
-    m.box(355, FLOOR + 22, 28, 359, FLOOR + 22, 32, P.s2).box(355, FLOOR + 29, 28, 359, FLOOR + 29, 32, P.s2);
-    fx.glow.box(356, FLOOR + 23, 29, 358, FLOOR + 28, 31, 0xffffff);
+    const lx = o + 357;
+    m.box(lx, FLOOR + 30, 34, lx, TOP + 2, 34, P.s2);
+    m.box(lx - 2, FLOOR + 22, 32, lx + 2, FLOOR + 22, 36, P.s2).box(lx - 2, FLOOR + 29, 32, lx + 2, FLOOR + 29, 36, P.s2);
+    fx.glow.box(lx - 1, FLOOR + 23, 33, lx + 1, FLOOR + 28, 35, 0xffffff);
   },
 };
 
 const ROOM_COLLIDERS = {
-  kueche: () => [[77, 4, 96, 12, 'anrichte'], [99, 4, 122, 13, 'herd'], [125, 4, 142, 11, 'spuele'], [96, 44, 119, 57, 'tisch'], [104, 60, 109, 64, 'hocker']],
-  schlafzimmer: () => [[276, 4, 303, 39, 'bett'], [266, 6, 273, 13, 'nachttisch'], [307, 4, 322, 13, 'schrank']],
-  werkstatt: () => [[10, 4, 41, 15, 'werkbank'], [48, 5, 67, 14, 'bretter'], [18, 44, 37, 51, 'saegebock'], [56, 36, 65, 45, 'fass']],
-  lager: () => [[330, 4, 385, 10, 'regal'], [333, 17, 354, 28, 'faesser'], [364, 16, 383, 35, 'kisten'], [348, 49, 362, 62, 'saecke']],
+  kueche: (r) => {
+    const t = { x: r.x0 + KUECHE.tisch.x, z: KUECHE.tisch.z };
+    return [
+      [r.x0 + 1, 4, r.x0 + 20, 12, 'anrichte'],
+      [r.x0 + KUECHE.herd, 4, r.x0 + KUECHE.herd + 23, 13, 'herd'],
+      [r.x0 + KUECHE.spuele, 4, r.x0 + KUECHE.spuele + 17, 11, 'spuele'],
+      [r.x0 + KUECHE.buffet, 4, r.x0 + KUECHE.buffet + 14, 12, 'buffet'],
+      [t.x, t.z, t.x + 23, t.z + 13, 'tisch'],
+      [t.x + 4, t.z + 17, t.x + 19, t.z + 21, 'hocker'],
+    ];
+  },
+  schlafzimmer: (r) => [
+    [r.x0 + 20, 4, r.x0 + 47, 39, 'bett'],
+    [r.x0 + 10, 6, r.x0 + 17, 13, 'nachttisch'],
+    [r.x0 + SCHLAF.schrank, 4, r.x0 + SCHLAF.schrank + 15, 13, 'schrank'],
+  ],
+  werkstatt: () => [[10, 4, 41, 15, 'werkbank'], [58, 5, 77, 14, 'bretter'], [26, 58, 45, 65, 'saegebock'], [84, 36, 93, 45, 'fass'], [86, 4, 101, 9, 'farbregal']],
+  lager: (r) => {
+    const o = r.x0 - 328;
+    return [[o + 330, 4, o + 413, 10, 'regal'], [o + 333, 17, o + 354, 28, 'faesser'], [o + 364, 16, o + 383, 35, 'kisten'], [o + 348, 59, o + 362, 72, 'saecke']];
+  },
 };
 
 const ROOM_INTERACTIONS = {
-  kueche: (r, wx, wz) => ({ interactions: [{ id: 'herd', x: wx(110), z: wz(16), radius: 1.4, prompt: 'herd', dialog: 'herd', inside: true }] }),
+  kueche: (r, wx, wz) => ({ interactions: [{ id: 'herd', x: wx(r.x0 + KUECHE.herd + 11), z: wz(16), radius: 1.4, prompt: 'herd', dialog: 'herd', inside: true }] }),
   schlafzimmer: (r, wx, wz) => ({
-    interactions: [{ id: 'bett', x: wx(274), z: wz(24), radius: 1.4, prompt: 'schlafen', action: 'sleep', inside: true }],
-    wakeSpot: { x: wx(268), z: wz(32), facing: Math.PI * 0.1 },
+    interactions: [{ id: 'bett', x: wx(r.x0 + 18), z: wz(24), radius: 1.4, prompt: 'schlafen', action: 'sleep', inside: true }],
+    wakeSpot: { x: wx(r.x0 + 12), z: wz(32), facing: Math.PI * 0.1 },
   }),
   werkstatt: (r, wx, wz) => ({ interactions: [{ id: 'werkbank-innen', x: wx(26), z: wz(18), radius: 1.5, prompt: 'werkbank', use: 'werkbank', inside: true }] }),
-  lager: (r, wx, wz) => ({ interactions: [{ id: 'lager', x: wx(357), z: wz(14), radius: 1.6, prompt: 'lager', dialog: 'lager', inside: true }] }),
+  lager: (r, wx, wz) => ({ interactions: [{ id: 'lager', x: wx(r.x0 + 29), z: wz(14), radius: 1.6, prompt: 'lager', dialog: 'lager', inside: true }] }),
 };
 
-/** Lichtinseln [x, z, Radius in m]: Herd, Nachttischlampe, Werkstattlampe, Laterne im Lager. */
+/** Lichtinseln [x, z, Radius in m]: Herd, Nachttischlampe, Werkstattlampe, Laterne im Lager (je nach Raum). */
 const ROOM_POOLS = {
-  kueche: [[117, 18, 2.2]],
-  schlafzimmer: [[270, 16, 1.8]],
-  werkstatt: [[26, 14, 2.4]],
-  lager: [[357, 32, 2.6]],
+  kueche: (r) => [[r.x0 + KUECHE.herd + 18, 18, 2.2]],
+  schlafzimmer: (r) => [[r.x0 + 14, 16, 1.8]],
+  werkstatt: () => [[26, 14, 2.4]],
+  lager: (r) => [[r.x0 + 29, 34, 2.6]],
 };
 
 export { FLOOR as INTERIOR_FLOOR, TOP as INTERIOR_TOP };

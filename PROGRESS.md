@@ -5,6 +5,79 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Nachbesserung N4 – Probespiel: Edda am Funk, Rücken, Kürbisse, Haus und Katalog ✓
+
+Rückmeldungen aus dem eigenen Probespiel des Auftraggebers (29.09.2026), vor M29
+eingeschoben:
+
+- **Hinweise nicht mehr mitten im Bild – Edda über Funk** (Punkt 4). Was früher
+  als Hinweis-Kasten in der Mitte stand (Ziele, Laterne, Ruhe, Ausweichen,
+  Turmteile, Champions, Bosse), spricht jetzt **Edda** über das alte Funkgerät an
+  Mikas Gürtel: ein Comic-Feld unten rechts über der Bauleiste, rechts ihr altes
+  Foto (sepia, mit Klebeband), links eine helle Sprechblase mit harter Kontur und
+  Zipfel, in die sich der Text tippt, oben der Name »Edda · Funk«, am Foto
+  flackern die Empfangsbalken, solange sie spricht. Das Spiel hält nie an; ein
+  Klick aufs Feld tippt fertig und schließt es. Jede Erklärung kommt einmal im
+  ganzen Spiel (`funk.once`), eine Warteschlange hält höchstens fünf Zeilen.
+  **Wer Edda ist** (OFFENE-FRAGEN 180): Ihr gehörte die Holzlände, ihr Großvater
+  hat Steg, Hütte und Tor gebaut. Sie deutet an und erklärt – wo sie ist, sagt sie
+  nicht (»Irgendwo, wo man den See sehen kann«). Über das Funkgerät in der Stube
+  kann man sie auch selbst rufen.
+- **Die rechte Spalte:** Vorrat oben rechts, darunter der Nachtplan, darunter die
+  Meldungen – alle rechtsbündig, sie fahren von rechts herein. Die Bildmitte
+  gehört wieder dem Spiel.
+- **Die Laterne** (Punkt 1) leuchtet nur noch, wenn Mika sie mit F anzündet; am
+  hellen Morgen (07:30) löscht Mika sie und steckt sie weg – außer in einer
+  laufenden Nacht.
+- **Werkzeug und Waffe auf dem Rücken** (Punkt 1): Was Mika trägt, hängt schräg
+  auf dem Rücken (dieselbe Geometrie wie in der Hand) und kommt erst beim
+  Schlagen, Fällen oder Abbauen in die Hand. 2,6 s nach dem letzten Einsatz
+  steckt Mika es mit einem kurzen Griff über die Schulter wieder weg; solange ein
+  Schlurfer näher als 5 m ist, bleibt es gezogen. Drinnen ist nichts zu sehen.
+- **Frische Kürbisse** (Punkt 2): sattes Orange mit schmalen Furchen und
+  Wachsglanz, grüner Stiel mit Blatt, keine dunklen Flecken mehr – sie sahen
+  vorher faulig aus.
+- **Ein größeres Haus** (Punkt 3): 6,75 statt 4,75 m tief, jeder Raum anderthalbmal
+  so breit (die Stube 9,7 m), Durchgänge 2 m breit, die Haustür gegenüber dem
+  Kamin. Die Möbel behalten ihre Größe und bekommen Luft; Kaminsims, Kartentisch
+  und Lichter wandern mit.
+- **Balduins Katalog über das Funkgerät** (Punkt 3): Das Funkgerät auf der
+  Kommode ruft jetzt Balduin (Katalog), Edda oder das Radio. Der Katalog zeigt
+  24 Stücke auf fünf Seiten (Stube, Küche, Schlafzimmer, Werkstatt, Lager – jede
+  ab der Ausbaustufe ihres Raums), jedes als großes Foto aus seinem Voxelmodell
+  mit Beschreibung, Preis in Zombieteilen (6–24) und Gemütlichkeit. Neu sind 17
+  Stücke: Flickenteppich, Blumenampel, Bücherregal, Standuhr, Sofa, Grammophon,
+  Zwiebelzopf, Küchenkräuter, Kupfertöpfe, Apfelkuchen, Hausschuhe,
+  Standspiegel, Quilt, Hocker, Werkzeugkiste, Apfelkisten, Hängematte. Bestellt
+  ist sofort bezahlt, höchstens vier Stücke sind unterwegs.
+- **Die Lieferung:** Am nächsten Morgen trägt Balduin die Bestellung hinein,
+  sobald er anlegt (hat er schon abgelegt, steht die Kiste mittags am Steg).
+  Sobald kein Schlurfer in der Nähe ist, zeigt eine **Lieferkarte** jedes Stück
+  groß mit Namen und Raum (»Steht jetzt in der Küche«).
+- Balduins Horn, der erste Besuch im Haus, die erste gehaltene Nacht, die
+  Frostnacht und der Abschied des Herbsts bekommen je eine Zeile von Edda.
+- **Der Nebel flackerte beim Gehen** (Rückmeldung vom selben Abend): Das
+  Rauschen der Nebelbänke wanderte mit der Zeit durch ihr gerastertes
+  Durchsichtsmuster, und die Bänke lagen über den Figuren, deren Umriss sie in
+  jedem Bild neu zerschnitten. Jetzt hängt das Muster fest an der Welt, die
+  Bänke ziehen halb so schnell und werden vor den Figuren gezeichnet
+  (Reihenfolge 1,5, Überlebende 1,6). Ein Versuch mit starren Bänken, die nur
+  ganzpixelig wandern, flackerte noch stärker und wurde verworfen.
+- **Katalogfotos:** Kleine Stücke werden größer fotografiert (feinere Maßstäbe),
+  lange Stücke (Lichterkette, Wimpel) auf 24 Spalten zugeschnitten, Sofa und
+  Lesesessel von vorn. Eddas Foto zeigt sie jung, mit dunklem Haar und offenen
+  Augen, im Funk-Feld etwas größer. Grammophon und Hängematte bekamen freie
+  Plätze (vorher verdeckt von der Pflanze bzw. auf den Säcken). Porträts lesen
+  ihre Leinwand mit `willReadFrequently` (sonst warnte Chromium beim Foto).
+- **Spielstand v23** mit Migration: Bestellungen leer; wer im alten, kleineren
+  Haus gespeichert hat, steht nach dem Laden an der Haustür.
+- Prüfabschnitt `probespiel` (Bilder: funk, stube-gross, katalog, lieferung); die
+  Werkzeug-Prüfung von m12-r1 erwartet jetzt den Rücken, Einrichten (M6) bezahlt
+  in Zombieteilen, der Rundgang durch alle Räume läuft auf Höhe der neuen
+  Durchgänge. Der Herbstschmuck-Schritt (M25) leert Eddas Feld direkt vor dem
+  Mausklick – es lag genau über dem Zielfeld, der Klick schloss nur ihre Meldung.
+  Volle Prüfung: 340 Prüfpunkte bestanden.
+
 ## Meilenstein 28 – Kartenabend »Letzte Runde« ✓
 
 Dritter Schritt des Plans »Zuflucht sein« (DESIGN.md 8, OFFENE-FRAGEN 171–174):

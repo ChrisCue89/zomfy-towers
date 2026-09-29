@@ -221,6 +221,11 @@ const SFX = {
     [783.99, 987.77, 1174.66, 1567.98].forEach((f, k) => s.tone('triangle', f, t + 0.08 + k * 0.06, 0.16, { peak: 0.07 * v, out: o }));
   },
   funke: (s, t, v, o) => s.tone('square', 1800, t, 0.06, { freqEnd: 600, peak: 0.03 * v, filter: 4000, out: o }),
+  // N4: Edda meldet sich über Funk – kurzes Rauschen, dann ein heller Piep
+  funk: (s, t, v, o) => {
+    s.noise(t, 0.16, { type: 'bandpass', freq: 1700, freqEnd: 2600, q: 2.4, attack: 0.01, peak: 0.06 * v, out: o });
+    s.tone('square', 1320, t + 0.14, 0.05, { peak: 0.028 * v, filter: 2600, out: o });
+  },
   windstoss: (s, t, v, o) => s.noise(t, 0.7, { type: 'bandpass', freq: 380, freqEnd: 900, q: 0.7, attack: 0.25, peak: 0.16 * v, out: o }),
   // Bienenkorb: kurzes Summen, wenn ein Schwarm ausfliegt
   summen: (s, t, v, o) => s.tone('sawtooth', 210, t, 0.5, { freqEnd: 240, attack: 0.08, peak: 0.025 * v, filter: 900, vibrato: 14, out: o }),

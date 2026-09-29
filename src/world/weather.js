@@ -51,7 +51,10 @@ float noise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
 }
 void main() {
-  vec2 p = vWorld.xz * 0.35 + vec2(uTime * 0.05, uTime * 0.012);
+  // N4 (Probespiel: »der Nebel flackert, wenn wir gehen«): Das Muster steht fest in der
+  // Welt, nur die Bänke treiben (langsam). Vorher floss das Muster zusätzlich mit der Zeit
+  // durch das weltfeste Raster – dabei sprangen je Bild Hunderte Pixel an und aus.
+  vec2 p = vWorld.xz * 0.35;
   float n = noise(p) * 0.6 + noise(p * 2.3 + 7.0) * 0.4;
   // Ränder der Bank weich auslaufen lassen
   vec2 e = min(vUv, 1.0 - vUv) * 2.0;
@@ -87,7 +90,11 @@ class FogBanks {
     const layer = (material, count, place) => {
       const mesh = new THREE.InstancedMesh(geometry, material, count);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.renderOrder = 6;
+      // N4 (Probespiel: »der Nebel flackert, wenn wir gehen«): nach Boden und Bauten (bis 1,2),
+      // aber vor Figuren und Schlurfern (ab 1,75). Vorher lag der Nebel über den Beinen – wer
+      // durch eine Nebelbank lief, schwang die Beine durch die Ebene, und die Nebelpixel
+      // an den Beinen gingen bei jedem Schritt an und aus.
+      mesh.renderOrder = 1.5;
       mesh.frustumCulled = false;
       this.group.add(mesh);
       const banks = [];
@@ -101,7 +108,7 @@ class FogBanks {
       z: -25 + Math.floor(k / 2) * 5 + rng.range(-1.2, 1.2),
       w: rng.range(8, 12),
       d: rng.range(4, 6),
-      speed: rng.range(0.08, 0.16),
+      speed: rng.range(0.04, 0.08),
       x0: 10,
       x1: 38,
     }));
@@ -112,7 +119,7 @@ class FogBanks {
       z: -8 + k * 4.5 + rng.range(-1, 1),
       w: rng.range(6, 9),
       d: rng.range(3, 5),
-      speed: rng.range(0.05, 0.1),
+      speed: rng.range(0.025, 0.05),
       x0: -12,
       x1: 14,
     }));
@@ -123,7 +130,7 @@ class FogBanks {
       z: rng.range(-22, 16),
       w: rng.range(7, 11),
       d: rng.range(3.5, 5.5),
-      speed: rng.range(0.06, 0.12),
+      speed: rng.range(0.03, 0.06),
       x0: -62,
       x1: -4,
     }));

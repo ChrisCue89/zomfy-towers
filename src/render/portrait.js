@@ -5,7 +5,7 @@
 import { P, hexToRgb, nearestPaletteHex } from './palette.js';
 import { VoxelModel } from './voxel.js';
 import { buildFineBustModel, MIKA } from '../entities/characters.js';
-import { survivorParts, survivorParts32 } from '../entities/survivorModels.js';
+import { survivorParts, survivorParts32, eddaParts32, EDDA } from '../entities/survivorModels.js';
 import { WANDERER_ORDER } from '../data/wanderers.js';
 import { dogModels } from '../entities/dogModel.js';
 
@@ -51,7 +51,9 @@ export function renderVoxelPortrait(model, { size = 52, top = 3, w = 5, t = 3, f
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext('2d');
+  // Die Kontur liest das Bild zurück (und Eddas Foto ein zweites Mal, N4) – ohne den
+  // Hinweis warnt der Browser vor mehrfachem Auslesen
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   // Von hinten nach vorn, von unten nach oben zeichnen.
   cells.sort((a, b) => a[2] - b[2] || a[1] - b[1]);
   for (const [x, y, z, c] of cells) {
@@ -155,6 +157,70 @@ export function mikaPortrait(spec = MIKA) {
   return renderVoxelPortrait(bust, { size: 54, top: 1, w: 4, t: 1, f: 3 });
 }
 
+/**
+ * N4: Edda kennt man nur von einem alten Foto – ihr Brustbild in Sepia auf warmem
+ * Fotopapier mit dunkleren Ecken; `frame` legt einen hellen Rand, eine dünne Kontur
+ * und einen Streifen Klebeband darum (Hinweis-Feld unten rechts, ui/funk.js).
+ */
+export function eddaPortrait({ frame = false, size: area = 52 } = {}) {
+  // Das Foto ist alt: Edda ist darauf jung, das Haar noch dunkel statt silbern – so hebt
+  // sich der Zopfkranz in Sepia auch vom Gesicht ab. Offene Augen lesen sich klein besser.
+  const parts = eddaParts32({ ...EDDA, hair: P.e3, hairDark: P.e2, brow: P.e2 });
+  const bust = new VoxelModel();
+  const add = (model) => model.forEach((x, y, z, c) => y >= 20 && bust.set(x, y, z, c));
+  add(parts.torso);
+  add(parts.head);
+  add(parts.faces.normal);
+  const src = renderVoxelPortrait(bust, { size: area, top: 2, w: 2, t: 1, f: 1.5 });
+  const size = src.width;
+  const pad = frame ? 4 : 0;
+  const canvas = document.createElement('canvas');
+  canvas.width = size + pad * 2;
+  canvas.height = size + pad * 2 + (frame ? 2 : 0);
+  const ctx = canvas.getContext('2d');
+  const ramp = [P.e1, P.e2, P.e3, P.e4, P.e5, P.e6, P.e7, P.e8, P.e9];
+  const s = src.getContext('2d').getImageData(0, 0, size, size).data;
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      let hex;
+      if (s[i + 3] > 0) {
+        const l = (0.3 * s[i] + 0.59 * s[i + 1] + 0.11 * s[i + 2]) / 255;
+        hex = ramp[Math.max(0, Math.min(8, Math.round(l * 9.5 - 0.6)))];
+      } else {
+        // Fotopapier: hell in der Mitte, zu den Ecken dunkler (gestuft, gerastert)
+        const r = Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) / (size * 0.62);
+        const step = r + (((x & 1) ^ (y & 1)) ? 0.04 : -0.04);
+        hex = step < 0.55 ? P.e7 : step < 0.8 ? P.e6 : P.e5;
+      }
+      const [r, g, b] = hexToRgb(hex);
+      d[i] = Math.round(r * 255);
+      d[i + 1] = Math.round(g * 255);
+      d[i + 2] = Math.round(b * 255);
+      d[i + 3] = 255;
+    }
+  }
+  if (frame) {
+    ctx.fillStyle = css(P.n0);
+    ctx.fillRect(0, 1, canvas.width, canvas.height - 1);
+    ctx.fillStyle = css(P.e9);
+    ctx.fillRect(1, 2, canvas.width - 2, canvas.height - 3);
+  }
+  ctx.putImageData(img, pad, pad + (frame ? 1 : 0));
+  if (frame) {
+    // Klebeband oben in der Mitte
+    const tw = 16;
+    const tx = Math.round((canvas.width - tw) / 2);
+    ctx.fillStyle = css(P.s7);
+    ctx.fillRect(tx, 0, tw, 5);
+    ctx.fillStyle = css(P.s8);
+    ctx.fillRect(tx + 1, 1, tw - 2, 3);
+  }
+  return canvas;
+}
+
 /** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */
 export function renderPortraits() {
   return {
@@ -167,5 +233,6 @@ export function renderPortraits() {
     balduin: balduinPortrait(),
     knopf: dogPortrait(),
     ...Object.fromEntries(WANDERER_ORDER.map((id) => [id, portrait32(id)])), // M27: die Wanderer
+    edda: eddaPortrait(), // N4: nur als altes Foto bekannt
   };
 }

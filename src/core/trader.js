@@ -278,6 +278,7 @@ export class Trader {
       g.sound.fanfare();
       g.player.express('staunen', 2); // Was ist denn das? (M12)
       if (!g.state.flags.balduinGetroffen) g.hud.say(T.haendler.ankunft, 5);
+      g.funk?.once('balduin', T.funk.balduin); // N4: Edda kennt ihn
     }
     if (id === 'steht') {
       // Festmachen: Balduin springt auf den Steg
@@ -287,6 +288,7 @@ export class Trader {
       if (prev === 'kommt') {
         g.effects.dust(s.x + 0.6, s.z + 0.8, 0.8, 10);
         g.sound.play('bimmel', { x: s.x, z: s.z });
+        g.deliverOrders?.(); // N4: Bestelltes aus dem Katalog trägt er gleich ins Haus
       }
     } else if (id === 'geht' && prev === 'steht') {
       g.effects.dust(TRADER.stand.x + 0.6, TRADER.stand.z + 0.8, 0.8, 10);

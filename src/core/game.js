@@ -55,10 +55,12 @@ import { TrapSystem } from '../entities/traps.js';
 import { Loot } from '../entities/loot.js';
 import { UICanvas, COLORS } from '../ui/ui.js';
 import { Hud, LOW_HP } from '../ui/hud.js';
+import { Funk } from '../ui/funk.js';
 import { DialogBox } from '../ui/dialog.js';
 import { Menu } from '../ui/menu.js';
 import { BuildBar } from '../ui/buildbar.js';
 import { CraftingMenu } from '../ui/crafting.js';
+import { Catalog, DeliveryCard } from '../ui/catalog.js';
 import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
 import { MapView } from '../ui/mapView.js';
@@ -89,7 +91,7 @@ import { HOUSE_DAMAGE, PARTS_FROM_TOWERS } from '../data/zombies.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
-  radio: 'radioGehoert',
+  radioHoeren: 'radioGehoert', // N4: das Radio hinter dem Funkgerät-Menü
   briefkasten: 'briefkastenGesehen',
   sessel: 'sesselProbiert',
 };
@@ -218,6 +220,7 @@ export class Game {
     this.ride = null; // gerade auf der Reifenschaukel
 
     this.hud = new Hud(this);
+    this.funk = new Funk(this); // N4: Edda über Funk – Hinweise unten rechts statt mitten im Bild
     this.dialog = new DialogBox(this);
     this.dialog.speed = TEXT_SPEEDS[this.settings.text];
     this.menu = new Menu(this);
@@ -225,6 +228,9 @@ export class Game {
     this.gathering = new Gathering(this);
     this.buildbar = new BuildBar(this);
     this.crafting = new CraftingMenu(this);
+    this.catalog = new Catalog(this); // N4: Balduins Katalog über das Funkgerät
+    this.deliveryCard = new DeliveryCard(this); // N4: was Balduin bringt, einmal groß
+    this.pendingDelivery = null;
     this.report = new ReportPanel(this);
     this.perkChoice = new PerkChoice(this);
     this.mapView = new MapView(this);
@@ -378,7 +384,8 @@ export class Game {
     // Einführung auch nach einem Neuladen mitten im Intro noch einmal zeigen
     const introOpen = this.isNewGame || !this.state.flags.introGesehen;
     if (introOpen && !CONFIG.skipIntro) this.pendingIntro = true;
-    else if (introOpen) this.hud.showHint(T.meldungen.hinweisStart, 14);
+    else if (introOpen) this.funkStart(true);
+    else if (loaded.status === 'ok') this.funkStart(false); // N4: alte Stände lernen Edda beim Laden kennen
     if (CONFIG.test) this.intro.t = this.intro.duration;
     // Neues Spiel nach dem Neuladen (frische Karte): gleich mit Name und Aussehen los
     const fresh = takeFreshStart();
@@ -732,6 +739,7 @@ export class Game {
       this.player.place(spot.x, spot.z, spot.facing);
       this.pushPlayerOut();
       this.applyView(ps.to === 'innen');
+      if (ps.to === 'innen') this.funk.once('haus', T.funk.haus); // N4: Edda kennt jedes Brett
     }
     if (ps.t >= PASSAGE_TIME) this.passage = null;
   }
@@ -809,7 +817,10 @@ export class Game {
       else this.goal.progress = errand.progress;
       return;
     }
-    if (current?.id !== this.goal?.id) this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
+    if (current?.id !== this.goal?.id) {
+      this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
+      if (current && !silent && T.funk.ziele[current.id]) this.funk.once(`ziel_${current.id}`, T.funk.ziele[current.id]); // N4
+    }
     if (this.goal) {
       const p = current.progress ? current.progress(this) : null;
       this.goal.progress = p ? `(${Math.min(p[0], p[1])}/${p[1]})` : null;
@@ -817,8 +828,19 @@ export class Game {
       const need = this.stoneNeeded();
       const stone = this.state.inventory.stein || 0;
       this.goal.text = need > stone ? T.ziele.kiesel : T.ziele[current.id];
+      if (need > stone && !silent) this.funk.once('ziel_kiesel', T.funk.ziele.kiesel);
       if (need > stone) this.goal.progress = `(${stone}/${need})`;
     }
+  }
+
+  /**
+   * N4: Edda meldet sich über Funk – beim neuen Spiel mit der Steuerung, bei einem
+   * alten Stand nur mit ihrem Gruß (einmal im ganzen Spiel).
+   */
+  funkStart(controls) {
+    const f = this.funk;
+    f.once('start', T.funk.start[0]);
+    if (controls) f.once('steuerung', T.funk.start[1]);
   }
 
   /** Der Satz zum Wetter eines Tages (M12). */
@@ -854,6 +876,9 @@ export class Game {
       if (FLAG_AFTER_DIALOG[id]) this.state.flags[FLAG_AFTER_DIALOG[id]] = true;
       if (aktion === 'schlafen') this.startSleep();
       else if (aktion === 'suppe') this.cookSoup();
+      else if (aktion === 'katalog') this.openCatalog(); // N4: Balduins Katalog über Funk
+      else if (aktion === 'edda') this.startDialog('eddaFunk');
+      else if (aktion === 'radioHoeren') this.startDialog('radioHoeren');
       else if (REST_TARGET[aktion]) this.startRest(REST_TARGET[aktion]);
       if (onDone) onDone(aktion);
     });
@@ -996,7 +1021,7 @@ export class Game {
     this.sound.play('loot', { pitch: LOOT_PITCH[res] || 880 });
     if (res === 'teile' && !st.flags.fundTeile) {
       st.flags.fundTeile = true;
-      this.hud.toast(T.meldungen.ersteTeile, res, 4);
+      this.funk.say(T.funk.teile);
     }
     if (res === 'zahnraeder' && !st.flags.fundZahnrad) {
       st.flags.fundZahnrad = true;
@@ -1013,6 +1038,37 @@ export class Game {
     this.builder.cancel();
     this.mode = 'craft';
     this.crafting.open(source);
+  }
+
+  /** N4: Das Funkgerät in der Stube – Balduins Katalog aufschlagen. */
+  openCatalog() {
+    this.builder.cancel();
+    this.catalog.open();
+    this.mode = 'katalog';
+  }
+
+  closeCatalog() {
+    this.catalog.close();
+    this.mode = 'play';
+    this.useLockUntil = this.clock + 0.3; // ein schnelles E danach funkt nicht gleich wieder
+  }
+
+  /** N4: Balduin legt an (oder hat die Kiste mittags am Steg gelassen): Bestelltes kommt ins Haus. */
+  deliverOrders() {
+    const items = this.furnishing.deliver();
+    if (items.length) this.pendingDelivery = [...(this.pendingDelivery || []), ...items];
+    return items;
+  }
+
+  /** N4: Die Lieferkarte zeigt, was gekommen ist – sobald es ruhig ist (kein Schlurfer in der Nähe). */
+  showPendingDelivery() {
+    const items = this.pendingDelivery;
+    if (!items?.length || this.mode !== 'play' || this.nights.active) return;
+    const p = this.player.position;
+    if (this.horde.anyNear(p.x, p.z, 10)) return;
+    this.pendingDelivery = null;
+    this.deliveryCard.open(items);
+    this.mode = 'lieferung';
   }
 
   closeCrafting() {
@@ -1104,7 +1160,7 @@ export class Game {
     else this.hud.toast(T.meldungen.hergestellt(T.rezepte[recipe.id]), recipe.icon, 2);
     if (recipe.gives.weapon && !st.flags.ersteWaffe) {
       st.flags.ersteWaffe = true;
-      this.hud.showHint(T.meldungen.ausweichen, 8);
+      this.funk.say(T.funk.ausweichen);
     }
     this.sound.play(gives ? 'aufheben' : 'aufwertung');
     this.quietSave();
@@ -1392,7 +1448,7 @@ export class Game {
     const B = T.bosse[z.type];
     this.hud.showBanner(T.bosse.kommt(B.titel));
     this.sound.play('champion');
-    this.hud.toast(B.hinweis, 'warnung', 7);
+    this.funk.say(B.hinweis); // N4: Edda erklärt den Boss (das Banner bleibt)
     if (z.def.heart) this.autumn.onHeart(z); // M25: das Moderherz in der Frostnacht
   }
 
@@ -1545,7 +1601,7 @@ export class Game {
     this.sound.play('champion');
     if (!this.state.flags.championHinweis) {
       this.state.flags.championHinweis = true;
-      this.hud.showHint(T.champions.hinweis, 9);
+      this.funk.say(T.champions.hinweis);
     }
   }
 
@@ -1656,7 +1712,7 @@ export class Game {
     st.towerParts[id] = (st.towerParts[id] || 0) + 1;
     if (!st.flags.turmteilHinweis) {
       st.flags.turmteilHinweis = true;
-      this.hud.showHint(T.turmteile.hinweis, 9);
+      this.funk.say(T.turmteile.hinweis);
     }
   }
 
@@ -2314,7 +2370,7 @@ export class Game {
         this.startDialog('intro', () => {
           this.introRunning = false;
           this.state.flags.introGesehen = true;
-          this.hud.showHint(T.meldungen.hinweisStart, 14);
+          this.funkStart(true);
         });
       }
     }
@@ -2345,6 +2401,14 @@ export class Game {
         this.crafting.update(input, realDt);
         this.player.idle(dt);
         break;
+      case 'katalog': // N4: Balduins Katalog
+        this.catalog.update(input, realDt);
+        this.player.idle(dt);
+        break;
+      case 'lieferung': // N4: die Lieferkarte
+        if (this.deliveryCard.update(input, realDt)) this.mode = 'play';
+        this.player.idle(dt);
+        break;
       case 'karten': // M28: Kartenabend – die Uhr steht, die Welt lebt weiter
         this.cardTable.update(input, realDt);
         this.cardNight.update(realDt);
@@ -2353,8 +2417,10 @@ export class Game {
       case 'report':
         if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
+          const rep = this.state.report;
           this.state.report = null;
           this.mode = 'play';
+          if (rep?.won) this.funk.once('ersteNacht', T.funk.ersteNacht); // N4: die erste gehaltene Nacht
           this.autumn.afterReport(); // M25: nach der Frostnacht läuft der Abspann
         }
         this.player.idle(dt);
@@ -2425,6 +2491,8 @@ export class Game {
     this.updateCutout();
     this.updateGoals();
     this.hud.update(realDt);
+    if (this.mode === 'play' && !this.introRunning && !this.pendingIntro && !this.cardNight.match) this.funk.update(realDt); // N4
+    if (this.pendingDelivery) this.showPendingDelivery(); // N4: Lieferkarte, sobald es ruhig ist
   }
 
   updatePlay(dt) {
@@ -2445,6 +2513,10 @@ export class Game {
       else if (i >= 0) this.selectSlot(i);
       else if (k >= 0) this.skills.use(k); // Fähigkeit per Klick auf die Kachel (M16)
       if (i !== -1 || k >= 0) input.consumeClick();
+      else if (this.funk.contains(ui)) {
+        this.funk.skip(); // N4: ein Klick aufs Funkfeld tippt fertig bzw. schließt es
+        input.consumeClick();
+      }
     }
     const cancelling = this.builder.placement || this.builder.selection !== null;
     const escUsed = this.builder.handleCancel(input);
@@ -2494,6 +2566,8 @@ export class Game {
       this.updateRide(dt, input);
     } else {
       this.player.update(dt, this.world.doorAssist(this.player.position, input.moveVector()), input.isDown('run'));
+      // N4: Ist ein Schlurfer nah, bleibt Werkzeug bzw. Waffe gezogen
+      if (this.player.heldTool && this.horde.anyNear(this.player.position.x, this.player.position.z, 5)) this.player.keepDrawn(1.2);
       const through = this.world.passageAt(this.player.position.x, this.player.position.z);
       if (through) this.startPassage(through);
       else this.checkForestEdge(dt, input.moveVector());
@@ -2504,7 +2578,7 @@ export class Game {
     sp.z = p.z;
     sp.facing = this.player.facing;
 
-    const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui) && !this.hud.containsSkills(ui);
+    const pointerFree = !this.buildbar.contains(ui) && !this.hud.containsHotbar(ui) && !this.hud.containsSkills(ui) && !this.funk.contains(ui);
     const rest = this.builder.update(dt, input, pointerFree);
     if (this.mode !== 'play') return;
     // Übrig gebliebener Klick in die Welt: zuschlagen – auf den Schlurfer unter
@@ -2640,20 +2714,31 @@ export class Game {
     const flags = this.state.flags;
     const before = hoursOf(time.minute - dt / CONFIG.time.secondsPerGameMinute);
     if (before < 20 && h >= 20 && h < 20.5 && !this.nights.active) this.hud.toast(T.horde.bald, 'warnung', 4); // m16-r1: nicht, wenn sie schon gerufen ist
+    // N4 (Probespiel): Am hellen Morgen löscht Mika die Laterne und steckt sie weg – tagsüber
+    // lief sie sonst immer mit Licht in der Hand herum
+    if (before < 7.5 && h >= 7.5 && h < 9 && this.player.holdingLantern && !this.nights.active) {
+      this.toggleLantern();
+      const lp = this.player.position;
+      this.effects.dust(lp.x, lp.z, 0.4, 6);
+    }
+    // N4: Hat Balduin nicht angelegt (Stand geladen, Boot schon fort), steht die Kiste mittags am Steg
+    if (before < 12.5 && h >= 12.5 && this.furnishing.orders.some((o) => o.day < this.state.time.day)) this.deliverOrders();
+    // N4: Nach Balduins erstem Besuch erzählt Edda vom Katalog (einmal, sobald Mika im Haus ist)
+    if (this.viewInside && this.state.flags.balduinGetroffen && !this.nights.active) this.funk.once('katalog', T.funk.katalog);
     if (!flags.abendHorde && h >= 19 && h < 20.5 && !this.world.buildings.towers.length) {
       flags.abendHorde = true;
       this.startDialog('abendHorde');
     } else if (!flags.abendHinweis && h >= 20.1 && h < 23 && !this.player.holdingLantern) {
       // Gedanken statt Dialog: halten das Spiel nie an (m3-r1)
       flags.abendHinweis = true;
-      this.hud.say(T.meldungen.abendLaterne, 5);
+      this.funk.say(T.funk.laterne); // N4: über Funk statt als Gedanke mitten im Bild
     } else if (!flags.spaetHinweis && (h >= 23.5 || h < 4) && !this.nights.active && this.horde.alive === 0 && this.clock - this.nights.finishedAt > 8) {
       flags.spaetHinweis = true;
-      this.hud.say(T.meldungen.spaet, 4);
+      this.funk.say(T.funk.spaet);
     } else if (!flags.ruheHinweis && h >= 12.5 && h < 16.5 && this.horde.alive === 0) {
       // Langer Nachmittag: einmal daran erinnern, dass man die Zeit vorspulen kann (m3-r2)
       flags.ruheHinweis = true;
-      this.hud.say(T.meldungen.ruheHinweis, 6);
+      this.funk.say(T.funk.ruhe);
     }
   }
 
@@ -2878,8 +2963,12 @@ export class Game {
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
     if (playing) this.buildbar.draw(ui);
+    if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda unten rechts über der Bauleiste
+    else this.funk.rect = null;
     if (playing) this.builder.drawGhostLabel(ui); // M26: über der Tafel der Bauleiste
     this.crafting.draw(ui);
+    if (this.mode === 'katalog') this.catalog.draw(ui); // N4
+    if (this.mode === 'lieferung') this.deliveryCard.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
     if (this.mode === 'abspann') this.autumn.drawCredits(ui);
     this.perkChoice.draw(ui);
@@ -2889,6 +2978,7 @@ export class Game {
     // kommt die Horde« lag auf dem Nordweg)
     let toastY = this.hud.toastTop();
     if (this.crafting.isOpen) toastY = this.crafting.bottom(ui);
+    else if (this.catalog.isOpen) toastY = this.catalog.bottom(ui);
     else if (this.mapView.isOpen) toastY = this.mapView.bottom(ui);
     else if (this.perkChoice.isOpen) toastY = this.perkChoice.bottom(ui);
     else if (this.mode === 'report' && this.report.isOpen) toastY = this.report.bottom(ui);
@@ -3196,6 +3286,12 @@ export class Game {
           boot: step(game.trader.boat.root),
         };
       },
+      // N4: Edda über Funk, Balduins Katalog, Lieferung
+      funk: () => {
+        const f = game.funk;
+        return { current: f.current ? { text: f.current.text, key: f.current.key, t: f.current.t } : null, queue: f.queue.map((q) => q.key), said: f.said, rect: f.rect ? { ...f.rect } : null, ui: { w: game.ui.width, h: game.ui.height } };
+      },
+      catalog: () => ({ open: game.catalog.isOpen, page: game.catalog.page, focus: game.catalog.focus, items: game.catalog.items(), orders: game.furnishing.orders.map((o) => ({ ...o })), owned: [...game.furnishing.owned], mode: game.mode, card: game.deliveryCard.isOpen ? game.deliveryCard.items[game.deliveryCard.k] : null }),
       /** Innenraum (M11): Eingang, Tür nach draußen, Grenzen, Räume; drinnen? */
       interior: () => {
         const i = game.world.interior;

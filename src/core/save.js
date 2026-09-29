@@ -80,6 +80,17 @@ const MIGRATIONS = {
   // beginnen frühestens morgen – ein alter Stand verpasst keinen, und keiner steht plötzlich da.
   // v21 -> v22: M28 (Kartenabend). Noch kein Abend gespielt, die Rückseite »Herbstlaub«.
   21: (data) => ({ ...data, version: 22, cards: newCardState() }),
+  // v22 -> v23: N4 (Probespiel). Noch nichts bei Balduin bestellt; das Haus ist größer
+  // geworden – wer drinnen gespeichert hat, steht jetzt hinter der Haustür.
+  22: (data) => {
+    const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
+    return {
+      ...data,
+      version: 23,
+      world: { ...(data.world || {}), orders: [] },
+      player: inside ? { ...(data.player || {}), x: INTERIOR_ENTRY.x, z: INTERIOR_ENTRY.z, facing: Math.PI } : data.player,
+    };
+  },
   20: (data) => ({ ...data, version: 21, guests: { plan: arrivalPlan((data.world?.mapSeed ?? 0) >>> 0, WANDERER_ORDER, (data.time?.day || 1) + 1) } }),
   19: (data) => ({ ...data, version: 20, book: { stars: {}, deeds: {}, kinds: {}, called: 0 } }),
   18: (data) => ({ ...data, version: 19, autumn: { frost: null, mode: 'herbst', credits: false } }),

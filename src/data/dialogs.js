@@ -27,6 +27,7 @@ export const SPRECHER = {
   clara: { name: 'Clara', portrait: 'clara' },
   lotte: { name: 'Lotte', portrait: 'lotte' },
   greta: { name: 'Greta', portrait: 'greta' },
+  edda: { name: 'Edda', portrait: 'edda' }, // N4: nur über Funk, als altes Foto
 };
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
@@ -440,7 +441,36 @@ export const DIALOGE = {
     },
   ],
 
-  radio: (state) =>
+  // N4: Das Funkgerät in der Stube – Balduins Katalog, Edda oder das Radio
+  radio: (state) => [
+    {
+      s: 'mika',
+      t: 'Das Funkgerät. Wen rufe ich?',
+      antworten: [
+        ...(state.flags?.balduinGetroffen ? [{ t: 'Balduin – den Katalog', aktion: 'katalog' }] : []),
+        { t: 'Edda …?', aktion: 'edda' },
+        { t: 'Radio hören', aktion: 'radioHoeren' },
+        { t: 'Niemanden.', standard: true },
+      ],
+    },
+  ],
+  // N4: Edda meldet sich – mal knapp, mal mit einem Stück ihrer Geschichte
+  eddaFunk: (state) => [
+    { s: 'mika', t: 'Edda? Bist du da?' },
+    pick(
+      [
+        { s: 'edda', t: 'Ich bin immer da, Mika. Nur nicht immer am Funkgerät. Ist das Feuer an?' },
+        { s: 'edda', t: 'Die Holzlände hat mein Großvater gebaut. Den Steg, die Hütte, das Tor. Ich hab dort Laufen gelernt.' },
+        { s: 'edda', t: 'Wo ich bin? Irgendwo, wo man den See sehen kann. Mehr sag ich noch nicht.' },
+        { s: 'edda', t: 'Der Moder hört auf Licht und Wärme. Merk dir das. Es wird wichtig.' },
+        { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
+        { s: 'edda', t: 'Krrz … schlechter Empfang heute. Das liegt am Wetter. Oder am Moder. Oder an mir.' },
+        { s: 'edda', t: 'Radio Stillwald? … So. Dann hat also doch jemand zugehört.' },
+      ],
+      state.time.day
+    ),
+  ],
+  radioHoeren: (state) =>
     state.flags.radioGehoert
       ? [
           { s: 'radio', t: '…krrrzzz… …pssshhh…' },

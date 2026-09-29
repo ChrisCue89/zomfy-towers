@@ -1170,6 +1170,75 @@ function wandererParts32(id) {
   }
 }
 
+// --- N4: Edda ------------------------------------------------------------------------
+// Die frühere Herrin der Holzlände spricht über das alte Funkgerät zu Mika. Man kennt
+// sie nur von einem Foto (sepia, im Hinweis-Feld unten rechts); erst im Netzwerk
+// (M32) steht sie selbst in der Bucht. Merkmale: silberner Zopfkranz, dunkelgrüner
+// Strickumhang, Bernsteinbrosche, alte Kopfhörer um den Hals.
+export const EDDA = {
+  skin: P.h3,
+  skinShade: P.h2,
+  cheek: P.a1,
+  eyes: P.n1,
+  brow: P.s8,
+  hair: P.s9,
+  hairDark: P.s7,
+  shawl: P.t2,
+  shawlDark: P.t1,
+  shawlLight: P.t3,
+  blouse: P.s9,
+  brooch: P.f6,
+  broochDark: P.f4,
+  phones: P.n2,
+  phonesLight: P.s5,
+  earring: P.f6,
+  skirt: P.n2,
+  skirtDark: P.n1,
+  shoes: P.e1,
+};
+
+function eddaHead32(s) {
+  const m = baseHead32(s);
+  // Silberner Zopfkranz rund um den Kopf, Strähnen schräg geflochten
+  const crown = (x, y, z) => Math.hypot(Math.hypot(x + 0.5, (z + 2.5) * 1.12) - 11.2, (y - 42.5) * 1.35) - 2.1;
+  sculpt(m, crown, -15, 39, -16, 14, 46, 10, (x, y, z) => {
+    const a = Math.atan2(z + 2.5, x + 0.5);
+    const strand = Math.floor((a / Math.PI) * 14 + (y - 42) * 0.8);
+    return ((strand % 2) + 2) % 2 ? s.hair : s.hairDark;
+  });
+  // Kleine goldene Ohrringe
+  m.set(-14, 31, -1, s.earring).set(13, 31, -1, s.earring);
+  return m;
+}
+
+function eddaTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    if (front && x >= -3 && x <= 2 && y >= 22) return y === 22 ? s.shawlDark : s.blouse; // Bluse im Ausschnitt
+    if (front && (x + y) % 5 === 0) return s.shawlLight; // Strickmuster
+    return n.y < -0.4 || n.z < -0.6 ? s.shawlDark : s.shawl;
+  });
+  sculptCollar(m, s.blouse, { r: 1.4 });
+  // Brosche mit Bernstein
+  for (const [x, y, c] of [[-1, 21, s.broochDark], [0, 21, s.broochDark], [-2, 20, s.broochDark], [-1, 20, s.brooch], [0, 20, s.brooch], [1, 20, s.broochDark], [-1, 19, s.broochDark], [0, 19, s.broochDark]]) onChest(m, x, y, 1, c);
+  onChest(m, -1, 20, 2, P.f7);
+  // Alte Kopfhörer um den Hals: zwei Muscheln auf den Schultern, der Bügel hinten
+  for (const side of [-1, 1]) sculpt(m, blob(-0.5 + side * 8, 26.5, 4.5, 2.6, 2.6, 1.8), -13, 23, 1, 12, 30, 8, (x, y, z, n) => (n.z > 0.6 ? s.phonesLight : s.phones));
+  return m;
+}
+
+/** Edda im Maß 1/32 (Porträt jetzt, ganze Figur ab M32); `s` erlaubt eine andere Palette (das alte Foto). */
+export function eddaParts32(s = EDDA) {
+  return {
+    skin: s.skin,
+    head: eddaHead32(s),
+    faces: faceSet32(s),
+    lids: lids32(s),
+    torso: eddaTorso32(s),
+    arm: baseArm32({ sleeve: s.shawl, sleeveDark: s.shawlDark, cuff: s.blouse, skin: s.skin, skinShade: s.skinShade }),
+    leg: baseLeg32({ shoe: s.shoes, shoeLight: P.e2, low: s.skirtDark, high: { light: s.skirt, dark: s.skirtDark }, top: s.skirt }),
+  };
+}
+
 /** Schlafsack am Gästeplatz (M27): Unterlage, gesteppter Sack, Kissen, karierte Decke, Blechbecher. */
 export function bedrollModel() {
   const m = new VoxelModel();

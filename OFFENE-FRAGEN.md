@@ -1972,6 +1972,53 @@ Kamera blickt Mika über die Schulter) Tisch und Gesicht des Gegenübers – dan
 man keinen Tick. Balduins Besuch ist morgens, also spielt er dort, wo
 er ist. Hildes Erklärung hängt nicht daran, ob man zufällig mit ihr spielt.
 
+### 180. Wer erklärt das Spiel, und wer ist Edda? (N4)
+**Entscheidung:** Hinweise und Erklärungen spricht **Edda** über Funk, unten
+rechts im Comic-Feld – nie mehr in der Bildmitte und nie als Dialog, der das Spiel
+anhält. Edda (um die siebzig) ist die Enkelin dessen, der die Holzlände gebaut hat,
+und hat bis vor drei Herbsten hier gewohnt. Als der Moder aufblühte, konnte sie die
+Nächte allein nicht halten; Balduin hat sie mit dem Boot geholt. Seitdem lebt sie
+auf der Leuchtturminsel im Nebel, sieht nachts Mikas Licht in der Bucht (»Ich bin
+näher, als du denkst«) und ist die Stimme von **Radio Stillwald**, die in M15 »Der
+alte Mast am Steg …« sagte. Das Funkgerät an Mikas Gürtel war ihres. Sie kennt
+Balduin gut (»Er schuldet mir noch einen Tanz«) und weiß, was er mit den Teilen
+macht – sagt es aber nicht. Nach der Frostnacht: »Jetzt kann ich bald nach Hause
+kommen.« Im **Wiedersehen (M32)** legt sie mit Balduin am Steg an.
+**Warum:** Ein Mensch mit Foto und Stimme erklärt freundlicher als ein Kasten, und
+eine Frage (»Wer ist sie?«) trägt über den ganzen Herbst. Sie fügt sich in die
+Geschichte, ohne etwas zu verbiegen: Die Stimme im Radio, der Kamin, »der schon
+immer nach links zieht«, und Balduins Geheimnis bekommen einen Menschen. Im
+Spiel bleibt es bei Andeutungen, bis M32 sie auflöst.
+
+### 181. Wie kommen Möbel ins Haus? (N4)
+**Entscheidung:** Über **Balduins Katalog**: Das Funkgerät in der Stube erreicht
+sein Boot. Jede Seite ist ein Raum und öffnet sich mit dessen Ausbaustufe; jedes
+Stück gibt es einmal, zu einem festen Platz, bezahlt in Zombieteilen (6–24), mit
+großem Foto aus dem Voxelmodell. Balduin bringt es am nächsten Morgen, eine
+Lieferkarte zeigt es groß. Höchstens vier Stücke sind gleichzeitig unterwegs.
+Der Reiter »Einrichten« behält Zelte, Hochsitze und Außenbauten.
+**Warum:** Möbel aus der Bauleiste kosteten Holz, Stein und Stoff und standen
+sofort da – ohne Vorfreude. Bestellen und einen Morgen warten macht aus jedem Stück ein kleines
+Ereignis und gibt den Zombieteilen einen zweiten, friedlichen Zweck – Balduins
+Besuch wird wichtiger, ohne die Nacht zu berühren (Möbel bringen nur
+Gemütlichkeit, nie Kampfkraft).
+
+### 182. Wie groß ist das Haus innen? (N4)
+**Entscheidung:** 6,75 m tief und je Raum anderthalbmal so breit wie in M11 (die
+Stube 9,7 m, die Durchgänge 2 m). Die Möbel behalten ihre Größe. Stände, die
+drinnen gespeichert sind, wachen an der Haustür auf.
+**Warum:** Bei 160 px/m und einer Figur mit Laterne und Werkzeug war jede Ecke
+zugestellt (»man stößt sich an allem«). Die neue Stube füllt das Bild drinnen
+fast ganz und lässt Platz für den Katalog.
+
+### 183. Wo trägt Mika Werkzeug und Waffe? (N4)
+**Entscheidung:** Auf dem Rücken, schräg über der Schulter. Gezogen wird beim
+Benutzen (Schlag, Fällen, Abbauen), weggesteckt 2,6 s danach – außer, ein
+Schlurfer ist näher als 5 m. Die Laterne brennt nur nach F und wird um 07:30 von
+selbst gelöscht, außer in einer laufenden Nacht.
+**Warum:** Ständig erhobene Laterne und Axt wirkten gehetzt; das Ziehen macht
+jeden Einsatz zu einer kleinen Geste, und die Silhouette bleibt am Tag ruhig.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

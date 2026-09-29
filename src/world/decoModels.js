@@ -33,9 +33,12 @@ export function buildRainBarrel(seed) {
 }
 
 /**
- * Gerippter Kürbis (M13g, 1/32 m): zehn Rippen mit feinen dunklen Furchen,
- * jede Rippe zur Mitte heller, oben eine Mulde um den Stiel, Stiel mit
- * Rillen, ein geädertes Blatt und eine Ranke. size ~ 0.7 (klein) … 1.2 (groß).
+ * Gerippter Kürbis (M13g, 1/32 m): zehn Rippen mit feinen Furchen, jede Rippe zur
+ * Mitte heller, oben eine Mulde um den Stiel, ein frischer grüner Stiel mit Rillen,
+ * ein geädertes Blatt und eine Ranke. size ~ 0.7 (klein) … 1.2 (groß).
+ * N4 (Probespiel 29.09.): frisch statt vergammelt – kräftiges Orange, schmale
+ * Furchen in hellem Rotorange statt breiter dunkelroter Streifen, keine dunklen
+ * Flecken mehr, dafür ein wachsiger Glanz auf den Rippen.
  */
 export function buildPumpkin(seed, size = 1) {
   const m = new VoxelModel();
@@ -43,33 +46,34 @@ export function buildPumpkin(seed, size = 1) {
   const rx = 6.8 * size + 1.2;
   const ry = 5.2 * size + 1.0;
   const rz = rx * 0.92;
+  const ramp = [P.f3, P.f4, P.f4, P.f5, P.f6, P.f7];
   m.ellipsoid(0, ry, 0, rx, ry, rz, (x, y, z, dx, dy) => {
     const a = Math.atan2(z + 0.5, x + 0.5);
     const ph = ((a / (Math.PI * 2)) * 10 + 10.25) % 1;
     const edge = Math.min(ph, 1 - ph); // 0 an der Furche, 0,5 in der Rippenmitte
     const radial = Math.hypot(x + 0.5, z + 0.5) / rx;
-    if (dy > 0.8 && radial < 0.3) return P.f3; // Mulde um den Stiel
-    if (edge < 0.07 * (1 + (1 - Math.abs(dy)))) return dy > 0.6 ? P.f3 : P.f2; // Furche
-    let k = dy < -0.7 ? 2 : dy < -0.35 ? 3 : 4;
-    if (edge > 0.3 && dy > -0.2) k += 1; // Rippenmitte glänzt
+    if (dy > 0.8 && radial < 0.3) return P.f4; // Mulde um den Stiel
+    if (edge < 0.04 * (1 + (1 - Math.abs(dy)))) return dy > 0.4 ? P.f4 : P.f3; // schmale Furche
+    let k = dy < -0.75 ? 0 : dy < -0.35 ? 1 : 2;
+    if (edge > 0.28 && dy > -0.3) k += 1; // Rippenmitte glänzt
     if (x + 0.5 < -rx * 0.35 && dy > 0.1 && edge > 0.2) k += 1; // Lichtseite (Westen)
-    if (hash3(x >> 1, y >> 1, z >> 1, seed) < 0.05) k -= 1;
-    return [P.f2, P.f2, P.f3, P.f3, P.f4, P.f5, P.f6][Math.max(0, Math.min(6, k))];
+    if (dy > 0.45 && edge > 0.36 && hash3(x >> 1, y >> 1, z >> 1, seed) < 0.3) k += 1; // wachsiger Glanz oben
+    return ramp[Math.max(0, Math.min(ramp.length - 1, k))];
   });
-  // Stiel mit Rillen, leicht gebogen
+  // Frischer Stiel mit Rillen, leicht gebogen, die Spitze etwas angetrocknet
   const top = Math.ceil(ry * 2);
-  m.box(-1, top - 2, -1, 1, top + 1, 1, (x, y, z) => ((x + z) % 2 ? P.g3 : P.e3));
-  m.box(0, top + 2, -1, 1, top + 3, 0, P.e3).set(2, top + 3, -1, P.e2).set(2, top + 4, -1, P.e2);
-  // Blatt mit Ader und Ranke
+  m.box(-1, top - 2, -1, 1, top + 1, 1, (x, y, z) => (y === top + 1 ? P.g6 : (x + z) % 2 ? P.g5 : P.g4));
+  m.box(0, top + 2, -1, 1, top + 3, 0, P.g4).set(2, top + 3, -1, P.e6).set(2, top + 4, -1, P.e6);
+  // Blatt mit heller Ader und Ranke
   if (rng.chance(0.75)) {
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 5; j++) {
         if ((i === 0 || i === 5) && (j === 0 || j === 4)) continue;
-        m.set(-3 - i, top - 2 - Math.floor(i * 0.8), 1 + j, j === 2 ? P.g6 : i + j < 4 ? P.g5 : P.g4);
+        m.set(-3 - i, top - 2 - Math.floor(i * 0.8), 1 + j, j === 2 ? P.g8 : i + j < 4 ? P.g7 : P.g6);
       }
     }
   }
-  for (const [x, y, z] of [[2, 0, -2], [3, 0, -2], [4, -1, -3], [5, -1, -3], [5, -2, -2], [4, -2, -1]]) m.set(x, top - 2 + y, z, P.g3);
+  for (const [x, y, z] of [[2, 0, -2], [3, 0, -2], [4, -1, -3], [5, -1, -3], [5, -2, -2], [4, -2, -1]]) m.set(x, top - 2 + y, z, P.g5);
   return m;
 }
 
@@ -105,7 +109,7 @@ export function buildJackOLantern(seed) {
       if (z <= -24) continue;
       m.set(x, y, z, null);
       glow.set(x, y, z, 0xffffff);
-      m.set(x, y, z - 1, P.f1); // dahinter das dunkle Innere
+      m.set(x, y, z - 1, P.e1); // dahinter das dunkle Innere (N4: dunkelbraun statt faulig rot)
       // helle Schnittkante: Nachbarn in der Außenhaut
       for (const [dx, dy] of [[-1, 0], [1, 0], [0, 1], [0, -1]]) {
         const ch = face[r - dy] && face[r - dy][i + dx];

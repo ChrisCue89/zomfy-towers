@@ -143,6 +143,10 @@ gilt bis auf Weiteres:
 - **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, Schlurfer, Turm, Loot)
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
   und im Maß 1/32 bauen (Natur 1/16).
+- **Die Bildmitte gehört dem Spiel (N4):** Hinweise und Erklärungen spricht
+  Edda über Funk unten rechts (`game.funk.say`, einmalig `funk.once(flag,
+  text)`), nie ein Kasten in der Mitte und nie ein Dialog; Meldungen
+  (`hud.toast`) stehen rechtsbündig unter Vorrat und Nachtplan.
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
   `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
   Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
@@ -191,7 +195,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Schlurferkunde, Turmalbum, M25),
                       survivors (Überlebende:
                       Ankunft, Gespräche, Zelte, Aufträge, Fähigkeiten,
-                      Funkturm), furnishing (Möbel, Gemütlichkeit), trader
+                      Funkturm), furnishing (Möbel, Gemütlichkeit,
+                      Bestellungen und Lieferung, N4), trader
                       (Balduin: Fahrplan aus der Uhrzeit, Einfahrt mit
                       Leine, Stand am Steg, Gesten, Handel über das
                       Werkbank-Fenster),
@@ -265,7 +270,9 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), cardTable
                       (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
-                      (Startbild, N2), title (Titelbild, Name und Aussehen)
+                      (Startbild, N2), title (Titelbild, Name und Aussehen),
+                      funk (Edda über Funk: Comic-Feld unten rechts, N4),
+                      catalog (Balduins Katalog und Lieferkarte, N4)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung, Turmteile,
                       `towerStatsOf`), zombies,
@@ -296,7 +303,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Ort, Tagesplatz; Ankunftsplan aus dem Startwert,
                       Schlafplätze, M27),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
-                      furniture (Möbel, Gemütlichkeit), looks (Aussehen der
+                      furniture (Möbel je Raum, Preise in Zombieteilen,
+                      Gemütlichkeit, N4), looks (Aussehen der
                       Hauptfigur, erlaubte Namen), weather (Wetter je Tag aus
                       Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
@@ -314,7 +322,8 @@ Grundprinzipien:
 - **Zustand ist Daten.** Alles Gespeicherte liegt im Zustandsobjekt
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
-  `report` (Morgenbericht), `perk` (Perk-Wahl), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
+  `lieferung` (Lieferkarte, N4), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -552,6 +561,22 @@ Grundprinzipien:
   `state.time.minute` ab 06:00. Einsätze
   auf dem Kaminsims (`world.refreshStakes`). Stile, Ticks und Einsätze in
   `data/cards.js`; `node tools/karten.mjs` prüft Fairness und Ticks.
+- **Edda und der Katalog (N4, `ui/funk.js`, `ui/catalog.js`):** `Funk` hält
+  eine Warteschlange (höchstens fünf), tippt die laufende Zeile in eine
+  Sprechblase neben Eddas Foto (`eddaPortrait` in `portrait.js`) und liegt über
+  den Reitern der Bauleiste; ein Klick tippt fertig bzw. schließt (vor dem
+  Builder ausgewertet, `pointerFree` schließt das Feld aus). `funk.once` merkt
+  sich Erklärungen in `state.flags` (`funk_…`). Das Funkgerät in der Stube ist
+  ein Menü (Katalog nach Balduins erstem Besuch, Edda, Radio). Der Katalog zeigt
+  je Raum eine Seite (`CATALOG_ROOMS`, `ROOM_LEVEL` in `data/furniture.js`),
+  Fotos baut `itemPicture` aus dem Möbelmodell (einmal, dann gemerkt).
+  `furnishing.order` bezahlt und merkt die Bestellung (`state.world.orders`),
+  `furnishing.deliver` stellt beim Anlegen Balduins auf (`game.deliverOrders`,
+  mittags ohne Boot); die Lieferkarte öffnet sich erst, wenn kein Schlurfer
+  näher als 10 m ist und keine Nacht läuft. Feste Plätze der Stube stehen in
+  `WOHN` (`interior.js`) – Möbelmodelle rechnen von dort aus. Werkzeug und Waffe
+  hängen auf dem Rücken (`character.backTools`, gleiche Geometrie wie in der
+  Hand); `player.keepDrawn(s)` hält sie gezogen (Schlurfer in 5 m).
 - **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
   { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
@@ -573,6 +598,9 @@ Grundprinzipien:
   Übergang aus (`world.passageAt`, `game.passage`). Kamin- und Tischlicht
   stehen fest im Innenraum. Neue Räume: `ROOMS`, `ROOM_BUILDERS`,
   `ROOM_COLLIDERS`, `ROOM_INTERACTIONS`, `ROOM_POOLS` in `interior.js`.
+  Seit N4 ist das Haus größer (6,75 m tief, die Stube 9,7 m breit); ältere
+  Stände, die drinnen gespeichert sind, wachen an der Haustür auf (Migration
+  v22 → v23).
 
 ### Leistung – bewährte Kniffe
 
@@ -808,7 +836,14 @@ Grundprinzipien:
    gewonnene Partien bringen Berts Grinsekürbis auf den Kaminsims und eine
    Wettschuld am Morgen, nur ein Abend je Tag, Menschenkunde im Herbstbuch, bei
    Regen am Kamin, Speichern v22, Migration v21 → v22 (Bilder: kartenabend,
-   kartentisch, kartensieg, kartenabend-kamin, menschenkunde).
+   kartentisch, kartensieg, kartenabend-kamin, menschenkunde); ab N4 (Abschnitt
+   `probespiel`): Edda spricht unten rechts im Funk-Feld, ein echter Klick tippt
+   fertig und schließt, die Laterne geht um halb acht aus, Werkzeug auf dem
+   Rücken und beim Schlag in der Hand, die Stube ist groß genug (Mika läuft von
+   der Tür vier Meter geradeaus), Funkgerät → Katalog mit echten Tasten
+   (Standuhr bestellen, D blättert, Esc), am nächsten Morgen liefert Balduin und
+   die Lieferkarte schließt mit E, Speichern v23 mit Bestellung, Migration
+   v22 → v23 (Bilder: funk, stube-gross, katalog, lieferung).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -928,7 +963,9 @@ Menschen, freie Plätze, Schlafsäcke, Sichtbarkeit und wer gerade fortgeht,
 Kartenstand, laufenden Abend (Stand, Partie, wer zieht), Mikas Tischansicht,
 die Zeile im Bild und wer warum nicht spielen kann, `cardBegin(id)` lädt ein,
 `cardFinish(sieger)` beendet die laufende Partie, `cardClose(aufgeben)` steht
-vom Tisch auf, `cardAiMove()` zeigt den Zug, den die Regel-KI für Mika wählen würde.
+vom Tisch auf, `cardAiMove()` zeigt den Zug, den die Regel-KI für Mika wählen würde; ab N4
+zeigt `funk()` laufende Zeile, Warteschlange und Lage des Funk-Felds,
+`catalog()` Seite, Auswahl, Stücke, Bestellungen und die offene Lieferkarte.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

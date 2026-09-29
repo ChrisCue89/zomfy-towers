@@ -20,6 +20,13 @@ const SLIDE_TURN = 1.15; // Richtung des Ausweichschritts (Bogenmaß zur Wunschr
  */
 const CLIMB = { speed: 0.45, lift: 0.28 };
 const MOVE = { climb: true };
+/**
+ * N4 (Probespiel 29.09.): Werkzeug und Waffe hängen auf dem Rücken. Beim Benutzen
+ * zieht Mika sie (der Schwung holt ohnehin über die Schulter aus), danach bleiben
+ * sie noch `hold` Sekunden in der Hand und wandern mit einem Griff über die Schulter
+ * (`sheath` Sekunden) zurück. Im Kampf hält game.js sie gezogen (keepDrawn).
+ */
+export const TOOL_CARRY = { hold: 2.6, sheath: 0.32 };
 
 function easeOut(t) {
   return 1 - (1 - t) * (1 - t);
@@ -68,7 +75,8 @@ export class Player {
     this.holdingLantern = false;
     this.lanternLit = false;
     this.lanternSwing = 0;
-    this.heldTool = null; // Werkzeug in der rechten Hand (aus der Schnellleiste)
+    this.heldTool = null; // Werkzeug aus der Schnellleiste (N4: auf dem Rücken, gezogen beim Benutzen)
+    this.drawnT = 0; // N4: so lange bleibt das Werkzeug noch in der Hand (s)
     this.speedFactor = 1; // Aufwertung »Tempo«
     this.action = null;
     this.swingReadyAt = 0; // abgebrochenes Ausschwingen: nächster Schlag erst ab hier (this.time)
@@ -128,8 +136,8 @@ export class Player {
     for (const name of ['legL', 'legR', 'torso', 'head', 'armL', 'armR']) {
       const oldMeshes = [];
       const newMeshes = [];
-      this.character.parts[name].traverse((o) => o.isMesh && !o.userData.outline && oldMeshes.push(o));
-      fresh.parts[name].traverse((o) => o.isMesh && newMeshes.push(o));
+      this.character.parts[name].traverse((o) => o.isMesh && !o.userData.outline && !o.userData.gear && oldMeshes.push(o));
+      fresh.parts[name].traverse((o) => o.isMesh && !o.userData.gear && newMeshes.push(o));
       oldMeshes.forEach((mesh, k) => {
         const geo = newMeshes[k]?.geometry;
         if (!geo || geo === mesh.geometry) return;
@@ -138,6 +146,16 @@ export class Player {
         for (const child of mesh.children) if (child.userData.outline) child.geometry = geo;
       });
     }
+  }
+
+  /** N4: Werkzeug bzw. Waffe mindestens so lange gezogen lassen (Kampf in der Nähe). */
+  keepDrawn(seconds) {
+    if (this.heldTool) this.drawnT = Math.max(this.drawnT, seconds);
+  }
+
+  /** N4: Ist gerade ein Werkzeug in der Hand (Aktion oder noch nicht weggesteckt)? */
+  get toolDrawn() {
+    return Boolean(this.action?.tool) || (this.drawnT > 0 && Boolean(this.heldTool));
   }
 
   /** Kurzer Gesichtsausdruck (M12), z. B. 'froh' nach einem Fund. */
@@ -376,10 +394,18 @@ export class Player {
     }
 
     // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl). Drinnen
-    // steckt Mika es weg – in der engen Stube ragte die Axt durch die Wand (m12-r1)
+    // steckt Mika es weg – in der engen Stube ragte die Axt durch die Wand (m12-r1).
+    // N4: Sonst hängt es auf dem Rücken und ist nur beim Benutzen und kurz danach
+    // in der Hand; zuletzt greift die Hand über die Schulter und steckt es zurück.
     const indoors = this.world.isInside?.(this.position.x, this.position.z);
-    const shownTool = a ? a.tool : indoors ? null : this.heldTool;
+    if (a?.tool) this.drawnT = TOOL_CARRY.hold;
+    else this.drawnT = Math.max(0, this.drawnT - dt);
+    const carried = indoors ? null : this.heldTool;
+    const shownTool = a ? a.tool : this.drawnT > 0 ? carried : null;
+    const sheathing = !a && shownTool && this.drawnT < TOOL_CARRY.sheath ? 1 - this.drawnT / TOOL_CARRY.sheath : 0;
     for (const [name, mesh] of Object.entries(this.character.tools)) mesh.visible = name === shownTool;
+    const backTool = !shownTool && !this.seated ? carried : null;
+    for (const [name, mesh] of Object.entries(this.character.backTools || {})) mesh.visible = name === backTool;
 
     // Rechter Arm
     if (a && a.kind === 'swing') {
@@ -432,6 +458,12 @@ export class Player {
       p.armR.rotation.x = -1.05;
       p.armR.rotation.z = 0.3;
       if (p.elbowR) p.elbowR.rotation.x = -0.8;
+    } else if (sheathing > 0) {
+      // N4: Wegstecken – die Hand fährt über die Schulter nach hinten
+      const q = easeInOut(Math.min(1, sheathing * 1.4));
+      p.armR.rotation.x = lerp(-0.25, -2.75, q);
+      p.armR.rotation.z = lerp(0.05, -0.25, q);
+      if (p.elbowR) p.elbowR.rotation.x = lerp(-0.45, -1.35, q);
     } else {
       p.armR.rotation.x = (shownTool ? -0.25 : 0) + s * 0.6 * amt;
       p.armR.rotation.z = 0.05 + Math.sin(this.time * 2.1) * 0.03 * idle;
@@ -452,6 +484,7 @@ export class Player {
       if (p.elbowR) p.elbowR.rotation.x = 0;
       if (p.kneeL) p.kneeL.rotation.x = p.kneeR.rotation.x = 0;
       for (const mesh of Object.values(this.character.tools)) mesh.visible = false;
+      for (const mesh of Object.values(this.character.backTools || {})) mesh.visible = false;
     }
 
     // Linker Arm: Laterne oder Schwingen

@@ -1,0 +1,394 @@
+// Balduins Katalog (N4, Probespiel 29.09.): Über das Funkgerät in der Stube bestellt
+// Mika Möbel und Kleinigkeiten, Balduin bringt sie am nächsten Morgen mit dem Boot.
+// Das Fenster sieht aus wie ein Versandkatalog – links die Seiten (ein Raum je Seite)
+// und die Stücke, rechts das gewählte Stück groß wie auf einem Katalogfoto. Dieselben
+// Bilder zeigt die Lieferkarte am Morgen: Was Balduin bringt, sieht man einmal groß.
+
+import { P, hexToCss } from '../render/palette.js';
+import { renderVoxelPortrait } from '../render/portrait.js';
+import { VoxelModel } from '../render/voxel.js';
+import { FURNITURE, FURNITURE_ORDER, CATALOG_ROOMS } from '../data/furniture.js';
+import { FURNITURE_MODELS } from '../world/furnitureModels.js';
+import { T } from '../data/texts.js';
+import { measure, wrap, drawText, LINE_HEIGHT } from './font.js';
+import { drawIcon } from './icons.js';
+
+const OPEN_LOCK = 0.25; // so lange nach dem Öffnen zählt E nicht (das E am Funkgerät)
+const MASH_GAP = 0.18;
+const PIC = { w: 176, h: 132 }; // Fläche des Katalogfotos (UI-Pixel)
+const ROW_H = 13;
+
+const PAPER = hexToCss(P.e9);
+const PAPER_DARK = hexToCss(P.e8);
+const INK = hexToCss(P.n1);
+const INK_SOFT = hexToCss(P.e3);
+const LINE = hexToCss(P.n0);
+const RED = hexToCss(P.r3);
+const RED_DARK = hexToCss(P.r1);
+const WHITE = hexToCss(P.s9);
+const GOLD = hexToCss(P.f6);
+const PHOTO_BG = hexToCss(P.e7);
+
+const pictures = new Map();
+
+/**
+ * Sitzmöbel stehen im Haus seitlich zur Kamera – fürs Katalogfoto werden sie so gedreht,
+ * dass man auf die Sitzfläche schaut (nach Westen bzw. Osten gewandt).
+ */
+const PHOTO_TURN = { sofa: 'west', lesesessel: 'east' };
+/** Stücke, die quer durch den Raum laufen (Ketten, breiter als PHOTO_WIDE), zeigt das Foto als Ausschnitt. */
+const PHOTO_WIDE = 64;
+const PHOTO_CROP = 24;
+
+function photoModel(spec, id) {
+  const model = new VoxelModel();
+  const turn = PHOTO_TURN[id];
+  const put = (x, y, z, c) => {
+    if (turn === 'west') model.set(z, y, -x, c); // Lehne im Osten – nach der Drehung hinten
+    else if (turn === 'east') model.set(-z, y, x, c); // Lehne im Westen – nach der Drehung hinten
+    else model.set(x, y, z, c);
+  };
+  spec.model.forEach(put);
+  if (spec.glow) spec.glow.forEach((x, y, z) => put(x, y, z, P.f6)); // Leuchtendes in warmem Gelb
+  let minX = Infinity;
+  let maxX = -Infinity;
+  model.forEach((x) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+  });
+  if (maxX - minX + 1 <= PHOTO_WIDE) return model;
+  const cut = new VoxelModel();
+  model.forEach((x, y, z, c) => x < minX + PHOTO_CROP && cut.set(x, y, z, c));
+  return cut;
+}
+
+/**
+ * Katalogfoto eines Stücks: das Modell aus furnitureModels.js mit der Projektion der
+ * Porträts, so groß wie es in die Fläche passt (ganze Pixel je Voxel, nie skaliert).
+ */
+export function itemPicture(id) {
+  if (pictures.has(id)) return pictures.get(id);
+  const spec = FURNITURE_MODELS[id]?.();
+  if (!spec) return null;
+  const model = photoModel(spec, id);
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  model.forEach((x, y, z) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+    minZ = Math.min(minZ, z);
+    maxZ = Math.max(maxZ, z);
+  });
+  // Größte Stufe, die passt; hohe, schmale Stücke (Standuhr, Spiegel) nehmen die flachere Draufsicht
+  const scales = [
+    { w: 8, t: 5, f: 6 }, // Kleinkram (Teekanne, Hausschuhe) füllt das Foto
+    { w: 6, t: 4, f: 5 },
+    { w: 5, t: 3, f: 4 },
+    { w: 4, t: 2, f: 3 },
+    { w: 4, t: 1, f: 3 },
+    { w: 3, t: 2, f: 2 },
+    { w: 3, t: 1, f: 2 },
+    { w: 2, t: 1, f: 2 },
+    { w: 2, t: 1, f: 1 },
+    { w: 1, t: 1, f: 1 },
+  ];
+  const fit = scales.find((s) => (maxX - minX + 1) * s.w + 2 <= PIC.w && (maxY - minY + 1) * s.f + (maxZ - minZ + 1) * s.t + 4 <= PIC.h) || scales[scales.length - 1];
+  const size = Math.max(PIC.w, PIC.h);
+  const canvas = renderVoxelPortrait(model, { size, top: 2, ...fit });
+  const used = (maxY - minY + 1) * fit.f + (maxZ - minZ + 1) * fit.t + 4;
+  const pic = { canvas, used };
+  pictures.set(id, pic);
+  return pic;
+}
+
+/** Katalogfoto in einen Rahmen zeichnen: helles Fotopapier, Bild mittig. */
+function drawPhoto(ctx, id, x, y) {
+  ctx.fillStyle = LINE;
+  ctx.fillRect(x - 1, y - 1, PIC.w + 10, PIC.h + 10);
+  ctx.fillStyle = WHITE;
+  ctx.fillRect(x, y, PIC.w + 8, PIC.h + 8);
+  ctx.fillStyle = PHOTO_BG;
+  ctx.fillRect(x + 4, y + 4, PIC.w, PIC.h);
+  // leichte Lichtstufen auf dem Hintergrund (gestuft, nicht weich)
+  ctx.fillStyle = PAPER_DARK;
+  ctx.fillRect(x + 4, y + 4 + PIC.h - 22, PIC.w, 22);
+  const pic = itemPicture(id);
+  if (!pic) return;
+  const used = Math.min(PIC.h, pic.used);
+  const dy = Math.max(0, Math.round((PIC.h - used) / 2));
+  ctx.drawImage(pic.canvas, 0, 0, PIC.w, used, x + 4, y + 4 + dy, PIC.w, used);
+}
+
+export class Catalog {
+  /** @param {import('../core/game.js').Game} game */
+  constructor(game) {
+    this.game = game;
+    this.isOpen = false;
+    this.page = 0;
+    this.focus = 0;
+    this.openT = 0;
+    this.lastPressAt = -Infinity;
+    this.flash = null; // { id, t } – gerade bestellt
+    this.note = null; // { text, t } – warum es nicht geht
+  }
+
+  open() {
+    this.isOpen = true;
+    this.openT = 0;
+    this.note = null;
+    this.flash = null;
+    const f = this.game.furnishing;
+    // Aufschlagen auf der ersten Seite, die noch etwas Bestellbares hat
+    const first = CATALOG_ROOMS.findIndex((r) => this.items(r).some((id) => f.orderState(id) === 'ok'));
+    this.page = first >= 0 ? first : 0;
+    this.focus = Math.max(0, this.items().findIndex((id) => f.orderState(id) === 'ok'));
+  }
+
+  close() {
+    this.isOpen = false;
+  }
+
+  /** Die Stücke einer Seite. */
+  items(room = CATALOG_ROOMS[this.page]) {
+    return FURNITURE_ORDER.filter((id) => FURNITURE[id].room === room);
+  }
+
+  layout(ui) {
+    const w = 470;
+    const h = 262;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2) - 8;
+    const tabs = [];
+    let tx = x + 10;
+    for (const room of CATALOG_ROOMS) {
+      const tw = measure(T.katalog.seiten[room]) + 10;
+      tabs.push({ room, rect: { x: tx, y: y + 40, w: tw, h: 14 } });
+      tx += tw + 3;
+    }
+    const rows = this.items().map((id, k) => ({ id, rect: { x: x + 10, y: y + 60 + k * ROW_H, w: 250, h: ROW_H - 1 } }));
+    return { x, y, w, h, tabs, rows, photo: { x: x + w - PIC.w - 18, y: y + 38 } };
+  }
+
+  /** Unterkante des Fensters (Meldungen erscheinen darunter). */
+  bottom(ui) {
+    const L = this.layout(ui);
+    return L.y + L.h + 4;
+  }
+
+  update(input, dt = 0) {
+    if (!this.isOpen) return;
+    this.openT += dt;
+    if (this.flash && (this.flash.t -= dt) <= 0) this.flash = null;
+    if (this.note && (this.note.t -= dt) <= 0) this.note = null;
+    const ui = this.game.ui;
+    let L = this.layout(ui);
+    if (input.pressed('menu')) {
+      this.game.closeCatalog();
+      return;
+    }
+    // Seiten: A/D oder Klick auf einen Reiter
+    const tabHit = L.tabs.findIndex((t) => ui.hover(t.rect.x, t.rect.y, t.rect.w, t.rect.h));
+    let turn = 0;
+    if (input.pressed('left')) turn = -1;
+    if (input.pressed('right')) turn = 1;
+    if (turn || (tabHit >= 0 && input.mouse.clicked)) {
+      this.page = tabHit >= 0 && input.mouse.clicked ? tabHit : (this.page + turn + CATALOG_ROOMS.length) % CATALOG_ROOMS.length;
+      this.focus = 0;
+      if (tabHit >= 0 && input.mouse.clicked) input.consumeClick();
+      this.game.sound.play('karte');
+      L = this.layout(ui);
+    }
+    const hovered = L.rows.findIndex((r) => ui.hover(r.rect.x, r.rect.y, r.rect.w, r.rect.h));
+    if (hovered >= 0 && input.mouse.moved) this.focus = hovered;
+    const n = L.rows.length;
+    if (input.pressed('up')) this.focus = (this.focus + n - 1) % n;
+    if (input.pressed('down')) this.focus = (this.focus + 1) % n;
+    const clicked = hovered >= 0 && input.mouse.clicked;
+    if (clicked) {
+      input.consumeClick();
+      this.focus = hovered;
+    }
+    const pressed = input.pressed('confirm');
+    const calm = this.openT - this.lastPressAt >= MASH_GAP;
+    if (pressed) this.lastPressAt = this.openT;
+    if (!(pressed || clicked) || this.openT < OPEN_LOCK || (!clicked && !calm)) return;
+    const id = L.rows[this.focus]?.id;
+    if (!id) return;
+    const why = this.game.furnishing.order(id);
+    if (why === 'ok') this.flash = { id, t: 1.2 };
+    else this.note = { text: this.reason(id, why), t: 2.4 };
+  }
+
+  /** Warum ein Stück nicht bestellbar ist – als Satz. */
+  reason(id, state) {
+    const K = T.katalog;
+    const def = FURNITURE[id];
+    if (state === 'imHaus') return K.imHaus;
+    if (state === 'bestellt') return K.bestellt;
+    if (state === 'raum') return K.raumFehlt({ wohnraum: 1, kueche: 2, schlafzimmer: 3, werkstatt: 4, lager: 5 }[def.room]);
+    if (state === 'braucht') return K.braucht('Knopf');
+    if (state === 'voll') return K.voll;
+    return K.zuTeuer;
+  }
+
+  draw(ui) {
+    if (!this.isOpen) return;
+    const L = this.layout(ui);
+    const ctx = ui.ctx;
+    const K = T.katalog;
+    const f = this.game.furnishing;
+    ui.ditherFill?.(0.35);
+    // Papier mit dunkler Kontur und hartem Schatten
+    ctx.fillStyle = LINE;
+    ctx.fillRect(L.x + 3, L.y + 3, L.w, L.h);
+    ctx.fillRect(L.x - 1, L.y - 1, L.w + 2, L.h + 2);
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(L.x, L.y, L.w, L.h);
+    // Kopf: rotes Band mit Titel, darunter der Untertitel und der Vorrat an Zombieteilen
+    ctx.fillStyle = RED;
+    ctx.fillRect(L.x, L.y, L.w, 20);
+    ctx.fillStyle = RED_DARK;
+    ctx.fillRect(L.x, L.y + 20, L.w, 2);
+    drawText(ctx, K.titel, L.x + 10, L.y + 4, WHITE);
+    const have = this.game.state.inventory.teile || 0;
+    const hv = String(have);
+    drawIcon(ctx, 'teile', L.x + L.w - 22 - measure(hv), L.y + 5);
+    drawText(ctx, hv, L.x + L.w - 8 - measure(hv), L.y + 4, WHITE);
+    drawText(ctx, K.untertitel, L.x + 10, L.y + 25, INK_SOFT);
+    // Reiter (Räume)
+    L.tabs.forEach((t, k) => {
+      const on = k === this.page;
+      const r = t.rect;
+      ctx.fillStyle = LINE;
+      ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + (on ? 1 : 2));
+      ctx.fillStyle = on ? PAPER : PAPER_DARK;
+      ctx.fillRect(r.x, r.y, r.w, r.h + (on ? 1 : 0));
+      drawText(ctx, K.seiten[t.room], r.x + 5, r.y + 1, on ? INK : INK_SOFT);
+    });
+    ctx.fillStyle = LINE;
+    ctx.fillRect(L.x + 8, L.y + 55, 256, 1);
+    // Zeilen: Name links, Preis bzw. Zustand rechts
+    L.rows.forEach((row, k) => {
+      const r = row.rect;
+      const st = f.orderState(row.id);
+      const sel = k === this.focus;
+      if (sel) {
+        ctx.fillStyle = PAPER_DARK;
+        ctx.fillRect(r.x - 2, r.y - 1, r.w + 4, r.h + 1);
+        ctx.fillStyle = RED;
+        ctx.fillRect(r.x - 2, r.y - 1, 2, r.h + 1);
+      }
+      const dim = st === 'imHaus' || st === 'raum' || st === 'braucht';
+      drawText(ctx, T.moebel[row.id][0], r.x + 4, r.y, dim ? INK_SOFT : INK);
+      const right = st === 'imHaus' ? K.imHausKurz : st === 'bestellt' ? K.bestelltKurz : String(FURNITURE[row.id].cost.teile);
+      const rw = measure(right);
+      if (st !== 'imHaus' && st !== 'bestellt') drawIcon(ctx, 'teile', r.x + r.w - rw - 14, r.y + 1);
+      drawText(ctx, right, r.x + r.w - rw - 2, r.y, st === 'teuer' ? hexToCss(P.a0) : dim ? INK_SOFT : INK);
+      if (this.flash?.id === row.id && Math.floor(this.flash.t * 10) % 2 === 0) {
+        ctx.fillStyle = GOLD;
+        ctx.fillRect(r.x - 2, r.y + r.h - 1, r.w + 4, 1);
+      }
+    });
+    // Rechts das Katalogfoto mit Name, Beschreibung, Preis und Gemütlichkeit
+    const id = L.rows[this.focus]?.id;
+    if (id) {
+      const ph = L.photo;
+      drawPhoto(ctx, id, ph.x, ph.y);
+      const tx = ph.x;
+      let ty = ph.y + PIC.h + 13;
+      drawText(ctx, T.moebel[id][0], tx, ty, INK);
+      ty += LINE_HEIGHT;
+      for (const line of wrap(T.moebel[id][1], PIC.w + 8)) {
+        drawText(ctx, line, tx, ty, INK_SOFT);
+        ty += LINE_HEIGHT;
+      }
+      const def = FURNITURE[id];
+      drawText(ctx, `${K.preis(def.cost.teile)} · ${K.gemuetlich(def.cozy)}`, tx, ty + 2, INK);
+    }
+    // Fuß: Zustand bzw. Grund, unterwegs, Tasten
+    const st = id ? f.orderState(id) : null;
+    const status = this.note?.text || (st && st !== 'ok' && st !== 'teuer' ? this.reason(id, st) : null);
+    const out = f.orders.length;
+    const foot = L.y + L.h - 16;
+    if (status) drawText(ctx, status, L.x + 10, foot - LINE_HEIGHT - 2, this.note ? hexToCss(P.a0) : INK_SOFT);
+    else if (out) drawText(ctx, K.unterwegs(out), L.x + 10, foot - LINE_HEIGHT - 2, INK_SOFT);
+    ctx.fillStyle = PAPER_DARK;
+    ctx.fillRect(L.x, foot - 2, L.w, 18);
+    drawText(ctx, K.hinweis, L.x + 10, foot + 1, INK_SOFT);
+  }
+}
+
+/**
+ * Lieferkarte (N4): Was Balduin bringt (und später, was die Bewohner schenken), einmal
+ * groß wie im Katalog – mit Namen und dem Raum, in dem es jetzt steht. E blättert weiter.
+ */
+export class DeliveryCard {
+  constructor(game) {
+    this.game = game;
+    this.isOpen = false;
+    this.items = [];
+    this.k = 0;
+    this.openT = 0;
+  }
+
+  open(items) {
+    this.items = items;
+    this.k = 0;
+    this.openT = 0;
+    this.isOpen = items.length > 0;
+  }
+
+  /** true, wenn die letzte Karte weggeklickt ist. */
+  update(input, dt = 0) {
+    if (!this.isOpen) return true;
+    this.openT += dt;
+    if (this.openT < OPEN_LOCK) return false;
+    if (input.pressed('confirm') || input.mouse.clicked || input.pressed('menu')) {
+      input.consumeClick?.();
+      this.game.sound.play('aufheben');
+      this.k += 1;
+      this.openT = 0;
+      if (this.k >= this.items.length || input.pressed('menu')) {
+        this.isOpen = false;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  draw(ui) {
+    if (!this.isOpen) return;
+    const id = this.items[this.k];
+    const ctx = ui.ctx;
+    const K = T.katalog;
+    const w = PIC.w + 40;
+    const h = PIC.h + 84;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2) - 6;
+    const pop = Math.min(1, this.openT / 0.18);
+    const dy = Math.round((1 - pop) * 10);
+    ui.ditherFill?.(0.35);
+    ctx.fillStyle = LINE;
+    ctx.fillRect(x + 3, y + 3 + dy, w, h);
+    ctx.fillRect(x - 1, y - 1 + dy, w + 2, h + 2);
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(x, y + dy, w, h);
+    ctx.fillStyle = RED;
+    ctx.fillRect(x, y + dy, w, 18);
+    const title = this.items.length > 1 ? `${K.lieferung} · ${this.k + 1}/${this.items.length}` : K.lieferung;
+    drawText(ctx, title, x + Math.round((w - measure(title)) / 2), y + 3 + dy, WHITE);
+    drawPhoto(ctx, id, x + 16, y + 24 + dy);
+    const name = T.moebel[id][0];
+    drawText(ctx, name, x + Math.round((w - measure(name)) / 2), y + PIC.h + 38 + dy, INK);
+    const room = K.steht(FURNITURE[id].room);
+    drawText(ctx, room, x + Math.round((w - measure(room)) / 2), y + PIC.h + 38 + LINE_HEIGHT + dy, INK_SOFT);
+    const hint = this.k + 1 < this.items.length ? K.weiter : K.fertig;
+    drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);
+  }
+}

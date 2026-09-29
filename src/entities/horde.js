@@ -659,6 +659,13 @@ export class Horde {
     this.cb.onBossTelegraph?.(z, kind);
   }
 
+  /** Steht ein Schlurfer näher als r (m)? Ohne Liste, für jeden Schritt (N4: die Waffe bleibt gezogen). */
+  anyNear(x, z, r) {
+    const r2 = r * r;
+    for (const zo of this.list) if (zo.state !== 'dying' && zo.state !== 'enter' && !(zo.y < -0.5) && (zo.x - x) ** 2 + (zo.z - z) ** 2 <= r2) return true;
+    return false;
+  }
+
   inRange(x, z, r) {
     const out = [];
     for (const zo of this.list) if (zo.state !== 'dying' && zo.state !== 'enter' && !(zo.y < -0.5) && (zo.x - x) ** 2 + (zo.z - z) ** 2 <= r * r) out.push(zo); // M22: nicht unter der Erde
