@@ -358,7 +358,11 @@ Grundprinzipien:
   `horde.list` (Zustand, Leben, Position) und werden je Art und Körperteil
   als `InstancedMesh` gezeichnet; ein unsichtbares Gerüst posiert die Teile.
   Werte stehen in `src/data/zombies.js`, `towers.js`, `waves.js` – dort
-  wird balanciert, nicht im Code.
+  wird balanciert, nicht im Code. Je Art zeichnet das Bild höchstens
+  `MAX_PER_TYPE` (180); `horde.room(type)` sagt, wie viele noch dazukommen
+  dürfen – ist eine Art voll, wartet die Warteschlange der Nacht, und Kapseln,
+  Rufe und Pulks bringen nur so viele, wie Platz ist (M25c: nie ein
+  unsichtbarer Schlurfer). Ein Brüter legt höchstens `brood.max` Kapseln.
 - **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
   eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
 - **Das Lager (M17, `data/buildings.js` CAMP_*, RAID, GEAR):** Wall und Tor
@@ -385,7 +389,10 @@ Grundprinzipien:
   Klebekürbis. `horde.reaction` meldet über `onReaction` (Wort mit
   `hud.popWord`, Klang, Notizbuch `state.notes`); dieselbe Reaktion je
   Schlurfer nur alle paar Sekunden. Regen (`ctx.wet`, `ctx.burnFactor`) und
-  Nebel/Wind (`towers.weatherRange`) wirken über das Wetter der Welt.
+  Nebel/Wind (`towers.weatherRange`) wirken über das Wetter der Welt. Eine
+  Betäubung hält am Stück höchstens `STUN.chain` s, danach ist der Schlurfer
+  `STUN.free` s lang nicht zu betäuben (`horde.stun`, M25c) – sonst hielt Dampf
+  eine dichte Horde die ganze Nacht fest.
 - **Baupläne und Fallen (M19):** `state.blueprints` (gewählte Bauarten) und
   `state.blueprintChoice` ({ options, from, extra }); `knowsBuilding` sagt,
   was die Bauleiste zeigt. `game.offerBlueprint(from)` stellt eine Wahl,
@@ -652,7 +659,8 @@ Grundprinzipien:
    Migration v14 → v15 (Bilder: mischturm, werkstattbuch); ab M21 (Abschnitt
    `glanz`, nur der Kern): ein Turm auf Stufe 4 nimmt mit echten Tasten zwei
    Turmteile, ein drittes passt nicht; das Brennglas setzt in Brand; Nacht 3
-   hat einen Champion im Plan, die ersten beiden keinen; ein Champion mit
+   hat einen Champion im Plan, die ersten beiden keinen (auf »Wild« kommt er
+   eine Nacht früher, M25c); ein Champion mit
    Schild zeigt Name und Merkmale, fällt und lässt eine Fundkiste liegen, die
    mit echter Taste aufplatzt; Basteln (drei Hufeisen → ein seltenes Teil);
    Balduins Wundertüte; Speichern v16 (auch ein lebender Champion) und
@@ -664,7 +672,9 @@ Grundprinzipien:
    Moderfalter fliegt über eine Barrikadenreihe, der Gräber buddelt sich
    darunter durch; die Tür des Schildträgers fängt von vorn ab; der
    Lichtfresser löscht eine Fackel; aus der Kapsel des Brüters schlüpfen
-   Schwärmer; der Moosriese zerfällt in drei; eine Nebelwelle bleibt nach dem
+   Schwärmer (höchstens vier Kapseln je Brüter; ist eine Art im Bild voll,
+   wartet die Warteschlange, bis einer fällt, und aus einer Kapsel schlüpft
+   nichts – M25c); der Moosriese zerfällt in drei; eine Nebelwelle bleibt nach dem
    Neuladen eine; die Boss-Musik rechnet offline ohne Übersteuerung (Bilder:
    nebelwelle, boss); ab M23 (Abschnitt `gemeinsam`, nur der Kern): ein
    Hochsitz neben dem Weg, nie darauf, die Taste der Auswahl stellt Juna auf

@@ -16,7 +16,8 @@
 //   flying    fliegt über Barrikaden (Fallen und Flächen am Boden treffen ihn nicht)
 //   digger    buddelt sich unter Barrikaden durch      door  Tür vorn: fängt ab, bis sie bricht
 //   lightproof  Licht schreckt ihn nicht               snuff löscht Lichter im Umkreis (m)
-//   brood     legt Sporenkapseln (alle `every` s, schlüpfen nach `hatch` s: `count` Schwärmer)
+//   brood     legt Sporenkapseln (alle `every` s, schlüpfen nach `hatch` s: `count` Schwärmer,
+//             höchstens `max` Kapseln je Brüter – M25c: sonst ohne Ende in späten Nächten)
 //   steadfast standhaft (M25, das Moderherz): keine Betäubung, kein Rückstoß, kein Locken –
 //             nur Licht macht es müde; bei vielen Türmen stand es sonst still
 
@@ -176,7 +177,7 @@ export const ZOMBIES = {
     hitRate: 0.5,
     scale: 1.2,
     radius: 0.36,
-    brood: { every: 7, hatch: 5, count: 3, hp: 12 },
+    brood: { every: 7, hatch: 5, count: 3, hp: 12, max: 4 },
     loot: { teile: [2, 4], zahnraeder: 0.12 },
     xp: 3,
   },

@@ -11,6 +11,16 @@
 //   brennend  Feuerkürbis, Kürbiswurf, Pechkessel (der Brand selbst)
 //   betäubt   Pfanne, Laternenblitz (die Betäubung selbst)
 
+/**
+ * Betäubung am Stück (M25c): Auch wenn sie immer wieder aufgefrischt wird (Dampf
+ * ringsum, Glocke, Blitz, Pfanne), hält eine Betäubung höchstens `chain` s; danach
+ * schüttelt sich der Schlurfer frei und ist `free` s lang nicht zu betäuben. Sonst
+ * hielt Dampf eine dichte Horde die ganze Nacht fest (Balance-Durchlauf, Nacht 29:
+ * 2400 Betäubungen in drei Sekunden, niemand kam voran, im Morgengrauen floh alles).
+ * Keine einzelne Betäubung ist länger als `chain` (die längste: Dampf, 2,5 s).
+ */
+export const STUN = { chain: 3, free: 2 };
+
 export const STATUS = {
   nass: { time: 4 },
   frostig: { time: 3 },

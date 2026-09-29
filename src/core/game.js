@@ -1426,7 +1426,8 @@ export class Game {
         this.bossStats.healed++;
       }
       z.hp = Math.min(z.maxHp, z.hp + z.maxHp * a.heal * 0.4);
-      for (let k = 0; k < a.spawn; k++) {
+      const hatch = Math.min(a.spawn, this.horde.room('schwaermer')); // M25c: nie unsichtbar
+      for (let k = 0; k < hatch; k++) {
         const ang = (k / a.spawn) * Math.PI * 2;
         const o = this.horde.spawn('schwaermer', { x: z.x + Math.cos(ang) * 0.8, z: z.z + Math.sin(ang) * 0.8, hpFactor: this.nights.plan?.hpFactor || 1 });
         o.state = 'walk';

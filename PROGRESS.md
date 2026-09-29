@@ -5,6 +5,51 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 25 – Nachbesserung 2: Grenzen für dichte Horden ✓
+
+**Anlass:** »Wild« über 30 Nächte war noch nicht vermessen. Dabei fiel Nacht 29
+in beiden Schwierigkeiten aus der Reihe: Ausgewogen 367 Abschüsse, Wild 140 –
+geplant waren rund 730 bzw. 900 Schlurfer.
+
+- **Gefunden** (Nacht 29 aus einem abgelegten Stand nachgespielt):
+  - *Dauerbetäubung:* Sprenger und Feuer machten die dichte Horde nass und
+    brennend, Dampf betäubte jeden in der Menge immer wieder (2400 Betäubungen
+    in drei Sekunden). Niemand kam voran, im Morgengrauen floh alles.
+  - *Brüter ohne Grenze:* 26 zähe Brüter legten Kapseln ohne Ende. Um 05:29
+    lebten 1836 Schlurfer, 1449 davon Schwärmer – über 1200 unsichtbar, weil
+    das Bild je Art nur 180 zeichnet.
+- **Geändert** (OFFENE-FRAGEN 160):
+  - Eine Betäubung hält am Stück höchstens 3 s, danach ist der Schlurfer 2 s
+    lang nicht zu betäuben (`STUN` in `data/reactions.js`; keine einzelne
+    Betäubung ist länger, es kürzt nur das Auffrischen).
+  - Ein Brüter legt höchstens vier Kapseln.
+  - Nie ein unsichtbarer Schlurfer: Ist eine Art im Bild voll, wartet die
+    Warteschlange der Nacht, bis einer fällt; Kapseln, Rufe (Anführer,
+    Moderherz) und die Sporenwolke bringen nur so viele, wie Platz ist
+    (`horde.room`).
+  - »Wild«: Der erste Champion läuft schon in Nacht 2 mit (OFFENE-FRAGEN 118,
+    Nachtrag). Rückte auch die Anzahl je Nacht vor, wurde Nacht 9 mit drei
+    Champions zur Spitze (Durchbruch, Mika bei 4 Leben) – deshalb nur der Anfang.
+- **Ergebnis** (Balance-Durchlauf über 30 Nächte, Bot mit Mika):
+  - Nacht 29: Die Horde erreicht die Barrikaden, höchstens rund 600 leben
+    gleichzeitig, jeder ist zu sehen (vorher 1836, davon über 1200 unsichtbar).
+  - Ausgewogen: 30/30 gehalten, Druck in den Nächten 23, 24 und 26–29 (Nacht
+    24: Mika bei 21 Leben); der einzige Durchbruch ist die Frostnacht – das Herz
+    erstarrt im Morgengrauen mit 43 % Leben (Phase 3).
+  - Wild: 30/30 gehalten; ab Nacht 8 wird es eng (Barrikade angeschlagen, Mika
+    bei 80), ab Nacht 14 Druck in fast jeder Nacht (Nacht 18: Mika bei 17),
+    Durchbrüche in Nacht 28 und in der Frostnacht (das Herz erstarrt mit 57 %).
+    Die Nächte 13–30 sind ohne den frühen Champion gemessen, die ersten zwölf
+    mit ihm nachgemessen.
+- **Prüfung:** Abschnitt `fragen` prüft die Grenzen (vier Kapseln, die
+  Warteschlange wartet bei vollem Bild und holt nach, aus einer Kapsel schlüpft
+  dann nichts), `glanz` den Champion in Nacht 2 auf »Wild«; der Prüfpunkt der
+  Kürbisballiste hält die Reihe jetzt direkt fest statt mit einer Betäubung.
+- **Offen:** »Mehr Sterne« auf »Wild« (OFFENE-FRAGEN 118) ist nicht umgesetzt;
+  die Sterne zählen in allen Stufen gleich.
+
+---
+
 ## Meilenstein 25 – Nachbesserung: späte Nächte und die Frostnacht vermessen ✓
 
 **Anlass:** Die Frostnacht war noch nicht mit dem Balance-Durchlauf vermessen;
@@ -22,7 +67,8 @@ die Gesamtprüfung zeigte dazu drei Mängel im Bild.
   - Ergebnis: 30/30 gehalten, Druck ab Nacht 23, Durchbruch in Nacht 28; in der
     Frostnacht bricht das Herz Barrikaden und Tor, der Frost kommt, im
     Morgengrauen erstarrt es mit rund 40 % Leben.
-  - Offen: »Wild« über 30 Nächte ist noch nicht gemessen.
+  - Offen: »Wild« über 30 Nächte ist noch nicht gemessen (erledigt in der
+    Nachbesserung 2).
 - **Bild:** Lange Gedanken brechen in der Sprechblase um und weichen der
   Nachtplan-Tafel aus (unter die Füße); Wege werden im Satz aufgezählt (»über den
   Nordweg, den Mittelweg und den Südweg – und an diesen Wegen …«); der Abspann

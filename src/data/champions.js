@@ -8,9 +8,14 @@ import { Rng } from '../core/rng.js';
 /** Ab dieser Nacht gibt es Champions. */
 export const CHAMPION_FROM_NIGHT = 3;
 
-/** So viele Champions in Nacht n (höchstens einer je Welle). */
-export function championsInNight(n) {
-  if (n < CHAMPION_FROM_NIGHT) return 0;
+/**
+ * So viele Champions in Nacht n (höchstens einer je Welle).
+ * @param {number} [early] so viele Nächte früher kommt der erste (»Wild«, M25c) –
+ *   nur der Anfang rückt vor, die Anzahl je Nacht bleibt (sonst wurde Nacht 9 mit
+ *   drei Champions bei voller Zähigkeit zur Spitze: Durchbruch, Mika bei 4 Leben)
+ */
+export function championsInNight(n, early = 0) {
+  if (n < CHAMPION_FROM_NIGHT - early) return 0;
   return n < 6 ? 1 : n < 10 ? 2 : 3;
 }
 
@@ -61,9 +66,10 @@ export const CHEST_REACH = 0.85;
  * späteren Wellen lieber. Ein eigener Zufall (nicht der des Wellenplans), damit
  * die Wellen aus früheren Ständen gleich bleiben.
  * @param {Array<{spawns: Array<object>}>} waves
+ * @param {number} [early] so viele Nächte früher kommt der erste (Schwierigkeit »Wild«, M25c)
  */
-export function addChampions(waves, n, seed) {
-  const count = Math.min(championsInNight(n), waves.length);
+export function addChampions(waves, n, seed, early = 0) {
+  const count = Math.min(championsInNight(n, early), waves.length);
   if (!count) return;
   const rng = new Rng(seed * 37 + n * 131);
   // Wellen von hinten nach vorn: die letzten sind die großen

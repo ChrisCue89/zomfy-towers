@@ -25,7 +25,7 @@ import { SHADOW_LAYER, SHADOW_PROXY_MATERIAL } from '../render/staticMesh.js';
 import { V } from '../world/layout.js';
 import { ZOMBIES, DAY_ZOMBIE, NIGHT_AGGRO } from '../data/zombies.js';
 import { BUILDINGS, RAID } from '../data/buildings.js';
-import { STATUS, REACTIONS, WEATHER_EFFECTS } from '../data/reactions.js';
+import { STATUS, REACTIONS, WEATHER_EFFECTS, STUN } from '../data/reactions.js';
 import { CHAMPION, TRAITS, cleanChampion } from '../data/champions.js';
 import { WAVE_TRAITS, FOG_SEEN } from '../data/waves.js';
 import { BOSS_ATTACKS } from '../data/bosses.js';
@@ -123,6 +123,7 @@ export class Horde {
     this.nextId = 1;
     this.pods = []; // Sporenkapseln der Brüter (M22)
     this.nextPod = 1;
+    this.livingCount = {}; // Lebende je Art (M25c: `room`)
     this.time = 0;
     this.material = createWorldMaterial({ selfLight: 0.2 }); // nachts erkennbar, nicht nur die Augen
     this.glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -202,6 +203,22 @@ export class Horde {
     let n = 0;
     for (const z of this.list) if (z.state !== 'dying') n++;
     return n;
+  }
+
+  /** Lebende je Art neu zählen (jeder Schritt; `spawn` zählt dazwischen mit). */
+  recount() {
+    const c = this.livingCount;
+    for (const type in c) c[type] = 0;
+    for (const z of this.list) if (z.state !== 'dying') c[z.type] = (c[z.type] || 0) + 1;
+  }
+
+  /**
+   * Wie viele dieser Art noch dazukommen dürfen (M25c). Mehr als MAX_PER_TYPE
+   * zeichnet das Bild nicht – wer darüber läge, liefe unsichtbar mit. Die
+   * Warteschlange der Nacht wartet dann, Kapseln und Rufe bleiben aus.
+   */
+  room(type) {
+    return Math.max(0, MAX_PER_TYPE - (this.livingCount[type] || 0));
   }
 
   /**
@@ -288,6 +305,7 @@ export class Horde {
     if (def.brood) z.broodT = def.brood.every * (0.5 + this.rng.next() * 0.5);
     if (def.snuff) z.snuffT = 0;
     this.list.push(z);
+    this.livingCount[type] = (this.livingCount[type] || 0) + 1;
     return z;
   }
 
@@ -345,6 +363,7 @@ export class Horde {
   clear() {
     this.list.length = 0;
     this.pods.length = 0;
+    this.recount();
   }
 
   /** Sporenkapseln (M22): reifen, bis Schwärmer schlüpfen. */
@@ -354,7 +373,8 @@ export class Horde {
       p.t -= dt;
       if (p.t > 0) continue;
       this.pods.splice(i, 1);
-      for (let k = 0; k < p.count; k++) {
+      const n = Math.min(p.count, this.room('schwaermer')); // M25c: nie unsichtbar
+      for (let k = 0; k < n; k++) {
         const a = (k / p.count) * Math.PI * 2;
         const o = this.spawn('schwaermer', { x: p.x + Math.cos(a) * 0.4, z: p.z + Math.sin(a) * 0.4, hpFactor: p.hpFactor });
         o.state = 'walk';
@@ -469,7 +489,16 @@ export class Horde {
    */
   stun(z, time, light = false) {
     if (z.state === 'dying' || (light && z.lightproof) || z.def.steadfast) return;
-    z.stunT = Math.max(z.stunT, time * (z.def.heavy ? 0.5 : 1));
+    // M25c: am Stück höchstens STUN.chain s, danach schüttelt er sich STUN.free s lang frei
+    const now = this.time;
+    if (!(z.stunT > 0)) {
+      if (now < (z.stunFree || 0)) return;
+      z.stunFrom = now;
+    }
+    const t = Math.min(time * (z.def.heavy ? 0.5 : 1), (z.stunFrom ?? now) + STUN.chain - now);
+    if (!(t > z.stunT)) return;
+    z.stunT = t;
+    z.stunFree = now + t + STUN.free;
     z.windup = 0;
   }
 
@@ -626,6 +655,7 @@ export class Horde {
    */
   update(dt, ctx) {
     this.time += dt;
+    this.recount();
     const world = this.world;
     const pathing = world.pathing;
     const player = ctx.player;
@@ -713,14 +743,20 @@ export class Horde {
       }
       if (z.def.brood && z.state !== 'enter' && z.state !== 'dig' && (z.broodT -= dt) <= 0) {
         z.broodT = z.def.brood.every;
-        this.pods.push({ x: z.x, z: z.z, t: z.def.brood.hatch, hp: z.def.brood.hp, count: z.def.brood.count, hpFactor: z.maxHp / z.def.hp, id: this.nextPod++ });
-        this.cb.onPod?.(z);
+        // M25c: nur so viele Kapseln, wie er trägt (`max`) – sonst legte ein zäher Brüter in
+        // späten Nächten ohne Ende, und über tausend Schwärmer verstopften die Wege
+        if ((z.laid || 0) < z.def.brood.max && this.room('schwaermer') > 0) {
+          z.laid = (z.laid || 0) + 1;
+          this.pods.push({ x: z.x, z: z.z, t: z.def.brood.hatch, hp: z.def.brood.hp, count: z.def.brood.count, hpFactor: z.maxHp / z.def.hp, id: this.nextPod++ });
+          this.cb.onPod?.(z);
+        }
       }
       if (z.def.summon && z.state !== 'enter') {
         z.summonT -= dt;
         if (z.summonT <= 0) {
           z.summonT = z.def.summon.every;
-          for (let k = 0; k < z.def.summon.count; k++) {
+          const n = Math.min(z.def.summon.count, this.room(z.def.summon.type)); // M25c: nie unsichtbar
+          for (let k = 0; k < n; k++) {
             const a = (k / z.def.summon.count) * Math.PI * 2;
             const s = this.spawn(z.def.summon.type, { x: z.x + Math.cos(a) * 0.9, z: z.z + Math.sin(a) * 0.9, hpFactor: z.maxHp / z.def.hp });
             s.state = 'walk';

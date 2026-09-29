@@ -1040,7 +1040,7 @@ etwas schneller und voller. Entscheidungen: OFFENE-FRAGEN 84–88.
   besorgt, entschlossen, normal), die Überlebenden lächeln, wenn Mika bei
   ihnen steht (Nr. 103). Laterne und Turmgeschosse im feinen Maß (Nr. 104).
 
-### Meilenstein 13 – Detailgrad: alles im feinen Maß
+### Meilenstein 13 – Detailgrad: alles im feinen Maß ✓
 
 Wunsch des Auftraggebers (nach M8 und erneut nach M12): Man soll erkennen,
 was was ist, statt es zu raten oder zu lesen. M11 und M12 haben das drinnen
@@ -1074,7 +1074,7 @@ Requisiten und Natur noch aus groben 1/8-m-Klötzen (OFFENE-FRAGEN 111).
 - Grundflächen und Kollision bleiben, wie sie sind; die Bildzeit wird vorher
   und nachher gemessen. Testrunde mit der Frage »Erkennt man, was was ist?«.
 
-### Meilenstein 14 – Balance und Testrunden
+### Meilenstein 14 – Balance und Testrunden (aufgegangen in M16–M25)
 
 - Balance über zehn und mehr Nächte an den Wegen (Vorschläge liegen beim
   Auftraggeber), Testrunden mit allen Personas, Feinschliff.
@@ -1249,6 +1249,9 @@ Flächenschaden in allen TD-Karten.
   brennend + matschig = **Glut** (Brand doppelt so lang), geblendet +
   Bolzen = **Schwachstelle** (doppelter Schaden), frostig + Streukürbis =
   **Splitter**, matschig + Katapult = **Klebekürbis** (die Fläche bremst).
+  Eine Betäubung hält am Stück höchstens drei Sekunden, dann schüttelt sich der
+  Schlurfer kurz frei (M25c) – Dampf verwirrt die Horde, er hält sie nicht die
+  ganze Nacht fest.
 - **Das Wetter wirkt** (bisher nur Stimmung, OFFENE-FRAGEN 99): Regen macht
   alle nass (Frost stärker, Feuer schwächer), Nebel kürzt Reichweiten
   (Laternen heben es auf), Wind trägt Streukürbisse weiter – Juna sagt es

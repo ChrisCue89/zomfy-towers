@@ -264,6 +264,7 @@ export class Nights {
       const s = this.queue[i];
       s.delay -= dt;
       if (s.delay > 0) continue;
+      if (g.horde.room(s.type) <= 0) continue; // M25c: wartet, bis diese Art wieder ins Bild passt
       this.queue.splice(i, 1);
       const p = this.plan;
       const lured = p?.lure && s.entry === p.lure ? LURE.loot : 1; // M24: über die Moderlocke mehr Beute
@@ -292,6 +293,7 @@ export class Nights {
   spawnGroup(type, entryName, count, { day = false, hpFactor = 1, speedFactor = 1, lootFactor = 1, champion = null, trait = null } = {}) {
     const g = this.game;
     const entry = g.world.pathing.entries[entryName];
+    count = Math.min(count, g.horde.room(type)); // M25c: nie mehr, als das Bild zeigt (Ruf des Herzens)
     for (let k = 0; k < count; k++) {
       const jitter = (k - (count - 1) / 2) * 0.7;
       const from = { x: entry.from.x + jitter, z: entry.from.z + jitter * 0.5 };

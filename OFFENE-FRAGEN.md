@@ -1157,7 +1157,12 @@ und der Spielstand bleiben – verlieren kostet weiter nur Material.
 Einstellungen: **Gemütlich** (weniger Horde, mehr Beute), **Ausgewogen**,
 **Wild** (mehr und zähere Horde, Champions früher, mehr Sterne). **Warum:**
 m12-r1 – für Mira zu hart, für Theo zu leicht; eine Zahl für alle trifft
-niemanden.
+niemanden. **Nachtrag (M25c):** Umgesetzt waren bis dahin nur Menge, Leben, Tempo
+und Beute; jetzt läuft der erste Champion auf »Wild« schon in Nacht 2 mit (die
+Anzahl je Nacht bleibt wie auf »Ausgewogen« – rückte auch sie vor, wurde Nacht 9
+mit drei Champions bei voller Zähigkeit zur Spitze: Durchbruch, Mika bei 4
+Leben). »Mehr Sterne« bleibt offen: Die Sterne (Nr. 155) kamen erst später und
+zählen in allen Stufen gleich.
 
 ### 119. Nachts Tempo machen? (Spaß-Plan)
 **Annahme:** Ja. In der Pause ruft eine Taste die nächste Welle sofort (mit
@@ -1606,6 +1611,25 @@ ohne dass je etwas geschah. Jetzt (Ausgewogen, derselbe Bot): Das Herz walzt
 durch die Barrikaden, bricht das Tor, kommt ins Lager, der Frost setzt ein
 (Phase 3), und im Morgengrauen erstarrt es mit rund 40 % Leben – die Bucht hält
 knapp. Wer stärker verteidigt (Fähigkeiten, Mischtürme, Fallen), kann es fällen.
+
+### 160. Wie viel Kontrolle verträgt eine dichte Horde? (M25)
+**Entscheidung:** Drei Grenzen. (1) Eine Betäubung hält am Stück höchstens
+drei Sekunden, auch wenn Dampf, Glocke, Blitz oder Pfanne sie immer wieder
+auffrischen; danach schüttelt sich der Schlurfer zwei Sekunden lang frei (keine
+einzelne Betäubung ist länger als drei Sekunden, es kürzt also nur das
+Auffrischen). (2) Ein Brüter legt höchstens vier Kapseln (zwölf Schwärmer).
+(3) Je Art zeichnet das Bild 180 Schlurfer; ist eine Art voll, wartet der Rest
+der Welle, bis einer fällt, und Kapseln, Rufe und Pulks bringen nur so viele,
+wie Platz ist. **Warum:** Der Balance-Durchlauf fiel in Nacht 29 in beiden
+Schwierigkeiten ab (Ausgewogen 367 Abschüsse bei rund 730 geplanten Schlurfern,
+Wild 140 bei rund 900). Beim
+Nachspielen zeigte sich: Sprenger und Feuer machten die Horde nass und
+brennend, Dampf betäubte jeden in der dichten Menge immer wieder (2400
+Betäubungen in drei Sekunden) – niemand kam voran. Derweil legten 26 zähe
+Brüter ohne Ende Kapseln: 1836 Schlurfer lebten im Morgengrauen, 1449 davon
+Schwärmer, über 1200 unsichtbar, und alles floh, ohne je die Barrikaden zu
+erreichen. Mit den Grenzen erreicht die Horde in derselben Nacht die
+Barrikaden, höchstens rund 600 leben gleichzeitig, jeder ist zu sehen.
 
 ## Technik mit Auswirkung aufs Design
 

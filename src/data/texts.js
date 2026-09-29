@@ -1191,7 +1191,7 @@ export const T = {
     info: {
       gemuetlich: 'Weniger Horde, mehr Beute – zum Erkunden und Einrichten.',
       ausgewogen: 'So ist das Spiel gedacht.',
-      wild: 'Mehr und zähere Horde – für alle, die es knallen hören wollen.',
+      wild: 'Mehr und zähere Horde, Champions früher – für alle, die es knallen hören wollen.',
     },
     gewechselt: (name) => `Schwierigkeit: ${name}`,
   },

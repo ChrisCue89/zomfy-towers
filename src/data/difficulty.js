@@ -4,11 +4,13 @@
 //
 //   budget   Punkte der Nacht (wie viele Schlurfer)   hp     Leben je Schlurfer
 //   speed    Tempo der Horde                          loot   Zombieteile je Abschuss
+//   champions  so viele Nächte früher kommt der erste Champion (M25c – OFFENE-FRAGEN
+//              118: »Wild« bringt Champions früher; die Anzahl je Nacht bleibt)
 
 export const DIFFICULTIES = {
-  gemuetlich: { budget: 0.65, hp: 0.8, speed: 0.92, loot: 1.25 },
-  ausgewogen: { budget: 1, hp: 1, speed: 1, loot: 1 },
-  wild: { budget: 1.2, hp: 1.35, speed: 1.08, loot: 0.85 },
+  gemuetlich: { budget: 0.65, hp: 0.8, speed: 0.92, loot: 1.25, champions: 0 },
+  ausgewogen: { budget: 1, hp: 1, speed: 1, loot: 1, champions: 0 },
+  wild: { budget: 1.2, hp: 1.35, speed: 1.08, loot: 0.85, champions: 1 },
 };
 
 export const DIFFICULTY_ORDER = ['gemuetlich', 'ausgewogen', 'wild'];

@@ -1943,7 +1943,7 @@ async function runMixChecks(browser, url) {
     const dir = Math.sign(p.col[0] + 0.5 - c.z) || 1;
     for (let k = 0; k < 4; k++) {
       const id = Z.spawnZombie('schlurfer', c.x, c.z + dir * (2 + k * 0.7));
-      Z.game.horde.stun(Z.game.horde.list.find((q) => q.id === id), 4);
+      Z.game.horde.list.find((q) => q.id === id).stunT = 4; // festhalten (eine Betäubung hielte am Stück nur 3 s, M25c)
     }
     Z.game.towers.maxPierce = 0;
     Z.teleport(c.x + 3, c.z - dir * 2.5, 0);
@@ -2147,8 +2147,17 @@ async function runShineChecks(browser, url) {
 
   // 2) Champions im Plan: Nacht 1 und 2 keiner, Nacht 3 einer
   const plan = await z(() => [1, 2, 3].map((n) => window.zomfy.championPlan(n).length));
-  if (plan.join() === '0,0,1') note('✓ Champions (M21): Nacht 1 und 2 ohne, in Nacht 3 läuft einer mit');
-  else fail(`Champions im Plan: ${JSON.stringify(plan)}`);
+  // M25c: Auf »Wild« kommen Champions eine Nacht früher
+  const wild = await z(() => {
+    const st = window.zomfy.game.state;
+    const vorher = st.difficulty;
+    st.difficulty = 'wild';
+    const r = [1, 2, 5].map((n) => window.zomfy.championPlan(n).length);
+    st.difficulty = vorher;
+    return r;
+  });
+  if (plan.join() === '0,0,1' && wild.join() === '0,1,1') note('✓ Champions (M21): Nacht 1 und 2 ohne, in Nacht 3 läuft einer mit; auf »Wild« schon in Nacht 2 (M25c)');
+  else fail(`Champions im Plan: ${JSON.stringify({ plan, wild })}`);
 
   // 3) Ein Champion mit Schild: Name und Merkmale über dem Kopf; der Turm holt ihn, das Brennglas brennt
   const champ = await z((t) => {
@@ -2283,7 +2292,8 @@ async function runShineChecks(browser, url) {
  * einer Barrikade aus (Warnkreis, Balken oben) und zerschlägt sie. Der Moderfalter
  * fliegt über eine Barrikade, der Gräber buddelt sich darunter durch; die Tür des
  * Schildträgers fängt von vorn ab; der Lichtfresser löscht eine Fackel; aus der
- * Kapsel des Brüters schlüpfen Schwärmer; der Moosriese zerfällt in drei. Eine
+ * Kapsel des Brüters schlüpfen Schwärmer (höchstens vier Kapseln je Brüter; ist
+ * eine Art im Bild voll, wartet die Warteschlange, M25c); der Moosriese zerfällt in drei. Eine
  * Nebelwelle bleibt nach dem Neuladen eine (Bilder: nebelwelle, boss).
  */
 async function runQuestionChecks(browser, url) {
@@ -2482,6 +2492,51 @@ async function runQuestionChecks(browser, url) {
   });
   await step(300);
   const schwarm = await z(() => window.zomfy.zombies().filter((q) => q.type === 'schwaermer' && q.state !== 'dying').length);
+  // M25c: Ein Brüter legt höchstens `max` Kapseln. Ist eine Art im Bild voll, wartet die
+  // Warteschlange der Nacht, und aus Kapseln schlüpft nichts – nie ein unsichtbarer Schlurfer.
+  const grenze = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const h = g.horde;
+    const b = h.list.find((o) => o.type === 'brueter' && o.state !== 'dying');
+    for (let k = 0; k < 10; k++) {
+      b.broodT = 0;
+      window.__zomfyStep(40);
+    }
+    const kapseln = b.laid;
+    const max = b.def.brood.max;
+    // Das Bild voller Schwärmer (sie stehen still), dann soll noch einer aus der Warteschlange kommen
+    h.clear();
+    const col = Z.pathColumn(-44);
+    const mid = col[Math.floor(col.length / 2)] + 0.5;
+    const cap = h.room('schwaermer');
+    const ids = [];
+    for (let k = 0; k < cap; k++) {
+      const id = Z.spawnZombie('schwaermer', -46 + (k % 12) * 0.4, mid + (Math.floor(k / 12) % 3) * 0.3);
+      h.list.find((o) => o.id === id).stunT = 999;
+      ids.push(id);
+    }
+    const lebend = () => h.list.filter((o) => o.type === 'schwaermer' && o.state !== 'dying').length;
+    const m0 = g.state.time.minute;
+    const was = g.nights.enabled;
+    g.state.time.minute = 6 * 60; // mittags: dabei beginnt keine Nacht
+    g.nights.queue.push({ type: 'schwaermer', entry: Object.keys(g.world.pathing.entries)[0], delay: 0 });
+    g.nights.enabled = true;
+    g.nights.update(0.05);
+    const voll = { wartet: g.nights.queue.length, lebend: lebend(), platz: h.room('schwaermer') };
+    Z.killZombie(ids[0], 'turm');
+    h.recount();
+    g.nights.update(0.05);
+    const frei = { wartet: g.nights.queue.length, lebend: lebend() };
+    g.nights.enabled = was;
+    g.state.time.minute = m0;
+    // Eine reife Kapsel bei vollem Bild: Es schlüpft nichts
+    h.pods.push({ x: -40, z: mid, t: 0, hp: 12, count: 3, hpFactor: 1, id: 999 });
+    h.updatePods(0.05);
+    const kapselVoll = lebend();
+    h.clear();
+    return { kapseln, max, cap, voll, frei, kapselVoll };
+  });
   // Moosriese: zerfällt in drei
   const riese = await z(() => {
     const Z = window.zomfy;
@@ -2495,6 +2550,9 @@ async function runQuestionChecks(browser, url) {
   if (rest.vorn <= 12 && rest.hinten >= 38 && rest.vorher && !nach.hell && nach.snuffed >= 1 && nach.pods >= 1 && schwarm >= vorSchwarm + 3 && riese.length === 3 && riese.every((r) => r.size < 1)) {
     note(`✓ Neue Arten (M22): Die Tür fängt von vorn ab (${rest.vorn} statt ${rest.hinten} Schaden), der Lichtfresser löscht die Fackel, aus der Kapsel des Brüters schlüpfen Schwärmer, der Moosriese zerfällt in drei`);
   } else fail(`Arten M22: ${JSON.stringify({ rest, nach, vorSchwarm, schwarm, riese })}`);
+  if (grenze.kapseln === grenze.max && grenze.cap > 0 && grenze.voll.wartet === 1 && grenze.voll.lebend === grenze.cap && grenze.voll.platz === 0 && grenze.frei.wartet === 0 && grenze.frei.lebend === grenze.cap && grenze.kapselVoll === grenze.cap) {
+    note(`✓ Grenzen (M25c): Ein Brüter legt höchstens ${grenze.max} Kapseln; mit ${grenze.cap} Schwärmern im Bild wartet die Warteschlange, bis einer fällt, und aus einer Kapsel schlüpft nichts – kein Schlurfer läuft unsichtbar mit`);
+  } else fail(`Grenzen M25c: ${JSON.stringify(grenze)}`);
 
   // 6) Speichern: ein Schlurfer der Nebelwelle bleibt einer
   await z(() => {

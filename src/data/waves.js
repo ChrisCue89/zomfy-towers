@@ -230,7 +230,7 @@ export function planNight(n, seed, entries, difficulty, mode = null) {
     at += Math.max(36, 62 - n * 3) + rng.int(-6, 6);
   }
   // Champions (M21): ab Nacht 3 einzelne Schlurfer mit Namen und Merkmalen (eigener Zufall)
-  addChampions(waves, n, seed);
+  addChampions(waves, n, seed, diff.champions || 0); // »Wild«: eine Nacht früher (M25c)
   // Neue Arten und Wellenmerkmale (M22): Schildträger, Moderfalter … · Nebelwelle, flinke Nacht … (eigener Zufall)
   addNewKinds(waves, n, seed);
   addWaveTraits(waves, n, seed);
