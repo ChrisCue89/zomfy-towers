@@ -64,10 +64,13 @@ function clock(ctx, t) {
   Object.defineProperty(ctx, 'currentTime', { get: () => t, configurable: true });
 }
 
-function pack(buf, from = 0, to = buf.length) {
-  const out = { n: to - from, ch: [] };
+/** AudioBuffer → { n, at, ch: [base64, base64] }; optional nur der Ausschnitt [from, to] in Sekunden. */
+function pack(buf, from = 0, to = null) {
+  const a = Math.round(from * SR);
+  const b = to === null ? buf.length : Math.min(buf.length, Math.round(to * SR));
+  const out = { n: b - a, at: from, ch: [] };
   for (let c = 0; c < 2; c++) {
-    const d = buf.getChannelData(c).subarray(from, to);
+    const d = buf.getChannelData(c).subarray(a, b);
     const u8 = new Uint8Array(d.buffer, d.byteOffset, d.byteLength);
     let str = '';
     for (let i = 0; i < u8.length; i += 0x8000) str += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
@@ -326,47 +329,64 @@ function impact(s, m, t, size, dest) {
   }
 }
 
-tasks.transitions = async () => {
-  const { ctx, s, m } = env(DURATION, 201);
-  const dest = ctx.destination;
-  // Übergang 12,5 – 16,0
-  const bDrone = gain(ctx, 1, dest);
-  const bRise = gain(ctx, 1, dest);
-  const bHeart = gain(ctx, 1, dest);
-  const heartSend = gain(ctx, 0.25, m.verb);
-  bHeart.connect(heartSend);
-  drone(ctx, s, T.trans, T.nacht, 0.5, bDrone);
-  riser(ctx, s, T.trans + 0.1, T.nacht, 0.5, bRise);
-  await reverseCymbal(ctx, bRise, T.nacht, 3.0, 0.55, -0.55);
-  await reverseCymbal(ctx, bRise, T.nacht, 3.0, 0.55, 0.55);
+// Jede Komponente einzeln (eigener Stem, eigener Pegel in mix.mjs): Drohne, Riser, Becken/Whoosh, Herzschlag, Einschläge.
+const SPAN_TRANS = [12.0, 17.2];
+
+tasks['trans-drone'] = async () => {
+  const { ctx, s } = env(DURATION, 211);
+  drone(ctx, s, T.trans, T.nacht, 1, ctx.destination);
+  return pack(await ctx.startRendering(), ...SPAN_TRANS);
+};
+
+tasks['trans-riser'] = async () => {
+  const { ctx, s } = env(DURATION, 212);
+  riser(ctx, s, T.trans + 0.1, T.nacht, 1, ctx.destination);
+  return pack(await ctx.startRendering(), ...SPAN_TRANS);
+};
+
+tasks['trans-cymbal'] = async () => {
+  const { ctx, s } = env(DURATION, 213);
+  // zwei umgekehrte Becken (links/rechts), Ende exakt auf dem Einschlag
+  await reverseCymbal(ctx, ctx.destination, T.nacht, 3.0, 1, -0.55);
+  await reverseCymbal(ctx, ctx.destination, T.nacht, 3.0, 1, 0.55);
   // Whoosh nach unten beim Abbruch des Themas
-  s.noise(T.trans, 0.9, { type: 'bandpass', freq: 5200, freqEnd: 420, q: 0.8, attack: 0.05, peak: 0.16, out: bRise });
-  // Herzschlag: Abstand 0,9 → 0,45 s, lauter werdend (Rezept `herzschlag` des Spiels + ein Hauch Körper, damit man ihn auch auf kleinen Lautsprechern hört)
-  const hb = heartbeatsTransition();
+  s.noise(T.trans, 0.9, { type: 'bandpass', freq: 5200, freqEnd: 420, q: 0.8, attack: 0.05, peak: 0.16 * 3, out: ctx.destination });
+  return pack(await ctx.startRendering(), ...SPAN_TRANS);
+};
+
+/** Herzschlag (Rezept `herzschlag` des Spiels) + ein Hauch Körper, damit man ihn auch auf kleinen Lautsprechern hört. */
+tasks['trans-heart'] = async () => {
+  const { ctx, s, m } = env(DURATION, 214);
+  const bus = gain(ctx, 1, ctx.destination);
+  bus.connect(gain(ctx, 0.2, m.verb));
   s.sfxBus.disconnect();
-  s.sfxBus.connect(bHeart);
-  const heart = (t, v, dub = true) => {
+  s.sfxBus.connect(bus);
+  const beat = (t, v, dub = true) => {
     clock(ctx, t - 0.005);
     s.voices = 0;
     if (dub) s.play('herzschlag', { volume: v });
-    else s.tone('sine', 64, t, 0.14, { freqEnd: 44, peak: 0.24 * v, attack: 0.006, out: bHeart });
-    s.tone('sine', 128, t, 0.09, { freqEnd: 88, peak: 0.07 * v, attack: 0.004, out: bHeart });
-    s.noise(t, 0.04, { type: 'lowpass', freq: 240, peak: 0.08 * v, attack: 0.003, out: bHeart });
-    if (dub) {
-      s.tone('sine', 116, t + 0.2, 0.08, { freqEnd: 80, peak: 0.05 * v, attack: 0.004, out: bHeart });
-    }
+    else s.tone('sine', 64, t, 0.14, { freqEnd: 44, peak: 0.24 * v, attack: 0.006, out: bus });
+    s.tone('sine', 128, t, 0.09, { freqEnd: 88, peak: 0.07 * v, attack: 0.004, out: bus });
+    s.noise(t, 0.04, { type: 'lowpass', freq: 240, peak: 0.08 * v, attack: 0.003, out: bus });
+    if (dub) s.tone('sine', 116, t + 0.2, 0.08, { freqEnd: 80, peak: 0.05 * v, attack: 0.004, out: bus });
   };
-  hb.times.forEach((t, k) => heart(t, 0.55 + 0.75 * (k / (hb.times.length - 1))));
-  // Einschlag 16,0
-  const bImp = gain(ctx, 1, dest);
-  impact(s, m, T.nacht, 1, bImp);
-  // Stille vor dem Boss: zwei Herzschläge (der zweite ohne zweiten Schlag – der Einschlag ist sein »dub«)
-  clock(ctx, 0);
-  heart(HEART_SILENCE[0], 0.9, true);
-  heart(HEART_SILENCE[1], 1.1, false);
-  // Einschlag 41,233 (der große)
-  impact(s, m, T.boss, 1.5, bImp);
-  return pack(await ctx.startRendering());
+  // Wende: Abstand 0,9 → 0,45 s, lauter werdend; der letzte »Schlag« ist der Einschlag
+  const hb = heartbeatsTransition();
+  hb.times.forEach((t, k) => beat(t, 0.55 + 0.75 * (k / (hb.times.length - 1))));
+  // Stille vor dem Boss: zwei Schläge (der zweite ohne »dub« – der Einschlag folgt 0,23 s später)
+  beat(HEART_SILENCE[0], 0.9, true);
+  beat(HEART_SILENCE[1], 1.1, false);
+  const buf = await ctx.startRendering();
+  return { parts: [pack(buf, ...SPAN_TRANS), pack(buf, 40.3, 42.0)] };
+};
+
+/** Einschläge: 16,0 (Wende → Nacht) und 41,233 (Boss, größer). */
+tasks.impacts = async () => {
+  const { ctx, s, m } = env(DURATION, 215);
+  impact(s, m, T.nacht, 1, ctx.destination);
+  impact(s, m, T.boss, 1.5, ctx.destination);
+  const buf = await ctx.startRendering();
+  return { parts: [pack(buf, 15.8, 19.0), pack(buf, 41.0, 44.5)] };
 };
 
 // --- Aufgaben: Bett -----------------------------------------------------------------------------
@@ -386,35 +406,37 @@ function curve(points) {
   };
 }
 
-/** Bett: Wind (durchgehend), Krähen, Feuerknistern (0–12, 31–41), Wellen am See (0–12, 52–60), Vögel am Morgen. */
-tasks.bed = async () => {
-  const { ctx, s } = env(DURATION, 301);
-  const dest = ctx.destination;
-  // Wind: zwei Rauschquellen (links/rechts), Tiefpass wie im Spiel (300–480 Hz, langsam wandernd), Pegel nach Abschnitt
+/** Wind: zwei Rauschquellen (links/rechts), Tiefpass wie im Spiel (300–480 Hz, langsam wandernd), Pegel nach Abschnitt. */
+tasks['bed-wind'] = async () => {
+  const { ctx } = env(DURATION, 301);
   const windLevel = curve([
-    [0, 0.03], [12, 0.034], [16, 0.05], [22, 0.03], [31, 0.03], [31.5, 0.011], [40.4, 0.011], [40.9, 0.006],
-    [41.4, 0.03], [51.4, 0.04], [51.67, 0.008], [52.5, 0.02], [60, 0.02],
+    [0, 1.0], [12, 1.1], [16, 1.6], [22, 1.0], [31, 1.0], [31.5, 0.4], [40.4, 0.4], [40.9, 0.2],
+    [41.4, 1.0], [51.4, 1.3], [51.67, 0.3], [52.5, 0.7], [60, 0.7],
   ]);
-  const seconds = DURATION;
   for (const side of [-1, 1]) {
     const src = ctx.createBufferSource();
-    src.buffer = longNoise(ctx, seconds + 0.1);
+    src.buffer = longNoise(ctx, DURATION + 0.1);
     const f = ctx.createBiquadFilter();
     f.type = 'lowpass';
     f.Q.value = 0.8;
     const g = ctx.createGain();
     const p = ctx.createStereoPanner();
     p.pan.value = 0.55 * side;
-    for (let t = 0; t <= seconds; t += 0.25) {
+    for (let t = 0; t <= DURATION; t += 0.25) {
       const sway = 0.75 + 0.25 * Math.sin(t * 0.13 + side) * Math.sin(t * 0.07 + side * 2);
       f.frequency.setValueAtTime(300 + 180 * (0.5 + 0.5 * Math.sin(t * 0.21 + side)), t);
-      g.gain.setValueAtTime(windLevel(t) * sway * 1.4, t);
+      g.gain.setValueAtTime(0.03 * windLevel(t) * sway, t);
     }
-    src.connect(f).connect(g).connect(p).connect(dest);
+    src.connect(f).connect(g).connect(p).connect(ctx.destination);
     src.start(0);
   }
-  // Feuer (Rauschen, Tiefpass 260 Hz) und Knistern wie im Spiel, jeweils mit weichen Rändern
-  const fire = (a, b, level, fadeIn = 0.8, fadeOut = 0.8) => {
+  return pack(await ctx.startRendering());
+};
+
+/** Feuer: Rauschen (Tiefpass 260 Hz) und Knistern wie im Spiel (update: Bandpass-Pops alle 0,04–0,29 s), 0–12 s und 31–41 s. */
+tasks['bed-fire'] = async () => {
+  const { ctx, s } = env(DURATION, 302);
+  const fire = (a, b, level, fadeIn, fadeOut) => {
     const src = ctx.createBufferSource();
     src.buffer = longNoise(ctx, b - a + 1);
     const lp = ctx.createBiquadFilter();
@@ -425,34 +447,43 @@ tasks.bed = async () => {
     g.gain.linearRampToValueAtTime(0.05 * level * level, a + fadeIn);
     g.gain.setValueAtTime(0.05 * level * level, b - fadeOut);
     g.gain.linearRampToValueAtTime(0.0001, b);
-    src.connect(lp).connect(g).connect(dest);
+    src.connect(lp).connect(g).connect(ctx.destination);
     src.start(a);
     src.stop(b + 0.05);
     let t = a;
     while (t < b) {
-      const step = 0.04 + Math.random() * 0.25;
       const fade = Math.min(1, (t - a) / fadeIn, (b - t) / fadeOut);
       if (fade > 0.02) {
-        const pan = s.pan(s.ambPans, dest, Math.random() * 0.8 - 0.5);
-        s.noise(t, 0.012 + Math.random() * 0.02, { type: 'bandpass', freq: 1400 + Math.random() * 2200, q: 2, peak: 0.07 * level * fade, out: pan });
+        const out = s.pan(s.ambPans, ctx.destination, Math.random() * 0.8 - 0.5);
+        s.noise(t, 0.012 + Math.random() * 0.02, { type: 'bandpass', freq: 1400 + Math.random() * 2200, q: 2, peak: 0.07 * level * fade, out });
       }
-      t += step;
+      t += 0.04 + Math.random() * 0.25;
     }
   };
   fire(0, 12.4, 0.75, 0.05, 0.9);
   fire(T.mid, 40.55, 0.9, 0.9, 0.3);
-  // Wellen am See: langsames Anschwellen und Verebben, links/rechts im Wechsel
+  return pack(await ctx.startRendering());
+};
+
+/** Wellen am See (0–12 s, 52–60 s): langsames Anschwellen und Verebben, links/rechts im Wechsel. */
+tasks['bed-waves'] = async () => {
+  const { ctx, s } = env(DURATION, 303);
   const wave = (t, dur, peak, dir) => {
-    const out = s.pan(s.ambPans, s.ambBus, dir);
+    const out = s.pan(s.ambPans, ctx.destination, dir);
     s.noise(t, dur, { type: 'lowpass', freq: 900, freqEnd: 330, q: 0.6, attack: dur * 0.38, peak, out });
     s.noise(t + 0.15, dur * 0.8, { type: 'bandpass', freq: 2300, freqEnd: 1200, q: 0.5, attack: dur * 0.36, peak: peak * 0.22, out });
   };
-  [[0.1, 5.2, 0.05, -0.5], [5.9, 5.6, 0.06, 0.5], [11.2, 4.2, 0.045, -0.4]].forEach((a) => wave(...a));
-  [[51.9, 5.4, 0.045, 0.5], [57.3, 4.6, 0.05, -0.5]].forEach((a) => wave(...a));
-  // Krähen (kraehe: caw) und Vögel am Tag/Morgen – sparsam
-  s.caw(4.7, -0.6, 3.2);
-  s.caw(9.9, 0.55, 2.6);
-  s.caw(54.3, -0.5, 2.4);
+  [[0.1, 5.2, 1, -0.5], [5.9, 5.6, 1.2, 0.5], [11.2, 4.2, 0.9, -0.4]].forEach((a) => wave(...a));
+  [[51.9, 5.4, 0.9, 0.5], [57.3, 4.6, 1.0, -0.5]].forEach((a) => wave(...a));
+  return pack(await ctx.startRendering());
+};
+
+/** Krähen (Rezept `kraehe`: caw) und Vögel am Tag/Morgen – sparsam. */
+tasks['bed-animals'] = async () => {
+  const { ctx, s } = env(DURATION, 304);
+  s.caw(4.7, -0.6, 1);
+  s.caw(9.9, 0.55, 0.85);
+  s.caw(54.3, -0.5, 0.8);
   s.bird(7.6);
   s.bird(52.6);
   s.bird(53.4);

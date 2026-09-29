@@ -44,6 +44,13 @@ export async function prepare(rec, { day = 4, hour = 21, minute = 0, weather = '
         if (zo.champion) g.onChampion(zo);
         return zo.id;
       },
+      /** z der Wegmitte von Weg `name` ('nord'|'mitte'|'sued') an der Stelle x (aus der Spur der Horde) */
+      traceZ(name, x) {
+        const pts = g.world.pathing.trace(name);
+        let best = pts[0];
+        for (const p of pts) if (Math.abs(p.x - x) < Math.abs(best.x - x)) best = p;
+        return best.z;
+      },
       /** Wege: Mittelpunkt des Weges an der Spalte x (Meter) */
       pathZ(x) {
         const col = Z.pathColumn(Math.floor(x));

@@ -10,29 +10,29 @@ const FRAMES = Number(process.env.ZT_FRAMES || 90);
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 4, hour: 21, minute: 0 });
 const towers = await placeTowers(rec, [
-  { type: 'laternenturm', i: -16, j: -2, level: 3, spec: 'A' },
-  { type: 'bolzen', i: -14, j: -2, level: 3, spec: 'B', xp: 520 },
-  { type: 'katapult', i: -19, j: -2, level: 3, spec: 'A', xp: 200 },
-  { type: 'katapult', i: -17, j: 5, level: 3, spec: 'A', xp: 200 },
-  { type: 'sprenger', i: -13, j: 4, level: 2, xp: 160 },
-  { type: 'bolzen', i: -20, j: 4, level: 3, spec: 'A', xp: 200 },
+  { type: 'katapult', i: -25, j: -1, level: 3, spec: 'A', xp: 200 },
+  { type: 'laternenturm', i: -22, j: -2, level: 3, spec: 'A' },
+  { type: 'bolzen', i: -20, j: -2, level: 3, spec: 'B', xp: 520 },
+  { type: 'bolzen', i: -26, j: 4, level: 3, spec: 'A', xp: 200 },
+  { type: 'katapult', i: -23, j: 5, level: 3, spec: 'A', xp: 200 },
+  { type: 'sprenger', i: -20, j: 4, level: 2, xp: 160 },
 ]);
-console.log(JSON.stringify(towers.map((t) => [t.type, t.ok, t.why])));
+console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
 await rec.eval(() => {
   const Z = window.zomfy;
-  Z.teleport(-15.5, 5.8, 0);
+  Z.teleport(-22.3, 6.6, 0);
   const b = window.__b;
-  // ein dichter Trupp über die Breite des Weges, in der Mitte ein Brummer
-  const rows = [0.3, 1.5, 2.7];
-  for (let k = 0; k < 15; k++) {
-    const x = -35 + Math.floor(k / 3) * 1.6 + (k % 3) * 0.35;
-    b.zombie(k === 7 ? 'brummer' : k % 5 === 4 ? 'flitzer' : 'schlurfer', x, rows[k % 3] + (k % 2) * 0.25, { hp: 2.5 });
+  // ein dichter Trupp auf dem Weg (kommt von links aus dem Wald), in der Mitte ein Brummer
+  const off = [-0.9, 0.1, 1.0];
+  for (let k = 0; k < 16; k++) {
+    const x = -34 - Math.floor(k / 3) * 1.6 - (k % 3) * 0.35;
+    b.zombie(k === 6 ? 'brummer' : k % 5 === 4 ? 'flitzer' : 'schlurfer', x, b.traceZ('mitte', x) + off[k % 3] + (k % 2) * 0.25, { hp: 2.5 });
   }
 });
-await rec.sim(4.5);
+await rec.sim(5);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -18.8, 1.5], [FRAMES - 1, -17.4, 1.5]] },
+  cam: { keys: [[0, -23, 1.6], [FRAMES - 1, -21.8, 1.6]] },
   each: () => { window.__b.keep(); },
   description: 'Nacht, Bolzenwerfer (Repetierer), Kürbiskatapult (Feuer), Sprenger (Frost) und Laternenturm am letzten Wegabschnitt; ein Trupp Schlurfer mit Brummer läuft von links herein.',
 });

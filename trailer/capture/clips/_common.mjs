@@ -40,3 +40,29 @@ export function camAt(keys, f, ease = 'smooth') {
   if (ease !== 'linear') u = u * u * (3 - 2 * u);
   return [k[j][1] + (k[j + 1][1] - k[j][1]) * u, k[j][2] + (k[j + 1][2] - k[j][2]) * u];
 }
+
+/**
+ * Tastatur-Steuerung im Spiel (echte Eingabe über game.input): window.__walkTo(x, z, run) hält je Bild die
+ * passenden Richtungstasten (W/A/S/D) gedrückt und gibt die Restentfernung zurück, window.__stop() lässt los.
+ */
+export function installWalker(rec) {
+  return rec.eval(() => {
+    const g = window.zomfy.game;
+    const KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft'];
+    window.__stop = () => { for (const k of KEYS) g.input.down.delete(k); };
+    window.__walkTo = (tx, tz, run = false, eps = 0.12) => {
+      const p = g.player.position;
+      const dx = tx - p.x;
+      const dz = tz - p.z;
+      const set = (k, on) => (on ? g.input.down.add(k) : g.input.down.delete(k));
+      set('KeyD', dx > eps);
+      set('KeyA', dx < -eps);
+      set('KeyS', dz > eps);
+      set('KeyW', dz < -eps);
+      set('ShiftLeft', run);
+      return Math.hypot(dx, dz);
+    };
+    window.__key = (code, on = true) => (on ? g.input.down.add(code) : g.input.down.delete(code));
+    window.__tap = (code) => g.input.pressedCodes.add(code);
+  });
+}
