@@ -35,6 +35,15 @@ if (PROBE) {
     frames: FRAMES,
     ui: 'world',
     cam: { keys: KEYS },
+    // Der Fackelschein bremst Schlurfer im Spiel; für gleichmäßiges Schlurfen von links in die Mitte legen wir ihren Weg auf x fest
+    // (Bewegung und Gehanimation kommen weiter vom Spiel, nur die Strecke je Bild ist bestimmt).
+    each: (i) => {
+      const g = window.zomfy.game;
+      const a = g.horde.list.find((q) => q.type === 'schildtraeger');
+      const b = g.horde.list.find((q) => q.type === 'schlurfer');
+      if (a) a.x = -55.3 + 0.036 * i;
+      if (b) b.x = -57.2 + 0.036 * i;
+    },
     description: 'Dämmerung/Nacht (20:20) am Waldrand der Nordzuführung, Ansicht nah: links violett glimmender Moder mit Pilzringen und Fackelschein, der Weg läuft durchs Bild. Der Schildträger (Schlurfer mit Kochtopf als Helm, Tür als Schild) tritt von links ins Bild (ab Bild 0-10 am linken Rand), ist bei Bild 30 im linken Drittel, bei Bild 60-90 in der Bildmitte (mittleres Drittel) und gut zu sehen; ein normaler Schlurfer mit Gänseblümchen folgt dicht dahinter (tritt um Bild 25 ins Bild). Kamera fährt langsam nach links. Tempo der Schlurfer 1,2 m/s (etwas zügiger als im Spiel, damit sie in 3 s bis zur Mitte kommen). Schnittpunkt: 4-Bilder-Blitz aus Bild 60-75.',
   });
 }

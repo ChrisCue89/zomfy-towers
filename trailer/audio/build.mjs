@@ -70,11 +70,15 @@ for (const [name, r] of Object.entries(raw)) {
 let sfxInfo = null;
 if (events) {
   raw.sfx = await browser.render('sfx', { events });
-  sfxInfo = { played: raw.sfx.played, skipped: raw.sfx.skipped };
+  sfxInfo = { played: raw.sfx.played, skipped: raw.sfx.skipped.length };
   say(`sfx gerechnet: ${raw.sfx.played} gespielt, ${raw.sfx.skipped.length} übersprungen`);
-  const skippedByReason = {};
-  for (const line of raw.sfx.skipped) (skippedByReason[line.split(': ')[1]] ??= []).push(line.split(': ')[0]);
-  for (const [why, list] of Object.entries(skippedByReason)) say(`  übersprungen (${why}): ${list.length}${why.startsWith('Effekt unbekannt') || why.startsWith('unbekannt') ? ' – Namen prüfen: ' + list.slice(0, 6).join(', ') : ''}`);
+  const byReason = {};
+  for (const sk of raw.sfx.skipped) (byReason[sk.why] ??= []).push(sk);
+  for (const [why, list] of Object.entries(byReason)) {
+    const names = [...new Set(list.map((x) => x.name))].slice(0, 8).join(', ');
+    say(`  übersprungen – ${why}: ${list.length} (${names})`);
+  }
+  sfxInfo.skippedReasons = Object.fromEntries(Object.entries(byReason).map(([why, list]) => [why, list.length]));
 }
 if (browser.problems.length) console.warn('Browser-Meldungen:', browser.problems);
 await browser.close();

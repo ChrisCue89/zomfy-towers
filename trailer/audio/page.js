@@ -566,7 +566,7 @@ tasks.sfx = async ({ events }) => {
       else if (kind === 'whoosh') s.noise(e.t - 0.6, 0.7, { type: 'bandpass', freq: 500, freqEnd: 4500, q: 0.8, attack: 0.6, peak: 0.16 * (e.volume ?? 1), out: s.sfxBus });
       else if (kind === 'boom') impact(s, m, e.t, 0.7 * (e.volume ?? 1), ctx.destination);
       else {
-        skipped.push(`${e.t} ${e.name}: unbekannter Umgebungsklang`);
+        skipped.push({ t: e.t, name: e.name, why: 'unbekannter Umgebungsklang' });
         continue;
       }
       played++;
@@ -578,9 +578,9 @@ tasks.sfx = async ({ events }) => {
     for (const k of ['x', 'z', 'volume', 'pitch', 'rate']) if (e[k] !== undefined) opt[k] = e[k];
     s.play(e.name, opt);
     if (s.lastVary) played++; // play() setzt lastVary erst, wenn der Effekt wirklich klingt
-    else if (!s.last.has(e.name)) skipped.push(`${e.t} ${e.name}: Effekt unbekannt`);
-    else if (s.last.get(e.name) !== now) skipped.push(`${e.t} ${e.name}: Mindestabstand (MIN_GAP)`);
-    else skipped.push(`${e.t} ${e.name}: zu weit weg (Hörweite 16 m) oder zu leise`);
+    else if (!s.last.has(e.name)) skipped.push({ t: e.t, name: e.name, why: 'Effekt unbekannt' });
+    else if (s.last.get(e.name) !== now) skipped.push({ t: e.t, name: e.name, why: 'Mindestabstand (MIN_GAP)' });
+    else skipped.push({ t: e.t, name: e.name, why: 'zu weit weg (Hörweite 16 m) oder zu leise' });
   }
   const r = pack(await ctx.startRendering());
   r.played = played;
