@@ -2,7 +2,7 @@
 // Klangpipeline des Trailers: rechnet Musik, Übergänge, Bett und Effekte mit dem Klang-Baukasten des Spiels
 // (Chromium, OfflineAudioContext), mischt taktgenau auf 60,000 s und schreibt trailer.wav (+ Stems, hits.json).
 //
-//   node trailer/audio/build.mjs [--out DIR] [--sfx DATEI] [--sfx-db N] [--no-verify]
+//   node trailer/audio/build.mjs [--out DIR] [--sfx DATEI] [--sfx-db N] [--no-verify] [--spectro]
 //
 // Umgebung: ZT_GAME (Spielcode, nur lesen), ZT_WORK (Ausgabe nach $ZT_WORK/audio/), ZT_FFMPEG (Prüfung).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -11,9 +11,9 @@ import { GAME_DIR, AUDIO } from '../config.mjs';
 import { openBrowser } from './browser.mjs';
 import { SR, TOTAL_SAMPLES } from './score.mjs';
 import { mixStems, master } from './mix.mjs';
-import { writeWav16, writeWavFloat, Meter, truePeakDb } from './dsp.mjs';
+import { writeWav16, writeWavFloat, Meter, shortTermRms, toDb } from './dsp.mjs';
 import { buildHits } from './hits.mjs';
-import { verify } from './verify.mjs';
+import { verify, spectrograms } from './verify.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, def = null) => {
@@ -46,10 +46,23 @@ for (const name of TASKS) {
   raw[name] = await browser.render(name);
   say(`${name.padEnd(13)} gerechnet (${raw[name].ms} ms)`);
 }
+// Wie renderMusic des Spiels: kein Stück darf stumm sein oder NaN/Inf enthalten (`bad`-Zähler)
 const check = await browser.render('check');
-const bad = check.filter((c) => c.bad || !(c.rms > 0));
-if (bad.length) throw new Error(`Stück stumm oder ungültig: ${JSON.stringify(bad)}`);
-say(`Stücke lauffähig: ${check.map((c) => `${c.id} rms ${c.rms.toFixed(3)} bad ${c.bad}`).join(', ')}`);
+const badPieces = check.filter((c) => c.bad || !(c.rms > 0));
+if (badPieces.length) throw new Error(`Stück stumm oder ungültig: ${JSON.stringify(badPieces)}`);
+say(`Stücke des Spiels lauffähig: ${check.map((c) => `${c.id} rms ${c.rms.toFixed(3)} bad ${c.bad}`).join(', ')}`);
+for (const [name, r] of Object.entries(raw)) {
+  for (const p of r.parts ?? [r]) {
+    let sum = 0;
+    let badCount = 0;
+    for (let i = 0; i < p.l.length; i++) {
+      const v = p.l[i] * p.l[i] + p.r[i] * p.r[i];
+      if (Number.isFinite(v)) sum += v;
+      else badCount++;
+    }
+    if (badCount || !(sum > 0)) throw new Error(`gerechneter Klang ${name} ist stumm oder ungültig (bad ${badCount}, Energie ${sum})`);
+  }
+}
 let sfxInfo = null;
 if (events) {
   raw.sfx = await browser.render('sfx', { events });
@@ -71,6 +84,11 @@ const g = 10 ** (info.gainDb / 20);
 for (const [name, b] of Object.entries(mixed.stems)) {
   const s = { l: Float32Array.from(b.l, (v) => v * g), r: Float32Array.from(b.r, (v) => v * g) };
   writeWavFloat(join(stemDir, `${name}.wav`), s);
+  if (name === 'bed') {
+    const st = shortTermRms(s);
+    const top = st.reduce((a, b2) => (b2.db > a.db ? b2 : a), st[0]);
+    say(`Bett: höchster Kurzzeit-RMS (3 s) ${top.db.toFixed(1)} dBFS bei ${(top.t - 3).toFixed(1)}–${top.t.toFixed(1)} s ${top.db < -30 ? '(unter −30, ok)' : '(ZU LAUT: Grenze −30)'}`);
+  }
 }
 writeWav16(join(outDir, 'trailer.wav'), out);
 say(`geschrieben: ${join(outDir, 'trailer.wav')} (${TOTAL_SAMPLES} Abtastwerte)`);
@@ -81,3 +99,4 @@ writeFileSync(join(outDir, 'hits.json'), JSON.stringify(hits, null, 1));
 say('hits.json geschrieben');
 
 if (!flag('no-verify')) await verify(join(outDir, 'trailer.wav'), out, { say });
+if (flag('spectro')) await spectrograms(join(outDir, 'trailer.wav'), join(outDir, 'check'), { say });

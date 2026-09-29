@@ -1,5 +1,7 @@
 // Messung der fertigen Datei: Lautheit (ffmpeg ebur128, unabhängig von unserem Messer), Abschnitte, Einsätze.
 import { spawnSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { FFMPEG } from '../config.mjs';
 import { SR, T, TOTAL_SAMPLES } from './score.mjs';
 import { Meter, truePeakDb, toDb, readWav } from './dsp.mjs';
@@ -64,6 +66,8 @@ export async function verify(path, buf, { say = console.log } = {}) {
   say(`Einsätze (steilster Anstieg): Nacht ${onset(buf, T.nacht - 0.05, T.nacht + 0.05).toFixed(3)} s (soll ${T.nacht}), Boss ${onset(buf, T.boss - 0.05, T.boss + 0.05).toFixed(3)} s (soll ${T.boss})`);
   const f = spawnSyncFfmpeg(path);
   if (f) say(f);
+  const lp = loudnormTruePeak(path);
+  if (lp) say(lp);
   const w = readWav(path);
   say(`Datei: ${w.l.length} Abtastwerte (soll ${TOTAL_SAMPLES}), ${w.sr} Hz, ${w.ch} Kanäle`);
 }
@@ -74,4 +78,22 @@ function spawnSyncFfmpeg(path) {
   const txt = r.stderr;
   const at = txt.lastIndexOf('Summary:');
   return at < 0 ? 'ffmpeg: keine Zusammenfassung' : `ffmpeg ebur128:\n${txt.slice(at).replace(/\n\n/g, '\n').trim().split('\n').map((l) => '    ' + l.trim()).join('\n')}`;
+}
+
+/** True Peak mit zwei Nachkommastellen (loudnorm gibt sie als JSON aus). */
+function loudnormTruePeak(path) {
+  const r = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', path, '-af', 'loudnorm=print_format=json', '-f', 'null', '-'], { encoding: 'utf8' });
+  const m = /"input_tp"\s*:\s*"([-\d.]+)"/.exec(r.stderr || '');
+  const i = /"input_i"\s*:\s*"([-\d.]+)"/.exec(r.stderr || '');
+  return m ? `ffmpeg loudnorm: input_i ${i?.[1]} LUFS, input_tp ${m[1]} dBTP` : null;
+}
+
+/** Spektrogramme (ffmpeg showspectrumpic) als PNG: ganz, Wende, Einschläge, Ausklang. */
+export async function spectrograms(path, dir, { say = console.log } = {}) {
+  mkdirSync(dir, { recursive: true });
+  const jobs = [['gesamt', 0, 60], ['wende-12-17', 11.5, 6.5], ['boss-40-43', 40, 3.5], ['ausklang-50-60', 50, 10]];
+  for (const [name, ss, t] of jobs) {
+    const r = spawnSync(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error', '-ss', String(ss), '-t', String(t), '-i', path, '-lavfi', 'showspectrumpic=s=1400x480:legend=1:scale=log:fscale=log:drange=90:limit=0:color=intensity', join(dir, `${name}.png`)], { encoding: 'utf8' });
+    say(r.status === 0 ? `Spektrogramm ${join(dir, name + '.png')}` : `Spektrogramm ${name} fehlgeschlagen: ${r.stderr}`);
+  }
 }

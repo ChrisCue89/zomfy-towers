@@ -176,9 +176,19 @@ export function shortTermRms(buf, win = 3, hop = 0.5, sr = 44100) {
 
 // --- True Peak und Begrenzer ---------------------------------------------------------------------------
 
-/** 4-fach überabgetastet: 12 Taps je Phase, Blackman-Harris-Fenster (Phasen 1…3; Phase 0 ist das Signal selbst). */
-const TP_TAPS = 12;
+/** 4-fach überabgetastet: 32 Taps je Phase, Kaiser-Fenster (β = 9) – misst Zwischenwerte auf ~0,05 dB genau (ffmpeg: ebur128 peak=true). */
+const TP_TAPS = 32;
 const TP_PHASE = (() => {
+  const bessel0 = (x) => {
+    let sum = 1;
+    let term = 1;
+    for (let k = 1; k < 40; k++) {
+      term *= (x / (2 * k)) ** 2;
+      sum += term;
+    }
+    return sum;
+  };
+  const beta = 9;
   const H = [];
   const half = TP_TAPS / 2 - 1;
   for (let p = 1; p < 4; p++) {
@@ -187,7 +197,8 @@ const TP_PHASE = (() => {
     let sum = 0;
     for (let j = 0; j < TP_TAPS; j++) {
       const d = phi - (j - half); // Abstand des Abtastwerts x[i + k] vom Ausgabepunkt, k = j − half
-      const w = 0.35875 + 0.48829 * Math.cos((2 * Math.PI * d) / TP_TAPS) + 0.14128 * Math.cos((4 * Math.PI * d) / TP_TAPS) + 0.01168 * Math.cos((6 * Math.PI * d) / TP_TAPS);
+      const r = d / (TP_TAPS / 2);
+      const w = Math.abs(r) >= 1 ? 0 : bessel0(beta * Math.sqrt(1 - r * r)) / bessel0(beta);
       h[j] = (d === 0 ? 1 : Math.sin(Math.PI * d) / (Math.PI * d)) * w;
       sum += h[j];
     }

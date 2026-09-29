@@ -34,7 +34,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -26.2, 1.4], [FRAMES - 1, -24.8, 1.4]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Bolzenwerfer (Repetierer), Kürbiskatapult (Feuer), Sprenger (Frost) und Laternenturm am letzten Wegabschnitt; ein Trupp Schlurfer mit Brummer läuft von links herein.',
+  description: 'Nacht, Ansicht weit, Weggabelung (nord- und mitte/sued-Weg laufen zusammen, Fackeln mit Lichtinseln). Ein Trupp Schlurfer (16, mit Brummer und Flitzern) zieht aus dem Wald ein; zwei Feuer-Katapulte (Kürbisbögen), zwei Bolzenwerfer (Repetierer und Scharfschütze), Sprenger und Laternenturm schießen. Mika steht unten. Kamera fest mit ganz leichter Fahrt nach rechts. Beste Schnitte: 0-45 (Bögen und Bolzen), 45-90 (Trupp rückt nach).',
 });
 console.log(r.problems);
 await rec.close();

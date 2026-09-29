@@ -9,12 +9,12 @@ const FRAMES = Number(process.env.ZT_FRAMES || 75);
 const COL = -13; // Spalte der Barrikaden (Weg dort: j −1 … 3)
 
 const rec = await Rec.open({ ui: 'world' });
-await prepare(rec, { day: 6, hour: 21, minute: 0 });
+await prepare(rec, { day: 6, hour: 21, minute: 0, view: 'nah' });
 const towers = await placeTowers(rec, [
-  { type: 'bolzen', i: -11, j: -2, level: 3, spec: 'B', xp: 520 },
-  { type: 'katapult', i: -9, j: -2, level: 3, spec: 'A', xp: 200 },
-  { type: 'katapult', i: -11, j: 4, level: 2, xp: 200 },
-  { type: 'bolzen', i: -9, j: 4, level: 2, xp: 200 },
+  { type: 'katapult', i: -11, j: -2, level: 3, spec: 'A', xp: 520 },
+  { type: 'katapult', i: -11, j: 4, level: 3, spec: 'A', xp: 200 },
+  { type: 'laternenpfahl', i: -14, j: -2 },
+  { type: 'laternenpfahl', i: -14, j: 4 },
 ]);
 console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
 const bar = await rec.eval((COL) => {
@@ -30,7 +30,7 @@ const bar = await rec.eval((COL) => {
   }
   // Zubehör: Dornen an der mittleren Barrikade (wer draufschlägt, verletzt sich)
   if (typeof ids[2] === 'number') Z.addGear(ids[2], 'dornen');
-  Z.teleport(-11.6, 5.9, 0);
+  Z.teleport(-9.5, 4.8, 0);
   const b = window.__b;
   // Trupp aus dem Wald: Schlurfer und Flitzer, ein Brummer vorn im Pulk
   const rows = [0.5, 1.5, 2.5];
@@ -57,9 +57,9 @@ for (let t = 0; t < 400; t++) {
 console.log('vorlauf s', waited.toFixed(1));
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -14.6, 1.5], [FRAMES - 1, -13.6, 1.5]] },
+  cam: { keys: [[0, -13.6, 1.6], [FRAMES - 1, -13.0, 1.6]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Barrikaden (Stufe 2, Dornen in der Mitte) quer über den letzten Wegabschnitt. Der Trupp mit Brummer schlägt sie ein (Holzsplitter), Katapulte (Feuer) und Bolzenwerfer stehen dahinter; eine Barrikade bricht kurz nach Bild 0.',
+  description: 'Nacht, Ansicht nah (160 px/m). Brummer mit Trupp schlägt eine Barrikadenreihe quer über den Weg ein (Holzsplitter, Dornen an der mittleren), zwei Feuer-Katapulte (Kürbisbögen, Aufprall) dahinter, zwei Laternenpfähle als Lichtinseln, Mika rechts. Um Bild 40 bricht die mittlere Barrikade, der Brummer steht im Spalt, ab ca. Bild 60 kippt er (Brand). Beste Schnitte: Bild 0-35 (Pulk und Splitter), 36-60 (Durchbruch).',
 });
 console.log(r.problems);
 const end = await rec.eval(() => window.zomfy.buildings().filter((b) => b.type === 'barrikade').length);

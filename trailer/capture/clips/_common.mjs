@@ -79,3 +79,25 @@ export function installWalker(rec) {
     window.__tap = (code) => g.input.pressedCodes.add(code);
   });
 }
+
+/**
+ * Lager mit Menschen (für Gruppe A): Tage, Vorräte, Zelte (ins Bild gesetzt), alle Überlebenden eingezogen.
+ * Gibt die Ergebnisse der Bauversuche zurück.
+ */
+export function setupCamp(rec, { day = 8, tents = [[-5, -3], [-5, 0], [-4, 3], [-2, -6]], ids = ['knopf', 'hilde', 'juna', 'bert', 'yusuf'] } = {}) {
+  return rec.eval((a) => {
+    const z = window.zomfy;
+    const g = z.game;
+    z.setDay(a.day);
+    z.give({ holz: 200, schrott: 80, stoff: 60, fasern: 80, stein: 60 });
+    const res = { tents: [], moved: {} };
+    for (const [i, j] of a.tents) res.tents.push(`${i},${j}:${z.build('zelt', i, j)}`);
+    for (const id of a.ids) {
+      z.setSurvivor(id, 2);
+      res.moved[id] = g.survivors.moveIn(id);
+    }
+    g.survivors.placeAll(true);
+    g.survivors.refreshInteractions();
+    return res;
+  }, { day, tents, ids });
+}

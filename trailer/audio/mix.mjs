@@ -215,11 +215,12 @@ export function softClip(buf, knee = 0.5, asym = 0.9) {
  * Master: Verstärkung → Sättigung → Begrenzer → Ränder. Sucht die Verstärkung, bei der die integrierte Lautheit
  * (nach Begrenzer) den Zielwert trifft. Gibt die fertige Mischung und die Verstärkung zurück.
  */
-export function master(pre, { targetLufs = -16, ceilingDb = -1.6, knee = 0.55, asym = 0.93, edge = 0.02, iterations = 5 } = {}) {
+export function master(pre, { targetLufs = -16, ceilingDb = -1.4, tpMaxDb = -1.35, knee = 0.55, asym = 0.93, edge = 0.02, iterations = 8 } = {}) {
   const fi = fadeIn(0, edge);
   const fo = fadeOut(DURATION - edge, DURATION);
   const edgeFade = (t) => fi(t) * fo(t);
   let gDb = targetLufs - new Meter(pre).integrated();
+  let ceil = ceilingDb;
   let out;
   let info;
   for (let it = 0; it < iterations; it++) {
@@ -230,11 +231,15 @@ export function master(pre, { targetLufs = -16, ceilingDb = -1.6, knee = 0.55, a
       out.r[i] *= g;
     }
     const clipped = softClip(out, knee, asym);
-    const lim = limit(out, { ceilingDb, attack: 0.004, release: 0.1, sr: SR });
+    const lim = limit(out, { ceilingDb: ceil, attack: 0.004, release: 0.1, sr: SR });
     applyGain(out, edgeFade, 0, SR);
     const lufs = new Meter(out).integrated();
-    info = { gainDb: gDb, lufs, clipped, limiter: lim };
-    if (Math.abs(lufs - targetLufs) < 0.05) break;
+    const tp = truePeakDb(out);
+    info = { gainDb: gDb, lufs, truePeakDb: tp, ceilingDb: ceil, clipped, limiter: lim };
+    const okLufs = Math.abs(lufs - targetLufs) < 0.05;
+    const okTp = tp <= tpMaxDb;
+    if (okLufs && okTp) break;
+    if (!okTp) ceil -= tp - tpMaxDb + 0.02; // Zwischenwerte über der Grenze: Decke absenken
     gDb += targetLufs - lufs;
   }
   return { out, info };
