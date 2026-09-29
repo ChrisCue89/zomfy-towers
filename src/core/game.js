@@ -2846,13 +2846,23 @@ export class Game {
   }
 
   /** Text in mehrfacher Pixelgröße (Titel, Tageskarte). */
-  drawBigText(ui, text, cx, y, factor, color) {
-    const w = measure(text);
-    const tmp = document.createElement('canvas');
-    tmp.width = w + 2;
-    tmp.height = GLYPH_ROWS + 2;
-    const c = tmp.getContext('2d');
-    drawText(c, text, 1, 1, color, { shadow: COLORS.shadow });
+  /**
+   * Große Schrift (Banner, Titel, Abspann): einmal klein gezeichnet und vergrößert.
+   * Die kleinen Bilder bleiben im Zwischenspeicher (M25: vorher jedes Bild eine neue
+   * Leinwand). `outline`: Kontur statt Schatten (Abspann auf Schnee).
+   */
+  drawBigText(ui, text, cx, y, factor, color, outline = null) {
+    const key = `${text}|${color}|${outline}`;
+    const cache = this.bigTextCache || (this.bigTextCache = new Map());
+    let tmp = cache.get(key);
+    if (!tmp) {
+      if (cache.size > 40) cache.clear();
+      tmp = document.createElement('canvas');
+      tmp.width = measure(text) + 2;
+      tmp.height = GLYPH_ROWS + 2;
+      drawText(tmp.getContext('2d'), text, 1, 1, color, outline ? { outline } : { shadow: COLORS.shadow });
+      cache.set(key, tmp);
+    }
     ui.ctx.drawImage(tmp, Math.round(cx - (tmp.width * factor) / 2), Math.round(y), tmp.width * factor, tmp.height * factor);
   }
 

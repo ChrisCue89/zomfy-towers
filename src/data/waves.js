@@ -37,15 +37,19 @@ export function wavesInNight(n) {
  */
 export const TOUGHNESS = { from: 3, per: 0.4, grow: 0.02, bossNight: 0.4 };
 
-/** Zusätzliche Zähigkeit ab Nacht 4; in Bossnächten nur ein Teil davon – dort ist der Boss die Prüfung. */
-export function toughness(n) {
+/**
+ * Zusätzliche Zähigkeit ab Nacht 4; in Bossnächten nur ein Teil davon – dort ist
+ * der Boss die Prüfung (`boss`; die Frostnacht rechnet ohne diesen Rabatt, M25).
+ * Dazu der Ausgleich für die gedeckelte Menge (`crowd`, ab Nacht 13).
+ */
+export function toughness(n, boss = isLeaderNight(n)) {
   const k = Math.max(0, n - TOUGHNESS.from);
   const extra = TOUGHNESS.per * k + TOUGHNESS.grow * k * k;
-  return 1 + extra * (isLeaderNight(n) ? TOUGHNESS.bossNight : 1);
+  return (1 + extra * (boss ? TOUGHNESS.bossNight : 1)) * crowd(n);
 }
 
-export function hpFactor(n) {
-  return (1 + 0.25 * (n - 1)) * toughness(n);
+export function hpFactor(n, boss = isLeaderNight(n)) {
+  return (1 + 0.25 * (n - 1)) * toughness(n, boss);
 }
 
 export function isLeaderNight(n) {
@@ -130,13 +134,32 @@ function addWaveTraits(waves, n, seed) {
  * M9.1 (Auftraggeber: »ein Turm und bisschen Handarbeit regelt« Nacht 1): +3.
  * Nacht 1: 33, 2: 43, 3: 55, 4: 69, 5: 85, 8: 145 (M9: 30, 40, 52, 66, 82, 142).
  */
-export function nightBudget(n) {
+function budgetCurve(n) {
   return 33 + 9 * (n - 1) + (n - 1) ** 2;
 }
 
 /**
+ * Menge der Horde (M25, Balance-Durchlauf über 30 Nächte): Bis Nacht 12 wächst
+ * das Budget quadratisch (so in M24 vermessen), danach nur noch linear mit der
+ * Steigung von Nacht 12 – sonst kamen in Nacht 23 an die 1500 Schlurfer, mehr als
+ * das Bild lesbar zeigt (je Art zeichnet es höchstens 110 gleichzeitig). Was an
+ * Masse fehlt, tragen die Schlurfer als Zähigkeit (`crowd`).
+ */
+export const CROWD = { from: 12 };
+
+export function nightBudget(n) {
+  if (n <= CROWD.from) return budgetCurve(n);
+  return budgetCurve(CROWD.from) + (9 + 2 * (CROWD.from - 1)) * (n - CROWD.from);
+}
+
+/** Ausgleich für die gedeckelte Menge: so viel mehr Leben je Schlurfer (bis Nacht 12 genau 1). */
+export function crowd(n) {
+  return budgetCurve(n) / nightBudget(n);
+}
+
+/**
  * @param {'finale'|'rogue'|null} [mode] M25: Frostnacht (jede Welle über alle
- *   Wege, das Moderherz führt die letzte an) bzw. nach dem Herbst eine Nacht, die
+ *   Wege, das Moderherz führt die zweite an) bzw. nach dem Herbst eine Nacht, die
  *   sich neu würfelt (langsamer wachsend, siehe data/autumn.js)
  */
 export function planNight(n, seed, entries, difficulty, mode = null) {
@@ -145,6 +168,8 @@ export function planNight(n, seed, entries, difficulty, mode = null) {
   // Nach dem Herbst wächst die Horde nur noch halb so schnell (M25)
   const g = mode === 'rogue' ? AUTUMN.days + (n - AUTUMN.days) * ROGUE.growth : n;
   const count = wavesInNight(Math.round(g));
+  // Bossnächte rechnen mit weniger Zähigkeit – die Frostnacht nicht: Sie ist der Höhepunkt (M25)
+  const boss = mode === 'finale' ? false : isLeaderNight(g);
   const waves = [];
   let at = NIGHT_START;
   // Spätere Wellen einer Nacht sind größer (Gewichte 0,8 / 1,0 / 1,2 …)
@@ -193,10 +218,11 @@ export function planNight(n, seed, entries, difficulty, mode = null) {
       for (let k = 0; k < g.count; k++) spawns.push({ type: g.type, entry: g.entry, delay: t + k * (g.type === 'schwaermer' ? 0.35 : 1.4) });
     });
     // Jede fünfte Nacht führt ein Boss die letzte Welle an (M22; vorher der Anführer).
-    // M25: In der Frostnacht ist es das Moderherz (über den mittleren Weg), nach dem
-    // Herbst ein zufälliger Boss. Bosse behalten ihre eigene Kurve (ohne die Zähigkeit, M24).
-    if (mode === 'finale' && w === count - 1) spawns.push({ type: FINALE_BOSS, entry: entries[Math.floor(entries.length / 2)], delay: span + 4, hp: (FINALE.heartHp * bossHpFactor(n)) / toughness(g) });
-    else if (isLeaderNight(n) && w === count - 1) spawns.push({ type: mode === 'rogue' ? rng.pick(BOSS_ORDER) : bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(g) });
+    // M25: In der Frostnacht ist es das Moderherz (über den mittleren Weg, schon in der
+    // zweiten Welle – FINALE.heartWave, sonst käme es nie an), nach dem Herbst ein zufälliger Boss.
+    // Bosse behalten ihre eigene Kurve (ohne die Zähigkeit, M24).
+    if (mode === 'finale' && w === Math.min(count - 1, FINALE.heartWave)) spawns.push({ type: FINALE_BOSS, entry: entries[Math.floor(entries.length / 2)], delay: span + 4, hp: (FINALE.heartHp * bossHpFactor(n)) / toughness(g, boss) });
+    else if (isLeaderNight(n) && w === count - 1) spawns.push({ type: mode === 'rogue' ? rng.pick(BOSS_ORDER) : bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(g, boss) });
     const shuffled = spawns.sort((a, b) => a.delay - b.delay);
     waves.push({ at: Math.round(at), entries: used, spawns: shuffled });
     // Verschnaufpausen zum Einsammeln und Flicken, später dichter (m3-r1: das
@@ -209,7 +235,7 @@ export function planNight(n, seed, entries, difficulty, mode = null) {
   addNewKinds(waves, n, seed);
   addWaveTraits(waves, n, seed);
   if (mode === 'rogue') diceNight(waves, n, seed, entries);
-  return { night: n, hpFactor: hpFactor(g) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves, finale: mode === 'finale', rogue: mode === 'rogue' };
+  return { night: n, hpFactor: hpFactor(g, boss) * diff.hp, speedFactor: diff.speed, lootFactor: diff.loot, waves, finale: mode === 'finale', rogue: mode === 'rogue' };
 }
 
 /**

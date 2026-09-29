@@ -7,11 +7,14 @@ import { RESOURCES, RARE_RESOURCES, ITEMS, HOTBAR_SIZE } from '../data/items.js'
 import { HOUSE_LEVELS, maxHpOf } from '../data/buildings.js';
 import { clockText, hoursOf } from '../core/state.js';
 import { COLORS } from './ui.js';
-import { measure, LINE_HEIGHT, drawTiny } from './font.js';
+import { measure, LINE_HEIGHT, drawTiny, wrap } from './font.js';
 import { drawIcon, iconSize } from './icons.js';
 import { xpForLevel } from '../data/perks.js';
 import { SKILLS } from '../data/skills.js';
 import { P, hexToCss } from '../render/palette.js';
+
+/** So breit wird eine Sprechblase höchstens, dann bricht sie um (M25). */
+const SPEECH_MAX_W = 380;
 
 /**
  * Zeichen der Zustände über dem Kopf (M18): 5 × 5 Pixel auf dunklem Grund –
@@ -995,24 +998,46 @@ export class Hud {
     }
   }
 
+  /** Lage der Sprechblase über Mika (oder über `who`) – null, wenn keine da ist. */
+  speechLayout(ui) {
+    const s = this.speech;
+    if (!s) return null;
+    const p = s.who || this.game.player.position;
+    const at = this.game.worldToUi(p.x, p.y + (s.who ? 0 : 2.1), p.z);
+    // Lange Gedanken brechen um (M25: »…über den Nordweg, den Mittelweg und den Südweg…« lief über den Rand)
+    const maxW = Math.min(ui.width - 8, SPEECH_MAX_W);
+    const lines = measure(s.text) + 12 > maxW ? wrap(s.text, maxW - 12) : [s.text];
+    const w = Math.max(...lines.map((l) => measure(l))) + 12;
+    const h = 5 + lines.length * LINE_HEIGHT;
+    const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
+    const y = Math.round(Math.max(62, at.y - h - 1)); // nie über Uhr und Ziel
+    // Liegt dort die Tafel des Nachtplans (gleiches Bild, schon gezeichnet), steht der Gedanke
+    // unter den Füßen – sonst verdeckten sie sich (M25, Frostnacht)
+    const pr = this.planRect;
+    if (pr && x < pr.x + pr.w && x + w > pr.x && y < pr.y + pr.h && y + h + 2 > pr.y) {
+      const foot = this.game.worldToUi(p.x, p.y - (s.who ? 1.6 : 0), p.z);
+      return { x, y: Math.round(Math.min(ui.height - h - 60, foot.y + 6)), w, h, lines, at: foot, below: true };
+    }
+    return { x, y, w, h, lines, at, below: false };
+  }
+
   drawSpeech(ui) {
     this.speechRect = null;
     const s = this.speech;
-    if (!s) return;
+    const L = this.speechLayout(ui);
+    if (!L) return;
     if (s.duration - s.time < 0.4 && Math.floor(s.time * 12) % 2 === 0) return;
-    const p = s.who || this.game.player.position;
-    const at = this.game.worldToUi(p.x, p.y + (s.who ? 0 : 2.1), p.z);
-    const w = measure(s.text) + 12;
-    const x = Math.round(Math.min(ui.width - w - 4, Math.max(4, at.x - w / 2)));
-    const y = Math.round(Math.max(62, at.y - 18)); // nie über Uhr und Ziel
-    this.speechRect = { x, y, w, h: 19 }; // m16-r1: der E-Hinweis weicht der Sprechblase aus
-    ui.panel(x, y, w, 17, { fill: COLORS.fillLight });
-    ui.text(s.text, x + 6, y + 2, COLORS.text);
-    // Zipfel der Sprechblase
+    const { x, y, w, h, lines, at, below } = L;
+    this.speechRect = { x, y: below ? y - 2 : y, w, h: h + 2 }; // m16-r1: der E-Hinweis weicht der Sprechblase aus
+    ui.panel(x, y, w, h, { fill: COLORS.fillLight });
+    lines.forEach((l, k) => ui.text(l, x + 6, y + 2 + k * LINE_HEIGHT, COLORS.text));
+    // Zipfel der Sprechblase (unter den Füßen zeigt er nach oben)
     const tx = Math.round(Math.min(x + w - 8, Math.max(x + 6, at.x)));
-    ui.rect(tx - 2, y + 16, 5, 1, COLORS.outline);
-    ui.rect(tx - 1, y + 17, 3, 1, COLORS.outline);
-    ui.rect(tx, y + 18, 1, 1, COLORS.outline);
+    const edge = below ? y : y + h - 1;
+    const dir = below ? -1 : 1;
+    ui.rect(tx - 2, edge, 5, 1, COLORS.outline);
+    ui.rect(tx - 1, edge + dir, 3, 1, COLORS.outline);
+    ui.rect(tx, edge + 2 * dir, 1, 1, COLORS.outline);
   }
 
   hotbarRect(ui) {

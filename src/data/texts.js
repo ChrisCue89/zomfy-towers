@@ -12,6 +12,12 @@ const LAGER_DINGE = {
   vogelscheuche: ['Die Vogelscheuche', 'der Vogelscheuche'], // M19: fällt um, wenn die Gelockten sie zerschlagen
 };
 
+/** »a, b und c« – Aufzählung im Satz (M25: drei Wege lasen sich als »a und b und c«). */
+function liste(items) {
+  if (items.length <= 1) return items[0] || '';
+  return `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`;
+}
+
 export const T = {
   spielName: 'Zomfy Towers',
   laden: 'Zomfy Towers wird geladen …',
@@ -344,6 +350,10 @@ export const T = {
     // Die Spawns am linken Kartenrand (Meilenstein 9): drei Wege aus dem Wald
     richtung: { nord: 'über den Nordweg', mitte: 'über den Mittelweg', sued: 'über den Südweg' },
     richtungKurz: { nord: 'Nordweg', mitte: 'Mittelweg', sued: 'Südweg' },
+    // M25: mehrere Wege in einem Satz – »über den Nordweg, den Mittelweg und den Südweg«
+    wege: { nord: 'den Nordweg', mitte: 'den Mittelweg', sued: 'den Südweg' },
+    ueber: (keys) => `über ${liste(keys.map((k) => T.horde.wege[k]))}`,
+    kurzListe: (keys) => liste(keys.map((k) => T.horde.richtungKurz[k])),
     // Arten für Junas Funkspruch (Einzahl, Mehrzahl)
     arten: {
       schlurfer: ['ein Schlurfer', 'Schlurfer'],
@@ -368,7 +378,7 @@ export const T = {
     welleKurz: (n, von) => `Welle ${n}/${von}`,
     aus: (woher) => `Aus: ${woher}`,
     gleich: (woher) => `Gleich: ${woher}`,
-    ungedecktAbend: (woher) => `Heute Nacht kommen sie zuerst ${woher} – und an dem Weg steht noch kein Turm.`,
+    ungedecktAbend: (woher, n = 1) => `Heute Nacht kommen sie zuerst ${woher} – und ${n > 1 ? 'an diesen Wegen' : 'an dem Weg'} steht noch kein Turm.`,
     ungedeckt: (woher) => `Die nächste Welle kommt ${woher} – dort steht kein Turm am Weg!`,
     trupp: (woher) => `Ein kleiner Trupp nähert sich ${woher}.`,
     nachtBeginnt: (n) => `Nacht ${n}: Die Horde kommt.`,

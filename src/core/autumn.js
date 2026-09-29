@@ -14,6 +14,8 @@ import { measure } from '../ui/font.js';
 
 /** Abspann: so viele Oberflächenpixel je Sekunde, Abstand der Zeilen; Kamerafahrt über die verschneite Bucht. */
 const CREDITS = { speed: 16, fast: 5, line: 12, gap: 10, spots: ['haus', 'zusammen', 'unterholz', 'wald', 'haus'], spotTime: 9 };
+/** Gedämpfte Zeilen im Abspann: hell genug für die Kontur auf Schnee. */
+const CREDITS_DIM = hexToCss(P.s7);
 
 export class Autumn {
   constructor(game) {
@@ -245,12 +247,10 @@ export class Autumn {
   drawCredits(ui) {
     const c = this.credits;
     if (!c) return;
-    // Nur ein Band hinter den Zeilen abdunkeln – links und rechts bleibt die verschneite Bucht klar
+    // Die verschneite Bucht bleibt ganz frei (kein Rasterband – das machte das Haus zum
+    // Schachbrett); die Zeilen tragen eine dunkle Kontur und lesen sich so auch auf Schnee
     const cx = Math.round(ui.width / 2);
-    const band = 150;
-    ui.ditherRect(cx - band, 0, band * 2, ui.height, 0.55, COLORS.night);
-    ui.ditherRect(cx - band - 12, 0, 12, ui.height, 0.25, COLORS.night);
-    ui.ditherRect(cx + band, 0, 12, ui.height, 0.25, COLORS.night);
+    const edge = { outline: COLORS.outline };
     let y = Math.round(c.y);
     for (const l of c.lines) {
       if (l.gap) {
@@ -258,15 +258,15 @@ export class Autumn {
         continue;
       }
       if (l.big) {
-        if (y > -30 && y < ui.height + 4) this.game.drawBigText(ui, l.text, cx, y, 2, COLORS.gold);
+        if (y > -30 && y < ui.height + 4) this.game.drawBigText(ui, l.text, cx, y, 2, COLORS.gold, COLORS.outline);
         y += CREDITS.line * 2 + 4;
         continue;
       }
-      if (y > -12 && y < ui.height + 4) ui.textCentered(l.text, cx, y, l.head ? COLORS.gold : l.dim ? COLORS.textDim : COLORS.text);
+      if (y > -12 && y < ui.height + 4) ui.textCentered(l.text, cx, y, l.head ? COLORS.gold : l.dim ? CREDITS_DIM : COLORS.text, edge);
       y += CREDITS.line;
     }
     const hint = T.herbst.abspann.taste;
-    ui.text(hint, ui.width - measure(hint) - 6, ui.height - 12, hexToCss(P.s6));
+    ui.text(hint, ui.width - measure(hint) - 6, ui.height - 12, CREDITS_DIM, edge);
   }
 
   /** Für die Prüfung. */

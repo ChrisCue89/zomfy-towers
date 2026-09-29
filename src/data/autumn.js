@@ -10,13 +10,16 @@ export const AUTUMN = { days: 30, snowDays: 3, countdownFrom: 25 };
 
 /**
  * Frostnacht: jede Welle über alle Wege, das Budget etwas höher; das Herz
- * führt die letzte Welle an (`heartHp` mal so viel Leben wie ein Boss dieser
- * Nacht). Phasen nach seinem Leben: unter `phases[0]` ruft es die Horde über
- * alle Wege (je Weg ein Pulk mit `pulk` Schwärmern), unter `phases[1]` kommt
- * der Frost – das Herz wird langsamer (`frostSlow`), ruft noch einmal, und
- * seine Sporen kommen öfter.
+ * führt die Welle Nummer `heartWave` an (ab 0 gezählt, `heartHp` mal so viel
+ * Leben wie ein Boss dieser Nacht). Der Balance-Durchlauf zeigte: Aus der
+ * letzten Welle kam es nie an – es braucht für die rund 60 m Weg sechs
+ * Spielstunden und erstarrte am Waldrand. Aus der zweiten Welle erreicht es die
+ * Verteidigung gegen Mitternacht, die übrigen Wellen folgen ihm. Phasen nach
+ * seinem Leben: unter `phases[0]` ruft es die Horde über alle Wege (je Weg ein
+ * Pulk mit `pulk` Schwärmern), unter `phases[1]` kommt der Frost – das Herz wird
+ * langsamer (`frostSlow`), ruft noch einmal, und seine Sporen kommen öfter.
  */
-export const FINALE = { budget: 1.15, heartHp: 1, phases: [0.66, 0.33], pulk: 5, frostSlow: 0.75 };
+export const FINALE = { budget: 1.15, heartHp: 0.8, heartWave: 1, phases: [0.66, 0.33], pulk: 5, frostSlow: 0.75 };
 
 /**
  * Nach dem Herbst (»weiterspielen«): Jede Nacht würfelt sich neu – Wege je

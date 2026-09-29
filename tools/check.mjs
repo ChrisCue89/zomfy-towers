@@ -5899,7 +5899,7 @@ async function runRiskChecks(browser, url) {
 /**
  * M25 (nur der Kern): Ein Herbst hat 30 Tage – die Uhr zählt mit, die letzten
  * Tage zählen herunter. In der Frostnacht (Nacht 30) kommt jede Welle über alle
- * Wege, das Moderherz führt die letzte an; unter zwei Dritteln ruft es die Horde
+ * Wege, das Moderherz führt schon die zweite an; unter zwei Dritteln ruft es die Horde
  * über alle Wege, unter einem Drittel kommt der Frost (Schnee fällt). Fällt das
  * Herz, zerfällt die Horde, die Nacht ist gehalten, der erste Frost ist da:
  * Schnee am Morgen, der Moder glimmt nicht mehr. Nach dem Morgenbericht (echte
@@ -5947,12 +5947,12 @@ async function runFinaleChecks(browser, url) {
       finale: p30.finale,
       alle: p30.waves.every((w) => w.entries.length === 3),
       herz: spawns.filter((s) => s.type === 'moderherz').length,
-      letzte: p30.waves[p30.waves.length - 1].spawns.some((s) => s.type === 'moderherz'),
+      zweite: p30.waves[1].spawns.some((s) => s.type === 'moderherz'), // es ist langsam: aus der letzten Welle käme es nie an
       vorher: g.nights.planFor(29).finale,
     };
   });
-  if (kalender.label === 'Tag 12 von 30' && kalender.count === 'Noch 3 Nächte bis zum ersten Frost.' && kalender.finale && kalender.alle && kalender.herz === 1 && kalender.letzte && !kalender.vorher) {
-    note(`✓ Herbst (M25): Die Uhr zeigt »${kalender.label}«, ab Tag 25 zählen die Nächte herunter (»${kalender.count}«); in der Frostnacht kommt jede Welle über alle drei Wege, das Moderherz führt die letzte an`);
+  if (kalender.label === 'Tag 12 von 30' && kalender.count === 'Noch 3 Nächte bis zum ersten Frost.' && kalender.finale && kalender.alle && kalender.herz === 1 && kalender.zweite && !kalender.vorher) {
+    note(`✓ Herbst (M25): Die Uhr zeigt »${kalender.label}«, ab Tag 25 zählen die Nächte herunter (»${kalender.count}«); in der Frostnacht kommt jede Welle über alle drei Wege, das Moderherz führt schon die zweite an`);
   } else fail(`Kalender und Frostnacht: ${JSON.stringify(kalender)}`);
 
   // 2) Frostnacht: Das Herz ruft die Horde über alle Wege, dann kommt der Frost; fällt es, zerfällt die Horde

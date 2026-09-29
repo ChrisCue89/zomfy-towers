@@ -5,6 +5,34 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 25 – Nachbesserung: späte Nächte und die Frostnacht vermessen ✓
+
+**Anlass:** Die Frostnacht war noch nicht mit dem Balance-Durchlauf vermessen;
+die Gesamtprüfung zeigte dazu drei Mängel im Bild.
+
+- **Balance-Durchlauf über 30 Nächte** (Ausgewogen, Bot mit Mika):
+  - Vorher: ab Nacht 12 kein Druck mehr, dafür immer mehr Schlurfer (Nacht 23:
+    1500); das Moderherz kam aus der letzten Welle nie an – es hing am Waldrand in
+    Betäubung, Rückstoß und im Stau fest und erstarrte mit 60 % Leben.
+  - Geändert: Ab Nacht 13 wächst die Menge nur linear, die Masse steckt in der
+    Zähigkeit (OFFENE-FRAGEN 158); bis zu 180 Schlurfer je Art im Bild. Das Herz
+    führt die zweite Welle an, ist standhaft und schiebt sich durch die eigene
+    Horde, hat 80 % des Boss-Lebens; die Frostnacht ohne Bossnacht-Rabatt
+    (OFFENE-FRAGEN 159).
+  - Ergebnis: 30/30 gehalten, Druck ab Nacht 23, Durchbruch in Nacht 28; in der
+    Frostnacht bricht das Herz Barrikaden und Tor, der Frost kommt, im
+    Morgengrauen erstarrt es mit rund 40 % Leben.
+  - Offen: »Wild« über 30 Nächte ist noch nicht gemessen.
+- **Bild:** Lange Gedanken brechen in der Sprechblase um und weichen der
+  Nachtplan-Tafel aus (unter die Füße); Wege werden im Satz aufgezählt (»über den
+  Nordweg, den Mittelweg und den Südweg – und an diesen Wegen …«); der Abspann
+  zeigt die verschneite Bucht ohne Rasterband, die Schrift hat eine Kontur.
+- **Technik:** große Schrift (Banner, Abspann) aus einem Zwischenspeicher statt
+  jedes Bild neu; der Fallen-Test (seit M19 falsch) prüft jetzt wirklich, dass
+  Stachelbretter über die ganze Spalte den Weg nicht sperren.
+
+---
+
 ## Meilenstein 25 – Ein Herbst mit Ende (Teil 2: Herbstbuch) ✓
 
 **Ziel (DESIGN 8):** Sterne je Nacht, Herbstbuch mit Deko als Belohnung,

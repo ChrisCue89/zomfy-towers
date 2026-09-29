@@ -17,6 +17,8 @@
 //   digger    buddelt sich unter Barrikaden durch      door  Tür vorn: fängt ab, bis sie bricht
 //   lightproof  Licht schreckt ihn nicht               snuff löscht Lichter im Umkreis (m)
 //   brood     legt Sporenkapseln (alle `every` s, schlüpfen nach `hatch` s: `count` Schwärmer)
+//   steadfast standhaft (M25, das Moderherz): keine Betäubung, kein Rückstoß, kein Locken –
+//             nur Licht macht es müde; bei vielen Türmen stand es sonst still
 
 export const ZOMBIES = {
   schlurfer: {
@@ -271,6 +273,7 @@ export const ZOMBIES = {
     heavy: true,
     boss: true,
     immuneSlow: true,
+    steadfast: true, // M25: sonst hielten viele Türme es mit Betäubung und Rückstoß am Waldrand fest
     heart: true,
     attacks: ['wurzeln'],
     loot: { teile: [40, 50], zahnraeder: [4, 6], moderkerne: 3 },

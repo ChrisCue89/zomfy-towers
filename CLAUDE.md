@@ -459,7 +459,11 @@ Grundprinzipien:
   eine solche Nacht mit mehr Leben je Schlurfer nach (ein bis drei Minuten
   statt einer halben Stunde). Er ersetzt die Testspieler für die Frage »zu
   leicht, zu schwer?«; balanciert wird in `src/data/` (Zähigkeit:
-  `TOUGHNESS` in `waves.js`).
+  `TOUGHNESS` in `waves.js`). Ab Nacht 13 wächst die Menge der Horde nur noch
+  linear (`CROWD`, `nightBudget`), die fehlende Masse tragen die Schlurfer als
+  Zähigkeit (`crowd`) – sonst kamen über 1500 je Nacht, mehr als das Bild lesbar
+  zeigt. `node tools/balance.mjs --naechte=30` meldet in der Frostnacht, ob das
+  Herz fiel oder erstarrte (Phase, wie weit, Leben).
 - **Ein Herbst mit Ende (M25, `core/autumn.js`):** `autumn.planMode(n)` sagt dem
   Wellenplan, ob Nacht n die Frostnacht (`'finale'`: alle Wege, das Moderherz)
   oder eine neu gewürfelte Nacht nach dem Herbst ist (`'rogue'`). Das Herz ist
@@ -471,7 +475,11 @@ Grundprinzipien:
   `weather.snowNow` (vom Spiel gesetzt) wählt das Wetter `schnee`, der Shader
   legt über `uSnow` eine Schneedecke auf alles mit `snow` im Material (nur
   Feststehendes draußen; der Boden mit `snow: 0.5` nur bestäubt), der Moder
-  glimmt über `world.moderFactor` schwächer. Werte in `data/autumn.js`.
+  glimmt über `world.moderFactor` schwächer. Werte in `data/autumn.js`. Das
+  Herz ist `steadfast` (keine Betäubung, kein Rückstoß, kein Locken, es schiebt
+  sich durch die eigene Horde – nur Licht macht es müde) und führt die zweite
+  Welle an (`FINALE.heartWave`); die Frostnacht rechnet ohne den Rabatt der
+  Bossnächte (`toughness(n, boss)`).
 - **Herbstbuch (M25, Teil 2, `core/book.js`):** `state.book` hält Sterne je Nacht
   (`nights.finishNight` → `book.starsFor`/`onNightWon`: gehalten, makellos aus
   `settleRisk`, mutig aus `night.called`), die Tage gelungener Taten, erledigte

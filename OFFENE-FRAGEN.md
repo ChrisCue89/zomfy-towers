@@ -1582,6 +1582,31 @@ vorher steht dort »Ein Arzt wüsste mehr darüber …«. **Warum:** Das verbind
 Kunde mit einem Menschen der Bucht und macht Yusufs Ankunft zu einem kleinen
 Ereignis; das Buch ist trotzdem von Anfang an nützlich.
 
+### 158. Wie wachsen die späten Nächte? (M25)
+**Entscheidung:** Bis Nacht 12 bleibt alles, wie es in M24 vermessen wurde. Danach
+wächst die Menge der Horde nur noch linear (mit der Steigung von Nacht 12), und
+was an Masse fehlt, tragen die Schlurfer als Zähigkeit – dieselbe Gesamtlast,
+weniger, aber zähere Schlurfer. Je Art zeichnet das Spiel jetzt bis zu 180
+gleichzeitig (vorher 110). **Warum:** Der Balance-Durchlauf über 30 Nächte zeigte
+bis zu 1500 Schlurfer je Nacht – mehr, als man lesen kann, und in dichten Wellen
+blieben welche unsichtbar. Gemessen (Ausgewogen, Bot mit 60 Türmen der Stufen 4–5
+und Mika): alle 30 Nächte gehalten, Druck ab Nacht 23 (die erste Barrikadenreihe
+bricht, Mika ≥ 85), Nacht 28 mit Durchbruch.
+
+### 159. Wie wird die Frostnacht zum Höhepunkt? (M25)
+**Entscheidung:** Das Moderherz führt schon die zweite Welle an, es ist
+**standhaft** (keine Betäubung, kein Rückstoß, kein Locken; es schiebt sich
+durch die eigene Horde – nur Licht macht es müde, wie die Geschichte sagt), hat
+80 % des Lebens eines Bosses dieser Nacht, und die Frostnacht rechnet ohne den
+Rabatt der Bossnächte (die Horde ist so zäh wie in Nacht 29). **Warum:** Die
+Messung zeigte, dass das Herz aus der letzten Welle nie ankam: Es braucht für die
+rund 60 m Weg sechs Spielstunden, hing in Betäubung und Rückstoß fest und
+steckte im Stau seiner eigenen Horde – es erstarrte am Waldrand mit 60 % Leben,
+ohne dass je etwas geschah. Jetzt (Ausgewogen, derselbe Bot): Das Herz walzt
+durch die Barrikaden, bricht das Tor, kommt ins Lager, der Frost setzt ein
+(Phase 3), und im Morgengrauen erstarrt es mit rund 40 % Leben – die Bucht hält
+knapp. Wer stärker verteidigt (Fähigkeiten, Mischtürme, Fallen), kann es fällen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

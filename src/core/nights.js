@@ -60,8 +60,8 @@ export class Nights {
     this.coverWarned = key;
     const open = this.uncovered(entries);
     if (!open.length) return;
-    const woher = open.map((e) => T.horde.richtung[e]).join(T.horde.und);
-    if (evening) this.game.hud.say(T.horde.ungedecktAbend(woher), 6);
+    const woher = T.horde.ueber(open);
+    if (evening) this.game.hud.say(T.horde.ungedecktAbend(woher, open.length), 6);
     else this.game.hud.toast(T.horde.ungedeckt(woher), 'warnung', 4.5);
   }
 
@@ -229,7 +229,7 @@ export class Nights {
         for (const s of wave.spawns) this.queue.push({ ...s, bonus: Boolean(wave.called), trait: wave.trait || null });
         // Das Banner sagt es groß (Welle und Richtung), die Nachtleiste behält es –
         // eine zusätzliche Meldung lag nur darüber (m3-r2)
-        g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und)}${wave.trait ? ` · ${T.wellen.merkmale[wave.trait][0]}` : ''}`);
+        g.hud.showBanner(`${T.horde.welleKurz(night.wave, plan.waves.length)} · ${T.horde.kurzListe(wave.entries)}${wave.trait ? ` · ${T.wellen.merkmale[wave.trait][0]}` : ''}`);
         // M22: Beim ersten Mal erklärt Mika das Merkmal
         if (wave.trait && !st.flags[`merkmal-${wave.trait}`]) {
           st.flags[`merkmal-${wave.trait}`] = true;
@@ -282,7 +282,7 @@ export class Nights {
     const plan = this.plan;
     const night = this.state;
     if (!plan || !this.active) return null;
-    const names = (wave) => wave.entries.map((e) => T.horde.richtungKurz[e]).join(T.horde.und);
+    const names = (wave) => T.horde.kurzListe(wave.entries);
     const cleared = this.game.horde.alive === 0 && !this.queue.length;
     if ((cleared || night.wave === 0) && night.wave < plan.waves.length) return T.horde.gleich(names(plan.waves[night.wave]));
     if (night.wave > 0 && !cleared) return T.horde.aus(names(plan.waves[night.wave - 1]));

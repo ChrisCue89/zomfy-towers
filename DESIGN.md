@@ -1454,7 +1454,7 @@ Schlagkraft, Pfanne durchschlägt Panzer).
 
 *Umgesetzt (28.09.2026, Teil 1):* Die Uhr zeigt »Tag 12 von 30«, ab Tag 25
 zählen die Nächte bis zum ersten Frost herunter. In der **Frostnacht** (Nacht 30)
-kommt jede Welle über alle drei Wege, das **Moderherz** führt die letzte an – ein
+kommt jede Welle über alle drei Wege, das **Moderherz** führt schon die zweite an – ein
 pochendes Herz aus Pilzgeflecht auf Wurzelbeinen mit einer Krone aus Pilzhüten.
 Es bricht mit Wurzeln Barrikaden, ruft unter zwei Dritteln seines Lebens die
 Horde über alle Wege und schickt Sporen; unter einem Drittel kommt der Frost

@@ -44,7 +44,7 @@ const REJOIN_NEAR = 0.4;
 /** … oder nach so vielen Sekunden geht es wieder auf dem Weg weiter. */
 const REJOIN_MAX = 15;
 
-const MAX_PER_TYPE = 110;
+const MAX_PER_TYPE = 180; // M25: späte Nächte (Schwärmer aus Brütern, Pilzmutter, Moderflut) – vorher 110
 const RECOIL = 0.22; // so lange taumelt ein Schlurfer nach einem Treffer zurück
 const WINDUP = 0.38; // so lange holt ein Schlurfer aus, bevor er beißt
 const BITE_LUNGE = 0.45; // M16: so weit reicht der Biss über die Reichweite hinaus (Ausfallschritt)
@@ -426,7 +426,7 @@ export class Horde {
     z.hp -= dealt;
     z.flash = 0.1;
     z.recoil = RECOIL;
-    if (push && fromX !== null) {
+    if (push && fromX !== null && !z.def.steadfast) {
       const dx = z.x - fromX;
       const dz = z.z - fromZ;
       const d = Math.hypot(dx, dz) || 1;
@@ -468,14 +468,14 @@ export class Horde {
    * @param {boolean} [light] vom Licht (Laternenblitz) – ein lichtfressender Champion merkt das nicht (M21)
    */
   stun(z, time, light = false) {
-    if (z.state === 'dying' || (light && z.lightproof)) return;
+    if (z.state === 'dying' || (light && z.lightproof) || z.def.steadfast) return;
     z.stunT = Math.max(z.stunT, time * (z.def.heavy ? 0.5 : 1));
     z.windup = 0;
   }
 
   /** Ablenken (Pfiff, M16): bleibt stehen und starrt auf (x, zz). Zähe nur halb so lange. */
   lure(z, x, zz, time) {
-    if (z.state === 'dying' || z.state === 'enter') return;
+    if (z.state === 'dying' || z.state === 'enter' || z.def.steadfast) return;
     z.lureT = Math.max(z.lureT, time * (z.def.heavy ? 0.5 : 1));
     z.lureX = x;
     z.lureZ = zz;
@@ -561,7 +561,7 @@ export class Horde {
 
   /** Windrad (M19): ein Stück den Weg zurück, gegen das Flussfeld. Zähe nur knapp halb so weit. */
   blowBack(z, dist) {
-    if (z.state === 'dying' || z.state === 'enter') return;
+    if (z.state === 'dying' || z.state === 'enter' || z.def.steadfast) return;
     const dir = this.world.pathing.direction(z.x, z.z, true, this._dir);
     if (!dir) return;
     const resist = z.def.heavy ? 0.4 : 1;
@@ -1156,8 +1156,9 @@ export class Horde {
         if (d2 >= min * min || d2 < 1e-6) continue;
         const d = Math.sqrt(d2);
         const push = ((min - d) / d) * 0.5 * Math.min(1, dt * 12);
-        const wa = A.def.heavy ? 0.25 : 1;
-        const wb = B.def.heavy ? 0.25 : 1;
+        // Schwere weichen weniger aus, das Moderherz gar nicht – es schiebt sich durch die eigene Horde (M25)
+        const wa = A.def.steadfast ? 0 : A.def.heavy ? 0.25 : 1;
+        const wb = B.def.steadfast ? 0 : B.def.heavy ? 0.25 : 1;
         A.x -= dx * push * wa;
         A.z -= dz * push * wa;
         B.x += dx * push * wb;

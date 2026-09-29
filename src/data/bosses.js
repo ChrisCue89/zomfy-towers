@@ -7,7 +7,7 @@
 /** Reihenfolge der Bosse: Nacht 5, 10, 15, 20 – danach von vorn, zäher. */
 export const BOSS_ORDER = ['holzfaeller', 'pilzmutter', 'laternenhexe', 'moosriese'];
 
-/** Das Finale (M25): In der Frostnacht führt das Moderherz die letzte Welle an. */
+/** Das Finale (M25): In der Frostnacht führt das Moderherz die zweite Welle an (FINALE.heartWave). */
 export const FINALE_BOSS = 'moderherz';
 
 /** Boss der Nacht n (oder null). */

@@ -173,6 +173,12 @@ function armMika(on) {
     if (m) {
       for (const z of g.horde.list) if (z.state !== 'dying' && z.x > m.maxX) m.maxX = z.x;
       m.minHp = Math.min(m.minHp, st.player.hp);
+      const heart = g.autumn?.heart; // M25: die Frostnacht – wie weit kam das Moderherz?
+      if (heart && heart.state !== 'dying') {
+        m.phase = Math.max(m.phase || 0, heart.boss?.phase || 0);
+        m.heartX = Math.max(m.heartX ?? -Infinity, heart.x);
+        m.heartHp = heart.hp / heart.maxHp;
+      }
     }
     if (!on || !window.__balanceFight || st.player.hp <= 0) return;
     const p = g.player.position;
@@ -196,6 +202,12 @@ function armMika(on) {
     const d = Math.hypot(dx, dz);
     if (d > 0.4 && !g.player.action) g.player.update(dt, { x: dx / d, z: dz / d }, false);
   };
+}
+
+/** Zeile zur Frostnacht (M25): »Herz gefallen (Phase 3, bis x −20)« oder »Herz erstarrt (Phase 2, 40 % Leben, bis x −31)«. */
+function finaleText(f) {
+  if (!f) return '';
+  return ` · Herz ${f.fell ? 'gefallen' : `erstarrt (${f.hp} % Leben)`}, Phase ${f.phase}, bis x ${f.x}`;
 }
 
 /** Im Spiel: die Nacht laufen lassen (Zeitraffer an). */
@@ -243,7 +255,9 @@ async function nightTurn(page, day) {
     const barNow = bs.filter((q) => q.type === 'barrikade' && !q.broken).reduce((a, q) => a + q.hp, 0);
     const gateNow = bs.find((q) => q.type === 'tor')?.hp ?? 0;
     const pressure = { maxX: Number.isFinite(m.maxX) ? Math.round(m.maxX * 10) / 10 : null, minHp: Math.round(m.minHp), barLost: Math.max(0, Math.round(m.bar - barNow)), gateLost: Math.max(0, Math.round(m.gate - gateNow)) };
-    return { won: n.won, kills: n.kills, homeLost: r.homeLost ?? null, homeNow: r.homeNow ?? Math.round(st.world.homeHp), homeMax: r.homeMax ?? null, breach: Boolean(n.breach), inCamp: n.inCamp || 0, broken: n.broken || 0, level: st.player.level, pressure };
+    // M25: Frostnacht – fiel das Herz, oder erstarrte es im Morgengrauen (Phase, wie weit, wie viel Leben übrig)?
+    const finale = m.phase ? { fell: Boolean(r.finale?.heart), phase: m.phase, x: Math.round(m.heartX * 10) / 10, hp: Math.round((r.finale?.heart ? 0 : m.heartHp) * 100) } : null;
+    return { won: n.won, kills: n.kills, homeLost: r.homeLost ?? null, homeNow: r.homeNow ?? Math.round(st.world.homeHp), homeMax: r.homeMax ?? null, breach: Boolean(n.breach), inCamp: n.inCamp || 0, broken: n.broken || 0, level: st.player.level, pressure, finale };
   });
 }
 
@@ -302,7 +316,7 @@ async function runLevel(browser, url, level) {
     const nacht = await nightTurn(page, day);
     rows.push({ day, ...nacht, ...tag });
     const home = nacht.homeMax ? `${nacht.homeNow}/${nacht.homeMax}` : `${nacht.homeNow}`;
-    console.log(`${level.padEnd(10)} Nacht ${String(day).padStart(2)} · ${nacht.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${home} (−${nacht.homeLost ?? '?'}) · ${nacht.breach ? `Durchbruch (${nacht.inCamp} im Lager)` : 'Tor hält'} · besiegt ${nacht.kills} · Türme ${tag.tuerme || '–'} · Barrikaden ${tag.barrikaden} (${nacht.broken} zerschlagen) · Schrott ${tag.vorrat.schrott} (getauscht ${tag.traded}), Teile ${tag.vorrat.teile} · Stufe ${nacht.level} · Druck: bis x ${nacht.pressure.maxX ?? '–'}, Barrikaden −${nacht.pressure.barLost}, Tor −${nacht.pressure.gateLost}, Mika ≥ ${nacht.pressure.minHp}`);
+    console.log(`${level.padEnd(10)} Nacht ${String(day).padStart(2)} · ${nacht.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${home} (−${nacht.homeLost ?? '?'}) · ${nacht.breach ? `Durchbruch (${nacht.inCamp} im Lager)` : 'Tor hält'} · besiegt ${nacht.kills} · Türme ${tag.tuerme || '–'} · Barrikaden ${tag.barrikaden} (${nacht.broken} zerschlagen) · Schrott ${tag.vorrat.schrott} (getauscht ${tag.traded}), Teile ${tag.vorrat.teile} · Stufe ${nacht.level} · Druck: bis x ${nacht.pressure.maxX ?? '–'}, Barrikaden −${nacht.pressure.barLost}, Tor −${nacht.pressure.gateLost}, Mika ≥ ${nacht.pressure.minHp}${finaleText(nacht.finale)}`);
     await page.evaluate(() => window.zomfy.game.advanceToMorning());
   }
   if (errors.length) console.log(`  Fehler im Spiel: ${errors.slice(0, 5).join(' | ')}`);
@@ -331,7 +345,7 @@ async function replayNight(browser, url) {
     await page.evaluate(armMika, MIKA);
     const n = await nightTurn(page, day);
     const p = n.pressure;
-    console.log(`Nacht ${day} · Leben ×${mul} · ${n.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${n.homeNow}/${n.homeMax ?? '?'} · ${n.breach ? `Durchbruch (${n.inCamp} im Lager)` : 'Tor hält'} · besiegt ${n.kills} · zerschlagen ${n.broken} · bis x ${p.maxX ?? '–'}, Barrikaden −${p.barLost}, Tor −${p.gateLost}, Mika ≥ ${p.minHp}${errors.length ? ` · Fehler: ${errors[0]}` : ''}`);
+    console.log(`Nacht ${day} · Leben ×${mul} · ${n.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${n.homeNow}/${n.homeMax ?? '?'} · ${n.breach ? `Durchbruch (${n.inCamp} im Lager)` : 'Tor hält'} · besiegt ${n.kills} · zerschlagen ${n.broken} · bis x ${p.maxX ?? '–'}, Barrikaden −${p.barLost}, Tor −${p.gateLost}, Mika ≥ ${p.minHp}${finaleText(n.finale)}${errors.length ? ` · Fehler: ${errors[0]}` : ''}`);
     await context.close();
   }
 }
