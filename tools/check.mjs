@@ -983,7 +983,7 @@ async function runPlaytest16Checks(browser, url) {
     g.towerRanks.onDamage(id, 100);
     return { vor, nach: b.xp || 0 };
   }, setup.towers[0]?.id);
-  if (rang.nach - rang.vor === 26) note('✓ Turm-Erfahrung (m16-r1): 100 Schaden bringen 25 Erfahrung (vorher 100)');
+  if (rang.nach - rang.vor === 25) note('✓ Turm-Erfahrung (m16-r1): 100 Schaden bringen 25 Erfahrung (vorher 100)');
   else fail(`Turm-Erfahrung: ${JSON.stringify(rang)}`);
 
   // F13: Eine Barrikade außerhalb jedes Turmkreises wird beim Setzen genannt
@@ -1058,7 +1058,7 @@ async function runCampChecks(browser, url) {
   const lager = await z(() => ({ camp: window.zomfy.camp(), x: window.zomfy.lager().campX, weg: window.zomfy.pathColumn(-8) }));
   const tor = lager.camp.find((b) => b.type === 'tor');
   const meter = lager.camp.reduce((n, b) => n + (b.type === 'wall4' ? 4 : b.type === 'tor' ? 5 : 3), 0);
-  if (tor && tor.level === 1 && tor.hp === tor.max && meter === 26 && lager.x === -7 && lager.weg.length && lager.weg.every((j) => j >= tor.j && j < tor.j + 5)) {
+  if (tor && tor.level === 1 && tor.hp === tor.max && meter === 24 && lager.x === -7 && lager.weg.length && lager.weg.every((j) => j >= tor.j && j < tor.j + 5)) {
     note(`✓ Lager (M17): Weidenzaun mit Tor von Anfang an – ${lager.camp.length - 1} Wall-Abschnitte und das Tor (${tor.max}), 24 m von Ufer zu Ufer, der letzte Weg läuft durchs Tor`);
   } else fail(`Lager: ${JSON.stringify(lager)}`);
 
@@ -2872,7 +2872,7 @@ async function runTour(browser, url) {
       await intro.page.keyboard.press(key);
       await settle(intro.page, 2);
     };
-    for (let k = 0; k < 6; k++) await tap('KeyW'); // M16/N5: über Einführung und Schwierigkeit hinweg zur Mütze
+    for (let k = 0; k < 7; k++) await tap('KeyW'); // M16/N5/M31: über Einführung, Verluste und Schwierigkeit hinweg zur Mütze
     await tap('KeyD');
     await tap('KeyW');
     await tap('KeyW'); // N5: über »Figur« zum Namen
@@ -2884,7 +2884,7 @@ async function runTour(browser, url) {
     await intro.page.screenshot({ path: join(SHOTS, 'figur.png') });
     note('  Screenshot: screenshots/figur.png');
     const knoepfe = await intro.page.evaluate(() => window.zomfyView().titel?.knoepfe || []);
-    for (let k = 0; k < 8; k++) await tap('KeyS'); // N5: zwei Zeilen mehr (Figur, Einführung)
+    for (let k = 0; k < 9; k++) await tap('KeyS'); // N5/M31: drei Zeilen mehr (Figur, Einführung, Verluste)
     await intro.page.waitForFunction(() => window.zomfyView().titel?.bereit, null, { timeout: 60000 }); // m16-r1: »Los geht’s!« erst nach einem Moment
     await tap('Enter');
     // N5: Die Ankunft beginnt – gehaltenes Esc überspringt sie (die Szene selbst prüft Abschnitt »ankunft«)
@@ -3039,7 +3039,7 @@ async function runTour(browser, url) {
       const { DIALOGE, SPRECHER } = await import('/src/data/dialogs.js');
       const texts = [];
       const collect = (v) => {
-        if (typeof v === 'string') texts.push(v);
+        if (typeof v === 'string') texts.push(v.replaceAll('{name}', 'Mika')); // M29: {name} ist ein Platzhalter (bonds.callName)
         else if (typeof v === 'function') {
           try {
             collect(v(3));
@@ -3108,7 +3108,11 @@ async function runSaveChecks(browser, url) {
     });
     await t.page.waitForFunction(() => window.zomfyView().titel?.bereit, null, { timeout: 60000 });
     await t.page.keyboard.press('Enter'); // »Los geht’s!« ist vorgewählt
+    // N5: Erst kommt die Ankunft übers Wasser – gehaltenes Esc überspringt sie
+    await t.page.waitForFunction(() => window.zomfy.mode === 'ankunft', null, { timeout: 180000 });
+    await t.page.keyboard.down('Escape');
     await t.page.waitForFunction(() => window.zomfy.mode === 'dialog', null, { timeout: 180000 });
+    await t.page.keyboard.up('Escape');
     const gestartet = await t.page.evaluate(() => Boolean(localStorage.getItem('zomfy-towers.spielstand')));
     if (inFigur.seite === 'figur' && inFigur.stand === null && gestartet) note('✓ Titelbild: in der Figurwahl entsteht kein Spielstand, erst »Los geht’s!« legt ihn an');
     else fail(`Titelbild ohne Stand: ${JSON.stringify({ ...inFigur, gestartet })}`);
@@ -7253,7 +7257,8 @@ async function runArrivalChecks(browser, url) {
   await press('KeyD');
   const einfAus = await view();
   await press('KeyD'); // wieder mit Edda
-  await press('KeyW');
+  await press('KeyW'); // M31: über »Verluste« …
+  await press('KeyW'); // … zur Schwierigkeit
   const schw = await view();
   for (let k = 0; k < 5; k++) await press('KeyW'); // Haut, Haare, Jacke, Mütze, Figur
   const figur = await view();
