@@ -18,7 +18,7 @@ import { TRADER, TRADER_OFFERS, offersOfDay } from '../data/trader.js';
 import { canAfford } from './inventory.js';
 import { FLAWLESS } from '../data/risk.js';
 import { ABILITIES } from '../data/wanderers.js';
-import { AMMO_TRADE } from '../data/arms.js';
+import { AMMO_TRADE, ARMS_REPLACE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 
@@ -320,6 +320,14 @@ export class Trader {
       const n = AMMO_TRADE.gives.patronen;
       list.push({ id: 'tausch-patronen', key: 'patronen', cost: AMMO_TRADE.cost, trade: true, icon: 'patronen', name: T.haendler.vorrat(T.menge(n, 'patronen'), left), info: T.waffen.patronenInfo, gives: { inventory: { patronen: n } }, owned: left === 0, ownedText: T.haendler.ausverkauft, affordable: left > 0 && canAfford(st.inventory, AMMO_TRADE.cost) });
     }
+    // M31: Was nach der Lagerglocke im Laub blieb, bringt Balduin nach (eine Waffe je Tag)
+    const lost = st.arms?.lost || [];
+    if (lost.length) {
+      const left = Math.max(0, ARMS_REPLACE.perDay - this.soldToday('ersatz'));
+      for (const id of lost) {
+        list.push({ id: `tausch-ersatz-${id}`, key: 'ersatz', cost: ARMS_REPLACE.cost, trade: true, icon: id, name: T.waffen.ersatz(T.gegenstaende[id]), info: T.waffen.ersatzInfo, gives: { arm: id }, owned: left === 0, ownedText: T.haendler.ausverkauft, affordable: left > 0 && canAfford(st.inventory, ARMS_REPLACE.cost) });
+      }
+    }
     return list;
   }
 
@@ -349,7 +357,7 @@ export class Trader {
       }
       // M29: Mit Fiete im Lager legt Balduin bei Rohstoffen etwas drauf (sie kennen sich von früher)
       const [res, base] = Object.entries(o.get)[0];
-      const n = base + (this.game.survivors?.ability('handel') ? ABILITIES.handel.extra : 0);
+      const n = base + Math.floor(ABILITIES.handel.extra * (this.game.survivors?.ability('handel') || 0)); // M31: verletzt halb
       return { ...common, icon: res, name: left === null ? T.menge(n, res) : T.haendler.vorrat(T.menge(n, res), left), info: T.haendler.info[key], gives: { inventory: { [res]: n } } };
     });
   }

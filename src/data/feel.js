@@ -25,6 +25,7 @@ export const FEEL = {
   bossFaellt: { stop: 0.15, trauma: 0.75, slow: 0.4 },
   herzFaellt: { stop: 0.22, trauma: 1, slow: 0.6 },
   letzterSchlurfer: { slow: 0.45 }, // der letzte Schlurfer der Nacht fällt
+  lagerglocke: { trauma: 0.6 }, // M31: die Lagerglocke schlägt an – alle zu den Waffen
   // M30: Schüsse – Rückstoß als gerichteter Stoß gegen die Schussrichtung; nur ein Treffer hält an
   schuss: { trauma: 0.3, kick: 1 }, // Pistole, Signalpistole
   schussSchwer: { trauma: 0.45, kick: 2 }, // Jagdgewehr, Doppelflinte
@@ -63,7 +64,7 @@ export const POP = { time: 0.5, squash: 0.16, upgrade: 0.22, freq: 4.6, damping:
 export const SOUND_VARY = { pitch: 0.05, db: 1.5 };
 
 /** Klänge mit fester Tonhöhe (Musikalisches und Oberfläche). */
-export const SOUND_FIXED = ['glocke', 'bimmel', 'herzschlag', 'jubel', 'klick', 'tipp', 'welle', 'stufe', 'morgen', 'sturmglocke', 'turmglocke', 'champion', 'pfiff', 'loot', 'reaktion'];
+export const SOUND_FIXED = ['lagerglocke', 'glocke', 'bimmel', 'herzschlag', 'jubel', 'klick', 'tipp', 'welle', 'stufe', 'morgen', 'sturmglocke', 'turmglocke', 'champion', 'pfiff', 'loot', 'reaktion'];
 
 /** Ausbau: Mit jeder Stufe klingt der Ausbau ein wenig höher. */
 export const UPGRADE_PITCH = 0.07;

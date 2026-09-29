@@ -115,6 +115,7 @@ export class Buildings {
     // Moderlocke (M24): nur nahe einem Spawn, dort wo der Weg aus dem Wald kommt
     if (def.bait && this.lureEntry && !this.lureEntry(i + w / 2, j + d / 2)) return { ok: false, reason: 'locke' };
     if (!def.onPath && onPath.some(Boolean)) return { ok: false, reason: 'aufWeg' };
+    if (def.yard && cells.some(([ci, cj]) => !this.grid.isYard(ci, cj))) return { ok: false, reason: 'nurHof' }; // M31: Lagerglocke
     if (!this.grid.canPlace(i, j, w, d)) {
       const why = cells.map(([ci, cj]) => this.grid.blockReason(ci, cj)).find(Boolean) || null;
       return { ok: false, reason: 'belegt', why };

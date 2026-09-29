@@ -377,6 +377,39 @@ export class Music {
     this.restUntil = Math.max(this.restUntil, at + 2.4);
   }
 
+  /**
+   * M31: Die Spieluhr am Erinnerungsbrett – eine leise, langsame Melodie über warmen
+   * Akkorden (e-Moll mit Septime, C, G), je Person eine eigene Wendung (M32: ihre Motive).
+   */
+  memorial(variant = 0) {
+    const c = this.ctx;
+    const t = c.currentTime + 0.08;
+    const bus = c.createGain();
+    bus.gain.value = 0.9;
+    bus.connect(this.out);
+    const send = c.createGain();
+    send.gain.value = 0.5;
+    bus.connect(send).connect(this.verb);
+    const beat = 0.42;
+    const tunes = [
+      ['B5', 'G5', 'E5', 'G5', 'A5', 'G5', 'E5', 'D5'],
+      ['E6', 'D6', 'B5', 'G5', 'A5', 'B5', 'G5', 'E5'],
+      ['G5', 'A5', 'B5', 'D6', 'B5', 'A5', 'G5', 'E5'],
+    ];
+    const tune = tunes[Math.abs(variant) % tunes.length];
+    tune.forEach((n, k) => this.bell(hz(n), t + k * beat, 0.04, bus));
+    [CHORDS.Em7, CHORDS.Cmaj7, CHORDS.Gmaj7].forEach((ch, k) => {
+      const at = t + k * beat * 3;
+      ch.ep.forEach((f, i) => this.ep(f, at + i * 0.03, beat * 3.2, 0.025, bus));
+      this.bass(ch.bass, at, beat * 3, 0.06, bus);
+    });
+    const end = t + tune.length * beat;
+    this.bell(hz('G5'), end + 0.2, 0.03, bus);
+    this.old.push({ bus, until: end + 4 });
+    this.restUntil = Math.max(this.restUntil, end + 2);
+    this.duck(end - c.currentTime + 1);
+  }
+
   // --- Tag und Abend --------------------------------------------------------------------
 
   cozyStep(cur, t) {

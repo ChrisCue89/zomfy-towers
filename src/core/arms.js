@@ -95,17 +95,27 @@ export class Arms {
     return this.data.taken.includes(id);
   }
 
+  /** Nach der Lagerglocke im Laub verloren (M31)? Dann bringt Balduin Ersatz. */
+  lost(id) {
+    return this.data.lost.includes(id);
+  }
+
+  /** Was gerade nicht im Schrank steht: bei Mika oder verloren (world.refreshCabinet). */
+  missing() {
+    return [...this.data.taken, ...this.data.lost];
+  }
+
   /** Mika nimmt eine Waffe aus dem Schrank (in die Schnellleiste) oder legt sie zurück. */
   toggleTake(id) {
     const g = this.game;
     const st = g.state;
-    if (!ARMS_ORDER.includes(id)) return false;
+    if (!ARMS_ORDER.includes(id) || this.lost(id)) return false;
     if (this.taken(id)) {
       this.data.taken = this.data.taken.filter((w) => w !== id);
       const slot = st.hotbar.slots.indexOf(id);
       if (slot >= 0) st.hotbar.slots[slot] = null;
       g.updateHeldItem(false);
-      g.world.refreshCabinet(this.data.taken);
+      g.world.refreshCabinet(this.missing());
       g.sound.play('aufheben', { rate: 0.8 });
       return true;
     }
@@ -115,7 +125,7 @@ export class Arms {
     }
     this.data.taken.push(id);
     g.addToHotbar(id);
-    g.world.refreshCabinet(this.data.taken);
+    g.world.refreshCabinet(this.missing());
     g.sound.play('aufheben');
     if (GUNS[id]) g.tutorial.teach('schiessen', T.waffen.hinweisSchiessen);
     return true;
@@ -123,6 +133,7 @@ export class Arms {
 
   /** Wer bekommt die Waffe im Notfall? Der Reihe nach: die Bewohner, dann niemand. */
   cycleOwner(id, people) {
+    if (this.lost(id)) return null; // M31: erst wenn Balduin Ersatz gebracht hat
     const d = this.data.notfall;
     const current = people.find((p) => d[p] === id) || null;
     const order = [...people, null];

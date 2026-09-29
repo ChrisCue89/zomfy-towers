@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { survivorParts32, bedrollModel } from './survivorModels.js';
+import { armsModel } from './characters.js';
 import { buildDog, poseDog } from './dogModel.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
@@ -134,6 +135,9 @@ export class Npcs {
     const seat = !n.dog && n.seatY !== null && n.seatY !== undefined ? (n.seatY - HIP) * n.sit : 0;
     root.position.set(n.x, (n.y ?? this.world.heightAt(n.x, n.z)) + seat, n.z);
     root.rotation.y = n.facing;
+    // M31: zu Boden gegangen – liegt auf dem Rücken (nach der Lagerglocke), die Hüfte auf dem Boden
+    root.rotation.x = n.lying ? -Math.PI / 2 : 0;
+    if (n.lying) root.position.y += 0.12;
   }
 
   /**
@@ -243,6 +247,32 @@ export class Npcs {
     }
     if (this.time > n.blinkAt + 0.13) n.blinkAt = this.time + 2.5 + Math.random() * 3.5;
     p.eyelids.visible = this.time >= n.blinkAt && !(happy && n.model.smileEyes);
+  }
+
+  /**
+   * M31: eine Waffe aus dem Schrank in der rechten Hand (null: nichts) – dieselben Modelle wie bei
+   * Mika, erst beim ersten Griff gebaut.
+   */
+  hold(n, id) {
+    if (n.dog) return;
+    const p = n.model.parts;
+    if (!p.hand) {
+      p.hand = new THREE.Group();
+      p.hand.position.set(0, -16 * U, 0);
+      p.armR.add(p.hand);
+      p.held = {};
+    }
+    if (id && !p.held[id]) {
+      const model = armsModel(id);
+      if (!model) return;
+      const mesh = new THREE.Mesh(model.toGeometry({ jitter: 0.02, seed: 5, size: U }), n.model.material);
+      mesh.position.set(-2 * U, 0, -2 * U);
+      mesh.castShadow = true;
+      mesh.renderOrder = 1.6;
+      p.hand.add(mesh);
+      p.held[id] = mesh;
+    }
+    for (const [k, mesh] of Object.entries(p.held)) mesh.visible = k === id;
   }
 
   /** Eine Geste vorspielen (M10); mehrere laufen nacheinander. */

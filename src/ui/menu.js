@@ -28,7 +28,7 @@ const NOTE_TEXT_W = NOTES_W - 24;
  * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
  * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
  */
-const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen'];
+const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust
 const BOOK_W = 350;
 const BOOK_ROW = 13;
 const BOOK_ROWS = 8;
@@ -84,6 +84,8 @@ export class Menu {
       }));
       // M16: Die Schwierigkeit gehört zum Spielstand und gilt ab der nächsten Nacht
       if (!this.fromTitle) rows.push({ label: `${T.schwierigkeit.titel}: ${T.schwierigkeit[this.game.state.difficulty]}`, setting: 'difficulty', action: () => this.change('difficulty', 1) });
+      // M31: »Verluste« gehört zum Spielstand und geht nur noch von »an« nach »aus«
+      if (!this.fromTitle) rows.push({ label: `${T.glocke.verluste}: ${this.game.defense.losses ? T.glocke.an : T.glocke.aus}`, setting: 'losses', action: () => this.change('losses', 1) });
       return [...rows, { label: T.menue.zurueck, action: () => this.go('main') }];
     }
     if (this.screen === 'confirm') {
@@ -121,6 +123,17 @@ export class Menu {
    * der Reihe nach weiter, auch mit Umlauf, sonst käme man per E nicht zurück.
    */
   change(key, dir, cycle = false) {
+    if (key === 'losses') {
+      // M31: nur von »an« nach »aus« (Nr. 166)
+      const st = this.game.state;
+      if (st.losses) {
+        st.losses = false;
+        this.game.hud.toast(T.glocke.verlusteInfo.aus, 'lagerglocke', 3);
+        this.game.quietSave();
+      } else this.game.hud.toast(st.difficulty === 'gemuetlich' ? T.glocke.verlusteInfo.gemuetlich : T.glocke.verlusteInfo.nurAus, 'lagerglocke', 2.6);
+      this.game.sound.play('klick');
+      return;
+    }
     if (key === 'difficulty') {
       const n = DIFFICULTY_ORDER.length;
       const next = DIFFICULTY_ORDER[(DIFFICULTY_ORDER.indexOf(this.game.state.difficulty) + dir + n) % n];
@@ -206,14 +219,20 @@ export class Menu {
 
   /** Umblättern: dir ±1 (A/D) oder direkt auf eine Seite (Klick auf den Reiter). */
   turnPage(dir, page = null) {
-    const n = BOOK_PAGES.length;
-    const next = page || BOOK_PAGES[(BOOK_PAGES.indexOf(this.page) + dir + n) % n];
+    const pages = this.bookPages();
+    const n = pages.length;
+    const next = page || pages[(pages.indexOf(this.page) + dir + n) % n];
     if (next === this.page) return;
     this.page = next;
     this.bookCache = null;
     this.bookFocus = null;
     this.focus = 0;
     this.game.sound.play('klick');
+  }
+
+  /** Die Seiten des Herbstbuchs – »Erinnerung« (M31) erst, wenn jemand gefallen ist. */
+  bookPages() {
+    return this.game.state.fallen?.length ? BOOK_PAGES : BOOK_PAGES.filter((p) => p !== 'erinnerung');
   }
 
   /** Zeilen, Beschreibungen und Zähler der aufgeschlagenen Seite (einmal je Seite berechnet). */
@@ -278,10 +297,29 @@ export class Menu {
             ...(r ? lines(kt.buch.abende(r.played, r.won, r.lost), COLORS.text) : []),
             ...(r ? lines(`${kt.buch.stueck(kt.stuecke[r.stake])}${r.stakeWon ? ` – ${kt.buch.stueckDa}` : ''}`, r.stakeWon ? COLORS.gold : COLORS.textDim) : []),
             ...(r ? lines(r.note || kt.buch.unbekannt, r.note ? COLORS.textWarm : COLORS.textDim, true) : []),
+            // M31: Wunden und Narben von der Nacht mit der Glocke
+            ...(resident && g.defense.wound(id) ? lines(T.glocke.wundeBuch(g.defense.wound(id), Math.max(1, (g.state.wounds[id]?.until || 0) - g.state.time.day)), COLORS.red, true) : []),
+            ...(resident && g.state.scars?.[id] ? lines(T.glocke.narbe, COLORS.textDim) : []),
           ],
         };
       });
       empty = lines(tb.leer, COLORS.textDim);
+    } else if (this.page === 'erinnerung') {
+      // M31: Die mit uns waren – Name, Tage in der Bucht, die Zeile, die bleibt, das Erinnerungsstück
+      const E = T.erinnerung;
+      rows = (this.game.state.fallen || []).map((f) => {
+        const name = personOf(f.id)?.name || f.id;
+        return {
+          id: `erinnerung-${f.id}`,
+          label: name,
+          right: E.tage(f.from, f.to),
+          color: COLORS.text,
+          rightColor: COLORS.textDim,
+          detail: [...lines(E.zeilen[f.id] || E.zeile(name), COLORS.textWarm), ...(f.item ? lines(E.stueck(T.bindung.karte.namen[f.item] || f.item), COLORS.textDim, true) : [])],
+        };
+      });
+      count = E.seite;
+      empty = lines(E.leer, COLORS.textDim);
     } else {
       rows = book.album().map((a) => ({
         id: String(a.id),
@@ -320,9 +358,10 @@ export class Menu {
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
     // Reiter der drei Seiten, mittig unter dem Titel
-    const tabW = BOOK_PAGES.map((p) => measure(T.buch.seiten[p]) + 12);
+    const pages = this.bookPages();
+    const tabW = pages.map((p) => measure(T.buch.seiten[p]) + 12);
     let tx = Math.round(x + (w - tabW.reduce((a, b) => a + b + 4, -4)) / 2);
-    const tabs = BOOK_PAGES.map((page, k) => {
+    const tabs = pages.map((page, k) => {
       const rect = { x: tx, y: y + 25, w: tabW[k], h: 13 };
       tx += tabW[k] + 4;
       return { page, rect };

@@ -34,6 +34,8 @@ import { damp, dampAngle } from '../core/math.js';
 
 /** M30: So lange sucht ein Schlurfer nach Mika, nachdem er einen Schuss gehört hat (s). */
 const NOISE_TIME = 8;
+/** M31: So nah muss ein kämpfender Bewohner sein, damit ein Schlurfer im Lager auf ihn losgeht (m). */
+const BRAWL_SEEK = 3.5;
 
 /** Jagd hinter einem Hindernis: nach so vielen Sekunden ohne Durchkommen aufgeben … */
 const CHASE_GIVE_UP = 2.5;
@@ -850,6 +852,14 @@ export class Horde {
           z.inCamp = true;
           this.cb.onEnterCamp?.(z);
         }
+        // M31: Nach der Lagerglocke kämpfen die Bewohner im Lager – wer einem nahe kommt, geht auf ihn los
+        if ((z.state === 'walk' || z.state === 'raid') && !z.lureBy && this.cb.defenderNear) {
+          const f = this.cb.defenderNear(z.x, z.z, BRAWL_SEEK);
+          if (f) {
+            z.state = 'brawl';
+            z.person = f.id;
+          }
+        }
         if (z.state === 'walk') {
           z.raidScan -= dt;
           if (z.raidScan <= 0) {
@@ -1021,6 +1031,31 @@ export class Horde {
               z.attackAnim = 0.45;
               if (z.lureBy) this.cb.onLureHit?.(b, z.def.hit, z);
               else this.cb.onRaidHit?.(b, z.def.hit, z);
+            }
+          }
+          break;
+        }
+        case 'brawl': {
+          // M31: Handgemenge mit einem Bewohner nach der Lagerglocke – wer liegt, den lassen sie in Ruhe
+          const f = this.cb.defenderAt?.(z.person);
+          if (!f) {
+            z.state = 'walk';
+            z.person = null;
+            break;
+          }
+          const dx = f.x - z.x;
+          const dz = f.z - z.z;
+          const d = Math.hypot(dx, dz) || 1;
+          z.brawlMoving = d > z.def.radius + 0.45;
+          if (z.brawlMoving) {
+            vx = (dx / d) * speed;
+            vz = (dz / d) * speed;
+          } else {
+            z.facing = dampAngle(z.facing, Math.atan2(dx, dz), 8, dt);
+            if (!frozen && z.cooldown <= 0) {
+              z.cooldown = 1 / (z.def.hitRate * (1 - light));
+              z.attackAnim = 0.45;
+              this.cb.onHitPerson?.(z.person, z.def.bite * (z.day ? 0.6 : 1), z);
             }
           }
           break;
@@ -1388,7 +1423,7 @@ export class Horde {
     const t = this.time;
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
-    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving);
+    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving) || (z.state === 'brawl' && z.brawlMoving);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
     const heavy = z.def.heavy;

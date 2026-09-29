@@ -12,6 +12,7 @@ import { COLORS } from './ui.js';
 import { measure, drawText, missingGlyphs, wrap, LINE_HEIGHT } from './font.js';
 import { LOOKS, LOOK_KEYS, DEFAULT_LOOK, NAME_MAX, cleanName } from '../data/looks.js';
 import { DIFFICULTY_ORDER, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
+import { LOSSES_DEFAULT } from '../data/bell.js';
 
 const LOGO_SCALE = 3;
 const GUARD = 0.3; // nach jedem Seitenwechsel zählen Klicks kurz nicht
@@ -31,6 +32,7 @@ export class TitleScreen {
     this.look = { ...DEFAULT_LOOK };
     this.difficulty = DEFAULT_DIFFICULTY; // M16: Gemütlich · Ausgewogen · Wild
     this.tutorial = true; // N5: Einführung mit Edda (abwählbar)
+    this.losses = null; // M31: »Verluste« – null: wie die Schwierigkeit vorgibt (auf »Gemütlich« immer aus)
     this.logo = null;
   }
 
@@ -77,8 +79,9 @@ export class TitleScreen {
       { label: `${T.titel.name}: ${this.name}${this.editing && Math.floor(this.t * 2.5) % 2 === 0 ? '_' : ''}`, name: true, info: I.name, action: () => this.toggleEditing() },
       ...LOOK_KEYS.map((key) => ({ label: `${T.titel.aussehen[key]}: ${T.titel.werte[key][this.look[key]]}`, look: key, info: key === 'body' ? I.body : I.aussehen, action: () => this.changeLook(key, 1) })),
       { label: `${T.schwierigkeit.titel}: ${T.schwierigkeit[this.difficulty]}`, difficulty: true, info: T.schwierigkeit.info[this.difficulty], action: () => this.changeDifficulty(1) },
+      { label: `${T.glocke.verluste}: ${this.lossesOn() ? T.glocke.an : T.glocke.aus}`, losses: true, info: this.difficulty === 'gemuetlich' ? T.glocke.verlusteInfo.gemuetlich : T.glocke.verlusteInfo[this.lossesOn() ? 'an' : 'aus'], action: () => this.toggleLosses() },
       { label: `${T.titel.einfuehrung}: ${this.tutorial ? T.titel.mitEdda : T.titel.ohne}`, tutorial: true, info: I.einfuehrung[this.tutorial ? 'an' : 'aus'], action: () => this.toggleTutorial() },
-      { label: T.titel.los, start: true, info: I.los, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }, this.difficulty, this.tutorial) },
+      { label: T.titel.los, start: true, info: I.los, action: () => this.game.startNewFromTitle(cleanName(this.name), { ...this.look }, this.difficulty, this.tutorial, this.lossesOn()) },
       { label: T.menue.zurueck, action: () => this.go('main') },
     ];
   }
@@ -86,6 +89,18 @@ export class TitleScreen {
   toggleEditing() {
     this.editing = !this.editing;
     if (!this.editing) this.name = cleanName(this.name);
+  }
+
+  /** M31: Können Bewohner nach der Lagerglocke fallen? Auf »Gemütlich« nie. */
+  lossesOn() {
+    if (this.difficulty === 'gemuetlich') return false;
+    return this.losses ?? LOSSES_DEFAULT[this.difficulty] ?? true;
+  }
+
+  toggleLosses() {
+    this.game.sound.play('klick');
+    if (this.difficulty === 'gemuetlich') return;
+    this.losses = !this.lossesOn();
   }
 
   toggleTutorial() {
@@ -145,6 +160,7 @@ export class TitleScreen {
     if (focused?.look && (input.pressed('left') || input.pressed('right'))) this.changeLook(focused.look, input.pressed('left') ? -1 : 1);
     if (focused?.difficulty && (input.pressed('left') || input.pressed('right'))) this.changeDifficulty(input.pressed('left') ? -1 : 1);
     if (focused?.tutorial && (input.pressed('left') || input.pressed('right'))) this.toggleTutorial();
+    if (focused?.losses && (input.pressed('left') || input.pressed('right'))) this.toggleLosses();
     if (input.mouse.clicked && this.guard > 0) {
       input.consumeClick();
     } else if (hovered >= 0 && input.mouse.clicked) {

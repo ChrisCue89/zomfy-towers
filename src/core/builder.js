@@ -197,7 +197,8 @@ export class Builder {
   /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
   furnishOptions() {
     const inv = this.game.state.inventory;
-    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz', 'uebungsplatz']); // M23: der Hochsitz gehört zu den Überlebenden; M30: der Übungsplatz
+    // M23: der Hochsitz gehört zu den Überlebenden; M30: der Übungsplatz; M31: die Lagerglocke, sobald der Waffenschrank offen ist
+    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz', 'uebungsplatz', ...(this.game.state.arms?.unlocked ? ['lagerglocke'] : [])]);
     // M27: Die Schlafhütte gibt es erst mit dem Schlafzimmer (Zuhause-Stufe 3)
     const hut = options.find((o) => o.id === 'schlafhuette');
     if (hut && (this.game.state.world.houseLevel || 1) < BUILDINGS.schlafhuette.house) Object.assign(hut, { disabled: true, locked: true, disabledText: T.wanderer.huetteAb });
@@ -687,7 +688,8 @@ export class Builder {
   /** Kosten der nächsten Barrikadenstufe – mit Frieda (M29) braucht Metall nur halb so viel Schrott. */
   barricadeUpgradeCost(level) {
     const cost = { ...BARRICADE_LEVELS[level].cost };
-    if (cost.schrott && this.game.survivors?.ability('schmieden')) cost.schrott = Math.max(1, Math.ceil(cost.schrott * ABILITIES.schmieden.scrap));
+    const smith = this.game.survivors?.ability('schmieden') || 0; // M31: verletzt halb
+    if (cost.schrott && smith) cost.schrott = Math.max(1, Math.ceil(cost.schrott * (1 - (1 - ABILITIES.schmieden.scrap) * smith)));
     return cost;
   }
 

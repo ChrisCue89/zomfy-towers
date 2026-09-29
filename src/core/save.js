@@ -9,6 +9,7 @@ import { LAYOUT } from '../world/layout.js';
 import { blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { WANDERER_ORDER, arrivalPlan, extendPlan } from '../data/wanderers.js';
 import { newArms } from '../data/arms.js';
+import { LOSSES_DEFAULT, newBell } from '../data/bell.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -102,6 +103,18 @@ const MIGRATIONS = {
   // v25 -> v26: M30 (Waffenschrank und Übungsplatz). Der Schrank ist zu – wer die erste Nacht
   // schon gehalten hat, findet den Schlüssel gleich (Edda sagt, wo); noch niemand hat geübt.
   25: (data) => ({ ...data, version: 26, arms: newArms(), training: {} }),
+  // v26 -> v27: M31 (Lagerglocke). Noch nie geläutet, niemand verwundet oder gefallen; »Verluste«
+  // nach der Schwierigkeit (auf »Gemütlich« aus), nichts im Laub verloren.
+  26: (data) => ({
+    ...data,
+    version: 27,
+    bell: newBell(),
+    wounds: {},
+    scars: {},
+    fallen: [],
+    losses: data.difficulty !== 'gemuetlich' && (LOSSES_DEFAULT[data.difficulty] ?? true),
+    arms: { ...(data.arms || newArms()), lost: [] },
+  }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

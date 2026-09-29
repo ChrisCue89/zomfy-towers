@@ -215,6 +215,23 @@ export class World {
   }
 
   /** Leuchtmast am Steg (früher Funkturm) zeigen; ab Stufe 3 wirft das Leuchtfeuer eine große Lichtinsel. */
+  /**
+   * M31: Das Erinnerungsbrett am Steg zeigt so viele Fotos, wie Menschen gefallen sind; die
+   * Laterne davor brennt an dem Abend, an dem Mika sie angezündet hat (mit Lichtinsel).
+   */
+  setMemorial(fallen, day) {
+    const lit = fallen.length > 0 && fallen.some((f) => f.lit === day);
+    this.props.setMemorial(fallen.length, lit);
+    if (lit && !this.memorialPool) {
+      const p = this.props.memorialPos;
+      this.memorialPool = this.lightPools.add(p.x + 0.3, p.z + 0.35, 1.8);
+    } else if (!lit && this.memorialPool) {
+      this.lightPools.remove(this.memorialPool);
+      this.memorialPool = null;
+    }
+    this.refreshInteractions();
+  }
+
   setTowerStage(stage, beaconRange = 9) {
     this.props.setTowerStage(stage);
     if (stage >= 3 && !this.beaconPool) {

@@ -221,6 +221,34 @@ export function eddaPortrait({ frame = false, size: area = 52 } = {}) {
   return canvas;
 }
 
+/**
+ * M31: ein Porträt als altes Foto in Sepia (Erinnerungsbrett) – dieselbe Rampe wie Eddas Foto,
+ * der Hintergrund bleibt durchsichtig.
+ */
+export function sepiaOf(src) {
+  const w = src.width;
+  const h = src.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const ramp = [P.e1, P.e2, P.e3, P.e4, P.e5, P.e6, P.e7, P.e8, P.e9];
+  const s = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  const img = ctx.createImageData(w, h);
+  const d = img.data;
+  for (let i = 0; i < s.length; i += 4) {
+    if (s[i + 3] === 0) continue;
+    const l = (0.3 * s[i] + 0.59 * s[i + 1] + 0.11 * s[i + 2]) / 255;
+    const [r, g, b] = hexToRgb(ramp[Math.max(0, Math.min(8, Math.round(l * 9.5 - 0.6)))]);
+    d[i] = Math.round(r * 255);
+    d[i + 1] = Math.round(g * 255);
+    d[i + 2] = Math.round(b * 255);
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
 /** Alle Porträts: Mika, Radio und die Überlebenden (Meilenstein 6). */
 export function renderPortraits() {
   return {

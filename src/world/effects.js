@@ -35,6 +35,8 @@ const SPLAT = {
   // M30: Treffer einer Kugel – violette Sporen und Laub, nie Blut; Leuchtkugel rot-weiß
   sporen: [c(P.d3), c(P.d4), c(P.a2), c(P.g6), c(P.e6)],
   leucht: [c(0xfff6d8), c(P.r4), c(P.f7), c(P.a1)],
+  // M31: Herbstlaub, das aufwirbelt (wo jemand fällt, bleibt nur Laub)
+  laub: [c(P.f4), c(P.f5), c(P.r3), c(P.e6), c(P.f3)],
 };
 const MUZZLE = { feuer: [c(0xfff6d8), c(P.f8), c(P.f7), c(P.f6)], leucht: [c(0xfff6d8), c(P.r4), c(P.a1)] };
 const SMOKE = [c(P.s7), c(P.s8), c(P.s6)];

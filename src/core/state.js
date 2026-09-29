@@ -25,8 +25,9 @@ import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { newCardState, sanitizeCards } from './cardNight.js';
 import { newBonds, sanitizeBonds } from '../data/bonds.js';
 import { AMMO, newArms, sanitizeArms, sanitizeTraining } from '../data/arms.js';
+import { LOSSES_DEFAULT, newBell, sanitizeWounds } from '../data/bell.js';
 
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -105,6 +106,14 @@ export function createNewState(config, mapSeed = 1) {
     // nimmt, Schuss im Magazin je Schusswaffe; Übung je Person { level, done, day }
     arms: newArms(),
     training: {},
+    // M31: Lagerglocke – in welcher Nacht geläutet wurde, was der Morgenbericht erzählt;
+    // Wunden je Person { kind: erschoepft|verletzt|schwer, until, hour }, Narben (Tag),
+    // die Gefallenen fürs Erinnerungsbrett { id, from, to, item, lit }, Einstellung »Verluste«
+    bell: newBell(),
+    wounds: {},
+    scars: {},
+    fallen: [],
+    losses: LOSSES_DEFAULT[DEFAULT_DIFFICULTY],
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -229,6 +238,22 @@ export function sanitizeState(data, config) {
   out.scenes = { seen: Array.isArray(data.scenes?.seen) ? data.scenes.seen.filter((id) => typeof id === 'string').slice(-40) : [] };
   out.arms = sanitizeArms(data.arms, [...SURVIVOR_ORDER, ...WANDERER_ORDER]); // M30
   out.training = sanitizeTraining(data.training, [...SURVIVOR_ORDER, ...WANDERER_ORDER]);
+  // M31: Lagerglocke, Wunden, Narben, Gefallene, »Verluste« (nie auf »Gemütlich«)
+  const people = [...SURVIVOR_ORDER, ...WANDERER_ORDER];
+  const bell = data.bell || {};
+  out.bell = {
+    night: Math.floor(num(bell.night, 0, 0, 1e6)),
+    day: Math.floor(num(bell.day, 0, 0, 1e6)),
+    report: bell.report && Number.isFinite(bell.report.day) && Array.isArray(bell.report.lines) ? { day: Math.floor(bell.report.day), lines: bell.report.lines.filter((l) => typeof l === 'string').slice(0, 24) } : null,
+  };
+  out.wounds = sanitizeWounds(data.wounds, people);
+  out.scars = {};
+  for (const id of people) if (Number.isFinite(data.scars?.[id])) out.scars[id] = Math.floor(num(data.scars[id], 1, 1, 1e6));
+  out.fallen = Array.isArray(data.fallen)
+    ? data.fallen.filter((f, i, a) => f && people.includes(f.id) && a.findIndex((g) => g?.id === f.id) === i).map((f) => ({ id: f.id, from: Math.floor(num(f.from, 1, 1, 1e6)), to: Math.floor(num(f.to, 1, 1, 1e6)), item: typeof f.item === 'string' ? f.item : null, lit: Math.floor(num(f.lit, 0, 0, 1e6)) }))
+    : [];
+  out.losses = typeof data.losses === 'boolean' ? data.losses : LOSSES_DEFAULT[out.difficulty] ?? true;
+  if (out.difficulty === 'gemuetlich') out.losses = false;
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);
@@ -335,15 +360,16 @@ export function sanitizeState(data, config) {
     for (const [k, v] of Object.entries(w.trader.sold)) if (TRADER_OFFERS[k] && Number.isFinite(v)) out.world.trader.sold[k] = Math.floor(num(v, 0, 0, 99));
   }
   const tentOf = (s) => (s.tent === 'zimmer' ? 'zimmer' : Number.isFinite(s.tent) ? Math.floor(s.tent) : null); // M27: auch die Dachkammer
+  const opt = (v) => (Number.isFinite(v) ? Math.floor(v) : null);
   for (const id of SURVIVOR_ORDER) {
     const s = data.survivors?.[id] || {};
-    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 3)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), errand: Math.floor(num(s.errand, 0, 0, 2)) };
+    const stage = Math.floor(num(s.stage, 0, 0, 5)); // M31: 5 = gefallen (die Stammfiguren ziehen nie weiter)
+    out.survivors[id] = { stage: stage === 4 ? 3 : stage, day: Math.floor(num(s.day, 0, 0, 1e6)), tent: stage >= 4 ? null : tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), errand: Math.floor(num(s.errand, 0, 0, 2)), gone: opt(s.gone) };
   }
-  // M27: Wanderer (4 = weitergezogen, mit Brief) und der Plan ihrer Ankünfte
-  const opt = (v) => (Number.isFinite(v) ? Math.floor(v) : null);
+  // M27: Wanderer (4 = weitergezogen, mit Brief; M31: 5 = gefallen) und der Plan ihrer Ankünfte
   for (const id of WANDERER_ORDER) {
     const s = data.survivors?.[id] || {};
-    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 4)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), guest: Number.isFinite(s.guest) ? Math.floor(num(s.guest, 0, 0, 1)) : null, due: opt(s.due), extra: s.extra === true, gone: opt(s.gone), letter: opt(s.letter), read: s.read === true };
+    out.survivors[id] = { stage: Math.floor(num(s.stage, 0, 0, 5)), day: Math.floor(num(s.day, 0, 0, 1e6)), tent: tentOf(s), slot: Math.floor(num(s.slot, 0, 0, 1)), guest: Number.isFinite(s.guest) ? Math.floor(num(s.guest, 0, 0, 1)) : null, due: opt(s.due), extra: s.extra === true, gone: opt(s.gone), letter: opt(s.letter), read: s.read === true };
   }
   out.guests = {
     plan: Array.isArray(data.guests?.plan)

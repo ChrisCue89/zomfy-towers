@@ -125,7 +125,9 @@ export class Armory {
     }
     if (this.openT < OPEN_LOCK) return;
     const id = ARMS_ORDER[this.focus];
-    if (input.pressed('confirm') || clicked) {
+    if ((input.pressed('confirm') || clicked) && g.arms.lost(id)) {
+      this.note = { text: T.waffen.verloren, t: 2.6 }; // M31: im Laub geblieben – Balduin bringt Ersatz
+    } else if (input.pressed('confirm') || clicked) {
       const was = g.arms.taken(id);
       const ok = g.arms.toggleTake(id);
       if (ok) this.note = { text: was ? T.waffen.zurueck(T.gegenstaende[id]) : T.waffen.genommen(T.gegenstaende[id]), t: 2.2 };
@@ -174,6 +176,7 @@ export class Armory {
       const r = row.rect;
       const sel = k === this.focus;
       const taken = g.arms.taken(row.id);
+      const lost = g.arms.lost(row.id); // M31
       if (sel) {
         ctx.fillStyle = FELT_LIGHT;
         ctx.fillRect(r.x - 2, r.y - 1, r.w + 4, r.h + 2);
@@ -181,8 +184,8 @@ export class Armory {
         ctx.fillRect(r.x - 2, r.y - 1, 2, r.h + 2);
       }
       drawIcon(ctx, row.id, r.x + 2, r.y + 1);
-      drawText(ctx, T.gegenstaende[row.id], r.x + 18, r.y + 2, taken ? TEXT_SOFT : TEXT);
-      const right = taken ? W.beiMika : '';
+      drawText(ctx, T.gegenstaende[row.id], r.x + 18, r.y + 2, taken || lost ? TEXT_SOFT : TEXT);
+      const right = lost ? W.fort : taken ? W.beiMika : '';
       if (right) drawText(ctx, right, r.x + r.w - measure(right) - 2, r.y + 2, BRASS);
     });
     // Rechts das Foto und was man wissen muss

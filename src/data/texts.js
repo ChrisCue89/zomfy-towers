@@ -96,6 +96,7 @@ export const T = {
     schlafhuette: 'Schlafhütte', // M27: zwei Schlafplätze
     hochsitz: 'Hochsitz', // M23
     uebungsplatz: 'Übungsplatz', // M30
+    lagerglocke: 'Lagerglocke', // M31
     // M17: Wall und Tor des Lagers
     wall3: 'Wall',
     wall4: 'Wall',
@@ -135,6 +136,7 @@ export const T = {
     reparieren: 'Flickt Zuhause, Türme und Barrikaden.',
     werkbank: 'Werkzeuge bauen, Überschuss verwerten.',
     uebungsplatz: 'Hier üben die Bewohner – jeden Tag eine Person, zwei Stunden lang. Wer geübt ist, hält im Notfall länger durch.',
+    lagerglocke: 'Balduins alte Schiffsglocke. Nur im Hof. Ist die Horde nachts durchgebrochen, holt ein Läuten alle zu den Waffen – einmal je Nacht.',
     barrikade: 'Nur auf den Weg: Die Horde bleibt hängen und schlägt darauf ein.',
     // M19
     glockenturm: 'Ein Glockenschlag betäubt alles ringsum kurz.',
@@ -209,7 +211,7 @@ export const T = {
     reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten', schmuck: 'Schmuck' },
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
-    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg', locke: 'Nur auf einen Weg nahe dem Waldrand' },
+    grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg', locke: 'Nur auf einen Weg nahe dem Waldrand', nurHof: 'Nur im Hof, innerhalb des Walls' },
     keineHorde: 'Hier kommt keine Horde vorbei', // m12-r1: der Turm stand mitten in der Bucht
     keinTurm: 'Kein Turm reicht hierher', // m16-r1: Barrikaden gehören in den Kreis eines Turms
     nurDraussen: 'Nur draußen',
@@ -637,6 +639,10 @@ export const T = {
     holzNehmen: 'Holz nehmen',
     ueben: 'Üben lassen', // M30: Übungsplatz
     waffenschrank: 'Waffenschrank öffnen', // M30
+    glocke: 'Läuten (E halten)', // M31: Lagerglocke
+    retten: 'Aufhelfen (E halten)', // M31: nach der Lagerglocke am Boden
+    erinnerung: 'Laterne anzünden', // M31: Erinnerungsbrett am Steg
+    erinnerungAnsehen: 'Ansehen', // M31: tagsüber
     brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
     heuteLeer: 'Heute leer – morgen wieder',
     leerBald: 'Leer – in ein, zwei Tagen wieder',
@@ -1207,7 +1213,7 @@ export const T = {
   buch: {
     menue: 'Herbstbuch',
     titel: 'Herbstbuch',
-    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde' },
+    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', erinnerung: 'Erinnerung' },
     fuss: 'A/D blättern · W/S wählen · Esc zurück',
     // Sterne im Morgenbericht
     sterne: { gehalten: 'Gehalten', makellos: 'Makellos', mutig: 'Mutig' },
@@ -1555,6 +1561,97 @@ export const T = {
     uebenPatronen: 'Drei Patronen für die Dosen.',
     stufe: (n, rest) => (rest === null ? 'ganz geübt' : `Übung ${n} von 3, noch ${rest} bis zur nächsten`),
     buch: (n) => ['Hat noch nie geübt.', 'Ein wenig geübt.', 'Geübt.', 'Sehr geübt.'][n],
+    // M31: nach der Lagerglocke im Laub verloren – Balduin bringt Ersatz
+    fort: 'im Laub',
+    verloren: 'Im Laub geblieben – Balduin bringt Ersatz.',
+    ersatz: (name) => `Ersatz: ${name}`,
+    ersatzInfo: 'Was nach der Lagerglocke im Laub blieb. Balduin kennt jemanden, der jemanden kennt.',
+    ersatzDa: (name) => `${name} steht wieder im Waffenschrank.`,
+  },
+  // Die Lagerglocke (M31, OFFENE-FRAGEN 165–167): einmal je Nacht, nur nach einem Durchbruch
+  glocke: {
+    gelaeutet: 'Die Glocke! Alle zu den Waffen!',
+    werKommt: 'Wer kommt?',
+    verarztet: 'verarztet',
+    nicht: {
+      tag: 'Die Glocke ist für die Nacht – wenn die Horde durchbricht.',
+      schonGelaeutet: 'Heute Nacht hat die Glocke schon geläutet.',
+      keinDurchbruch: 'Noch hält das Tor. Die Glocke ist für den Notfall.',
+      niemand: 'Niemand da, der kommen könnte.',
+    },
+    ziehen: 'E halten: läuten',
+    keinRaffer: 'Nicht jetzt – die Glocke hat geläutet.',
+    keinRufen: 'Erst das Lager – dann die nächste Welle.',
+    schreck: 'Oh nein …',
+    rueckzug: 'Ich muss rein!',
+    hilfe: 'Mika!',
+    danke: 'Danke …',
+    stabil: (name) => `${name} ist versorgt.`,
+    stabilKurz: 'versorgt',
+    retten: 'E halten: aufhelfen',
+    liegt: (name) => `${name} liegt am Boden!`,
+    still: (name) => `Wo eben noch ${name} lag, fällt nur noch Laub.`,
+    entwarnung: 'Entwarnung – das Lager ist frei.',
+    kampf: 'Die Glocke hat geläutet',
+    bericht: (names, kills) =>
+      kills > 0
+        ? `Die Glocke hat geläutet: ${liste(names)} ${names.length === 1 ? 'kam' : 'kamen'} – ${kills === 1 ? 'ein Schlurfer' : `${kills} Schlurfer`} weniger im Lager.`
+        : `Die Glocke hat geläutet: ${liste(names)} ${names.length === 1 ? 'kam und hielt' : 'kamen und hielten'} mit dir das Lager.`,
+    zumSteg: (name) => `Wir haben ${name} zum Steg gebracht.`,
+    schwer: (name, days) => `${name} ist schwer verletzt und muss ${days === 1 ? 'einen Tag' : `${days} Tage`} liegen.`,
+    verletzt: (name, days) => `${name} ist verletzt – ${days === 1 ? 'einen Tag' : `${days} Tage`} nur halb bei Kräften.`,
+    waffeWeg: (name, waffe) => `${/[sxzß]$/.test(name) ? `${name}’` : `${name}s`} ${waffe} ist im Laub geblieben. Balduin bringt sicher Ersatz.`,
+    erinnern: (who, name, since) =>
+      [
+        `${who} hat heute früh eine Kürbislaterne an den Steg gestellt – für ${name}.`,
+        `${who} erzählt beim Frühstück von ${name}. Alle lachen ein bisschen, und dann ist es still.`,
+        `${who} summt beim Holzhacken das Lied, das ${name} immer gesummt hat.`,
+      ][Math.min(2, since - 1)],
+    wunde: { erschoepft: 'erschöpft', verletzt: 'verletzt', schwer: 'schwer verletzt' },
+    narbe: 'Eine Narbe von der Nacht mit der Glocke.',
+    wundeBuch: (kind, days) => (kind === 'erschoepft' ? 'Erschöpft vom Kampf – bis mittags.' : `${kind === 'schwer' ? 'Schwer verletzt' : 'Verletzt'} – noch ${days === 1 ? 'ein Tag' : `${days} Tage`}.`),
+    verluste: 'Verluste',
+    verlusteInfo: {
+      an: 'Wer nach der Lagerglocke zu lange liegen bleibt, kann sterben.',
+      aus: 'Wer liegen bleibt, verliert nur seine Waffe.',
+      gemuetlich: 'Auf „Gemütlich“ stirbt niemand.',
+      nurAus: 'Nur noch von „an“ zu „aus“.',
+    },
+    an: 'an',
+    aus: 'aus',
+  },
+  // Das Erinnerungsbrett am Steg (M31, OFFENE-FRAGEN 170)
+  erinnerung: {
+    brett: 'Erinnerungsbrett',
+    tage: (from, to) => `Tag ${from}–${to}`,
+    anzuenden: 'Laterne anzünden',
+    ansehen: 'Ansehen',
+    brennt: 'Die Laterne brennt schon.',
+    nurAbends: 'Die Laterne zündet man abends an.',
+    seite: 'Die mit uns waren',
+    stueck: (item) => `Erinnerungsstück: ${item}`,
+    zeilen: {
+      hilde: 'Hilde hat nie verraten, wie viel Zucker in ihren Tee kam. Man schmeckt es trotzdem noch.',
+      bert: '„Fragen Sie mich!“ – und man hat ihn gefragt. Immer.',
+      juna: 'Im Funkgerät rauscht es manchmal, als würde Juna gleich lachen.',
+      yusuf: 'Das Plüschschaf sitzt noch auf dem Doktorhut und passt auf.',
+      hannes: 'Der Hobel riecht noch nach Harz. Hannes hätte ihn nie so liegen lassen.',
+      clara: '„Hier wird nichts weggeworfen.“ Also bleibt auch das.',
+      lotte: 'Lottes Papierlaterne leuchtet heute ein bisschen heller. Bestimmt.',
+      greta: 'Greta hätte gesagt: „Nicht trauern. Fallen stellen.“',
+      fiete: 'Fiete kannte jeden Knoten. Den letzten hat er für uns gebunden.',
+      ida: 'Ida wusste, wie alt jeder Baum hier ist. Jetzt wissen es nur noch die Bäume.',
+      rosa: 'Aus Rosas Rezeptheft riecht es nach Zimt, wenn man es aufschlägt.',
+      anton: 'Abends am Feuer fehlt eine Mundharmonika. Man hört sie trotzdem.',
+      emil: 'Im Frühling gehen Emils Kürbissamen auf. Er hat es versprochen.',
+      frieda: 'Das Hufeisen hängt mit der Öffnung nach oben. Frieda hat darauf bestanden.',
+      mara: 'Mara wusste immer, wo Süden ist. Jetzt zeigt der Kompass zum Steg.',
+      paula: 'Paulas Kissen hat einen Flicken für jeden hier. Auch für sie.',
+    },
+    zeile: (name) => `${name} war hier. Das bleibt.`,
+    leer: 'Hier stehen die Namen derer, die mit uns waren. Möge die Seite leer bleiben.',
+    fertig: 'E: Gute Nacht',
+    angezuendet: 'Die Laterne am Brett brennt.',
   },
   // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch
   startbild: {

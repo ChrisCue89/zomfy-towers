@@ -5,6 +5,93 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 31 – Die Lagerglocke ✓
+
+Die schwerste Entscheidung der Nacht: allein halten oder alle rufen (DESIGN 8,
+OFFENE-FRAGEN 165–167, 170, 190).
+
+- **Die Glocke** (Nr. 165): Balduins alte Schiffsglocke an einem Galgen aus
+  Treibholz – silbriges Holz mit Astknoten, Bronze mit grüner Patina und
+  Zierrille, darunter Klöppel und Seil mit dickem Knoten.
+  - Sie steht im Reiter Einrichten, sobald der Waffenschrank offen ist, kostet
+    6 Holz, 4 Schrott und 6 Zombieteile, einmal und nur im Hof (»Nur im Hof,
+    innerhalb des Walls«). Die Horde wirft sie nicht um.
+  - Tagsüber sagt die Einblendung, wofür sie ist (»Die Glocke ist für die Nacht
+    – wenn die Horde durchbricht«), nachts ohne Durchbruch »Noch hält das Tor«,
+    nach dem Läuten »Heute Nacht hat die Glocke schon geläutet«.
+  - Nach einem Durchbruch (Tor gefallen oder ein Schlurfer im Lager) hält Mika E
+    anderthalb Sekunden. Solange zeigt links eine Tafel »Wer kommt?« mit Namen,
+    Waffe, Leben und Munition, darunter füllt sich ein Goldbalken.
+- **Das Läuten** in drei Takten: ein tiefer Schlag mit langem Nachhall (Brummton,
+  Grundton, kleine Terz, Quinte, Oktave, dazu der Klöppel), die Kamera bebt,
+  ein Schlag Stille (die Musik duckt sich), dann treten die Bewohner nacheinander
+  aus Zelt, Hütte oder Haustür – mit Daumen hoch und ihrer Notfallwaffe in der
+  Hand. Die Nachtmusik läuft danach auf voller Stufe.
+- **Der Kampf** (Nr. 167) nur innerhalb des Walls:
+  - Wer eine Schusswaffe hat, bleibt auf Abstand, zielt nach seiner
+    Treffsicherheit (Übung, Profil) und verschießt die gemeinsame Munition aus
+    dem Vorrat – Hilde ihre Doppelflinte, Juna die Signalpistole. Die anderen
+    gehen mit Spaltaxt, Mistgabel oder Schläger ran. Trägt Mika die Waffe gerade
+    selbst oder liegt sie im Laub, bleiben die Fäuste.
+  - Einmal je Nacht kann der Schreck packen (1 s Zögern, »Oh nein …«), wenn ein
+    Schlurfer auf 2 m herankommt – je nach Übung und Profil.
+  - Die Horde im Lager geht auf Bewohner los, die ihr nahe kommen
+    (Handgemenge); Liegende lassen sie in Ruhe.
+  - 80 Leben, 20 mehr je Übungsstufe; ein Treffer nimmt höchstens 40 %
+    (Gemütlich 30, Wild 50). Bei einem Viertel ziehen sie sich ins Haus zurück –
+    zu Boden geht nur, wer eingekesselt ist.
+  - Dr. Yusuf kämpft nicht: Er geht zu den Liegenden und versorgt alle im Umkreis
+    von 6 m nach 4 s.
+  - Solange die Glocke läutet: kein Zeitraffer (B), kein Rufen (N).
+- **Zu Boden und Aufhelfen** (Nr. 167): Ein Ring zählt das Rettungsfenster
+  herunter (60 s, Wild 40, doppelt so schnell mit einem Schlurfer daneben),
+  darüber der Name in Rot, »Mika!«, Herzschlag, eine Meldung. Die Einblendung
+  »Aufhelfen (E halten)« geht allem anderen vor; nach 2 s steht die Person auf
+  und zieht sich zurück. Ist das Lager frei, gelten alle als gerettet.
+- **Wenn das Fenster abläuft** (Nr. 166): Ohne »Verluste« bleibt nur die Waffe
+  im Laub – Balduin bringt Ersatz (8 Zombieteile, eine je Tag). Mit
+  »Verluste« ist die Person nicht mehr da: Laub wirbelt auf, »Wo eben noch Juna
+  lag, fällt nur noch Laub.« Angedeutet, nie gezeigt, sofort gespeichert. Auf
+  »Gemütlich« nie, Knopf nie.
+- **Entwarnung:** 20 s nachdem das Lager frei ist (spätestens im
+  Morgengrauen) schlägt die Glocke dreimal, alle gehen zurück.
+- **Der Morgen danach:**
+  - Der Bericht erzählt, wer kam und wie viele Schlurfer weniger im Lager waren,
+    wer zum Steg gebracht wurde, wer verletzt ist und welche Waffe im Laub
+    blieb. Das steht im Spielstand und kommt auch, wenn Mika wach bleibt.
+  - Wunden: erschöpft (wer gekämpft hat, bis mittags), verletzt (die Nacht mit
+    höchstens der Hälfte der Leben beendet, 2 Tage, halbe Fähigkeit, folgt der
+    Glocke nicht), schwer verletzt (war zu Boden, 4 Tage, keine Fähigkeit;
+    Dr. Yusuf und ein Bett im Haus kürzen je einen Tag). Gemütlich 1/2 Tage,
+    Wild 3/5. Danach bleibt eine Narbe (eine Zeile in der Menschenkunde).
+  - »Halbe Fähigkeit« heißt: halbe Morgengaben, halbe Wirkung bei Zahlen
+    (Flicken, Rabatte, Lichtradius), Greta stellt nur jede zweite Falle neu.
+  - In den drei Tagen danach spricht jemand von ihr (»Hilde hat heute früh eine
+    Kürbislaterne an den Steg gestellt – für Juna.«).
+- **Das Erinnerungsbrett am Steg** (Nr. 170): erscheint mit dem ersten Verlust
+  am Anfang des Stegs – ein Brett aus Treibholz mit Moosdach, zwei
+  Wäscheleinen mit Fotos (je Verlust eines, mit Klammer), davor eine
+  Kürbislaterne. Abends zündet E die Laterne an (Lichtinsel), eine kleine
+  Spieluhr spielt, und eine Karte zeigt jedes Foto in Sepia mit Namen, »Tag
+  7–19«, einer Zeile, die bleibt, und dem Erinnerungsstück. Tagsüber »Ansehen«.
+- **Das Herbstbuch** bekommt die Seite »Erinnerung« (Die mit uns waren), die
+  Menschenkunde zeigt Wunden und Narben.
+- **Einstellung »Verluste«** (Nr. 166): im Titelbild (A/D, mit Erklärung neben
+  der Zeile), auf »Gemütlich« immer aus, sonst an vorgewählt; im Pausenmenü nur
+  noch von »an« nach »aus«. Wechselt die Schwierigkeit auf »Gemütlich«, ist sie
+  aus und bleibt es.
+- Nebenbei behoben: Weitergezogene (Stufe 4) zählten noch als Bewohner – ihre
+  Fähigkeit wirkte weiter.
+- **Spielstand v27** mit Migration (noch nie geläutet, niemand verwundet,
+  »Verluste« nach der Schwierigkeit).
+- Prüfabschnitt `glocke` (Bilder: glocke-tafel, glocke-kampf, glocke-aufhelfen,
+  erinnerung, erinnerungsbrett). Die Abschnitte `glocke`, `gaeste` und `bindung`
+  sind bestanden. Beim Ansehen der Bilder behoben:
+  - Die Karte am Brett war zu kurz, der Hinweis lag über der zweiten Zeile.
+  - Während die Glocke läutete, bot die Einblendung noch »Läuten« an.
+  - Ohne erledigten Schlurfer hieß es »0 Schlurfer weniger« (jetzt »… kamen und
+    hielten mit dir das Lager«).
+
 ## Meilenstein 30 – Waffenschrank und Übungsplatz ✓
 
 Die Bewohner können sich wehren, wenn es sein muss, und Mika bekommt echte Waffen mit

@@ -285,6 +285,24 @@ const ICONS = {
       '.kkk..kkk..',
     ],
   },
+  // M31: Lagerglocke – Galgen aus Treibholz, Bronzeglocke, Seil mit Knoten
+  lagerglocke: {
+    legend: { k: P.n1, w: P.s6, W: P.s5, b: P.e5, B: P.e7, h: P.f7, r: P.e8 },
+    rows: [
+      'kkkkkkkkkkkk',
+      'kwwwwwwwwwwk',
+      'kWkk.kk.kkWk',
+      'kWk.kbbk.kWk',
+      'kWk.kBhk.kWk',
+      'kWkkbBhBkkWk',
+      'kWkbBBhBBkWk',
+      'kWkbbbbbbkWk',
+      'kWk.kkkk.kWk',
+      'kWk..krk.kWk',
+      'kWk.krrrkkWk',
+      'kkk..kkk.kkk',
+    ],
+  },
   // M30: Übungsplatz – die Strohpuppe mit dem Kochtopf
   uebungsplatz: {
     legend: { k: P.n1, S: P.s4, s: P.s6, y: P.e8, Y: P.e7, e: P.e4 },

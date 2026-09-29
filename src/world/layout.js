@@ -26,6 +26,7 @@ export const LAYOUT = {
   lighthouse: { x: 22.25, z: -1.0 }, // Leuchtmast am Ende des Stegs (früher Funkturm), Mitte zwischen den Beinen
   beacon: { x: 7.5, z: 1.0 }, // hierhin fällt das Leuchtfeuer: auf den Hof (Lichtinsel, bremst die Horde)
   towerDebris: { x: 10.75, z: 2.5 }, // ein abgebrochenes Stück des Masts am Strand
+  memorial: { x: 12.25, z: -2.5 }, // M31: Erinnerungsbrett am Anfang des Stegs (erscheint mit dem ersten Verlust)
   wreck: { x: 10.25, z: 9.5 }, // Bootswrack am Strand (gibt einmal Schrott)
   garden: { x: -2.0, z: -9.0 },
   clothesline: { x0: -6.0, x1: -2.5, z: -6.0 },

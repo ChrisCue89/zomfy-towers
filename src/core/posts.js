@@ -82,7 +82,7 @@ export class Posts {
 
   /** Steht diese Person gerade auf ihrem Hochsitz? */
   onDuty(id) {
-    return this.onShift === true && !this.retreated.has(id) && this.game.survivors.resident(id) && Boolean(this.postOf(id));
+    return this.onShift === true && !this.retreated.has(id) && this.game.survivors.strength(id) > 0 && Boolean(this.postOf(id)); // M31: schwer Verletzte bleiben im Zelt
   }
 
   /** Oben auf dem Hochsitz. */

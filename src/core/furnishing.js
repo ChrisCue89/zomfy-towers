@@ -147,7 +147,7 @@ export class Furnishing {
     const g = this.game;
     const st = g.state;
     // M29: Hat Anton abends am Feuer gespielt, schlafen alle gemütlicher
-    const cozy = this.cozy + (g.survivors?.ability('musik') ? ABILITIES.musik.cozy : 0);
+    const cozy = this.cozy + Math.floor(ABILITIES.musik.cozy * (g.survivors?.ability('musik') || 0)); // M31: verletzt halb
     if (cozy <= 0) return [];
     g.combat.gainXp(cozy);
     const rested = cozy >= COZY.rested;

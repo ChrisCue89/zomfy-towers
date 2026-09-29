@@ -83,7 +83,7 @@ export class Gathering {
   deplete(node) {
     const g = this.game;
     // M29: Mit Ida (Försterin) wachsen gefällte Bäume schneller nach – mindestens ein Tag bleibt
-    const faster = node.kind === 'baum' && g.survivors?.ability('wald') ? ABILITIES.wald.faster : 0;
+    const faster = node.kind === 'baum' ? Math.floor(ABILITIES.wald.faster * (g.survivors?.ability('wald') || 0)) : 0; // M31: verletzt nicht
     const until = g.state.time.day + Math.max(1, node.rules.regrowDays - faster);
     g.world.resources.startFall(node, until);
     g.state.world.nodes[node.id] = { until };

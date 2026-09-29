@@ -108,9 +108,15 @@ export function stepsLeft(t) {
   return TRAINING.steps[level] - (t?.done || 0);
 }
 
-/** Leerer Eintrag für den Waffenschrank (state.arms). */
+/**
+ * Verloren (M31, Nr. 166): Wer ohne »Verluste« nach der Lagerglocke liegen bleibt, verliert
+ * seine Waffe im Laub. Balduin bringt Ersatz – eine je Tag, für so viele Zombieteile.
+ */
+export const ARMS_REPLACE = { cost: { teile: 8 }, perDay: 1 };
+
+/** Leerer Eintrag für den Waffenschrank (state.arms); `lost`: verlorene Waffen (M31). */
 export function newArms() {
-  return { unlocked: false, taken: [], notfall: { ...NOTFALL_START }, mag: {} };
+  return { unlocked: false, taken: [], notfall: { ...NOTFALL_START }, mag: {}, lost: [] };
 }
 
 /** Waffenschrank prüfen und reparieren (sanitizeState). */
@@ -119,6 +125,7 @@ export function sanitizeArms(raw, people) {
   if (!raw || typeof raw !== 'object') return out;
   out.unlocked = raw.unlocked === true;
   out.taken = Array.isArray(raw.taken) ? raw.taken.filter((id, i, a) => ARMS_ORDER.includes(id) && a.indexOf(id) === i) : [];
+  out.lost = Array.isArray(raw.lost) ? raw.lost.filter((id, i, a) => ARMS_ORDER.includes(id) && a.indexOf(id) === i && !out.taken.includes(id)) : [];
   for (const id of people) {
     const w = raw.notfall?.[id];
     if (w === null || ARMS_ORDER.includes(w)) out.notfall[id] = w;

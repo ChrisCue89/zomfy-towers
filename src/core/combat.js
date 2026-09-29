@@ -47,7 +47,7 @@ export class Combat {
 
   /** Wie viel Leben die Suppe bis zum Morgen dazugibt – mit Rosa (M29) mehr. */
   soupHp() {
-    return this.game.survivors?.ability('kochen') ? ABILITIES.kochen.soupHp : SOUP.maxHp;
+    return SOUP.maxHp + (ABILITIES.kochen.soupHp - SOUP.maxHp) * (this.game.survivors?.ability('kochen') || 0); // M31: verletzt halb
   }
 
   /** Womit Mika gerade zuschlägt (Name aus weapons.js). */

@@ -31,7 +31,7 @@ import { SplashScreen } from '../ui/splash.js';
 import { DIFFICULTIES, DEFAULT_DIFFICULTY } from '../data/difficulty.js';
 import { MIKA } from '../entities/characters.js';
 import { lookSpec } from '../data/looks.js';
-import { Survivors } from './survivors.js';
+import { Survivors, personOf, PEOPLE } from './survivors.js';
 import { Trader } from './trader.js';
 import { Arrival } from './arrival.js';
 import { Tutorial } from './tutorial.js';
@@ -68,6 +68,8 @@ import { Catalog, DeliveryCard } from '../ui/catalog.js';
 import { Armory } from '../ui/armory.js';
 import { Arms } from './arms.js';
 import { Training } from './training.js';
+import { Defense } from './defense.js';
+import { LOSSES_DEFAULT } from '../data/bell.js';
 import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
 import { PerkChoice } from '../ui/perkChoice.js';
@@ -254,6 +256,10 @@ export class Game {
       onBarricadeHit: (b, dmg, z) => this.onBarricadeHit(b, dmg, z),
       onRaidHit: (b, dmg, z) => this.onRaidHit(b, dmg, z),
       onLureHit: (b, dmg, z) => this.onLureHit(b, dmg, z),
+      // M31: nach der Lagerglocke – Handgemenge mit den Bewohnern im Lager
+      defenderNear: (x, z, r) => this.defense.defenderNear(x, z, r),
+      defenderAt: (id) => this.defense.defenderAt(id),
+      onHitPerson: (id, dmg, z) => this.defense.hit(id, dmg, z),
       onEnterCamp: (z) => this.onEnterCamp(z),
       onReaction: (kind, z) => this.onReaction(kind, z),
       onShatter: (z) => {
@@ -362,6 +368,7 @@ export class Game {
     this.furnishing = new Furnishing(this);
     this.arms = new Arms(this); // M30: Schusswaffen, Munition, Hülsen, Leuchtkugeln
     this.training = new Training(this); // M30: der Übungsplatz – jeden Tag übt eine Person
+    this.defense = new Defense(this); // M31: die Lagerglocke – alle zu den Waffen
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -405,7 +412,7 @@ export class Game {
     // Neues Spiel nach dem Neuladen (frische Karte): gleich mit Name und Aussehen los
     const fresh = takeFreshStart();
     if (fresh && !this.worldFromSave) {
-      this.startNewFromTitle(fresh.name, fresh.look, fresh.difficulty, fresh.tutorial);
+      this.startNewFromTitle(fresh.name, fresh.look, fresh.difficulty, fresh.tutorial, fresh.losses);
     } else if (CONFIG.showTitle) {
       // Titelbild (Meilenstein 7): das Intro kommt erst, wenn man losspielt
       this.titleIntro = this.pendingIntro;
@@ -492,6 +499,7 @@ export class Game {
     this.update(dt);
     // Zeitraffer (M16): nachts auf Wunsch doppelt so schnell – als zweiter Schritt
     // gleicher Länge, damit Laufen, Treffer und Kollision so genau bleiben wie sonst
+    if (this.fast && this.defense.active) this.fast = false; // M31: kein Zeitraffer, solange die Glocke läutet
     if (this.fast && !this.frozenFrame) {
       if (this.mode === 'play' && this.nights.fastAllowed) {
         this.input.endFrame();
@@ -536,7 +544,9 @@ export class Game {
     this.trader.apply();
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
-    this.world.refreshCabinet(this.state.arms.taken); // M30: was noch im Waffenschrank steht
+    this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
+    this.defense.reset(); // M31: ein halber Kampf wird nicht gespeichert
+    this.world.setMemorial(st.fallen, this.state.time.day); // M31: das Erinnerungsbrett am Steg
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -902,6 +912,7 @@ export class Game {
   }
 
   interact(it) {
+    if (it.rescue) return; // M31: Aufhelfen hält E (defense.updateDown)
     this.lastInteraction = it.id;
     if (it.action === 'sleep') this.requestSleep();
     else if (it.action === 'takeAxe') this.takeAxe();
@@ -911,6 +922,8 @@ export class Game {
     else if (it.use === 'werkbank') this.openCrafting();
     else if (it.use === 'bank') this.useBench();
     else if (it.use === 'ueben') this.training.offer(); // M30: Wer übt heute?
+    else if (it.use === 'glocke') this.defense.press(); // M31: ein Druck sagt, warum nicht – halten läutet
+    else if (it.memorial) this.lightMemorial(); // M31: das Erinnerungsbrett am Steg
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -919,6 +932,34 @@ export class Game {
     else if (this.gathering.interact(it)) return;
     else if (it.thought) this.hud.say(T.geschichte[it.thought], 5); // M15: Gedanke statt Dialog
     else if (it.dialog) this.startDialog(it.dialog);
+  }
+
+  /** M31: Abends (und nachts) kann man die Laterne am Erinnerungsbrett anzünden. */
+  memorialEvening() {
+    const h = hoursOf(this.state.time.minute);
+    return h >= 17 || h < 5;
+  }
+
+  /**
+   * M31: E am Erinnerungsbrett – abends zündet Mika die Laterne an (die Spieluhr spielt,
+   * eine Erinnerungszeile), dann zeigt eine Karte jedes Foto mit Namen, Tagen und Zeile.
+   */
+  lightMemorial() {
+    const st = this.state;
+    if (!st.fallen.length) return;
+    const day = st.time.day;
+    if (this.memorialEvening() && st.fallen.some((f) => f.lit !== day)) {
+      for (const f of st.fallen) f.lit = day;
+      this.world.setMemorial(st.fallen, day);
+      const first = st.fallen[st.fallen.length - 1].id;
+      this.sound.memorial(first.length + first.charCodeAt(0));
+      const p = this.world.props.memorialPos;
+      this.effects.splat(p.x + 0.3, 0.4, p.z + 0.35, 'funken', 8, 0.5);
+      this.hud.toast(T.erinnerung.angezuendet, 'kuerbislaterne', 3);
+      this.quietSave();
+    }
+    this.deliveryCard.open(st.fallen.map((f) => ({ memorial: f.id, name: personOf(f.id)?.name || f.id, from: f.from, to: f.to, item: f.item })));
+    this.mode = 'lieferung';
   }
 
   /** Auf die Reifenschaukel: ein paar Schwünge, Mika steht auf dem Reifen (m12-r1). */
@@ -1020,7 +1061,7 @@ export class Game {
         this.state.world.buildings = this.world.buildings.toState();
         this.effects.chips(c.x, 0.3, c.z, b.type === 'holzlager' ? 'holz' : 'gras', 8);
         // M29: Mit Emil (Gärtner) tragen die Beete mehr
-        const extra = b.type === 'beet' && this.survivors.ability('garten') ? ABILITIES.garten.extra : 0;
+        const extra = b.type === 'beet' ? Math.floor(ABILITIES.garten.extra * this.survivors.ability('garten')) : 0; // M31: verletzt halb
         const harvest = { ...BUILDINGS[b.type].harvest };
         if (extra) harvest.fasern = (harvest.fasern || 0) + extra;
         this.gathering.give(harvest, c.x, 0.9, c.z);
@@ -1177,6 +1218,17 @@ export class Game {
       this.trader.sold(recipe);
       this.hud.toast(T.wundertuete.auf(T.turmteile[id][0], T.turmteile.seltenheit[TOWER_PARTS[id].rarity]), id, 4);
       this.sound.play('kiste');
+      this.quietSave();
+      return true;
+    }
+    if (recipe.gives.arm) {
+      // M31: Ersatz für eine Waffe, die nach der Lagerglocke im Laub blieb – sie steht wieder im Schrank
+      const id = recipe.gives.arm;
+      st.arms.lost = st.arms.lost.filter((w) => w !== id);
+      this.trader.sold(recipe);
+      this.world.refreshCabinet(this.arms.missing());
+      this.hud.toast(T.waffen.ersatzDa(T.gegenstaende[id]), id, 3.2);
+      this.sound.play('aufwertung');
       this.quietSave();
       return true;
     }
@@ -1351,7 +1403,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
     this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
@@ -1373,6 +1425,8 @@ export class Game {
 
   /** Alles, was ein neuer Tag mit sich bringt (Nachwachsen …). */
   onNewDay() {
+    this.defense.heal(); // M31: abgelaufene Wunden heilen, aus »schwer verletzt« wird eine Narbe
+    this.world.setMemorial(this.state.fallen, this.state.time.day); // die Laterne am Brett ist aus
     this.world.lightPools.restore(Infinity); // M22: der Morgen zündet alle Lichter wieder an
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
@@ -2286,6 +2340,10 @@ export class Game {
    * Geht es nicht, sagt eine Meldung, warum (m16-r1: vorher kam gar nichts).
    */
   callWave() {
+    if (this.defense.active) {
+      this.hud.toast(T.glocke.keinRufen, 'lagerglocke', 2.2); // M31: solange die Glocke läutet
+      return;
+    }
     const n = this.nights;
     const evening = !n.active;
     if (!n.callNext()) {
@@ -2306,6 +2364,7 @@ export class Game {
   setDifficulty(id) {
     if (!DIFFICULTIES[id] || this.state.difficulty === id) return;
     this.state.difficulty = id;
+    if (id === 'gemuetlich') this.state.losses = false; // M31: auf »Gemütlich« nie – und danach nicht wieder an
     this.survivors.upcoming = null; // Knopfs Bellen vor Welle 1 rechnet den Plan neu
     this.hud.toast(T.schwierigkeit.gewechselt(T.schwierigkeit[id]), null, 2.4);
     this.quietSave();
@@ -2313,6 +2372,10 @@ export class Game {
 
   /** Zeitraffer an/aus (M16) – nur nachts. */
   toggleFast() {
+    if (this.defense.active) {
+      this.hud.toast(T.glocke.keinRaffer, 'lagerglocke', 2.2); // M31: solange die Glocke läutet
+      return;
+    }
     if (!this.nights.fastAllowed) {
       this.hud.toast(T.nacht.rafferNurNachts, null, 2.2);
       return;
@@ -2342,8 +2405,9 @@ export class Game {
   newRound() {
     const { name, look } = this.state.player;
     const difficulty = this.state.difficulty;
+    const losses = this.state.losses; // M31: bleibt wie gewählt
     // N5: Wer einen Herbst gespielt hat, braucht keine Einführung mehr
-    if (!CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial: false })) {
+    if (!CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial: false, losses })) {
       this.saves.clear();
       this.holdSave = true;
       location.reload();
@@ -2359,10 +2423,10 @@ export class Game {
   }
 
   /** Neues Spiel mit Name und Aussehen. */
-  startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY, tutorial = true) {
+  startNewFromTitle(name, look, difficulty = DEFAULT_DIFFICULTY, tutorial = true, losses = undefined) {
     // Die Karte gehört noch zum alten Spielstand: einmal neu laden, dann entsteht
     // ein neues Wegenetz und es geht gleich mit diesem Namen weiter
-    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial })) {
+    if (this.worldFromSave && !CONFIG.test && !CONFIG.playtest && stashFreshStart({ name, look, difficulty, tutorial, losses })) {
       this.saves.clear();
       this.holdSave = true;
       location.reload();
@@ -2374,6 +2438,8 @@ export class Game {
     Object.assign(this.state.player, { name, look });
     this.state.difficulty = DIFFICULTIES[difficulty] ? difficulty : DEFAULT_DIFFICULTY;
     this.state.tutorial = { on: tutorial !== false }; // N5: Einführung mit Edda oder ohne
+    // M31: »Verluste« – auf »Gemütlich« nie, sonst wie gewählt (vorgewählt: an)
+    this.state.losses = this.state.difficulty !== 'gemuetlich' && (typeof losses === 'boolean' ? losses : LOSSES_DEFAULT[this.state.difficulty] ?? true);
     this.appliedLook = null;
     this.applyLook();
     this.quietSave();
@@ -2722,6 +2788,7 @@ export class Game {
     this.combat.update(dt);
     this.arms.update(dt); // M30: Nachladen, Hülsen, Leuchtkugeln, der Schlüssel zum Schrank
     this.training.update(dt); // M30: wer gerade übt
+    this.defense.update(dt, this.input); // M31: Lagerglocke – läuten, kämpfen, aufhelfen
     this.skills.update(dt);
     this.updateCamp(dt);
     if (this.mode !== 'play') return;
@@ -2756,6 +2823,9 @@ export class Game {
       if (it && this.suppressed && it.id === this.suppressed.id) it = null;
     }
     if (!it && usePress && !this.builder.placement && !this.player.busy) this.tellAboutForestTree(p);
+    // M31: Liegt nach der Lagerglocke jemand am Boden, geht Aufhelfen vor (E halten, defense.js)
+    const down = this.defense.downNear(p.x, p.z);
+    if (down && !this.builder.placement) it = { id: `retten-${down.id}`, x: down.x, z: down.z, radius: 1.3, prompt: 'retten', rescue: down.id };
     this.currentInteraction = it;
     if (it && usePress) {
       this.interact(it);
@@ -2776,6 +2846,10 @@ export class Game {
       this.hud.toast(this.weatherLine(time.day), null, 4); // M12
       this.onNewDay();
       if (this.milled) this.hud.toast(T.muehle.gemahlen(this.milled), 'windrad', 4); // M19
+      // M31: Was die Lagerglocke gebracht hat, erzählt der Bericht (oder eine Meldung)
+      const bell = this.defense.morning();
+      if (bell.length && this.state.report) this.state.report.extra = [...(this.state.report.extra || []), ...bell];
+      else for (const line of bell) this.hud.toast(line.text, 'lagerglocke', 5);
       // Wach geblieben: Der Morgenbericht kommt trotzdem (m12-r1: er kam nur nach dem Schlafen)
       if (this.state.report && this.mode === 'play') this.showReport();
     }
@@ -2893,7 +2967,7 @@ export class Game {
     info.rain = this.world.weather.rain; // Wetter (M12): Regen trommelt, Wind weht stärker
     info.wind = this.world.weather.mix.wind;
     // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
-    info.threat = atHome > 0 || near >= 3 ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0;
+    info.threat = atHome > 0 || near >= 3 || this.defense.fighting ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0; // M31: nach der Glocke volle Stufe
     info.boss = info.fight && this.horde.list.some((z) => z.def.boss && z.state !== 'dying'); // M22: eigene Musik
     // M28: am Kartentisch »Kartenabend«; Spannung beim Klopfen und in der Letzten Runde
     const cm = this.cardNight.match;
@@ -2973,11 +3047,17 @@ export class Game {
       const b = this.world.buildings.get(it.building);
       if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
     }
+    // M31: Die Lagerglocke sagt gleich, warum sie gerade schweigt
+    if (it.use === 'glocke') {
+      const why = this.defense.active ? 'schonGelaeutet' : this.defense.blocked(); // während sie läutet, kein »Läuten« mehr
+      if (why && why !== 'keineGlocke') return T.glocke.nicht[why];
+    }
     return null;
   }
 
   /** Text der Einblendung. Sessel und Bank sagen tagsüber gleich, dass man dort ausruhen kann (m3-r2). */
   promptText(it) {
+    if (it.memorial) return this.memorialEvening() && !this.state.fallen.every((f) => f.lit === this.state.time.day) ? T.aktionen.erinnerung : T.aktionen.erinnerungAnsehen; // M31
     if ((it.id === 'sessel' || it.use === 'bank') && !this.nights.active && canRest(this.state)) return T.aktionen.ausruhen;
     return T.aktionen[it.prompt];
   }
@@ -3027,6 +3107,7 @@ export class Game {
     this.world.weather.drawSnow(ui, frame, dn.night, this.viewInside); // M25
     if (playing) this.builder.drawOverlay(ui);
     this.arms.draw(ui); // M30: Leuchtspuren der Schüsse
+    if (playing) this.defense.draw(ui); // M31: »Wer kommt?«, Lebensbalken, Ringe um Liegende
     // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
     const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann' || this.mode === 'ankunft'; // M25: im Abspann nur Bild und Namen; N5: die Ankunft
     const atTable = Boolean(this.cardNight.match); // M28: am Kartentisch nur die Karten
@@ -3788,6 +3869,51 @@ export class Game {
       cabinetShown: () => Object.fromEntries(Object.entries(game.world.cabinetItems || {}).map(([id, o]) => [id, o.visible])),
       training: () => game.training.info(),
       startTraining: (id) => game.training.start(id),
+      // M31: Lagerglocke – Kampf, Wunden, Narben, Gefallene, Verluste, verlorene Waffen, Erinnerungsbrett
+      bell: () => {
+        const st = game.state;
+        const d = game.defense;
+        return {
+          ...d.info(),
+          active: d.active,
+          fighting: d.fighting,
+          losses: d.losses,
+          wounds: JSON.parse(JSON.stringify(st.wounds)),
+          scars: { ...st.scars },
+          fallen: st.fallen.map((f) => ({ ...f })),
+          lost: [...st.arms.lost],
+          report: st.bell.report ? { ...st.bell.report } : null,
+          strength: Object.fromEntries(PEOPLE.filter((id) => game.survivors.resident(id)).map((id) => [id, game.survivors.strength(id)])),
+          npcs: Object.fromEntries(d.people.map((p) => {
+            const n = game.survivors.npcs.list.get(p.id);
+            return [p.id, n ? { x: n.x, z: n.z, visible: n.model.root.visible, lying: Boolean(n.lying), held: Object.entries(n.model.parts.held || {}).find(([, m]) => m.visible)?.[0] || null } : null];
+          })),
+          brawl: game.horde.list.filter((z) => z.state === 'brawl').map((z) => ({ id: z.id, person: z.person })),
+        };
+      },
+      ringBell: () => {
+        if (game.defense.blocked()) return game.defense.blocked();
+        game.defense.ring();
+        return true;
+      },
+      breach: () => {
+        game.state.night.breach = true;
+        return game.defense.blocked();
+      },
+      hitPerson: (id, dmg) => game.defense.hit(id, dmg),
+      setLosses: (on) => {
+        game.state.losses = Boolean(on);
+        return game.defense.losses;
+      },
+      fallPerson: (id) => {
+        game.survivors.fall(id);
+        return game.state.survivors[id]?.stage;
+      },
+      memorial: () => {
+        const pr = game.world.props;
+        const it = game.world.interactions.find((i) => i.memorial);
+        return { pos: pr.memorialPos, shown: game.world.props.group.children.some((o) => o.name === 'Erinnerungsbrett' && o.visible), interaction: it ? { x: it.x, z: it.z, enabled: it.enabled !== false, prompt: game.promptText(it) } : null, pool: Boolean(game.world.memorialPool), memorials: game.sound.memorials || 0 };
+      },
       // M29: geteilte Szenen – gewählt, laufend (Zeile), gespielt, Anlässe; Sprechblasen im Bild
       scenes: () => {
         const sc = game.scenes;
@@ -3830,7 +3956,8 @@ export class Game {
       nextMorning: () => {
         game.state.time.day += 1;
         game.state.time.minute = 60;
-        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages
+        game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
+        return [...game.defense.morning(), ...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages
       },
       /** Der offene Dialog: Zeile, Sprecher, Antworten (mit Aktion) und die vorgewählte. */
       dialogInfo: () => {

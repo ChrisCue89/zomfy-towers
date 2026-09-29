@@ -2103,6 +2103,25 @@ Großvater), und knappe, geteilte Munition macht aus jedem Schuss eine Wahl: Was
 verschießt, fehlt, wenn die Glocke läutet (Nr. 168). Der Lärm ist die zweite
 Gegenseite, damit Schießen nie die bessere Axt ist.
 
+### 190. Die Lagerglocke im Einzelnen (M31)
+**Entscheidung:** Die Glocke ist ein Bau im Reiter Einrichten – erst, wenn der
+Waffenschrank offen ist, einmal, nur im Hof, für Holz, Schrott und Zombieteile
+(Balduins Glocke), und die Horde wirft sie nicht um: Läuten muss gehen, wenn es
+darauf ankommt. Dr. Yusuf ist immer der Arzt, auch wenn ihm jemand eine Waffe
+zuteilt. Wer keine Waffe hat, weil Mika sie trägt oder sie im Laub liegt, kämpft
+mit den Fäusten – so hat Mikas eigene Bewaffnung eine Gegenseite. Die verlorene
+Waffe (ohne »Verluste«) fehlt im Schrank, bis Balduin Ersatz bringt. Wunden
+zählen ab dem Morgen nach dem Kampf und stehen mit dem Bericht im Spielstand,
+damit Neuladen nichts ungeschehen macht. »Halbe Fähigkeit« halbiert, was eine
+Zahl ist, und lässt Ja/Nein-Fähigkeiten gelten. Das Erinnerungsbrett steht am
+Anfang des Stegs, der Platz ist von Beginn an frei gehalten. Die Karte am Brett
+zeigt die Porträts in Sepia wie Eddas altes Foto.
+**Warum:** Die Glocke soll nie an einer Nebensache scheitern (umgeworfen, kein
+Platz); die eigentlichen Kosten sind Munition, Wunden und das Risiko. Die Fäuste
+statt einer Sperre machen sichtbar, was Mika den anderen wegnimmt. Wunden im
+Spielstand verhindern, dass man den Morgen »zurücklädt« (Nr. 166: sofort
+gespeichert).
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

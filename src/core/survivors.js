@@ -18,6 +18,11 @@
 // ein Wanderer unter den Bewohnern an, Platz zu machen. Niemand wird
 // weggeschickt: Wer sich nicht entscheiden lassen will, zieht nach dem zweiten
 // Morgen von selbst weiter.
+//
+// M31: Stufe 5 heißt gefallen – nur nach der Lagerglocke, mit »Verluste« und nie
+// auf »Gemütlich«. Der Platz wird frei, am Steg hängt das Erinnerungsbrett.
+// Verwundete helfen weniger (`strength`): verletzt halb, schwer verletzt und
+// erschöpft (bis mittags) gar nicht.
 
 import { T } from '../data/texts.js';
 import { SURVIVORS, SURVIVOR_ORDER, TOWER_STAGES, BEACON, TRADES, MORNING_GIFTS, BERT_REPAIR, YUSUF_TEA, ERRANDS } from '../data/survivors.js';
@@ -26,6 +31,7 @@ import { hoursOf } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
 import { BUILDINGS, maxHpOf } from '../data/buildings.js';
 import { WANDERERS, WANDERER_ORDER, ABILITIES, ARRIVE_SPOTS, GUEST_SPOTS, EXIT_ROUTES, PLACES, GUEST_ROOM_LEVEL, LETTER_DELAY } from '../data/wanderers.js';
+import { KEEPSAKES } from '../data/bonds.js';
 
 const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
@@ -75,9 +81,18 @@ export class Survivors {
     return this.st[id]?.stage || 0;
   }
 
-  /** Eingezogen (Knopf: gestreichelt) – dann wirkt die Fähigkeit. */
+  /** Eingezogen (Knopf: gestreichelt) – dann wirkt die Fähigkeit. (Weitergezogene und Gefallene nicht mehr, M31) */
   resident(id) {
-    return this.stage(id) >= 3;
+    return this.stage(id) === 3;
+  }
+
+  /**
+   * Wie sehr hilft `id` gerade (M31)? 1 = ganz, 0,5 = verletzt, 0 = gar nicht (nicht eingezogen,
+   * übt gerade, schwer verletzt oder erschöpft bis mittags).
+   */
+  strength(id) {
+    if (!this.resident(id) || this.game.training?.busy(id)) return 0;
+    return this.game.defense?.strength(id) ?? 1;
   }
 
   /** Nach dem Laden oder einem neuen Spiel. */
@@ -210,10 +225,11 @@ export class Survivors {
 
   placeOne(id, out, jump) {
     if (this.seat?.id === id) return; // M28: sitzt gerade am Kartentisch
+    if (this.game.defense?.controls(id)) return; // M31: kämpft gerade nach der Lagerglocke
     const def = personOf(id);
     const stage = this.stage(id);
-    // M27: Weitergezogene gehen noch bis zum Tor bzw. zum Strand, dann sind sie fort
-    if (stage === 0 || (stage === 4 && !this.leaving.has(id))) {
+    // M27: Weitergezogene gehen noch bis zum Tor bzw. zum Strand, dann sind sie fort (M31: Gefallene sind nicht mehr da)
+    if (stage === 0 || stage === 5 || (stage === 4 && !this.leaving.has(id))) {
       this.npcs.setVisible(id, false);
       return;
     }
@@ -251,10 +267,10 @@ export class Survivors {
     const list = [];
     for (const id of PEOPLE) {
       const stage = this.stage(id);
-      if (stage === 0 || stage === 4) continue;
+      if (stage === 0 || stage >= 4) continue;
       const n = this.npcs.list.get(id);
       if (!n) continue;
-      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: personOf(id).prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) });
+      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: 1.35, prompt: personOf(id).prompt, npc: id, enabled: n.model.root.visible && !this.onPost(id) && !this.game.defense?.controls(id) });
     }
     this.interactions = list;
     this.game.world.npcInteractions = list;
@@ -570,6 +586,40 @@ export class Survivors {
     return Boolean(this.game.world.buildings.get(tent)?.broken);
   }
 
+  /** Wo jemand herauskommt, wenn die Lagerglocke läutet (M31): vor dem Zelt bzw. der Hütte – sonst null (Haustür). */
+  homeSpot(id) {
+    const tent = this.st[id]?.tent;
+    if (tent === null || tent === undefined || tent === 'zimmer') return null;
+    const b = this.game.world.buildings.get(tent);
+    if (!b || b.broken) return null;
+    const c = this.game.world.buildings.bounds(b);
+    return this.freeSpot(c.x + ((this.st[id].slot || 0) ? 0.5 : 0), c.z + c.d / 2 + 0.45, 0.28);
+  }
+
+  /**
+   * Gefallen (M31): nur nach der Lagerglocke, mit »Verluste«, nie Knopf. Stufe 5, der Platz
+   * wird frei, das Erinnerungsbrett am Steg bekommt Foto, Namen, Tage und das Erinnerungsstück.
+   */
+  fall(id) {
+    const g = this.game;
+    const s = this.st[id];
+    if (!s || personOf(id)?.dog || s.stage === 5) return;
+    const day = g.state.time.day;
+    const item = (g.state.bonds?.[id]?.moment || 0) >= 3 ? KEEPSAKES[id]?.item || null : null; // das Erinnerungsstück, falls sie es Mika schon geschenkt hat (M29)
+    g.state.fallen.push({ id, from: s.day || 1, to: day, item, lit: 0 });
+    s.stage = 5;
+    s.tent = null;
+    s.slot = 0;
+    s.guest = null;
+    s.gone = day;
+    this.leaving.delete(id);
+    this.npcs.setVisible(id, false);
+    this.onAbilitiesChanged();
+    this.refreshInteractions();
+    this.updateBedrolls();
+    g.world.setMemorial(g.state.fallen, day);
+  }
+
   moveIn(id) {
     const g = this.game;
     const s = this.st[id];
@@ -743,14 +793,19 @@ export class Survivors {
     this.npcs.setBedrolls(GUEST_SPOTS, used);
   }
 
-  /** Hat ein Bewohner diese Fähigkeit? (M27) – wer gerade übt, dessen Fähigkeit ruht (M30) */
+  /**
+   * Hat ein Bewohner diese Fähigkeit? (M27) – wer gerade übt, dessen Fähigkeit ruht (M30).
+   * M31: die Stärke (0 = nein, 0,5 = verletzt: halbe Wirkung, 1 = ganz) – als Wahrheitswert nutzbar.
+   */
   ability(kind) {
-    return WANDERER_ORDER.some((id) => WANDERERS[id].ability === kind && this.resident(id) && !this.game.training?.busy(id));
+    let best = 0;
+    for (const id of WANDERER_ORDER) if (WANDERERS[id].ability === kind) best = Math.max(best, this.strength(id));
+    return best;
   }
 
   /** Fähigkeiten, die dauerhaft wirken (Lottes Licht), neu setzen. */
   onAbilitiesChanged() {
-    this.game.world.lightPools.setScale?.(this.ability('licht') ? ABILITIES.licht.radius : 1);
+    this.game.world.lightPools.setScale?.(1 + (ABILITIES.licht.radius - 1) * this.ability('licht')); // M31: verletzt halb so viel
   }
 
   /** Morgens: Briefe, Hannes flickt, Greta stellt Fallen, Unentschlossene ziehen weiter. */
@@ -779,24 +834,28 @@ export class Survivors {
         lines.push({ text: T.wanderer.selbstWeiter(w.name, T.wanderer.zumOrt[w.place]) });
       }
     }
-    // Hannes: Holzbarrikaden flicken (die Hälfte der Schäden)
-    if (this.ability('flicken')) {
+    // Hannes: Holzbarrikaden flicken (die Hälfte der Schäden; verletzt die Hälfte davon, M31)
+    const mend = this.ability('flicken');
+    if (mend) {
       let n = 0;
       for (const b of g.world.buildings.list) {
         if (b.type !== 'barrikade' || b.broken || (b.level || 1) > 2) continue;
         const max = maxHpOf(b);
         if (b.hp >= max - 0.5) continue;
-        b.hp = Math.min(max, b.hp + (max - b.hp) * ABILITIES.flicken.share);
+        b.hp = Math.min(max, b.hp + (max - b.hp) * ABILITIES.flicken.share * mend);
         g.world.buildings.refreshLook(b);
         n++;
       }
       if (n) lines.push({ text: T.wanderer.geflickt(n) });
     }
-    // Greta: verbrauchte Fallen neu stellen
-    if (this.ability('fallen')) {
+    // Greta: verbrauchte Fallen neu stellen (verletzt nur jede zweite, M31)
+    const traps = this.ability('fallen');
+    if (traps) {
       let n = 0;
+      let k = 0;
       for (const b of g.world.buildings.list) {
         if (!BUILDINGS[b.type].trap || !b.broken) continue;
+        if (traps < 1 && k++ % 2) continue;
         g.world.buildings.rebuildBarricade(b);
         n++;
       }
@@ -866,21 +925,23 @@ export class Survivors {
     const lines = [];
     this.raiseFallen(lines); // M29: Paula stellt Umgeworfenes wieder auf
     this.checkTents();
-    for (const [id, gift] of Object.entries(MORNING_GIFTS)) {
-      if (!this.resident(id)) continue;
+    for (const [id, base] of Object.entries(MORNING_GIFTS)) {
+      const k = this.strength(id); // M31: verletzt die Hälfte, schwer verletzt nichts
+      if (!k) continue;
       if (this.tentDown(id)) {
         lines.push({ text: T.ueberlebende.zeltUmgeworfen(SURVIVORS[id].name), bad: true });
         continue;
       }
+      const gift = k < 1 ? Object.fromEntries(Object.entries(base).map(([r, n]) => [r, Math.max(1, Math.floor(n * k))])) : base;
       gain(st.inventory, gift);
       lines.push({ text: T.ueberlebende.gabe[id], res: gift });
     }
-    if (this.resident('yusuf')) {
+    if (this.strength('yusuf')) {
       st.player.hp = g.combat.maxHp;
       st.player.tea = st.time.day;
       lines.push({ text: T.ueberlebende.tee });
     }
-    if (this.resident('juna')) {
+    if (this.strength('juna')) {
       // Juna meldet, was heute Nacht kommt (M9: Arten statt Richtung, OFFENE-FRAGEN Nr. 74)
       const plan = g.nights.planFor(st.time.day);
       lines.push({ text: T.ueberlebende.funk(plan.waves.length, nightMix(plan)) });
@@ -894,36 +955,37 @@ export class Survivors {
     return lines;
   }
 
-  /** Nacht geschafft: Bert flickt die Türme. */
+  /** Nacht geschafft: Bert flickt die Türme (verletzt halb so viel, M31). */
   onNightEnd() {
-    if (!this.resident('bert')) return;
+    const k = this.strength('bert');
+    if (!k) return;
     for (const b of this.game.world.buildings.list) {
       const def = BUILDINGS[b.type];
       if (!def.tower || b.hp === undefined) continue;
-      b.hp = Math.min(def.hp, b.hp + def.hp * BERT_REPAIR.nightlyTower);
+      b.hp = Math.min(def.hp, b.hp + def.hp * BERT_REPAIR.nightlyTower * k);
     }
     this.game.state.world.buildings = this.game.world.buildings.toState();
   }
 
   /** Bert: Reparieren kostet weniger (Clara flickt Türme noch billiger, siehe towerRepairFactor). */
   repairFactor() {
-    return this.resident('bert') ? BERT_REPAIR.costFactor : 1;
+    return 1 - (1 - BERT_REPAIR.costFactor) * this.strength('bert');
   }
 
   /** Clara (M27): Türme flicken kostet ein Viertel weniger. */
   towerRepairFactor() {
-    return this.ability('schrauben') ? ABILITIES.schrauben.repair : 1;
+    return 1 - (1 - ABILITIES.schrauben.repair) * this.ability('schrauben');
   }
 
   /** Basteln (M21): Mit Clara braucht es ein Teil weniger. */
   tinkerDiscount() {
-    return this.ability('schrauben') ? ABILITIES.schrauben.tinker : 0;
+    return this.ability('schrauben') >= 1 ? ABILITIES.schrauben.tinker : 0;
   }
 
   /** Dr. Yusufs Tee: schnelleres Heilen am selben Tag. */
   regenFactor() {
     const st = this.game.state;
-    if (!this.resident('yusuf') || st.player.tea !== st.time.day) return 1;
+    if (!this.strength('yusuf') || st.player.tea !== st.time.day) return 1;
     return this.st.yusuf.errand === 2 ? ERRANDS.yusuf.reward.tea : YUSUF_TEA.regen; // mit Kamille stärker
   }
 
@@ -934,7 +996,7 @@ export class Survivors {
   rescue() {
     const g = this.game;
     const st = g.state;
-    if (!this.resident('yusuf') || st.world.yusufNight === st.night.n) return false;
+    if (!this.strength('yusuf') || st.world.yusufNight === st.night.n) return false;
     st.world.yusufNight = st.night.n;
     st.player.hp = g.combat.maxHp * 0.6;
     g.hud.toast(T.ueberlebende.verarztet, 'herz', 3.5);

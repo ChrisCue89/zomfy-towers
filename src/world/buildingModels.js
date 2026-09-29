@@ -524,6 +524,54 @@ export function buildTrainingGround(seed) {
 }
 
 /**
+ * Lagerglocke (M31): Balduins alte Schiffsglocke an einem Galgen aus Treibholz –
+ * silbrig verwittertes Holz mit Astknoten, Bronze mit grüner Patina und einer
+ * Zierrille, darunter der Klöppel und ein Seil mit dickem Knoten zum Ziehen.
+ */
+export function buildCampBell(seed) {
+  const m = new VoxelModel();
+  const drift = (x, y, z) => {
+    const h = hash3(x >> 1, y >> 2, z, seed);
+    return h > 0.82 ? P.s4 : h > 0.4 ? P.s6 : P.s5; // Treibholz: silbrig, gemasert
+  };
+  // Zwei Pfosten, ein Querbalken mit Überstand, zwei Streben
+  m.box(-13, 0, -2, -11, 61, 0, drift);
+  m.box(10, 0, -2, 12, 61, 0, drift);
+  m.box(-16, 58, -2, 15, 61, 0, drift);
+  m.box(-16, 61, -2, 15, 61, 0, (x) => (x % 5 === 0 ? P.s5 : P.s7)); // Kante oben im Licht
+  m.line(-10, 49, -1, -4, 57, -1, P.s5, 0);
+  m.line(9, 49, -1, 3, 57, -1, P.s5, 0);
+  m.set(-12, 27, 0, P.s3).set(11, 38, 0, P.s3).set(-12, 44, 0, P.s3); // Astknoten
+  // Feldsteine an den Füßen
+  for (const [x, z] of [[-15, 1], [-10, 1], [9, 1], [14, 1], [-12, -4], [11, -4]]) m.box(x - 1, 0, z - 1, x + 1, 1, z + 1, (xx, y) => (y === 1 ? P.s7 : P.s5));
+  // Aufhängung: Bügel am Balken
+  m.box(-2, 54, -2, 2, 57, 0, (x, y) => (y === 57 || x === -2 || x === 2 ? P.e5 : null));
+  // Die Glocke: schmale Schulter, weite Lippe
+  const radius = (y) => (y <= 37 ? 9 : y >= 51 ? 5.5 - (y - 51) * 1.2 : 8 - (y - 38) * 0.19);
+  for (let y = 36; y <= 53; y++) {
+    const r = radius(y);
+    if (r <= 0.5) continue;
+    for (let x = -10; x <= 10; x++) {
+      for (let z = -11; z <= 9; z++) {
+        if (Math.hypot(x, (z + 1) * 1.05) > r) continue;
+        let c = x < -r * 0.35 ? P.e8 : x > r * 0.45 ? P.e5 : P.e7; // links im Licht, rechts im Schatten
+        if (y === 36 || y === 37) c = y === 37 ? P.f7 : P.e6; // die Lippe
+        else if (y === 44) c = P.e5; // Zierrille
+        else if (x > -r * 0.15 && x < r * 0.05 && y > 39) c = P.f7; // Glanzstreif
+        if (y > 45 && hash3(x, y, z, seed + 5) > 0.86) c = P.a5; // grüne Patina
+        m.set(x, y, z, c);
+      }
+    }
+  }
+  // Klöppel und Seil mit dickem Knoten
+  m.ellipsoid(0, 34, -1, 1.6, 1.6, 1.6, P.s3);
+  for (let y = 15; y <= 32; y++) m.set(0, y, -1, y % 3 === 0 ? P.e6 : P.e8);
+  m.ellipsoid(0, 13, -1, 2.2, 2.4, 2.2, (x, y) => ((x + y) % 2 === 0 ? P.e7 : P.e8));
+  m.set(0, 10, -1, P.e8).set(0, 9, -1, P.e7);
+  return m;
+}
+
+/**
  * Moderlocke (M24): ein Haufen Überreste um einen fauligen Kürbis, darüber an
  * einem Pfahl ein Jutesack – und obendrauf sprießt schon der Moder
  * (pflaumenviolett, glimmende Knoten im Glüh-Modell).
@@ -693,6 +741,7 @@ export const BUILDING_MODELS = {
   bank: { model: buildBench },
   hochsitz: { model: buildHochsitz },
   uebungsplatz: { model: buildTrainingGround }, // M30
+  lagerglocke: { model: buildCampBell }, // M31
   moderlocke: { model: buildModerlocke, glow: buildModerlockeGlow }, // M24
   // Herbstschmuck aus dem Herbstbuch (M25): die Modelle der Herbst-Requisiten (decoModels.js)
   kuerbis: { model: buildPumpkinPair },

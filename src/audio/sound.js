@@ -86,6 +86,18 @@ const SFX = {
     s.tone('sine', 880, t, 0.7, { peak: 0.08 * v, attack: 0.005, out: o });
     s.tone('sine', 1320, t, 0.45, { peak: 0.04 * v, attack: 0.005, out: o });
   },
+  // M31: Balduins alte Schiffsglocke – ein tiefer Schlag mit langem Nachhall (Brummton,
+  // Grundton, kleine Terz, Quinte, Oktave und ein heller Teilton), dazu der Klöppel
+  lagerglocke: (s, t, v, o) => {
+    const f = 330;
+    s.tone('sine', f / 2, t, 3.2, { peak: 0.1 * v, attack: 0.004, out: o });
+    s.tone('sine', f, t, 2.6, { peak: 0.16 * v, attack: 0.002, out: o });
+    s.tone('sine', f * 1.2, t, 1.6, { peak: 0.07 * v, attack: 0.002, out: o });
+    s.tone('sine', f * 1.5, t, 1.4, { peak: 0.06 * v, attack: 0.002, out: o });
+    s.tone('sine', f * 2, t, 1.2, { peak: 0.08 * v, attack: 0.002, out: o });
+    s.tone('sine', f * 2.66, t, 0.7, { peak: 0.04 * v, attack: 0.001, out: o });
+    s.noise(t, 0.03, { type: 'bandpass', freq: 2400, q: 2, peak: 0.12 * v, out: o });
+  },
   // Balduins Wagenglöckchen und das Rumpeln der Räder (Meilenstein 8)
   bimmel: (s, t, v, o) => {
     for (const dt of [0, 0.15, 0.3]) {
@@ -478,6 +490,14 @@ export class Sound {
       o.start(t);
       this.track(o, t + dur + 0.22, g);
     }
+  }
+
+  /** M31: die Spieluhr am Erinnerungsbrett (eine Wendung je Person). */
+  memorial(variant = 0) {
+    if (!this.ready || !this.music) return false;
+    this.music.memorial(variant);
+    this.memorials = (this.memorials || 0) + 1;
+    return true;
   }
 
   /** Startbild (N2): die Spieluhr von Tales of Cue. false, solange noch kein Klang läuft. */

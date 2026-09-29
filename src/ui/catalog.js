@@ -6,7 +6,7 @@
 // M29: Dieselbe Karte zeigt, was die Bewohner Mika schenken (ihr Erinnerungsstück).
 
 import { P, hexToCss } from '../render/palette.js';
-import { renderVoxelPortrait } from '../render/portrait.js';
+import { renderVoxelPortrait, sepiaOf } from '../render/portrait.js';
 import { VoxelModel } from '../render/voxel.js';
 import { FURNITURE, FURNITURE_ORDER, CATALOG_ROOMS } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
@@ -31,6 +31,16 @@ const WHITE = hexToCss(P.s9);
 const GOLD = hexToCss(P.f6);
 const PHOTO_BG = hexToCss(P.e7);
 const GREEN = hexToCss(P.g3); // Kopf der Geschenkkarte (M29)
+const DUSK = hexToCss(P.d1); // Kopf der Erinnerungskarte (M31)
+
+const sepias = new Map();
+
+/** M31: das Porträt einer Person als altes Foto (einmal je Person erzeugt). */
+function memorialPicture(portrait, id) {
+  if (!portrait) return null;
+  if (!sepias.has(id)) sepias.set(id, sepiaOf(portrait));
+  return sepias.get(id);
+}
 
 const pictures = new Map();
 
@@ -378,6 +388,7 @@ export class DeliveryCard {
   draw(ui) {
     if (!this.isOpen) return;
     const id = this.items[this.k];
+    if (id && typeof id === 'object' && id.memorial) return this.drawMemorial(ui, id); // M31
     const gift = typeof id === 'object' ? id : null; // M29: ein Geschenk { gift, from, name }
     const ctx = ui.ctx;
     const K = T.katalog;
@@ -404,6 +415,65 @@ export class DeliveryCard {
     const room = gift ? T.bindung.karte.wo[gift.gift] || T.bindung.karte.regal : K.steht(FURNITURE[id].room);
     drawText(ctx, room, x + Math.round((w - measure(room)) / 2), y + PIC.h + 38 + LINE_HEIGHT + dy, INK_SOFT);
     const hint = this.k + 1 < this.items.length ? K.weiter : K.fertig;
+    drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);
+  }
+
+  /**
+   * M31: Eine Karte vom Erinnerungsbrett – ihr Foto in Sepia mit Wäscheklammer, Name,
+   * die Tage in der Bucht, das Erinnerungsstück und eine Zeile, die bleibt.
+   */
+  drawMemorial(ui, m) {
+    const ctx = ui.ctx;
+    const E = T.erinnerung;
+    const w = 236;
+    const lines = wrap(E.zeilen[m.memorial] || E.zeile(m.name), w - 28);
+    // Foto (bis 100), Name und Tage, die Zeilen, das Stück, darunter Luft und der Hinweis
+    const h = 104 + (2 + lines.length + (m.item ? 1 : 0)) * LINE_HEIGHT + 22;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2) - 6;
+    const pop = Math.min(1, this.openT / 0.18);
+    const dy = Math.round((1 - pop) * 10);
+    ui.ditherFill?.(0.35);
+    ctx.fillStyle = LINE;
+    ctx.fillRect(x + 3, y + 3 + dy, w, h);
+    ctx.fillRect(x - 1, y - 1 + dy, w + 2, h + 2);
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(x, y + dy, w, h);
+    ctx.fillStyle = DUSK;
+    ctx.fillRect(x, y + dy, w, 18);
+    const head = this.items.length > 1 ? `${E.brett} · ${this.k + 1}/${this.items.length}` : E.brett;
+    drawText(ctx, head, x + Math.round((w - measure(head)) / 2), y + 3 + dy, WHITE);
+    // Das Foto: weißer Rand, Sepia, oben eine Wäscheklammer
+    const pic = memorialPicture(this.game.portraits?.[m.memorial], m.memorial);
+    const pw = 60;
+    const px = x + Math.round((w - pw - 8) / 2);
+    const py = y + 26 + dy;
+    ctx.fillStyle = LINE;
+    ctx.fillRect(px - 1, py - 1, pw + 10, pw + 10);
+    ctx.fillStyle = WHITE;
+    ctx.fillRect(px, py, pw + 8, pw + 8);
+    ctx.fillStyle = PHOTO_BG;
+    ctx.fillRect(px + 4, py + 4, pw, pw);
+    if (pic) ctx.drawImage(pic, 0, 0, pic.width, pic.height, px + 4 + Math.round((pw - pic.width) / 2), py + 4 + Math.round((pw - pic.height) / 2), pic.width, pic.height);
+    ctx.fillStyle = hexToCss(P.e5);
+    ctx.fillRect(px + Math.round(pw / 2), py - 4, 6, 9); // Wäscheklammer
+    ctx.fillStyle = hexToCss(P.e7);
+    ctx.fillRect(px + Math.round(pw / 2) + 1, py - 3, 4, 7);
+    let ty = py + pw + 14;
+    drawText(ctx, m.name, x + Math.round((w - measure(m.name)) / 2), ty, INK);
+    ty += LINE_HEIGHT;
+    const days = E.tage(m.from, m.to);
+    drawText(ctx, days, x + Math.round((w - measure(days)) / 2), ty, INK_SOFT);
+    ty += LINE_HEIGHT + 4;
+    for (const line of lines) {
+      drawText(ctx, line, x + Math.round((w - measure(line)) / 2), ty, INK);
+      ty += LINE_HEIGHT;
+    }
+    if (m.item) {
+      const it = E.stueck(T.bindung.karte.namen[m.item] || m.item);
+      drawText(ctx, it, x + Math.round((w - measure(it)) / 2), ty, INK_SOFT);
+    }
+    const hint = this.k + 1 < this.items.length ? T.katalog.weiter : E.fertig;
     drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);
   }
 }

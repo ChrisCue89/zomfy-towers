@@ -63,6 +63,12 @@ export class BuildGrid {
     return { x: ci + 0.5, z: cj + 0.5 };
   }
 
+  /** Liegt die Zelle im Hof (innerhalb des Walls, M31: Lagerglocke)? */
+  isYard(ci, cj) {
+    const k = this.index(ci, cj);
+    return k >= 0 && this.yard[k] === 1;
+  }
+
   /** Liegt die Zelle auf einem Weg der Horde? */
   isPath(ci, cj) {
     const k = this.index(ci, cj);

@@ -196,7 +196,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       (geteilte Szenen: morgens über die Nacht, abends am
                       Feuer, M29), arms (Waffenschrank, Schießen, Munition,
                       Hülsen, Leuchtkugeln, Lärm, M30), training (Übungsplatz:
-                      wer übt, Stufen, M30), quests (Nebenaufträge:
+                      wer übt, Stufen, M30), defense (Lagerglocke: Läuten,
+                      Kampf der Bewohner, Aufhelfen, Wunden, Verluste,
+                      Bericht, M31), quests (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
                       (Herbstbuch: Sterne, Taten, Herbstschmuck,
@@ -303,7 +305,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Erinnerungsstücke und ihre Plätze, M29), scenes
                       (Szenen mit Rollen nach Temperament, Anlässe, M29),
                       arms (Schusswaffen, Munition, Notfallwaffen, Übung und
-                      Profile, M30),
+                      Profile, verlorene Waffen, M30/M31), bell (Lagerglocke,
+                      Kampf der Bewohner, Wunden, »Verluste«, M31),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -608,6 +611,25 @@ Grundprinzipien:
   Person steht an `training.spotOf` (vor `scenes` in `survivors.standSpot`), ihre
   Fähigkeit ruht (`survivors.ability`), nach `TRAINING.hours` zählt
   `state.training[id]` (`level`, `done`, `day`).
+- **Die Lagerglocke (M31, `core/defense.js`, `data/bell.js`):** Der Bau
+  `lagerglocke` (`use: 'glocke'`, `yard: true` – nur im Hof, Grund `nurHof`) läutet,
+  wenn Mika E hält (`defense.pull` aus `update`, die Einblendung ist
+  `currentInteraction`); ein Druck allein sagt über `defense.press`, warum nicht
+  (`blocked`: tag, keinDurchbruch, schonGelaeutet, niemand). `ring` merkt Nacht und
+  Tag (`state.bell`), baut `people` aus `roster()` (Notfallwaffe, sonst Fäuste; Dr.
+  Yusuf ist `medic`) und spielt die Phasen seil → stille → fenster → kampf →
+  entwarnung. Die Figuren steuert dann `defense` (`survivors.placeOne` und die
+  Einblendungen lassen sie in Ruhe, `defense.controls`), Waffen hält
+  `npcs.hold(n, id)`, Liegende `n.lying`. Die Horde bekommt `defenderNear`,
+  `defenderAt` und `onHitPerson` (Zustand `brawl`). Zu Boden: `downNear` macht die
+  Einblendung `retten` (E halten, `updateDown`). `fall` nimmt ohne `losses` die
+  Waffe (`state.arms.lost`, Balduin bringt Ersatz über `gives.arm`), mit `losses`
+  `survivors.fall` (Stufe 5, `state.fallen`, `world.setMemorial`). `settle` legt
+  beim Ende Wunden (`state.wounds`, ab dem Morgen danach) und den Bericht
+  (`state.bell.report`) ab; `heal` (bei jedem neuen Tag) und `morning` (Bericht oder
+  Meldungen) lesen sie. Wie stark jemand hilft, sagt `survivors.strength(id)`
+  (0/0,5/1); `ability(art)` gibt die Stärke zurück. `state.losses` gilt nur, wenn
+  die Schwierigkeit nicht »Gemütlich« ist (`defense.losses`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -935,7 +957,19 @@ Grundprinzipien:
    die Doppelflinte trifft im Fächer; am Übungsplatz übt Hilde mit echten Tasten
    zwei Spielstunden (Mika dabei: gemeinsame Zeit), nach der zweiten Übung Stufe
    1; Speichern v26 und Migration v25 → v26 (Bilder: waffenschrank, schuss,
-   uebungsplatz).
+   uebungsplatz); ab M31 (Abschnitt `glocke`): die Lagerglocke nur im Hof und erst
+   mit offenem Waffenschrank, tagsüber und ohne Durchbruch sagt E, warum nicht;
+   nach einem Durchbruch hält Mika E (echte Taste), die Tafel »Wer kommt?« zeigt
+   alle, die Glocke läutet, Hilde, Bert und Juna treten mit ihren Waffen heraus,
+   Dr. Yusuf verarztet, Hilde verschießt Schrot aus dem Vorrat; kein Zeitraffer,
+   kein Rufen, einmal je Nacht; Bert geht eingekesselt zu Boden und steht mit
+   gehaltenem E wieder auf; ohne »Verluste« bleibt nur Hildes Doppelflinte im Laub
+   (auf »Gemütlich« nie Verluste), mit »Verluste« fällt Juna und das
+   Erinnerungsbrett erscheint; Entwarnung mit drei Schlägen; der Morgen erzählt es,
+   Bert ist schwer verletzt, Balduin bringt Ersatz; abends zündet E die Laterne am
+   Brett an, die Karte zeigt Juna; die Seite »Erinnerung« im Herbstbuch; Speichern
+   v27 und Migration v26 → v27 (Bilder: glocke-tafel, glocke-kampf,
+   glocke-aufhelfen, erinnerung, erinnerungsbrett).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1070,7 +1104,13 @@ Genommenes, Notfall, Magazine, Munition, Schüsse, Hülsen, Leuchtkugeln, Spuren
 und den letzten Lärm, `unlockArms()` schließt auf, `takeArm(id)` nimmt oder legt
 zurück, `shoot(dx, dz)` schießt, `armory()` zeigt das offene Fenster,
 `cabinetShown()` was im Gestell steht, `training()` die laufende Übung, Kandidaten
-und Stufen, `startTraining(id)` beginnt eine Übung.
+und Stufen, `startTraining(id)` beginnt eine Übung; ab M31 zeigt `bell()` Phase,
+Sperre, Tafel, Kämpfende (Leben, Zustand, Waffe in der Hand), Handgemenge, Wunden,
+Narben, Gefallene, verlorene Waffen, den Bericht und die Stärke je Bewohner,
+`ringBell()` läutet ohne Taste, `breach()` setzt einen Durchbruch, `hitPerson(id,
+n)` trifft jemanden, `setLosses(an)` stellt »Verluste«, `fallPerson(id)` lässt
+jemanden fallen, `memorial()` zeigt das Erinnerungsbrett (Einblendung, Lichtinsel,
+Spieluhr).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

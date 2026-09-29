@@ -1753,17 +1753,20 @@ State of Decay 2 (Waffenschrank).
   zählt es als gemeinsame Zeit.
 - Spielstand v26.
 
-#### M31 – Die Lagerglocke
+#### M31 – Die Lagerglocke ✓
 
 *Ziel:* Die schwerste Entscheidung der Nacht: allein halten oder alle rufen.
 
 *Vorbild:* der Rasenmäher in Plants vs. Zombies, XCOM (Ausbluten,
 Gedenkwand), Darkest Dungeon (der Treffer auf null tötet nie).
 
-- **Die Glocke am Feuer** (Nr. 165), Kampf der Bewohner nur innerhalb des
-  Walls.
+- **Die Glocke am Feuer** (Nr. 165, 190): Bau im Hof, E halten nach einem
+  Durchbruch, einmal je Nacht; die Tafel »Wer kommt?«; Kampf der Bewohner nur
+  innerhalb des Walls mit ihren Notfallwaffen und der gemeinsamen Munition.
 - **Zu Boden, Rettung, Verwundung, Narbe, Tod** (Nr. 166, 167); das
-  **Erinnerungsbrett** am Steg (Nr. 170); Einstellung »Verluste« im Titelbild.
+  **Erinnerungsbrett** am Steg mit Laterne und Karte (Nr. 170), die Seite
+  »Erinnerung« im Herbstbuch; Einstellung »Verluste« im Titelbild und im
+  Pausenmenü.
 
 *Prüfen:* Glocke nur nach einem Durchbruch und einmal je Nacht, Rettung mit
 echter Taste, Tod nur nach der Glocke und nie auf »Gemütlich«, Speichern.

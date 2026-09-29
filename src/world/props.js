@@ -992,6 +992,20 @@ export function createProps({ seed, materials, colliders, map }) {
   colliders.addCircle(bollard.x, bollard.z, 0.16, 'poller');
   const heightZones = [{ minX: dock.x0 + 0.5, maxX: dock.x1, minZ: dock.z0, maxZ: dock.z1, y: 3 * V }];
 
+  // M31: Erinnerungsbrett am Anfang des Stegs – erscheint mit dem ersten Verlust (setMemorial);
+  // der Platz bleibt von Anfang an frei, damit dort nichts gebaut wird
+  const mem = LAYOUT.memorial;
+  block(mem.x - 0.6, mem.z - 0.45, mem.x + 0.6, mem.z + 0.6);
+  const memorialGroup = new THREE.Group();
+  memorialGroup.name = 'Erinnerungsbrett';
+  memorialGroup.position.set(mem.x, 0, mem.z);
+  memorialGroup.visible = false;
+  group.add(memorialGroup);
+  const memorialInteraction = { id: 'erinnerung', x: mem.x, z: mem.z + 0.55, radius: 1.3, prompt: 'erinnerung', memorial: true, enabled: false };
+  interactions.push(memorialInteraction);
+  const memorialBoards = new Map(); // Anzahl der Fotos -> { object, glow }
+  let memorialCollider = null;
+
   // Leuchtmast am Steg: der alte Funkturm-Stumpf mit Trümmerteil (Juna baut ihn aus)
   const tower = LAYOUT.lighthouse;
   add(buildTower(seed + 7), tower.x, tower.z, { occluder: true, name: 'Funkturm' });
@@ -1195,6 +1209,31 @@ export function createProps({ seed, materials, colliders, map }) {
     heightZones,
     towerPos: { x: tower.x, z: tower.z },
     beaconPos: { x: LAYOUT.beacon.x, z: LAYOUT.beacon.z }, // wohin das Leuchtfeuer fällt
+    memorialPos: { x: mem.x, z: mem.z },
+    /** M31: das Erinnerungsbrett – so viele Fotos wie Verluste (höchstens acht), `lit`: die Laterne brennt. */
+    setMemorial(count, lit) {
+      const shown = count > 0;
+      memorialGroup.visible = shown;
+      memorialInteraction.enabled = shown;
+      if (shown && !memorialCollider) memorialCollider = colliders.addBox(mem.x - 0.55, mem.z - 0.1, mem.x + 0.5, mem.z + 0.1, 'erinnerung');
+      if (!shown && memorialCollider) {
+        colliders.remove(memorialCollider);
+        memorialCollider = null;
+      }
+      const n = Math.min(8, count);
+      if (shown && !memorialBoards.has(n)) {
+        const built = buildMemorial(seed + 90, n);
+        const object = createStaticVoxelObject(built.model, materials.world, { seed, size: FINE32, shadow: 'coarse4' });
+        const glow = materials.pumpkinGlow ? createStaticVoxelObject(built.glow, materials.pumpkinGlow, { size: FINE32, shadow: 'none', jitter: 0 }) : null;
+        if (glow) object.add(glow);
+        memorialGroup.add(object);
+        memorialBoards.set(n, { object, glow });
+      }
+      for (const [k, b] of memorialBoards) {
+        b.object.visible = k === n;
+        if (b.glow) b.glow.visible = k === n && lit;
+      }
+    },
     /** Funkturm-Ausbau zeigen (0 = Stumpf, 3 = Leuchtfeuer). */
     setTowerStage(stage) {
       towerStages.forEach((o, k) => {
@@ -1225,4 +1264,58 @@ export function createProps({ seed, materials, colliders, map }) {
       embers: new THREE.Vector3(fire.x - 0.06, 0.6, fire.z - 0.06),
     },
   };
+}
+
+/**
+ * M31: Erinnerungsbrett am Steg – ein Brett aus Treibholz mit Dach und Moos, eine
+ * Wäscheleine mit Fotos (so viele wie Verluste, höchstens acht, in zwei Reihen), jedes
+ * mit Wäscheklammer; vorn rechts eine Kürbislaterne (`glow`: ihr Licht, wenn sie brennt).
+ * Blick nach Süden (zur Kamera), Maß 1/32 m.
+ */
+export function buildMemorial(seed, count) {
+  const m = new VoxelModel();
+  const wood = (x, y) => (hash3(x >> 1, y >> 2, 1, seed) > 0.8 ? P.e3 : y % 6 === 0 ? P.e4 : P.e5);
+  // Pfosten, Brett (waagrechte Planken mit dunklen Fugen), kleines Dach mit Moos
+  m.box(-15, 0, -1, -13, 44, 0, (x, y) => (y < 2 ? P.e2 : wood(x, y)));
+  m.box(12, 0, -1, 14, 44, 0, (x, y) => (y < 2 ? P.e2 : wood(x, y)));
+  m.box(-16, 14, 1, 15, 40, 1, (x, y) => ((y - 14) % 7 === 6 ? P.e3 : hash3(x >> 1, y, 2, seed) > 0.85 ? P.e5 : P.e6));
+  m.box(-18, 41, -3, 17, 43, 3, (x, y, z) => (y === 43 && hash3(x >> 1, z, 3, seed) > 0.7 ? P.g4 : y === 43 ? P.e5 : P.e3));
+  m.box(-18, 41, 3, 17, 41, 3, P.e2); // Traufkante im Schatten
+  // Zwei Wäscheleinen
+  for (const y of [37, 26]) m.box(-15, y, 2, 14, y, 2, P.e8);
+  // Die Fotos: weißer Rand, Sepia mit Kopf und Schultern, oben eine Klammer
+  const slots = [];
+  const perRow = Math.min(4, count);
+  for (let k = 0; k < count; k++) {
+    const row = k < 4 ? 0 : 1;
+    const inRow = row === 0 ? perRow : count - 4;
+    const idx = row === 0 ? k : k - 4;
+    const x = Math.round(-((inRow - 1) * 8) / 2 + idx * 8) - 3;
+    slots.push({ x, top: row === 0 ? 37 : 26 });
+  }
+  for (const [k, s] of slots.entries()) {
+    const x0 = s.x;
+    const y1 = s.top - 1;
+    const y0 = y1 - 8;
+    m.box(x0, y0, 2, x0 + 6, y1, 2, P.e9); // Rand
+    m.box(x0 + 1, y0 + 1, 2, x0 + 5, y1 - 1, 2, (x, y) => {
+      const cx = x0 + 3;
+      if (Math.hypot(x - cx, y - (y0 + 5)) < 1.6) return P.e4; // Kopf
+      if (y <= y0 + 2 && Math.abs(x - cx) <= 2) return P.e4; // Schultern
+      return (x + y + k) % 5 === 0 ? P.e6 : P.e7; // Hintergrund, leicht gerastert
+    });
+    m.box(x0 + 3, s.top - 1, 3, x0 + 3, s.top + 1, 3, P.e7); // Klammer
+  }
+  // Kürbislaterne vorn rechts am Fuß des Bretts
+  const jack = buildJackOLantern(seed + 3);
+  const glow = new VoxelModel();
+  jack.model.forEach((x, y, z, c) => m.set(x + 9, y, z + 10, c));
+  jack.glow.forEach((x, y, z, c) => glow.set(x + 9, y, z + 10, c));
+  // Ein paar Blätter am Fuß
+  for (let k = 0; k < 9; k++) {
+    const x = Math.floor(hash3(k, 5, 7, seed) * 30) - 15;
+    const z = Math.floor(hash3(k, 9, 2, seed) * 8) + 2;
+    m.set(x, 0, z, [P.f4, P.f5, P.r3][k % 3]);
+  }
+  return { model: m, glow };
 }
