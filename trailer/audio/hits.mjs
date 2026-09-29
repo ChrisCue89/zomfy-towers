@@ -1,6 +1,5 @@
 // hits.json: Taktschläge, Taktanfänge, Einschläge und Stille-Momente auf der Trailer-Zeitachse – für den Schnitt.
 import { T, BAR, BPM, FPS, DURATION, grid, heartbeatsTransition, HEART_SILENCE, beatOf } from './score.mjs';
-import { SILENCES } from './mix.mjs';
 
 const r4 = (x) => Math.round(x * 10000) / 10000;
 const R = (list) => list.map(r4);
@@ -52,7 +51,10 @@ export function buildHits({ masterInfo = null, sfxInfo = null } = {}) {
     { t: T.bossEnd, name: 'boss-schluss', strength: 'mittel', note: 'Schlussschlag (Kick, Pauke, Becken, Hörner), dann Stille' },
     { t: T.title, name: 'titel-figur', strength: 'weich', note: 'Spieluhr G–H–D–G; Akkord Gadd9 bei +0,6 s' },
   ].map((x) => ({ ...x, t: r4(x.t), frame: Math.round(x.t * FPS) }));
-  const silences = SILENCES.map((s) => ({ ...s, start: r4(s.start), end: r4(s.end) }));
+  const silences = [
+    { name: 'luft-holen-1', start: 40.6, end: r4(T.boss), sound: 'Musik weg (Ausblendung 40,5–40,78), Herzschläge bei 40,7 (+ zweiter Schlag 40,9) und 41,0; der Einschlag bei 41,233 folgt 0,23 s danach' },
+    { name: 'luft-holen-2', start: r4(T.bossEnd), end: T.morning, sound: 'Schlussschlag des Boss bei 51,668 (klingt ~0,3 s aus), dann nur leiser Wind, ab ≈ 52,6 Vogel; 52,2 setzt die Spieluhr ein' },
+  ];
   return {
     version: 1,
     generator: 'trailer/audio/build.mjs',

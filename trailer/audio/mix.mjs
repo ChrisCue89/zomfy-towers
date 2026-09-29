@@ -64,11 +64,23 @@ const ENVELOPE = {
   title: fadeOut(T.end - 0.6, T.end),
 };
 
-/** Stille-Fenster, in denen Effekte (sfx-track) und Bett schweigen: Luft holen. */
-export const SILENCES = [
-  { name: 'luft-holen-1', start: T.midMusicEnd - 0.05, end: T.boss - 0.0 },
+/**
+ * Stille-Fenster (Luft holen): Der sfx-track wird hier weich ausgeblendet (die aufgenommenen Effekte dürfen die Stille nicht
+ * brechen), das Bett führt nur leisen Wind. Zeiten: Beginn der Ausblendung, Ende der Stille.
+ */
+export const GATES = [
+  { name: 'luft-holen-1', start: T.midMusicEnd - 0.05, end: T.boss },
   { name: 'luft-holen-2', start: T.bossEnd + 0.3, end: T.morning - 0.05 },
 ];
+const gateCurve = (t) => {
+  let g = 1;
+  for (const w of GATES) {
+    if (t >= w.start - 0.05 && t < w.start) g *= 1 - (t - (w.start - 0.05)) / 0.05;
+    else if (t >= w.start && t < w.end) g = 0;
+    else if (t >= w.end && t < w.end + 0.02) g *= (t - w.end) / 0.02;
+  }
+  return g;
+};
 
 // --- Hilfen ----------------------------------------------------------------------------------------------------------
 
@@ -178,16 +190,7 @@ export function mixStems(raw, opts = {}) {
   let sfx = stereo(N);
   if (raw.sfx) {
     const b = place(raw.sfx);
-    const gate = (t) => {
-      let g = 1;
-      for (const s of SILENCES) {
-        const a = s.start;
-        const e = s.end;
-        if (t > a - 0.05 && t < e + 0.02) g *= t < a ? 1 - (t - (a - 0.05)) / 0.05 : t > e ? 1 - (t - e) / 0.02 : 0;
-      }
-      return g;
-    };
-    sfx = scaled(b, opts.sfxDb ?? LEVELS.sfxDb, gate);
+    sfx = scaled(b, opts.sfxDb ?? LEVELS.sfxDb, gateCurve);
   }
 
   return { stems: { music, transitions, bed, sfx }, pre: sum([music, transitions, bed, sfx]), log, musicGain };
