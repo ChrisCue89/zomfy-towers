@@ -2,7 +2,7 @@
 import { openDay, setupCamp, camAt } from './_common.mjs';
 
 const FRAMES = 60;
-const KEYS = [[0, 0.2, -1.9], [FRAMES - 1, 1.0, -1.9]];
+const KEYS = [[0, 0.3, -1.7], [FRAMES - 1, 1.1, -1.7]];
 const PROBE = process.env.PROBE;
 
 const rec = await openDay({ hour: 8, minute: 0, day: 8, weather: 'klar', view: 'nah' });
@@ -13,10 +13,10 @@ await rec.eval(() => {
   const g = z.game;
   // Festplätze im Halbkreis um das Feuer, so dass man die Gesichter sieht (das Spiel stellt sie sonst im Vollkreis auf)
   const spots = {
-    bert: { x: -0.9, z: -2.9 },
-    juna: { x: 2.0, z: -3.0 },
-    hilde: { x: -1.7, z: -0.6 },
-    yusuf: { x: 2.7, z: -0.3 },
+    bert: { x: -1.25, z: -2.75 },
+    juna: { x: 2.05, z: -3.05 },
+    hilde: { x: -1.25, z: -0.75 },
+    yusuf: { x: 2.25, z: -0.75 },
   };
   const c = { x: 0.5, z: -1.75 };
   g.posts.feastSpot = (id) => {
@@ -25,11 +25,11 @@ await rec.eval(() => {
     return { x: p.x, z: p.z, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   };
   z.setFeast(g.state.time.day); // Festtag: alle am Feuer (wie nach jeder fünften Nacht)
-  z.teleport(0.6, 0.5, Math.PI); // Mika steht südlich des Feuers und schaut in die Runde
+  z.teleport(2.0, 1.35, Math.PI * 0.85); // Mika steht südöstlich des Feuers und schaut in die Runde
   g.survivors.placeAll(true);
 });
 await rec.sim(4);
-await rec.eval(() => { const g = window.zomfy.game; g.survivors.placeAll(true); window.zomfy.teleport(0.6, 0.5, Math.PI); });
+await rec.eval(() => { const g = window.zomfy.game; g.survivors.placeAll(true); window.zomfy.teleport(2.0, 1.35, Math.PI * 0.85); });
 await rec.sim(2);
 
 if (PROBE) {
@@ -51,7 +51,7 @@ if (PROBE) {
       if (i === 26) wave('bert', 1.2);
       if (i === 40) wave('yusuf', 1.2);
     },
-    description: 'Festmorgen (08:00, klar, Ansicht nah) am Lagerfeuer: Bert, Juna, Hilde, Dr. Yusuf im Halbkreis, Knopf (Hund) am Feuer, Mika südlich schaut in die Runde; Zelte links im Hintergrund, Haus rechts oben. Langsame Fahrt nach rechts. Einzelne winken (Bild 6 Hilde, 26 Bert, 40 Yusuf), Knopf bellt beim Fest. Gute Schnittpunkte: Bild 0-59 (jeder Ausschnitt).',
+    description: 'Festmorgen (08:00, klar, Ansicht nah) am Lagerfeuer: Bert, Juna, Hilde, Dr. Yusuf im Halbkreis, Knopf (Hund) am Feuer, Mika südöstlich schaut in die Runde; Zelte links im Hintergrund, Haus rechts oben. Langsame Fahrt nach rechts. Einzelne winken (Bild 6 Hilde, 26 Bert, 40 Yusuf), Knopf bellt beim Fest. Gute Schnittpunkte: Bild 0-59 (jeder Ausschnitt).',
   });
 }
 console.log('problems', rec.problems);

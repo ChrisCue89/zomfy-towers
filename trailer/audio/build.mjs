@@ -46,16 +46,35 @@ if (existsSync(sfxPath)) {
 const browser = await openBrowser(GAME_DIR);
 const TASKS = ['jingle', 'titel-intro', 'nacht', 'titel-mid', 'boss', 'morning', 'title', 'trans-drone', 'trans-riser', 'trans-cymbal', 'trans-heart', 'impacts', 'bed-wind', 'bed-fire', 'bed-waves', 'bed-animals'];
 const raw = {};
-for (const name of TASKS) {
-  raw[name] = await browser.render(name);
-  say(`${name.padEnd(13)} gerechnet (${raw[name].ms} ms)`);
+let sfxInfo = null;
+try {
+  for (const name of TASKS) {
+    raw[name] = await browser.render(name);
+    say(`${name.padEnd(13)} gerechnet (${raw[name].ms} ms)`);
+  }
+  // Wie renderMusic des Spiels: kein Stück darf stumm sein oder NaN/Inf enthalten (`bad`-Zähler)
+  const check = await browser.render('check');
+  const badPieces = check.filter((c) => c.bad || !(c.rms > 0));
+  if (badPieces.length) throw new Error(`Stück stumm oder ungültig: ${JSON.stringify(badPieces)}`);
+  say(`Stücke des Spiels lauffähig: ${check.map((c) => `${c.id} rms ${c.rms.toFixed(3)} bad ${c.bad}`).join(', ')}`);
+  if (events) {
+    raw.sfx = await browser.render('sfx', { events });
+    sfxInfo = { played: raw.sfx.played, skipped: raw.sfx.skipped.length };
+    say(`sfx gerechnet: ${raw.sfx.played} gespielt, ${raw.sfx.skipped.length} übersprungen`);
+    const byReason = {};
+    for (const sk of raw.sfx.skipped) (byReason[sk.why] ??= []).push(sk);
+    for (const [why, list] of Object.entries(byReason)) {
+      const names = [...new Set(list.map((x) => x.name))].slice(0, 8).join(', ');
+      say(`  übersprungen – ${why}: ${list.length} (${names})`);
+    }
+    sfxInfo.skippedReasons = Object.fromEntries(Object.entries(byReason).map(([why, list]) => [why, list.length]));
+  }
+  if (browser.problems.length) console.warn('Browser-Meldungen:', browser.problems);
+} finally {
+  await browser.close();
 }
-// Wie renderMusic des Spiels: kein Stück darf stumm sein oder NaN/Inf enthalten (`bad`-Zähler)
-const check = await browser.render('check');
-const badPieces = check.filter((c) => c.bad || !(c.rms > 0));
-if (badPieces.length) throw new Error(`Stück stumm oder ungültig: ${JSON.stringify(badPieces)}`);
-say(`Stücke des Spiels lauffähig: ${check.map((c) => `${c.id} rms ${c.rms.toFixed(3)} bad ${c.bad}`).join(', ')}`);
 for (const [name, r] of Object.entries(raw)) {
+  if (name === 'sfx') continue; // darf leer sein (keine Einträge im Zeitfenster)
   for (const p of r.parts ?? [r]) {
     let sum = 0;
     let badCount = 0;
@@ -67,21 +86,6 @@ for (const [name, r] of Object.entries(raw)) {
     if (badCount || !(sum > 0)) throw new Error(`gerechneter Klang ${name} ist stumm oder ungültig (bad ${badCount}, Energie ${sum})`);
   }
 }
-let sfxInfo = null;
-if (events) {
-  raw.sfx = await browser.render('sfx', { events });
-  sfxInfo = { played: raw.sfx.played, skipped: raw.sfx.skipped.length };
-  say(`sfx gerechnet: ${raw.sfx.played} gespielt, ${raw.sfx.skipped.length} übersprungen`);
-  const byReason = {};
-  for (const sk of raw.sfx.skipped) (byReason[sk.why] ??= []).push(sk);
-  for (const [why, list] of Object.entries(byReason)) {
-    const names = [...new Set(list.map((x) => x.name))].slice(0, 8).join(', ');
-    say(`  übersprungen – ${why}: ${list.length} (${names})`);
-  }
-  sfxInfo.skippedReasons = Object.fromEntries(Object.entries(byReason).map(([why, list]) => [why, list.length]));
-}
-if (browser.problems.length) console.warn('Browser-Meldungen:', browser.problems);
-await browser.close();
 
 // --- Mischen und Mastern ------------------------------------------------------------------------------------------------------
 const sfxDb = opt('sfx-db') !== null ? Number(opt('sfx-db')) : undefined;

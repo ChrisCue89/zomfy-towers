@@ -84,7 +84,7 @@ export function installWalker(rec) {
  * Lager mit Menschen (für Gruppe A): Tage, Vorräte, Zelte (ins Bild gesetzt), alle Überlebenden eingezogen.
  * Gibt die Ergebnisse der Bauversuche zurück.
  */
-export function setupCamp(rec, { day = 8, tents = [[-5, -3], [-5, 0], [-4, 3], [-2, -6]], ids = ['knopf', 'hilde', 'juna', 'bert', 'yusuf'] } = {}) {
+export function setupCamp(rec, { day = 8, tents = [[-5, -3], [-4, 3], [4, 2], [7, -1]], ids = ['knopf', 'hilde', 'juna', 'bert', 'yusuf'] } = {}) {
   return rec.eval((a) => {
     const z = window.zomfy;
     const g = z.game;

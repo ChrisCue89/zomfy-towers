@@ -16,12 +16,15 @@ await rec.eval(() => {
   const g = Z.game;
   g.state.tools.axt = true;
   g.addToHotbar('axt');
-  Z.teleport(0.9, -0.1, 4.2); // Mika steht am Feuer und schaut nach Westen
+  // Kürbislaternen als Lichtinseln links und rechts der Kampfstelle (Herbstschmuck, auch im Spiel baubar)
+  for (const [i, j] of [[-3, 2], [4, 1], [-2, -2]]) console.log('kuerbislaterne', i, j, Z.build('kuerbislaterne', i, j));
+  g.world.crows.group.visible = false; // keine Krähen im Bild
+  Z.teleport(0.9, 0.5, 4.2); // Mika steht am Feuer und schaut nach Westen
   g.player.facing = -Math.PI / 2;
   // vier Schlurfer und ein Flitzer kommen aus dem Westen über den Hof
   const b = window.__b;
-  const list = [['schlurfer', -1.5, -0.35], ['schlurfer', -1.8, 0.45], ['schlurfer', -2.6, -0.1], ['schlurfer', -3.3, 0.6], ['flitzer', -4.6, -0.3]];
-  for (const [t, x, z] of list) b.zombie(t, x, z, { hp: t === 'flitzer' ? 1.0 : 0.6 });
+  const list = [['schlurfer', -1.0, 0.7], ['schlurfer', -1.4, 0.15], ['schlurfer', -2.7, 0.75], ['schlurfer', -3.1, 0.2], ['schlurfer', -4.3, 0.6], ['flitzer', -5.6, 0.9]];
+  for (const [t, x, z] of list) b.zombie(t, x, z, { hp: t === 'flitzer' ? 0.55 : 0.38 });
   // Nacht gilt als schon geplant: nur diese Schlurfer sind noch übrig – fällt der letzte, ist sie gehalten
   g.nights.beginNight(g.state.time.day);
   g.state.night.wave = g.nights.plan.waves.length;
@@ -89,7 +92,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: null,
   each: (i) => { window.__b.keep(); window.__b.pilot(i); },
-  description: 'Nacht am Lagerfeuer, Ansicht nah (160 px/m), Kamera folgt Mika. Mika (Axt, echte Eingaben) schlägt die Schlurfer zurück, Treffer-Blitz, Wackeln, Trefferstopp; der letzte Schlurfer fällt in Zeitlupe.',
+  description: 'Nacht am Lagerfeuer, Ansicht nah (160 px/m), Kamera folgt Mika wie im Spiel, Kürbislaternen als Lichtinseln. Mika (Axt, echte Eingaben: Maus zielen, Klick, Leertaste) schlägt die Schlurfer zurück: Treffer bei Bild 6 (zwei fallen), 27 (zwei), ca. 52 (die letzten); Ausweichrolle nach Süden Bild 30-38; der letzte Schlurfer der Nacht fällt ab ca. Bild 52 in Zeitlupe (Nacht gehalten). Schadenszahlen „12“ über den Treffern, Trefferstopp (doppelte Bilder). Beste Schnitte: 0-14, 24-40, 50-70.',
 });
 console.log(r.problems);
 const end = await rec.eval(() => ({ alive: window.zomfy.game.horde.alive, night: window.zomfy.state().night.done, hp: window.zomfy.state().player.hp, kills: window.zomfy.state().stats.kills }));
