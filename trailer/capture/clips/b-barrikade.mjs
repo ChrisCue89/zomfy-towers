@@ -59,7 +59,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -13.6, 1.6], [FRAMES - 1, -13.0, 1.6]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Ansicht nah (160 px/m). Brummer mit Trupp schlägt eine Barrikadenreihe quer über den Weg ein (Holzsplitter, Dornen an der mittleren), zwei Feuer-Katapulte (Kürbisbögen, Aufprall) dahinter, zwei Laternenpfähle als Lichtinseln, Mika rechts. Um Bild 40 bricht die mittlere Barrikade, der Brummer steht im Spalt, ab ca. Bild 60 kippt er (Brand). Beste Schnitte: Bild 0-35 (Pulk und Splitter), 36-60 (Durchbruch).',
+  description: 'Nacht, Ansicht nah (160 px/m). Ein Brummer mit Trupp (Schlurfer, Flitzer, Brand-Symbole über den Köpfen) hat eine Reihe Verstärkter Barrikaden quer über den Weg erreicht und schlägt sie ein; die Barrikaden dahinter (Dornen an der mittleren) halten teils: Bild 0-10 Splitter- und Funkenschauer, Bild 10 (Klang „abriss“) bricht eine Barrikade, Bild 20 fallen drei Schlurfer, Bild 20-74 drängt sich der Trupp durch die Lücke, der Brummer steht im Spalt. Zwei Feuer-Katapulte dahinter (Kürbisse fliegen im Bogen, Aufprall), zwei Laternenpfähle als Lichtinseln, Mika rechts. Ein Brummer bleibt bis zum Ende stehen (Bild 74 noch am Schlagen), im Clip fällt kein Boss. Beste Schnitte: 0-25 (Splitter und Bögen), 35-60 (Trupp im Spalt).',
 });
 console.log(r.problems);
 const end = await rec.eval(() => window.zomfy.buildings().filter((b) => b.type === 'barrikade').length);

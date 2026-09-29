@@ -45,7 +45,7 @@ const heart = await rec.eval(() => {
   return id;
 });
 console.log('Herz', heart);
-await snowCover(rec, 0.5); // dünnere Schneedecke (kein Tarnmuster)
+await snowCover(rec, 0.4); // dünnere Schneedecke (kein Tarnmuster)
 await rec.sim(0.6);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
@@ -54,9 +54,8 @@ const r = await rec.clip(NAME, {
     window.__b.keep();
     if (i === 8) window.zomfy.killZombie(window.__heart, 'turm');
     window.__dawn(i);
-    window.__snowK = 0.5 + 0.5 * Math.max(0, Math.min(1, (i - 22) / 30)); // zum Morgen liegt die volle Schneedecke
   },
-  description: 'Frostnacht, Ansicht nah, Schnee. Das Moderherz (Lebensbalken oben) fällt in Bild 8 (Trefferstopp, Wackeln, Zeitlupe), im Folgebild zerfällt die Horde ringsum zu Staub und Moos; ab Bild 26 läuft ein Zeitraffer in die Morgendämmerung (05:30 bis 07:20), die Bucht liegt still im Schnee. Beste Schnitte: 4-24 (Fall), 30-59 (Morgengrauen).',
+  description: 'Frostnacht, Ansicht nah, kurz vor dem Morgen. Bild 0-8: das Moderherz (Lebensbalken fast leer, Pilzköpfe) steht mitten in seiner Horde (Schwärmer, Schlurfer, Brummer, Flitzer), Bolzen und Feuerkürbisse fliegen von den Türmen; Bild 8: das Herz fällt (Klang „jubel“/„tod“, Trefferstopp, Wackeln, Zeitlupe); Bild ~14-22: die Horde ringsum zerfällt zu Staub, der Lebensbalken verschwindet; Bild 16: „Nacht überstanden“ (Klang „morgen“); Bild 20-44: das Herz sinkt zur Seite und wird zu Moos und Pilzen (Blumen, Glitzer); ab Bild 26 Zeitraffer der Morgendämmerung (05:30 bis 07:20): Licht wird warm, das Gras wird grün, Schnee bleibt nur in Flecken (Schneedecke am Boden für die Aufnahme auf 40 % gedünnt), Mika steht rechts am Katapult. Beste Schnitte: 0-20 (Fall und Zerfall), 30-59 (Morgen).',
 });
 console.log(r.problems);
 const end = await rec.eval(() => ({ alive: window.zomfy.game.horde.list.length, done: window.zomfy.state().night.done, frost: window.zomfy.state().autumn.frost }));

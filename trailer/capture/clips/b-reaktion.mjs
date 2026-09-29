@@ -87,6 +87,6 @@ const dir = join(FRAMES_DIR, NAME);
 writeFileSync(join(dir, 'events.json'), JSON.stringify(events));
 const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
 meta.frames = first;
-meta.description = `Nacht, Ansicht nah, zwei Szenen aus echten Türmen hintereinander. ${texts.join(' · ')}. Das Wort steht jeweils ab ca. 4 Bildern nach Abschnittsbeginn über den Schlurfern und bleibt rund eine Sekunde.`;
+meta.description = `Nacht, Ansicht nah, Handlung in Bildmitte; zwei Szenen aus echten Türmen hintereinander (je ${SEG} Bilder). ${texts.join(' · ')}. Das Wort steht jeweils ab ca. 3-4 Bildern nach Abschnittsbeginn über den Schlurfern (Eisblock! ab 3, Klirr! ab 17, Dampf! ab 48) und bleibt rund eine Sekunde. Schnitt in 15-Bilder-Stücken: 3-18 (Eisblock), 17-32 (Klirr), 48-63 und 62-77 (Dampf).`;
 writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta, null, 1));
 process.exit(0);

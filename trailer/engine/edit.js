@@ -26,7 +26,7 @@ export const tb = (k) => T.titel + k * BEAT.titel;
 
 const S = (n) => `/game/screenshots/${n}.png`;
 const STAND = {
-  reaktionen: 'reaktionen', 'hud-frost': 'finale',
+  reaktionen: 'reaktionen', 'hud-frost': 'finale', 'balduin-frag': 'dialog',
   'see-morgen': 'haendler', 'haus-morgen': 'titel', sammeln: 'tag', bauen: 'turm-bauen', einrichten: 'innen', 'feuer-abend': 'abend',
   daemmerung: 'abend', 'wald-moder': 'moder-nacht', 'turm-bauen-nacht': 'nacht', 'turm-feuer': 'horde', barrikade: 'barrikaden', nahkampf: 'nahkampf',
   'reaktion-eisblock': 'reaktionen', 'reaktion-dampf': 'reaktionen', 'reaktion-kleber': 'reaktionen', 'boss-holzfaeller': 'boss', 'champion-beute': 'champion',
@@ -163,7 +163,7 @@ add(
 // ============================================================================
 add(
   sh('frost-morgen', 52.2, 1.85, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.6 } }),
-  sh('balduin-dialog', 53.9, 2.3, { tin: { kind: 'dither', dur: 0.4 }, ui: true }),
+  sh('balduin-frag', 53.85, 2.3, { from: 0, tin: { kind: 'dither', dur: 0.4 } }),
   narrate('Am Morgen liegt {Schnee.}', 52.1, 1.9),
   title(T.title, DURATION),
 );
