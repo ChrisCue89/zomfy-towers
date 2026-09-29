@@ -10,6 +10,7 @@ const site = await rec.eval(() => {
   const z = window.zomfy;
   const g = z.game;
   z.give({ holz: 60, schrott: 40, stein: 20, fasern: 20, stoff: 10 });
+  for (const f of ['ersterTurm', 'werkbankGebaut', 'introGesehen']) z.setFlag(f); // keine Dialogfenster nach dem Bau
   const cr = g.world.crows;
   for (const c of cr.list) if (c.state === 'sitzt') cr.leave(c, true);
   // Bauplatz: freie Zelle nördlich des letzten Wegabschnitts (x -15..-10), z -1..-3
