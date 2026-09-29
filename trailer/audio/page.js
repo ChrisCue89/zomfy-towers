@@ -550,7 +550,8 @@ tasks['bed-animals'] = async () => {
 tasks.sfx = async ({ events }) => {
   const { ctx, s, m } = env(DURATION, 401);
   const sorted = events.slice().sort((a, b) => a.t - b.t);
-  const played = [];
+  let played = 0;
+  const skipped = [];
   for (const e of sorted) {
     s.voices = 0; // im Spiel zählen laufende Stimmen; hier läuft nichts »ab«
     s.lastVary = null;
@@ -564,19 +565,26 @@ tasks.sfx = async ({ events }) => {
       else if (kind === 'cricket') s.cricket(e.t);
       else if (kind === 'whoosh') s.noise(e.t - 0.6, 0.7, { type: 'bandpass', freq: 500, freqEnd: 4500, q: 0.8, attack: 0.6, peak: 0.16 * (e.volume ?? 1), out: s.sfxBus });
       else if (kind === 'boom') impact(s, m, e.t, 0.7 * (e.volume ?? 1), ctx.destination);
-      else continue;
-      played.push(e);
+      else {
+        skipped.push(`${e.t} ${e.name}: unbekannter Umgebungsklang`);
+        continue;
+      }
+      played++;
       continue;
     }
-    clock(ctx, e.t - 0.005);
+    const now = e.t - 0.005;
+    clock(ctx, now);
     const opt = {};
     for (const k of ['x', 'z', 'volume', 'pitch', 'rate']) if (e[k] !== undefined) opt[k] = e[k];
     s.play(e.name, opt);
-    if (s.lastVary) played.push(e); // play() setzt lastVary erst, wenn der Effekt wirklich klingt (Abstand, Entfernung, MIN_GAP)
+    if (s.lastVary) played++; // play() setzt lastVary erst, wenn der Effekt wirklich klingt
+    else if (!s.last.has(e.name)) skipped.push(`${e.t} ${e.name}: Effekt unbekannt`);
+    else if (s.last.get(e.name) !== now) skipped.push(`${e.t} ${e.name}: Mindestabstand (MIN_GAP)`);
+    else skipped.push(`${e.t} ${e.name}: zu weit weg (Hörweite 16 m) oder zu leise`);
   }
   const r = pack(await ctx.startRendering());
-  r.played = played.length;
-  r.skipped = sorted.filter((e) => !played.includes(e)).map((e) => `${e.t} ${e.name}`);
+  r.played = played;
+  r.skipped = skipped;
   return r;
 };
 

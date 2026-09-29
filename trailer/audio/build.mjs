@@ -35,6 +35,10 @@ let events = null;
 if (existsSync(sfxPath)) {
   events = JSON.parse(readFileSync(sfxPath, 'utf8'));
   if (!Array.isArray(events)) events = events.events ?? events.sfx;
+  const okEvent = (e) => e && typeof e.name === 'string' && Number.isFinite(e.t) && e.t >= 0 && e.t < 60;
+  const dropped = events.filter((e) => !okEvent(e));
+  if (dropped.length) console.warn(`Effekte: ${dropped.length} ungültige Einträge (name/t fehlt oder t außerhalb 0–60 s) werden ignoriert, z. B. ${JSON.stringify(dropped[0])}`);
+  events = events.filter(okEvent);
   say(`Effekte: ${events.length} Einträge aus ${sfxPath}`);
 } else say(`keine Effektdatei (${sfxPath}) – Ebene sfx bleibt leer`);
 
@@ -67,7 +71,10 @@ let sfxInfo = null;
 if (events) {
   raw.sfx = await browser.render('sfx', { events });
   sfxInfo = { played: raw.sfx.played, skipped: raw.sfx.skipped };
-  say(`sfx gerechnet: ${raw.sfx.played} gespielt, ${raw.sfx.skipped.length} übersprungen (Entfernung/Mindestabstand)`);
+  say(`sfx gerechnet: ${raw.sfx.played} gespielt, ${raw.sfx.skipped.length} übersprungen`);
+  const skippedByReason = {};
+  for (const line of raw.sfx.skipped) (skippedByReason[line.split(': ')[1]] ??= []).push(line.split(': ')[0]);
+  for (const [why, list] of Object.entries(skippedByReason)) say(`  übersprungen (${why}): ${list.length}${why.startsWith('Effekt unbekannt') || why.startsWith('unbekannt') ? ' – Namen prüfen: ' + list.slice(0, 6).join(', ') : ''}`);
 }
 if (browser.problems.length) console.warn('Browser-Meldungen:', browser.problems);
 await browser.close();
