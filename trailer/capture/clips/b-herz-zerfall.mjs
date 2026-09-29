@@ -3,7 +3,7 @@
 // Das Herz wird in Bild 8 erledigt (so, als hätte ein Turm es gefällt: killZombie(id, 'turm') = derselbe Weg wie ein Abschuss).
 //   node capture/clips/b-herz-zerfall.mjs            (ZT_NAME=_probe ZT_FRAMES=1 für Proben)
 import { Rec } from '../lib.mjs';
-import { prepare, placeTowers } from './b-common.mjs';
+import { prepare, placeTowers, snowCover } from './b-common.mjs';
 
 const NAME = process.env.ZT_NAME || 'herz-zerfall';
 const FRAMES = Number(process.env.ZT_FRAMES || 60);
@@ -45,6 +45,7 @@ const heart = await rec.eval(() => {
   return id;
 });
 console.log('Herz', heart);
+await snowCover(rec, 0.5); // dünnere Schneedecke (kein Tarnmuster)
 await rec.sim(0.6);
 const r = await rec.clip(NAME, {
   frames: FRAMES,

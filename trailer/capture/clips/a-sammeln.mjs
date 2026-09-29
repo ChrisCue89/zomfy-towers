@@ -2,7 +2,7 @@
 import { openDay, installWalker, camAt } from './_common.mjs';
 
 const FRAMES = 40;
-const KEYS = [[0, -1.3, -10.6], [FRAMES - 1, -1.5, -10.6]];
+const KEYS = [[0, -1.3, -12.3], [FRAMES - 1, -1.5, -12.3]];
 const PROBE = process.env.PROBE;
 
 const rec = await openDay({ hour: 10, minute: 30, day: 2, weather: 'wind', view: 'nah' });
