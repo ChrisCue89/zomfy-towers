@@ -125,9 +125,10 @@ export function snowCover(rec, k) {
   return rec.eval(async (k) => {
     const { sharedUniforms } = await import('/src/render/materials.js');
     const g = window.zomfy.game;
+    window.__snowK = k; // lässt sich je Bild ändern (z. B. die Decke wächst zum Morgen hin)
     if (!g.__renderRaw) g.__renderRaw = g.render.bind(g);
     g.render = () => {
-      sharedUniforms.uSnow.value = Math.min(sharedUniforms.uSnow.value, k);
+      sharedUniforms.uSnow.value = Math.min(sharedUniforms.uSnow.value, window.__snowK);
       return g.__renderRaw();
     };
   }, k);

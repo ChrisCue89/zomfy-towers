@@ -148,8 +148,9 @@ const BBAR = 4 * BEAT.boss;
 add(
   sh('frost-nacht', bb(0), 2 * BBAR + 0.05, { from: 0, ui: { rects: [[0, 32, 640, 328], [0, 0, 205, 32], [435, 0, 205, 32]] } }),
   sh('moderherz', bb(8), 2 * BBAR + 0.05, { from: 0 }),
-  sh('leuchtfeuer', bb(16), BBAR, { from: 0, speed: 0.6 }),
-  sh('herz-zerfall', bb(20), T.end - bb(20) + 0.4, { from: 0 }),
+  sh('leuchtfeuer', bb(16), 51.4 - bb(16), { from: 0, speed: 0.6 }),
+  // das Herz fällt in Bild 8 des Clips: genau auf den Schlussschlag der Musik (T.end)
+  sh('herz-zerfall', T.end - 8 / FPS, 1.15, { from: 0 }),
   particles('snow', T.boss, T.end + 0.5, { count: 110, seed: 6, alpha: 0.9, speed: 1.1, wind: 55, z: 6 }),
   sticker('hud-frost', 0, [225, 4, 190, 55], bb(1), 2 * BBAR - 0.4, { x: W / 2, y: 118, scale: 3 }),
   slam('DER ERSTE FROST', bb(0), 2 * BBAR - 0.05, { look: 'ice', scale: 12 }),
@@ -161,7 +162,7 @@ add(
 // AUSKLANG  51,67 – 60
 // ============================================================================
 add(
-  sh('frost-morgen', T.end + 0.3, 2.2, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.7 } }),
+  sh('frost-morgen', 52.2, 1.85, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.6 } }),
   sh('balduin-dialog', 53.9, 2.3, { tin: { kind: 'dither', dur: 0.4 }, ui: true }),
   narrate('Am Morgen liegt {Schnee.}', 52.1, 1.9),
   title(T.title, DURATION),
@@ -201,10 +202,10 @@ export function gradeAt(t) {
 
 // [zeit, stärke in Pixeln]
 export const shakes = [
-  [T.night, 27], [T.boss, 27], [nb(8), 9], [nb(16) + 22 / 30, 18], [bb(8), 15], [bb(16), 12], [T.title + 0.66, 9],
+  [T.night, 27], [T.boss, 27], [nb(8), 9], [nb(16) + 22 / 30, 18], [T.end, 21], [bb(8), 15], [bb(16), 12], [T.title + 0.66, 9],
 ];
 // [zeit, stärke, abklingen]
-const FLASHES = [[T.night, 0.85, 7], [T.boss, 0.8, 7], [nb(8), 0.25, 9], [nb(16), 0.3, 9], [bb(8), 0.35, 8], [bb(16), 0.3, 8], [T.title, 0.35, 4], [T.title + 0.66, 0.25, 5]];
+const FLASHES = [[T.night, 0.85, 7], [T.boss, 0.8, 7], [nb(8), 0.25, 9], [nb(16), 0.3, 9], [bb(8), 0.35, 8], [bb(16), 0.3, 8], [T.end, 0.55, 6], [T.title, 0.35, 4], [T.title + 0.66, 0.25, 5]];
 export const flashColor = '#fff2c8';
 export function flashAt(t) {
   let a = 0;

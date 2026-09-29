@@ -54,6 +54,7 @@ const r = await rec.clip(NAME, {
     window.__b.keep();
     if (i === 8) window.zomfy.killZombie(window.__heart, 'turm');
     window.__dawn(i);
+    window.__snowK = 0.5 + 0.5 * Math.max(0, Math.min(1, (i - 22) / 30)); // zum Morgen liegt die volle Schneedecke
   },
   description: 'Frostnacht, Ansicht nah, Schnee. Das Moderherz (Lebensbalken oben) fällt in Bild 8 (Trefferstopp, Wackeln, Zeitlupe), im Folgebild zerfällt die Horde ringsum zu Staub und Moos; ab Bild 26 läuft ein Zeitraffer in die Morgendämmerung (05:30 bis 07:20), die Bucht liegt still im Schnee. Beste Schnitte: 4-24 (Fall), 30-59 (Morgengrauen).',
 });
