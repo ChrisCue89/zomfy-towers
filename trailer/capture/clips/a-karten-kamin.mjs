@@ -19,7 +19,8 @@ await rec.eval(() => { window.__mikaDone = false; });
 await rec.clip('karten-kamin', {
   frames: FRAMES,
   ui: 'world',
-  cam: null,
+  // feste Kamera (das Spiel fährt sie sonst in den ersten 1,5 s an den Tisch): etwas weiter nördlich, damit der Kamin ins Bild kommt
+  cam: { keys: [[0, 312.5, 1.55], [FRAMES - 1, 312.55, 1.55]] },
   each: (i) => {
     const z = window.zomfy;
     const g = z.game;
@@ -29,7 +30,7 @@ await rec.clip('karten-kamin', {
       if (mv && g.cardNight.mikaMove(mv)) window.__mikaDone = true;
     }
   },
-  description: 'Kartenabend bei Regen (18:40) drinnen am Kamin: der Tisch wird gedeckt/gegeben (Karten fliegen), Bert (Mütze, Schnauzer) sitzt gegenüber, Mika von hinten rechts, Kamin dahinter, warmes Licht. Bild ~18+ spielt Mika ihre erste Karte, danach denkt Bert und zieht (Geste "reiben" = sein Tick). Oberflächen-Ebene (.ui.png) enthält Kartenhand, Tisch-Kopfzeile ("Bert - Partie 1") - für reine Weltbilder nur die 0000.png nehmen. Kamera fährt vom Spiel selbst an den Tisch.',
+  description: 'Kartenabend bei Regen (18:40) drinnen am Kamin: der Tisch wird gedeckt/gegeben (Karten fliegen), Bert (Mütze, Schnauzer) sitzt gegenüber, Mika von hinten rechts, Kamin dahinter, warmes Licht. Bild ~18+ spielt Mika ihre erste Karte, danach denkt Bert und zieht (Geste "reiben" = sein Tick). Oberflächen-Ebene (.ui.png) enthält Kartenhand, Tisch-Kopfzeile ("Bert - Partie 1") - für reine Weltbilder nur die 0000.png nehmen. Feste Kamera, Ansicht 240 px/m statt der 160 des Spiels.',
 });
 console.log('problems', rec.problems);
 await rec.close();

@@ -22,6 +22,9 @@ srv.server.close();
 // Effekte, die in einem Trailer keinen Sinn haben (Oberfläche, Schritte, Stille)
 const SKIP = new Set(['klick', 'tipp', 'schritt', 'schrittHolz', 'aufheben', 'zuhause']);
 const MIN_VOLUME = 0.06;
+// Zeitfenster, in denen keine Spiel-Effekte einsetzen (Stille vor dem Boss, Stille und Spieluhr-Einsatz nach dem Schlussschlag);
+// Effekte, die davor beginnen, klingen sonst in die Stille hinein.
+const HUSH = [[40.3, 41.23], [51.75, 52.6]];
 const out = [];
 for (const s of shots) {
   const dir = join(FRAMES, s.clip);
@@ -33,6 +36,7 @@ for (const s of shots) {
   for (const e of events) {
     if (e.f < f0 || e.f >= f1 || SKIP.has(e.name)) continue;
     const t = s.at + (e.f - f0) / (FPS * s.speed);
+    if (HUSH.some(([a, b]) => t >= a && t < b)) continue;
     const item = { t: +t.toFixed(3), name: e.name };
     for (const k of ['x', 'z', 'lx', 'lz', 'volume', 'rate', 'pitch']) if (e[k] !== undefined && e[k] !== null) item[k] = e[k];
     out.push(item);

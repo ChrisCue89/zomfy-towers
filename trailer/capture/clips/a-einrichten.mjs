@@ -14,17 +14,17 @@ const info = await rec.eval(() => {
   z.give({ holz: 60, schrott: 40, stein: 20, fasern: 20, stoff: 20 });
   for (const id of ['bild', 'teekanne', 'wimpel', 'lichterkette', 'stehlampe', 'lesesessel']) z.buyFurniture(id);
   const e = z.interior().entry;
-  // freie Bahn durch den Raum suchen: Zeile z, in der Mika von x=309.9 bis 315.2 ungehindert geht (Möbel stehen im Weg)
+  // freie Bahn durch den Raum suchen: Zeile z, in der Mika von x=311 bis 315.2 ungehindert geht (Möbel stehen im Weg)
   const col = g.world.colliders;
   const rows = [];
   for (let zz = 1.2; zz <= 4.9; zz += 0.1) {
     let free = true;
-    for (let xx = 309.8; xx <= 315.3; xx += 0.1) if (col.blocks(xx, zz, 0.3)) { free = false; break; }
+    for (let xx = 311.0; xx <= 315.3; xx += 0.1) if (col.blocks(xx, zz, 0.3)) { free = false; break; }
     if (free) rows.push(+zz.toFixed(2));
   }
-  const lane = rows.length ? rows.reduce((b, r) => (Math.abs(r - 3.0) < Math.abs(b - 3.0) ? r : b), rows[0]) : 4.6;
+  const lane = rows.length ? rows.reduce((b, r) => (Math.abs(r - 2.6) < Math.abs(b - 2.6) ? r : b), rows[0]) : 4.6;
   window.__lane = lane;
-  z.teleport(310.0, lane, Math.PI / 2); // im Wohnraum, links; schaut nach rechts
+  z.teleport(311.1, lane, Math.PI / 2); // im Wohnraum, links; schaut nach rechts
   return { entry: e, inside: g.viewInside, bounds: z.interior().bounds, cozy: z.cozy(), rows, lane };
 });
 console.log(JSON.stringify(info));

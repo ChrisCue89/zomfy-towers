@@ -69,7 +69,7 @@ add(
 // DIE WENDE  12,5 – 16,0
 // ============================================================================
 add(
-  sh('daemmerung', 12.5, 2.2 + 0.1, { from: 8, tin: { kind: 'dither', dur: 0.5 } }),
+  sh('daemmerung', 12.5, 2.85, { ui: false, from: 4, speed: 0.95, tin: { kind: 'dither', dur: 0.5 } }),
   sh('wald-moder', 14.7, 1.3 + 0.1, { ui: false, from: 46, tin: { kind: 'dither', dur: 0.45, mode: 'right' } }),
   particles('spores', 14.4, 16.0, { count: 34, seed: 2, fi: 0.4, fo: 0.05 }),
   narrate('Nachts …', 12.7, 1.6, { tone: 'cold' }),
@@ -102,9 +102,9 @@ add(
   sh('barrikade', nb(24), BEAT.night, { from: 40 }),
   sh('nahkampf', nb(25), BEAT.night, { from: 42 }),
   sh('lager-tor', nb(26), BEAT.night, { from: 0 }),
-  sh('turm-feuer', nb(27), BEAT.night, { from: 20 }),
+  sh('turm-feuer', nb(27), BEAT.night + 0.8, { from: 20 }),
   // Takt 8: Morgen. Nacht überstanden.
-  sh('morgenbericht', nb(28), T.zu - nb(28) + 0.4, { tin: { kind: 'dither', dur: 0.7, mode: 'up' }, ui: { rects: [[108, 78, 428, 174]] } }),
+  sh('morgenbericht', nb(28), T.zu - nb(28) + 0.65, { tin: { kind: 'dither', dur: 0.7, mode: 'up' }, ui: { rects: [[108, 78, 428, 174]] } }),
   slam('TÜRME', nb(0), BAR - 0.05, { sub: 'neben dem Weg.' }),
   slam('BARRIKADEN', nb(4), BAR - 0.05, { sub: 'darauf.', scale: 12 }),
   slam('UND DU', nb(8), BAR - 0.05, { sub: 'mittendrin.' }),
@@ -150,7 +150,7 @@ add(
   sh('moderherz', bb(8), 2 * BBAR + 0.05, { from: 0 }),
   sh('leuchtfeuer', bb(16), 51.4 - bb(16), { from: 0, speed: 0.6 }),
   // das Herz fällt in Bild 8 des Clips: genau auf den Schlussschlag der Musik (T.end)
-  sh('herz-zerfall', T.end - 8 / FPS, 1.15, { from: 0 }),
+  sh('herz-zerfall', T.end - 8 / FPS, 1.55, { from: 0 }),
   particles('snow', T.boss, T.end + 0.5, { count: 110, seed: 6, alpha: 0.9, speed: 1.1, wind: 55, z: 6 }),
   sticker('hud-frost', 0, [225, 4, 190, 55], bb(1), 2 * BBAR - 0.4, { x: W / 2, y: 118, scale: 3 }),
   slam('DER ERSTE FROST', bb(0), 2 * BBAR - 0.05, { look: 'ice', scale: 12 }),
@@ -162,8 +162,8 @@ add(
 // AUSKLANG  51,67 – 60
 // ============================================================================
 add(
-  sh('frost-morgen', 52.2, 1.85, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.6 } }),
-  sh('balduin-frag', 53.85, 2.3, { from: 0, tin: { kind: 'dither', dur: 0.4 } }),
+  sh('frost-morgen', 52.2, 2.25, { from: 4, zoom: [1.0, 1.05], tin: { kind: 'dither', dur: 0.6 } }),
+  sh('balduin-frag', 53.85, 2.4, { from: 0, ui: { rects: [[96, 262, 448, 92]] }, zoom: [1.0, 1.1], pan: [[0, 0], [0, -34]], tin: { kind: 'dither', dur: 0.4 } }),
   narrate('Am Morgen liegt {Schnee.}', 52.1, 1.9),
   title(T.title, DURATION),
 );

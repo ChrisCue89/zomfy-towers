@@ -13,6 +13,8 @@ export async function openDay(o = {}) {
     z.setTime(a.hour, a.minute);
     z.setWeather(a.weather, true);
     z.setHorde(a.horde);
+    // Hinweis-Dialoge und Gedanken des Spiels (Abend, Horde, Laterne …) abstellen: sie würden die Aufnahme stören (und tippen)
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis', 'werkbankGebaut', 'championHinweis', 'turmteilHinweis', 'lockeHinweis']) z.setFlag(f);
     z.game.settings.shake = z.game.settings.shake; // unverändert
     if (z.game.view !== a.view) z.game.applySettings({ view: a.view });
   }, { day, hour, minute, weather, view, horde });
