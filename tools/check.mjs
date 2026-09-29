@@ -1727,7 +1727,9 @@ async function runToyChecks(browser, url) {
     for (const j of col) Z.build('stachelbrett', -12, j);
     const sperrt = Z.pathBlocked([]);
     const out = { sperrt, gesetzt: {} };
-    const plan = { stachelbrett: -13, leimtopf: -15, klettenteppich: -17, knallerbsen: -19, oelspur: -21 };
+    // M26: die Ölspur zuerst (der brennende Schlurfer zündet sie gleich an), dann die Stachelbretter –
+    // hinter dem Leimtopf kam in allen Läufen höchstens einer bei ihnen an; der Leimtopf hält als letzter fest
+    const plan = { oelspur: -21, stachelbrett: -19, knallerbsen: -17, klettenteppich: -15, leimtopf: -13 };
     for (const [type, i] of Object.entries(plan)) {
       const c = Z.pathColumn(i);
       let n = 0;

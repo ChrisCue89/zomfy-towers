@@ -2286,7 +2286,9 @@ export class Game {
       this.hud.update(dt);
       return;
     }
-    // Zeitlupe (M26): der letzte Schlurfer der Nacht, das fallende Herz
+    // Zeitlupe (M26): der letzte Schlurfer der Nacht, das fallende Herz. Nur die Welt wird
+    // langsamer – Bericht, Menü und Dialoge laufen in echter Zeit (sonst wartete E dort länger)
+    const realDt = dt;
     if (this.slowT > 0) {
       this.slowT -= dt;
       dt *= SLOWMO.scale;
@@ -2311,27 +2313,27 @@ export class Game {
       case 'dialog':
         // Esc schließt den Dialog wie die harmlose Antwort (m3-r2: nicht das Menü darüber)
         if (input.pressed('menu')) this.dialog.finish(null);
-        else this.dialog.update(dt, input);
+        else this.dialog.update(realDt, input);
         this.player.idle(dt);
         break;
       case 'menu':
-        this.menu.update(input, dt);
+        this.menu.update(input, realDt);
         this.player.idle(dt);
         break;
       case 'splash':
-        this.splash.update(input, dt);
+        this.splash.update(input, realDt);
         this.player.idle(dt);
         break;
       case 'title':
-        this.title.update(input, dt);
+        this.title.update(input, realDt);
         this.player.idle(dt);
         break;
       case 'craft':
-        this.crafting.update(input, dt);
+        this.crafting.update(input, realDt);
         this.player.idle(dt);
         break;
       case 'report':
-        if (this.report.update(dt, input)) {
+        if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
           this.state.report = null;
           this.mode = 'play';
@@ -2340,7 +2342,7 @@ export class Game {
         this.player.idle(dt);
         break;
       case 'perk': {
-        const chosen = this.perkChoice.update(input, dt);
+        const chosen = this.perkChoice.update(input, realDt);
         const kind = this.perkChoice.kind;
         const ok = chosen && (kind === 'perk' ? this.combat.choosePerk(chosen) : kind === 'bauplan' ? this.chooseBlueprint(chosen) : this.skills.choose(chosen));
         if (ok) {
@@ -2361,11 +2363,11 @@ export class Game {
         this.player.idle(dt);
         break;
       case 'karte':
-        if (this.mapView.update(input, dt)) this.mode = 'play';
+        if (this.mapView.update(input, realDt)) this.mode = 'play';
         this.player.idle(dt);
         break;
       case 'abspann': // M25: nach der Frostnacht
-        this.autumn.updateCredits(dt, input);
+        this.autumn.updateCredits(realDt, input);
         this.player.idle(dt);
         break;
       default:
@@ -2404,7 +2406,7 @@ export class Game {
     }
     this.updateCutout();
     this.updateGoals();
-    this.hud.update(dt);
+    this.hud.update(realDt);
   }
 
   updatePlay(dt) {
@@ -2852,6 +2854,7 @@ export class Game {
     const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann'; // M25: im Abspann nur Bild und Namen
     if (!cinematic) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (playing) this.buildbar.draw(ui);
+    if (playing) this.builder.drawGhostLabel(ui); // M26: über der Tafel der Bauleiste
     this.crafting.draw(ui);
     if (this.mode === 'report') this.report.draw(ui);
     if (this.mode === 'abspann') this.autumn.drawCredits(ui);

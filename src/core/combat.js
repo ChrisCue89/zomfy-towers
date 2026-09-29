@@ -285,6 +285,7 @@ export class Combat {
     this.invulnerable = 0.35;
     this.hurtFlash = 0.25;
     g.player.flinch = FLINCH;
+    g.player.setFace('aua'); // schon im Bild des Trefferstopps
     // M26: Die Welt ruckt vom Angreifer weg
     g.feel('autsch', from ? { dx: g.player.position.x - from.x, dz: g.player.position.z - from.z } : {});
     g.hud.damageNumber(g.player.position.x, 1.9, g.player.position.z, Math.round(amount), true);

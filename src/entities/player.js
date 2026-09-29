@@ -290,6 +290,15 @@ export class Player {
     this.syncObject();
   }
 
+  /** Gesicht sofort umstellen (M26: im Trefferstopp steht das Bild still – das Aua muss schon drin sein). */
+  setFace(expr) {
+    const faces = this.character.parts.faces;
+    if (!faces || !faces[expr] || expr === this.faceShown) return;
+    faces[this.faceShown].visible = false;
+    faces[expr].visible = true;
+    this.faceShown = expr;
+  }
+
   animate(dt) {
     const p = this.character.parts;
     this.flashT = Math.max(0, (this.flashT || 0) - dt); // Laternenblitz (M16): Licht über intensity
@@ -326,11 +335,7 @@ export class Player {
       else if (a && (a.kind === 'swing' || a.kind === 'roll' || a.kind === 'wurf' || a.kind === 'wirbel')) expr = 'entschlossen';
       else if (a && a.kind === 'blitz') expr = 'staunen';
       else if (a && a.kind === 'jubel') expr = 'froh';
-      if (expr !== this.faceShown && p.faces[expr]) {
-        p.faces[this.faceShown].visible = false;
-        p.faces[expr].visible = true;
-        this.faceShown = expr;
-      }
+      this.setFace(expr);
     }
     // Blinzeln: alle paar Sekunden für einen Augenblick die Lider zu (nur bei offenen Augen)
     if (p.eyelids) {

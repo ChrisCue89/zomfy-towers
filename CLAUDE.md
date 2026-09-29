@@ -513,7 +513,10 @@ Grundprinzipien:
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
   nach dem Trauma-Modell (`rig.addTrauma`, Faktor `rig.shakeScale` aus der
   Einstellung »Wackeln«) und zittert im Trefferstopp weiter (`rig.tickShake`);
-  die Zeitlupe (`game.slowT`) verkürzt `dt` in `update`. Türme halten nie an.
+  die Zeitlupe (`game.slowT`) verkürzt `dt` in `update` – nur für die Welt;
+  Bericht, Menü, Dialoge und Wahlen laufen mit `realDt` (sonst ging ein frühes E
+  am Morgenbericht verloren). Mikas Gesicht wechselt schon beim Treffer
+  (`player.setFace`), damit das stehende Bild das »Aua« zeigt. Türme halten nie an.
   Bauten federn über `buildings.pop(b)` (danach wieder genau 1, also auf dem
   Pixelraster). Effekte klingen gestreut: `sound.play(name, { rate })` – `rate`
   ist die Tonhöhe als Faktor, `pitch` bei manchen Rezepten der Grundton in Hz;

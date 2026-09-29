@@ -927,8 +927,40 @@ export class Builder {
     const { w, d } = footprint(pl.type, pl.turns);
     const top = g.worldToUi(pl.i, BUILDINGS[pl.type].height || 1.2, pl.j);
     const bottom = g.worldToUi(pl.i + w, 0, pl.j + d);
-    const label = pl.ok ? 0 : LINE_HEIGHT + 10;
-    return { x: top.x - 40, y: top.y - 4, w: bottom.x - top.x + 80, h: bottom.y - top.y + 8 + label };
+    // Der Hinweis unter dem Geist gehört dazu – die Tafel darf ihn nicht verdecken (M26)
+    const note = this.ghostNote(pl);
+    const label = note ? LINE_HEIGHT + 10 : 0;
+    const half = Math.max(40 + (bottom.x - top.x) / 2, note ? measure(note.text) / 2 + 8 : 0);
+    const mid = (top.x + bottom.x) / 2;
+    return { x: mid - half, y: top.y - 4, w: half * 2, h: bottom.y - top.y + 8 + label };
+  }
+
+  /** Der Hinweis unter dem Geist – nach der Bauleiste gezeichnet, damit ihn ihre Tafel nie verdeckt (M26). */
+  drawGhostLabel(ui) {
+    const l = this.ghostLabel;
+    this.ghostLabel = null;
+    if (!l || !this.placement) return;
+    const tw = measure(l.text) + 8;
+    const tx = Math.round(l.x - tw / 2);
+    const ty = Math.round(l.y);
+    ui.rect(tx - 1, ty - 1, tw + 2, LINE_HEIGHT + 5, COLORS.outline);
+    ui.rect(tx, ty, tw, LINE_HEIGHT + 3, COLORS.fill);
+    ui.text(l.text, tx + 4, ty + 1, l.why ? COLORS.buildBad : COLORS.gold);
+  }
+
+  /** Hinweis am Geist: warum er rot ist, oder dass er so nichts nützt. null = nichts zu sagen. */
+  ghostNote(pl) {
+    const { w, d } = footprint(pl.type, pl.turns);
+    const cx = pl.i + w / 2;
+    const cz = pl.j + d / 2;
+    const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
+    if (why) return { text: why, why: true };
+    if (!pl.ok) return null;
+    // Passt, aber nutzlos: Ein Turm, dessen Kreis weder Weg noch Hof erreicht (m12-r1)
+    if (BUILDINGS[pl.type].tower && !this.world.pathing.covers(cx, cz, towerStats(pl.type, 1, null).range)) return { text: T.bauleiste.keineHorde, why: false };
+    // m16-r1: Eine Barrikade, die kein Turm erreicht, hält die Horde nur auf, wo niemand trifft
+    if (pl.type === 'barrikade' && this.world.buildings.towers.length > 0 && !this.towerReaches(cx, cz)) return { text: T.bauleiste.keinTurm, why: false };
+    return null;
   }
 
   /** Steht ein Schlurfer dicht bei Mika? Dann hat Zuschlagen Vorrang vor dem Auswählen. */
@@ -1199,21 +1231,10 @@ export class Builder {
       thick(r, pl.ok ? COLORS.buildOk : COLORS.buildBad);
       // M26: ✓ oder ✗ an der Ecke – nie Farbe allein (Rot-Grün-Schwäche)
       drawIcon(ui.ctx, pl.ok ? 'passt' : 'passtNicht', r.x + r.w - 3, r.y - 9);
-      // Warum rot? Gleich am Geist sagen, nicht erst nach dem Klick (m3-r2)
-      const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
-      // Passt, aber nutzlos: Ein Turm, dessen Kreis weder Weg noch Hof erreicht (m12-r1)
-      const idle = !why && pl.ok && BUILDINGS[pl.type].tower && !this.world.pathing.covers(cx, cz, towerStats(pl.type, 1, null).range);
-      // m16-r1: Eine Barrikade, die kein Turm erreicht, hält die Horde nur auf, wo niemand trifft
-      const alone = !why && !idle && pl.ok && pl.type === 'barrikade' && this.world.buildings.towers.length > 0 && !this.towerReaches(cx, cz);
-      if (why || idle || alone) {
-        const text = why || (idle ? T.bauleiste.keineHorde : T.bauleiste.keinTurm);
-        const tw = measure(text) + 8;
-        const tx = Math.round(r.x + r.w / 2 - tw / 2);
-        const ty = r.y + r.h + 5;
-        ui.rect(tx - 1, ty - 1, tw + 2, LINE_HEIGHT + 5, COLORS.outline);
-        ui.rect(tx, ty, tw, LINE_HEIGHT + 3, COLORS.fill);
-        ui.text(text, tx + 4, ty + 1, why ? COLORS.buildBad : COLORS.gold);
-      }
+      // Warum rot – oder passt, aber nutzlos? Gleich am Geist sagen (m3-r2, m12-r1, m16-r1)
+      // Gezeichnet wird er erst nach der Bauleiste (drawGhostLabel) – so liegt er über ihrer Tafel
+      const note = this.ghostNote(pl);
+      this.ghostLabel = note ? { ...note, x: r.x + r.w / 2, y: r.y + r.h + 5 } : null;
     }
     if (sel) {
       const b = this.world.buildings.bounds(sel);

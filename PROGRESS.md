@@ -38,6 +38,20 @@ Erster Schritt des Plans »Zuflucht sein« (DESIGN.md 8) und des Auftrags
   11 ms (Headless).
 - **Prüfskript:** neuer Abschnitt `wucht` (Bilder: baugeist, einstellungen) mit
   Bildzeiten p50/p95/p99 bei vielen Schlurfern.
+- **Nach der vollen Prüfung nachgebessert:**
+  - Die Zeitlupe bremste auch Morgenbericht, Menüs und Dialoge. Nach dem letzten
+    Schlurfer brauchte das E am Bericht deshalb länger, ein frühes E ging verloren.
+    Jetzt wird nur die Welt langsamer, Oberflächen laufen in echter Zeit.
+  - Mikas »Aua« steht jetzt schon im Bild des Trefferstopps, vorher erst danach.
+  - Die Musik-Probe (offline gerechnet) kannte die Tonhöhen-Streuung nicht und
+    stürzte ab. Die Musik bleibt ungestreut.
+  - Fallen-Prüfung: Die Stachelbretter liegen jetzt gleich hinter der Ölspur.
+    Hinter dem Leimtopf kam in allen Läufen höchstens ein Schlurfer bei ihnen an,
+    das war zu knapp.
+  - Der Hinweis unter dem Baugeist (»Auf dem Weg nur Barrikaden und Fallen«) wurde
+    am Rand von der Bau-Tafel verdeckt. Die Tafel weicht jetzt dem ganzen Hinweis
+    aus, nicht nur dem Geist. Ist überall etwas im Weg, nimmt sie die Stelle mit
+    der kleinsten Überdeckung (neu: links unter dem Ziel-Feld).
 
 ## Recherche und Entscheidungen: Gemeinschaft (29.09.2026) ✓
 

@@ -327,9 +327,14 @@ export class BuildBar {
       { x: Math.min(ui.width - w - 4, Math.max(4, L.x + L.w - w)), y: L.y - 18 - h },
       { x: 4, y: hot.y - 20 - h },
       { x: ui.width - w - 4, y: TIP_TOP },
+      { x: 4, y: TIP_TOP + 24 }, // unter dem Ziel-Feld
     ];
-    const hits = (p) => avoid && avoid.x < p.x + w && avoid.x + avoid.w > p.x && avoid.y < p.y + h && avoid.y + avoid.h > p.y;
-    const { x, y } = spots.find((p) => !hits(p)) || spots[0];
+    // M26: Deckt jede Stelle etwas zu, nimmt die Tafel die mit der kleinsten Überdeckung
+    // (der Hinweis unter dem Geist ist breit und soll lesbar bleiben)
+    const overlap = (p) => (avoid ? Math.max(0, Math.min(avoid.x + avoid.w, p.x + w) - Math.max(avoid.x, p.x)) * Math.max(0, Math.min(avoid.y + avoid.h, p.y + h) - Math.max(avoid.y, p.y)) : 0);
+    let best = spots[0];
+    for (const p of spots) if (overlap(p) < overlap(best)) best = p;
+    const { x, y } = best;
     ui.panel(x, y, w, h);
     let cy = y + 3;
     ui.text(option.name, x + 5, cy, COLORS.gold);
