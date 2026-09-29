@@ -13,13 +13,13 @@ const clone = (b) => ({ l: Float32Array.from(b.l), r: Float32Array.from(b.r) });
 // aus dem Stück selbst (Stufe 2 ist die lauteste), gemessen wird an Stufe 2.
 export const LEVELS = {
   music: {
-    jingle: { win: [0.05, 3.0], lufs: -20.5 },
-    'titel-intro': { win: [T.titel + 0.1, T.titelCut - 0.1], lufs: -21.5 },
+    jingle: { win: [0.05, 3.0], lufs: -22.5 },
+    'titel-intro': { win: [T.titel + 0.1, T.titelCut - 0.1], lufs: -22.5 },
     nacht: { win: [T.nachtStage2, T.nachtEnd - 0.05], lufs: -14.5 },
-    'titel-mid': { win: [T.mid + 0.3, T.midMusicEnd - 0.1], lufs: -19.5 },
+    'titel-mid': { win: [T.mid + 0.3, T.midMusicEnd - 0.1], lufs: -21 },
     boss: { win: [T.boss + 0.1, T.bossEnd - 0.05], lufs: -14.0 },
-    morning: { win: [T.morning + 0.1, T.title - 0.4], lufs: -30 },
-    title: { win: [T.title + 0.1, T.end - 0.6], lufs: -20.5 },
+    morning: { win: [T.morning + 0.1, T.title - 0.4], lufs: -27.5 },
+    title: { win: [T.title + 0.1, T.end - 0.6], lufs: -21.5 },
   },
   // Übergänge: Spitze (dBFS) bzw. Lautheit im Fenster
   trans: {
@@ -34,12 +34,12 @@ export const LEVELS = {
   ],
   // Bett: RMS / Spitze (dBFS)
   bed: {
-    'bed-wind': { kind: 'rms', win: [0, 12], target: -42 },
-    'bed-fire': { kind: 'rms', win: [32, 40], target: -47 },
-    'bed-waves': { kind: 'peak', win: [5.9, 11.5], target: -34 },
-    'bed-animals': { kind: 'peak', win: [4.5, 5.6], target: -28 },
+    'bed-wind': { kind: 'rms', win: [0, 12], target: -40 },
+    'bed-fire': { kind: 'rms', win: [32, 40], target: -44 },
+    'bed-waves': { kind: 'peak', win: [5.9, 11.5], target: -31 },
+    'bed-animals': { kind: 'peak', win: [4.5, 5.6], target: -23 },
   },
-  sfxDb: 0, // Grundverstärkung der Effekt-Ebene (roh → Mix)
+  sfxDb: 5, // Grundverstärkung der Effekt-Ebene (roh → Mix): dichte Kampfszene (~5 Effekte/s) liegt ≈ 8 dB unter der Musik
 };
 
 // Ducken der Musik beim Einschlag: [Zeit, Tiefe dB, Haltezeit s, Erholung s]
@@ -215,7 +215,7 @@ export function softClip(buf, knee = 0.5, asym = 0.9) {
  * Master: Verstärkung → Sättigung → Begrenzer → Ränder. Sucht die Verstärkung, bei der die integrierte Lautheit
  * (nach Begrenzer) den Zielwert trifft. Gibt die fertige Mischung und die Verstärkung zurück.
  */
-export function master(pre, { targetLufs = -16, ceilingDb = -1.3, knee = 0.55, asym = 0.93, edge = 0.02, iterations = 5 } = {}) {
+export function master(pre, { targetLufs = -16, ceilingDb = -1.6, knee = 0.55, asym = 0.93, edge = 0.02, iterations = 5 } = {}) {
   const fi = fadeIn(0, edge);
   const fo = fadeOut(DURATION - edge, DURATION);
   const edgeFade = (t) => fi(t) * fo(t);

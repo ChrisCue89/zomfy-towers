@@ -5,16 +5,16 @@ import { Rec } from '../lib.mjs';
 import { prepare, placeTowers } from './b-common.mjs';
 
 const NAME = process.env.ZT_NAME || 'barrikade';
-const FRAMES = Number(process.env.ZT_FRAMES || 90);
-const COL = -15; // Spalte der Barrikaden (Weg dort: j −1 … 3)
+const FRAMES = Number(process.env.ZT_FRAMES || 75);
+const COL = -13; // Spalte der Barrikaden (Weg dort: j −1 … 3)
 
 const rec = await Rec.open({ ui: 'world' });
 await prepare(rec, { day: 6, hour: 21, minute: 0 });
 const towers = await placeTowers(rec, [
-  { type: 'katapult', i: -13, j: -2, level: 3, spec: 'A', xp: 200 },
-  { type: 'laternenturm', i: -16, j: -2, level: 3, spec: 'A' },
-  { type: 'bolzen', i: -14, j: 4, level: 2, xp: 520 },
-  { type: 'sprenger', i: -17, j: 4, level: 3, spec: 'B', xp: 160 },
+  { type: 'bolzen', i: -11, j: -2, level: 3, spec: 'B', xp: 520 },
+  { type: 'katapult', i: -9, j: -2, level: 3, spec: 'A', xp: 200 },
+  { type: 'laternenturm', i: -11, j: 4, level: 3, spec: 'A' },
+  { type: 'bolzen', i: -9, j: 4, level: 2, xp: 200 },
 ]);
 console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
 const bar = await rec.eval((COL) => {
@@ -30,14 +30,14 @@ const bar = await rec.eval((COL) => {
   }
   // Zubehör: eine Laterne und Dornen an der mittleren Barrikade
   if (typeof ids[2] === 'number') { Z.addGear(ids[2], 'laterne'); Z.addGear(ids[2], 'dornen'); }
-  Z.teleport(-12.5, 5.8, 0);
+  Z.teleport(-13.2, 6.2, 0);
   const b = window.__b;
   // Trupp aus dem Wald: Schlurfer und Flitzer, ein Brummer vorn im Pulk
   const rows = [0.5, 1.5, 2.5];
   // der Brummer vorn, dahinter ein dichter Trupp (die Türme dünnen ihn aus, während der Brummer schlägt)
-  b.zombie('brummer', -19.2, 1.5, { hp: 4 });
+  b.zombie('brummer', -17.4, 1.5, { hp: 4 });
   for (let k = 0; k < 14; k++) {
-    const x = -21.4 - Math.floor(k / 3) * 1.5 - (k % 3) * 0.3;
+    const x = -19.4 - Math.floor(k / 3) * 1.5 - (k % 3) * 0.3;
     b.zombie(k % 5 === 4 ? 'flitzer' : 'schlurfer', x, rows[k % 3] + (k % 2) * 0.3, { hp: 3, speed: 1.1 });
   }
   return ids;
@@ -55,9 +55,9 @@ await rec.sim(0.5);
 console.log('vorlauf s', waited);
 const r = await rec.clip(NAME, {
   frames: FRAMES,
-  cam: { keys: [[0, -16.5, 1.5], [FRAMES - 1, -15.5, 1.5]] },
+  cam: { keys: [[0, -14.6, 1.5], [FRAMES - 1, -13.6, 1.5]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Barrikaden (Stufe 2, Laterne und Dornen in der Mitte) quer über den letzten Wegabschnitt. Der Trupp mit Brummer schlägt sie ein (Holzsplitter), Katapult (Feuer), Bolzen-Repetierer, Sprenger (Schlamm) und Laternenturm treffen von den Seiten.',
+  description: 'Nacht, Barrikaden (Stufe 2, Laterne und Dornen in der Mitte) quer über den letzten Wegabschnitt. Der Trupp mit Brummer schlägt sie ein (Holzsplitter), Katapult (Feuer), Bolzen und Laternenturm stehen dahinter.',
 });
 console.log(r.problems);
 const end = await rec.eval(() => window.zomfy.buildings().filter((b) => b.type === 'barrikade').length);

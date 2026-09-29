@@ -26,12 +26,57 @@ const seed = (n) => {
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 
-// --- Umgebung -------------------------------------------------------------------------------
-
-// Reproduzierbarkeit: Das Spiel hängt verklungene Töne über `onended` ab (spart im Live-Betrieb Rechenzeit). Im Offline-Kontext
-// läuft dieses Ereignis asynchron zum Rechenthread – ein Wettlauf, der die Samples (im Bereich der Rundung) von Lauf zu Lauf
-// ändert. Die Handler werden hier ausgeschaltet; verklungene Töne stehen bei ~0 im Graphen und kosten nichts.
+// --- Reproduzierbarkeit ------------------------------------------------------------------------------
+//
+// 1. Das Spiel hängt verklungene Töne über `onended` ab (spart im Live-Betrieb Rechenzeit). Im Offline-Kontext läuft dieses
+//    Ereignis asynchron zum Rechenthread – ein Wettlauf, der die Samples von Lauf zu Lauf ändert. Die Handler werden ausgeschaltet;
+//    verklungene Töne stehen bei ~0 im Graphen und kosten nichts.
 Object.defineProperty(AudioScheduledSourceNode.prototype, 'onended', { configurable: true, get: () => null, set() {} });
+
+// 2. Chromium addiert die Eingänge eines Knotens in der Reihenfolge einer Hash-Menge (Zeigeradressen) – bei drei oder mehr
+//    Quellen an einem Knoten (Bus, Filter, Ausgang) ändert sich die Rundung von Lauf zu Lauf um ~1e−8. Zwei Summanden sind
+//    dagegen vertauschbar und exakt. Deshalb werden connect()-Aufrufe gesammelt und vor dem Rechnen als Binärbaum aus
+//    Zwei-Eingang-Addierern (GainNode, Verstärkung 1) aufgebaut: Summierreihenfolge = Aufrufreihenfolge im Code, jeder Eingang ≤ 2.
+const rawConnect = AudioNode.prototype.connect;
+const pendingByCtx = new Map(); // Kontext → Map(Ziel → [{src, out}])
+AudioNode.prototype.connect = function (dest, out = 0, inp = 0) {
+  if (!(dest instanceof AudioNode)) return rawConnect.call(this, dest, out); // AudioParam: ein Modulator je Parameter
+  if (inp !== 0) throw new Error('connect: Eingang ≠ 0 nicht unterstützt');
+  let map = pendingByCtx.get(this.context);
+  if (!map) pendingByCtx.set(this.context, (map = new Map()));
+  let list = map.get(dest);
+  if (!list) map.set(dest, (list = []));
+  if (!list.some((e) => e.src === this && e.out === out)) list.push({ src: this, out });
+  return dest;
+};
+function buildAdderTrees(ctx) {
+  const map = pendingByCtx.get(ctx);
+  if (!map) return;
+  pendingByCtx.delete(ctx);
+  for (const [dest, list] of map) {
+    let level = list;
+    while (level.length > 2) {
+      const next = [];
+      for (let i = 0; i < level.length; i += 2) {
+        if (i + 1 >= level.length) {
+          next.push(level[i]);
+          continue;
+        }
+        const add = ctx.createGain();
+        rawConnect.call(level[i].src, add, level[i].out);
+        rawConnect.call(level[i + 1].src, add, level[i + 1].out);
+        next.push({ src: add, out: 0 });
+      }
+      level = next;
+    }
+    for (const e of level) rawConnect.call(e.src, dest, e.out);
+  }
+}
+const rawStart = OfflineAudioContext.prototype.startRendering;
+OfflineAudioContext.prototype.startRendering = function () {
+  buildAdderTrees(this);
+  return rawStart.call(this);
+};
 
 /** Ein Sound-Objekt ohne Lautsprecher (wie renderMusic), mit Bussen für Effekte und Umgebung. */
 function makeSound(ctx, dest = ctx.destination) {
@@ -56,10 +101,10 @@ function makeSound(ctx, dest = ctx.destination) {
   return s;
 }
 
-function env(seconds, seedNo) {
+function env(seconds, seedNo, sfxTo = null) {
   seed(seedNo);
   const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SR), SR);
-  const s = makeSound(ctx);
+  const s = makeSound(ctx, sfxTo ? sfxTo(ctx) : ctx.destination);
   const m = new Music(s, ctx.destination);
   return { ctx, s, m };
 }
@@ -232,7 +277,7 @@ async function reverseCymbal(ctx, dest, endAt, len, level, pan) {
 /** Tiefes Grollen: Sinus-Drohne unter 80 Hz (D1, A1, D2) mit Schwebung und langsam schwellendem Rauschen. */
 function drone(ctx, s, t0, t1, level, dest) {
   const g = ctx.createGain();
-  g.gain.setValueAtTime(0.04 * level, t0);
+  g.gain.setValueAtTime(0.12 * level, t0);
   g.gain.exponentialRampToValueAtTime(level, t1 - 0.02);
   g.gain.setTargetAtTime(0.0001, t1, 0.05);
   g.connect(dest);
@@ -361,11 +406,9 @@ tasks['trans-cymbal'] = async () => {
 
 /** Herzschlag (Rezept `herzschlag` des Spiels) + ein Hauch Körper, damit man ihn auch auf kleinen Lautsprechern hört. */
 tasks['trans-heart'] = async () => {
-  const { ctx, s, m } = env(DURATION, 214);
-  const bus = gain(ctx, 1, ctx.destination);
+  let bus;
+  const { ctx, s, m } = env(DURATION, 214, (c) => (bus = gain(c, 1, c.destination)));
   bus.connect(gain(ctx, 0.2, m.verb));
-  s.sfxBus.disconnect();
-  s.sfxBus.connect(bus);
   const beat = (t, v, dub = true) => {
     clock(ctx, t - 0.005);
     s.voices = 0;
