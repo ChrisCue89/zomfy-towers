@@ -13,7 +13,7 @@ await prepare(rec, { day: 6, hour: 21, minute: 0 });
 const towers = await placeTowers(rec, [
   { type: 'bolzen', i: -11, j: -2, level: 3, spec: 'B', xp: 520 },
   { type: 'katapult', i: -9, j: -2, level: 3, spec: 'A', xp: 200 },
-  { type: 'laternenturm', i: -11, j: 4, level: 3, spec: 'A' },
+  { type: 'katapult', i: -11, j: 4, level: 2, xp: 200 },
   { type: 'bolzen', i: -9, j: 4, level: 2, xp: 200 },
 ]);
 console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
@@ -28,9 +28,9 @@ const bar = await rec.eval((COL) => {
       ids.push(b.id);
     } else ids.push(r);
   }
-  // Zubehör: eine Laterne und Dornen an der mittleren Barrikade
-  if (typeof ids[2] === 'number') { Z.addGear(ids[2], 'laterne'); Z.addGear(ids[2], 'dornen'); }
-  Z.teleport(-13.2, 6.2, 0);
+  // Zubehör: Dornen an der mittleren Barrikade (wer draufschlägt, verletzt sich)
+  if (typeof ids[2] === 'number') Z.addGear(ids[2], 'dornen');
+  Z.teleport(-11.6, 5.9, 0);
   const b = window.__b;
   // Trupp aus dem Wald: Schlurfer und Flitzer, ein Brummer vorn im Pulk
   const rows = [0.5, 1.5, 2.5];
@@ -43,21 +43,23 @@ const bar = await rec.eval((COL) => {
   return ids;
 }, COL);
 console.log('barrikaden', JSON.stringify(bar));
-// Vorlauf: bis die ersten schlagen, dann noch einen Moment (Splitter fliegen schon im ersten Bild)
+// Vorlauf: bis der Brummer die erste Barrikade fast durchgeschlagen hat – dann bricht sie im Clip
 let waited = 0;
-for (let t = 0; t < 120; t++) {
-  await rec.sim(0.25);
-  waited += 0.25;
-  const st = await rec.eval(() => window.zomfy.zombies().filter((z) => z.state === 'smash').length);
-  if (st >= 1) break;
+for (let t = 0; t < 400; t++) {
+  await rec.sim(0.1);
+  waited += 0.1;
+  const st = await rec.eval(() => {
+    const l = window.zomfy.game.world.buildings.list.filter((b) => b.type === 'barrikade');
+    return { min: Math.min(...l.filter((b) => !b.broken).map((b) => b.hp)), broken: l.filter((b) => b.broken).length };
+  });
+  if (st.broken > 0 || st.min <= 14) break;
 }
-await rec.sim(0.5);
-console.log('vorlauf s', waited);
+console.log('vorlauf s', waited.toFixed(1));
 const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, -14.6, 1.5], [FRAMES - 1, -13.6, 1.5]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht, Barrikaden (Stufe 2, Laterne und Dornen in der Mitte) quer über den letzten Wegabschnitt. Der Trupp mit Brummer schlägt sie ein (Holzsplitter), Katapult (Feuer), Bolzen und Laternenturm stehen dahinter.',
+  description: 'Nacht, Barrikaden (Stufe 2, Dornen in der Mitte) quer über den letzten Wegabschnitt. Der Trupp mit Brummer schlägt sie ein (Holzsplitter), Katapulte (Feuer) und Bolzenwerfer stehen dahinter; eine Barrikade bricht kurz nach Bild 0.',
 });
 console.log(r.problems);
 const end = await rec.eval(() => window.zomfy.buildings().filter((b) => b.type === 'barrikade').length);
