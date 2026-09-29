@@ -12,6 +12,7 @@ import { WEAPONS, weaponStats } from '../data/weapons.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
 import { BUILDINGS, SOUP, BENCH, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
+import { FEEL } from '../data/feel.js';
 
 const REGEN_RATE = 4;
 const ROLL = { duration: 0.3, speed: 7, cooldown: 0.75, invulnerable: 0.34 };
@@ -181,15 +182,19 @@ export class Combat {
     })) factor *= perkValue(st, 'turmfreund');
     if (g.benchBuff > g.clock) factor *= BENCH.damage; // M24: frisch verschnauft (Sitzbank)
     const targets = found.slice(0, w.targets);
+    // M26: Wucht gestaffelt (data/feel.js) – schwer (Kombo, Pfanne), Abschuss, gewöhnlich
+    const heavy = comboHit || Boolean(w.stun);
+    let killedAny = false;
     for (const { z } of targets) {
-      g.sound.play('treffer', { x: z.x, z: z.z });
+      g.sound.play('treffer', { x: z.x, z: z.z, rate: heavy ? 0.88 : undefined });
       const killed = g.horde.damage(z, w.damage * factor, { pierce: Boolean(w.pierce), push: w.push * (comboHit ? 1.6 : 1), fromX: p.x, fromZ: p.z, source: 'spieler' });
+      if (killed) killedAny = true;
       if (w.stun && !killed) g.horde.stun(z, w.stun);
-      g.effects.splat(z.x, 0.8, z.z, 'moos', comboHit ? 12 : 6, comboHit ? 1.1 : 0.7);
+      g.effects.splat(z.x, 0.8, z.z, 'moos', heavy ? FEEL.schlagSchwer.bits : FEEL.schlag.bits, heavy ? 1.1 : 0.7);
     }
     this.lifesteal(targets.length);
-    g.hitstop = comboHit || w.stun ? 0.08 : 0.05;
-    g.rig.shake = comboHit || w.stun ? 0.18 : 0.12;
+    const first = targets[0].z;
+    g.feel(heavy ? 'schlagSchwer' : killedAny ? 'abschuss' : 'schlag', { dx: first.x - p.x, dz: first.z - p.z });
   }
 
   /** Zähe Natur (Perk): Ein Schlag heilt – das erste Ziel voll, jedes weitere nur ein wenig (m16-r1). */
@@ -235,13 +240,10 @@ export class Combat {
       g.sound.play('treffer', { x: z.x, z: z.z });
       const killed = g.horde.damage(z, damage, { push: w.push + S.push, fromX: p.x, fromZ: p.z, source: 'spieler' });
       if (w.stun && !killed) g.horde.stun(z, w.stun);
-      g.effects.splat(z.x, 0.8, z.z, 'moos', 8, 0.9);
+      g.effects.splat(z.x, 0.8, z.z, 'moos', FEEL.wirbel.bits, 0.9);
     }
     this.lifesteal(hits);
-    if (hits) {
-      g.hitstop = 0.07;
-      g.rig.shake = 0.16;
-    }
+    if (hits) g.feel('wirbel'); // M26
   }
 
   /** Kann Mika gerade ausweichen? */
@@ -283,7 +285,8 @@ export class Combat {
     this.invulnerable = 0.35;
     this.hurtFlash = 0.25;
     g.player.flinch = FLINCH;
-    g.rig.shake = 0.15;
+    // M26: Die Welt ruckt vom Angreifer weg
+    g.feel('autsch', from ? { dx: g.player.position.x - from.x, dz: g.player.position.z - from.z } : {});
     g.hud.damageNumber(g.player.position.x, 1.9, g.player.position.z, Math.round(amount), true);
     // Rückstoß weg vom Angreifer
     if (from) {

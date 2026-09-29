@@ -1560,7 +1560,23 @@ Feinschliff in M27 und M29):
 | Bruno | Koch | stärkere Suppe | brummiger Kartenrivale |
 | Ida | Kartografin | zeichnet Quellen und Fundstücke in die Karte | verwandte Seele: hat auch ihr Zuhause verloren |
 
-#### M26 – Wucht und Schliff
+#### M26 – Wucht und Schliff ✓
+
+*Umgesetzt (29.09.2026):* Eine **Rückmeldungs-Tabelle** (`src/data/feel.js`)
+stuft vierzehn Ereignisse nach Wucht – vom gewöhnlichen Schlag (50 ms
+Trefferstopp, ein Pixel Stoß in Schlagrichtung) über Pfanne und Kombo (100 ms)
+bis zum fallenden Moderherz (220 ms, volles Wackeln, 0,6 s Zeitlupe). Die Kamera
+**wackelt nach dem Trauma-Modell** in ganzen Pixeln ohne Drehung, klingt ab und
+zittert auch im Trefferstopp weiter; Barrikaden wackeln nur in Mikas Nähe, Türme
+halten das Spiel nie an. Der **letzte Schlurfer der Nacht** und jeder **Boss**
+fallen in Zeitlupe. Getroffene Schlurfer **zittern** einen Pixel. Bauten **setzen
+gestaucht auf und federn nach**, jeder Ausbau klingt eine Stufe höher. Jeder
+Effekt klingt **gestreut** (±5 % Tonhöhe, ±1,5 dB), Musikalisches und Oberfläche
+bleiben gleich. Der **Baugeist** zeigt ✓ oder ✗ an der Ecke. Neue Einstellungen
+**Wackeln** (aus/halb/voll) und **Blitze** (voll/sanft). Alle **Shader** werden
+beim Start übersetzt, das **Abstandhalten der Horde** läuft über ein Raster (in
+einer späten Nacht mit 563 Schlurfern 0,6 statt 5,8 ms je Schritt), das
+Prüfskript misst p95/p99 der Bildzeiten.
 
 *Ziel:* Jeder Schlag, jeder Treffer und jeder Bau fühlt sich an; das Spiel
 läuft auch in dichten Nächten gleichmäßig. Das ist der erste Schritt zum

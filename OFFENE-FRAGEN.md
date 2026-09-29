@@ -1922,6 +1922,23 @@ Steam-Rezensionen nennt Trefferstopp, stimmigen Klang und Kameraführung als die
 stärksten Treiber des Wucht-Gefühls, und die großen Pixelspiele (HD-2D, Sea of
 Stars, Eastward) leben vom Licht.
 
+### 177. Wucht ohne Unruhe: Wann hält das Spiel an, wann wackelt es? (M26)
+**Entscheidung:** Der **Trefferstopp** gehört Mikas eigenen Schlägen (50–120 ms nach
+Wucht), Mikas Schmerz (nur 40 ms, weil es oft passiert) und den großen Momenten
+(ein Boss fällt 150 ms, das Herz 220 ms). Türme halten das Spiel nie an – ihre
+Treffer lassen nur den getroffenen Schlurfer weiß aufblitzen und einen Pixel
+zittern. **Wackeln** ist ein Stoß, kein Dauerzustand: Es addiert sich bis zum
+Maximum, klingt in unter einer Sekunde ab und wird mit der Entfernung zu Mika
+schwächer; eine brechende Barrikade wackelt nur, wenn Mika höchstens 10 m entfernt
+ist. Im Trefferstopp zittert das stehende Bild weiter. **Zeitlupe** (×0,3) nur für
+den letzten Schlurfer der Nacht, einen fallenden Boss und das Herz. Wackeln und
+Blitze lassen sich abschalten bzw. abschwächen.
+**Warum:** Wucht entsteht aus Trefferstopp, Klang und Kamera (die Steam-Auswertung
+in `recherche/premium-pixel.md`), aber ein Tower-Defense zeigt Hunderte Treffer je
+Minute: Würde jeder Turmtreffer anhalten oder wackeln, wäre die Nacht ein
+Dauerbeben, und das Feld wäre nicht mehr lesbar. Deshalb spürt man nur, was Mika
+selbst tut oder was die Nacht entscheidet.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

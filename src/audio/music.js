@@ -675,6 +675,7 @@ export async function renderMusic(SoundClass, id, seconds, { threat = 0, sampleR
   s.ctx = ctx;
   s.counting = false;
   s.voices = 0;
+  s.pitchMul = 1; // M26: die Streuung der Effekte gilt nie für die Musik
   s.noiseBuffer = ctx.createBuffer(1, sampleRate * 2, sampleRate);
   const nd = s.noiseBuffer.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;

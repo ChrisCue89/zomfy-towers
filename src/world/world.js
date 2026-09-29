@@ -434,12 +434,13 @@ export class World {
       const flash = player.flashT > 0; // Laternenblitz (M16): flammt auch am Tag und ohne Laterne in der Hand auf
       const lit = (player.holdingLantern && player.lanternLit) || flash;
       this.lanternLight.on = lit;
-      this.lanternLight.boost = flash ? 1 + 5 * (player.flashT / FLASH_TIME) : 1;
+      this.lanternLight.boost = flash ? 1 + (this.flashLevel ?? 5) * (player.flashT / FLASH_TIME) : 1; // M26: Einstellung »Blitze«
       if (player.holdingLantern || flash) this.lanternLight.light.position.copy(player.lanternPosition());
     }
     this.lights.update(dt, dn.lampLevel);
     this.lightPools.update(dn.lampLevel);
     this.resources.update(dt);
+    this.buildings.update(dt); // M26: Bauen mit Schwung
     this.water.update(dt, focus);
 
     // Flammen: zufällig zwischen Einzelbildern wechseln

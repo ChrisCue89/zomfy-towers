@@ -118,7 +118,7 @@ gilt bis auf Weiteres:
   `pixel.uiToScene` um). Pixelgrößen in der Szene (Partikel, Durchsicht-Loch)
   mit `pxPerMeter / 40` skalieren.
 - Kamera: orthografisch, **Gier immer 0** (Blick nach Norden, −Z), Neigung
-  sin = 0,6 / cos = 0,8.
+  sin = 0,6 / cos = 0,8. Wackeln (M26) nur in ganzen Pixeln, nie gedreht.
 - **Voxelgrößen (M13g, doppelt fein):** 1/32 m = 2,5 px (`size: FINE32` aus
   `src/world/voxelKit.js`, `unit` an den Teilen) für Mika samt Laterne und
   Werkzeug, Überlebende, Balduin und sein Boot, Knopf, Krähen, Horde, Türme,
@@ -195,8 +195,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       (Balduin: Fahrplan aus der Uhrzeit, Einfahrt mit
                       Leine, Stand am Steg, Gesten, Handel über das
                       Werkbank-Fenster),
-                      settings (Lautstärke, Pixelgröße, Textgeschwindigkeit –
-                      eigener Speicherplatz, nicht im Spielstand)
+                      settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
+                      Wackeln, Blitze – eigener Speicherplatz, nicht im
+                      Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
                       Umgebung; erst nach der ersten Eingabe), music
                       (Soundtrack: Stücke als Noten-Daten, Instrumente,
@@ -279,6 +280,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
                       Reihenfolge der Schlurferkunde, Turmalbum, M25),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
+                      feel (Rückmeldung je Ereignis: Trefferstopp, Wackeln,
+                      Zeitlupe, Federn der Bauten, Klangstreuung, M26),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
                       survivors (Ankunft, Plätze, Funkturm, Tausch, Aufträge),
                       trader (Balduins Fahrplan, Angebote, Vorrat je Tag),
@@ -505,6 +508,17 @@ Grundprinzipien:
   Bauten mit `deco`). Der Turm der Nacht bekommt einen Strich (`b.best`,
   `towerRanks.crown`). Das Pausenmenü zeigt das Buch (`menu.bookData`, Seiten
   `taten`/`kunde`/`album`, A/D blättern). Werte in `data/book.js`.
+- **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
+  { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
+  aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
+  nach dem Trauma-Modell (`rig.addTrauma`, Faktor `rig.shakeScale` aus der
+  Einstellung »Wackeln«) und zittert im Trefferstopp weiter (`rig.tickShake`);
+  die Zeitlupe (`game.slowT`) verkürzt `dt` in `update`. Türme halten nie an.
+  Bauten federn über `buildings.pop(b)` (danach wieder genau 1, also auf dem
+  Pixelraster). Effekte klingen gestreut: `sound.play(name, { rate })` – `rate`
+  ist die Tonhöhe als Faktor, `pitch` bei manchen Rezepten der Grundton in Hz;
+  was in `SOUND_FIXED` steht, klingt immer gleich. Der Laternenblitz richtet
+  sich nach »Blitze« (`world.flashLevel`).
 - **Drinnen ist ein eigenes Bild (M11, `interior.js`):** Der Innenraum liegt in
   derselben Szene bei x ≈ 300 (östlich der Karte); `world.isInside` erkennt ihn,
   `game.applyView` stellt die Kamera um (160 px/m, Grenzen des Raums), sobald
@@ -527,6 +541,13 @@ Grundprinzipien:
   Sichtfeld der Kamera plus 2,5 m Rand, M25c). Instanzen einer Art kennen kein
   Culling – vorher lief in späten Nächten jeder Schlurfer der Karte durch die
   Grafikkarte (25,6 Mio. Dreiecke bei 563 Schlurfern, jetzt 3,5 Mio.).
+- **Abstandhalten der Horde über ein Raster** (`horde.separate`, M26): Zellen
+  von 0,9 m in einem umlaufenden Gitter aus typisierten Feldern, Große
+  (Anführer, Bosse) prüfen gegen alle – in einer späten Nacht mit 563
+  Schlurfern 0,6 statt 5,8 ms je Schritt.
+- **Shader beim Start vorübersetzt** (`game.precompile`, M26): mit
+  KHR_parallel_shader_compile über `compileAsync`, sonst nach dem ersten Bild
+  mit `compile` – ohne die Erweiterung schriebe `compileAsync` eine Warnung.
 - Keine Allokationen pro Bild in heißen Pfaden (Vektoren wiederverwenden).
 
 ## Prüfablauf (nach jeder Änderung am Spielcode, vor jedem Commit)
@@ -717,7 +738,15 @@ Grundprinzipien:
    Mausklick), das Herbstbuch mit echten Tasten (Esc, S, E; D/A blättern:
    Taten, Schlurferkunde mit Dr. Yusufs Notiz, Turmalbum mit dem Turm der
    Nacht), Speichern v20, Migration v19 → v20 mit leise eingetragenen Taten
-   (Bilder: sterne, herbstbuch, schlurferkunde, schmuck).
+   (Bilder: sterne, herbstbuch, schlurferkunde, schmuck); ab M26 (Abschnitt
+   `wucht`): die Rückmeldungs-Tabelle ist gestaffelt, die Shader sind
+   vorübersetzt, ein echter Klick trifft mit Trefferstopp und Stoß, ein großer
+   Moment wackelt in ganzen Pixeln und klingt ab (»aus« hält still, »halb«
+   halbiert, gespeichert), im Trefferstopp zittert das Bild, danach Zeitlupe, ein
+   Turm setzt gestaucht auf und steht danach genau, 80 Schlurfer auf einem Fleck
+   laufen über das Raster auseinander, Treffer klingen gestreut, »Blitze: sanft«,
+   Baugeist auf dem Weg mit ✗, Einstellungen mit Wackeln und Blitze, Bildzeiten
+   p50/p95/p99 mit vielen Schlurfern (Bilder: baugeist, einstellungen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -825,7 +854,11 @@ M25 zeigt `autumn()` Frost, Modus, Abspann, das Herz (Leben, Phase) und wie oft
 es gerufen hat, `spawnHeart(x, z)` lässt das Moderherz erscheinen; ab M25,
 Teil 2 zeigt `book()` Sterne je Nacht, Taten, Herbstschmuck, erledigte Arten,
 gerufene Wellen und das Turmalbum, `bookCheck()` trägt gelungene Taten sofort
-ein.
+ein; ab M26 zeigt `feel()` Trauma, Stoß, Versatz, Trefferstopp, Zeitlupe, die
+letzten Rückmeldungen, ob die Shader vorübersetzt sind und die zuletzt gestreute
+Klangfarbe, `feelEvent(ereignis, o)` löst eine Rückmeldung aus, `buildScale(id)`
+zeigt das Federn eines Baus, `perfSample(schritte, jedesNte)` misst Bildzeiten
+(p50/p95/p99 von Simulation und Zeichnen).
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

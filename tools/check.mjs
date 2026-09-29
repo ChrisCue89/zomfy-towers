@@ -207,6 +207,8 @@ async function runBrowserChecks() {
     if (want('finale')) await runFinaleChecks(browser, url);
     // --- 6u. M25, Teil 2: Herbstbuch (Sterne, Taten, Schmuck, Schlurferkunde, Turmalbum) -----
     if (want('buch')) await runBookChecks(browser, url);
+    // --- 6v. M26: Wucht und Schliff (Trefferstopp, Wackeln, Federn, Raster, Klang, Bildzeiten) ---
+    if (want('wucht')) await runFeelChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -6411,4 +6413,279 @@ if (!args.has('--syntax')) {
     process.exit(1);
   }
   console.log('Prüfung bestanden.');
+}
+
+/**
+ * M26: Wucht und Schliff – die Rückmeldungs-Tabelle ist gestaffelt, ein echter
+ * Schlag stoppt kurz und stößt die Kamera, große Momente wackeln in ganzen
+ * Pixeln und klingen ab, »Wackeln: aus« hält still, im Trefferstopp zittert das
+ * Bild weiter, die Zeitlupe bremst die Welt; Bauten federn beim Aufsetzen und
+ * stehen danach wieder genau; die Horde hält über das Raster Abstand; Treffer
+ * klingen nie gleich; die Shader sind vorübersetzt; Bildzeiten mit vielen
+ * Schlurfern (p95/p99). Bilder: einstellungen, baugeist.
+ */
+async function runFeelChecks(browser, url) {
+  const { FEEL, SHAKE_LEVELS } = await import('../src/data/feel.js');
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Wucht und Schliff (M26)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-m26')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-m26', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+
+  // 1) Die Tabelle: jedes Ereignis mit gültigen Werten, nach Wucht gestaffelt
+  const events = Object.entries(FEEL);
+  const valid = events.every(([, f]) => (f.stop ?? 0) >= 0 && (f.stop ?? 0) <= 0.3 && (f.trauma ?? 0) >= 0 && (f.trauma ?? 0) <= 1 && (f.slow ?? 0) <= 1);
+  const graded = FEEL.schlag.stop < FEEL.schlagSchwer.stop && FEEL.schlagSchwer.stop < FEEL.herzFaellt.stop && FEEL.schlag.trauma < FEEL.schlagSchwer.trauma && FEEL.schlagSchwer.trauma < FEEL.bossSchlag.trauma && FEEL.bossSchlag.trauma < FEEL.durchbruch.trauma && FEEL.durchbruch.trauma <= FEEL.herzFaellt.trauma;
+  if (valid && graded && SHAKE_LEVELS.aus === 0) note(`✓ Wucht: Rückmeldungs-Tabelle mit ${events.length} Ereignissen, gestaffelt (Stopp ${FEEL.schlag.stop * 1000}/${FEEL.schlagSchwer.stop * 1000}/${FEEL.herzFaellt.stop * 1000} ms)`);
+  else fail(`Wucht: Tabelle ungültig oder nicht gestaffelt (${JSON.stringify(FEEL)})`);
+
+  // 2) Vorübersetzte Shader
+  const pre = await page
+    .waitForFunction(() => window.zomfy.feel().precompiled, null, { timeout: 90000 })
+    .then(() => z(() => window.zomfy.feel().precompileMs))
+    .catch(() => null);
+  if (pre !== null) note(`✓ Wucht: alle Shader beim Start vorübersetzt (${pre} ms)`);
+  else fail('Wucht: Shader nicht vorübersetzt');
+
+  // 3) Ein echter Schlag: Klick auf einen Schlurfer – Trefferstopp, Stoß, Rückmeldung
+  await z(() => {
+    window.__zomfyHold = true;
+    const Z = window.zomfy;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'werkbankGebaut']) Z.setFlag(f);
+    Z.quietChoices();
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setTime(10, 0);
+    Z.give({ holz: 200, stein: 100, schrott: 400, fasern: 20, zahnraeder: 10 });
+    Z.teleport(0.5, 2.5, 0);
+  });
+  await step(300);
+  await z(() => window.zomfy.spawnZombie('brummer', 0.5, 3.7));
+  const t = await z(() => window.zomfy.screenOf(0.5, 0, 3.7));
+  await page.mouse.move(t.x, t.y);
+  await step(34);
+  await page.mouse.down();
+  await step(34);
+  await page.mouse.up();
+  let hit = null;
+  for (let k = 0; k < 20 && !hit; k++) {
+    await step(34);
+    const f = await z(() => window.zomfy.feel());
+    if (f.log.some((e) => e === 'schlag' || e === 'abschuss' || e === 'schlagSchwer')) hit = f;
+  }
+  if (hit && hit.trauma > 0) note(`✓ Wucht: echter Klick trifft – Rückmeldung »${hit.log[hit.log.length - 1]}«, Trauma ${hit.trauma}, Stoß ${hit.kick.join('/')}`);
+  else fail(`Wucht: Schlag ohne Rückmeldung (${JSON.stringify(hit)})`);
+  await z(() => window.zomfy.killAllZombies());
+  await step(1500);
+
+  // 4) Großes Wackeln in ganzen Pixeln, klingt ab; »aus« hält still; »halb« halbiert
+  const wobble = async (level) => {
+    return z((lv) => {
+      const Z = window.zomfy;
+      Z.game.applySettings({ shake: lv });
+      window.__zomfyStep(1500);
+      Z.feelEvent('durchbruch');
+      const offs = [];
+      for (let k = 0; k < 45; k++) {
+        window.__zomfyStep(34);
+        offs.push(Z.feel().offset);
+      }
+      const max = Math.max(...offs.map(([x, y]) => Math.max(Math.abs(x), Math.abs(y))));
+      const whole = offs.every(([x, y]) => Number.isInteger(x) && Number.isInteger(y));
+      const end = offs[offs.length - 1];
+      return { max, whole, end: end.join(','), scale: Z.feel().shakeScale };
+    }, level);
+  };
+  const voll = await wobble('voll');
+  const aus = await wobble('aus');
+  const halb = await wobble('halb');
+  await z(() => window.zomfy.game.applySettings({ shake: 'voll' }));
+  if (voll.max >= 3 && voll.max <= 12 && voll.whole && voll.end === '0,0') note(`✓ Wucht: Tor fällt – Wackeln bis ${voll.max} px in ganzen Pixeln, danach steht das Bild`);
+  else fail(`Wucht: Wackeln ${JSON.stringify(voll)}`);
+  if (aus.max === 0 && halb.scale === 0.5) note('✓ Wucht: Einstellung »Wackeln: aus« hält das Bild still, »halb« halbiert');
+  else fail(`Wucht: Wackeln aus ${JSON.stringify(aus)}, halb ${JSON.stringify(halb)}`);
+  const saved = await z(() => JSON.parse(localStorage.getItem('zomfy-towers.einstellungen') || '{}').shake);
+  if (saved === 'voll') note('✓ Wucht: Wackeln steht in den Einstellungen (eigener Speicherplatz)');
+  else fail(`Wucht: Einstellung Wackeln gespeichert als ${saved}`);
+
+  // 5) Trefferstopp mit Zittern, dann Zeitlupe (das Herz fällt)
+  const finale = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    window.__zomfyStep(1500);
+    Z.feelEvent('herzFaellt');
+    const offs = new Set();
+    let frozen = 0;
+    for (let k = 0; k < 6; k++) {
+      window.__zomfyStep(34);
+      const f = Z.feel();
+      if (f.hitstop > 0) {
+        frozen++;
+        offs.add(f.offset.join(','));
+      }
+    }
+    while (g.hitstop > 0) window.__zomfyStep(34);
+    const h0 = g.horde.time;
+    window.__zomfyStep(10 * 34);
+    const slowRate = (g.horde.time - h0) / (10 / 30);
+    window.__zomfyStep(1500);
+    const h1 = g.horde.time;
+    window.__zomfyStep(10 * 34);
+    const normalRate = (g.horde.time - h1) / (10 / 30);
+    return { frozen, offsets: offs.size, slowRate: +slowRate.toFixed(2), normalRate: +normalRate.toFixed(2) };
+  });
+  if (finale.frozen >= 4 && finale.offsets >= 2 && finale.slowRate < 0.5 && finale.normalRate > 0.9) note(`✓ Wucht: Das Herz fällt – ${finale.frozen} Bilder Trefferstopp mit Zittern, danach Zeitlupe (×${finale.slowRate})`);
+  else fail(`Wucht: Trefferstopp/Zeitlupe ${JSON.stringify(finale)}`);
+
+  // 6) Bauen mit Schwung: gestaucht, federt über, steht danach genau
+  const pop = await z(() => {
+    const Z = window.zomfy;
+    for (const i of [-12, -14, -10, -16]) {
+      const col = Z.pathColumn(i);
+      if (!col.length) continue;
+      const j = Math.min(...col) - 1;
+      if (Z.build('bolzen', i, j) !== 'ok') continue;
+      const b = Z.buildings().find((q) => q.type === 'bolzen' && q.i === i && q.j === j);
+      const s0 = Z.buildScale(b.id);
+      window.__zomfyStep(100);
+      const s1 = Z.buildScale(b.id);
+      window.__zomfyStep(700);
+      const s2 = Z.buildScale(b.id);
+      return { s0, s1, s2 };
+    }
+    return null;
+  });
+  if (pop && pop.s0.y < 0.9 && pop.s1.y > 1.02 && pop.s2.y === 1 && pop.s2.x === 1 && !pop.s2.popping) note(`✓ Wucht: Ein Turm setzt gestaucht auf (${pop.s0.y}), federt über (${pop.s1.y}) und steht dann genau`);
+  else fail(`Wucht: Bauen mit Schwung ${JSON.stringify(pop)}`);
+
+  // 7) Abstandhalten über das Raster: 80 auf einem Fleck laufen auseinander
+  const sep = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    Z.setHorde(true);
+    const col = Z.pathColumn(-20);
+    const zc = col[Math.floor(col.length / 2)] + 0.5;
+    for (let k = 0; k < 80; k++) {
+      const id = Z.spawnZombie(k % 10 === 0 ? 'brummer' : 'schlurfer', -20.5 + (k % 3) * 0.01, zc + (k % 5) * 0.01);
+      const q = g.horde.list.find((o) => o.id === id);
+      q.stunT = 999;
+    }
+    const t0 = performance.now();
+    for (let k = 0; k < 90; k++) g.horde.separate(1 / 30);
+    const ms = (performance.now() - t0) / 90;
+    const L = g.horde.list.filter((o) => o.state !== 'dying');
+    let worst = 1;
+    for (let a = 0; a < L.length; a++) {
+      for (let b = a + 1; b < L.length; b++) {
+        const d = Math.hypot(L[a].x - L[b].x, L[a].z - L[b].z);
+        worst = Math.min(worst, d / ((L[a].def.radius + L[b].def.radius) * 0.9));
+      }
+    }
+    g.horde.clear();
+    Z.setHorde(false);
+    return { n: L.length, worst: +worst.toFixed(2), ms: +ms.toFixed(3) };
+  });
+  if (sep.n === 80 && sep.worst >= 0.8) note(`✓ Wucht: Abstandhalten über das Raster – 80 Schlurfer auf einem Fleck laufen auseinander (enger als 80 % keiner, ${sep.ms} ms je Schritt)`);
+  else fail(`Wucht: Abstandhalten ${JSON.stringify(sep)}`);
+
+  // 8) Klang: kein Treffer wie der vorige (echte Taste weckt den Klang)
+  await page.keyboard.press('ArrowLeft');
+  await step(100);
+  const rates = [];
+  for (let k = 0; k < 6; k++) {
+    rates.push(await z(() => {
+      window.zomfy.game.sound.play('treffer');
+      return window.zomfy.feel().sound?.rate ?? null;
+    }));
+    await page.waitForTimeout(60);
+  }
+  const klick = await z(() => {
+    window.zomfy.game.sound.play('klick');
+    return window.zomfy.feel().sound?.rate ?? null;
+  });
+  const distinct = new Set(rates.map((r) => r?.toFixed(4))).size;
+  if (rates.every((r) => r !== null && r >= 0.95 && r <= 1.05) && distinct >= 4 && klick === 1) note(`✓ Wucht: Treffer klingen gestreut (${rates.map((r) => r.toFixed(3)).join(', ')}), der Klick immer gleich`);
+  else fail(`Wucht: Klangstreuung ${JSON.stringify({ rates, klick })}`);
+
+  // 9) Blitze sanft: der Laternenblitz flammt schwächer auf
+  const blitz = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const boost = () => {
+      g.player.flashT = 0.2;
+      window.__zomfyStep(34);
+      return g.world.lanternLight.boost;
+    };
+    const voll = boost();
+    g.applySettings({ flashes: 'sanft' });
+    const sanft = boost();
+    g.applySettings({ flashes: 'voll' });
+    return { voll: +voll.toFixed(2), sanft: +sanft.toFixed(2) };
+  });
+  if (blitz.sanft > 1 && blitz.sanft - 1 < (blitz.voll - 1) / 2) note(`✓ Wucht: »Blitze: sanft« – der Laternenblitz flammt schwächer auf (${blitz.sanft} statt ${blitz.voll})`);
+  else fail(`Wucht: Blitze ${JSON.stringify(blitz)}`);
+
+  // 10) Bilder: Baugeist mit ✗ auf dem Weg (echte Taste, Maus), Einstellungen
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(-13, 2, 0);
+  });
+  await step(600);
+  await page.keyboard.press('KeyQ');
+  await step(200);
+  const weg = await z(() => {
+    const Z = window.zomfy;
+    const col = Z.pathColumn(-13);
+    return Z.screenOf(-12.5, 0, col[Math.floor(col.length / 2)] + 0.5);
+  });
+  await page.mouse.move(weg.x, weg.y);
+  await step(200);
+  const rot = await z(() => ({ ok: window.zomfy.game.builder.placement?.ok, reason: window.zomfy.game.builder.placement?.reason }));
+  await page.screenshot({ path: join(SHOTS, 'baugeist.png') });
+  note('  Screenshot: screenshots/baugeist.png');
+  if (rot.ok === false && rot.reason === 'aufWeg') note('✓ Wucht: Baugeist auf dem Weg zeigt ✗ und den Grund');
+  else fail(`Wucht: Baugeist auf dem Weg ${JSON.stringify(rot)}`);
+  await page.keyboard.press('Escape');
+  await step(100);
+  await page.keyboard.press('Escape');
+  await step(100);
+  await z(() => window.zomfy.game.menu.go('settings'));
+  await step(100);
+  const rows = await z(() => window.zomfy.game.menu.buttons().map((b) => b.label));
+  await page.screenshot({ path: join(SHOTS, 'einstellungen.png') });
+  note('  Screenshot: screenshots/einstellungen.png');
+  if (rows.some((r) => r.startsWith('Wackeln')) && rows.some((r) => r.startsWith('Blitze'))) note('✓ Wucht: Einstellungen zeigen Wackeln und Blitze');
+  else fail(`Wucht: Einstellungen ${JSON.stringify(rows)}`);
+  await page.keyboard.press('Escape');
+  await step(100);
+
+  // 11) Bildzeiten mit vielen Schlurfern (Headless mit Software-WebGL: nur grobe Anhaltspunkte)
+  const perf = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    Z.setHorde(true);
+    Z.setTime(21, 0);
+    for (const e of ['nord', 'mitte', 'sued']) {
+      Z.spawnAtEntry('schlurfer', e, 70);
+      Z.spawnAtEntry('flitzer', e, 20);
+    }
+    window.__zomfyStep(3000);
+    const s = Z.perfSample(90, 3);
+    g.horde.clear();
+    Z.setHorde(false);
+    return s;
+  });
+  note(`  Bildzeiten mit ${perf.alive} Schlurfern: Simulation p50 ${perf.sim.p50} / p95 ${perf.sim.p95} / p99 ${perf.sim.p99} ms, Zeichnen p50 ${perf.draw.p50} / p95 ${perf.draw.p95} ms (Software-WebGL)`);
+  if (perf.alive >= 100 && perf.sim.p99 < 60) note('✓ Wucht: Simulation bleibt auch mit vielen Schlurfern unter 60 ms (p99)');
+  else fail(`Wucht: Bildzeiten ${JSON.stringify(perf)}`);
+
+  checkMessages(session);
+  await session.context.close();
 }

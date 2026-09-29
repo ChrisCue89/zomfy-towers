@@ -1,4 +1,5 @@
-// Einstellungen (Meilenstein 7): Lautstärke, Pixelgröße, Textgeschwindigkeit.
+// Einstellungen (Meilenstein 7): Lautstärke, Pixelgröße, Textgeschwindigkeit;
+// seit M26 auch Wackeln und Blitze (Zugänglichkeit).
 // Sie gehören nicht zum Spielstand – eigener Schlüssel im Browser, damit ein
 // neues Spiel sie nicht zurücksetzt.
 
@@ -11,6 +12,10 @@ const KEY = 'zomfy-towers.einstellungen';
 export const PIXEL_SIZES = { klein: -1, mittel: 0, gross: 1 };
 /** Ansicht draußen (M13): weit = 80 px/m (Standard, Größe wie immer), nah = 160 px/m wie drinnen. */
 export const VIEWS = ['nah', 'weit'];
+/** Kamerawackeln (M26): aus, halb, voll – Faktoren in `data/feel.js`. */
+export const SHAKES = ['aus', 'halb', 'voll'];
+/** Blitze (M26): voll oder sanft (der Laternenblitz flammt schwächer auf). */
+export const FLASHES = ['voll', 'sanft'];
 /** Zeichen pro Sekunde beim Tippen der Dialoge (0 = sofort). */
 export const TEXT_SPEEDS = { langsam: 36, normal: 72, schnell: 140, sofort: 0 };
 
@@ -21,6 +26,8 @@ export const DEFAULT_SETTINGS = {
   pixel: 'mittel',
   text: 'normal',
   view: 'weit',
+  shake: 'voll',
+  flashes: 'voll',
 };
 
 export function loadSettings() {
@@ -33,6 +40,8 @@ export function loadSettings() {
       if (data.pixel in PIXEL_SIZES) out.pixel = data.pixel;
       if (data.text in TEXT_SPEEDS) out.text = data.text;
       if (VIEWS.includes(data.view)) out.view = data.view;
+      if (SHAKES.includes(data.shake)) out.shake = data.shake;
+      if (FLASHES.includes(data.flashes)) out.flashes = data.flashes;
     }
   } catch {
     // kaputt oder gesperrt: Standardwerte

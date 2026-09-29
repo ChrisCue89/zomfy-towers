@@ -7,13 +7,19 @@
 
 import * as THREE from 'three';
 import { damp } from '../core/math.js';
+import { SHAKE } from '../data/feel.js';
 
-const JITTER = [
-  [1, 0],
-  [0, -1],
-  [-1, 0],
-  [0, 1],
-];
+/** Glattes Rauschen in [−1, 1] (Wertrauschen mit weicher Überblendung) – fürs Wackeln. */
+function noise1(t, seed) {
+  const i = Math.floor(t);
+  const f = t - i;
+  const h = (n) => {
+    const x = Math.sin((n + seed * 57.13) * 127.1) * 43758.5453;
+    return (x - Math.floor(x)) * 2 - 1;
+  };
+  const u = f * f * (3 - 2 * f);
+  return h(i) * (1 - u) + h(i + 1) * u;
+}
 
 export class CameraRig {
   constructor(renderConfig, cameraConfig) {
@@ -36,8 +42,50 @@ export class CameraRig {
     this._up = new THREE.Vector3(0, this.cos, -this.sin);
     this._ideal = new THREE.Vector3();
     this._projected = new THREE.Vector3();
-    this.shake = 0; // Sekunden Wackeln (Treffer), ganze Pixel
-    this._shakeTick = 0;
+    // Wackeln nach dem Trauma-Modell (M26): Stöße addieren sich, der Ausschlag
+    // wächst mit dem Quadrat und klingt linear ab; dazu ein gerichteter Stoß.
+    this.trauma = 0;
+    this.kick = new THREE.Vector2(); // Pixel, klingt schnell ab
+    this.shakeTime = 0;
+    this.shakeScale = 1; // Einstellung »Wackeln« (aus/halb/voll)
+    this.shakeOffset = new THREE.Vector2(); // zuletzt benutzter Versatz (ganze Pixel)
+  }
+
+  /**
+   * Die Kamera bekommt einen Stoß.
+   * @param {number} amount Trauma (0..1), addiert sich bis 1
+   * @param {number} [dx] Richtung in der Welt (x), in die die Welt rucken soll
+   * @param {number} [dz] Richtung in der Welt (z)
+   * @param {number} [kick] Pixel des gerichteten Stoßes
+   */
+  addTrauma(amount, dx = 0, dz = 0, kick = 0) {
+    this.trauma = Math.min(1, this.trauma + amount);
+    const len = Math.hypot(dx, dz);
+    if (kick > 0 && len > 1e-6) {
+      // Die Welt ruckt in Schlagrichtung: Die Kamera geht dafür ein Stück dagegen.
+      // Nach Norden (−z) ist im Bild oben.
+      this.kick.x -= (dx / len) * kick;
+      this.kick.y += (dz / len) * kick;
+    }
+  }
+
+  /** Wackeln fortschreiben – auch im Trefferstopp, dann zittert das stehende Bild. */
+  tickShake(dt) {
+    this.trauma = Math.max(0, this.trauma - SHAKE.decay * dt);
+    this.shakeTime += dt;
+    const k = Math.exp(-SHAKE.kickDecay * dt);
+    this.kick.multiplyScalar(k);
+    if (Math.abs(this.kick.x) < 0.05) this.kick.x = 0;
+    if (Math.abs(this.kick.y) < 0.05) this.kick.y = 0;
+  }
+
+  /** Versatz in ganzen Pixeln (nie gedrehte Pixel, nie halbe). */
+  shakePixels() {
+    const s = this.shakeScale;
+    if (s <= 0 || (this.trauma <= 0 && this.kick.x === 0 && this.kick.y === 0)) return this.shakeOffset.set(0, 0);
+    const amp = SHAKE.maxPx * this.trauma * this.trauma * s;
+    const t = this.shakeTime * SHAKE.freq;
+    return this.shakeOffset.set(Math.round(noise1(t, 1) * amp + this.kick.x * s), Math.round(noise1(t, 2) * amp + this.kick.y * s));
   }
 
   setViewport(rtWidth, rtHeight) {
@@ -96,7 +144,7 @@ export class CameraRig {
     const tz = target.z + (this.cfg.focusOffsetZ || 0) + (velocity ? velocity.z * ahead * 0.25 : 0);
     this.focus.x = damp(this.focus.x, tx, sharpness, dt);
     this.focus.z = damp(this.focus.z, tz, sharpness, dt);
-    this.shake = Math.max(0, this.shake - dt);
+    this.tickShake(dt);
     this.applyBounds();
     this.place();
   }
@@ -112,8 +160,8 @@ export class CameraRig {
     const sx = Math.round(cx / px) * px;
     const sy = Math.round(cy / px) * px;
     this.residual.set((cx - sx) / px, (cy - sy) / px);
-    // Wackeln: ein ganzer Pixel reihum, nach dem Rest – sonst glättet es sich weg
-    const [jx, jy] = this.shake > 0 ? JITTER[this._shakeTick++ % JITTER.length] : [0, 0];
+    // Wackeln (M26): ganze Pixel, nach dem Rest – sonst glättet es sich weg
+    const { x: jx, y: jy } = this.shakePixels();
     cam.position.copy(ideal);
     cam.position.x += sx - cx + jx * px;
     cam.position.addScaledVector(this._up, sy - cy + jy * px);

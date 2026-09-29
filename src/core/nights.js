@@ -340,6 +340,7 @@ export class Nights {
       g.hud.toast(T.horde.geschafft(night.n), 'haus', 5);
       g.hud.showBanner(T.horde.geschafftKurz);
       g.sound.play('morgen');
+      g.feel?.('letzterSchlurfer'); // M26: der letzte fällt in Zeitlupe
       g.survivors?.onNightEnd(); // Bert flickt die Türme
       g.offerBlueprint?.('nacht'); // M19: nach jeder gewonnenen Nacht ein Bauplan zur Wahl
     } else {

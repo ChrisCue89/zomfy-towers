@@ -73,6 +73,7 @@ import { BUILDINGS, HOUSE_LEVELS, TOWER_LOSS_FLOOR, SOUP, BENCH, barricadeLevel,
 import { towerInvested, towerStatsOf, TOWER_PARTS, PART_RARITIES, TINKER_COUNT, partsOfRarity, hasPart } from '../data/towers.js';
 import { CHAMPION, CHEST_RARITY, CHEST_LOOT } from '../data/champions.js';
 import { LURE } from '../data/risk.js';
+import { FEEL, SHAKE, SHAKE_LEVELS, FLASH_LEVELS, SLOWMO } from '../data/feel.js';
 import { BOSS_ATTACKS, SPLIT } from '../data/bosses.js';
 import { BAG_RARITY } from '../data/trader.js';
 import { GOALS } from '../data/goals.js';
@@ -147,6 +148,8 @@ export class Game {
     this.sleep = null;
     this.goal = null; // { id, text }
     this.hitstop = 0; // Trefferstopp: Simulation hält kurz an
+    this.slowT = 0; // Zeitlupe (M26): so viele Sekunden läuft die Welt langsamer
+    this.feelLog = []; // M26: die letzten Rückmeldungen (für die Prüfung)
     this.benchReady = 0; // ab wann die Bank wieder heilt (this.clock)
     this.benchBuff = 0; // bis wann Mika frisch verschnauft kräftiger zuschlägt (M24)
     this.treeHintUntil = 0; // Absage am Waldbaum nicht bei jedem Tastendruck
@@ -204,6 +207,8 @@ export class Game {
     this.rig = new CameraRig(CONFIG.render, CONFIG.camera);
     this.rig.bounds = LAYOUT.cameraBounds;
     this.rig.limits = TERRAIN_AREA;
+    this.rig.shakeScale = SHAKE_LEVELS[this.settings.shake] ?? 1; // M26: Einstellung »Wackeln«
+    this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll; // M26: Einstellung »Blitze«
     this.viewInside = null; // drinnen: eigenes Bild im doppelten Maßstab (M11); null = noch nicht gesetzt
     this.passage = null; // gerade durch die Haustür unterwegs
     this.ride = null; // gerade auf der Reifenschaukel
@@ -295,6 +300,7 @@ export class Game {
       {
         onShot: (kind, x, z) => this.sound.play(kind, { x, z, volume: kind === 'sprenger' ? 0.6 : 1 }),
         onImpact: (x, z, name = 'platsch') => this.sound.play(name, { x, z }), // M20: das Feuerwerk knallt
+        onThrowBurst: (x, z) => this.feel('kuerbis', { x, z }), // M26
         // M19: Glockenschlag (Ring am Boden, Friedensglocke grün-golden), Windstoß, Schwarm
         onBell: (t, o, range, healed) => {
           this.bellStats.rings++;
@@ -391,8 +397,37 @@ export class Game {
     }
 
     this.setFavicon();
+    this.precompile();
     if (CONFIG.test || CONFIG.debug) this.exposeTestApi();
     if (CONFIG.test || CONFIG.debug || CONFIG.playtest) window.zomfyView = () => this.observe();
+  }
+
+  /**
+   * M26: Alle Shader gleich beim Start übersetzen – auch die der Horde, der
+   * Geschosse und des Innenraums, die erst später ins Bild kommen. Sonst hakt
+   * genau das Bild, in dem der erste Schlurfer auftaucht.
+   */
+  precompile() {
+    this.precompiled = false;
+    const r = this.pixel.renderer;
+    const t0 = performance.now();
+    const done = () => {
+      this.precompiled = true;
+      this.precompileMs = Math.round(performance.now() - t0);
+    };
+    // Mit KHR_parallel_shader_compile übersetzt der Treiber im Hintergrund. Ohne die
+    // Erweiterung würde compileAsync eine Warnung schreiben – dann nach dem ersten
+    // Bild auf einen Schlag (während das Startbild noch steht).
+    if (r.extensions.has('KHR_parallel_shader_compile')) {
+      r.compileAsync(this.scene, this.rig.camera).then(done).catch(() => {});
+    } else {
+      requestAnimationFrame(() =>
+        setTimeout(() => {
+          r.compile(this.scene, this.rig.camera);
+          done();
+        }, 0)
+      );
+    }
   }
 
   start() {
@@ -1412,7 +1447,7 @@ export class Game {
       }
       if (nearMika) this.combat.hurt(a.bite, z);
       this.effects.dust(z.x, z.z, a.radius, 24);
-      this.rig.shake = Math.max(this.rig.shake || 0, 0.3);
+      this.feel('bossSchlag', { x: z.x, z: z.z });
       if (kind === 'wurzeln') this.effects.splat(z.x, 0.4, z.z, 'moos', 26, a.radius * 0.8); // M25: Wurzeln brechen aus dem Boden
       this.sound.play(kind === 'hieb' ? 'abriss' : 'knall', { x: z.x, z: z.z });
       if (kind === 'hieb') this.hud.popWord(z.x, 2.6 * z.def.scale, z.z, T.bosse.sturm, hexToCss(P.r4));
@@ -1477,6 +1512,7 @@ export class Game {
     }
     this.hud.showBanner(T.bosse.faellt(B.titel));
     this.sound.play('jubel');
+    this.feel('bossFaellt', { x: z.x, z: z.z }); // M26
   }
 
   /**
@@ -1723,7 +1759,10 @@ export class Game {
     this.effects.dust(c.x, c.z, def.camp ? 2.2 : 1.2, def.camp ? 40 : 22);
     this.sound.play('abriss', { x: c.x, z: c.z });
     if (def.camp) this.onCampBreach(b);
-    else this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
+    else {
+      this.hud.toast(T.horde.barrikadeWeg, 'barrikade', 2.4);
+      this.feelBarricade(b); // M26
+    }
     if (this.nights.active) this.state.night.broken = (this.state.night.broken || 0) + 1;
   }
 
@@ -1839,13 +1878,42 @@ export class Game {
     if (this.viewInside) this.hud.say(T.horde.drinnenHaemmern, 3);
   }
 
+  /**
+   * Rückmeldung eines Ereignisses (M26, Werte in `data/feel.js`): Trefferstopp,
+   * Kamerastoß (gerichtet, wenn der Schlag eine Richtung hat) und Zeitlupe. Was
+   * weit weg von Mika geschieht, wackelt schwächer.
+   * @param {string} event Schlüssel in FEEL
+   * @param {{dx?:number, dz?:number, x?:number, z?:number}} [o] Schlagrichtung und Ort
+   */
+  feel(event, o = {}) {
+    const f = FEEL[event];
+    if (!f) return;
+    let k = 1;
+    if (o.x !== undefined && !f.stop) {
+      const d = Math.hypot(o.x - this.player.position.x, o.z - this.player.position.z);
+      k = Math.max(0.35, Math.min(1, 1.25 - d / 24));
+    }
+    if (f.stop) this.hitstop = Math.max(this.hitstop, f.stop);
+    if (f.trauma) this.rig.addTrauma(f.trauma * k, o.dx || 0, o.dz || 0, f.kick || 0);
+    if (f.slow) this.slowT = Math.max(this.slowT, f.slow);
+    this.feelLog.push({ event, t: +this.clock.toFixed(2) });
+    if (this.feelLog.length > 24) this.feelLog.shift();
+  }
+
+  /** Eine Barrikade bricht (M26): Wackeln nur, wenn Mika in der Nähe ist. */
+  feelBarricade(b) {
+    const c = this.world.buildings.bounds(b);
+    if (Math.hypot(c.x - this.player.position.x, c.z - this.player.position.z) <= SHAKE.barricadeNear) this.feel('barrikade', { x: c.x, z: c.z });
+  }
+
   /** Durchbruch (M17): Tor oder Wall gefallen – die Horde kommt ins Lager, jetzt kämpft Mika. */
   onCampBreach(b) {
     const gate = BUILDINGS[b.type].camp === 'tor';
     this.hud.showBanner(gate ? T.lager.torGefallen : T.lager.wallGefallen);
     this.hud.toast(T.lager.durchbruch, 'warnung', 5);
     this.sound.play('zuhause', { volume: 1 });
-    this.rig.shake = Math.max(this.rig.shake || 0, 0.25);
+    const c = this.world.buildings.bounds(b);
+    this.feel('durchbruch', { x: c.x, z: c.z });
     if (this.nights.active) {
       const night = this.state.night;
       night.breach = night.breach || { at: Math.round(this.state.time.minute), gate };
@@ -2211,10 +2279,17 @@ export class Game {
     if (input.pressed('debug')) this.showDebug = !this.showDebug;
     this.frozenFrame = this.hitstop > 0;
     if (this.frozenFrame) {
-      // Trefferstopp: ein, zwei Bilder lang steht alles still
+      // Trefferstopp: ein, zwei Bilder lang steht alles still – nur die Kamera zittert weiter (M26)
       this.hitstop -= dt;
+      this.rig.tickShake(dt);
+      this.rig.place();
       this.hud.update(dt);
       return;
+    }
+    // Zeitlupe (M26): der letzte Schlurfer der Nacht, das fallende Herz
+    if (this.slowT > 0) {
+      this.slowT -= dt;
+      dt *= SLOWMO.scale;
     }
     if (this.intro.t < this.intro.duration) {
       this.intro.t += dt;
@@ -2665,6 +2740,8 @@ export class Game {
     }
     this.sound.setVolumes(volumesOf(this.settings));
     this.dialog.speed = TEXT_SPEEDS[this.settings.text];
+    this.rig.shakeScale = SHAKE_LEVELS[this.settings.shake] ?? 1; // M26
+    this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll;
     const shift = PIXEL_SIZES[this.settings.pixel];
     if (this.pixel.scaleShift !== shift) {
       this.pixel.scaleShift = shift;
@@ -3185,6 +3262,51 @@ export class Game {
       // M25, Teil 2: Herbstbuch – Sterne, Taten, Schmuck, Arten, Turmalbum; Taten jetzt prüfen
       book: () => game.book.view(),
       bookCheck: () => game.book.check(),
+      // M26: Wucht und Schliff
+      /** Kamera, Trefferstopp, Zeitlupe, letzte Rückmeldungen, Einstellungen, vorübersetzte Shader. */
+      feel: () => ({
+        trauma: +game.rig.trauma.toFixed(3),
+        kick: [+game.rig.kick.x.toFixed(2), +game.rig.kick.y.toFixed(2)],
+        offset: [game.rig.shakeOffset.x, game.rig.shakeOffset.y],
+        shakeScale: game.rig.shakeScale,
+        hitstop: +Math.max(0, game.hitstop).toFixed(3),
+        slow: +Math.max(0, game.slowT).toFixed(3),
+        log: game.feelLog.map((f) => f.event),
+        precompiled: Boolean(game.precompiled),
+        precompileMs: game.precompileMs ?? null,
+        flashLevel: game.world.flashLevel,
+        sound: game.sound.lastVary,
+      }),
+      feelEvent: (event, o) => game.feel(event, o),
+      /** Wie weit ein Bau gerade gestaucht ist (M26: Bauen mit Schwung). */
+      buildScale: (id) => {
+        const b = game.world.buildings.get(id);
+        return b?.object ? { x: +b.object.scale.x.toFixed(3), y: +b.object.scale.y.toFixed(3), popping: game.world.buildings.popping.includes(b) } : null;
+      },
+      /**
+       * Bildzeiten (M26): `steps` Schritte à 1/30 s einzeln stoppen, dazu jedes
+       * `drawEvery`-te Bild zeichnen – Perzentile in Millisekunden.
+       */
+      perfSample(steps = 120, drawEvery = 1) {
+        const sim = [];
+        const draw = [];
+        for (let k = 0; k < steps; k++) {
+          const t0 = performance.now();
+          game.step(1 / 30);
+          const t1 = performance.now();
+          sim.push(t1 - t0);
+          if (k % drawEvery === 0) {
+            game.render();
+            draw.push(performance.now() - t1);
+          }
+        }
+        const pct = (list, q) => {
+          const a = [...list].sort((x, y) => x - y);
+          return +a[Math.min(a.length - 1, Math.floor(q * a.length))].toFixed(2);
+        };
+        const stats = (list) => ({ p50: pct(list, 0.5), p95: pct(list, 0.95), p99: pct(list, 0.99), max: +Math.max(...list).toFixed(2) });
+        return { alive: game.horde.alive, sim: stats(sim), draw: draw.length ? stats(draw) : null };
+      },
       /** Das Moderherz erscheinen lassen (wie aus dem Plan: Banner, erste Phase). */
       spawnHeart(x, z) {
         const zo = game.horde.spawn('moderherz', { x, z, hpFactor: game.nights.plan?.hpFactor || 1 });

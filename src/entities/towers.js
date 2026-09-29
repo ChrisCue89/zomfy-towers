@@ -958,6 +958,7 @@ export class TowerSystem {
     }
     if (frosty) this.splinter(p, frosty);
     if (muddy) this.sticky(p, muddy);
+    if (p.source === 'wurf') this.cb.onThrowBurst?.(p.x, p.z); // M26: Mikas eigener Kürbis wackelt
     const look = p.mud ? 'schlamm' : p.firework ? 'feuerwerk' : p.burn ? 'feuer' : 'kuerbis';
     this.effects.splat(p.x, p.firework ? 0.9 : 0.3, p.z, look, p.kind === 'mini' ? 8 : p.firework ? 22 : 16, p.kind === 'mini' ? 0.7 : p.firework ? 1.4 : 1);
     if (p.firework) this.effects.splat(p.x, 1.2, p.z, 'licht', 6, 1);

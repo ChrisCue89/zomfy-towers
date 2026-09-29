@@ -25,6 +25,8 @@ import { canAfford, pay, gain, progressToward, missing } from './inventory.js';
 import { BuildPreview } from '../world/buildPreview.js';
 import { COLORS } from '../ui/ui.js';
 import { measure, LINE_HEIGHT } from '../ui/font.js';
+import { POP, UPGRADE_PITCH } from '../data/feel.js';
+import { drawIcon } from '../ui/icons.js';
 
 /** Bauleisten-Optionen, die beim ersten Bezahlbar-Werden eine Meldung bekommen. */
 const ANNOUNCE = new Set(['werkbank', 'huette', 'bolzen', 'specA', 'specB']);
@@ -130,6 +132,7 @@ export class Builder {
     if (b.broken || !gearFits(b.type, id) || b.gear.includes(id) || b.gear.length >= gearSlots(b)) return;
     if (!pay(this.game.state.inventory, GEAR[id].cost)) return;
     bs.addGearTo(b, id);
+    bs.pop(b, POP.squash * 0.6); // M26
     this.game.state.world.buildings = bs.toState();
     const c = bs.bounds(b);
     this.game.effects.splat(c.x, 0.9, c.z, 'funken', 10, 0.7);
@@ -537,9 +540,10 @@ export class Builder {
     const fresh = !st.recipes[id];
     if (fresh) st.recipes[id] = st.time.day;
     const c0 = bs.bounds(m);
+    bs.pop(m, POP.upgrade); // M26
     g.effects.dust(c0.x, c0.z, 1.4, 22);
     g.effects.splat(c0.x, 1.4, c0.z, 'licht', 18, 1.2);
-    g.sound.play('aufwertung');
+    g.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * 3 });
     if (fresh) {
       g.hud.showBanner(T.misch.neu(T.misch[id][0]));
       g.hud.toast(T.werkstattbuch.neu(T.misch[id][0]), 'buch', 4);
@@ -632,8 +636,9 @@ export class Builder {
     const t = TOWERS[b.type];
     const cost = level <= 2 ? t.base[level - 1].cost : t.specs[spec].levels[level - 3].cost;
     if (!pay(this.game.state.inventory, cost)) return;
-    this.game.sound.play('aufwertung');
+    this.game.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * (level - 2) }); // M26: jede Stufe klingt höher
     this.world.buildings.upgrade(b, level, spec);
+    this.world.buildings.pop(b, POP.upgrade);
     this.game.state.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
     this.game.effects.dust(c.x, c.z, 1.2);
@@ -649,6 +654,7 @@ export class Builder {
     st.towerParts[id] -= 1;
     b.parts = [...(b.parts || []), id];
     this.world.buildings.attachObject(b);
+    this.world.buildings.pop(b, POP.squash * 0.6); // M26
     st.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
     this.game.sound.play('aufwertung');
@@ -661,8 +667,9 @@ export class Builder {
   upgradeCamp(b) {
     const cost = campUpgradeCost(b);
     if (!cost || b.broken || this.waveRunning() || !pay(this.game.state.inventory, cost)) return;
-    this.game.sound.play('aufwertung');
+    this.game.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * (b.level - 1) });
     this.world.buildings.upgradeCamp(b);
+    this.world.buildings.pop(b, POP.upgrade); // M26
     this.game.state.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
     this.game.effects.dust(c.x, c.z, 1.6, 30);
@@ -675,8 +682,9 @@ export class Builder {
   upgradeBarricade(b) {
     const next = BARRICADE_LEVELS[b.level + 1];
     if (!next || !pay(this.game.state.inventory, next.cost)) return;
-    this.game.sound.play('aufwertung');
+    this.game.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * (b.level - 1) });
     this.world.buildings.upgradeBarricade(b);
+    this.world.buildings.pop(b, POP.upgrade); // M26
     this.game.state.world.buildings = this.world.buildings.toState();
     const c = this.world.buildings.bounds(b);
     this.game.effects.dust(c.x, c.z, 1.1);
@@ -767,6 +775,7 @@ export class Builder {
       // Wiederaufbau: ganz oder gar nicht
       if (!pay(this.game.state.inventory, cost)) return;
       this.world.buildings.rebuildBarricade(b);
+      this.world.buildings.pop(b); // M26
       this.game.state.world.buildings = this.world.buildings.toState();
       if (def.raid) this.world.refreshInteractions(); // wieder benutzbar (M17d)
       const c = this.world.buildings.bounds(b);
@@ -1025,6 +1034,7 @@ export class Builder {
     const state = this.game.state;
     if (!pay(state.inventory, pl.cost)) return;
     const b = this.world.buildings.place(pl.type, pl.i, pl.j, pl.turns);
+    this.world.buildings.pop(b); // M26: aufsetzen und nachfedern
     this.game.sound.play('bau');
     this.game.player.express('froh', 1.2); // geschafft (M12)
     if (BUILDINGS[pl.type].harvest) b.day = state.time.day; // frisch gesät: erst morgen erntereif
@@ -1187,6 +1197,8 @@ export class Builder {
       if (BUILDINGS[pl.type].tower) ring(cx, cz, towerStats(pl.type, 1, null).range, COLORS.gold);
       const r = box(pl.i, pl.j, w, d);
       thick(r, pl.ok ? COLORS.buildOk : COLORS.buildBad);
+      // M26: ✓ oder ✗ an der Ecke – nie Farbe allein (Rot-Grün-Schwäche)
+      drawIcon(ui.ctx, pl.ok ? 'passt' : 'passtNicht', r.x + r.w - 3, r.y - 9);
       // Warum rot? Gleich am Geist sagen, nicht erst nach dem Klick (m3-r2)
       const why = !pl.ok && ((pl.reason === 'belegt' && pl.why && T.bauleiste.grundBelegt[pl.why]) || T.bauleiste.grund[pl.reason]);
       // Passt, aber nutzlos: Ein Turm, dessen Kreis weder Weg noch Hof erreicht (m12-r1)

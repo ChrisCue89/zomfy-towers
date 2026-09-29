@@ -11,6 +11,7 @@
 //             Boot kommt (M9.1)
 
 import { Music } from './music.js';
+import { SOUND_VARY, SOUND_FIXED } from '../data/feel.js';
 
 const VOICES = 32; // höchstens so viele Effekte gleichzeitig
 const HEAR = 16; // Meter: weiter weg hört man nichts mehr
@@ -38,6 +39,7 @@ const FANFARE = {
 };
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const FIXED = new Set(SOUND_FIXED); // M26: Musikalisches und Oberfläche klingen immer gleich
 
 /**
  * Effekte als kleine Rezepte: (s, t, v, out) – s ist der Klang-Baukasten,
@@ -246,6 +248,8 @@ export class Sound {
     this.nextCrow = 14; // Krähen am Tag (M12)
     this.music = null; // der Soundtrack (M10d), entsteht mit dem AudioContext
     this.jingles = 0; // wie oft die Spieluhr des Startbilds lief (für die Prüfung, N2)
+    this.pitchMul = 1; // M26: Tonhöhe des gerade gespielten Effekts (Streuung)
+    this.lastVary = null; // M26: zuletzt gestreut (für die Prüfung)
   }
 
   get ready() {
@@ -357,6 +361,8 @@ export class Sound {
 
   tone(type, freq, t, dur, { freqEnd = null, peak = 0.1, attack = 0.008, filter = 0, vibrato = 0, out }) {
     const c = this.ctx;
+    freq *= this.pitchMul ?? 1;
+    if (freqEnd) freqEnd *= this.pitchMul ?? 1;
     const osc = c.createOscillator();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t);
@@ -387,6 +393,8 @@ export class Sound {
 
   noise(t, dur, { type = 'lowpass', freq = 1000, freqEnd = null, q = 0.8, peak = 0.2, attack = 0.004, out }) {
     const c = this.ctx;
+    freq *= this.pitchMul ?? 1;
+    if (freqEnd) freqEnd *= this.pitchMul ?? 1;
     const src = c.createBufferSource();
     src.buffer = this.noiseBuffer;
     const f = c.createBiquadFilter();
@@ -534,7 +542,8 @@ export class Sound {
   /**
    * Einen Effekt spielen. Mit x/z leiser in der Ferne und etwas seitlich.
    * @param {string} name
-   * @param {{x?:number, z?:number, volume?:number, pitch?:number}} [opt]
+   * @param {{x?:number, z?:number, volume?:number, pitch?:number, rate?:number}} [opt]
+   *   pitch: Grundton in Hz (nur manche Rezepte); rate: Tonhöhe als Faktor (M26)
    */
   play(name, opt = {}) {
     if (!this.ready || this.voices > VOICES) return;
@@ -556,9 +565,19 @@ export class Sound {
       if (v < 0.02) return;
       out = this.pan(this.sfxPans, this.sfxBus, dx / 10);
     }
+    // M26: Kein Treffer klingt wie der vorige – Tonhöhe ±5 %, Lautstärke ±1,5 dB
+    const fixed = FIXED.has(name);
+    const rate = opt.rate ?? (fixed ? 1 : 1 + (Math.random() * 2 - 1) * SOUND_VARY.pitch);
+    if (!fixed) v *= Math.pow(10, ((Math.random() * 2 - 1) * SOUND_VARY.db) / 20);
+    this.lastVary = { name, rate, volume: v };
+    this.pitchMul = rate;
     this.counting = true;
-    recipe(this, now + 0.005, v, out, opt);
-    this.counting = false;
+    try {
+      recipe(this, now + 0.005, v, out, opt);
+    } finally {
+      this.counting = false;
+      this.pitchMul = 1;
+    }
   }
 
   // --- Umgebung und Musik (jedes Bild) ------------------------------------------------------

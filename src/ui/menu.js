@@ -8,7 +8,7 @@
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
-import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS } from '../core/settings.js';
+import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS, SHAKES, FLASHES } from '../core/settings.js';
 import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
@@ -33,8 +33,8 @@ const BOOK_TEXT_W = BOOK_W - 24;
 const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
-const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text'];
-const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS };
+const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text', 'shake', 'flashes'];
+const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES };
 
 export class Menu {
   /** @param {import('../core/game.js').Game} game */
@@ -352,13 +352,15 @@ export class Menu {
     // m16-r1: Die Steuerung wird so breit, dass Taste und Text nie aneinanderstoßen
     const w = this.screen === 'controls' ? Math.max(250, ...controls.map(([key, what]) => measure(key) + measure(what) + 36)) : 220;
     const bodyH = controls.length ? controls.length * LINE_HEIGHT + 8 : confirmText.length ? confirmText.length * LINE_HEIGHT + 8 : 0;
-    const h = 30 + bodyH + buttons.length * 22 + 20;
+    // M26: Mit Wackeln und Blitzen hat die Einstellungsseite zehn Zeilen – etwas enger
+    const step = buttons.length > 9 ? 20 : 22;
+    const h = 30 + bodyH + buttons.length * step + 20;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
     let cy = y + 28 + bodyH;
     const rects = buttons.map((b) => {
-      const rect = { x: x + 20, y: cy, w: w - 40, h: 19 };
-      cy += 22;
+      const rect = { x: x + 20, y: cy, w: w - 40, h: step - 3 };
+      cy += step;
       return { ...b, rect };
     });
     return { x, y, w, h, controls, confirmText, buttons: rects };

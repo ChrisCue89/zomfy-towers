@@ -191,7 +191,7 @@ export class Skills {
         g.hud.ring(x, z, S.radius, 'licht');
         g.effects.splat(x, 1.3, z, 'licht', 20, 1.4);
         g.sound.play('blitz');
-        g.rig.shake = Math.max(g.rig.shake || 0, 0.08);
+        g.feel('blitz'); // M26
         for (const pod of g.horde.podsNear(x, z, S.radius)) g.horde.hitPod(pod, 99); // M22: Licht lässt die Sporenkapseln platzen
         for (const zo of g.horde.inRange(x, z, S.radius)) {
           g.horde.stun(zo, S.stun * power, true); // Licht: den lichtfressenden Champion betäubt es nicht (M21)

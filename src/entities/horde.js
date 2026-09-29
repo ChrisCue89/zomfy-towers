@@ -81,6 +81,13 @@ const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
  * Schlurfer der Karte, über 25 Mio. Dreiecke bei 560 Schlurfern).
  */
 const VIEW_MARGIN = 2.5;
+// Abstandhalten über ein Raster (M26): Zellen von SEP_CELL m, gefunden werden alle
+// Paare bis SEP_CELL Abstand. Wer größer ist als SEP_BIG (Anführer, Bosse), prüft
+// gegen alle – das sind nur wenige.
+const SEP_CELL = 0.9;
+const SEP_BIG = 0.42;
+const SEP_HASH = 256; // Zellen je Achse (umlaufend – entfernte Zellen teilen sich einen Eimer, geprüft wird der echte Abstand)
+const HIT_JITTER = 1 / 80; // M26: Getroffene zittern einen Pixel (bei 80 px/m)
 const _frustum = new THREE.Frustum();
 const _viewProj = new THREE.Matrix4();
 const _sphere = new THREE.Sphere();
@@ -1185,31 +1192,89 @@ export class Horde {
     }
   }
 
-  /** Schlurfer schieben sich nicht ineinander. */
+  /**
+   * Schlurfer schieben sich nicht ineinander. M26: über ein Raster statt jeder
+   * gegen jeden – bei 560 Schlurfern war das gut die Hälfte der Rechenzeit.
+   */
   separate(dt) {
     const list = this.list;
-    for (let a = 0; a < list.length; a++) {
+    const n = list.length;
+    if (!this._sepHead) {
+      this._sepHead = new Int32Array(SEP_HASH * SEP_HASH);
+      this._sepNext = new Int32Array(256);
+      this._sepCell = new Int32Array(256);
+      this._sepBig = [];
+    }
+    if (this._sepNext.length < n) {
+      this._sepNext = new Int32Array(n * 2);
+      this._sepCell = new Int32Array(n * 2);
+    }
+    const head = this._sepHead.fill(-1);
+    const next = this._sepNext;
+    const cellOf = this._sepCell;
+    const big = this._sepBig;
+    big.length = 0;
+    const k = Math.min(1, dt * 12);
+    for (let a = 0; a < n; a++) {
       const A = list[a];
+      cellOf[a] = -1;
       if (A.state === 'dying' || A.state === 'enter') continue;
-      for (let b = a + 1; b < list.length; b++) {
-        const B = list[b];
-        if (B.state === 'dying' || B.state === 'enter') continue;
-        const dx = B.x - A.x;
-        const dz = B.z - A.z;
-        const min = (A.def.radius + B.def.radius) * 0.9;
-        const d2 = dx * dx + dz * dz;
-        if (d2 >= min * min || d2 < 1e-6) continue;
-        const d = Math.sqrt(d2);
-        const push = ((min - d) / d) * 0.5 * Math.min(1, dt * 12);
-        // Schwere weichen weniger aus, das Moderherz gar nicht – es schiebt sich durch die eigene Horde (M25)
-        const wa = A.def.steadfast ? 0 : A.def.heavy ? 0.25 : 1;
-        const wb = B.def.steadfast ? 0 : B.def.heavy ? 0.25 : 1;
-        A.x -= dx * push * wa;
-        A.z -= dz * push * wa;
-        B.x += dx * push * wb;
-        B.z += dz * push * wb;
+      if (A.def.radius > SEP_BIG) {
+        big.push(a);
+        continue;
+      }
+      const cx = Math.floor(A.x / SEP_CELL) & (SEP_HASH - 1);
+      const cz = Math.floor(A.z / SEP_CELL) & (SEP_HASH - 1);
+      const c = cz * SEP_HASH + cx;
+      cellOf[a] = c;
+      next[a] = head[c];
+      head[c] = a;
+    }
+    // Kleine gegen kleine: je Paar einmal (der mit dem kleineren Index schiebt)
+    for (let a = 0; a < n; a++) {
+      const c = cellOf[a];
+      if (c < 0) continue;
+      const A = list[a];
+      const cx = c % SEP_HASH;
+      const cz = (c - cx) / SEP_HASH;
+      for (let oz = -1; oz <= 1; oz++) {
+        const rz = ((cz + oz) & (SEP_HASH - 1)) * SEP_HASH;
+        for (let ox = -1; ox <= 1; ox++) {
+          for (let b = head[rz + ((cx + ox) & (SEP_HASH - 1))]; b >= 0; b = next[b]) {
+            if (b > a) this.separatePair(A, list[b], k);
+          }
+        }
       }
     }
+    // Große gegen alle (Anführer, Bosse; Große untereinander nur einmal)
+    for (const a of big) {
+      const A = list[a];
+      for (let b = 0; b < n; b++) {
+        if (b === a) continue;
+        const B = list[b];
+        if (B.state === 'dying' || B.state === 'enter') continue;
+        if (B.def.radius > SEP_BIG && b < a) continue;
+        this.separatePair(A, B, k);
+      }
+    }
+  }
+
+  /** Zwei Schlurfer auseinanderschieben, wenn sie sich überlappen. */
+  separatePair(A, B, k) {
+    const dx = B.x - A.x;
+    const dz = B.z - A.z;
+    const min = (A.def.radius + B.def.radius) * 0.9;
+    const d2 = dx * dx + dz * dz;
+    if (d2 >= min * min || d2 < 1e-6) return;
+    const d = Math.sqrt(d2);
+    const push = ((min - d) / d) * 0.5 * k;
+    // Schwere weichen weniger aus, das Moderherz gar nicht – es schiebt sich durch die eigene Horde (M25)
+    const wa = A.def.steadfast ? 0 : A.def.heavy ? 0.25 : 1;
+    const wb = B.def.steadfast ? 0 : B.def.heavy ? 0.25 : 1;
+    A.x -= dx * push * wa;
+    A.z -= dz * push * wa;
+    B.x += dx * push * wb;
+    B.z += dz * push * wb;
   }
 
   /**
@@ -1217,6 +1282,7 @@ export class Horde {
    * @param {THREE.Camera} [camera] nur zeichnen, was sie sieht (M25c; ohne Kamera: alle)
    */
   render(camera = null) {
+    this._tick = (this._tick || 0) + 1; // M26: Zittern der Getroffenen (je Bild)
     const counts = {};
     const living = {};
     for (const type of ZOMBIE_TYPES) counts[type] = 0;
@@ -1307,7 +1373,9 @@ export class Horde {
       fall = q * q * 1.45 * z.deathDir;
       sink = Math.max(0, z.deathT - 0.55) * 0.6;
     }
-    rig.root.position.set(z.x, z.y - sink, z.z);
+    // M26: Wer gerade getroffen wurde, zittert einen Pixel hin und her
+    const shiver = z.flash > 0 && z.state !== 'dying' ? (this._tick & 1 ? HIT_JITTER : -HIT_JITTER) : 0;
+    rig.root.position.set(z.x + shiver, z.y - sink, z.z);
     rig.root.rotation.set(0, z.facing, 0);
     rig.root.scale.set(s, s, s);
     if (z.def.flying) {

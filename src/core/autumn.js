@@ -78,7 +78,7 @@ export class Autumn {
     this.heart = z;
     z.boss.phase = 1;
     z.boss.attacks = ['wurzeln'];
-    this.game.rig.shake = Math.max(this.game.rig.shake || 0, 0.4);
+    this.game.feel('herz', { x: z.x, z: z.z }); // M26
   }
 
   /** Jeder Spielschritt: Phasen des Herzens nach seinem Leben. */
@@ -131,6 +131,7 @@ export class Autumn {
     if (g.nights.plan) g.state.night.wave = g.nights.plan.waves.length;
     g.hud.showBanner(T.herbst.herzFaellt);
     g.sound.play('jubel');
+    g.feel('herzFaellt', { x: z.x, z: z.z }); // M26: Trefferstopp, Wackeln, Zeitlupe
   }
 
   /** Alles, was noch lebt, zerfällt zu Staub; nur das Herz sinkt noch zusammen. */

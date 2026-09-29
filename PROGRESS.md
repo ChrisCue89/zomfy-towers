@@ -5,6 +5,40 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 26 – Wucht und Schliff ✓
+
+Erster Schritt des Plans »Zuflucht sein« (DESIGN.md 8) und des Auftrags
+»Triple-A-Pixelspiel«: Politur, die überall wirkt (OFFENE-FRAGEN 176, 177).
+
+- **Rückmeldungs-Tabelle** (`src/data/feel.js`): vierzehn Ereignisse nach Wucht
+  gestaffelt – Schlag 50 ms Trefferstopp, Abschuss 80, Pfanne und Kombo 100,
+  Wirbel 120, ein fallender Boss 150, das Herz 220 ms mit Zeitlupe; Mikas
+  Schmerz nur 40 ms (passiert oft). Alles läuft über `game.feel()`.
+- **Kamerawackeln nach dem Trauma-Modell:** Stöße addieren sich, der Ausschlag
+  wächst mit dem Quadrat, ganze Pixel, keine Drehung, mit gerichtetem Stoß (die
+  Welt ruckt in Schlagrichtung bzw. vom Angreifer weg); weiter weg von Mika
+  schwächer, Barrikaden nur in 10 m Nähe. Im Trefferstopp zittert das stehende
+  Bild weiter. Vorher: ein fester 1-px-Kreis für alles.
+- **Zeitlupe** (×0,3) für den letzten Schlurfer der Nacht, fallende Bosse und das
+  Herz. **Getroffene zittern** einen Pixel (auch unter Turmbeschuss – ohne die
+  Welt anzuhalten).
+- **Bauen mit Schwung:** Jeder Bau setzt gestaucht auf und federt nach (0,5 s,
+  danach wieder genau auf dem Pixelraster), Ausbauten federn tiefer und klingen
+  mit jeder Stufe höher; ebenso Mischturm, Turmteil, Zubehör, Wiederaufbau.
+- **Klang gestreut:** jeder Effekt ±5 % Tonhöhe und ±1,5 dB – kein Treffer klingt
+  wie der vorige; Musikalisches und Oberfläche (Klick, Glocken, Fanfaren,
+  Beute-Tonleiter) bleiben gleich. Die Pfanne klingt tiefer.
+- **Baugeist mit ✓/✗** an der Ecke – nie Farbe allein.
+- **Einstellungen »Wackeln«** (aus/halb/voll) **und »Blitze«** (voll/sanft: der
+  Laternenblitz flammt schwächer auf); eigener Speicherplatz wie die anderen.
+- **Stabile Bildzeiten:** Alle Shader werden beim Start übersetzt (auch Horde,
+  Geschosse, Innenraum). Das Abstandhalten der Horde läuft über ein Raster statt
+  jeder gegen jeden: In der späten Nacht mit 563 Schlurfern (Nacht 29 aus dem
+  Balance-Durchlauf) 0,64 statt 5,8 ms je Schritt, die ganze Simulation 8,4 statt
+  11 ms (Headless).
+- **Prüfskript:** neuer Abschnitt `wucht` (Bilder: baugeist, einstellungen) mit
+  Bildzeiten p50/p95/p99 bei vielen Schlurfern.
+
 ## Recherche und Entscheidungen: Gemeinschaft (29.09.2026) ✓
 
 **Auftrag:** »Alles so wie du es für spaßig hältst. Recherchiere zu allen

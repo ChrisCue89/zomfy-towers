@@ -20,6 +20,7 @@ import { fineTowerModels, towerPartModel } from './towerModels.js';
 import { TRAP_MODELS } from './trapModels.js';
 import { V } from './layout.js';
 import { edgeLight } from './voxelKit.js';
+import { POP } from '../data/feel.js';
 
 export class Buildings {
   /**
@@ -44,6 +45,39 @@ export class Buildings {
     lights.addGlow(this.glowMaterial, { dim: 0x6a6f80, bright: 0xffc86a, boost: 1.1, mode: 'lamp' });
     this.models = new Map();
     this.checkCache = { key: '', result: null };
+    this.popping = []; // M26: Bauten, die gerade aufsetzen und nachfedern
+  }
+
+  /**
+   * Bauen mit Schwung (M26): Der Bau staucht sich beim Aufsetzen und federt nach
+   * (gedämpfte Schwingung um die Bodenlinie). Nach `POP.time` steht er wieder
+   * genau auf dem Pixelraster.
+   * @param {object} b Bau
+   * @param {number} [amount] wie tief er sich staucht (Ausbau: etwas mehr)
+   */
+  pop(b, amount = POP.squash) {
+    if (!b?.object) return;
+    b.popT = 0;
+    b.popA = amount;
+    b.object.scale.set(1 + amount * POP.widen, 1 - amount, 1 + amount * POP.widen); // schon im ersten Bild gestaucht
+    if (!this.popping.includes(b)) this.popping.push(b);
+  }
+
+  /** Jedes Bild: federnde Bauten fortschreiben. */
+  update(dt) {
+    for (let k = this.popping.length - 1; k >= 0; k--) {
+      const b = this.popping[k];
+      const o = b.object;
+      b.popT += dt;
+      if (!o || b.popT >= POP.time || !this.list.includes(b)) {
+        if (o) o.scale.set(1, 1, 1);
+        this.popping.splice(k, 1);
+        continue;
+      }
+      const y = 1 - b.popA * Math.exp(-POP.damping * b.popT) * Math.cos(2 * Math.PI * POP.freq * b.popT);
+      const xz = 1 + (1 - y) * POP.widen;
+      o.scale.set(xz, y, xz);
+    }
   }
 
   count(type) {

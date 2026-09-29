@@ -1763,6 +1763,32 @@ const ICONS = {
       '.kkkkkkkkkk.',
     ],
   },
+  // Baugeist (M26): passt – passt nicht, dazu die Farbe (nie Farbe allein)
+  passt: {
+    legend: { g: P.g9, k: P.n0 },
+    rows: [
+      '......kk',
+      '.....kgk',
+      'kk..kggk',
+      'kgkkggk.',
+      'kgggggk.',
+      '.kgggk..',
+      '..kgk...',
+      '...k....',
+    ],
+  },
+  passtNicht: {
+    legend: { r: P.f3, k: P.n0 },
+    rows: [
+      'kk...kk',
+      'krk.krk',
+      '.krkrk.',
+      '..krk..',
+      '.krkrk.',
+      'krk.krk',
+      'kk...kk',
+    ],
+  },
   bauplan: {
     legend: { b: P.b2, B: P.b3, w: P.s9, l: P.b5, k: P.n1 },
     rows: [
