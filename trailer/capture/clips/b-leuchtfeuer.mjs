@@ -42,7 +42,7 @@ const r = await rec.clip(NAME, {
   frames: FRAMES,
   cam: { keys: [[0, ...CAM0], [FRAMES - 1, ...CAM1]] },
   each: () => { window.__b.keep(); },
-  description: 'Nacht im Schneetreiben (Tag 30, 22:10), Ansicht nah. Der Leuchtmast am Ende des Stegs leuchtet (Stufe 3, Leuchtfeuer); Kamerafahrt (Neigung nach oben) vom Steg am Mastfuß entlang aufwärts zur Lampe, sie erreicht das weiße Lampenglas ganz oben im Bild ab etwa Bild 45. Die Lichtinsel des Leuchtfeuers wurde für die Aufnahme an den Mast verlegt; vier Schlurfer laufen den Steg entlang durch den Schein (geblendet, langsamer). Mika steht am Stegansatz.',
+  description: 'Nacht im Schneetreiben (Tag 30, 22:10, Frost), Ansicht nah. Der Leuchtmast am Ende des Stegs (Stufe 3, Leuchtfeuer) steht im Mittelpunkt: Bild 0-30 Steg und Mastfuß in großer, ovaler Lichtinsel (graues bis violettes Licht auf Wasser und Schnee; die Insel wurde für die Aufnahme an den Mast verlegt und 1,6x vergrößert), vier Schlurfer laufen den Steg entlang durch den Schein (geblendet, um 30 % langsamer); Kamerafahrt (Neigung nach oben) am Mast entlang, ab Bild ~45 steht das weiße Lampenglas ganz oben im Bild mit Halo, die Kamera hält dort bis Bild 59. Schneedecke am Boden für die Aufnahme auf 50 % gedünnt (weniger Tarnmuster), Schneeflocken wie im Spiel. Beste Schnitte: 0-25 (Steg+Schlurfer im Licht), 40-59 (Lampe).',
 });
 console.log(r.problems);
 await rec.close();

@@ -4,7 +4,7 @@
 // `hud-frost`: ein Einzelbild mit voller Oberfläche (Uhrentafel „Tag 30 von 30 · Schnee 20:42 · Nacht“, Nachtleiste).
 //   node capture/clips/b-frost-nacht.mjs            (ZT_NAME=_probe ZT_FRAMES=1 für Proben; ZT_NOHUD=1 ohne Einzelbild)
 import { Rec } from '../lib.mjs';
-import { prepare, placeTowers, snowCover, hideHudBits } from './b-common.mjs';
+import { prepare, placeTowers, snowCover } from './b-common.mjs';
 
 const NAME = process.env.ZT_NAME || 'frost-nacht';
 const FRAMES = Number(process.env.ZT_FRAMES || 110);
@@ -47,9 +47,17 @@ if (!process.env.ZT_NOHUD) {
   });
   await rec.sim(0.5);
   await rec.eval(() => (window.zomfy.game.hud.toasts.length = 0));
-  await rec.setUi('full');
-  await hideHudBits(rec);
-  await rec.clip('hud-frost', { frames: 1, ui: 'full', cam: { keys: [[0, CAM[0], CAM[1]]] }, description: 'Einzelbild mit voller Oberfläche: Uhrentafel „Tag 30 von 30 · Schnee 20:42 · Nacht“, Nachtleiste der Frostnacht („Aus: Nordweg, Mittelweg und Südweg“).' });
+  await rec.clip('hud-frost', {
+    frames: 1,
+    ui: 'full',
+    // Zielzeile, Einblendung und Hinweis stören die Uhrentafel: nach dem Setzen der Oberfläche ausblenden
+    each: () => { const h = window.zomfy.game.hud; for (const n of ['drawGoal', 'drawPrompt', 'drawLabels', 'drawGoalMarker', 'drawEdgeMarkers']) h[n] = () => {}; },
+    cam: { keys: [[0, CAM[0], CAM[1]]] }, description: 'Einzelbild mit voller Oberfläche: Uhrentafel „Tag 30 von 30 · Schnee 20:43 · Nacht“, Nachtleiste „Nacht 30 · Welle 1/8 · Aus: Nordweg, Mittelweg und Südweg“ (Zuhause 300/300, Tor 650/650), Vorrat oben rechts, Herzleiste, Schnellleiste und Bauleiste; ohne Zielzeile und Hinweis.',
+  });
+  if (process.env.ZT_ONLYHUD) {
+    await rec.close();
+    process.exit(0);
+  }
   await rec.setUi('world');
 }
 // Vorlauf: die Horde (echte Welle) zieht als dichter Pulk auf das Tor zu – gewartet wird, bis ihre Spitze im Bild ist
