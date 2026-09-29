@@ -1,8 +1,8 @@
 // Mischung: setzt die gerechneten Stücke, Übergänge, das Bett und die Effekte auf die Zeitachse,
 // stellt die Pegel nach Messwerten (Lautheit/Spitze/RMS je Fenster) ein und mastert (Sättigung,
 // Begrenzer, Lautheit −16 LUFS, Ein-/Ausblendung an den Rändern).
-import { SR, DURATION, T, BAR, TOTAL_SAMPLES } from './score.mjs';
-import { stereo, mixInto, applyGain, fadeIn, fadeOut, Meter, limit, truePeakDb, toDb } from './dsp.mjs';
+import { SR, DURATION, T, TOTAL_SAMPLES } from './score.mjs';
+import { stereo, applyGain, fadeIn, fadeOut, Meter, limit, truePeakDb, toDb } from './dsp.mjs';
 
 const N = TOTAL_SAMPLES;
 const dbToLin = (db) => 10 ** (db / 20);
