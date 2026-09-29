@@ -28,6 +28,11 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 // --- Umgebung -------------------------------------------------------------------------------
 
+// Reproduzierbarkeit: Das Spiel hängt verklungene Töne über `onended` ab (spart im Live-Betrieb Rechenzeit). Im Offline-Kontext
+// läuft dieses Ereignis asynchron zum Rechenthread – ein Wettlauf, der die Samples (im Bereich der Rundung) von Lauf zu Lauf
+// ändert. Die Handler werden hier ausgeschaltet; verklungene Töne stehen bei ~0 im Graphen und kosten nichts.
+Object.defineProperty(AudioScheduledSourceNode.prototype, 'onended', { configurable: true, get: () => null, set() {} });
+
 /** Ein Sound-Objekt ohne Lautsprecher (wie renderMusic), mit Bussen für Effekte und Umgebung. */
 function makeSound(ctx, dest = ctx.destination) {
   const s = Object.create(Sound.prototype);

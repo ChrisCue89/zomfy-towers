@@ -13,7 +13,7 @@ await prepare(rec, { day: 6, hour: 21, minute: 0 });
 const towers = await placeTowers(rec, [
   { type: 'katapult', i: -13, j: -2, level: 3, spec: 'A', xp: 200 },
   { type: 'laternenturm', i: -16, j: -2, level: 3, spec: 'A' },
-  { type: 'bolzen', i: -14, j: 4, level: 3, spec: 'B', xp: 520 },
+  { type: 'bolzen', i: -14, j: 4, level: 2, xp: 520 },
   { type: 'sprenger', i: -17, j: 4, level: 3, spec: 'B', xp: 160 },
 ]);
 console.log(JSON.stringify(towers.map((t) => [t.type, t.i, t.j, t.ok, t.why])));
@@ -33,22 +33,25 @@ const bar = await rec.eval((COL) => {
   Z.teleport(-12.5, 5.8, 0);
   const b = window.__b;
   // Trupp aus dem Wald: Schlurfer und Flitzer, ein Brummer vorn im Pulk
-  const rows = [0.4, 1.5, 2.6];
-  for (let k = 0; k < 13; k++) {
-    const x = -33 + Math.floor(k / 3) * 1.6 + (k % 3) * 0.3;
-    b.zombie(k === 2 ? 'brummer' : k % 4 === 3 ? 'flitzer' : 'schlurfer', x, rows[k % 3] + (k % 2) * 0.3, { hp: 2.5, speed: 1.15 });
+  const rows = [0.5, 1.5, 2.5];
+  // der Brummer vorn, dahinter ein dichter Trupp (die Türme dünnen ihn aus, während der Brummer schlägt)
+  b.zombie('brummer', -19.2, 1.5, { hp: 4 });
+  for (let k = 0; k < 14; k++) {
+    const x = -21.4 - Math.floor(k / 3) * 1.5 - (k % 3) * 0.3;
+    b.zombie(k % 5 === 4 ? 'flitzer' : 'schlurfer', x, rows[k % 3] + (k % 2) * 0.3, { hp: 3, speed: 1.1 });
   }
   return ids;
 }, COL);
 console.log('barrikaden', JSON.stringify(bar));
 // Vorlauf: bis die ersten schlagen, dann noch einen Moment (Splitter fliegen schon im ersten Bild)
 let waited = 0;
-for (let t = 0; t < 60; t++) {
-  await rec.sim(0.5);
-  waited += 0.5;
+for (let t = 0; t < 120; t++) {
+  await rec.sim(0.25);
+  waited += 0.25;
   const st = await rec.eval(() => window.zomfy.zombies().filter((z) => z.state === 'smash').length);
-  if (st >= 3) break;
+  if (st >= 1) break;
 }
+await rec.sim(0.5);
 console.log('vorlauf s', waited);
 const r = await rec.clip(NAME, {
   frames: FRAMES,

@@ -45,17 +45,9 @@ if (PROBE) {
       const g = window.zomfy.game;
       if (i === 0) g.sound.play('tuer'); // Türklang des Durchgangs (der Durchgang selbst begann kurz vor Bild 0)
       // ab Bild 9 zum Feuer (Südostseite, vor dem Sessel), dann stehen bleiben
-      if (i >= 9) {
-        const wp = window.__wp || (window.__wp = { k: 0, pts: [[4.9, -3.9], [3.9, -0.9], [2.1, -0.65]] });
-        if (wp.k < wp.pts.length) {
-          const [tx, tz] = wp.pts[wp.k];
-          const d = window.__walkTo(tx, tz, false, 0.1);
-          if (d < 0.2) wp.k++;
-          if (wp.k >= wp.pts.length) window.__stop();
-        }
-      }
+      if (i >= 9) window.__route([[4.9, -3.9], [3.9, -0.9], [2.1, -0.65]]);
     },
-    description: 'Morgen am Fischerhaus (Tag 1, 07:00, Windwetter mit Laub, Ansicht weit). Bild 0-6: Blende (Oberflächen-Ebene, gerastertes Aufblenden) - Mika tritt aus der Tür (echter Durchgang des Spiels), warmes Fenster, Kürbislichter, Krähe auf dem Wäscheleinenpfosten, Rauch aus dem Kamin. Ab Bild 9 geht Mika (echte Tastensteuerung) zum Lagerfeuer und bleibt dort stehen (Ankunft etwa Bild 70). Kamera ruhig auf dem Haus, ab Bild 14 langsame Fahrt zum Feuer. Gute Schnittpunkte: Bild 7-60.',
+    description: 'Morgen am Fischerhaus (Tag 1, 07:00, Windwetter mit Laub, Ansicht weit). Bild 0-6: Blende (Oberflächen-Ebene, gerastertes Aufblenden) - Mika tritt aus der Tür (echter Durchgang des Spiels), warmes Fenster, Kürbislichter, Krähe auf dem Wäscheleinenpfosten, Rauch aus dem Kamin. Ab Bild 9 geht Mika (echte Tastensteuerung) zum Lagerfeuer und bleibt dort stehen (Ankunft etwa Bild 78). Kamera ruhig auf dem Haus, ab Bild 14 langsame Fahrt zum Feuer. Gute Schnittpunkte: Bild 7-60.',
   });
 }
 console.log('problems', rec.problems);

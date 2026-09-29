@@ -62,6 +62,19 @@ export function installWalker(rec) {
       set('ShiftLeft', run);
       return Math.hypot(dx, dz);
     };
+    // Route aus Wegpunkten [[x, z], …]: je Bild aufrufen; Zwischenpunkte gelten ab 0,45 m als erreicht, der letzte ab `end` m
+    window.__route = (pts, run = false, end = 0.3) => {
+      const wp = window.__wp && window.__wp.pts === pts.toString() ? window.__wp : (window.__wp = { pts: pts.toString(), k: 0, done: false });
+      if (wp.done) return true;
+      const [tx, tz] = pts[wp.k];
+      const last = wp.k === pts.length - 1;
+      const d = window.__walkTo(tx, tz, run, last ? 0.08 : 0.15);
+      if (d < (last ? end : 0.45)) {
+        wp.k++;
+        if (wp.k >= pts.length) { wp.done = true; window.__stop(); return true; }
+      }
+      return false;
+    };
     window.__key = (code, on = true) => (on ? g.input.down.add(code) : g.input.down.delete(code));
     window.__tap = (code) => g.input.pressedCodes.add(code);
   });
