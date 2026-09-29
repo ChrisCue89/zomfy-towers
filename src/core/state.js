@@ -22,8 +22,9 @@ import { TOWERS } from '../data/towers.js';
 import { QUESTS } from '../data/quests.js';
 import { POST_ROLES } from '../data/posts.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
+import { newCardState, sanitizeCards } from './cardNight.js';
 
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -93,6 +94,7 @@ export function createNewState(config, mapSeed = 1) {
     risk: { streak: 0, treasure: false }, // M24: makellose Nächte in Folge, wartet Balduins Schatz?
     autumn: { frost: null, mode: 'herbst', credits: false }, // M25: Tag des ersten Frosts, nach dem Herbst weiter?, Abspann gesehen
     book: freshBook(), // M25, Teil 2: Herbstbuch – Sterne je Nacht, Taten, Schlurferkunde, früh gerufene Wellen
+    cards: newCardState(), // M28: Kartenabende – Stufe, Einsätze, Rückseiten, Wettschuld, Menschenkunde
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -211,6 +213,7 @@ export function sanitizeState(data, config) {
     for (const k of KIND_ORDER) if (Number.isFinite(bk.kinds[k]) && bk.kinds[k] > 0) out.book.kinds[k] = Math.floor(num(bk.kinds[k], 0, 0, 1e7));
   }
   out.book.called = Math.floor(num(bk.called, 0, 0, 1e6));
+  out.cards = sanitizeCards(data.cards); // M28
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

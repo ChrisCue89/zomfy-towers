@@ -40,6 +40,9 @@ import { Posts } from './posts.js';
 import { Quests } from './quests.js';
 import { Autumn } from './autumn.js';
 import { Book } from './book.js';
+import { CardNight } from './cardNight.js';
+import { CardTable } from '../ui/cardTable.js';
+import { view, aiMove, STYLES } from './cards.js';
 import { STAR_KEYS } from '../data/book.js';
 import { World } from '../world/world.js';
 import { Effects } from '../world/effects.js';
@@ -344,6 +347,8 @@ export class Game {
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
     this.book = new Book(this); // M25, Teil 2: Herbstbuch (Sterne, Taten, Schlurferkunde, Turmalbum)
+    this.cardNight = new CardNight(this); // M28: Kartenabend »Letzte Runde«
+    this.cardTable = new CardTable(this);
     this.portraits = renderPortraits();
 
     this.state = loaded.state || createNewState(CONFIG, this.world.mapSeed);
@@ -507,6 +512,7 @@ export class Game {
     this.survivors.apply();
     this.posts.apply();
     this.trader.apply();
+    this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -671,7 +677,9 @@ export class Game {
   applyView(inside) {
     this.viewInside = inside;
     const r = CONFIG.render;
-    const ppm = inside ? r.interiorPxPerMeter : this.view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
+    // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
+    const view = this.cardNight?.match ? 'nah' : this.view;
+    const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
     sharedUniforms.uCutRadius.value.set(26, 40).multiplyScalar(ppm / 40); // Durchsicht wächst mit dem Maßstab
@@ -699,7 +707,10 @@ export class Game {
     const lo = Math.min(zMin, zMax);
     const hi = Math.max(zMin, zMax);
     const mid = (zMin + zMax) / 2;
-    rig.bounds = zMin <= zMax ? { minX: b.minX, maxX: b.maxX, minZ: mid, maxZ: mid } : { minX: b.minX, maxX: b.maxX, minZ: lo, maxZ: hi };
+    // M28: Am Kartentisch darf die Kamera weiter nach Süden – unten liegt dann ohnehin die
+    // Kartenoberfläche, und Tisch und Gegenüber rücken über sie
+    const south = this.cardNight?.match ? 2 : 0;
+    rig.bounds = zMin <= zMax ? { minX: b.minX, maxX: b.maxX, minZ: mid, maxZ: mid + south } : { minX: b.minX, maxX: b.maxX, minZ: lo, maxZ: hi + south };
     rig.limits = { x0: b.minX - 0.25, x1: b.maxX + 0.25 };
   }
 
@@ -1244,7 +1255,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.survivors.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning()];
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
     if (bitte) extra.push({ text: bitte });
@@ -2334,6 +2345,11 @@ export class Game {
         this.crafting.update(input, realDt);
         this.player.idle(dt);
         break;
+      case 'karten': // M28: Kartenabend – die Uhr steht, die Welt lebt weiter
+        this.cardTable.update(input, realDt);
+        this.cardNight.update(realDt);
+        this.player.idle(dt);
+        break;
       case 'report':
         if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
@@ -2399,7 +2415,7 @@ export class Game {
     // M25: Der Abspann zeigt die verschneite Bucht draußen, auch wenn Mika drinnen aufgewacht ist
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
-    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
     else {
@@ -2725,6 +2741,10 @@ export class Game {
     // Stufe der Nachtmusik (M10d): 2 = am Haus oder hinter Mika her, 1 = viele unterwegs oder an Barrikaden
     info.threat = atHome > 0 || near >= 3 ? 2 : smash > 0 || near > 0 || this.horde.alive >= 8 ? 1 : 0;
     info.boss = info.fight && this.horde.list.some((z) => z.def.boss && z.state !== 'dying'); // M22: eigene Musik
+    // M28: am Kartentisch »Kartenabend«; Spannung beim Klopfen und in der Letzten Runde
+    const cm = this.cardNight.match;
+    info.cards = Boolean(cm);
+    info.cardTension = cm ? (cm.g?.pending || (cm.wins[0] === 1 && cm.wins[1] === 1) ? 1 : 0) : 0;
     this.sound.update(dt, info);
     // Schritte: bei jedem halben Laufzyklus, drinnen auf Holz
     const stepIndex = Math.floor(this.player.phase / Math.PI);
@@ -2854,7 +2874,9 @@ export class Game {
     if (playing) this.builder.drawOverlay(ui);
     // Einleitung (M15): wie im Kino nur das Bild und Mikas Worte
     const cinematic = this.pendingIntro || this.introRunning || this.mode === 'abspann'; // M25: im Abspann nur Bild und Namen
-    if (!cinematic) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
+    const atTable = Boolean(this.cardNight.match); // M28: am Kartentisch nur die Karten
+    if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
+    if (atTable) this.cardTable.draw(ui);
     if (playing) this.buildbar.draw(ui);
     if (playing) this.builder.drawGhostLabel(ui); // M26: über der Tafel der Bauleiste
     this.crafting.draw(ui);
@@ -3537,6 +3559,37 @@ export class Game {
       beaconSlow: (x, z) => game.survivors.beaconSlow(x, z),
       arrive: () => game.survivors.arrive(true),
       morning: () => [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning()].map((l) => l.text),
+      // M28: Kartenabend
+      cards: () => {
+        const c = game.cardNight;
+        const m = c.match;
+        return {
+          state: JSON.parse(JSON.stringify(game.state.cards)),
+          mode: game.mode,
+          match: m ? { id: m.id, stage: m.stage, wins: [...m.wins], gameNo: m.gameNo, over: m.over, result: m.result, spot: m.spot.kind, who: m.g?.who ?? null, gameOver: Boolean(m.g?.over), busy: game.cardTable.busy, wait: game.cardTable.wait, myTurn: c.myTurn } : null,
+          view: m?.g ? view(m.g, 0) : null,
+          line: game.cardTable.line?.text || null,
+          blocked: Object.fromEntries(['bert', 'hilde', 'juna', 'yusuf', 'balduin'].map((id) => [id, c.blocked(id)])),
+        };
+      },
+      cardBegin: (id) => game.cardNight.begin(id),
+      /** Die laufende Partie zu Ende spielen lassen (beide Seiten mit der Regel-KI); winner 0 = Mika gewinnt. */
+      cardFinish(winner = 0) {
+        const m = game.cardNight.match;
+        if (!m || !m.g) return false;
+        game.cardTable.beats = [];
+        game.cardTable.wait = null;
+        m.g.over = true;
+        m.g.winner = winner;
+        game.cardNight.endGame();
+        return true;
+      },
+      cardClose: (resign = false) => game.cardNight.close(resign),
+      cardAiMove: () => {
+        const m = game.cardNight.match;
+        if (!m?.g) return null;
+        return aiMove(view(m.g, 0), STYLES.ausgewogen, () => 0.5).move;
+      },
       // M27: Gäste und Plätze
       guests: () => {
         const sv = game.survivors;
@@ -3556,7 +3609,7 @@ export class Game {
       nextMorning: () => {
         game.state.time.day += 1;
         game.state.time.minute = 60;
-        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning()].map((l) => ({ text: l.text }));
+        return [...game.survivors.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning()].map((l) => ({ text: l.text }));
       },
       /** Der offene Dialog: Zeile, Sprecher, Antworten (mit Aktion) und die vorgewählte. */
       dialogInfo: () => {

@@ -27,6 +27,9 @@ import { Weather } from './weather.js';
 import { P } from '../render/palette.js';
 import { Crows } from '../entities/crows.js';
 import { FLASH_TIME } from '../data/skills.js';
+import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
+import { createStaticVoxelObject } from '../render/staticMesh.js';
+import { STAKES } from '../data/cards.js';
 
 const SMOKE_DAY = [new THREE.Color(0xd0c9bc), new THREE.Color(0x999490)];
 const KICK_COLORS = [P.f3, P.f4, P.f5, P.r3, P.e5].map((c) => new THREE.Color(c)); // aufstiebendes Laub (M12)
@@ -252,6 +255,116 @@ export class World {
     this.refreshInteractions();
   }
 
+  // --- Kartenabend (M28) ----------------------------------------------------------------
+
+  /**
+   * Wo der Kartentisch steht: am Feuer (Klapptisch zwischen zwei Hackklötzen, das
+   * Feuer im Rücken des Gegenübers), am Kamin (der Stubentisch mit seinen Stühlen)
+   * oder am Steg (Balduin). Sitze mit der Höhe der Sitzfläche, Blickpunkt der Kamera.
+   */
+  cardSpot(kind) {
+    const V32 = 1 / 32;
+    if (kind === 'steg') {
+      const t = { x: 16.5, z: -1.0 };
+      const y = this.heightAt(t.x, t.z);
+      return {
+        kind,
+        table: t,
+        y,
+        top: y + (TABLE_TOP + 1) * V32,
+        opp: { x: t.x - 0.125, z: t.z - 0.5, facing: 0, seatY: 9 * V32 }, // Sitzhöhe über dem Steg
+        mika: { x: t.x + 0.875, z: t.z, facing: -Math.PI / 2, seatY: 9 * V32 }, // über Eck (s. unten)
+        look: { x: t.x + 0.375, z: t.z + 1.5 - y * 1.33 }, // wie am Feuer; der Steg liegt höher
+        inside: false,
+        own: true,
+      };
+    }
+    // Am Feuer steht der Tisch südlich der Feuerstelle, am Kamin auf dem Teppich davor –
+    // beide Male mit dem Feuer im Rücken des Gegenübers
+    const inside = kind === 'kamin';
+    const f = LAYOUT.campfire;
+    const t = inside ? { ...this.interior.cardAnchor } : { x: f.x, z: f.z + 1.875 };
+    return {
+      kind: inside ? 'kamin' : 'feuer',
+      table: t,
+      y: 0,
+      top: (TABLE_TOP + 1) * V32,
+      opp: { x: t.x - 0.125, z: t.z - 0.625, facing: 0, seatY: 9 * V32 },
+      // Mika sitzt über Eck an der Ostseite: Säße Mika südlich, verdeckte der Kopf (von hinten
+      // gesehen) Tisch und Gegenüber – die Kamera blickt ja über Mikas Schulter nach Norden
+      mika: { x: t.x + 0.875, z: t.z, facing: -Math.PI / 2, seatY: 9 * V32 },
+      look: { x: t.x + 0.375, z: t.z + 1.5 }, // die Kamera schaut 1 m voraus: Tisch im oberen Drittel
+      inside,
+      own: true,
+    };
+  }
+
+  /** Tisch aufstellen (draußen) und den Einsatz des Gegenübers darauflegen. */
+  showCardTable(spot, id, stake) {
+    if (!this.cardProps) {
+      const g = new THREE.Group();
+      g.name = 'Kartentisch';
+      const size = 1 / 32;
+      const opts = { size, shadow: 'coarse4', seed: this.seed };
+      this.cardTableObj = createStaticVoxelObject(buildCardTable(this.seed + 51), this.materials.world, opts);
+      this.cardStumps = [0, 1].map((k) => createStaticVoxelObject(buildStump(this.seed + 52 + k), this.materials.world, opts));
+      this.cardFlame = new THREE.Mesh(buildCandleFlame().toGeometry({ jitter: 0, ao: false, visibleOnly: true, size }), createGlowMaterial(0xffffff, { vertexColors: true }));
+      g.add(this.cardTableObj, ...this.cardStumps, this.cardFlame);
+      this.scene.add(g);
+      this.cardProps = g;
+      this.cardStakes = {};
+    }
+    const own = spot.own;
+    const y = spot.y || 0;
+    this.cardTableObj.visible = own;
+    this.cardFlame.visible = own;
+    this.cardStumps.forEach((s, k) => {
+      const seat = k ? spot.mika : spot.opp;
+      s.visible = own;
+      s.position.set(seat.x, y, seat.z);
+    });
+    this.cardTableObj.position.set(spot.table.x, y, spot.table.z);
+    this.cardFlame.position.set(spot.table.x + 9 / 32, y + 22 / 32, spot.table.z - 5 / 32);
+    for (const o of Object.values(this.cardStakes)) o.visible = false;
+    if (stake) {
+      const o = (this.cardStakes[stake] ||= this.stakeObject(stake, this.cardProps));
+      o.position.set(spot.table.x - 0.25, spot.top, spot.table.z - 0.12);
+      o.visible = true;
+    }
+    this.cardProps.visible = true;
+  }
+
+  hideCardTable() {
+    if (this.cardProps) this.cardProps.visible = false;
+  }
+
+  /** Einsatz-Modell (1/32) als statisches Objekt in einer Gruppe. */
+  stakeObject(id, parent) {
+    const o = createStaticVoxelObject(buildStake(id), this.materials.world, { size: 1 / 32, shadow: 'none', seed: this.seed });
+    parent.add(o);
+    return o;
+  }
+
+  /** Gewonnene Einsätze auf dem Kaminsims (M28): vorn an der Kante, in fester Reihenfolge. */
+  refreshStakes(list) {
+    if (!this.stakeShelf) {
+      this.stakeShelf = new THREE.Group();
+      this.stakeShelf.name = 'Kaminsims';
+      this.scene.add(this.stakeShelf);
+      this.shelfItems = {};
+    }
+    const m = this.interior.mantel;
+    const ids = Object.keys(STAKES);
+    ids.forEach((id) => {
+      const won = list.includes(id);
+      if (!won && !this.shelfItems[id]) return;
+      const o = (this.shelfItems[id] ||= this.stakeObject(id, this.stakeShelf));
+      const k = STAKES[id].shelf;
+      o.position.set(m.x0 + ((k + 0.5) / ids.length) * (m.x1 - m.x0), m.y, m.z);
+      o.visible = won;
+    });
+  }
+
   /** Lichtinseln der Lampen im Innenraum (Herd, Nachttisch, Werkstatt, Lager). */
   addInteriorPools() {
     for (const pool of this.interiorPools) this.lightPools.remove(pool);
@@ -304,6 +417,7 @@ export class World {
     }
     if (key === 'unterholz') return this.forestSpot || (this.forestSpot = this.findForestSpot());
     if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
+    if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
     // Haus, Hof und rechts der See
     const sh = LAYOUT.shelter;
     return { x: sh.x + 4, z: sh.z + 4.5 };

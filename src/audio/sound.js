@@ -132,6 +132,15 @@ const SFX = {
   abriss: (s, t, v, o) => s.noise(t, 0.4, { type: 'lowpass', freq: 1400, freqEnd: 260, peak: 0.35 * v, out: o }),
   aufwertung: (s, t, v, o) => [523.25, 659.25, 783.99].forEach((f, k) => s.tone('square', f, t + k * 0.06, 0.1, { peak: 0.05 * v, filter: 2400, out: o })),
   klick: (s, t, v, o) => s.tone('square', 1250, t, 0.02, { peak: 0.035 * v, filter: 3000, out: o }),
+  // M28: Karten – Wischen, Mischen (viele kurze Wischer), Faust auf Holz
+  karte: (s, t, v, o) => s.noise(t, 0.07, { type: 'bandpass', freq: 2600, freqEnd: 1500, q: 1.2, attack: 0.01, peak: 0.1 * v, out: o }),
+  'karten-mischen': (s, t, v, o) => {
+    for (let k = 0; k < 9; k++) s.noise(t + k * 0.045, 0.04, { type: 'bandpass', freq: 2200 + (k % 3) * 400, q: 1.4, attack: 0.005, peak: 0.07 * v, out: o });
+  },
+  klopfen: (s, t, v, o) => {
+    s.tone('sine', 140, t, 0.09, { freqEnd: 90, peak: 0.22 * v, out: o });
+    s.noise(t, 0.05, { type: 'lowpass', freq: 900, peak: 0.12 * v, out: o });
+  },
   tipp: (s, t, v, o, opt) => s.tone('square', opt.pitch || 520, t, 0.028, { peak: 0.025 * v, filter: 2200, out: o }),
   welle: (s, t, v, o) => {
     s.tone('sawtooth', 110, t, 1.7, { attack: 0.35, peak: 0.12 * v, filter: 650, out: o });

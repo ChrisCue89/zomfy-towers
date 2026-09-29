@@ -10,6 +10,7 @@ import { damp, dampAngle, clamp } from '../core/math.js';
 
 const U = 1 / 32; // M13g: doppelt fein wie Mika – Gelenke der 1/16-Figur mal zwei
 const WALK_SPEED = 1.6;
+const HIP = 12 * U; // Höhe des Hüftgelenks im Stehen (M28: Sitzen)
 
 /** Menschliche Figur aus Teilen – Gelenke wie bei Mika (characters.js). */
 function buildSurvivor(id, seed) {
@@ -124,7 +125,9 @@ export class Npcs {
 
   sync(n) {
     const root = n.model.root;
-    root.position.set(n.x, n.y ?? this.world.heightAt(n.x, n.z), n.z);
+    // M28: Wer sitzt, hat die Hüfte auf Sitzhöhe (seatY über dem Boden)
+    const seat = !n.dog && n.seatY !== null && n.seatY !== undefined ? (n.seatY - HIP) * n.sit : 0;
+    root.position.set(n.x, (n.y ?? this.world.heightAt(n.x, n.z)) + seat, n.z);
     root.rotation.y = n.facing;
   }
 
@@ -161,7 +164,10 @@ export class Npcs {
         const px = player.x - n.x;
         const pz = player.z - n.z;
         n.near = px * px + pz * pz < 9;
-        if (n.near) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
+        // Wer sitzt (Kartentisch, M28), bleibt dem Tisch zugewandt – sonst drehte sich das
+        // Gegenüber zu Mika über Eck und zeigte der Kamera nur noch das Profil
+        const seated = n.sitTarget > 0 && n.restFacing !== null;
+        if (n.near && !seated) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
         else if (n.restFacing !== null) n.facing = dampAngle(n.facing, n.restFacing, 3, dt);
       }
       n.moving = damp(n.moving, clamp(speed / WALK_SPEED, 0, 1), 10, dt);
@@ -170,12 +176,12 @@ export class Npcs {
       n.bark = Math.max(0, n.bark - dt);
       n.sit = damp(n.sit, n.sitTarget, 4, dt);
       if (n.dog) poseDog(n.model, { t, phase: n.phase, moving: n.moving, wag: n.target ? 0.6 : 1, sit: n.sit, bark: n.bark > 0 ? Math.abs(Math.sin(n.bark * 18)) : 0 });
-      else this.poseHuman(n, dt);
+      else this.poseHuman(n, dt, player);
       this.sync(n);
     }
   }
 
-  poseHuman(n, dt) {
+  poseHuman(n, dt, player = null) {
     const p = n.model.parts;
     const amt = n.moving;
     const s = Math.sin(n.phase);
@@ -187,6 +193,21 @@ export class Npcs {
     p.body.position.y = Math.abs(Math.cos(n.phase)) * 0.03 * amt + Math.sin(this.time * 2 + n.x) * 0.005 * idle;
     p.head.rotation.x = Math.sin(n.phase * 2) * 0.05 * amt;
     p.head.rotation.y = Math.sin(this.time * 0.4 + n.z) * 0.15 * idle;
+    // M28: Sitzen am Kartentisch – Beine nach vorn, Arme auf dem Tisch, die Karten in der Hand
+    if (n.sit > 0.01) {
+      const k = n.sit;
+      p.legL.rotation.x = -1.5 * k;
+      p.legR.rotation.x = -1.4 * k;
+      p.armL.rotation.x = -0.95 * k;
+      p.armR.rotation.x = -0.95 * k;
+      p.body.position.y = Math.sin(this.time * 1.7 + n.x) * 0.004;
+      // der Blick geht ab und zu hinüber zu Mika (Kopf, nicht der Körper)
+      if (player) {
+        const turn = Math.atan2(player.x - n.x, player.z - n.z) - n.facing;
+        const want = Math.max(-0.45, Math.min(0.45, Math.atan2(Math.sin(turn), Math.cos(turn)))) * (0.5 + 0.5 * Math.sin(this.time * 0.35 + n.x));
+        p.head.rotation.y = want * k;
+      }
+    }
     // Winken zur Begrüßung
     if (n.wave > 0) {
       p.armR.rotation.x = -2.6;
@@ -254,6 +275,27 @@ export class Npcs {
         to(p.armR, 'x', -2.1);
         to(p.armR, 'z', -0.55);
         to(p.head, 'x', -0.1);
+        break;
+      // M28: die Ticks am Kartentisch
+      case 'kichern': // Hand vor den Mund, die Schultern hüpfen
+        to(p.armR, 'x', -2.35);
+        to(p.armR, 'z', -0.5);
+        to(p.head, 'z', 0.12);
+        p.body.position.y += Math.abs(Math.sin(g.t * 26)) * 0.012 * k;
+        break;
+      case 'summen': // Kopf wiegt sich im Takt
+        p.head.rotation.z += Math.sin(g.t * 5) * 0.16 * k;
+        p.head.rotation.x += 0.06 * k;
+        break;
+      case 'brille': // rechte Hand an die Brille, Kopf etwas gesenkt
+        to(p.armR, 'x', -2.55);
+        to(p.armR, 'z', -0.3);
+        to(p.head, 'x', 0.12);
+        break;
+      case 'pfeife': // Pfeife an den Mund, ein Zug
+        to(p.armR, 'x', -2.2);
+        to(p.armR, 'z', -0.45);
+        p.head.rotation.x += -0.08 * Math.sin(Math.min(1, g.t / g.dur) * Math.PI) * k;
         break;
       default:
         break;

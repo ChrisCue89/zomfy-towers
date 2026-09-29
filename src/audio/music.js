@@ -21,6 +21,11 @@
 //   boss   »Der Boss kommt« (M22) – c-Moll, 138 Schläge pro Minute, solange ein
 //          Boss lebt: wie die Nacht auf Stufe 2, dazu eine Pauke und eine
 //          eigene Hörnermelodie.
+//   karten »Kartenabend« (M28) – G-Dur im Dreiertakt, 96 Schläge pro Minute:
+//          Bass auf der Eins, E-Piano auf Zwei und Drei, gezupfte Gitarre,
+//          Flöte und Spieluhr im Wechsel. Läuft am Kartentisch ohne Pause;
+//          klopft jemand oder steht es 1 : 1 (»Letzte Runde«), legt sich eine
+//          Streicherfläche mit leisem Ticken darunter (`tension`).
 //
 // Die Stücke sind Daten: Akkorde je Takt (»Gm7|C7« = je ein halber Takt) und
 // Melodien als »Ton:Länge« in Sechzehnteln (»-« ist eine Pause). Gespielt wird
@@ -145,6 +150,20 @@ const SONGS = {
       { chords: ['Gmaj7', 'Em7', 'Cadd9', 'Dsus|D'], ep: 'comp', arp: 'roll', bass: 'walk', pad: true, lead: 0, mel: ['B4:6 A4:2 G4:4 D4:4', 'E4:4 G4:4 B4:6 C5:2', 'D5:4 E5:4 D5:4 B4:4', 'A4:8 D5:8'] },
     ],
   },
+  karten: {
+    bpm: 96,
+    verb: 0.32,
+    bellOctave: 2,
+    steps: 12, // Dreiertakt: zwölf Sechzehntel je Takt
+    waltz: true,
+    loop: true,
+    sections: [
+      { chords: ['Gadd9', 'Em7', 'Cadd9', 'D'], arp: true, lead: 0, mel: ['D5:4 B4:4 G4:4', 'E5:6 D5:2 B4:4', 'C5:4 E5:4 G5:4', 'F#5:8 -:4'] },
+      { chords: ['Gmaj7', 'Em7', 'Am7', 'D7'], arp: true, lead: 0, mel: ['D5:4 B4:4 G4:4', 'G5:6 F#5:2 E5:4', 'C5:4 E5:4 A4:4', 'D5:12'] },
+      { chords: ['Cmaj7', 'GB', 'Am7', 'D7'], arp: true, brush: true, lead: 1, mel: ['E5:4 G5:4 E5:4', 'D5:6 B4:2 G4:4', 'C5:4 A4:4 C5:4', 'B4:4 A4:4 F#4:4'] },
+      { chords: ['Gadd9', 'Em7', 'D', 'Gadd9'], arp: true, brush: true, lead: 1, mel: ['G4:4 B4:4 D5:4', 'E5:6 G5:2 E5:4', 'D5:6 C5:2 A4:4', 'G4:12'] },
+    ],
+  },
   nacht: {
     bpm: 126,
     verb: 0.14,
@@ -166,9 +185,9 @@ const SONGS = {
   },
 };
 
-/** »C5:6 A4:2 -:4« → 16 Plätze je Takt: [Hz, Länge] oder null. */
-function bar16(text) {
-  const out = new Array(16).fill(null);
+/** »C5:6 A4:2 -:4« → 16 (bzw. `steps`) Plätze je Takt: [Hz, Länge] oder null. */
+function bar16(text, steps = 16) {
+  const out = new Array(steps).fill(null);
   let step = 0;
   for (const tok of text.trim().split(/\s+/)) {
     const [name, l] = tok.split(':');
@@ -176,7 +195,7 @@ function bar16(text) {
     if (name !== '-') out[step] = [hz(name), len];
     step += len;
   }
-  if (step !== 16) throw new Error(`Musik: Takt »${text}« hat ${step} statt 16 Sechzehntel`);
+  if (step !== steps) throw new Error(`Musik: Takt »${text}« hat ${step} statt ${steps} Sechzehntel`);
   return out;
 }
 
@@ -188,7 +207,7 @@ for (const song of Object.values(SONGS)) {
         return CHORDS[n];
       }),
     );
-    sec.mel = sec.mel ? sec.mel.map(bar16) : null;
+    sec.mel = sec.mel ? sec.mel.map((b) => bar16(b, song.steps || 16)) : null;
   }
   if (song.end) song.end = { chord: CHORDS[song.end.chord], note: hz(song.end.note) };
 }
@@ -234,7 +253,8 @@ export class Music {
   update(dt, s) {
     const t = this.ctx.currentTime;
     // Startbild: noch keine Musik (nur die Spieluhr); Titelbild: das Titelstück (N2)
-    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? (s.boss ? 'boss' : 'nacht') : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
+    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? (s.boss ? 'boss' : 'nacht') : s.cards ? 'karten' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
+    this.tension = s.cards ? s.cardTension || 0 : 0; // M28: Klopfen, Letzte Runde
     const level = t < this.duckUntil ? 0.15 : 1;
     if (level !== this.level) {
       this.level = level;
@@ -243,7 +263,7 @@ export class Music {
     const cur = this.cur;
     // Nacht kommt sofort, sonst darf ein Durchgang zu Ende spielen – nur das
     // Titelstück wechselt gleich (ins Spiel hinein oder zurück zum Titelbild)
-    const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel');
+    const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel' || cur.id === 'karten' || want === 'karten');
     // Nacht und Boss (M22) kommen sofort und wechseln gleich
     const fightWant = want === 'nacht' || want === 'boss';
     const fightCur = cur && SONGS[cur.id].night;
@@ -302,16 +322,17 @@ export class Music {
       const t = cur.next;
       if (t >= now - 0.05) {
         if (song.night) this.nightStep(cur, t, threat);
+        else if (song.waltz) this.waltzStep(cur, t);
         else this.cozyStep(cur, t);
       }
       cur.next += cur.stepDur;
-      if (++cur.step < 16) continue;
+      if (++cur.step < (song.steps || 16)) continue;
       cur.step = 0;
       cur.first = false;
       if (++cur.bar < song.sections[cur.sec].chords.length) continue;
       cur.bar = 0;
       if (++cur.sec < song.sections.length) continue;
-      if (song.night) cur.sec = 0;
+      if (song.night || song.loop) cur.sec = 0;
       else this.finish(cur, Math.max(cur.next, now));
     }
   }
@@ -399,6 +420,40 @@ export class Music {
       if (k === 0 || k === 10) this.s.tone('sine', 88, t, 0.22, { freqEnd: 46, peak: 0.1, attack: 0.004, out });
       if (k === 4 || k === 12) this.hit(t, 0.14, 0.028, cur.fx.brush, 0.03);
       else if (k % 4 === 2) this.hit(t, 0.05, 0.01, cur.fx.brush, 0.01);
+    }
+  }
+
+  // --- Kartenabend (M28) -------------------------------------------------------------------
+
+  /** Dreiertakt: Bass auf der Eins, E-Piano auf Zwei und Drei, Gitarre, Melodie; darunter die Spannung. */
+  waltzStep(cur, t) {
+    const song = cur.song;
+    const sec = song.sections[cur.sec];
+    const k = cur.step;
+    const [chord] = sec.chords[cur.bar];
+    const beat = cur.stepDur * 4;
+    const out = cur.bus;
+    if (k === 0) this.bass(chord.bass, t, beat * 1.6, 0.1, out);
+    if (k === 4 || k === 8) chord.ep.forEach((f, n) => this.ep(f, t + n * 0.01, beat * 0.7, 0.024, out));
+    if (sec.arp && k % 2 === 0) {
+      const pattern = [0, -1, 2, 3, 4, 2];
+      const i = pattern[k / 2];
+      if (i >= 0) this.pluck(chord.arp[i], t + rand(0, 0.01), (k === 0 ? 0.04 : 0.028) * rand(0.85, 1.1), out);
+    }
+    const n = sec.mel ? sec.mel[cur.bar][k] : null;
+    if (n) {
+      if ((sec.lead + cur.pass) % 2 === 0) this.flute(n[0], t, n[1] * cur.stepDur, 0.058, out);
+      else this.bell(n[0] * song.bellOctave, t, 0.042, out);
+    }
+    if (sec.brush) {
+      if (k === 0) this.s.tone('sine', 88, t, 0.2, { freqEnd: 46, peak: 0.08, attack: 0.004, out });
+      if (k === 4 || k === 8) this.hit(t, 0.08, 0.016, cur.fx.brush, 0.02);
+    }
+    // Spannung: Streicher unter jedem Takt, leises Ticken auf den Achteln dazwischen
+    const tension = this.tension || 0;
+    if (tension > 0) {
+      if (k === 0) this.pad(chord.ep, t, beat * 3, 0.014 * tension, 800, out);
+      if (k % 4 === 2) this.hit(t, 0.03, 0.012 * tension, cur.fx.brush, 0.008);
     }
   }
 

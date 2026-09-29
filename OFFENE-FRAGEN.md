@@ -1952,6 +1952,26 @@ schon das Zuhause ist; das Gästezimmer ist eine **Dachkammer** über dem Lager
 niemand blockiert ewig den Gästeplatz; ohne Entscheidung passiert etwas
 Freundliches statt nichts.
 
+### 179. Wo, wann und mit wem wird Karten gespielt? (M28)
+**Entscheidung:** Abends zwischen 18:00 und 19:40 – dann endet der Abend
+spätestens zur ersten Welle um 20:30 – bietet jeder eingezogene Bewohner im
+Gespräch eine Runde an, höchstens ein Abend je Tag. Am ersten Abend nur Bert (er
+erklärt das Spiel in einer Minute), ab dem dritten Abend erklärt Hilde vor der
+Partie die Farbpaare, egal gegen wen. Balduin spielt am Steg, solange er angelegt
+hat (eine Zeile im Handelsfenster, erst wenn Mika die Farbpaare kennt), und
+bringt dabei den Griff ins Dunkle bei, der danach in allen Partien gilt. Draußen
+steht ein Klapptisch vor dem Feuer, bei Regen oder Schnee derselbe Tisch drinnen
+auf dem Teppich vor dem Kamin. Das Gegenüber sitzt nördlich des Tisches mit dem
+Gesicht zu uns und dem Feuer im Rücken, Mika über Eck an der Ostseite. Ein Abend
+geht bis zwei Siege, die erste Partie beginnt Mika, der Anfang
+wechselt. Laubwirbel und Krähendieb sind echte Wahlen, der Mond deckt von selbst
+auf (meist gibt es nur eine verdeckte Karte).
+**Warum:** Die Uhr steht beim Spielen – ein Abend, der in die Nacht reicht, würde
+die Verteidigung bestrafen. Säße Mika gegenüber im Süden, verdeckte Mikas Kopf (die
+Kamera blickt Mika über die Schulter) Tisch und Gesicht des Gegenübers – dann sähe
+man keinen Tick. Balduins Besuch ist morgens, also spielt er dort, wo
+er ist. Hildes Erklärung hängt nicht daran, ob man zufällig mit ihr spielt.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -5,6 +5,73 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 28 – Kartenabend »Letzte Runde« ✓
+
+Dritter Schritt des Plans »Zuflucht sein« (DESIGN.md 8, OFFENE-FRAGEN 171–174):
+ein ruhiger Abend mit einem Menschen und ein Spiel, das man freiwillig noch einmal
+spielt.
+
+- **Regeln** (`src/core/cards.js`, ohne three.js) aus der Recherche: 36 Karten,
+  fünf auf der Hand, drei Plätze (Laterne, Kessel, Kürbis), genau 15 ist ein
+  Volltreffer, Klopfen einmal je Partie, zwei Plätze gewinnen. Gleichstand: Mond,
+  weniger Karten, höhere Karte, wer nicht angefangen hat. Stufe 2 **Farbpaare**
+  (Glut, Laubwirbel, Mondlicht, Krähendieb), Stufe 3 **Griff ins Dunkle**.
+  Laubwirbel und Krähendieb sind echte Wahlen (welche Karten abwerfen, welche
+  fortnehmen – oder keine).
+- **Simulator** `node tools/karten.mjs`: Startspieler 49–51 %, keine Remis, alle
+  Farbpaare zwischen 48 und 54 %, rund 17 Züge je Partie. Die KI sieht nur den
+  Tisch: Tauscht man Mikas verdeckte Karten gegen andere aus dem Stapel, ändern
+  sich Tischansicht und Zug der KI nie (verdeckte Karten tragen keine ID mehr –
+  die hätte Farbe und Wert verraten). `--liga`: jede Figur gegen jede.
+- **Sechs Spielstile mit Tick:** Bert (blufft nie, klopft nie, reibt sich die
+  Hände, wenn er gut steht – immer ehrlich), Juna (Chaos, kichert beim Verdecken
+  und auch einfach so), Balduin (Draufgänger, versteckt schwache Karten und tippt
+  dann an die Mütze), Oma Hilde (sammelt Farbpaare und summt, wenn eins kommt),
+  Dr. Yusuf (vorsichtig, rückt die Brille, wenn er schlecht steht) und Fiete (der
+  Stärkste, merkt sich alles und liest Mika – jedes dritte Mal täuscht seine
+  Pfeife; er kommt mit den Wanderern in M29). Gedächtnis und Lesen: Wer liest,
+  rückt seine Schätzung von Mikas verdeckten Karten an das, was Mika bisher
+  verdeckt hatte.
+- **Der Tisch:** abends (18:00–19:40) bietet ein Bewohner im Gespräch eine Runde
+  an, am ersten Abend nur Bert, der das Spiel erklärt; ab dem dritten Abend zeigt
+  Hilde die Farbpaare, Balduin den Griff ins Dunkle (eine Runde am Steg, eine
+  Zeile im Handelsfenster). Draußen steht ein Klapptisch mit kariertem Tuch und
+  Kerze zwischen zwei Hackklötzen vor dem Feuer, bei Regen oder Schnee steht er
+  drinnen auf dem Teppich vor dem Kamin. Die Kamera rückt nah heran, das Gegenüber
+  sitzt uns zugewandt mit dem Feuer im Rücken, Mika über Eck; die Uhr steht, danach
+  sind 50 Minuten vergangen.
+- **Karten im Pixelstil** (26 × 36, große Ziffer, Farbe als Symbol und Form) und
+  sieben Rückseiten. Karten fliegen im Bogen, drehen sich in drei Bildern um,
+  beim Klopfen pocht die Faust zweimal (ein Pixel Wackeln), beim Aufdecken zählt
+  es mit steigender Tonhöhe, 15 ist ein Flammenstoß, »Geplatzt« eine Kastanie.
+  Klänge: Wischen, Mischen, Faust auf Holz; Musik **»Kartenabend«** im
+  Dreiertakt mit einer Spannungsschicht beim Klopfen und in der Letzten Runde.
+- **Tasten:** A/D Karte, 1 2 3 Platz, E offen, Q verdeckt, K klopfen, Tab Griff
+  ins Dunkle, B schneller, Esc beendet den Abend (zählt verloren). Maus: Karte
+  anklicken, Platz anklicken (rechts: verdeckt), Knopf K zum Klopfen.
+- **Einsätze:** Der erste Sieg gegen eine Figur bringt ihr Stück (Berts
+  Grinsekürbis, Junas Funkabzeichen, Balduins Taschenuhr, Hildes Kartenbeutel,
+  Yusufs Teedose, Fietes Flaschenschiff) – es steht dann auf dem Kaminsims;
+  weitere Siege bringen Kartenrückseiten. Mika setzt nie Vorrat, sondern eine
+  Pflicht: Wer verliert, spült ab (hackt Holz, macht Frühstück …) – am Morgen
+  eine Zeile im Bericht. Nichts vom Kartentisch hilft in der Nacht.
+- **Menschenkunde:** nach drei Beobachtungen eines Ticks notiert Mika einen
+  Verdacht (»Balduin tippt an die Mütze, wenn er blufft. 4 von 5 Mal war die
+  verdeckte Karte schwach.«) – neue Seite im Herbstbuch.
+- **Spielstand v22** mit Migration.
+- Bei der Durchsicht nachgebessert: Das Abendfenster rechnete in Minuten ab
+  Mitternacht (die Uhr des Spiels zählt ab 06:00) – niemand bot eine Runde an.
+  Mika saß zuerst gegenüber im Süden; der große Kopf verdeckte von hinten Tisch
+  und Gegenüber (die Kamera blickt Mika über die Schulter) – jetzt sitzt Mika über
+  Eck, und wer am Tisch sitzt, dreht sich nicht mehr zu Mika um (nur der Kopf
+  wandert hinüber). Drinnen steht der Tisch auf dem Teppich vor dem Kamin statt am
+  Stubentisch an der Westwand (dort lag das Gegenüber unter der Porträt-Tafel).
+  Sprüche und Ticks stehen unter dem Porträt, »Partie gewonnen« und die Siegtafel
+  über der Reihe des Gegenübers – vorher lagen sie auf dem Kopf des Gegenübers bzw.
+  auf den Summen. Der E-Hinweis weicht dem Nachtplan aus.
+- Prüfabschnitt `karten` (Bilder: kartenabend, kartentisch, kartensieg,
+  kartenabend-kamin, menschenkunde).
+
 ## Meilenstein 27 – Gäste und Plätze ✓
 
 Zweiter Schritt des Plans »Zuflucht sein« (DESIGN.md 8, OFFENE-FRAGEN 161–164).

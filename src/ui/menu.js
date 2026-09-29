@@ -5,6 +5,7 @@
 // kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
 // Rückfrage liegt „Lieber nicht“ dort, wo eben noch „Neues Spiel“ stand.
 
+import { SPRECHER } from '../data/dialogs.js';
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
@@ -25,7 +26,7 @@ const NOTE_TEXT_W = NOTES_W - 24;
  * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
  * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
  */
-const BOOK_PAGES = ['taten', 'kunde', 'album'];
+const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen'];
 const BOOK_W = 350;
 const BOOK_ROW = 13;
 const BOOK_ROWS = 8;
@@ -35,6 +36,8 @@ const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
 const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text', 'shake', 'flashes'];
 const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES };
+
+const SPRECHER_NAMES = Object.fromEntries(Object.entries(SPRECHER).map(([k, v]) => [k, v.name]));
 
 export class Menu {
   /** @param {import('../core/game.js').Game} game */
@@ -247,6 +250,22 @@ export class Menu {
           : { id: k.id, label: T.buch.unbekannt, right: '', color: COLORS.textDim, detail: lines(T.buch.nieErledigt, COLORS.textDim) }
       );
       count = T.buch.kundeZaehler(book.kindsKnown, KIND_ORDER.length);
+    } else if (this.page === 'menschen') {
+      // M28: Menschenkunde – je Figur die Abende, der Einsatz und Mikas Verdacht
+      const kt = T.karten;
+      rows = this.game.cardNight.bookRows().map((r) => ({
+        id: r.id,
+        label: SPRECHER_NAMES[r.id] || r.id,
+        right: `${r.won} : ${r.lost}`,
+        color: COLORS.text,
+        rightColor: COLORS.textDim,
+        detail: [
+          ...lines(kt.buch.abende(r.played, r.won, r.lost), COLORS.text),
+          ...lines(`${kt.buch.stueck(kt.stuecke[r.stake])}${r.stakeWon ? ` – ${kt.buch.stueckDa}` : ''}`, r.stakeWon ? COLORS.gold : COLORS.textDim),
+          ...lines(r.note || kt.buch.unbekannt, r.note ? COLORS.textWarm : COLORS.textDim, true),
+        ],
+      }));
+      empty = lines(kt.buch.leer, COLORS.textDim);
     } else {
       rows = book.album().map((a) => ({
         id: String(a.id),

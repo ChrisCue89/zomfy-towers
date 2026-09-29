@@ -195,6 +195,10 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       (Balduin: Fahrplan aus der Uhrzeit, Einfahrt mit
                       Leine, Stand am Steg, Gesten, Handel über das
                       Werkbank-Fenster),
+                      cards (Regeln »Letzte Runde« ohne three.js: Züge,
+                      Wertung, Tischansicht, KI, M28), cardNight (Kartenabend:
+                      Einladung, Tisch, KI mit Bedenkzeit und Tick, Einsatz,
+                      Wettschuld, Menschenkunde, M28),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
                       Wackeln, Blitze – eigener Speicherplatz, nicht im
                       Spielstand)
@@ -236,6 +240,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Wohnraum des Innenraums),
                       questModels (Fundstücke der Nebenaufträge, M23),
+                      cardModels (Klapptisch, Hackklötze, Einsätze, M28),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
@@ -258,7 +263,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
                       buildbar (Bauleiste), crafting (Werkbank und
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
-                      (Morgenbericht), perkChoice (Perk-Wahl), splash
+                      (Morgenbericht), perkChoice (Perk-Wahl), cardTable
+                      (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
                       (Startbild, N2), title (Titelbild, Name und Aussehen)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung, Turmteile,
@@ -280,6 +286,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
                       Reihenfolge der Schlurferkunde, Turmalbum, M25),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
+                      cards (Spielstile, Ticks, Einsätze, Rückseiten,
+                      Pflichten, Regelstufen, M28),
                       feel (Rückmeldung je Ereignis: Trefferstopp, Wackeln,
                       Zeitlupe, Federn der Bauten, Klangstreuung, M26),
                       difficulty (Gemütlich/Ausgewogen/Wild, M16),
@@ -293,6 +301,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Startwert und Tag, Wirkung und Anteile, M12)
 tools/serve.mjs       Statischer Server (ohne Abhängigkeiten)
 tools/check.mjs       Prüfskript (Syntax, Headless-Rundgang, Screenshots)
+tools/karten.mjs      Simulator für »Letzte Runde«: Fairness, Stile, Ticks (M28)
 tools/balance.mjs     Balance-Durchlauf: spielt Nächte mit einer Bau-Strategie
                       (M24, statt Testspielern)
 tools/playtest.mjs    Playtest-Brücke (früher für Testspieler-Agenten)
@@ -526,6 +535,23 @@ Grundprinzipien:
   Fähigkeiten über `survivors.ability(art)`; Lottes Licht über
   `lightPools.setScale`. `PEOPLE`/`personOf` (core/survivors.js) statt
   `SURVIVOR_ORDER`/`SURVIVORS`, wo alle Menschen gemeint sind.
+- **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
+  Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
+  `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
+  `aiMove(view, stil, zufall)` und `showTell`. Die KI zieht **nur aus der
+  Tischansicht**; nie den Spielzustand an sie geben. Laubwirbel und Krähendieb
+  sind Wahlen (`g.choice`, Züge `drop`/`steal`). Modus `karten`: Die Uhr steht,
+  `cardNight.update` lässt die KI mit Bedenkzeit ziehen, `cardTable` zeigt Mikas
+  Sicht und spielt die Ereignisse eines Zugs als Bewegungen ab (`beats`; solange
+  sie laufen, zieht niemand). Der Tisch steht am Feuer, bei Regen/Schnee auf dem
+  Teppich vor dem Kamin (`interior.cardAnchor`), mit Balduin am Steg; Sitze und
+  Blickpunkt baut `world.cardSpot` (das Gegenüber im Norden mit dem Gesicht zur
+  Kamera, Mika über Eck an der Ostseite – von Süden verdeckte Mikas Kopf den Tisch).
+  Figuren sitzen über `player.seat`/`survivors.seatAt` (`seatY` = Sitzhöhe); wer
+  sitzt, dreht sich nicht zu Mika (nur der Kopf). Das Abendfenster zählt wie
+  `state.time.minute` ab 06:00. Einsätze
+  auf dem Kaminsims (`world.refreshStakes`). Stile, Ticks und Einsätze in
+  `data/cards.js`; `node tools/karten.mjs` prüft Fairness und Ticks.
 - **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
   { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
@@ -775,7 +801,14 @@ Grundprinzipien:
    das Angebot eines Bewohners, »Weiterbringen«, ein Brief nach zwei, drei Tagen,
    Schlafhütte erst ab Zuhause-Stufe 3 mit zwei Plätzen, die Fähigkeiten
    (Lichtinseln größer, Hannes flickt), Speichern v21, Migration v20 → v21
-   (Bilder: gaeste, gast-dialog, schlafhuette).
+   (Bilder: gaeste, gast-dialog, schlafhuette); ab M28 (Abschnitt `karten`):
+   Regeln im Simulator (Startspieler, Farben, Remis, die KI sieht nur den
+   Tisch), Bert bietet abends eine Runde an (echte Taste) und erklärt das Spiel,
+   D, 2, E legen offen, 3, Q verdeckt, die KI antwortet mit Bedenkzeit, zwei
+   gewonnene Partien bringen Berts Grinsekürbis auf den Kaminsims und eine
+   Wettschuld am Morgen, nur ein Abend je Tag, Menschenkunde im Herbstbuch, bei
+   Regen am Kamin, Speichern v22, Migration v21 → v22 (Bilder: kartenabend,
+   kartentisch, kartensieg, kartenabend-kamin, menschenkunde).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -891,7 +924,11 @@ zeigt das Federn eines Baus, `perfSample(schritte, jedesNte)` misst Bildzeiten
 Menschen, freie Plätze, Schlafsäcke, Sichtbarkeit und wer gerade fortgeht,
 `nextMorning()` springt zum nächsten Morgen (Zeilen wie im Bericht),
 `dialogInfo()` zeigt den offenen Dialog mit Antworten und Vorwahl,
-`buildOptionsFor(reiter)` die Kacheln eines Reiters.
+`buildOptionsFor(reiter)` die Kacheln eines Reiters; ab M28 zeigt `cards()`
+Kartenstand, laufenden Abend (Stand, Partie, wer zieht), Mikas Tischansicht,
+die Zeile im Bild und wer warum nicht spielen kann, `cardBegin(id)` lädt ein,
+`cardFinish(sieger)` beendet die laufende Partie, `cardClose(aufgeben)` steht
+vom Tisch auf, `cardAiMove()` zeigt den Zug, den die Regel-KI für Mika wählen würde.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.

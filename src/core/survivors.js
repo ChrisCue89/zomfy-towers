@@ -170,7 +170,40 @@ export class Survivors {
     this.updateBedrolls();
   }
 
+  /** Kartenabend (M28): `id` sitzt am Tisch (spot mit seatY) – oder steht wieder auf (null). */
+  seatAt(id, spot) {
+    const n = this.npcs.get(id, false);
+    if (spot) {
+      this.seat = { id, ...spot };
+      n.model.root.visible = true;
+      n.gestures.length = 0;
+      n.sit = 1;
+      n.sitTarget = 1;
+      n.seatY = spot.seatY;
+      n.y = null;
+      n.restFacing = spot.facing;
+      this.npcs.place(n, spot.x, spot.z, spot.facing);
+    } else {
+      this.seat = null;
+      n.sit = 0;
+      n.sitTarget = 0;
+      n.seatY = null;
+      if (id === 'balduin') this.game.trader.enter('steht', 'steht');
+      else this.placeAll(true);
+    }
+    this.refreshInteractions();
+  }
+
+  /** Geste am Kartentisch (der Tick, ein Achselzucken, Daumen hoch). */
+  cardGesture(id, kind) {
+    const n = this.npcs.list.get(id);
+    if (!n || !kind) return;
+    n.gestures.length = 0;
+    this.npcs.gesture(n, kind, 1.1);
+  }
+
   placeOne(id, out, jump) {
+    if (this.seat?.id === id) return; // M28: sitzt gerade am Kartentisch
     const def = personOf(id);
     const stage = this.stage(id);
     // M27: Weitergezogene gehen noch bis zum Tor bzw. zum Strand, dann sind sie fort
@@ -401,6 +434,13 @@ export class Survivors {
         g.updateGoals(true);
       }
     } else if (aktion === 'tauschen') this.trade();
+    else if (aktion === 'karten') {
+      // M28: Kartenabend – wer nicht kann, sagt warum
+      const why = g.cardNight.blocked(id);
+      if (why) g.hud.toast(T.karten.gruende[why] || T.karten.gruende.heute, 'buch', 2.6);
+      else g.cardNight.begin(id);
+      return;
+    }
     else if (aktion === 'auftrag') this.completeErrand(id);
     g.quietSave();
   }

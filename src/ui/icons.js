@@ -4,6 +4,11 @@
 import { P, hexToCss } from '../render/palette.js';
 
 const ICONS = {
+  // M28: Farbpaare am Kartentisch (7 × 7)
+  'karte-blatt': { legend: { k: P.g1, g: P.g5, l: P.g7, s: P.e3 }, rows: ['...k...', '..kgk..', '.kggl..', 'kgggglk', '.kgglk.', '..kkk..', '...s...'] },
+  'karte-feuer': { legend: { k: P.f0, R: P.f2, y: P.f6 }, rows: ['..k....', '..kRk..', '.kRRk.k', '.kRyRkR', 'kRyyyRk', 'kRyyyRk', '.kkkkk.'] },
+  'karte-mond': { legend: { k: P.n3, m: P.s8 }, rows: ['..kkk..', '.kmmk..', 'kmmk...', 'kmmk...', 'kmmmk..', '.kmmmkk', '..kkkk.'] },
+  'karte-kraehe': { legend: { k: P.n0, K: P.n2, b: P.f5 }, rows: ['...kk..', '..kKKbb', '.kKKKk.', 'kKKKKk.', '.kKKKKk', '..b.b..', '.b..b..'] },
   holz: {
     legend: { k: P.e1, b: P.e3, r: P.e6, R: P.e7, c: P.e8 },
     rows: [

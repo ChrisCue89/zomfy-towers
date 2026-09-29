@@ -1,5 +1,6 @@
 // Speichern und Laden im Browser (localStorage), versioniert und mit Migrationen.
 
+import { newCardState } from './cardNight.js';
 import { INTERIOR_ENTRY } from '../world/interior.js';
 import { SAVE_VERSION, sanitizeState } from './state.js';
 import { BUILDINGS } from '../data/buildings.js';
@@ -77,6 +78,8 @@ const MIGRATIONS = {
   // Taten, die der Stand schon erfüllt, trägt das Buch nach dem Laden leise ein.
   // v20 -> v21: M27 (Gäste und Plätze). Die Wanderer sind noch unterwegs; ihre Ankünfte
   // beginnen frühestens morgen – ein alter Stand verpasst keinen, und keiner steht plötzlich da.
+  // v21 -> v22: M28 (Kartenabend). Noch kein Abend gespielt, die Rückseite »Herbstlaub«.
+  21: (data) => ({ ...data, version: 22, cards: newCardState() }),
   20: (data) => ({ ...data, version: 21, guests: { plan: arrivalPlan((data.world?.mapSeed ?? 0) >>> 0, WANDERER_ORDER, (data.time?.day || 1) + 1) } }),
   19: (data) => ({ ...data, version: 20, book: { stars: {}, deeds: {}, kinds: {}, called: 0 } }),
   18: (data) => ({ ...data, version: 19, autumn: { frost: null, mode: 'herbst', credits: false } }),

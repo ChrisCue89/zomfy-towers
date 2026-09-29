@@ -78,7 +78,9 @@ export class CraftingMenu {
       const traded = g.trader.tradedToday();
       const bye = { id: 'tschuess', close: true, icon: 'boot', name: T.haendler.fertig, info: traded ? T.haendler.fertigInfo : T.haendler.fertigInfoWarten, cost: {}, gives: {}, affordable: true };
       const bitte = g.quests.tradeRow(); // M23: Balduins Bitte (Nebenauftrag)
-      return [...g.trader.offers(), ...(bitte ? [bitte] : []), bye];
+      // M28: eine Runde Karten am Steg, bevor er ablegt
+      const karten = !g.cardNight.blocked('balduin') ? [{ id: 'karten', cards: true, icon: 'buch', name: T.karten.einladenBalduin, info: T.karten.titel, cost: {}, gives: {}, affordable: true }] : [];
+      return [...g.trader.offers(), ...(bitte ? [bitte] : []), ...karten, bye];
     }
     const list = RECIPES.map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
@@ -135,6 +137,15 @@ export class CraftingMenu {
     const r = L.rows[this.focus]?.recipe;
     if (!r) return;
     const pressed = input.pressed('confirm');
+    if (r.cards) {
+      this.hold = null;
+      if ((pressed || clicked) && this.openT >= OPEN_LOCK) {
+        this.close();
+        this.game.mode = 'play';
+        this.game.cardNight.begin('balduin');
+      }
+      return;
+    }
     if (r.close) {
       this.hold = null;
       if ((pressed || clicked) && this.openT >= OPEN_LOCK) this.game.closeCrafting();

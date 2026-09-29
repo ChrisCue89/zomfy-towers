@@ -10,6 +10,7 @@ import { TOWERS } from './towers.js';
 import { TRADES, ERRANDS } from './survivors.js';
 import { WANDERERS, freePlaces } from './wanderers.js';
 import { T } from './texts.js';
+import { cardsOffered } from './cards.js';
 
 export const SPRECHER = {
   mika: { name: 'Mika', portrait: 'mika' },
@@ -42,6 +43,7 @@ function freeTent(state) {
 function guestAnswers(state, id, extra = []) {
   const answers = [...extra];
   if (state.survivors?.[id]?.stage === 2 && freeTent(state)) answers.push({ t: 'Das Zelt dort ist für dich.', aktion: 'einziehen' });
+  if (cardsOffered(state, id)) answers.push({ t: T.karten.einladen, aktion: 'karten' }); // M28: abends eine Runde
   if (!answers.length) return undefined;
   answers.push({ t: 'Bis später.', standard: true });
   return answers;
@@ -290,6 +292,27 @@ export const DIALOGE = {
       ],
       guestAnswers(state, 'yusuf', canHandIn(state, 'yusuf') ? [handIn('yusuf')] : [])
     ),
+  // M28: Kartenabend – Bert erklärt das Grundspiel, Hilde die Farbpaare, Balduin den Griff ins Dunkle
+  kartenRegeln: [
+    { s: 'bert', t: 'Setz dich. Das Spiel heißt „Letzte Runde“. Hab ich dreißig Jahre lang in der Mittagspause gespielt.' },
+    { s: 'bert', t: 'Drei Plätze: Laterne, Kessel, Kürbis. Fünf Karten auf der Hand. Jede Runde legst du eine auf deine Seite – höchstens drei pro Platz.' },
+    { s: 'bert', t: 'Eine davon darf verdeckt liegen. Wer näher an 15 kommt, kriegt den Platz. Drüber, und die Kastanie ist geplatzt. Genau 15 ist ein Volltreffer.' },
+    { s: 'bert', t: 'Einmal darfst du klopfen: Dann hab ich noch einen Zug, und wir decken auf. Zwei Plätze gewinnen. Hmpf. Fertig.' },
+    { s: 'mika', t: 'Und wer verliert?' },
+    { s: 'bert', t: 'Spült ab. Wie immer.' },
+  ],
+  kartenPaare: [
+    { s: 'hilde', t: 'Darf ich, Kindchen? Ich zeig dir, was mein Mann mir beigebracht hat.' },
+    { s: 'hilde', t: 'Zwei offene Karten derselben Farbe am selben Platz – das ist ein Farbpaar. Jedes Paar tut einmal etwas.' },
+    { s: 'hilde', t: 'Feuer macht Glut: 14 oder 16 zählen dort als 15. Blatt bringt einen Laubwirbel: zwei ziehen, zwei abwerfen.' },
+    { s: 'hilde', t: 'Der Mond deckt eine verdeckte Karte drüben auf, und ein Gleichstand dort gehört dir. Die Krähe nimmt eine offene Karte drüben fort.' },
+    { s: 'hilde', t: 'Verdeckte Karten bilden keine Paare. Merk dir das – dann merkt sich das Spiel dich.' },
+  ],
+  kartenDunkel: [
+    { s: 'balduin', t: 'Karten? Hoho! Dann zeig ich dir den Griff ins Dunkle, wie wir ihn auf See spielen.' },
+    { s: 'balduin', t: 'Statt einer Handkarte nimmst du die oberste vom Stapel und legst sie ungesehen verdeckt hin. Keiner weiß, was es ist – du auch nicht.' },
+    { s: 'balduin', t: 'Nachziehen gibt’s dann nicht, und ein Volltreffer zählt damit nicht. Wagnis, mein Kind. Das Salz im Spiel.' },
+  ],
   hildeAuftrag: [
     { s: 'hilde', t: 'Danke, Kindchen. Und weil du nachts so frierst: Bring mir acht Fasern, dann strick ich dir einen Schal.' },
     { s: 'mika', t: 'Fasern gibt es im hohen Gras. Mach ich!' },

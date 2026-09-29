@@ -469,6 +469,11 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
       lampe: new THREE.Vector3(wx(tab.x0 + 12), (FLOOR + 27) * U - FLOOR * U, wz(tab.z0 + 8)),
     },
     rooms: rooms.map((r) => ({ id: r.id, minX: wx(r.x0), maxX: wx(r.x1 + 1) })),
+    // M28: Kartenabend am Kamin – der Klapptisch steht auf dem Teppich vor dem Feuer
+    // (world.cardSpot baut daraus Sitze und Blickpunkt wie draußen)
+    cardAnchor: { x: wx(kamin.x0 + 16), z: wz(30) },
+    // M28: Kaminsims – vorn an der Kante stehen die gewonnenen Einsätze
+    mantel: { x0: wx(kamin.x0 + 1), x1: wx(kamin.x1), z: wz(12.5), y: 23 * U },
     // Lichtinseln für Lampen ohne eigenes Punktlicht (nachts, siehe lightPools.js)
     pools: rooms.flatMap((r) => (ROOM_POOLS[r.id] || []).map(([vx, vz, radius]) => ({ x: wx(vx), z: wz(vz), radius }))),
   };

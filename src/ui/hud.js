@@ -1204,6 +1204,9 @@ export class Hud {
     }
     const x = Math.round(Math.min(ui.width - w - 2, Math.max(2, prompt.x - w / 2)));
     let y = Math.round(Math.min(ui.height - 60, Math.max(40, prompt.y - h)));
+    // M28: Auch der Nachtplan am Abend bleibt lesbar – der Hinweis rückt unter die Tafel
+    const pr = this.planRect;
+    if (pr && x < pr.x + pr.w && x + w > pr.x && y < pr.y + pr.h && y + h > pr.y) y = pr.y + pr.h + 2;
     // m16-r1: Lag der Hinweis auf Mikas Gedanken, war der nicht zu lesen – dann darunter
     const sr = this.speechRect;
     if (sr && x < sr.x + sr.w && x + w > sr.x && y < sr.y + sr.h && y + h > sr.y) y = sr.y + sr.h + 2;

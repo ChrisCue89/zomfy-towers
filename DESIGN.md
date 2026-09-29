@@ -1642,7 +1642,17 @@ RimWorld (Gäste auf Zeit), Spiritfarer (der gestaltete Abschied).
 *Prüfen:* Ankunft, Gästeplatz, beide Entscheidungen mit echten Tasten, volle
 Plätze, Brief, Migration.
 
-#### M28 – Kartenabend »Letzte Runde«
+#### M28 – Kartenabend »Letzte Runde« ✓
+
+*Umgesetzt (29.09.2026):* Die geprüften Regeln (Nr. 172) als reine Daten mit
+Simulator (`tools/karten.mjs`: 49–51 % für den Startspieler, keine Remis, alle
+Farbpaare um 50 %; die KI sieht nur den Tisch). Abends bietet ein Bewohner eine
+Runde an – am ersten Abend Bert, der das Spiel erklärt, ab dem dritten Hilde mit
+den Farbpaaren, Balduin am Steg mit dem Griff ins Dunkle. Der Tisch steht vor dem
+Feuer oder bei Regen am Kamin, das Gegenüber sitzt uns zugewandt, die Uhr steht.
+Sechs Spielstile mit sichtbarem Tick, Einsätze auf dem Kaminsims,
+Kartenrückseiten, Wettschulden am Morgen, die Herbstbuch-Seite »Menschenkunde«
+und das Stück »Kartenabend« im Dreiertakt. Spielstand v22 (Nr. 179).
 
 *Ziel:* Ein ruhiger Abend mit einem Menschen, an dem man ihn kennenlernt – und
 ein Spiel, das man freiwillig noch einmal spielt.

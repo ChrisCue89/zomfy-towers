@@ -40,6 +40,7 @@ export class Player {
     this.config = config;
     this.climbing = false; // klettert gerade über eine eigene Barrikade (m12-r1)
     this.riding = null; // Neigung, solange Mika auf der Reifenschaukel steht (m12-r1)
+    this.seated = null; // M28: am Kartentisch – { x, z, facing, seatY }
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
@@ -362,6 +363,18 @@ export class Player {
       }
     }
 
+    // M28: am Kartentisch sitzen – Oberschenkel nach vorn, Knie gebeugt (die Füße hängen)
+    if (this.seated) {
+      p.legL.rotation.x = -1.5;
+      p.legR.rotation.x = -1.42;
+      if (p.kneeL) {
+        p.kneeL.rotation.x = 1.4;
+        p.kneeR.rotation.x = 1.3;
+      }
+      p.body.rotation.x = 0.08;
+      p.body.position.y = Math.sin(this.time * 1.9) * 0.004;
+    }
+
     // Rechte Hand: Werkzeug zeigen (Aktion hat Vorrang vor der Auswahl). Drinnen
     // steckt Mika es weg – in der engen Stube ragte die Axt durch die Wand (m12-r1)
     const indoors = this.world.isInside?.(this.position.x, this.position.z);
@@ -414,6 +427,11 @@ export class Player {
       p.armR.rotation.z = 0.1;
       p.body.rotation.x = 0.28;
       if (p.elbowR) p.elbowR.rotation.x = -0.6 - w * 0.3;
+    } else if (this.seated) {
+      // Die Karten vor der Brust
+      p.armR.rotation.x = -1.05;
+      p.armR.rotation.z = 0.3;
+      if (p.elbowR) p.elbowR.rotation.x = -0.8;
     } else {
       p.armR.rotation.x = (shownTool ? -0.25 : 0) + s * 0.6 * amt;
       p.armR.rotation.z = 0.05 + Math.sin(this.time * 2.1) * 0.03 * idle;
@@ -479,8 +497,16 @@ export class Player {
     }
   }
 
+  /** Kartenabend (M28): hinsetzen (seatY = Höhe der Sitzfläche) oder wieder aufstehen (null). */
+  seat(spot) {
+    this.seated = spot ? { ...spot } : null;
+    if (spot) this.place(spot.x, spot.z, spot.facing);
+    else this.syncObject();
+  }
+
   syncObject() {
     this.object.position.copy(this.position);
+    if (this.seated) this.object.position.y += (this.seated.seatY ?? 0.28) - 0.375; // Hüfte auf die Sitzfläche
     this.object.rotation.y = this.facing + (this.spinAngle || 0);
     this.object.rotation.z = this.riding ?? 0; // auf der Schaukel neigt sie sich mit
   }
