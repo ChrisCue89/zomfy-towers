@@ -30,11 +30,11 @@ export const T = {
   nachtStage2: 16.0 + 5 * NB,
   nachtEnd: 16.0 + 8 * NB, // 31,2381
   // 31,233 – Akt III: titel-Mittelteil (Streicher), Musik fällt bei 40,6 weg
-  mid: 31.2333,
+  mid: 937 / 30, // 31,2333 (Bild 937)
   midMusicEnd: 40.6,
   // 41,233 – Akt IV: harter Einsatz, boss in 6 Takten
-  boss: 41.2333,
-  bossEnd: 41.2333 + 6 * BB, // 51,668
+  boss: 1237 / 30, // 41,2333 (Bild 1237)
+  bossEnd: 1237 / 30 + 6 * BB, // 51,668
   // Ausklang
   morning: 52.2, // leise Spieluhr/Piano
   title: 56.0, // Titelakkord

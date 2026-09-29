@@ -13,19 +13,19 @@ const clone = (b) => ({ l: Float32Array.from(b.l), r: Float32Array.from(b.r) });
 // aus dem Stück selbst (Stufe 2 ist die lauteste), gemessen wird an Stufe 2.
 export const LEVELS = {
   music: {
-    jingle: { win: [0.05, 3.0], lufs: -22.5 },
-    'titel-intro': { win: [T.titel + 0.1, T.titelCut - 0.1], lufs: -22.5 },
+    jingle: { win: [0.05, 3.0], lufs: -23.5 },
+    'titel-intro': { win: [T.titel + 0.1, T.titelCut - 0.1], lufs: -23.5 },
     nacht: { win: [T.nachtStage2, T.nachtEnd - 0.05], lufs: -14.5 },
-    'titel-mid': { win: [T.mid + 0.3, T.midMusicEnd - 0.1], lufs: -21 },
+    'titel-mid': { win: [T.mid + 0.3, T.midMusicEnd - 0.1], lufs: -22 },
     boss: { win: [T.boss + 0.1, T.bossEnd - 0.05], lufs: -14.0 },
     morning: { win: [T.morning + 0.1, T.title - 0.4], lufs: -27.5 },
     title: { win: [T.title + 0.1, T.end - 0.6], lufs: -21.5 },
   },
   // Übergänge: Spitze (dBFS) bzw. Lautheit im Fenster
   trans: {
-    'trans-drone': { kind: 'peak', win: [T.trans, T.nacht + 0.1], target: -16 },
-    'trans-riser': { kind: 'lufs', win: [T.nacht - 1.0, T.nacht], target: -21 },
-    'trans-cymbal': { kind: 'lufs', win: [T.nacht - 1.0, T.nacht], target: -22 },
+    'trans-drone': { kind: 'peak', win: [T.trans, T.nacht + 0.1], target: -19 },
+    'trans-riser': { kind: 'lufs', win: [T.nacht - 1.0, T.nacht], target: -19.5 },
+    'trans-cymbal': { kind: 'lufs', win: [T.nacht - 1.0, T.nacht], target: -20 },
     'trans-heart': { kind: 'peak', win: [15.4, 15.9], target: -13 },
   },
   impacts: [

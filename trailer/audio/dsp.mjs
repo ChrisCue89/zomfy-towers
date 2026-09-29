@@ -160,6 +160,20 @@ export class Meter {
   }
 }
 
+/** Kurzzeit-RMS (dBFS, beide Kanäle gemittelt) im gleitenden Fenster: [{t (Ende), db}] */
+export function shortTermRms(buf, win = 3, hop = 0.5, sr = 44100) {
+  const n = buf.l.length;
+  const pre = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) pre[i + 1] = pre[i] + buf.l[i] * buf.l[i] + buf.r[i] * buf.r[i];
+  const out = [];
+  for (let t = win; t <= n / sr + 1e-9; t += hop) {
+    const a = Math.round((t - win) * sr);
+    const b = Math.min(n, Math.round(t * sr));
+    out.push({ t, db: 10 * Math.log10((pre[b] - pre[a]) / (2 * (b - a)) + 1e-30) });
+  }
+  return out;
+}
+
 // --- True Peak und Begrenzer ---------------------------------------------------------------------------
 
 /** 4-fach überabgetastet: 12 Taps je Phase, Blackman-Harris-Fenster (Phasen 1…3; Phase 0 ist das Signal selbst). */
