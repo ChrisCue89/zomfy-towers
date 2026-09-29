@@ -5,6 +5,44 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Recherche und Entscheidungen: Gemeinschaft (29.09.2026) ✓
+
+**Auftrag:** »Alles so wie du es für spaßig hältst. Recherchiere zu allen
+Punkten, auch zu meinen Ideen. Dann triff auf der Spielspaß-Grundlage zu allem
+Entscheidungen. Wir wollen ein Triple-A-Pixelspiel machen. Ich find Waffen
+übrigens besser als Werkzeug.« – zum Gemeinschaftskonzept vom 28.09.2026 (24
+Punkte, `KONZEPT-GEMEINSCHAFT.md`).
+
+- **Recherche** (`recherche/`, vier Berichte): Gemeinschaft (Plätze, Gäste,
+  Weiterbringen, Netzwerk, Bindung – Animal Crossing, State of Decay 2,
+  RimWorld, Spiritfarer, Fire Emblem, Wildermyth), Glocke und Waffen
+  (Notfallknopf, Permadeath mit Rettungsfenster, Verwundung, Gedenken – XCOM,
+  Darkest Dungeon, Plants vs. Zombies), Kartenspiel (Schotten Totten, Pazaak,
+  Gwent, Triple Triad, faire KI) und Premium-Pixel (Trefferstopp, Trauma-Wackeln,
+  Licht, Bildzeiten – Vlambeer, Dead Cells, HD-2D, Eastward). Quellen, die nur
+  als Suchausschnitt erreichbar waren, sind markiert.
+- **Kartenspiel im Simulator** (`recherche/karten-sim.mjs`, 20 000 Partien je
+  Variante, eine KI, die nur den Tisch sieht): Die Ausgangsidee trägt, braucht
+  aber eine Legepflicht (sonst platzt niemand), eine Gleichstandsregel (sonst
+  23 % Remis) und entschärfte Farbkräfte (Krähen-Tausch gewann 55–58 %). Die
+  geprüfte Fassung: 50,5 : 49,5 ohne Remis, alle Farben 49–51 %, etwa 18 Züge.
+- **Entschieden** (OFFENE-FRAGEN 161–176): zwölf Wanderer, acht je Herbst,
+  höchstens acht Plätze; Gästeplatz und »weiterbringen« statt ablehnen; fünf
+  sichere Orte mit Briefen, Paketen und Signalfeuern in der Frostnacht; die
+  Lagerglocke nur nach einem Durchbruch und einmal je Nacht; Tod nur nach der
+  Glocke, nie auf »Gemütlich«, nie Knopf; Verwundung in Tagen mit
+  Rettungsfenster; **echte Waffen** im Waffenschrank (Wunsch des
+  Auftraggebers), auch für Mika, mit geteilter Munition, ohne Blut; Übungsplatz
+  mit Übung 0–3; Erinnerungsbrett am Steg; ein Abend, eine Aktivität; die
+  Kartenregeln in drei Stufen; sechs Spielstile mit Tick; nur kosmetische
+  Gewinne; Posten helfen künftig, ohne zu kämpfen; Premium-Schliff als eigener
+  Meilenstein.
+- **Plan** (DESIGN.md 8, »Der Plan ab M26 – Zuflucht sein«): M26 Wucht und
+  Schliff → M27 Gäste und Plätze → M28 Kartenabend → M29 Bindung und Alltag →
+  M30 Waffenschrank und Übungsplatz → M31 Lagerglocke → M32 Netzwerk und
+  Wiedersehen → M33 Angeln, Licht und Schwellen. Neue Grundregel »Zuflucht
+  sein« in DESIGN 0.13 und CLAUDE.md.
+
 ## Meilenstein 25 – Nachbesserung 2: Grenzen für dichte Horden ✓
 
 **Anlass:** »Wild« über 30 Nächte war noch nicht vermessen. Dabei fiel Nacht 29

@@ -7,6 +7,8 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `DESIGN.md` | Vision, Look, alle Systeme, Meilensteinplan, Spaß-Leitlinien (Abschnitt 10) – **vor jeder Arbeit lesen** |
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
+| `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
@@ -57,6 +59,12 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
   auf Umwege gelenkt, das Wegenetz bleibt ein Baum; die Wegvorschau bleibt.
 - **Ein Spiel hat ein Ende (Nr. 117):** Finale nach einem Herbst, danach
   weiterspielen (Roguelike-Nächte, Nebenaufträge) oder neue Runde (M25).
+- **Zuflucht sein (ab M26, Nr. 161–176, DESIGN 0.13):** Menschen kommen, Mika
+  nimmt sie auf oder bringt sie weiter – niemand wird weggeschickt. Bewohner
+  sind keine kostenlosen Türme: Die Horde wird ohne sie balanciert, Posten
+  unterstützen nur. Zu den Waffen greifen sie erst nach der Lagerglocke, und
+  nur dann kann jemand sterben (nie auf »Gemütlich«, Knopf nie). Wehmut ja,
+  Schuld nein; Treffer ohne Blut (Sporen, Laub).
 - Widerspricht bestehender Code dieser Struktur, wird er angepasst – nicht
   bloß Neues daneben gesetzt.
 

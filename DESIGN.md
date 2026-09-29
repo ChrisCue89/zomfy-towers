@@ -119,6 +119,13 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
       verteidigt selbst → die Welle endet.
     - **Morgen:** Die Folgen der Nacht sind zu sehen → Zombie-Überreste
       einsammeln → Schäden reparieren → ein neuer Tag beginnt.
+13. **Zuflucht sein (ab M26, OFFENE-FRAGEN 161–176).** Menschen kommen in die
+    Bucht; Mika nimmt sie auf oder bringt sie weiter – niemand wird
+    weggeschickt. Bewohner sind keine kostenlosen Türme: Die Horde wird ohne
+    sie balanciert, auf dem Posten helfen sie, ohne zu kämpfen. Zu den Waffen
+    greifen sie erst, wenn Mika in der Not die Lagerglocke läutet, und nur
+    dann kann jemand sterben (nie auf »Gemütlich«, Knopf nie). Wehmut ja,
+    Schuld nein. Treffer bluten nicht, sie stäuben Sporen und Laub.
 
 ## 1. Vision
 
@@ -795,6 +802,10 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
   auf dem Steg: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
   (braucht einen Moderkern). Das Leuchtfeuer brennt jede Nacht über dem See
   und bremst Schlurfer in seinem Schein.
+- **Ab M27 (Plan »Zuflucht sein«, Abschnitt 8):** Wanderer mit Gästeplatz und
+  der Entscheidung am Morgen, bis zu acht Plätze, Kartenabende, Bindung,
+  Waffenschrank und Übungsplatz, die Lagerglocke und das Netzwerk der sicheren
+  Orte (OFFENE-FRAGEN 161–175).
 
 ### 6.15 Balduin und der Handel
 
@@ -1498,14 +1509,216 @@ Abspann nennt Sterne und Taten.
   **Herbstbuch** (Erfolge mit Deko als Belohnung), **Schlurferkunde** mit
   Dr. Yusufs Notizen, **Turmalbum.**
 
+### Der Plan ab M26 – Zuflucht sein (29.09.2026)
+
+Auftrag: das Gemeinschaftskonzept des Auftraggebers (28.09.2026, 24 Punkte,
+Analyse in `KONZEPT-GEMEINSCHAFT.md`), dazu: »Alles so wie du es für spaßig
+hältst. Recherchiere zu allen Punkten, auch zu meinen Ideen. Dann triff auf der
+Spielspaß-Grundlage zu allem Entscheidungen. Wir wollen ein Triple-A-Pixelspiel
+machen. Ich find Waffen übrigens besser als Werkzeug.« Die Recherche liegt in
+`recherche/` (Gemeinschaft, Glocke und Waffen, Kartenspiel mit Simulator,
+Premium-Pixel), die Entscheidungen stehen in OFFENE-FRAGEN 161–176.
+
+Mikas Aufgabe laut Geschichte: die Nächte halten, ein Zuhause bauen, Zuflucht
+sein. Tag und Nacht sind gebaut; das Zuflucht-Sein, also die Menschen, ist die
+fehlende dritte Hälfte. Das Rückgrat ist die Kette aus Punkt 23 des Konzepts:
+
+> Menschen kommen → Mika entscheidet (bleiben oder weiterbringen) → Bewohner
+> bekommen einen Platz → gemeinsame Abende (Karten, Angeln, Kochen) → Bindung →
+> Übung und Waffen → die Glocke in der Not → Verwundung, im Ernstfall ein
+> Verlust → Erinnerung → das Netzwerk hält die Weitergezogenen in der Welt → in
+> der Frostnacht leuchten ihre Signalfeuer.
+
+**Leitplanken für alle Meilensteine:**
+
+- **Bewohner sind keine kostenlosen Türme.** Die Horde wird ohne sie
+  balanciert; Posten unterstützen nur (Nr. 175); mit Waffen gekämpft wird erst,
+  wenn Mika die Lagerglocke läutet (Nr. 165).
+- **Niemand wird weggeschickt** – weiterbringen statt ablehnen (Nr. 163).
+- **Tod nur nach der Glocke**, nie auf »Gemütlich«, nie Knopf (Nr. 166).
+  Wehmut ja, Schuld nein: kein Stimmungsabzug, keine Trauer-Spirale.
+- **Treffer ohne Blut:** violette Sporen, Laub, Moos.
+- **Die Tage 1–6 bleiben die ruhige Einführung** der Stammbesetzung (Knopf,
+  Hilde, Juna, Bert, Dr. Yusuf), ohne Entscheidungsdruck.
+- Jeder Meilenstein ist für sich spielbar; alte Spielstände laufen weiter.
+
+**Vorläufige Besetzung der zwölf Wanderer** (je Herbst kommen acht, Nr. 161;
+Feinschliff in M27 und M29):
+
+| Name | Beruf | Fähigkeit (klein, meist nicht kämpferisch) | Rolle im Ensemble |
+|---|---|---|---|
+| Hannes | Zimmerer | flickt nachts die Hälfte der Holzschäden | bedächtig, klopft jede Planke ab |
+| Clara | Mechanikerin | Türme reparieren und Teile basteln billiger | redet mit den Türmen |
+| Fiete | alter Fischer | Fisch für die Suppe, bringt das Angeln bei (M33) | Kartenmeister, wirkt harmlos |
+| Greta | Jägerin | richtet verbrauchte Fallen morgens wieder auf | wortkarg, liest Spuren |
+| Jonte | Gärtner | Beete tragen mehr, Kräuter für Yusufs Tee | redet mit Pflanzen, fürchtet Krähen |
+| Lotte | Laternenmacherin | alle Lichtinseln größer (Licht macht den Moder müde) | schwärmt, verliert alles |
+| Ansgar | Lehrer | Übungen gehen schneller (M30) | korrigiert jeden, auch Balduin |
+| Pia | Kind, Finderin | findet morgens Kleinkram; kämpft nie | Schützling neben Juna |
+| Rudi | Musiker | spielt abends am Feuer: die Bucht erholt sich schneller | kennt jedes Lied, nur nicht zu Ende |
+| Nele | Schneiderin | Stoff reicht weiter, neue Mützen für Mika | ehrlich bis zur Grobheit |
+| Bruno | Koch | stärkere Suppe | brummiger Kartenrivale |
+| Ida | Kartografin | zeichnet Quellen und Fundstücke in die Karte | verwandte Seele: hat auch ihr Zuhause verloren |
+
+#### M26 – Wucht und Schliff
+
+*Ziel:* Jeder Schlag, jeder Treffer und jeder Bau fühlt sich an; das Spiel
+läuft auch in dichten Nächten gleichmäßig. Das ist der erste Schritt zum
+»Triple-A-Pixelspiel« – Hochwertigkeit entsteht aus Konsequenz, nicht aus
+Auflösung (Nr. 176).
+
+*Vorbild:* Vlambeer (»The Art of Screenshake«), Dead Cells, Hades, Celeste,
+das Trauma-Modell von Squirrel Eiserloh.
+
+- **Rückmeldungs-Tabelle** `src/data/feel.js`: je Ereignis Trefferstopp,
+  Wackeln, Blitz, Partikel und Klang in drei Stufen (leicht, mittel, schwer:
+  30–50 / 80–150 / 150–250 ms, Partikel 3–6 / 8–12 / 16–30).
+- **Wackeln nach dem Trauma-Modell:** Ausschlag = Trauma², ganze Pixel (1 /
+  2–3 / 4–6 / 6–8), gerichtet, ohne Drehung; Einstellungen »Wackeln«
+  (aus/halb/voll) und »Blitze« (abgeschwächt).
+- **Treffer lesbar:** ein Bild weißer Blitz, Nachschwung, Klang mit Varianten
+  und ±5 % Tonhöhe – nie zweimal derselbe Ton.
+- **Bauen mit Schwung:** Stauchen und Strecken beim Setzen, Staubring, Klang je
+  Stufe; der Baugeist zeigt ✓ oder ✗ mit Grund.
+- **Stabile Bildzeiten:** Shader beim Startbild vorkompilieren, Abstandhalten
+  der Horde über ein Raster statt jeder gegen jeden, p95/p99 der Bildzeit im
+  Prüfskript.
+
+*Prüfen:* Tabelle vollständig, »Wackeln aus« ohne Versatz, Bildzeiten einer
+dichten Nacht, Baugeist mit Grund.
+
+#### M27 – Gäste und Plätze
+
+*Ziel:* Die Bucht wird ein Zufluchtsort: Menschen kommen, und Mika entscheidet,
+wer bleibt – ohne je jemanden wegzuschicken.
+
+*Vorbild:* Animal Crossing (Camper, begrenzte Plätze), State of Decay 2,
+RimWorld (Gäste auf Zeit), Spiritfarer (der gestaltete Abschied).
+
+- **Umbau zuerst:** Die Überlebenden werden datengetrieben (keine festen Namen
+  mehr in Posten, Aufträgen, Morgengaben, Funk, Rettung, Modellen, Porträts);
+  die Prüfung bleibt unverändert grün.
+- **Figurenbaukasten für Wanderer:** Formen aus N1, Farben, Frisuren, Mützen,
+  Kleidung und Zubehör aus Daten; Porträts mit Ausdrücken.
+- **Ankünfte aus dem Startwert** (Tage 7–24), über den Weg ans Tor, am Strand
+  oder mit Balduins Boot; der **Gästeplatz** am Feuer.
+- **Die Entscheidung am Morgen:** »Bleib bei uns«, »Weiterbringen« (Proviant und
+  Laterne mitgeben) oder einmal »Bleib noch einen Tag«; Bewohner bieten aus
+  eigenem Grund an, Platz zu machen.
+- **Plätze:** Zelte bis fünf, die Hütte (+2), das Gästezimmer (+1).
+- **Die ersten vier Wanderer** mit Beruf, Fähigkeit, Temperament, Running Gag
+  und Erinnerungsstück; **Netzwerk, Stufe 1:** der erste Brief nach dem
+  Weiterbringen.
+- Spielstand v21 mit Migration.
+
+*Prüfen:* Ankunft, Gästeplatz, beide Entscheidungen mit echten Tasten, volle
+Plätze, Brief, Migration.
+
+#### M28 – Kartenabend »Letzte Runde«
+
+*Ziel:* Ein ruhiger Abend mit einem Menschen, an dem man ihn kennenlernt – und
+ein Spiel, das man freiwillig noch einmal spielt.
+
+*Vorbild:* Gwent, Triple Triad, Pazaak, Poker Night at the Inventory; Schotten
+Totten.
+
+- **Regelwerk** `src/core/cards.js` ohne three.js, Simulator in `tools/` mit
+  Fairness-Prüfung (Startspieler, Farben, Remis) – die geprüften Regeln aus
+  Nr. 172.
+- **Der Tisch:** Karten im Pixelstil, die Kamera fährt an Feuer oder Kamin
+  (nach Wetter), das Gegenüber sitzt uns zugewandt, die Welt lebt weiter.
+- **Drei Regelstufen** (Grundspiel, Farbpaare, Griff ins Dunkle), **sechs
+  Spielstile** mit sichtbarem Tick (Nr. 173), die KI sieht nur den Tisch.
+- **Einsätze und Kosmetik** (Nr. 174), Musik »Kartenabend«, Herbstbuch-Seite
+  »Menschenkunde«.
+
+*Prüfen:* Regeln im Simulator, Fairness (vertauschte verdeckte Karten ändern
+den Zug der KI nicht), eine Partie mit echten Tasten, Belohnung.
+
+#### M29 – Bindung und Alltag
+
+*Ziel:* Aus Mitbewohnern werden Freunde – über gemeinsame Zeit, nicht über
+Punkte.
+
+*Vorbild:* das Lagerfeuer in Red Dead Redemption 2, der Tee in Fire Emblem:
+Three Houses, das Fotoalbum in Final Fantasy XV, die Szenenrollen in
+Wildermyth.
+
+- **Ein Abend, eine Aktivität** (Nr. 171), vier stille Stufen, Gesten, drei
+  Bindungsmomente je Figur.
+- **Geteilte Szenen** mit Rollen nach Temperament; morgens reden die Bewohner
+  über die Nacht.
+- **Posten werden reine Unterstützung** (Nr. 175).
+- Die restlichen Wanderer bis zwölf.
+
+*Prüfen:* Stufe steigt über gemeinsame Zeit, Geste sichtbar, Posten ohne
+Schaden (Balance-Durchlauf unverändert).
+
+#### M30 – Waffenschrank und Übungsplatz
+
+*Ziel:* Die Bewohner können sich wehren, wenn es sein muss – und Mika bekommt
+eine echte Waffe mit Gegenseite.
+
+*Vorbild:* Death Road to Canada, Enter the Gungeon, Nuclear Throne (Wucht),
+State of Decay 2 (Waffenschrank).
+
+- **Waffenschrank** im Haus mit sieben Waffen (Nr. 168), eine Notfallwaffe je
+  Person.
+- **Mika mit Schusswaffe:** in der Schnellleiste; die Munition teilt sie mit
+  der Gemeinschaft (Patronen von Balduin, Schrot an der Werkbank); laute
+  Waffen locken Schlurfer an.
+- **Übungsplatz** mit Übung 0–3 (Nr. 169).
+
+*Prüfen:* Schuss mit echter Taste, Munition sinkt, Anlocken, Übung steigt.
+
+#### M31 – Die Lagerglocke
+
+*Ziel:* Die schwerste Entscheidung der Nacht: allein halten oder alle rufen.
+
+*Vorbild:* der Rasenmäher in Plants vs. Zombies, XCOM (Ausbluten,
+Gedenkwand), Darkest Dungeon (der Treffer auf null tötet nie).
+
+- **Die Glocke am Feuer** (Nr. 165), Kampf der Bewohner nur innerhalb des
+  Walls.
+- **Zu Boden, Rettung, Verwundung, Narbe, Tod** (Nr. 166, 167); das
+  **Erinnerungsbrett** am Steg (Nr. 170); Einstellung »Verluste« im Titelbild.
+
+*Prüfen:* Glocke nur nach einem Durchbruch und einmal je Nacht, Rettung mit
+echter Taste, Tod nur nach der Glocke und nie auf »Gemütlich«, Speichern.
+
+#### M32 – Netzwerk und Wiedersehen
+
+*Ziel:* Wer weitergezogen ist, bleibt in der Welt.
+
+*Vorbild:* die Briefe in Death Stranding, die Post in Stardew Valley, die
+Enklaven in State of Decay 2.
+
+- **Briefe** (Oma Hilde), **Pakete** (Balduin), **Stimmen** (Juna), Besuche und
+  Rückkehr (Nr. 164).
+- In der Frostnacht leuchten die **Signalfeuer**; jede Figur hat ihr Motiv in
+  der Musik.
+
+*Prüfen:* Brief und Paket kommen, Rückkehr, Signalfeuer in der Frostnacht.
+
+#### M33 – Angeln am Steg, Licht und Schwellen
+
+*Ziel:* die zweite Abendaktivität und der letzte Glanz.
+
+- **Angeln am Steg** als Abendaktivität mit einem Menschen (Fiete bringt es
+  bei).
+- **Lebendige Lichtinseln, Tiefe ohne Unschärfe, inszenierte Schwellen**
+  (Nr. 176).
+
+*Prüfen:* Angeln mit echten Tasten, Bilder der Lichtinseln.
+
 ## 9. Ideen-Parkplatz
 
-- Angeln am Steg, Kochen am Kamin mit kleinen Boni.
+- Angeln am Steg (eingeplant: M33), Kochen am Kamin mit kleinen Boni.
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen).
 - Mit Balduins Boot eine Insel besuchen.
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
-- Briefe von Oma Hilde als Sammelobjekte.
+- Briefe von Oma Hilde als Sammelobjekte (eingeplant: Netzwerk, M32).
 - Fotomodus.
 
 ## 10. Der Spaß – was die Warcraft-3-Karten so gut machten

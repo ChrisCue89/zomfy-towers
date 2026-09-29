@@ -1631,6 +1631,297 @@ Schwärmer, über 1200 unsichtbar, und alles floh, ohne je die Barrikaden zu
 erreichen. Mit den Grenzen erreicht die Horde in derselben Nacht die
 Barrikaden, höchstens rund 600 leben gleichzeitig, jeder ist zu sehen.
 
+### 161. Wer kommt in die Bucht – und wie viele Plätze gibt es? (Gemeinschaft, Konzept 1–2)
+**Entscheidung:** Zu den fünf Stammfiguren (Tage 2–6, unverändert) kommt ein Pool
+von **zwölf handgeschriebenen Wanderern**; in jedem Herbst kommen **acht** davon,
+in einer Reihenfolge aus dem Startwert der Karte, an den Tagen 7, 9, 12, 14, 17,
+19, 22 und 24 (±1 Tag, nie in einer Bossnacht, nie am Morgen nach dem Fest, nie
+zwei Tage hintereinander; ab Tag 25 keine neuen Gesichter). Sie kommen über den
+Hauptweg ans Tor, am Strand entlang oder mit Balduins Boot. Jeder Beruf kommt
+einmal je Spiel vor, die Fähigkeiten sind klein, verschieden und meist nicht
+kämpferisch (Zeit, Material, Komfort, Licht). Aus den Beispielen des Konzepts
+werden: Zimmerer (flickt nachts die Hälfte der Holzschäden), Mechanikerin
+(Türme reparieren und Turmteile basteln billiger), Jägerin (richtet
+verbrauchte Fallen morgens wieder auf), Gärtner (Beete tragen mehr,
+Kräuter für Yusufs Tee) und eine **Laternenmacherin statt des Elektrikers** (es
+gibt keinen Strom, aber Licht macht den Moder müde: alle Lichtinseln größer).
+Ein Arzt ist schon da (Dr. Yusuf). **Plätze:** Zelte bis fünf (vier für die
+Stammbesetzung, eins für den ersten Wanderer), die **Hütte** (+2, ab Zuhause-Stufe
+3) und das **Gästezimmer** (+1, Stufe 5) – höchstens acht Menschen plus Knopf.
+**Warum:** Animal Crossing (10 Plätze, etwa vier Camper im Monat), State of
+Decay 2 (12, ab 9 kaum noch Angebote) und RimWorld zeigen: Spannend sind die
+letzten Plätze, und die Knappheit darf nicht in die Einführung fallen (mit drei
+Zelten wäre schon die Stammbesetzung eine Wahl). Zwölf Bewerber auf acht Plätze
+ergeben 1,5 : 1 – etwa vier Weitervermittlungen und fünf bis sechs echte
+Entscheidungen je Herbst, höchstens eine am Tag (`recherche/gemeinschaft.md`).
+
+### 162. Wer ist jemand? (Konzept 3)
+**Entscheidung:** Jede Person hat Beruf und Fähigkeit (sofort sichtbar), zwei
+von acht Temperamenten (bestimmen ihre Rolle in geteilten Szenen), einen Running
+Gag, den das Spiel auslöst (Wetter, Türme, Balduin), eine Vorliebe und eine
+Abneigung aus ihrer Geschichte, einen Kartenstil mit sichtbarem Tick, ein
+Erinnerungsstück und ein eigenes Motiv aus vier bis sechs Tönen. Rund 110 Zeilen
+und vier Briefe je Wanderer, 150–200 Zeilen je Stammfigur, dazu etwa 40 geteilte
+Szenen mit Rollenplätzen statt einer Paar-Matrix; ein Gedächtnis für Gesagtes
+verhindert Wiederholung. Das Ensemble bekommt, was ihm fehlt: einen brummigen
+Kartenrivalen und eine verwandte Seele (jemand, der auch sein Zuhause verlor).
+**Warum:** Eine Kante schlägt zehn nette Sätze (Francis in Left 4 Dead); Animal
+Crossing: New Horizons wurde für gleiche, zu nette Zeilen kritisiert; Wildermyth
+verteilt Szenenrollen über Temperamente. Bindung entsteht in sieben Formen (CHI
+PLAY 2019) – Schützling (Juna), Freundin (Hilde) und Vorbild (Yusuf) gibt es
+schon, Gegenspieler und verwandte Seele fehlten.
+
+### 163. Niemand wird weggeschickt (Konzept 4)
+**Entscheidung:** Neue Besucher schlafen eine Nacht am **Gästeplatz** am Feuer
+(später zwei). Am Morgen: **»Bleib bei uns«** (ein Platz ist frei),
+**»Weiterbringen«** (Mika packt Proviant und eine Laterne ein; Balduin nimmt die
+Person mit, oder sie geht nach Junas Funkspruch am Ufer entlang zu einem der
+sicheren Orte) oder einmal je Gast **»Bleib noch einen Tag«** (Tee, ein Tag
+Aufschub). Ist alles voll, kann ein Bewohner aus eigenem Grund anbieten, Platz zu
+machen (»Mein Bruder ist auf der Nordinsel«) – so entsteht die Frage »Mist, dann
+müsste Hannes gehen«, ohne dass Mika jemanden fortschickt. Die Wörter sind
+»weiterbringen« und »mitgeben«, nie »ablehnen« oder »rauswerfen«. Die Ankünfte
+stehen im Startwert, gespeichert wird bei der Entscheidung (kein Neuladen-Würfeln).
+**Warum:** Frust entsteht durch Verlust ohne Zustimmung (frühere Animal-Crossing-
+Teile) oder ohne Rückweg (State of Decay 2); das »evict« in Fallout Shelter
+erzeugt Schuld. »Vielleicht später« (This War of Mine), Gäste auf Zeit
+(RimWorld) und der gestaltete Abschied in Spiritfarer zeigen den freundlichen Weg.
+
+### 164. Das Netzwerk der sicheren Orte (Konzept 5)
+**Entscheidung:** Fünf Orte – Nordinsel, Forsthaus, Alte Farm, Leuchtturm,
+Ferienlager – als Liste mit Zeitplan, ohne Simulation. Drei Kanäle: Oma Hilde
+(die frühere Postbotin) bringt Briefe, Balduin Pakete, Juna Stimmen über den
+Funk. Der erste Brief kommt zwei bis drei Tage nach der Abreise, ein Paket fünf
+bis acht Tage später (ein paar Rohstoffe, ein Möbelstück oder Kosmetik), dazu
+ein bis zwei Besuche je Herbst (zum Fest oder zum Kartenabend). Wird ein Platz
+frei, kann eine weitervermittelte Person wiederkommen (Einladung über Balduin).
+In der Frostnacht leuchtet für jede weitervermittelte Person ein Signalfeuer an
+ihrem Ort, und jeder Ort schickt eine kleine, nicht kämpferische Hilfe.
+Höchstens eine Nachricht je Morgen, gebündelt im Morgenbericht.
+**Warum:** Briefe nach jedem Aufstieg (Death Stranding), verbündete Enklaven
+(State of Decay 2) und Post mit Geschenk (Stardew Valley) lassen die Welt mit
+einem billigen Textkanal bewohnt wirken; Preston Garveys endlose Aufträge mit
+Fristen (Fallout 4) sind das Gegenbeispiel.
+
+### 165. Die Lagerglocke (Konzept 6)
+**Entscheidung:** Balduins alte **Schiffsglocke** hängt im Hof am Feuer (ein Bau,
+einmalig; »Lagerglocke« grenzt sie von der Alarmglocke am Tor und der Sturmglocke
+des Glockenturms ab). Läuten geht **nur nachts nach einem Durchbruch** (Tor
+gefallen oder Schlurfer im Lager) und **einmal je Nacht**: Mika steht an der
+Glocke und hält E 1,5 s, dabei zeigt eine Tafel »Wer kommt?« (Name, Leben,
+Waffe, Munition). Gekämpft wird nur innerhalb des Walls; 20 s nachdem das Lager
+frei ist (spätestens im Morgengrauen) schlägt die Glocke dreimal zur Entwarnung.
+Solange sie läutet: kein Zeitraffer, kein Rufen. **Kosten:** Munition, und wer
+gekämpft hat, ist am nächsten Tag bis 12 Uhr erschöpft (Fähigkeit ruht).
+**Lohn:** Geschichte statt Beute – eine Szene am Feuer, der Morgenbericht erzählt,
+wer was getan hat, Taten im Herbstbuch. Inszenierung in drei Takten: Das Seil
+spannt sich, ein Schlag Stille, Fenster gehen nacheinander an, jede Figur greift
+mit eigener Geste zu, die Kampfmusik setzt auf dem Takt ein. Die Steuerung bleibt
+beim Spieler.
+**Warum:** Ein Notfallknopf bleibt selten durch eine Bedingung, Einmaligkeit und
+Folgen am nächsten Tag, nicht durch eine Abklingzeit (der Rasenmäher in Plants
+vs. Zombies, die Blanks in Enter the Gungeon); das billige »Zu den Waffen« in
+Warcraft III wurde Routine (`recherche/glocke-waffen.md`).
+
+### 166. Wann jemand sterben kann (Konzept 7)
+**Entscheidung:** **Tödlich wird es nur, wenn Mika die Glocke läutet.** Posten,
+Tag und normale Nächte bleiben ohne Tod, und die Horde wird ohne Glocke
+balanciert. Auf »Gemütlich« sind Verluste aus (beim Spielstart wählbar, später
+nur noch von »an« zu »aus«); dort verliert, wer liegen bleibt, nur seine Waffe.
+Knopf stirbt nie – er verkriecht sich und ist morgens wieder da. Der Tod wird
+angedeutet, nie gezeigt, und sofort gespeichert.
+**Warum:** Spieler akzeptieren Permadeath, wenn er einer sichtbaren Entscheidung
+folgt, sich ankündigt und ein Rettungsfenster lässt (Jake Solomon: Das Spiel muss
+»völlig fair« wirken; Randy Smith, GDC 2023: Nichts darf an einem einzigen Wurf
+nach der Entscheidung hängen). Der Casual-Modus von Fire Emblem hält Spieler,
+statt sie zu vertreiben.
+
+### 167. Verwundung statt sofortigem Tod (Konzept 8)
+**Entscheidung:** Bewohner haben 80 Leben (+20 je Übungsstufe); ein Treffer nimmt
+höchstens 40 % (Gemütlich 30 %, Wild 50 %). Bei 25 % ziehen sie sich ins Haus
+zurück, wenn der Weg frei ist – zu Boden geht nur, wer eingekesselt ist. **Am
+Boden** läuft ein Rettungsfenster von 60 s (Wild 40 s, doppelt so schnell,
+solange ein Schlurfer daneben steht) mit Ring, Herzschlag, Randmarke mit Porträt
+und dem Ruf »Mika!«; Schlurfer lassen Liegende in Ruhe. Mika rettet mit E 2 s,
+Dr. Yusuf stabilisiert alle im Umkreis von 6 m nach 4 s, und ist das Lager frei,
+gelten alle Liegenden als gerettet. Danach: **erschöpft** (hat gekämpft, bis 12
+Uhr), **verletzt** (Nacht mit höchstens der Hälfte der Leben beendet: 2 Tage,
+Fähigkeit halb, folgt der Glocke nicht), **schwer verletzt** (war zu Boden: 4
+Tage, Fähigkeit aus; Yusuf und ein Bett im Haus kürzen um je einen Tag), dann
+eine **Narbe** (nur Aussehen und eine Zeile). Gemütlich 1/2 Tage, Wild 3/5.
+**Warum:** XCOM (3–4 Runden Ausbluten mit sichtbarem Zähler), Darkest Dungeon
+(der Treffer auf 0 tötet nie) und RimWorld (Zusammenbruch vor dem Tod) belegen
+den Zwischenzustand; Verletzungen in Tagen mit einem Heiler (XCOM 2, Darkest
+Dungeon) sind die eigentliche Strafe, weil Verletzte beim nächsten Mal fehlen.
+
+### 168. Waffen statt Werkzeug (Wunsch des Auftraggebers, Konzept 6 und 9)
+**Entscheidung:** Echte Waffen, warm inszeniert. Im **Waffenschrank** im Haus
+liegen Jagdgewehr (Präzision, 12 m, durchschlägt einen Schlurfer), Doppelflinte
+(Nahbereich im Fächer, stößt zurück), Pistole (Allrounder), Signalpistole (blendet,
+setzt eine Lichtinsel, macht den Moder müde – Junas Waffe), Axt, Mistgabel (weit,
+stößt zurück, die sicherste) und Baseballschläger (schnell, betäubt kurz). Jede
+Person bekommt eine Notfallwaffe zugewiesen: Oma Hilde nimmt die Doppelflinte,
+Bert die Axt, Dr. Yusuf keine – er verarztet. **Auch Mika** kann eine Schusswaffe
+aus dem Schrank in die Schnellleiste nehmen und teilt sich die Munition mit der
+Gemeinschaft: Wer die Patronen nachts selbst verschießt, hat sie nicht, wenn die
+Glocke läutet – eine Wahl mit Gegenseite. **Munition:** Patronen bei Balduin (für
+Zombieteile, begrenzt je Tag), Schrot aus Schrott an der Werkbank; laute Waffen
+locken Schlurfer im Umkreis an. **Darstellung:** Mündungsfeuer über zwei Bilder,
+Rauch, Hülsen bleiben bis zum Morgen liegen, 1–2 px Rückstoß, Trefferstopp, ein
+tiefer Knall mit Hall über dem See, Krähen fliegen auf, Knopf bellt. Treffer
+sprühen violette Sporen und Laub, nie Blut; wer fällt, sinkt zu einem Haufen aus
+Moos und Laub. Ein leeres Magazin klickt komisch.
+**Warum:** Der Auftraggeber findet Waffen besser als Werkzeug (29.09.2026). Death
+Road to Canada und Enter the Gungeon zeigen, dass Schusswaffen im humorvollen
+Pixelton funktionieren, solange Treffer knallen, aber nicht bluten (»The Art of
+Screenshake«: Mündungsfeuer, Rückstoß, Hülsen, Kamerastoß).
+
+### 169. Training (Konzept 9)
+**Entscheidung:** Ein **Übungsplatz** am Lager – Heuballen, Kürbisse als
+Zielscheiben, eine Strohpuppe mit Kochtopf-Helm, Blechdosen auf dem Zaun –,
+handgemacht, nicht militärisch. **Ein Regler je Person: Übung 0–3** (2/3/4
+Übungen, zusammen neun). Eine Übung dauert zwei Spielstunden am Tag, höchstens
+eine je Person und Tag, ihre Fähigkeit ruht solange; Schießen kostet drei
+Patronen. Übt Mika mit, zählt es auch als gemeinsame Zeit. Je Stufe +20 Leben,
++8 Treffsicherheit (Grund 60 %) und −10 »Schreck« (Grund 30 %: 1 s Zögern, wenn
+ein Schlurfer auf 2 m herankommt); jede Figur hat ein festes Profil (»Juna
+schnell, aber schreckhaft«). Eine überstandene Glockennacht zählt als Übung.
+**Warum:** Vier Fähigkeiten mit sieben Sternen (State of Decay 2) oder Schulen mit
+Tagen (XCOM) sind für vier bis acht Bewohner zu viel; »Training: Stufe 2« aus dem
+Konzept trifft die richtige Größe.
+
+### 170. Erinnerung an Verstorbene (Konzept 10)
+**Entscheidung:** Ein **Erinnerungsbrett am Steg**: mit Wäscheklammern ein Foto
+(aus dem Porträt), der Name und »Tag 7–19«, darunter das Erinnerungsstück und eine
+Kürbislaterne. Der Morgenbericht sagt es in einer ruhigen Zeile (man habe sie
+»zum Steg gebracht«). Abends kann Mika mit E die Laterne anzünden – dann spielt
+die Spieluhr ihr Motiv, und eine Erinnerungszeile erscheint. Die anderen sprechen
+noch einige Tage von ihr. Kein Stimmungsmalus, niemand zieht deshalb weg. Ihre
+Karten werden als Kartenrückseite wählbar, das Herbstbuch bekommt die Seite »Die
+mit uns waren«, und der Platz kann wieder einen Gast aufnehmen.
+**Warum:** Die Gedenkwand von XCOM, die Gedenktafeln in Dwarf Fortress und der
+selbst gewählte Abschied in Spiritfarer berühren über ein persönliches Detail
+und eine eigene Handlung; Trauer-Spiralen (RimWorld, This War of Mine) passen
+nicht zu »Wehmut ja, Schuld nein«.
+
+### 171. Ein Abend, eine Aktivität – und Beziehungen über Erlebnisse (Konzept 11, 12, 22)
+**Entscheidung:** Jeden Abend (18–20 Uhr, vor der Nacht) kann Mika **eine** Person
+zu **einer** Aktivität einladen: zuerst Karten (»Letzte Runde«), später Angeln am
+Steg und gemeinsam Kochen am Feuer. Die Uhr steht dabei, danach wird eine feste
+Zeit abgebucht. Bei schönem Wetter an der Feuerstelle, bei Regen, Sturm oder
+Schnee drinnen am Kamin; die Kamera fährt in 0,6–0,8 s auf 160 px/m, das Gegenüber
+sitzt nördlich des Tisches mit dem Gesicht zu uns, die Welt lebt weiter (Funken,
+Regen an den Scheiben, Grillen, Knopf schnarcht, Becher mit Dampf). Beziehungen
+wachsen über diese Erlebnisse in vier stillen Stufen (fremd, vertraut,
+befreundet, eng) ohne Verfall; neue Arten gemeinsamer Zeit zählen voll,
+Wiederholungen weniger. Jede Stufe bringt eine Geste (setzt sich neben Mika, ein
+Spitzname, schenkt ihr Erinnerungsstück) und neue Zeilen, dazu drei
+Bindungsmomente je Figur. Keine Zahl im Bild.
+**Warum:** Das Lagerfeuer in RDR2, der Tee in Fire Emblem: Three Houses und das
+Fotoalbum in FFXV binden über Aktivitäten mit sichtbarer Spur. Stardews Punkte
+und Geschenke gelten als »Bestechung«, Personas starke Boni machen Beziehungen zu
+Checklisten, und Cozy Grove begrenzt den Tag bewusst.
+
+### 172. »Letzte Runde« – die Regeln (Konzept 13–17)
+**Entscheidung:** Die geprüfte Fassung aus `recherche/kartenspiel.md`, in drei
+Stufen im Spiel beigebracht.
+- **Grundspiel (Bert erklärt es am ersten Abend):** 36 Karten (Blatt, Feuer,
+  Mond, Krähe, je 1–9), jeder fünf auf der Hand. Drei Plätze (Laterne, Kessel,
+  Kürbis), höchstens drei Karten je Platz und Seite. Jeder Zug: genau eine Karte
+  an einen eigenen Platz, offen oder verdeckt (je Platz höchstens eine verdeckte),
+  dann nachziehen. Genau 15 schließt den Platz (»Fünfzehn!«). **Klopfen** einmal
+  je Partie statt zu legen (an einem Platz mit mindestens zwei eigenen Karten):
+  Der andere hat noch genau einen Zug, dann wird aufgedeckt. Näher an 15 gewinnt,
+  15 oder weniger schlägt immer »geplatzt«, sind beide drüber, gewinnt, wer
+  weniger drüber liegt. Gleichstand: weniger Karten, dann die höhere Einzelkarte,
+  dann wer nicht angefangen hat. Zwei Plätze gewinnen; ein Abend geht bis zwei
+  Siege, der Anfang wechselt, die dritte Partie heißt »Letzte Runde«.
+- **Farbpaare (Oma Hilde, ab dem dritten Abend):** Die zweite *offene* Karte einer
+  Farbe am selben Platz löst einmal aus – **Glut** (14 oder 16 zählt als 15),
+  **Laubwirbel** (zwei ziehen, zwei abwerfen), **Mondlicht** (eine verdeckte Karte
+  des anderen aufdecken; ein Gleichstand an diesem Platz gehört dir),
+  **Krähendieb** (eine offene Karte des anderen an diesem Platz abwerfen).
+- **Griff ins Dunkle (Balduin):** statt einer Handkarte die oberste Stapelkarte
+  ungesehen verdeckt legen – das echte Wagnis.
+Im Simulator (20 000 Partien, eine KI, die nur sieht, was ein Spieler sieht):
+50,5 : 49,5 ohne Remis, alle Farben bei 49–51 %, etwa 18 Züge – ein Abend dauert
+fünf bis acht Minuten.
+**Warum:** Die Ausgangsidee trägt (drei Plätze, zwei gewinnen, 15, Klopfen – der
+Kern von Schotten Totten und Air, Land & Sea in eigener Mischung). Aber ohne
+Legepflicht platzt niemand, ohne Gleichstandsregel endeten 23 % unentschieden,
+der Startspieler lag vorn, und Krähen-Tausch (55–58 %) und Feuer ±1 dominierten.
+
+### 173. Faire Karten und Spielstile (Konzept 18, 19)
+**Entscheidung:** Alle spielen mit demselben Deck, es gibt nur Kosmetik
+(Rückseiten, Designs). Die KI bekommt nur eine Tischansicht (offene Karten,
+eigene Hand, Gesehenes); ein Prüfpunkt stellt sicher, dass ihr Zug gleich bleibt,
+wenn Mikas verdeckte Werte vertauscht werden. Das Deck ist echt gemischt, die
+Nachschau zeigt alle verdeckten Karten. Sechs Stile mit sichtbarem Tick: Bert
+(gemütlich, blufft nie, reibt sich bei guter Hand die Hände), Dr. Yusuf
+(vorsichtig, rückt die Brille, wenn er unsicher ist), Juna (Chaos, kichert beim
+Verdecken – aber auch sonst), Balduin (Draufgänger, klopft früh, tippt an die
+Mütze, wenn er blufft), Oma Hilde (sammelt Paare, summt dabei) und der **alte
+Fischer Fiete** unter den Wanderern (wirkt harmlos, liest und merkt sich alles;
+jedes dritte Mal täuscht sein Tick). Nach drei Beobachtungen notiert Mika einen
+Verdacht, die Herbstbuch-Seite »Menschenkunde« sammelt sie.
+**Warum:** Pazaak und das Poker in RDR2 litten unter dem Verdacht, die KI
+schummle; Poker Night at the Inventory zeigt, dass feste, nachprüfbare Ticks Spaß
+machen. Patzer machen eine KI kaum schwächer – die Schwierigkeit muss aus
+Denkweise und Lesen kommen.
+
+### 174. Belohnungen und Einsätze (Konzept 20, 21)
+**Entscheidung:** Nichts für die Verteidigung – keine Rohstoffe, keine Erfahrung,
+keine Turmteile, keine Baupläne; Gewinne vom Kartentisch haben Gemütlichkeit 0
+(Gemütlichkeit gibt im Spiel Erfahrung und Tempo). Jede Figur legt ihr Stück
+sichtbar auf den Tisch (Balduins Taschenuhr, die er nicht verkauft, Yusufs
+Teedose, Junas Funkabzeichen, Fietes Flaschenschiff, eine besondere
+Kürbislaterne); der erste Sieg gegen jede Figur bringt ihr Stück. Danach
+Kartenrückseiten, **Schallplatten** (neue Musikstücke fürs Grammophon), Tassen,
+Mützen für Mika, Kamin- und Feuerstellen-Deko und kosmetische Varianten für
+Barrikaden und Türme – etwa 20 Dinge je Herbst. Mika setzt nie Rohstoffe, sondern
+eine Pflicht (»Wer verliert, spült ab«), die am Morgen als kleine Szene zu sehen
+ist. Höchstens ein Kartenabend je Tag; nach der Bossnacht ein kleines Turnier beim
+Fest, am Abend vor der Frostnacht spielen alle die »Letzte Runde«.
+**Warum:** »Card Mod« in Triple Triad machte das frühe Spiel trivial; Gwent lebt
+von der Jagd nach Karten bei Wirten und davon, dass es freiwillig bleibt.
+
+### 175. Posten werden reine Unterstützung (Konzept 6, Frage 3)
+**Entscheidung:** Seit M23 helfen Bewohner jede Nacht vom Hochsitz, und Hildes
+Gläser machen Schaden – genau die »kostenlose Turm-Einheit«, die das Konzept
+ausschließt. Posten helfen deshalb künftig, ohne zu kämpfen: Bert flickt, Dr.
+Yusuf heilt, Juna leuchtet (blendet und holt aus dem Nebel, betäubt nicht mehr),
+Hilde wirft **Leimgläser** (kleben nur, kein Schaden). Knopf hütet weiter den Hof
+und verjagt Schwärmer – das bleibt sein Charme. Mit Waffen gekämpft wird nur nach
+der Glocke.
+**Warum:** Die Glocke verliert ihr Gewicht, wenn die Bewohner ohnehin jede Nacht
+kämpfen. Der Balance-Durchlauf rechnet ohne Posten und bleibt davon unberührt.
+
+### 176. Premium-Schliff: Was ein Pixelspiel hochwertig macht (»Triple-A-Pixelspiel«)
+**Entscheidung:** Vor und zwischen den Gemeinschafts-Meilensteinen kommt Schliff,
+der überall wirkt (`recherche/premium-pixel.md`):
+- eine **Rückmeldungs-Tabelle** je Ereignis in `src/data/` (Trefferstopp 30–50 /
+  80–150 / 150–250 ms, Wackeln, Blitz, Partikel 3–6 / 8–12 / 16–30, Klang mit
+  Varianten und ±5 % Tonhöhe);
+- **Wackeln nach dem Trauma-Modell** (Ausschlag = Trauma², ganze Pixel 1 / 2–3 /
+  4–6 / 6–8, gerichtet, ohne Drehung, im Menü aus/halb/voll);
+- **Bauen mit Schwung** (Stauchen und Strecken, Staubring, Klang je Stufe);
+- **stabile Bildzeiten** (Shader beim Startbild vorkompilieren, Abstandhalten der
+  Horde über ein Raster, p95/p99 im Prüfskript);
+- **lebendige Lichtinseln** (Flackern, Funken, Fensterlicht auf dem Boden,
+  Spiegelsäulen im See, Randlicht an Figuren am Feuer);
+- **Tiefe ohne Unschärfe** (Luftperspektive nach Norden, Rasterdunst, leichte
+  Vignette);
+- **inszenierte Schwellen** (Lampen gehen nacheinander an, der letzte Schlurfer in
+  Zeitlupe, der Morgen erst still);
+- **Leben in den Figuren** (Ausholen und Nachschwung, Idle-Leben, Emote-Blasen);
+- **Oberflächen-Politur und Zugänglichkeit** (✓/✗ im Baugeist, Oberflächengröße,
+  Blitze abschwächen);
+- **die Welt erinnert sich** (Spuren der Nacht, morgens reden die Bewohner darüber).
+**Warum:** Hochwertig wirkt Konsequenz, nicht Auflösung: Eine Auswertung von
+Steam-Rezensionen nennt Trefferstopp, stimmigen Klang und Kameraführung als die
+stärksten Treiber des Wucht-Gefühls, und die großen Pixelspiele (HD-2D, Sea of
+Stars, Eastward) leben vom Licht.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

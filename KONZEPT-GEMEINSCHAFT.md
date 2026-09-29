@@ -1,7 +1,11 @@
 # Konzept: Gemeinschaft – Besucher, Bewohner, Lagerglocke, „Letzte Runde“
 
-Stand: 28.09.2026 · **Analyse und Integrationsplan, noch nicht entschieden.**
-Umgesetzt wird erst nach der Entscheidung des Auftraggebers.
+Stand: 28.09.2026 · **Entschieden am 29.09.2026:** OFFENE-FRAGEN 161–176, Plan
+M26–M33 in DESIGN.md (Abschnitt 8, »Der Plan ab M26 – Zuflucht sein«), Recherche
+in `recherche/`. Abweichungen von dieser Analyse: **echte Waffen** statt
+Werkzeug (Wunsch des Auftraggebers, Nr. 168) und die **geprüften Kartenregeln**
+aus `recherche/kartenspiel.md` (Nr. 172). Die Analyse bleibt als Begründung
+stehen.
 
 Grundlage: das Designkonzept des Auftraggebers (Punkte 1–24) und der Code auf
 dem Stand von M24. Zahlen zum Kartenspiel stammen aus einem kleinen Simulator
@@ -32,6 +36,8 @@ Drei Punkte würde ich **deutlich ändern**:
    Bolzenwerfer, Katapult, Sprenger). Gewehre brechen den Ton. Besser passen
    improvisierte Werkzeuge, Licht und Wasser – und das stützt sogar die
    Geschichte: Licht macht den Moder müde, Wasser spült ihn ab.
+   *(Überholt am 29.09.2026: Der Auftraggeber findet Waffen besser – echte
+   Waffen, warm inszeniert, ohne Blut, OFFENE-FRAGEN 168.)*
 2. **Permadeath nur als Folge einer bewussten Entscheidung** (die Glocke),
    mit einem fairen Rettungsfenster, nie durch Zufall – und auf „Gemütlich“
    gar nicht.
