@@ -360,7 +360,7 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Stufen, N7), kite (Drachen: Bedarf, Zeiten, Wetter, Böen,
                       Looping, N9),
                       knots (Knoten der Geschichte: wer, wann, welcher Dialog,
-                      G2),
+                      G2; Stufen der Waldrand-Gedanken, G3),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -1201,7 +1201,10 @@ Grundprinzipien:
    zeigt den ganzen Plan (Bilder: hud-abend, hud-nacht, karte-plan); ab G2 (Abschnitt `knoten`):
    an Tag 12 spricht Hilde wie immer, an Tag 13 erkennt sie Eddas Stimme – nur einmal; nach Eddas
    Heimkehr stellt sie mit echter Taste den Brief zu, Edda liest ihn; Yusuf erkennt Knopfs roten
-   Faden, Edda erkennt Juna.
+   Faden, Edda erkennt Juna; ab G3 (Abschnitt `wald`): die Waldrand-Gedanken erzählen mit den
+   Tagen mehr, an Tag 8 mit echter Taste W ein Gedanke aus dem Volksmund, Hilde erzählt von den
+   Moosleuten und Yusuf sagt »Pilz«, nach dem Holzfäller funkt Edda vom Hemd, nach dem zweiten
+   von den vielen Männern.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1365,7 +1368,8 @@ Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backe
 viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` backt es sofort
 alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
 Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
-ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet.
+ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
+`forestThought(tag)` Stufe und Satz des Waldrand-Gedankens.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

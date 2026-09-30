@@ -1927,6 +1927,13 @@ nächsten Gespräch:
 Dazu kleine Zeilen für Ida, Rosa, Balduin (der Name am Bug) und Claras zweiten Brief vom
 Sturmhuk.
 
+#### G3 – Der Wald erzählt ✓
+
+*Umgesetzt (30.09.2026):* Die Waldrand-Gedanken folgen den Schichten des Moders – Volksmund ab
+Tag 7, Alte Ablage ab Tag 13, Frost ab Tag 20, Schnee danach. Hilde und Yusuf streiten über
+Moosleute und Pilz. Edda erzählt nach jedem Boss ein Stück. Die Stümpfe mit drei Kreuzen als
+Modell bleiben offen (Nr. 206).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

@@ -228,6 +228,7 @@ async function runBrowserChecks() {
     if (want('sprites')) await runSpriteChecks(browser, url);
     if (want('aufraeumen')) await runTidyChecks(browser, url);
     if (want('knoten')) await runKnotChecks(browser, url);
+    if (want('wald')) await runForestChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10894,6 +10895,99 @@ async function runKnotChecks(browser, url) {
   const knots = (await z(() => window.zomfy.knots())).filter((k) => ['hildeKenntEdda', 'briefZugestellt', 'yusufKnopf', 'eddaJuna'].includes(k.flag));
   if (yusuf.some((l) => l.t?.includes('roten') || l.t?.includes('rotem Garn')) && edda.some((l) => l.t?.includes('um acht')) && knots.length === 4 && knots.every((k) => k.done)) note('✓ Knoten (G2): Yusuf erkennt Knopfs roten Faden, Edda erkennt Juna – alle vier Knoten erzählt');
   else fail(`Knoten: Yusuf und Edda ${JSON.stringify({ yusuf, edda, knots })}`);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * G3 – Der Wald erzählt (recherche/storytelling-namen.md 4.2): Die Gedanken am Waldrand ändern sich
+ * mit den Tagen (was der Moder tut → Volksmund → Alte Ablage → Frost → Schnee), an Tag 8 mit
+ * echter Taste; Hilde erzählt von Moosleuten und Irrlichtern, Yusuf widerspricht; nach dem
+ * Holzfäller erzählt Edda über Funk vom Hemd, nach dem zweiten von den vielen Männern.
+ */
+async function runForestChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Wald (G3)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.quietChoices(); // die Stufe nach dem ersten Holzfäller öffnet sonst die Perk-Wahl (Edda schweigt dann)
+  });
+  await step(300);
+
+  // 1) Die Stufen der Gedanken nach dem Tag
+  const stufen = await z(() => [3, 8, 14, 22, 32].map((d) => window.zomfy.forestThought(d).stage));
+  if (stufen.join() === 'waldrand,waldrand2,waldrand3,waldrand4,waldrandSchnee') note('✓ Wald (G3): die Gedanken am Waldrand erzählen mit den Tagen mehr – Moder, Volksmund, Alte Ablage, Frost, Schnee');
+  else fail(`Wald: Stufen ${JSON.stringify(stufen)}`);
+
+  // 2) Tag 8, echte Taste W gegen den Wald: ein Gedanke aus dem Volksmund
+  await z(() => {
+    window.zomfy.setDay(8);
+    window.zomfy.setTime(14, 0); // Balduin ist fort – morgens denkt Mika an sein Boot
+  });
+  const rand = await z(() => {
+    const m = window.zomfy.game.world.map;
+    const c = window.zomfy.game.world.colliders;
+    for (let x = -12; x > -46; x -= 0.5) {
+      for (let zz = -2; zz > -26; zz -= 0.25) {
+        const e = m.edgeDistance(x, zz);
+        if (e < -0.9 || e > -0.6 || m.pathDistance(x, zz) < 1.5) continue;
+        if (m.edgeDistance(x, zz - 1.3) < 0.5 || m.isWater(x, zz - 1.3) || m.inBay(x, zz - 1.3)) continue;
+        if (c.near(x, zz, 1.2).length) continue;
+        return { x, z: zz };
+      }
+    }
+    return null;
+  });
+  await z((r) => window.zomfy.teleport(r.x, r.z, Math.PI), rand);
+  await step(100);
+  await z(() => (window.zomfy.game.hud.speech = null));
+  await page.keyboard.down('KeyW');
+  await step(2500);
+  await page.keyboard.up('KeyW');
+  await step(100);
+  const gedanke = await z(() => window.zomfy.game.hud.speech?.text || null);
+  if (rand && gedanke && /Stümpfe|Irrlichter|Moosleute/.test(gedanke)) note(`✓ Wald (G3): an Tag 8 denkt Mika am Waldrand (echte Taste W) – »${gedanke}«`);
+  else fail(`Wald: Gedanke an Tag 8 ${JSON.stringify({ rand, gedanke })}`);
+
+  // 3) Sage gegen Aufklärung: Hilde erzählt, Yusuf widerspricht (ab Tag 6, beide wohnen hier)
+  const sage = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    for (const id of ['hilde', 'yusuf']) Z.setSurvivor(id, 3);
+    Z.talkTo('hilde');
+    const lines = [];
+    let guard = 30;
+    while (g.dialog.active && guard-- > 0) {
+      lines.push({ s: g.dialog.line?.s, t: g.dialog.line?.t });
+      g.dialog.advance();
+    }
+    return lines;
+  });
+  if (sage.some((l) => l.s === 'hilde' && l.t.includes('Moosleute')) && sage.some((l) => l.s === 'yusuf' && l.t.includes('Pilz'))) note('✓ Wald (G3): Hilde erzählt von Irrlichtern und Moosleuten, Yusuf sagt »Pilz« – »Hab ich was anderes gesagt?«');
+  else fail(`Wald: Sage ${JSON.stringify(sage)}`);
+
+  // 4) Nach dem Holzfäller erzählt Edda vom Hemd, nach dem zweiten von den vielen Männern
+  const boss = async () => {
+    await z(() => {
+      const Z = window.zomfy;
+      Z.game.funk.clear();
+      const id = Z.spawnZombie('holzfaeller', 4, 2);
+      Z.killZombie(id, 'spieler');
+    });
+    await step(1500);
+    return z(() => window.zomfy.funk().current?.text || null);
+  };
+  const erster = await boss();
+  const zweiter = await boss();
+  if (erster?.includes('Hemd') && zweiter?.includes('viele Männer')) note('✓ Wald (G3): nach dem Holzfäller funkt Edda vom Hemd (»einer von unseren«), nach dem zweiten von den vielen Männern der Holzlände');
+  else fail(`Wald: Edda nach dem Boss ${JSON.stringify({ erster, zweiter })}`);
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();

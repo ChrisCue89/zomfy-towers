@@ -5,6 +5,29 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G3: Der Wald erzählt ✓
+
+**Auftrag (30.09.):** »Die Story ist noch dünn.« Dritter Schritt aus
+`recherche/storytelling-namen.md` (4.2 Der Moder in Schichten, 2.7 Sagen, Nr. 206).
+
+- **Die Gedanken am Waldrand** ändern sich mit dem Herbst:
+  - Tage 1–6: was der Moder tut.
+  - Ab Tag 7: der Volksmund – Stümpfe mit drei Kreuzen, Irrlichter, Moosleute.
+  - Ab Tag 13: die Alte Ablage, wo das letzte Holz liegen blieb. »Holz geht immer zum Wasser.«
+  - Ab Tag 20: der nahende Frost. »Das wärmste Feuer weit und breit brennt bei uns.«
+  - Nach dem Herbst: der schlafende Moder unter dem Schnee.
+- **Sage gegen Aufklärung** (ab Tag 6, wenn Hilde und Yusuf in der Bucht wohnen): Hilde erzählt
+  von Irrlichtern und Moosleuten. Yusuf: »Aberglaube. Es ist ein Pilz.« Hilde: »Hab ich was
+  anderes gesagt?« Das Spiel entscheidet nie.
+- **Edda nach den Bossen** (über Funk, je Art einmal):
+  - Holzfäller: das Hemd ihres Vaters. »Einer von unseren. Jetzt ist er Laub.« Der zweite:
+    »Die Holzlände hatte viele Männer.«
+  - Pilzmutter: das Herz liegt in der Alten Ablage.
+  - Laternenhexe: »den Weg nach Hause gesucht. Wie wir alle.« Die Schlurferkunde sagt es auch.
+  - Moosriese: »Wenn der Frost kommt, kommt das Herz.«
+
+**Prüfung:** Abschnitt `wald`, 5 Prüfpunkte bestanden.
+
 ## G2: Fäden verknoten ✓
 
 **Auftrag (30.09.):** »Die Story ist noch dünn.« Nach den Namen (G1) der zweite Schritt aus

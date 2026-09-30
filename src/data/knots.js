@@ -16,7 +16,29 @@ export const KNOTS = [
   { who: 'yusuf', flag: 'yusufKnopf', dialog: 'yusufKnopf', day: 16, when: (st) => living(st, 'knopf') },
   // Edda zu Hause: die Kleine, die um acht sendet – drei Jahre hat Edda ihr zugehört
   { who: 'edda', flag: 'eddaJuna', dialog: 'eddaJuna', when: (st) => living(st, 'juna') },
+  // G3: Sage gegen Aufklärung – Hilde erzählt von Irrlichtern und Moosleuten, Yusuf widerspricht
+  { who: 'hilde', flag: 'moosleute', dialog: 'moosleute', day: 6, when: (st) => living(st, 'yusuf') },
 ];
+
+/**
+ * G3: Der Wald erzählt – welche Gedanken Mika am Waldrand hat (T.geschichte), nach dem Tag:
+ * erst was der Moder tut, dann der Volksmund, dann die Alte Ablage, dann der nahende Frost und
+ * nach dem Herbst der Schnee.
+ */
+export const FOREST_STAGES = [
+  { from: 1, key: 'waldrand' },
+  { from: 7, key: 'waldrand2' },
+  { from: 13, key: 'waldrand3' },
+  { from: 20, key: 'waldrand4' },
+  { from: 31, key: 'waldrandSchnee' },
+];
+
+/** Schlüssel der Waldrand-Gedanken für Tag `day`. */
+export function forestKey(day) {
+  let key = FOREST_STAGES[0].key;
+  for (const s of FOREST_STAGES) if (day >= s.from) key = s.key;
+  return key;
+}
 
 /** Der Knoten, der für `who` gerade wartet (oder null). */
 export function knotFor(state, who) {

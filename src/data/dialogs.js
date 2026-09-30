@@ -1263,6 +1263,14 @@ export const DIALOGE = {
     { s: 'mika', t: 'Dann war er einer von deinen?' },
     { s: 'yusuf', t: '(Knopf wedelt) Einer von meinen. Und er hat allein ein Zuhause gefunden.' },
   ],
+  // G3: Sage gegen Aufklärung – und das Spiel entscheidet nie
+  moosleute: [
+    { s: 'hilde', t: 'Weißt du, was die Alten zu dem Glimmen im Wald gesagt haben, Kindchen? Irrlichter. Seelen, die den Weg nicht finden.' },
+    { s: 'hilde', t: 'Und die Holzhauer haben drei Kreuze in jeden Stumpf geschlagen. Damit die Moosleute Ruhe haben.' },
+    { s: 'yusuf', t: '(von der Feuerstelle) Aberglaube. Es ist ein Pilz. Wo Holz fault, wächst Pilz – und ein nasser, warmer Herbst …' },
+    { s: 'hilde', t: 'Hab ich was anderes gesagt?' },
+    { s: 'yusuf', t: '… Nein. Eigentlich nicht.' },
+  ],
   eddaJuna: [
     { s: 'eddaHier', t: 'Die Kleine mit den Kopfhörern. Die sendet jeden Abend um acht, oder?' },
     { s: 'mika', t: 'Juna. Ihr Vater hat die Seewelle gebaut.' },

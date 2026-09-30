@@ -25,7 +25,7 @@ import { NIGHT_START } from '../data/waves.js';
 import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
-import { KNOTS, knotFor } from '../data/knots.js';
+import { KNOTS, knotFor, forestKey } from '../data/knots.js';
 import { spriteUniforms } from '../render/spriteMaterial.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
@@ -1390,8 +1390,13 @@ export class Game {
     if (this.forestPush < 0.6) return;
     this.forestPush = 0;
     st.flags.waldrandTag = st.time.day;
-    const lines = T.geschichte.waldrand;
-    this.hud.say(lines[(st.time.day - 1) % lines.length], 5);
+    this.hud.say(this.forestThought(st.time.day), 5);
+  }
+
+  /** G3: Der Gedanke am Waldrand für Tag `day` – mit den Tagen erzählt der Wald mehr. */
+  forestThought(day) {
+    const lines = T.geschichte[forestKey(day)];
+    return lines[(day - 1) % lines.length];
   }
 
   /** Bank: Hinsetzen heilt Mika (alle 30 s); nachts ohne Dialog, das hält nicht auf. */
@@ -1766,6 +1771,9 @@ export class Game {
     this.hud.showBanner(T.bosse.faellt(B.titel));
     this.sound.play('jubel');
     this.feel('bossFaellt', { x: z.x, z: z.z }); // M26
+    // G3: Edda erzählt ein Stück der Geschichte – je Art einmal, der zweite Holzfäller eigens
+    const story = T.funk.bosse;
+    if (story[z.type] && !this.funk.once(`boss_${z.type}`, story[z.type]) && z.type === 'holzfaeller') this.funk.once('boss_holzfaeller2', story.holzfaeller2);
   }
 
   /**
@@ -3939,6 +3947,8 @@ export class Game {
         game.survivors.onAbilitiesChanged(); // dauerhafte Fähigkeiten (Lottes Licht) gleich setzen
       },
       talkTo: (id) => game.survivors.talk(id),
+      /** G3: der Gedanke am Waldrand an Tag `day` (die Stufe und der Satz). */
+      forestThought: (day) => ({ stage: forestKey(day), text: game.forestThought(day) }),
       /** G2: die Knoten der Geschichte – erzählt oder wartend. */
       knots: () => KNOTS.map((k) => ({ who: k.who, flag: k.flag, done: Boolean(game.state.flags[k.flag]), ready: knotFor(game.state, k.who)?.flag === k.flag })),
       /** Wie die Antwort »Das Zelt dort ist für dich« (mit Auftrag). */

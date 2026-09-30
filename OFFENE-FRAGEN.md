@@ -2449,6 +2449,21 @@ Was im Brief steht, sagt Edda nicht; Balduins Grund bleibt zu.
 Zweifel, die Seewelle. Ein Knoten braucht keinen neuen Spielstand und kein neues System – nur
 eine Bedingung und ein paar Zeilen, und er belohnt, wer mit den Leuten redet.
 
+### 206. Wie erzählt der Wald? (G3)
+**Entscheidung:** In Schichten, wie in der Recherche (4.2):
+
+- Was der Moder tut – das sagt Edda am ersten Tag.
+- Der Volksmund (Irrlichter, Moosleute, die drei Kreuze) gegen die Aufklärung (ein Pilz im
+  faulen Holz). Hilde gegen Yusuf, und keiner gewinnt.
+- Die Geschichte: Der Moder blühte, wo das letzte Holz nie zum Wasser kam.
+- Das Herz sucht vor dem Winter die Wärme.
+
+Die Waldrand-Gedanken wechseln die Schicht nach dem Tag (`FOREST_STAGES` in `data/knots.js`).
+Edda sagt nach jedem Boss ein Stück dazu. Was in den Schlurfern schläft, bleibt offen.
+**Warum:** Der Moder hatte nur eine Schicht, und »weich wie Moos, zäh wie Leim« kam dreimal. Der
+Wald soll mit dem Herbst mehr erzählen, ohne neue Systeme: Gedanken, ein Knoten und fünf
+Funksprüche.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

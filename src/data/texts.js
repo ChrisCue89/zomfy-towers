@@ -617,6 +617,27 @@ export const T = {
       'Das Laub sieht harmlos aus. Aber darunter zieht sich das Geflecht bis zu den Knien.',
       'Nur auf den alten Wegen ist der Boden fest. Deshalb kommen sie ja auch darüber.',
     ],
+    // G3: Der Wald erzählt – mit den Tagen andere Gedanken (Stufen in data/knots.js, FOREST_STAGES)
+    waldrand2: [
+      'Am Waldrand stehen alte Stümpfe. In jeden hat jemand drei Kreuze geschlagen.',
+      'Das Glimmen zwischen den Wurzeln … Hilde sagt, die Alten nannten das Irrlichter.',
+      'Drei Kreuze für die Moosleute, damit sie Ruhe haben. Ob es geholfen hat?',
+    ],
+    waldrand3: [
+      'Irgendwo da drin liegt die Alte Ablage. Dort blieb das letzte Holz liegen – und dort fing es an.',
+      'Holz geht immer zum Wasser. Vielleicht kennt der Wald keinen anderen Weg.',
+      'Alle Wege führen zur Bucht. Früher für das Holz. Jetzt für sie.',
+    ],
+    waldrand4: [
+      'Der Boden ist kalt geworden. Das Geflecht zieht sich zusammen – es sucht die Wärme.',
+      'Das wärmste Feuer weit und breit brennt bei uns. Das weiß der Wald auch.',
+      'Wenn der Frost kommt, kommt das Herz. Wir halten.',
+    ],
+    waldrandSchnee: [
+      'Unter dem Schnee schläft der Moder. Und träumt.',
+      'Der Wald ist still geworden. Still – nicht leer.',
+      'Im Frühjahr wacht er auf. Aber wir sind dann auch wach.',
+    ],
     warnpfahl: 'Ein rotes Kreuz und eine alte Laterne. Jemand vor mir hat markiert, wo sie aus dem Wald kommen.',
   },
   // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
@@ -1293,7 +1314,7 @@ export const T = {
       brueter: ['Brüter', 'Legt Sporenkapseln, aus denen Schwärmer schlüpfen – zertreten oder platzen lassen.', 'Die Kapseln sind warm wie Eier. Ich habe eine aufgeschnitten und bereue es.'],
       holzfaeller: ['Holzfäller', 'Boss: Holt aus, zerschlägt die Barrikade vor sich und stürmt los.', 'Er trägt noch das Hemd der Holzfäller von der alten Holzlände. Wie lange er wohl schon im Wald war?'],
       pilzmutter: ['Pilzmutter', 'Boss: Ihre Sporenwolken heilen die Horde, aus ihnen schlüpfen Schwärmer.', 'Das Geflecht wächst aus ihr heraus wie aus einem alten Baumstumpf. Das Herz des Moders ist sie nicht – aber nah dran.'],
-      laternenhexe: ['Laternenhexe', 'Boss: Stiehlt jedes Licht ringsum und heilt sich daran; Blitz und Licht schrecken sie nicht.', 'Sie trägt eine Laterne ohne Flamme. Ich glaube, sie sucht etwas im Dunkeln – nur was?'],
+      laternenhexe: ['Laternenhexe', 'Boss: Stiehlt jedes Licht ringsum und heilt sich daran; Blitz und Licht schrecken sie nicht.', 'Sie trägt eine Laterne ohne Flamme. Ich glaube, sie sucht den Weg nach Hause. Wie alle.'], // G3
       moosriese: ['Moosriese', 'Boss: Stampft Barrikaden und Mika um und zerfällt beim Fallen in drei.', 'Ein ganzer Waldboden, der aufgestanden ist. Drei Proben, drei Riesen – das Moos wächst einfach weiter.'],
       moderherz: ['Moderherz', 'Das Herz des Moders: Kommt in der Frostnacht über alle Wege und ruft die Horde.', 'Wenn der Frost kommt, schläft das Geflecht. Aber ein Herz, das schläft, schlägt noch.'],
     },
@@ -1539,6 +1560,14 @@ export const T = {
     ersteNacht: 'Die erste Nacht – gehalten. Weißt du, wie lange keiner mehr so etwas über die Holzlände sagen konnte?',
     balduin: 'Das ist Balduins Horn. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
     frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst.',
+    // G3: Nach den Bossen erzählt Edda ein Stück der Geschichte (je Art einmal)
+    bosse: {
+      holzfaeller: 'Das Hemd … solche hat mein Vater an die Männer verteilt. Einer von unseren. Der Wald hat ihn lange genug gehabt. Jetzt ist er Laub.',
+      holzfaeller2: 'Noch einer mit dem Hemd. Die Holzlände hatte viele Männer.',
+      pilzmutter: 'Wenn der Moder ein Herz hat, liegt es da, wo das Holz liegen blieb. In der Alten Ablage, tief im Dämmerwohld.',
+      laternenhexe: 'Sie hat Licht gesammelt, bis keins mehr übrig war. Ich glaube, sie hat den Weg nach Hause gesucht. Wie wir alle.',
+      moosriese: 'Holz geht immer zum Wasser, Mika. Vielleicht kennt der Wald keinen anderen Weg. … Und wenn der Frost kommt, kommt das Herz.',
+    },
     danach: 'Danke, Mika. Jetzt kann ich bald nach Hause kommen.',
     katalog: 'Das Funkgerät in der Stube erreicht auch Balduins Boot. Aus seinem Katalog bestellst du, er bringt es am nächsten Morgen.',
   },
