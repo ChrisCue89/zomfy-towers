@@ -5,6 +5,21 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Kaminsims: Kerzen, die man sieht ✓
+
+Beim Setzen der Streichholzdose (N10) fiel auf: Kerzen, Uhr und Kräuterglas auf dem Kaminsims
+standen seit M11 hinter der Vorderseite der Kaminschürze (z 7–10, die Schürze reicht bis z 11) –
+man hat sie nie gesehen, nur die Flammen der Kerzen glommen irgendwo darüber.
+
+- Die zwei Kerzen stehen jetzt an den freien Enden des Simses (links höher, rechts kürzer), ihre
+  Flammen leuchten abends an derselben Stelle.
+- Uhr und Glas fallen weg: Über dem Sims hängt das Hufeisen (M29), die Kante davor gehört den
+  Einsätzen des Kartenabends und der Streichholzdose.
+- Prüfung: Abschnitt `karten` (12 Prüfpunkte, Kaminsims mit Einsätzen), Stube bei Tag und Nacht
+  angesehen.
+
+---
+
 ## N10: Das erste Feuer ✓
 
 **Auftrag (30.09.):** »Bei der Ankunft ist das Feuer am laufen. Das könnte eine erste Quest sein

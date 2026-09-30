@@ -175,13 +175,12 @@ function fireplace(m, x0, seed) {
   // Holzscheite im Feuer
   m.box(x0 + 11, FLOOR, 7, x1 - 11, FLOOR + 1, 9, (x) => (x % 3 === 0 ? P.e2 : P.e3));
   m.box(x0 + 12, FLOOR + 2, 8, x1 - 12, FLOOR + 2, 8, P.e2);
-  // Kaminsims mit Kerzen, Uhr und Glas
+  // Kaminsims mit zwei Kerzen an den Enden. Die Schürze reicht bis z = 11 – was dahinter stand
+  // (Kerzen, Uhr, Kräuterglas), war nie zu sehen (N10). Frei sind die Enden neben der Schürze
+  // und die Kante davor; dort stehen die Einsätze, die Streichholzdose und das Hufeisen darüber.
   m.box(x0, FLOOR + 21, 4, x1, FLOOR + 22, 13, (x, y) => (y === FLOOR + 22 ? P.e5 : P.e3));
-  m.box(x0 + 4, FLOOR + 23, 8, x0 + 5, FLOOR + 26, 9, P.a4); // Kerze links
-  m.box(x1 - 5, FLOOR + 23, 8, x1 - 4, FLOOR + 25, 9, P.a4); // Kerze rechts
-  m.box(x0 + 13, FLOOR + 23, 7, x0 + 18, FLOOR + 29, 9, (x, y) => (y === FLOOR + 29 || x === x0 + 13 || x === x0 + 18 ? P.e2 : P.f6)); // Uhr
-  m.set(x0 + 15, FLOOR + 26, 10, P.e1).set(x0 + 16, FLOOR + 27, 10, P.e1);
-  m.box(x0 + 22, FLOOR + 23, 8, x0 + 24, FLOOR + 26, 10, (x, y) => (y === FLOOR + 26 ? P.e5 : P.g6)); // Glas mit Kräutern
+  m.box(x0, FLOOR + 23, 8, x0 + 1, FLOOR + 26, 9, P.a4); // Kerze links
+  m.box(x1 - 1, FLOOR + 23, 8, x1, FLOOR + 25, 9, P.a4); // Kerze rechts, kürzer
   // Herdplatte aus Stein vor dem Feuer
   m.box(x0, 0, 12, x1, FLOOR, 17, (x, y, z) => (y < FLOOR ? P.s3 : (x + z) % 6 === 0 ? P.s4 : P.s6));
   // Schürhaken
@@ -446,7 +445,7 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   group.add(mesh(bulb, materials.lamp, { shadow: false, jitter: 0 }));
   // Kerzen
   const candles = new VoxelModel();
-  candles.set(kamin.x0 + 4, FLOOR + 27, 8, 0xffffff).set(kamin.x0 + 27, FLOOR + 26, 8, 0xffffff);
+  candles.set(kamin.x0 + 1, FLOOR + 27, 9, 0xffffff).set(kamin.x1 - 1, FLOOR + 26, 9, 0xffffff); // Flammen der Kerzen auf dem Sims
   candles.merge(fx.glow);
   group.add(mesh(candles, materials.candle, { shadow: false, jitter: 0 }));
   if (fx.flame.cells.size) group.add(mesh(fx.flame, materials.flame, { shadow: false, jitter: 0 }));
