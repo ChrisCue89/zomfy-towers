@@ -11,6 +11,7 @@ import { TRADES, ERRANDS } from './survivors.js';
 import { WANDERERS, freePlaces } from './wanderers.js';
 import { T } from './texts.js';
 import { cardsOffered } from './cards.js';
+import { fishingOffered } from './fishing.js';
 import { stepsLeft } from './arms.js';
 
 // M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
@@ -64,6 +65,7 @@ function guestAnswers(state, id, extra = []) {
   const answers = [...extra];
   if (state.survivors?.[id]?.stage === 2 && freeTent(state)) answers.push({ t: 'Das Zelt dort ist für dich.', aktion: 'einziehen' });
   if (cardsOffered(state, id)) answers.push({ t: T.karten.einladen, aktion: 'karten' }); // M28: abends eine Runde
+  if (fishingOffered(state, id)) answers.push({ t: T.angeln.einladen, aktion: 'angeln' }); // M33: oder zum Steg
   if (!answers.length) return undefined;
   answers.push({ t: 'Bis später.', standard: true });
   return answers;
@@ -123,8 +125,13 @@ function decision(state, id, lines) {
 
 /** Bewohner (M27): eine Zeile je Tag. Als Gast vor der Entscheidung: noch am Feuer. */
 function resident(state, id, lines) {
-  if (state.survivors?.[id]?.stage === 2) return [{ s: id, t: T.wanderer.wartenZeile }];
-  return [{ s: id, t: pick(lines, (state.time?.day || 1) + id.length) }];
+  // M33: Fiete bringt das Angeln bei (solange Mika keine Angel hat), abends lädt Mika zum Steg ein
+  const answers = [];
+  if (id === 'fiete' && !state.fishing?.rod) answers.push({ t: T.angeln.lernen, aktion: 'angelnLernen' });
+  if (fishingOffered(state, id)) answers.push({ t: T.angeln.einladen, aktion: 'angeln' });
+  if (answers.length) answers.push({ t: 'Bis später.', standard: true });
+  const line = state.survivors?.[id]?.stage === 2 ? { s: id, t: T.wanderer.wartenZeile } : { s: id, t: pick(lines, (state.time?.day || 1) + id.length) };
+  return [answers.length ? { ...line, antworten: answers } : line];
 }
 
 /** Uhrzeit in Stunden (0..24) aus dem Spielzustand. */
@@ -456,6 +463,15 @@ export const DIALOGE = {
       'Der See hat sich verändert. Die Enten nicht. Frech wie immer.',
       'Knoten halten, wenn man sie richtig macht. Freundschaften auch.',
     ]),
+  // M33: Fiete bringt Mika das Angeln bei
+  fieteAngeln: [
+    { s: 'fiete', t: 'Angeln? Na endlich fragt mal einer! Hier – meine zweite. Die erste geb ich nicht her.' },
+    { s: 'fiete', t: 'Abends an die Nordkante vom Steg. E halten, dann loslassen – je länger du hältst, desto weiter fliegt sie.' },
+    { s: 'fiete', t: 'Zuckt die Pose nur, lass sie. Das ist ein Neugieriger. Taucht sie ganz ab: sofort anschlagen!' },
+    { s: 'fiete', t: 'Und dann nicht zerren. Mit E den Kescher unter dem Fisch halten, bis er müde ist. Fische werden müde. Ich auch.' },
+    { s: 'mika', t: 'Und was mache ich mit den Fischen?' },
+    { s: 'fiete', t: 'Balduin nimmt sie. Er tut so, als ob nicht. Aber er nimmt sie.' },
+  ],
   // --- Ida, die Försterin ---
   idaTreffen: [
     { s: 'ida', t: 'Hallo. Ida. Ich war Försterin, drüben im Revier am Nordufer.' },

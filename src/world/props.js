@@ -13,6 +13,7 @@ import { createStaticVoxelObject, shadowGeometry, SHADOW_LAYER, SHADOW_PROXY_MAT
 import { FINE, FINE32, shade, logX, logZ, stoneBlob, box2 } from './voxelKit.js';
 import { buildRainBarrel, buildPumpkin, buildJackOLantern, buildLeafPile } from './decoModels.js';
 import { SIGNAL_SPOTS } from '../data/network.js';
+import { SPOT as FISH_SPOT } from '../data/fishing.js';
 
 // --- Modelle --------------------------------------------------------------------
 
@@ -1050,6 +1051,9 @@ export function createProps({ seed, materials, colliders, map }) {
   const memorialInteraction = { id: 'erinnerung', x: mem.x, z: mem.z + 0.55, radius: 1.3, prompt: 'erinnerung', memorial: true, enabled: false };
   interactions.push(memorialInteraction);
   const memorialBoards = new Map(); // Anzahl der Fotos -> { object, glow }
+  // M33: Angelplatz an der Nordkante des Stegs (die Einblendung erst mit einer Angel)
+  const fishInteraction = { id: 'angelplatz', x: FISH_SPOT.prompt.x, z: FISH_SPOT.prompt.z, radius: FISH_SPOT.prompt.radius, prompt: 'angeln', fishing: true, enabled: false };
+  interactions.push(fishInteraction);
   let memorialCollider = null;
 
   // Leuchtmast am Steg: der alte Funkturm-Stumpf mit Trümmerteil (Juna baut ihn aus)
@@ -1287,6 +1291,10 @@ export function createProps({ seed, materials, colliders, map }) {
         b.object.visible = k === n;
         if (b.glow) b.glow.visible = k === n && lit;
       }
+    },
+    /** M33: Der Angelplatz zeigt seine Einblendung, sobald es eine Angel gibt. */
+    setFishingSpot(on) {
+      fishInteraction.enabled = Boolean(on);
     },
     /** M32: Fahne am Briefkasten – oben, solange Post darin liegt. */
     setMailFlag(on) {

@@ -48,6 +48,7 @@ export class Player {
     this.climbing = false; // klettert gerade über eine eigene Barrikade (m12-r1)
     this.riding = null; // Neigung, solange Mika auf der Reifenschaukel steht (m12-r1)
     this.seated = null; // M28: am Kartentisch – { x, z, facing, seatY }
+    this.fishingPose = null; // M33: beim Angeln { phase, power, t, pull, reel }
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
@@ -402,7 +403,7 @@ export class Player {
     if (a?.tool) this.drawnT = TOOL_CARRY.hold;
     else this.drawnT = Math.max(0, this.drawnT - dt);
     const carried = indoors ? null : this.heldTool;
-    const shownTool = a ? a.tool : this.drawnT > 0 ? carried : null;
+    const shownTool = this.fishingPose ? 'angel' : a ? a.tool : this.drawnT > 0 ? carried : null; // M33: beim Angeln die Angel
     const sheathing = !a && shownTool && this.drawnT < TOOL_CARRY.sheath ? 1 - this.drawnT / TOOL_CARRY.sheath : 0;
     for (const [name, mesh] of Object.entries(this.character.tools)) mesh.visible = name === shownTool;
     const backTool = !shownTool && !this.seated ? carried : null;
@@ -553,6 +554,26 @@ export class Player {
       p.armL.rotation.x = -2.8;
       p.armL.rotation.z = 0.18;
       if (p.elbowL) p.elbowL.rotation.x = 0;
+    }
+
+    // M33: Angeln – rechts die Angel schräg nach vorn oben, links die Hand an der Kurbel.
+    // Beim Laden holt sie weit über die Schulter aus, der Wurf schnellt nach vorn, im Drill
+    // steht die Rute steiler und zittert, die linke Hand kurbelt.
+    const fp = this.fishingPose;
+    if (fp) {
+      let ang = -2.05;
+      if (fp.phase === 'laden') ang = lerp(-2.05, -3.05, fp.power || 0);
+      else if (fp.phase === 'wurf') ang = lerp(-3.05, -1.75, Math.min(1, (fp.t || 0) / 0.2));
+      else if (fp.phase === 'biss') ang = -2.3;
+      else if (fp.phase === 'drill') ang = -2.3 - (fp.pull || 0) * 0.2 + Math.sin(this.time * 19) * 0.04 * (fp.pull || 0);
+      else if (fp.phase === 'fang') ang = -2.6;
+      p.armR.rotation.x = ang;
+      p.armR.rotation.z = 0.12;
+      if (p.elbowR) p.elbowR.rotation.x = -0.2;
+      p.armL.rotation.x = -1.3;
+      p.armL.rotation.z = -0.38;
+      if (p.elbowL) p.elbowL.rotation.x = -0.85 + (fp.reel ? Math.sin(this.time * 15) * 0.35 : 0);
+      lantern.group.visible = false;
     }
   }
 

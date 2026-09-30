@@ -520,6 +520,24 @@ export class Survivors {
 
   onAnswer(id, aktion) {
     const g = this.game;
+    // M33: Angeln – Fiete bringt es bei, abends kommt jemand mit an den Steg
+    if (aktion === 'angelnLernen') {
+      g.startDialog('fieteAngeln', () => {
+        const f = g.state.fishing;
+        f.rod = true;
+        f.taught = true;
+        g.world.refreshFishingSpot?.(true);
+        g.hud.toast(T.angeln.gelernt, 'angel', 4.5);
+        g.quietSave();
+      });
+      return;
+    }
+    if (aktion === 'angeln') {
+      const why = g.fishing.blocked(id);
+      if (why) g.hud.toast(T.angeln.gruende[why], 'angel', 2.6);
+      else g.fishing.begin(id);
+      return;
+    }
     if (isWanderer(id)) {
       this.decide(id, aktion);
       g.quietSave();

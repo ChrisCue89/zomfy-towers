@@ -86,6 +86,7 @@ export class DayNight {
       vignette: 0.2,
       vignetteColor: new THREE.Vector3(0.4, 0.4, 0.5),
       outlineTint: new THREE.Vector3(0.9, 0.82, 1.0),
+      haze: new THREE.Vector4(0.7, 0.76, 0.86, 0.08), // M33: Dunst nach Norden (tags hell und kühl, nachts dunkelblau)
     };
     // Drinnen (M11): warm und gemütlich, nachts kaum kühle Tönung – das Licht kommt vom Kamin
     this.lookInside = {
@@ -156,6 +157,7 @@ export class DayNight {
     const dayness = smoothstep(5.2, 7.0, h) * (1 - smoothstep(19.2, 21.0, h));
     this.night = clamp(1 - dayness, 0, 1);
     const n = this.night;
+    look.haze.set(0.7 - 0.52 * n, 0.76 - 0.55 * n, 0.86 - 0.5 * n, 0.08 - 0.03 * n);
     const inside = this.lookInside;
     inside.exposure = 1.04 + 0.1 * n;
     inside.tint.set(1.02 + 0.02 * n, 0.99 - 0.01 * n, 0.95 - 0.03 * n);

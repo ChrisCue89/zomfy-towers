@@ -822,6 +822,8 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
     glow,
     lights: {
       porch: toWorld(18.5, 14.75, 29.75), // Wandlaterne neben der Tür (Mitte im Maß 1/32: 74, 59, 119)
+      // M33: Fensterlicht auf dem Boden vor dem Haus (Stubenfenster, ab der Hütte das Fenster im Anbau)
+      windows: [toWorld((FWIN.x0 + FWIN.x1 + 1) / 8, 0, D + 6), ...(level >= 2 ? [toWorld((AWIN.x0 + AWIN.x1 + 1) / 8, 0, D + 6)] : [])],
     },
     chimney: toWorld(roofParts.chimneyTop.x, roofParts.chimneyTop.y, roofParts.chimneyTop.z),
     level,

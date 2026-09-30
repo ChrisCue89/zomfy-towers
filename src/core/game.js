@@ -70,6 +70,8 @@ import { Arms } from './arms.js';
 import { Training } from './training.js';
 import { Defense } from './defense.js';
 import { Post } from './post.js';
+import { Fishing } from './fishing.js';
+import { FishingView } from '../ui/fishingView.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
 import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
@@ -371,6 +373,8 @@ export class Game {
     this.training = new Training(this); // M30: der Übungsplatz – jeden Tag übt eine Person
     this.defense = new Defense(this); // M31: die Lagerglocke – alle zu den Waffen
     this.post = new Post(this); // M32: Briefe, Pakete, Stimmen, Besuch, Rückkehr, Signalfeuer
+    this.fishing = new Fishing(this); // M33: Angeln am Steg
+    this.fishingView = new FishingView(this);
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -550,6 +554,7 @@ export class Game {
     this.defense.reset(); // M31: ein halber Kampf wird nicht gespeichert
     this.world.setMemorial(st.fallen, this.state.time.day); // M31: das Erinnerungsbrett am Steg
     this.world.setMailFlag(this.post.waiting); // M32: Fahne oben, solange Post im Briefkasten liegt
+    this.world.refreshFishingSpot(st.fishing.rod); // M33: der Angelplatz, sobald es eine Angel gibt
     this.world.setSignalFires(this.nights.active && this.autumn.planMode(st.night.n) === 'finale' ? this.post.places() : []);
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
@@ -716,7 +721,7 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.cardNight?.match ? 'nah' : this.view;
+    const view = this.cardNight?.match || this.fishing?.session ? 'nah' : this.view; // M33: auch am Steg
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
@@ -930,6 +935,12 @@ export class Game {
     else if (it.use === 'glocke') this.defense.press(); // M31: ein Druck sagt, warum nicht – halten läutet
     else if (it.memorial) this.lightMemorial(); // M31: das Erinnerungsbrett am Steg
     else if (it.mailbox) this.post.open(); // M32: Briefe als Karten (leer: der alte Gedanke)
+    else if (it.fishing) {
+      // M33: allein angeln (abends) – sonst sagt Mika, warum nicht
+      const why = this.fishing.blocked();
+      if (why) this.hud.say(T.angeln.gruende[why], 2.6);
+      else this.fishing.begin(null);
+    }
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -1234,6 +1245,26 @@ export class Game {
       this.world.refreshCabinet(this.arms.missing());
       this.hud.toast(T.waffen.ersatzDa(T.gegenstaende[id]), id, 3.2);
       this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
+    if (recipe.gives.rod) {
+      // M33: Balduins zweite Angel – abends am Steg
+      st.fishing.rod = true;
+      this.trader.sold(recipe);
+      this.world.refreshFishingSpot(true);
+      this.hud.toast(T.angeln.angelGekauft, 'angel', 4);
+      this.sound.play('aufwertung');
+      this.quietSave();
+      return true;
+    }
+    if (recipe.gives.fish) {
+      // M33: ein Fisch aus dem Korb für Zombieteile
+      st.fishing.basket = Math.max(0, st.fishing.basket - 1);
+      gain(st.inventory, recipe.gives.fish);
+      this.trader.sold(recipe);
+      this.hud.toast(T.angeln.verkauft, 'fisch', 2.4);
+      this.sound.play('loot');
       this.quietSave();
       return true;
     }
@@ -2553,6 +2584,10 @@ export class Game {
         this.cardNight.update(realDt);
         this.player.idle(dt);
         break;
+      case 'angeln': // M33: Angeln am Steg – die Uhr steht, die Welt lebt weiter
+        this.fishing.update(realDt, input);
+        this.player.idle(dt);
+        break;
       case 'report':
         if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
@@ -2624,7 +2659,7 @@ export class Game {
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
     this.arrival.update(dt, input); // N5: die Ankunft (und danach schaukelt das Boot am Steg)
-    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
@@ -3068,6 +3103,11 @@ export class Game {
       const b = this.world.buildings.get(it.building);
       if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
     }
+    // M33: Der Angelplatz sagt gleich, warum gerade nicht (abends, einmal am Tag)
+    if (it.fishing) {
+      const why = this.fishing.blocked();
+      if (why && why !== 'angel') return T.angeln.gruende[why];
+    }
     // M31: Die Lagerglocke sagt gleich, warum sie gerade schweigt
     if (it.use === 'glocke') {
       const why = this.defense.active ? 'schonGelaeutet' : this.defense.blocked(); // während sie läutet, kein »Läuten« mehr
@@ -3135,6 +3175,7 @@ export class Game {
     const atTable = Boolean(this.cardNight.match); // M28: am Kartentisch nur die Karten
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
+    if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
     if (playing) this.buildbar.draw(ui);
     if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda unten rechts über der Bauleiste
     else this.funk.rect = null;
@@ -3984,6 +4025,12 @@ export class Game {
         game.state.time.minute = 60;
         game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
         return [...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post
+      },
+      /** M33: Angeln – Angel, Abende, Fänge, Korb, laufende Runde (Phase, Kescher, Karte), Zähler. */
+      fishing: () => ({ ...game.fishing.info(), mode: game.mode, pose: game.player.fishingPose ? { ...game.player.fishingPose } : null, spot: game.world.interactions.find((q) => q.id === 'angelplatz') || null }),
+      giveRod() {
+        game.state.fishing.rod = true;
+        game.world.refreshFishingSpot(true);
       },
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
       post: () => {

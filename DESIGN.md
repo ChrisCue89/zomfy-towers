@@ -1787,20 +1787,23 @@ Enklaven in State of Decay 2.
 *Prüfen:* Brief und Paket kommen, Rückkehr, Signalfeuer in der Frostnacht, Edda
 zu Hause (Abschnitt `netzwerk`).
 
-#### M33 – Angeln am Steg, Licht und Schwellen
+#### M33 – Angeln am Steg, Licht und Schwellen ✓
 
 *Ziel:* die zweite Abendaktivität und der letzte Glanz.
 
-- **Angeln am Steg** als Abendaktivität mit einem Menschen (Fiete bringt es
-  bei).
-- **Lebendige Lichtinseln, Tiefe ohne Unschärfe, inszenierte Schwellen**
-  (Nr. 176).
+- **Angeln am Steg** als Abendaktivität, allein oder mit einem Menschen (Fiete
+  bringt es bei, sonst hat Balduin eine Angel): Wurf mit Kraft, warten, anschlagen,
+  Drill mit dem Kescher, Fangkarte, Korb für Balduin, Flaschenpost von der Insel im
+  Nebel (Nr. 192).
+- **Lebendige Lichtinseln** (nacheinander an, Flammen atmen, Fensterlicht,
+  Spiegelungen im See), **Tiefe ohne Unschärfe** (Dunst nach Norden),
+  **inszenierte Schwellen** (Nr. 176).
 
-*Prüfen:* Angeln mit echten Tasten, Bilder der Lichtinseln.
+*Prüfen:* Angeln mit echten Tasten, Bilder der Lichtinseln (Abschnitt `angeln`).
 
 ## 9. Ideen-Parkplatz
 
-- Angeln am Steg (eingeplant: M33), Kochen am Kamin mit kleinen Boni.
+- Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen).
 - Mit Balduins Boot eine Insel besuchen.

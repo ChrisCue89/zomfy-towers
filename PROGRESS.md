@@ -5,6 +5,68 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Meilenstein 33 – Angeln am Steg, Licht und Schwellen ✓
+
+Die zweite Abendaktivität und der letzte Glanz (DESIGN 8, OFFENE-FRAGEN 171, 176,
+192).
+
+- **Die Angel**:
+  - Fiete, der Fischer vom alten Hafen, bringt es bei (»Bringst du mir das Angeln
+    bei?«) und schenkt Mika seine zweite Angel.
+  - Kommt Fiete nicht, hat Balduin ab Tag 6 eine alte Angel für 6 Zombieteile.
+  - Danach gibt es an der Nordkante des Stegs einen Angelplatz. Tagsüber sagt er,
+    wann es geht.
+- **Ein Abend, eine Aktivität**: Zwischen 18 und 20 Uhr geht Mika allein an den
+  Steg (E am Angelplatz) oder lädt jemanden ein, der im Lager wohnt (»Kommst du
+  mit angeln?«).
+  - Beide sitzen an der Stegkante, die Beine über dem Wasser, jeder mit Angel und
+    Pose. Die Kamera geht nah heran, die Uhr steht.
+  - Danach ist der Abend 50 Minuten weiter. Es gibt dann keinen Kartenabend
+    mehr, und umgekehrt.
+- **Der Wurf**: E halten lädt (die Kraft pendelt), loslassen wirft. Je weiter die
+  Pose fliegt, desto größer die Fische – Brasse, Zander und Hecht beißen erst weit
+  draußen.
+- **Warten**: Die Pose wippt und zuckt ein paar Mal. Wer dabei anschlägt,
+  verscheucht den Fisch und muss neu warten. Taucht sie ganz ab, erscheint ein
+  »!«: Jetzt zählt ein E im Fenster (je nach Fisch 0,5–1,1 s).
+- **Der Drill**:
+  - Eine Leiste unten im Bild. Gehaltenes E schiebt den Kescher nach rechts,
+    losgelassen fällt er nach links.
+  - Der Fisch sucht sich immer wieder ein neues Ziel; wilde Fische springen zur
+    Seite. Solange er im Kescher ist, füllt sich der Fang, sonst rinnt er aus.
+  - Mika kurbelt, die Rute zittert, die Pose kommt beim Einholen näher.
+- **Der Fang**: Der Fisch springt in einem Bogen aus dem Wasser. Die Fangkarte
+  zeigt ihn in Seitenansicht mit Größe in Zentimetern, »Neu!« oder »Rekord!«.
+  - Fänge: Plötze, Barsch (gestreift), Brasse, Aal (erst ab 19 Uhr), Zander (bei
+    Nebel, Regen, Sturm), Hecht (gefleckt, groß, wild), ein alter Gummistiefel.
+  - Fünf Zettel Flaschenpost erzählen von der Insel im Nebel.
+- **Wer mitkommt**, plaudert zwischendurch in Sprechblasen (Fiete, Greta, Hilde,
+  Bert, Juna und Dr. Yusuf mit eigenen Sätzen) und hilft ein wenig:
+  - Fiete macht den Kescher breiter.
+  - Greta lässt sie schneller beißen.
+  - Hilde bringt Tee: ein Wurf mehr.
+  - Der Abend zählt als gemeinsame Zeit (M29).
+- **Der Korb**: Echte Fische kommen in den Korb. Balduin nimmt sie für je 2
+  Zombieteile (sechs am Tag).
+- **Lebendige Lichtinseln** (Nr. 176):
+  - In der Dämmerung gehen die Lichter nacheinander an: zuerst das Fenster, dann
+    vom Haus nach außen. Morgens gehen sie andersherum aus.
+  - Fackeln, Kürbislaternen, die Laterne am Erinnerungsbrett und die Signalfeuer
+    atmen wie Flammen.
+  - Vor dem Stubenfenster (ab der Hütte auch vor dem Anbau) liegt nachts
+    Fensterlicht auf dem Boden.
+  - Leuchtfeuer und Signalfeuer spiegeln sich als schimmernder Streifen im See.
+- **Tiefe ohne Unschärfe**: Nach Norden (oben im Bild) liegt ein leichter Dunst,
+  tags hell und kühl, nachts dunkelblau. Die Palette macht daraus gerasterten
+  Dunst statt eines weichen Verlaufs; die Vignette gab es schon.
+- **Spielstand v29** mit Migration (noch keine Angel).
+- Prüfabschnitt `angeln` (Bilder: angeln, drill, fang). Die Abschnitte `angeln`,
+  `herbst`, `fragen` und `gaeste` sind bestanden (Lichtinseln, Nebelwelle,
+  Lottes Licht). Dabei geändert:
+  - Wer mitkommt, sitzt links neben Mika – rechts am Mast steht Juna.
+  - Die Fangkarte nimmt E erst nach einem Augenblick (sonst schlösse das
+    Drill-E sie gleich); die Prüfung wartet darauf.
+
 ## Meilenstein 32 – Netzwerk und Wiedersehen ✓
 
 Wer weitergezogen ist, bleibt in der Welt (DESIGN 8, OFFENE-FRAGEN 164, 170, 191).

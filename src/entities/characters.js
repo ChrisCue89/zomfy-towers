@@ -12,6 +12,7 @@ import { V } from '../world/layout.js';
 import { hash3 } from '../core/rng.js';
 import { shade, edgeLight, sculpt, roundBox, blob, capsule, roundTone } from '../world/voxelKit.js';
 import { HEAD, TORSO, headShape, torsoShape, facePlate, facLids, sculptArm, sculptLeg, sculptCollar } from './figureKit.js';
+import { buildRod32, ROD_TIP } from './fishingModels.js';
 
 /** Aussehen der Hauptfigur Mika. */
 export const MIKA = {
@@ -617,6 +618,7 @@ export const ARMS_MODELS32 = {
   spaltaxt: buildMaul32,
   mistgabel: buildPitchfork32,
   schlaeger: buildBat32,
+  angel: buildRod32, // M33: die Angel (kein Schrankstück – nur zum Halten)
 };
 
 /** Eine Waffe des Schranks als fertiges Modell (mit Kantenlicht). */
@@ -801,6 +803,14 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     backTools[name] = b;
   }
 
+  // M33: Die Spitze der Angel (für die Schnur, die die Oberfläche zeichnet)
+  let rodTip = null;
+  if (tools.angel) {
+    rodTip = new THREE.Object3D();
+    rodTip.position.set(1.5 * U, (-ROD_TIP + 0.5) * U, 1.5 * U);
+    tools.angel.add(rodTip);
+  }
+
   return {
     root,
     material,
@@ -808,6 +818,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     lantern: { group: lanternGroup, glow: lanternGlow, lightAnchor: lanternGlass },
     tools,
     backTools,
+    rodTip,
   };
 }
 

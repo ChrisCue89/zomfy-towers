@@ -5,8 +5,12 @@
 // Palettenabbildung macht daraus gestufte Ringe.
 
 import * as THREE from 'three';
+import { LAYOUT } from './layout.js';
 
 const _m = new THREE.Matrix4();
+// M33: Schwelle – in der Dämmerung gehen die Lichter nacheinander an, vom Haus nach außen
+const HOME = { x: LAYOUT.shelter.x + 2.5, z: LAYOUT.shelter.z + 2 };
+const easeOut = (t) => 1 - (1 - t) * (1 - t);
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
 const VERT = /* glsl */ `
@@ -66,11 +70,18 @@ export class LightPools {
     // Wo es nachts hell ist (M22: Nebelwelle – nur im Licht sieht man die Horde)
     this.spots = [];
     this.scale = 1; // M27: Lottes Laternen – alle Lichtinseln größer (auch für Nebel und Laternenhexe)
+    this.streaks = []; // M33: Spiegelungen im See (zählen nicht als Licht)
+    this.time = 0;
     this.group.renderOrder = 2;
     scene.add(this.group);
   }
 
-  add(x, z, radius) {
+  /**
+   * Eine Lichtinsel. M33: `flicker` lässt sie wie eine Flamme leicht atmen; `on` ist die
+   * Lampenstufe, ab der sie angeht (sonst nach dem Abstand zum Haus – die Lichter gehen in
+   * der Dämmerung nacheinander an).
+   */
+  add(x, z, radius, { flicker = false, on = null } = {}) {
     const mesh = new THREE.Mesh(this.geometry, this.material);
     mesh.scale.set(radius * 2 * this.scale, 1, radius * 2 * this.scale);
     mesh.position.set(x, 0.02, z);
@@ -79,8 +90,36 @@ export class LightPools {
     glow.renderOrder = 3;
     mesh.add(glow);
     this.group.add(mesh);
-    this.spots.push({ x, z, r: radius, mesh });
+    this.spots.push({ x, z, r: radius, mesh, flicker, on: on ?? this.threshold(x, z) });
     return mesh;
+  }
+
+  /** Ab welcher Lampenstufe eine Lichtinsel angeht: nah am Haus zuerst. */
+  threshold(x, z) {
+    return 0.03 + Math.min(0.42, Math.hypot(x - HOME.x, z - HOME.z) * 0.009);
+  }
+
+  /**
+   * M33: Spiegelung eines Lichts im See – ein schmaler Streifen zur Kamera hin (Süden), der mit
+   * seinem Licht angeht und leicht zittert. Zählt nicht als Licht (Nebelwelle, Laternenhexe).
+   */
+  addStreak(x, z, width, length) {
+    const mesh = new THREE.Mesh(this.geometry, this.material);
+    mesh.position.set(x, 0.015, z + length / 2 + 0.15);
+    mesh.renderOrder = 2;
+    const glow = new THREE.Mesh(this.geometry, this.addMaterial);
+    glow.renderOrder = 3;
+    mesh.add(glow);
+    this.group.add(mesh);
+    const s = { x, z, w: width, len: length, mesh, on: this.threshold(x, z), grow: 0 };
+    mesh.scale.set(0.001, 1, 0.001);
+    this.streaks.push(s);
+    return mesh;
+  }
+
+  removeStreak(mesh) {
+    this.group.remove(mesh);
+    this.streaks = this.streaks.filter((s) => s.mesh !== mesh);
   }
 
   /**
@@ -100,7 +139,7 @@ export class LightPools {
     const mesh = make(this.material, 2);
     mesh.add(make(this.addMaterial, 3));
     this.group.add(mesh);
-    points.forEach((p, i) => this.spots.push({ x: p.x, z: p.z, r: radius, mesh, i, flames }));
+    points.forEach((p, i) => this.spots.push({ x: p.x, z: p.z, r: radius, mesh, i, flames, flicker: Boolean(flames), on: this.threshold(p.x, p.z) }));
     return mesh;
   }
 
@@ -176,8 +215,47 @@ export class LightPools {
     }
   }
 
-  update(lampLevel) {
+  update(lampLevel, dt = 0) {
     this.material.uniforms.uLevel.value = lampLevel;
     this.group.visible = lampLevel > 0.01;
+    this.time += dt;
+    // M33: Schwelle und Flackern – jede Insel wächst auf, sobald die Lampenstufe ihre Schwelle
+    // erreicht (nah am Haus zuerst), Flammen atmen leicht; morgens gehen sie andersherum aus
+    for (const s of this.spots) {
+      if (s.off) continue;
+      const want = lampLevel >= (s.on || 0) ? 1 : 0;
+      const g0 = s.grow ?? want;
+      const g1 = want > g0 ? Math.min(1, g0 + dt * 3.5) : want < g0 ? Math.max(0, g0 - dt * 2.5) : g0;
+      if (g1 === s.grow && !(s.flicker && g1 > 0)) continue;
+      s.grow = g1;
+      const flick = s.flicker ? 1 + (Math.sin(this.time * 6.1 + s.x * 3.1) * 0.6 + Math.sin(this.time * 11.3 + s.z * 2.3) * 0.4) * 0.022 : 1;
+      this.place(s, g1 <= 0 ? 0 : (0.55 + 0.45 * easeOut(g1)) * flick);
+    }
+    for (const s of this.streaks) {
+      const want = lampLevel >= s.on ? 1 : 0;
+      s.grow = want > s.grow ? Math.min(1, s.grow + dt * 2) : want < s.grow ? Math.max(0, s.grow - dt * 2) : s.grow;
+      const shimmer = 1 + Math.sin(this.time * 3.7 + s.x) * 0.06;
+      const k = s.grow;
+      s.mesh.visible = k > 0;
+      s.mesh.scale.set(Math.max(0.001, s.w * k * (2 - shimmer)), 1, Math.max(0.001, s.len * k * shimmer));
+    }
+  }
+
+  /** Größe einer Insel setzen (k = 0: aus), einzeln oder als Instanz. */
+  place(s, k) {
+    const r = s.r * 2 * this.scale * k;
+    if (s.i === undefined) {
+      s.mesh.visible = k > 0;
+      if (k > 0) s.mesh.scale.set(r, 1, r);
+      return;
+    }
+    const pool = k > 0 ? _m.makeScale(r, 1, r).setPosition(s.x, 0.02, s.z) : ZERO;
+    s.mesh.setMatrixAt(s.i, pool);
+    s.mesh.instanceMatrix.needsUpdate = true;
+    const glow = s.mesh.children[0];
+    if (glow) {
+      glow.setMatrixAt(s.i, pool);
+      glow.instanceMatrix.needsUpdate = true;
+    }
   }
 }

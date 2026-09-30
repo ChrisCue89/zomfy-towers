@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { survivorParts32, bedrollModel } from './survivorModels.js';
 import { armsModel } from './characters.js';
+import { ROD_TIP } from './fishingModels.js';
 import { buildDog, poseDog } from './dogModel.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
@@ -238,6 +239,13 @@ export class Npcs {
     }
     p.armL.rotation.z = damp(p.armL.rotation.z, 0, 8, dt);
     p.head.rotation.z = damp(p.head.rotation.z, 0, 8, dt);
+    if (n.fishing) {
+      // M33: am Steg – die Angel schräg nach vorn oben, die linke Hand an der Kurbel
+      p.armR.rotation.x = -2.05 + Math.sin(this.time * 0.9 + n.x) * 0.03;
+      p.armR.rotation.z = 0.12;
+      p.armL.rotation.x = -1.3;
+      p.armL.rotation.z = -0.38;
+    }
     this.poseGesture(n, dt);
     // Lächeln beim Winken, bei Gesten und wenn Mika dabeisteht (M12)
     const happy = n.wave > 0 || n.near || n.gestures.length > 0;
@@ -271,6 +279,12 @@ export class Npcs {
       mesh.renderOrder = 1.6;
       p.hand.add(mesh);
       p.held[id] = mesh;
+      if (id === 'angel') {
+        // M33: Spitze der Angel für die Schnur
+        p.rodTip = new THREE.Object3D();
+        p.rodTip.position.set(1.5 * U, (-ROD_TIP + 0.5) * U, 1.5 * U);
+        mesh.add(p.rodTip);
+      }
     }
     for (const [k, mesh] of Object.entries(p.held)) mesh.visible = k === id;
   }

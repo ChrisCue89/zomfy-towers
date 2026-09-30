@@ -199,7 +199,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       wer übt, Stufen, M30), defense (Lagerglocke: Läuten,
                       Kampf der Bewohner, Aufhelfen, Wunden, Verluste,
                       Bericht, M31), post (Netzwerk: Briefkasten, Pakete,
-                      Stimmen, Besuch, Rückkehr, Signalfeuer, M32), quests
+                      Stimmen, Besuch, Rückkehr, Signalfeuer, M32), fishing
+                      (Angeln am Steg: Wurf, Biss, Drill, Fang, M33), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -278,7 +279,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       Laufen, Winken, Bellen, Lächeln), survivorModels (auch
                       Balduin), dogModel, traderModels (Balduins Boot, Mikas
                       Ruderboot, N5),
-                      crows (Krähen: sitzen, picken, fliegen auf, M12)
+                      crows (Krähen: sitzen, picken, fliegen auf, M12),
+                      fishingModels (Angel, Pose, Fänge, M33)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
@@ -289,7 +291,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       (Startbild, N2), title (Titelbild, Name und Aussehen),
                       armory (Fenster des Waffenschranks, M30),
                       funk (Edda über Funk: Comic-Feld unten rechts, N4),
-                      catalog (Balduins Katalog und Lieferkarte, N4)
+                      catalog (Balduins Katalog und Lieferkarte, N4),
+                      fishingView (Angeln: Schnur, Leisten, Fangkarte, M33)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung, Turmteile,
                       `towerStatsOf`), zombies,
@@ -313,7 +316,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Kampf der Bewohner, Wunden, »Verluste«, M31),
                       network (Netzwerk: Zeiten, Pakete, Stellen und Hilfe der
                       Signalfeuer, M32), motifs (Motive der Figuren für die
-                      Spieluhr, M32),
+                      Spieluhr, M32), fishing (Angeln: Platz, Zeiten, Fische,
+                      Hilfe der Freunde, Korb, M33),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -350,7 +354,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -434,7 +438,11 @@ Grundprinzipien:
   Rufe und Pulks bringen nur so viele, wie Platz ist (M25c: nie ein
   unsichtbarer Schlurfer). Ein Brüter legt höchstens `brood.max` Kapseln.
 - **Konstante Lichtzahl:** Gebaute Lampen bekommen kein Punktlicht, sondern
-  eine Lichtinsel (`lightPools.js`) und ein Glüh-Material.
+  eine Lichtinsel (`lightPools.js`) und ein Glüh-Material. Seit M33 gehen die Inseln
+  in der Dämmerung nacheinander an (`threshold`: nach dem Abstand zum Haus, `on`
+  setzt die Schwelle selbst), `flicker` lässt Flammen atmen, `addStreak` legt eine
+  Spiegelung auf den See (zählt nicht als Licht). Der Dunst nach Norden ist
+  `look.haze` (daynight.js) im Post-Pass.
 - **Das Lager (M17, `data/buildings.js` CAMP_*, RAID, GEAR):** Wall und Tor
   stehen immer (Spalte i = −8, `CAMP_LAYOUT`; `game.ensureCamp` stellt sie bei
   einem neuen Spiel und nach dem Laden eines alten Stands auf und erstattet,
@@ -661,6 +669,20 @@ Grundprinzipien:
     `survivors.placeEdda` stellt sie tagsüber ans Stegende (`EDDA_SPOT`, Figur aus
     `eddaParts32`). `talkEdda` führt zu `eddaHeimkehr` bzw. `eddaDa` (Sprecher
     `eddaHier`, Porträt `eddaHeute`).
+- **Angeln am Steg (M33, `core/fishing.js`, `ui/fishingView.js`, `data/fishing.js`):**
+  - Ein Abend, eine Aktivität: `fishing.blocked` und `cardNight.blocked` sehen
+    beide `state.fishing.lastDay` und `state.cards.lastDay`.
+  - `fishing.begin(friend)` setzt Mika (`player.seat`, `player.fishingPose`) und
+    wer mitkommt (`survivors.seatAt`, `npcs.hold(n, 'angel')`, `n.fishing`) an die
+    Nordkante des Stegs (`SPOT`). Die Kamera schaut über `world.fishLook`
+    (lookSpot »angeln«) nah aufs Wasser; der Modus ist `angeln`.
+  - `update` führt die Phasen bereit → laden → wurf → warten → biss → drill →
+    fang/weg. Die Schnur zeichnet die Oberfläche von `character.rodTip` zur Pose
+    (`fishingView`).
+  - Die Angel kommt über `angelnLernen` (Fietes Dialog) oder Balduins Angebot
+    `gives.rod`; der Korb geht über `gives.fish` an Balduin.
+  - Der Angelplatz ist eine Einblendung mit `fishing: true`
+    (`world.refreshFishingSpot`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1009,7 +1031,14 @@ Grundprinzipien:
    Frostnacht brennen zwei Signalfeuer auf den Inseln, auch auf der Karte; nach
    dem Herbst steht Edda am Stegende (echte Taste); die Seite »Post« im
    Herbstbuch; Speichern v28 und Migration v27 → v28 (Bilder: brief, paket,
-   signalfeuer, signalkarte, edda-daheim).
+   signalfeuer, signalkarte, edda-daheim); ab M33 (Abschnitt `angeln`): Fiete
+   bringt das Angeln bei (echte Tasten), tagsüber sagt der Angelplatz, wann es
+   geht, abends kommt Fiete mit und beide sitzen mit Angel an der Stegkante (die
+   Uhr steht), E halten lädt und loslassen wirft, zu früh angeschlagen verscheucht
+   den Fisch, der echte Biss will ein E, der Drill mit echten Tasten bringt den
+   Fang mit Fangkarte, Esc steht auf (50 Minuten später, gemeinsame Zeit, heute
+   keine Karten mehr), Balduin nimmt den Fisch, Speichern v29 und Migration
+   v28 → v29 (Bilder: angeln, drill, fang).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1152,7 +1181,9 @@ n)` trifft jemanden, `setLosses(an)` stellt »Verluste«, `fallPerson(id)` läss
 jemanden fallen, `memorial()` zeigt das Erinnerungsbrett (Einblendung, Lichtinsel,
 Spieluhr); ab M32 zeigt `post()` Briefkasten, Gelesenes, Verschicktes,
 Einladung, Besuch, Fahne, Signalfeuer, Edda und die offene Karte
-(`nextMorning()` bringt auch die Post).
+(`nextMorning()` bringt auch die Post); ab M33 zeigt `fishing()` Angel, Abende,
+Fänge, Korb, die laufende Runde (Phase, Kescher, Fangkarte) und den Angelplatz,
+`giveRod()` gibt die Angel.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
 `lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
 wieder Mika, M32).

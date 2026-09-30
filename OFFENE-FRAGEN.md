@@ -2153,6 +2153,33 @@ gespeichert).
 - Edda als Bewohnerin mit Platz und Fähigkeit hätte die Balance der Plätze
   verändert. Sie ist Belohnung und Abschluss der Geschichte, kein Werkzeug.
 
+### 192. Angeln im Einzelnen (M33)
+**Entscheidung:**
+- **Ort und Zeit:** Geangelt wird an der Nordkante des Stegs, damit Wasser, Pose
+  und Fang oben im Bild liegen und Mika von hinten zu sehen ist. Es geht abends
+  wie beim Kartenabend (18–20 Uhr): ein Abend, eine Aktivität, die Uhr steht,
+  danach 50 Minuten.
+- **Wer mitkommt:** Allein geht es auch – anders als bei den Karten, denn Angeln
+  ist ein stiller Zeitvertreib.
+- **Mechanik:** Der Drill ist eine waagerechte Leiste mit Kescher, bedient nur
+  mit E (halten und loslassen), damit er mit Tastatur und ohne Maus geht. Zu
+  frühes Anschlagen kostet nur Zeit, kein Wurf geht dabei verloren.
+- **Belohnung:** Fisch wird zu Zombieteilen bei Balduin, nicht zu Kampfkraft –
+  Angeln bleibt Ausgleich und Ort für gemeinsame Zeit. Die Flaschenpost erzählt
+  von der Insel im Nebel.
+- **Die Angel:** Sie kommt von Fiete (sein Beruf) oder, falls er nie kommt, von
+  Balduin ab Tag 6.
+- **Licht:** Die Schwelle der Dämmerung inszenieren die Lichtinseln selbst
+  (nacheinander nach dem Abstand zum Haus), nicht zusätzliche Lichter: Die Zahl
+  der Lichter bleibt konstant. Spiegelungen zählen nicht als Licht (Nebelwelle,
+  Laternenhexe).
+
+**Warum:**
+- Die Nordkante hält die Bildmitte frei für Pose und Fang (N4).
+- Eine einzige Taste macht das Angeln so zugänglich wie den Kartenabend.
+- Kampfboni würden das Angeln zur Pflicht machen – es soll eine Wahl für ruhige
+  Abende bleiben.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -19,6 +19,7 @@ import { canAfford } from './inventory.js';
 import { FLAWLESS } from '../data/risk.js';
 import { ABILITIES, WANDERERS } from '../data/wanderers.js';
 import { POST } from '../data/network.js';
+import { FISHING, ROD_OFFER, FISH_PRICE } from '../data/fishing.js';
 import { AMMO_TRADE, ARMS_REPLACE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
@@ -333,6 +334,15 @@ export class Trader {
     for (const id of this.game.post?.invitable() || []) {
       const w = WANDERERS[id];
       list.push({ id: `tausch-einladung-${id}`, key: 'einladung', cost: POST.inviteCost, trade: true, icon: 'brief', name: T.netz.einladung(w.name), info: T.netz.einladungInfo(T.wanderer.zumOrt[w.place], w.name), gives: { invite: id }, affordable: canAfford(st.inventory, POST.inviteCost) });
+    }
+    // M33: Balduins zweite Angel (solange Mika keine hat) und Fisch aus dem Korb
+    const fishing = st.fishing;
+    if (fishing && !fishing.rod && st.time.day >= ROD_OFFER.day) {
+      list.push({ id: 'tausch-angel', key: 'angel', cost: ROD_OFFER.cost, trade: true, icon: 'angel', name: T.angeln.angelAngebot, info: T.angeln.angelInfo, gives: { rod: true }, affordable: canAfford(st.inventory, ROD_OFFER.cost) });
+    }
+    if (fishing?.basket > 0) {
+      const left = Math.max(0, FISHING.sell.perDay - this.soldToday('fisch'));
+      list.push({ id: 'tausch-fisch', key: 'fisch', cost: {}, trade: true, icon: 'fisch', name: T.angeln.korb(fishing.basket), info: T.angeln.korbInfo, gives: { fish: FISH_PRICE }, owned: left === 0, ownedText: T.haendler.ausverkauft, affordable: left > 0 });
     }
     return list;
   }

@@ -64,7 +64,7 @@ export const POP = { time: 0.5, squash: 0.16, upgrade: 0.22, freq: 4.6, damping:
 export const SOUND_VARY = { pitch: 0.05, db: 1.5 };
 
 /** Klänge mit fester Tonhöhe (Musikalisches und Oberfläche). */
-export const SOUND_FIXED = ['lagerglocke', 'glocke', 'bimmel', 'herzschlag', 'jubel', 'klick', 'tipp', 'welle', 'stufe', 'morgen', 'sturmglocke', 'turmglocke', 'champion', 'pfiff', 'loot', 'reaktion'];
+export const SOUND_FIXED = ['lagerglocke', 'glocke', 'bimmel', 'herzschlag', 'jubel', 'klick', 'tipp', 'welle', 'stufe', 'morgen', 'sturmglocke', 'turmglocke', 'champion', 'pfiff', 'loot', 'reaktion', 'fang'];
 
 /** Ausbau: Mit jeder Stufe klingt der Ausbau ein wenig höher. */
 export const UPGRADE_PITCH = 0.07;

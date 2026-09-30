@@ -78,6 +78,20 @@ const SFX = {
     s.noise(t, 0.3, { type: 'lowpass', freq: 700, freqEnd: 220, attack: 0.04, peak: 0.22 * v, out: o });
     s.tone('sine', 95, t, 0.2, { freqEnd: 60, peak: 0.2 * v, out: o });
   },
+  // M33: Angeln – Auswerfen (Sausen und Rollenknarren), Biss (Blubb), Kurbel, Fang
+  auswerfen: (s, t, v, o) => {
+    s.noise(t, 0.28, { type: 'bandpass', freq: 600, freqEnd: 2400, q: 1.6, attack: 0.04, peak: 0.16 * v, out: o });
+    for (let k = 0; k < 5; k++) s.tone('square', 1800 - k * 90, t + 0.1 + k * 0.035, 0.012, { peak: 0.02 * v, filter: 3200, out: o });
+  },
+  biss: (s, t, v, o) => {
+    s.tone('sine', 420, t, 0.12, { freqEnd: 180, peak: 0.16 * v, out: o });
+    s.tone('sine', 300, t + 0.1, 0.1, { freqEnd: 140, peak: 0.1 * v, out: o });
+    s.noise(t, 0.1, { type: 'lowpass', freq: 700, peak: 0.08 * v, out: o });
+  },
+  kurbel: (s, t, v, o) => {
+    for (let k = 0; k < 3; k++) s.tone('square', 2100 - k * 150, t + k * 0.04, 0.01, { peak: 0.025 * v, filter: 3600, out: o });
+  },
+  fang: (s, t, v, o) => [587.33, 739.99, 880, 1174.66].forEach((f, k) => s.tone('triangle', f, t + k * 0.07, 0.16, { peak: 0.08 * v, out: o })),
   platsch: (s, t, v, o) => {
     s.noise(t, 0.22, { type: 'lowpass', freq: 900, peak: 0.3 * v, out: o });
     s.tone('sine', 75, t, 0.2, { freqEnd: 40, peak: 0.3 * v, out: o });

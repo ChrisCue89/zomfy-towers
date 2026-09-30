@@ -286,6 +286,41 @@ const ICONS = {
     ],
   },
   // M31: Lagerglocke – Galgen aus Treibholz, Bronzeglocke, Seil mit Knoten
+  // M33: Angel (Rute schräg, Schnur, Pose) und Fisch
+  angel: {
+    legend: { k: P.n1, e: P.e5, s: P.s6, w: P.s8, r: P.r3, W: P.s9 },
+    rows: [
+      '..........kk',
+      '.........kek',
+      '........kek.',
+      '.......kek.w',
+      '......kek..w',
+      '.....kek...w',
+      '....kek....w',
+      '...kek....kr',
+      '..kek.....kW',
+      'kkek.......k',
+      'ssk.........',
+      'ss..........',
+    ],
+  },
+  fisch: {
+    legend: { k: P.n1, b: P.b3, W: P.s9, n: P.n0, l: P.s8 },
+    rows: [
+      '............',
+      '............',
+      '...kkkkk...k',
+      '.kkbbbbbk.kk',
+      'kbWbbbbbbkbk',
+      'kbnbbbbbbbbk',
+      'klllllllkkbk',
+      '.kklllllk.kk',
+      '...kkkkk...k',
+      '............',
+      '............',
+      '............',
+    ],
+  },
   // M32: Brief (Luftpost-Umschlag mit rotem Siegel)
   brief: {
     legend: { k: P.n1, w: P.s9, W: P.s8, s: P.s6, r: P.r3, R: P.r4, b: P.b3 },

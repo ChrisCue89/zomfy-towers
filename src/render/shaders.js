@@ -41,6 +41,7 @@ uniform vec3 uTint;
 uniform float uSaturation;
 uniform float uVignette;
 uniform vec3 uVignetteColor;
+uniform vec4 uHaze;
 uniform ivec2 uDitherOffset;
 
 ${BAYER_GLSL}
@@ -125,6 +126,11 @@ void main() {
   float keep = smoothstep(0.22, 0.75, lum);
   col *= mix(uTint, vec3(1.0), keep);
   col = max(mix(vec3(lum), col, mix(uSaturation, 1.0, keep)), 0.0);
+
+  // M33: Luftperspektive – nach Norden (oben im Bild) ein leichter Dunst; das Raster der
+  // Palette macht daraus gerasterten Dunst statt eines weichen Verlaufs
+  float haze = smoothstep(0.42, 1.0, gl_FragCoord.y / uRes.y) * uHaze.a * (1.0 - keep * 0.7);
+  col = mix(col, uHaze.rgb, haze);
 
   // Vignette: Ränder weich in die Nachtfarbe ziehen
   vec2 v = (gl_FragCoord.xy / uRes - 0.5) * vec2(uRes.x / uRes.y, 1.0);

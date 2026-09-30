@@ -27,8 +27,9 @@ import { newBonds, sanitizeBonds } from '../data/bonds.js';
 import { AMMO, newArms, sanitizeArms, sanitizeTraining } from '../data/arms.js';
 import { LOSSES_DEFAULT, newBell, sanitizeWounds } from '../data/bell.js';
 import { newPost, sanitizePost } from '../data/network.js';
+import { newFishing, sanitizeFishing } from '../data/fishing.js';
 
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 29;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -119,6 +120,8 @@ export function createNewState(config, mapSeed = 1) {
     // (`id:art`), Einladung, Besuch zum Fest, Signalfeuer; Edda (ab welchem Tag zu Hause, begrüßt)
     post: newPost(),
     edda: { home: 0, met: false },
+    // M33: Angeln – Angel, Abende, letzter Abend, Fänge je Art { n, best }, Flaschenpost, Korb
+    fishing: newFishing(),
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -261,6 +264,7 @@ export function sanitizeState(data, config) {
   if (out.difficulty === 'gemuetlich') out.losses = false;
   out.post = sanitizePost(data.post); // M32
   out.edda = { home: Math.floor(num(data.edda?.home, 0, 0, 1e6)), met: data.edda?.met === true };
+  out.fishing = sanitizeFishing(data.fishing); // M33
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

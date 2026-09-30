@@ -120,7 +120,8 @@ export class World {
     this.lightPools = new LightPools(scene);
     this.interiorPools = [];
     this.addInteriorPools();
-    for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2); // Kürbislaternen (M12)
+    for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2, { flicker: true }); // Kürbislaternen (M12), M33: Kerzen flackern
+    this.refreshWindowPools(); // M33: Fensterlicht vor dem Haus
     if (this.props.torches.length) this.lightPools.addMany(this.props.torches, 2.4, this.props.torchFlames); // Fackeln an den Wegen
     this.buildings = new Buildings({
       scene,
@@ -224,11 +225,23 @@ export class World {
     this.props.setMemorial(fallen.length, lit);
     if (lit && !this.memorialPool) {
       const p = this.props.memorialPos;
-      this.memorialPool = this.lightPools.add(p.x + 0.3, p.z + 0.35, 1.8);
+      this.memorialPool = this.lightPools.add(p.x + 0.3, p.z + 0.35, 1.8, { flicker: true, on: 0 });
     } else if (!lit && this.memorialPool) {
       this.lightPools.remove(this.memorialPool);
       this.memorialPool = null;
     }
+    this.refreshInteractions();
+  }
+
+  /** M33: Fensterlicht auf dem Boden vor dem Haus – geht als erstes an (nachts, mit den Lampen). */
+  refreshWindowPools() {
+    for (const p of this.windowPools || []) this.lightPools.remove(p);
+    this.windowPools = (this.shelter.lights.windows || []).map((w) => this.lightPools.add(w.x, w.z, 1.15, { on: 0.02 }));
+  }
+
+  /** M33: der Angelplatz am Steg (mit Einblendung, sobald es eine Angel gibt). */
+  refreshFishingSpot(on) {
+    this.props.setFishingSpot(on);
     this.refreshInteractions();
   }
 
@@ -245,7 +258,9 @@ export class World {
   setSignalFires(places) {
     const spots = this.props.setSignalFires(places);
     for (const pool of this.signalPools || []) this.lightPools.remove(pool);
-    this.signalPools = spots.map((s) => this.lightPools.add(s.x, s.z + 0.25, 2.4));
+    for (const streak of this.signalStreaks || []) this.lightPools.removeStreak(streak);
+    this.signalPools = spots.map((s) => this.lightPools.add(s.x, s.z + 0.25, 2.4, { flicker: true, on: 0 }));
+    this.signalStreaks = spots.map((s) => this.lightPools.addStreak(s.x, s.z + 1.6, 0.5, 3.2)); // M33: der Schein im Wasser
     this.signalSpots = spots;
     return spots;
   }
@@ -255,9 +270,13 @@ export class World {
     if (stage >= 3 && !this.beaconPool) {
       const t = this.props.beaconPos;
       this.beaconPool = this.lightPools.add(t.x, t.z, beaconRange);
+      const m = this.props.towerPos;
+      if (!this.beaconStreak) this.beaconStreak = this.lightPools.addStreak(m.x, m.z + 0.6, 0.45, 4.2); // M33: das Leuchtfeuer spiegelt sich im See
     } else if (stage < 3 && this.beaconPool) {
       this.lightPools.remove(this.beaconPool);
       this.beaconPool = null;
+      if (this.beaconStreak) this.lightPools.removeStreak(this.beaconStreak);
+      this.beaconStreak = null;
     }
   }
 
@@ -289,6 +308,7 @@ export class World {
     for (const c of old.colliders) this.colliders.remove(c);
     this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level: outer, stage: level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
+    this.refreshWindowPools(); // M33: Fensterlicht auf dem Boden
     this.props.setHouseLevel(outer);
     this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
     this.pathing.setHome(homeRect(outer));
@@ -550,6 +570,7 @@ export class World {
     if (key === 'unterholz') return this.forestSpot || (this.forestSpot = this.findForestSpot());
     if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
     if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
+    if (key === 'angeln' && this.fishLook) return this.fishLook; // M33: übers Wasser am Steg
     if (key === 'ankunft') return { x: ARRIVAL.route[0][0], z: ARRIVAL.route[0][1] }; // N5: dort kommt das Boot her
     // Haus, Hof und rechts der See
     const sh = LAYOUT.shelter;
@@ -687,7 +708,7 @@ export class World {
       if (player.holdingLantern || flash) this.lanternLight.light.position.copy(player.lanternPosition());
     }
     this.lights.update(dt, dn.lampLevel);
-    this.lightPools.update(dn.lampLevel);
+    this.lightPools.update(dn.lampLevel, dt); // M33: nacheinander an, Flammen atmen
     this.resources.update(dt);
     this.buildings.update(dt); // M26: Bauen mit Schwung
     this.water.update(dt, focus);

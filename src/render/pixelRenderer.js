@@ -90,6 +90,7 @@ export class PixelRenderer {
           uSaturation: { value: 1 },
           uVignette: { value: 0.3 },
           uVignetteColor: { value: new THREE.Vector3(0.3, 0.3, 0.5) },
+          uHaze: { value: new THREE.Vector4(0, 0, 0, 0) }, // M33: Dunst nach Norden (Farbe, Stärke)
           uDitherOffset: { value: new THREE.Vector2(0, 0) },
         },
       })
@@ -229,6 +230,8 @@ export class PixelRenderer {
       pu.uSaturation.value = look.saturation;
       pu.uVignette.value = look.vignette;
       pu.uVignetteColor.value.copy(look.vignetteColor);
+      if (look.haze) pu.uHaze.value.copy(look.haze);
+      else pu.uHaze.value.w = 0;
       pu.uOutlineTint.value.copy(look.outlineTint);
     }
     r.setRenderTarget(this.postTarget);

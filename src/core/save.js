@@ -11,6 +11,7 @@ import { WANDERER_ORDER, arrivalPlan, extendPlan } from '../data/wanderers.js';
 import { newArms } from '../data/arms.js';
 import { LOSSES_DEFAULT, newBell } from '../data/bell.js';
 import { newPost } from '../data/network.js';
+import { newFishing } from '../data/fishing.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -127,6 +128,8 @@ const MIGRATIONS = {
     const after = data.autumn?.frost && data.autumn?.mode === 'weiter';
     return { ...data, version: 28, post, edda: { home: after ? (data.time?.day || 1) + 1 : 0, met: false } };
   },
+  // v28 -> v29: M33 (Angeln am Steg). Noch keine Angel – Fiete bringt es bei, oder Balduin hat eine.
+  28: (data) => ({ ...data, version: 29, fishing: newFishing() }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {
