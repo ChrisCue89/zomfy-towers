@@ -278,7 +278,8 @@ export class Isles {
     this.heading = Math.PI;
     g.world.map.isle = null;
     if (!g.arrival.active) g.arrival.moor();
-    if (g.world.map.onIsland(p.x, p.z) || g.world.map.isWater(p.x, p.z)) {
+    // (Der Innenraum liegt östlich der Karte – für die Karte wäre das See: wer drinnen ist, bleibt drinnen)
+    if (!g.world.isInside(p.x, p.z) && (g.world.map.onIsland(p.x, p.z) || g.world.map.isWater(p.x, p.z))) {
       p.x = TRIP.dock.x;
       p.z = TRIP.dock.z;
     }

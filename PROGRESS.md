@@ -47,6 +47,11 @@ Sei kreativ.« (OFFENE-FRAGEN 193)
 - Prüfabschnitt `inseln` (Bilder: rudern, insel, katze-daheim), bestanden. Beim
   Ansehen der Bilder behoben: der Leuchtmast vor der Nordinsel (siehe oben), das Zelt
   hat eine geschlossene Giebelwand mit dunklem Eingang (vorher sah man hinein).
+- Beim vollen Prüflauf gefunden und behoben: Wer drinnen gespeichert hatte, wachte
+  nach dem Laden am Steg auf – der Innenraum liegt östlich der Karte, und dort ist für
+  die Karte See. Jetzt bleibt drinnen, wer drinnen war. Volle Prüfung: 433 Prüfpunkte,
+  die drei Fehler davon waren dieser eine; `speichern`, `probespiel` und `inseln`
+  danach grün (36 Prüfpunkte).
 - Nebenbei: Die Flaschenpost (M33) und Eddas Funkbuch erzählen jetzt dasselbe –
   Marthe läutet bei Morgennebel. Die Fahrt zur Insel im Nebel ist der nächste
   Schritt (Plan: N7).
