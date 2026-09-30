@@ -1833,7 +1833,7 @@ export const T = {
     notizen: {
       zelt: '„14. Oktober. Marthe ist mit den Kindern vom Hof auf die Nebelinsel gezogen. Ihr Kahn leckt, aber sie haben die alte Schiffsglocke. Wenn morgens Nebel ist, läuten sie – dann weiß ich, dass es ihnen gut geht. – E.“',
       // N8: zwei weitere Seiten
-      stein: '„2. Oktober. Heute kam der Moder bis an Brandts Hof. Die Schafe sind fort. Brandt sagt, das Unterholz ist weich wie Moos und zäh wie Leim. Ich hab ihm gesagt: Bleib auf den alten Holzfällerwegen, die sind fest. Er hat gelacht. Morgen frag ich wieder. – E.“',
+      stein: '„2. Oktober. Heute kam der Moder bis an Brandts Hof. Die Schafe sind fort. Der alte Brandt sagt, das Unterholz ist weich wie Moos und zäh wie Leim – er hat seine Stiefel darin gelassen. Ich hab ihm gesagt: Bleib auf den alten Holzfällerwegen, die sind fest. Er hat genickt. Morgen frag ich wieder. – E.“',
       dose: '„8. Oktober. Radio Stillwald sendet weiter. Drei Hörer: Balduin, Marthe und eine, die sich nur »die Försterin« nennt. Ich lese jeden Abend das Wetter vor und wie hoch der See steht. Man braucht etwas, das jeden Tag gleich ist. – E.“',
     },
   },
