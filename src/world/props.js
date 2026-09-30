@@ -336,7 +336,7 @@ function buildTowerDebris(seed) {
 /**
  * Wegweiser (M13g, 1/32 m): gefaster Pfosten mit Kappe, drei Pfeilbretter mit
  * Nägeln. Oben ein gemalter Fisch und ein Häuschen (zum Fischerhaus am See),
- * links ein rot durchgestrichenes Brett (der Weg nach Moosbach ist gesperrt),
+ * links ein rot durchgestrichenes Brett (der Weg nach Birkhagen ist gesperrt),
  * unten eingeritzte Zeichen.
  */
 function buildSign(seed) {

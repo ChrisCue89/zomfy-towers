@@ -366,6 +366,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Jahrestage (G4), Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
                       Reihenfolge der Schlurferkunde, Turmalbum, M25),
+                      places (Ortskunde: die Orte der Holzmark, wann Mika
+                      sie kennt, Zeilen je Ort, G5),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       cards (Spielstile, Ticks, Einsätze, Rückseiten,
                       Pflichten, Regelstufen, M28),
@@ -619,7 +621,12 @@ Grundprinzipien:
   Herbstschmuck frei (`book.decoUnlocked()` → Reiter `schmuck` der Bauleiste,
   Bauten mit `deco`). Der Turm der Nacht bekommt einen Strich (`b.best`,
   `towerRanks.crown`). Das Pausenmenü zeigt das Buch (`menu.bookData`, Seiten
-  `taten`/`kunde`/`album`, A/D blättern). Werte in `data/book.js`.
+  `taten`/`kunde`/`album`, A/D blättern). Werte in `data/book.js`. Seit G5 hat es die
+  Seite `orte` (Ortskunde, `data/places.js`: `known(state)` und `lines(state)` je Ort, Texte
+  in `T.ortskunde`); neue Orte meldet `book.checkPlaces` in der Chronik (gemerkt nur im
+  Speicher, nach dem Laden still). Passen die Reiter nicht in eine Reihe, brechen sie in zwei
+  um (`splitTabs`); eine Seite mit mehr als 16 Zeilen blättert spaltenweise mit der Auswahl
+  (Pfeile am Rand, anklickbar).
 - **Gäste und Plätze (M27, `data/wanderers.js`, `core/survivors.js`):** Zu den
   fünf Stammfiguren kommen Wanderer nach `state.guests.plan` (beim Spielstart
   aus dem Startwert gewürfelt, gespeichert). `state.survivors[id].stage`: 0
@@ -1208,7 +1215,12 @@ Grundprinzipien:
    von den vielen Männern; ab G4 (Abschnitt `uhr`): Tag 12 ist der 12. Oktober, Tag 32 der
    1. November, am 21. Morgen »Reif auf dem Steg«, an Tag 20 um neun funkt Edda ihren Jahrestag,
    nach dem Frost Frau Holle und Junas Pfeifen, der Abspann nennt »Mikas Bucht« (Bilder:
-   uhr-jahrestag, karte-frost).
+   uhr-jahrestag, karte-frost); ab G5 (Abschnitt `orte`): am Anfang fünf Orte im Herbstbuch
+   (echte Tasten bis »Orte«, Herkunft des Namens), nach dem Wegweiser Birkhagen und nach dem
+   Landgang der Wartholm mit Meldung in der Chronik, die Insel im Nebel heißt erst nach Marthe
+   Apfelwerder, mit allem Wissen 24 Orte in zwei blätternden Spalten (S, Klick auf den Pfeil),
+   die Reiter in zwei Reihen im Buch, die Zuflucht nennt, wer dorthin weitergezogen ist
+   (Bilder: ortskunde, ortskunde-voll).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1374,7 +1386,8 @@ alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.
 Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
-Naturzeile und Jahrestag.
+Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeilen) und die
+offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

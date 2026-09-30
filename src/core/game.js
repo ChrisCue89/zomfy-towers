@@ -45,6 +45,7 @@ import { Posts } from './posts.js';
 import { Quests } from './quests.js';
 import { Autumn } from './autumn.js';
 import { Book } from './book.js';
+import { PLACES, placesKnown, placeLines } from '../data/places.js';
 import { CardNight } from './cardNight.js';
 import { Bonds } from './bonds.js';
 import { Scenes } from './scenes.js';
@@ -115,6 +116,7 @@ const FLAG_AFTER_DIALOG = {
   radioHoeren: 'radioGehoert', // N4: das Radio hinter dem Funkgerät-Menü
   briefkasten: 'briefkastenGesehen',
   sessel: 'sesselProbiert',
+  schild: 'schildGelesen', // G5: Birkhagen steht jetzt in der Ortskunde
 };
 
 /** Ausruhen: Zieluhrzeit je Aktion. */
@@ -3706,6 +3708,29 @@ export class Game {
       // M25, Teil 2: Herbstbuch – Sterne, Taten, Schmuck, Arten, Turmalbum; Taten jetzt prüfen
       book: () => game.book.view(),
       bookCheck: () => game.book.check(),
+      // G5: Ortskunde – bekannte Orte mit Namen, Zeilen und die offene Seite des Buchs samt Reitern
+      places: () => {
+        const st = game.state;
+        const menu = game.menu;
+        const L = menu.isOpen && menu.screen === 'buch' ? menu.layout(game.ui) : null;
+        return {
+          known: placesKnown(st),
+          names: placesKnown(st).map((id) => (!PLACES[id].named || PLACES[id].named(st) ? T.ortskunde.orte[id].name : T.ortskunde.orte[id].nameNebel)),
+          lines: Object.fromEntries(placesKnown(st).map((id) => [id, placeLines(st, id)])),
+          book: L && {
+            page: menu.page,
+            pages: menu.bookPages(),
+            count: L.book.count,
+            rows: L.buttons.filter((b) => b.row).map((b) => ({ id: b.row.id, label: b.row.label, right: b.row.right, hidden: Boolean(b.hidden) })),
+            shown: L.book.shown,
+            detail: L.book.detail.map((l) => l.text),
+            start: L.book.start,
+            arrows: L.book.arrows.map((a) => a.dir),
+            frame: { x: L.x, y: L.y, w: L.w, h: L.h },
+            tabs: L.book.tabs.map((t) => ({ page: t.page, ...t.rect })),
+          },
+        };
+      },
       // M26: Wucht und Schliff
       /** Kamera, Trefferstopp, Zeitlupe, letzte Rückmeldungen, Einstellungen, vorübersetzte Shader. */
       feel: () => ({

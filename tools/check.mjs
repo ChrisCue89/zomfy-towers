@@ -230,6 +230,7 @@ async function runBrowserChecks() {
     if (want('knoten')) await runKnotChecks(browser, url);
     if (want('wald')) await runForestChecks(browser, url);
     if (want('uhr')) await runClockChecks(browser, url);
+    if (want('orte')) await runPlaceChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -11059,6 +11060,139 @@ async function runClockChecks(browser, url) {
   await still(page, 'karte-frost');
   await page.keyboard.press('KeyM');
   await step(100);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+}
+
+async function runPlaceChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Orte (G5)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(100);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+  });
+  await step(300);
+  /** Herbstbuch mit echten Tasten: Esc, S bis »Herbstbuch«, E, dann D bis »Orte«. */
+  const openPlaces = async () => {
+    for (let k = 0; k < 3 && (await z(() => window.zomfy.game.mode)) !== 'menu'; k++) await tap('Escape');
+    const zeilen = await z(() => window.zomfy.game.menu.buttons().map((b) => b.label));
+    for (let k = 0; k < zeilen.indexOf('Herbstbuch'); k++) await tap('KeyS');
+    await tap('KeyE');
+    for (let k = 0; k < 9 && (await z(() => window.zomfy.game.menu.page)) !== 'orte'; k++) await tap('KeyD');
+    await step(200);
+  };
+  const closeMenu = async () => {
+    for (let k = 0; k < 4 && (await z(() => window.zomfy.game.mode)) !== 'play'; k++) await tap('Escape');
+    await step(100);
+  };
+
+  // 1) Am Anfang kennt Mika fünf Orte: die Holzmark, den See, die Holzlände, den Wald und die Wege
+  const start = await z(() => window.zomfy.places());
+  await openPlaces();
+  const buch1 = await z(() => window.zomfy.places().book);
+  await still(page, 'ortskunde');
+  await closeMenu();
+  if (start.known.join() === 'holzmark,kranichsee,holzlaende,daemmerwohld,wege' && buch1?.page === 'orte' && buch1.rows.length === 5 && buch1.count === 'Die Holzmark · 5 Orte' && buch1.detail[0]?.startsWith('Eine Mark war früher') && buch1.rows[0].right === 'Gegend') note(`✓ Orte (G5): im Herbstbuch die Seite »Orte« (${buch1.count}) – von Anfang an ${start.names.join(', ')}; zu jedem, woher der Name kommt`);
+  else fail(`Orte: Anfang ${JSON.stringify({ start, buch1 })}`);
+
+  // 2) Unterwegs dazugelernt: der Wegweiser (echte Taste im Dialog) und der Wartholm – beides als Meldung in der Chronik
+  await z(() => window.zomfy.game.startDialog('schild'));
+  await step(100);
+  for (let k = 0; k < 6 && (await z(() => window.zomfy.game.mode)) === 'dialog'; k++) await tap('KeyE');
+  await z(() => {
+    const g = window.zomfy.game;
+    g.state.isles.visited.push('nord');
+    g.book.check();
+  });
+  await step(100);
+  const neu = await z(() => ({ flag: window.zomfy.game.state.flags.schildGelesen, places: window.zomfy.places(), toasts: window.zomfy.game.hud.toasts.map((t) => `${t.kind || ''}:${t.text}`) }));
+  if (neu.flag === true && neu.places.known.includes('birkhagen') && neu.places.known.includes('wartholm') && neu.places.lines.birkhagen.includes('schild') && neu.toasts.includes('chronik:Ortskunde: Birkhagen') && neu.toasts.includes('chronik:Ortskunde: Wartholm')) note('✓ Orte (G5): nach dem Wegweiser steht Birkhagen im Buch, nach der Landung der Wartholm – beide melden sich in der Chronik (»Ortskunde: …«)');
+  else fail(`Orte: dazugelernt ${JSON.stringify(neu)}`);
+
+  // 3) Die Insel im Nebel bekommt ihren Namen erst, wenn Mika dort war
+  const nebel1 = await z(() => {
+    window.zomfy.setFog(1);
+    window.zomfy.game.book.check();
+    return window.zomfy.places().names;
+  });
+  await step(200);
+  const nebel2 = await z(() => {
+    window.zomfy.setFog(2);
+    window.zomfy.game.book.check();
+    return { names: window.zomfy.places().names, toasts: window.zomfy.game.hud.toasts.map((t) => t.text) };
+  });
+  await step(200);
+  if (nebel1.includes('Die Insel im Nebel') && !nebel1.includes('Apfelwerder') && nebel2.names.includes('Apfelwerder') && nebel2.names.includes('Wollgrashof') && nebel2.toasts.includes('Ortskunde: Apfelwerder')) note('✓ Orte (G5): erst »Die Insel im Nebel«, nach dem Treffen mit Marthe »Apfelwerder« (mit Meldung) – und der Wollgrashof');
+  else fail(`Orte: Nebelinsel ${JSON.stringify({ nebel1, nebel2 })}`);
+
+  // 4) Alles erfahren: 24 Orte, die Liste blättert spaltenweise, die Reiter brechen in zwei Reihen um
+  await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const st = g.state;
+    for (const f of ['radioGehoert', 'funk_boss_pilzmutter', 'moosleute']) st.flags[f] = true;
+    st.flags.waldrandTag = 13;
+    st.isles.visited = ['nord', 'mitte', 'sued'];
+    st.isles.found.push('bank', 'zelt', 'stein', 'dose');
+    st.isles.cat = true;
+    st.edda.met = true;
+    st.autumn.frost = true;
+    st.world.tower = 3;
+    for (const id of ['hilde', 'juna', 'yusuf', 'hannes']) st.bonds[id] = { ...(st.bonds[id] || {}), moment: 2 };
+    st.survivors.juna.stage = 2;
+    // Je sicherem Ort einer, der dorthin weitergezogen ist (Hannes ins Forsthaus Eulenbruch …)
+    for (const id of ['hannes', 'clara', 'rosa', 'lotte', 'fiete', 'frieda', 'mara', 'greta']) st.survivors[id].stage = 4;
+    st.post.read = [{ from: 'hannes', kind: 'brief', day: 12 }];
+    g.book.check();
+  });
+  await step(100);
+  await openPlaces();
+  for (let k = 0; k < 20; k++) await tap('KeyS');
+  const buch2 = await z(() => ({ ...window.zomfy.places().book, uiH: window.zomfy.game.ui.height }));
+  await still(page, 'ortskunde-voll');
+  const tabYs = [...new Set(buch2.tabs.map((t) => t.y))];
+  const tabsInside = buch2.tabs.every((t) => t.x >= buch2.frame.x + 4 && t.x + t.w <= buch2.frame.x + buch2.frame.w - 4);
+  const fits = buch2.frame.y >= 0 && buch2.frame.y + buch2.frame.h <= buch2.uiH;
+  const hidden = buch2.rows.filter((r) => r.hidden).length;
+  // Mit der Maus auf den Pfeil links: eine Spalte zurück
+  const pfeil = await z(() => {
+    const g = window.zomfy.game;
+    const L = g.menu.layout(g.ui);
+    const a = L.book.arrows.find((x) => x.dir < 0);
+    const c = document.querySelectorAll('canvas');
+    const r = c[c.length - 1].getBoundingClientRect();
+    const k = r.width / g.ui.width;
+    return a ? { x: r.left + (a.rect.x + a.rect.w / 2) * k, y: r.top + (a.rect.y + a.rect.h / 2) * k } : null;
+  });
+  if (pfeil) {
+    await page.mouse.move(pfeil.x, pfeil.y);
+    await step(60);
+    await page.mouse.click(pfeil.x, pfeil.y);
+    await step(100);
+  }
+  const buch3 = await z(() => window.zomfy.places().book);
+  const eulen = await z(() => {
+    const g = window.zomfy.game;
+    const rows = g.menu.buttons();
+    g.menu.focus = rows.findIndex((b) => b.row?.id === 'ort-eulenbruch');
+    return window.zomfy.places().book.detail;
+  });
+  await closeMenu();
+  const bookRowsOk = buch2.rows.length === 24 && buch2.count === 'Die Holzmark · 24 Orte' && hidden === 8 && buch2.start === 8 && buch2.arrows.join() === '-1';
+  const pfeilOk = pfeil && buch3.start === 0 && buch3.arrows.join() === '1';
+  const eulenOk = eulen.some((t) => t.includes('Bruch ist ein Sumpfwald')) && eulen.some((t) => t.includes('Hannes ist dorthin weitergezogen'));
+  if (bookRowsOk && tabYs.length === 2 && tabsInside && fits && pfeilOk && eulenOk) note(`✓ Orte (G5): alle 24 Orte – zwei Spalten sichtbar, S blättert weiter (ab Zeile ${buch2.start + 1}, Pfeil links), ein Klick auf den Pfeil zurück; die ${buch2.tabs.length} Reiter stehen in zwei Reihen im Buch; das Forsthaus Eulenbruch nennt Hannes, der dorthin weitergezogen ist`);
+  else fail(`Orte: alle ${JSON.stringify({ rows: buch2.rows.length, count: buch2.count, hidden, start: buch2.start, arrows: buch2.arrows, tabYs, tabsInside, fits, frame: buch2.frame, uiH: buch2.uiH, pfeil, buch3: buch3 && { start: buch3.start, arrows: buch3.arrows }, eulen })}`);
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();

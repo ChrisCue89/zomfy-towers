@@ -2482,6 +2482,28 @@ auch an Tag 23 stehen können (recherche 1.2). Die Natur ist die Uhr, die man sp
 Reif), die Jahrestage geben den Daten im Funkbuch Gewicht, und »Mikas Bucht« beantwortet die
 Frage, mit der das Spiel beginnt: »Ich suche ein Zuhause.«
 
+### 208. Wo erfährt man, woher die Namen kommen? (G5)
+**Entscheidung:** Im Herbstbuch, auf einer eigenen Seite »Orte« (Ortskunde):
+
+- Jeder Ort erscheint erst, wenn Mika ihn kennt – vom Wegweiser, aus dem Radio, aus einem
+  Gespräch oder weil Mika dort war. Keine »???«-Zeilen: Welche Zufluchtsorte man kennenlernt,
+  hängt davon ab, wer in einem Herbst kommt, und leere Zeilen, die man nie füllen kann, wären
+  eine falsche Liste zum Abhaken.
+- Die Herkunft des Namens steht immer da. Was Mika später erfährt, kommt als eigene Zeile
+  dazu.
+- Die Insel im Nebel heißt so, bis Mika ihren Namen kennt.
+- Die Zufluchtsorte tragen das Wort »Zuflucht« statt »sicherer Ort« (passt in die Zeile und
+  zu »Zuflucht sein«).
+- Die Namen erklären sich aus echten Flurnamen:
+  - Mark, Wohld, Lände, Ablage, Holm, Werder, Hagen, Rode, Bruch, Kamp und Bek;
+  - Kiek heißt guck, Eller heißt Erle.
+  Das ist Eisberg-Erzählen: Die Welt weiß mehr, als die Dialoge sagen.
+
+**Warum:** Die neuen Namen aus G1 tragen Geschichte, aber im Spiel stehen sie nur beiläufig
+(»vom Sturmhuk rüber«). Die Recherche empfahl genau so eine Seite (2.2: »Die Bibel weiß alles,
+das Spiel sagt ein Achtel«). Wer neugierig ist, liest nach; wer nicht, verpasst nichts.
+Dass die Seite mitwächst, belohnt Erkunden (Inseln, Nebel, Gespräche) ohne neue Mechanik.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

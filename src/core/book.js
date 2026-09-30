@@ -11,6 +11,7 @@ import { REACTION_ORDER } from '../data/reactions.js';
 import { MIX_ORDER } from '../data/mixes.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { towerRank, RANK_NAMES } from '../data/towers.js';
+import { PLACES, placesKnown } from '../data/places.js';
 
 /** So oft (Sekunden) schaut das Buch nach, ob eine Tat gelungen ist. */
 const CHECK_EVERY = 1.5;
@@ -20,6 +21,7 @@ export class Book {
   constructor(game) {
     this.game = game;
     this.checkIn = CHECK_EVERY;
+    this.places = null; // G5: Namen der Orte, die das Buch schon kennt (nur im Speicher)
   }
 
   get st() {
@@ -126,6 +128,7 @@ export class Book {
    * Meldung und – bei jeder dritten – dem neuen Herbstschmuck.
    */
   check({ quiet = false } = {}) {
+    this.checkPlaces(quiet);
     const before = this.decoUnlocked().length;
     const day = this.game.state.time.day;
     const fresh = [];
@@ -141,6 +144,27 @@ export class Book {
     const deco = this.decoUnlocked();
     for (const type of deco.slice(before)) g.hud.toast(T.buch.schmuckNeu(T.bauten[type]), BUILDINGS[type].icon, 5, 'chronik');
     return fresh;
+  }
+
+  /**
+   * G5: Neue Orte der Ortskunde als Meldung (Chronik). Gemerkt werden die Namen – so meldet
+   * sich auch die Insel im Nebel, sobald sie ihren Namen hat. Nach dem Laden still.
+   */
+  checkPlaces(quiet) {
+    const st = this.game.state;
+    const names = placesKnown(st).map((id) => {
+      const t = T.ortskunde.orte[id];
+      return !PLACES[id].named || PLACES[id].named(st) ? t.name : t.nameNebel;
+    });
+    if (!this.places || quiet) {
+      this.places = new Set(names);
+      return;
+    }
+    for (const name of names) {
+      if (this.places.has(name)) continue;
+      this.places.add(name);
+      this.game.hud.toast(T.ortskunde.neu(name), 'buch', 3, 'chronik');
+    }
   }
 
   /** Pro Spielschritt im Spielmodus: ab und zu nach den Taten sehen (Zählen ist billig). */

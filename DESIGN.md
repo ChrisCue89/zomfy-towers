@@ -1942,6 +1942,14 @@ Jahrestage an den Tagen 12, 14 und 20, und in der Frostnacht bleibt sie dran. Da
 Frau Holle, Junas Pfeifen, Yusufs letzte Notiz und »Mikas Bucht« im Abspann und auf der Karte
 (Nr. 207).
 
+#### G5 – Ortskunde ✓
+
+*Umgesetzt (30.09.2026):* Das Herbstbuch hat eine Seite »Orte«. 24 Orte der Holzmark erscheinen,
+sobald Mika sie kennt (Wegweiser, Radio, Gespräche, Landgang, Nebel, Zufluchtsorte), jeder mit
+der Herkunft seines Namens und Zeilen, die mit der Geschichte dazukommen (Almas Ruh, Hildes
+Brief, Mikas Bucht). Neue Orte melden sich in der Chronik. Die Reiter des Buchs brechen in zwei
+Reihen um, lange Seiten blättern spaltenweise (Nr. 208).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

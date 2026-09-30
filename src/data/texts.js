@@ -1263,7 +1263,7 @@ export const T = {
   buch: {
     menue: 'Herbstbuch',
     titel: 'Herbstbuch',
-    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', post: 'Post', funkbuch: 'Funkbuch', erinnerung: 'Erinnerung' },
+    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', orte: 'Orte', post: 'Post', funkbuch: 'Funkbuch', erinnerung: 'Erinnerung' }, // G5: Orte
     fuss: 'A/D blättern · W/S wählen · Esc zurück',
     // Sterne im Morgenbericht
     sterne: { gehalten: 'Gehalten', makellos: 'Makellos', mutig: 'Mutig' },
@@ -2155,6 +2155,152 @@ export const T = {
       dose: 'In einer Blechdose auf dem Kürbisholm.',
       zelt: 'Im Zelt auf dem Wartholm.',
       marthe: 'Marthe hat sie aufbewahrt – für jemanden, der das Feuer anmacht.',
+    },
+  },
+  // G5: Ortskunde im Herbstbuch – woher die Namen kommen (recherche/storytelling-namen.md 4.6)
+  ortskunde: {
+    titel: (n) => `Die Holzmark · ${n} Orte`,
+    neu: (name) => `Ortskunde: ${name}`,
+    art: { gegend: 'Gegend', see: 'See', bucht: 'Bucht', mast: 'Mast', funk: 'Funk', wald: 'Wald', wege: 'Wege', insel: 'Insel', hof: 'Hof', dorf: 'Dorf', gasthaus: 'Gasthaus', sicher: 'Zuflucht' },
+    und: (namen) => (namen.length > 1 ? `${namen.slice(0, -1).join(', ')} und ${namen[namen.length - 1]}` : namen[0] || ''),
+    dorthin: (namen) => `${T.ortskunde.und(namen)} ${namen.length > 1 ? 'sind' : 'ist'} dorthin weitergezogen.`,
+    orte: {
+      holzmark: {
+        name: 'Die Holzmark',
+        herkunft: 'Eine Mark war früher ein Wald, der mehreren Dörfern gemeinsam gehörte: Jeder durfte darin Holz schlagen – und jeder musste ihn pflegen.',
+        jetzt: 'Seen, Granitinseln und alter Fichtenwald. Mittendrin eine Bucht mit einem Steg.',
+        frost: 'Unter dem Schnee sieht die Holzmark aus, als hätte es den Moder nie gegeben.',
+      },
+      kranichsee: {
+        name: 'Kranichsee',
+        herkunft: 'Im Oktober rasten hier die Kraniche auf dem Weg nach Süden, Hunderte. Nachts schlafen sie im flachen Wasser – da kommt kein Fuchs hin.',
+        jetzt: 'Kalt, tief und voller Granitinseln. Auf dem Wasser ist man sicher: Der Moder meidet es.',
+        fort: 'Die letzten Kraniche sind fort. Im Frühjahr kommen sie wieder.',
+      },
+      holzlaende: {
+        name: 'Alte Holzlände',
+        herkunft: 'Eine Lände ist ein Anleger für Flöße. Über die alten Wege kam das Holz ans Wasser, hier wurde es gebunden und über den See gezogen.',
+        jetzt: 'Auf der Karte heißt die Bucht Ellerbucht – Eller ist ein altes Wort für Erle. Im Alltag sagen alle: die Holzlände.',
+        brief: 'Hildes letzter Brief ging hierher: an Frau Lindqvist, Holzlände 1.',
+        frost: (name) => `Seit der Frostnacht sagen alle nur noch: ${T.genitiv(name)} Bucht.`,
+      },
+      jakob: {
+        name: 'Der Lange Jakob',
+        herkunft: 'Der hohe Mast am Stegende. Jakob Lindqvist hat ihn gebaut, zusammen mit Steg, Hütte und Tor. Die Leute nannten beide den Langen Jakob – den Mann und den Mast.',
+        jetzt: 'Früher hat er den Fischern heimgeleuchtet.',
+        juna: 'Juna will ihn wieder zum Funkturm machen.',
+        leuchtet: 'Jetzt strahlt er wieder über den See – als Funkturm und als Leuchtfeuer.',
+        edda: 'Jakob Lindqvist war Eddas Großvater. Hier hat er nach den Booten geschaut – jetzt steht sie hier.',
+      },
+      seewelle: {
+        name: 'Die Seewelle',
+        herkunft: '„Welle“ im Radio und auf dem See: Ein kleiner Sender gab jeden Abend um acht das Wetter und den Pegel durch.',
+        radio: 'Aus dem Radio in der Stube, ganz leise: „Hier ist die Seewelle …“ Da draußen ist noch jemand.',
+        juna: 'Heute sendet Juna, jeden Abend um acht.',
+        sender: 'Junas Vater hat den Sender gebaut, im Keller in Birkhagen.',
+        hoerer: 'Drei Hörer hatte sie: Balduin, Marthe und eine, die sich nur „die Försterin“ nannte.',
+        edda: 'Vorgelesen hat Edda – am Langen Jakob, jeden Abend.',
+      },
+      daemmerwohld: {
+        name: 'Dämmerwohld',
+        herkunft: 'Wohld ist ein altes Wort für Wald. Unter den alten Fichten dämmert es schon am Mittag – daher der Name.',
+        jetzt: 'Im Unterholz wächst der Moder: weich wie Moos, zäh wie Leim. Fest sind nur die alten Wege.',
+        kreuze: 'Die Holzhauer schlugen drei Kreuze in jeden Stumpf – für die Moosleute.',
+        schnee: 'Unter dem Schnee schläft der Moder.',
+      },
+      wege: {
+        name: 'Die alten Wege',
+        herkunft: 'Köhlerstieg, Holzweg und Schaftrift: Über den Stieg kam die Kohle aus den Meilern, über die Trift trieb man die Schafe, und der Holzweg führte zur Lände.',
+        jetzt: 'Als die Laster kamen, wurden sie geschottert. Heute tragen nur noch sie – uns und die Horde.',
+      },
+      ablage: {
+        name: 'Alte Ablage',
+        herkunft: 'Auf einer Ablage liegt geschlagenes Holz, bis es abgefahren wird. Als die Flößerei endete, blieb das letzte Holz einfach liegen – abgelegt und vergessen.',
+        jetzt: 'Dort, tief im Dämmerwohld, fing der Moder an. Vor drei Herbsten, in einem warmen, nassen Herbst.',
+        herz: 'Unter dem ältesten Holzstapel schlug sein Herz. Jetzt schläft es im Frost.',
+      },
+      wartholm: {
+        name: 'Wartholm',
+        herkunft: 'Ein Holm ist eine kleine Insel, eine Warte ein Ausguck. Von hier hielten die Flößer nach dem Wetter Ausschau.',
+        jetzt: 'Der Name steht auf einem Pfahl am Ufer. Ein Zelt, ein Netz – hier hat jemand gewohnt. Nicht lange.',
+        zelt: 'Im Zelt lag eine Seite aus Eddas Funkbuch. Hat sie hier gewartet?',
+      },
+      kiekwerder: {
+        name: 'Kiekwerder',
+        herkunft: 'Ein Werder ist Land, das vom Wasser geschützt liegt, und „kiek“ heißt guck. Von hier sieht man die ganze Bucht.',
+        jetzt: 'Ein Grenzstein am Ufer trägt den Namen. Kiefern, Wind und eine Steinbank.',
+        bank: 'In die Bank ist „Almas Ruh“ geritzt, darunter „Für A. – J. L.“ – J. L. wie Jakob Lindqvist? Dann war Alma seine Frau.',
+      },
+      kuerbisholm: {
+        name: 'Kürbisholm',
+        herkunft: 'Den Namen hat ein Kind auf ein Brett gemalt. Wer hier einmal Kürbisse gesetzt hat, weiß keiner mehr – sie machen einfach weiter.',
+        jetzt: 'Hier wächst, was keiner gesät hat.',
+        katze: 'Von hier kam die Katze. Jetzt wohnt sie vor unserer Tür.',
+      },
+      apfelwerder: {
+        name: 'Apfelwerder',
+        nameNebel: 'Die Insel im Nebel',
+        herkunft: 'Eine alte Obstinsel draußen im Nebel. Die Flößer hängten dort eine Glocke auf, damit sie bei Nebel heimfanden – eingraviert: „Holzlände“.',
+        herkunftNebel: 'Irgendwo draußen im Nebel. An manchen Morgen läutet dort eine Glocke.',
+        marthe: 'Marthe wohnt dort mit Pim und Lu, zwischen Apfelbäumen, in einer Hütte aus Treibholz.',
+        bucht: 'Seit der Kahn dicht ist, liegen sie bei uns in der Bucht. Die Glocke hängt jetzt am Steg.',
+      },
+      wollgrashof: {
+        name: 'Wollgrashof',
+        herkunft: 'Wollgras wächst im Moor und sieht aus wie weiße Wattebäusche. Auf dem Hof hielt der alte Brandt seine Schafe.',
+        marthe: 'Seine Tochter Marthe hat dort Boote gebaut.',
+        moder: 'Am 2. Oktober vor drei Jahren kam der Moder bis an den Hof. Die Schafe sind fort.',
+      },
+      birkhagen: {
+        name: 'Birkhagen',
+        herkunft: 'Ein Hagen war früher ein eingezäuntes Stück Land – dieses hier zwischen Birken, zwölf Kilometer hinter dem Wald.',
+        schild: 'Auf dem Wegweiser steht: „Weg gesperrt“.',
+        yusuf: 'Dr. Yusuf hatte dort seine Praxis.',
+        juna: 'In Junas Keller steht der Sender der Seewelle.',
+      },
+      tannrode: {
+        name: 'Tannrode',
+        herkunft: 'Rode heißt gerodet: Land, das man dem Wald abgerungen hat. Tannrode liegt hinter dem Dämmerwohld.',
+        hannes: 'Hannes ist von dort. Der Moder hat es eingewickelt wie ein Päckchen.',
+      },
+      faehrhaus: {
+        name: 'Fährhaus am Südufer',
+        herkunft: 'Hier legten früher die Fähre und die Seepost an. Wer übersetzen wollte, wartete bei einer Suppe.',
+        rosa: 'Rosa hat dort gekocht, bis der Moder die Speisekammer gefressen hat.',
+      },
+      sturmhuk: {
+        name: 'Leuchtturm Sturmhuk',
+        herkunft: 'Ein Huk ist eine Landspitze, an der sich der Wind bricht. Der Leuchtturm darauf stand lange dunkel.',
+        edda: 'Dort hat Edda drei Jahre gewohnt. Von oben sah sie unser Feuer.',
+      },
+      eulenbruch: {
+        name: 'Forsthaus Eulenbruch',
+        herkunft: 'Ein Bruch ist ein Sumpfwald. Die Eulen wachen dort nachts – wie die Leute im Forsthaus.',
+      },
+      sonnenkamp: {
+        name: 'Sonnenkamp',
+        herkunft: 'Ein Kamp ist ein eingefriedetes Feld. Offenes, warmes Land – dort hält sich der Moder fern.',
+      },
+      gluehwuermchen: {
+        name: 'Ferienlager Glühwürmchen',
+        herkunft: 'Früher kamen die Kinder für den Sommer her. Der Name passt noch immer: kleine Lichter im Dunkeln.',
+      },
+      aalbek: {
+        name: 'Hafen von Aalbek',
+        herkunft: 'Eine Bek ist ein Bach. In Aalbek standen die Sägemühlen – dorthin zogen die Flöße von der Holzlände.',
+      },
+      hammermuehle: {
+        name: 'Hammermühle',
+        herkunft: 'Eine Mühle, deren Wasserrad einen Schmiedehammer treibt. Wer schmieden kann, ist dort willkommen.',
+      },
+      luzia: {
+        name: 'Kloster Sankt Luzia',
+        herkunft: 'Luzia bringt das Licht, im Norden feiert man sie mit Kerzen. Die Schwestern lassen nachts in jedem Fenster eine brennen.',
+      },
+      norderholm: {
+        name: 'Norderholm',
+        herkunft: 'Die nördlichste Insel im See – Norder heißt nördlicher. Wer dort wohnt, rudert nur bei ruhigem Wasser herüber.',
+      },
     },
   },
   // N7: Die Insel im Nebel (OFFENE-FRAGEN 194)

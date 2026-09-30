@@ -18,6 +18,7 @@ import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
 import { hexToCss } from '../render/palette.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
 import { PAGE_ORDER, pagesRead } from '../data/isles.js';
+import { PLACES, placesKnown, placeLines, movedTo } from '../data/places.js';
 
 /** Notizbuch (M18): Breite der Seite, Höhe einer Zeile der Liste, Breite der Beschreibung. */
 const NOTES_W = 300;
@@ -29,16 +30,31 @@ const NOTE_TEXT_W = NOTES_W - 24;
  * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
  * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
  */
-const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'post', 'funkbuch', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust, M32: »Post« mit dem ersten Brief, N8: »Funkbuch« mit der ersten Seite
+const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'orte', 'post', 'funkbuch', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust, M32: »Post« mit dem ersten Brief, N8: »Funkbuch« mit der ersten Seite, G5: »Orte«
 const BOOK_W = 420; // M32: Platz für sechs Reiter
 const BOOK_ROW = 13;
 const BOOK_ROWS = 8;
 const BOOK_TEXT_W = BOOK_W - 24;
 const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
+/** G5: Höhe einer Reihe von Reitern (passen sie nicht in eine, brechen sie in zwei um). */
+const BOOK_TAB_ROW = 15;
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
 const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text', 'shake', 'flashes', 'horde'];
 const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES, horde: HORDE_LOOKS };
+
+/**
+ * G5: Reiter auf Reihen verteilen – eine, wenn alle nebeneinander passen, sonst zwei, so
+ * geteilt, dass die breitere Reihe möglichst schmal ist. Gibt je Reihe die Indizes zurück.
+ */
+function splitTabs(widths, maxW) {
+  const width = (from, to) => widths.slice(from, to).reduce((a, w) => a + w + 4, -4);
+  const all = widths.map((_, k) => k);
+  if (width(0, widths.length) <= maxW || widths.length < 2) return [all];
+  let best = 1;
+  for (let k = 1; k < widths.length; k++) if (Math.max(width(0, k), width(k, widths.length)) < Math.max(width(0, best), width(best, widths.length))) best = k;
+  return [all.slice(0, best), all.slice(best)];
+}
 
 const SPRECHER_NAMES = Object.fromEntries(Object.entries(SPRECHER).map(([k, v]) => [k, v.name]));
 
@@ -342,6 +358,32 @@ export class Menu {
         detail: [...lines(id === 'marthe' ? T.nebel.seite : T.inseln.notizen[id], COLORS.textWarm), ...lines(F.orte[id], COLORS.textDim, true)],
       }));
       count = F.titel(read.length, PAGE_ORDER.length);
+    } else if (this.page === 'orte') {
+      // G5: Ortskunde – jeder Ort, den Mika kennt, mit der Herkunft seines Namens und dem, was
+      // Mika seitdem über ihn erfahren hat
+      const O = T.ortskunde;
+      const st = this.game.state;
+      const known = placesKnown(st);
+      rows = known.map((id) => {
+        const place = PLACES[id];
+        const t = O.orte[id];
+        const named = !place.named || place.named(st);
+        const more = placeLines(st, id).map((k) => (typeof t[k] === 'function' ? t[k](st.player?.name || 'Mika') : t[k]));
+        const moved = place.place ? movedTo(st, place.place).map((w) => personOf(w)?.name || w) : [];
+        return {
+          id: `ort-${id}`,
+          label: named ? t.name : t.nameNebel,
+          right: O.art[place.art],
+          color: COLORS.text,
+          rightColor: COLORS.textDim,
+          detail: [
+            ...lines(named ? t.herkunft : t.herkunftNebel, COLORS.textWarm),
+            ...more.flatMap((text, i) => lines(text, COLORS.text, i === 0)),
+            ...(moved.length ? lines(O.dorthin(moved), COLORS.textDim, true) : []),
+          ],
+        };
+      });
+      count = O.titel(known.length);
     } else if (this.page === 'erinnerung') {
       // M31: Die mit uns waren – Name, Tage in der Bucht, die Zeile, die bleibt, das Erinnerungsstück
       const E = T.erinnerung;
@@ -382,46 +424,64 @@ export class Menu {
   /**
    * Herbstbuch: Reiter der Seiten, Zähler, Zeilen (bei mehr als acht in zwei
    * Spalten, wählbar wie Knöpfe), die Beschreibung der gewählten, »Zurück«.
+   * G5: Passen die Reiter nicht in eine Reihe, brechen sie in zwei um; hat eine Seite mehr
+   * Zeilen als zwei Spalten fassen, blättert die Liste spaltenweise mit der Auswahl.
    */
   bookLayout(ui) {
     const data = this.bookData();
     const buttons = this.buttons();
     const rows = buttons.filter((b) => b.row);
     const cols = rows.length > BOOK_ROWS ? 2 : 1;
-    const perCol = Math.max(1, Math.ceil(rows.length / cols));
+    const paged = rows.length > BOOK_ROWS * 2;
+    const perCol = paged ? BOOK_ROWS : Math.max(1, Math.ceil(rows.length / cols));
     const lineH = (list) => list.reduce((h, l) => h + LINE_HEIGHT + (l.gap ? 3 : 0), 0);
     const detailH = Math.max(BOOK_DETAIL_H, ...rows.map((b) => lineH(b.row.detail)));
     const w = BOOK_W;
-    const h = 28 + 16 + LINE_HEIGHT + 4 + BOOK_ROWS * BOOK_ROW + 6 + detailH + 8 + 22 + 20;
-    const x = Math.round((ui.width - w) / 2);
-    const y = Math.round((ui.height - h) / 2);
-    // Reiter der drei Seiten, mittig unter dem Titel
     const pages = this.bookPages();
     const tabW = pages.map((p) => measure(T.buch.seiten[p]) + 12);
-    let tx = Math.round(x + (w - tabW.reduce((a, b) => a + b + 4, -4)) / 2);
-    const tabs = pages.map((page, k) => {
-      const rect = { x: tx, y: y + 25, w: tabW[k], h: 13 };
-      tx += tabW[k] + 4;
-      return { page, rect };
+    const tabLines = splitTabs(tabW, w - 20);
+    const h = 28 + tabLines.length * BOOK_TAB_ROW + 1 + LINE_HEIGHT + 4 + BOOK_ROWS * BOOK_ROW + 6 + detailH + 8 + 22 + 20;
+    const x = Math.round((ui.width - w) / 2);
+    const y = Math.round((ui.height - h) / 2);
+    // Reiter der Seiten, mittig unter dem Titel – je Reihe für sich zentriert
+    const tabs = [];
+    tabLines.forEach((line, r) => {
+      let tx = Math.round(x + (w - line.reduce((a, k) => a + tabW[k] + 4, -4)) / 2);
+      for (const k of line) {
+        tabs.push({ page: pages[k], rect: { x: tx, y: y + 25 + r * BOOK_TAB_ROW, w: tabW[k], h: 13 } });
+        tx += tabW[k] + 4;
+      }
     });
-    const countY = y + 25 + 16;
+    const countY = y + 25 + tabLines.length * BOOK_TAB_ROW + 1;
     const rowsY = countY + LINE_HEIGHT + 4;
     const colW = Math.floor((w - 20) / cols);
+    // Die gewählte Zeile – steht »Zurück« im Fokus, die zuletzt gewählte
+    const focused = buttons[Math.min(this.focus, buttons.length - 1)];
+    if (focused?.row) this.bookFocus = focused.row.id;
+    const shownAt = Math.max(0, rows.findIndex((b) => b.row.id === this.bookFocus));
+    // Lange Seiten: zwei Spalten sichtbar, die gewählte Zeile möglichst in der rechten
+    const lastStart = Math.ceil(rows.length / BOOK_ROWS) * BOOK_ROWS - BOOK_ROWS * 2;
+    const start = paged ? Math.max(0, Math.min(lastStart, (Math.floor(shownAt / BOOK_ROWS) - 1) * BOOK_ROWS)) : 0;
+    const end = paged ? start + BOOK_ROWS * 2 : rows.length;
     let k = 0;
     const rects = buttons.map((b) => {
       if (b.row) {
-        const c = Math.floor(k / perCol);
-        const r = k % perCol;
+        const i = k - start;
         k += 1;
+        if (i < 0 || k > end) return { ...b, hidden: true, rect: { x: -1000, y: -1000, w: 0, h: 0 } };
+        const c = Math.floor(i / perCol);
+        const r = i % perCol;
         return { ...b, rect: { x: x + 10 + c * colW, y: rowsY + r * BOOK_ROW, w: colW - (cols > 1 ? 4 : 0), h: BOOK_ROW - 1 } };
       }
       return { ...b, rect: { x: x + 20, y: y + h - 20 - 22, w: w - 40, h: 19 } };
     });
-    // Beschreibung der gewählten Zeile – steht »Zurück« im Fokus, die zuletzt gewählte
-    const focused = buttons[Math.min(this.focus, buttons.length - 1)];
-    if (focused?.row) this.bookFocus = focused.row.id;
-    const shown = rows.find((b) => b.row.id === this.bookFocus)?.row || rows[0]?.row || null;
-    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + BOOK_ROWS * BOOK_ROW + 6, shown: shown?.id ?? null } };
+    const shown = rows[shownAt]?.row || null;
+    // Pfeile an den Rändern der Liste, wenn davor oder danach noch Zeilen liegen (anklickbar)
+    const arrowH = BOOK_ROWS * BOOK_ROW;
+    const arrows = [];
+    if (start > 0) arrows.push({ dir: -1, rect: { x: x + 1, y: rowsY, w: 8, h: arrowH } });
+    if (end < rows.length) arrows.push({ dir: 1, rect: { x: x + w - 9, y: rowsY, w: 8, h: arrowH } });
+    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + BOOK_ROWS * BOOK_ROW + 6, shown: shown?.id ?? null, arrows, start } };
   }
 
   /** Herbstbuch zeichnen: Reiter, Zähler, Zeilen mit Wert rechts, Beschreibung, »Zurück«. */
@@ -438,12 +498,19 @@ export class Menu {
         ui.button(b.label, b.rect.x, b.rect.y, b.rect.w, b.rect.h, { focused, hoverHighlight: false });
         return;
       }
+      if (b.hidden) return; // G5: auf einer anderen Spalte der langen Liste
       const shown = b.row.id === L.book.shown;
       if (focused || shown) ui.rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, focused ? COLORS.fillHover : COLORS.fillLight);
       if (focused) for (let k = 0; k < 3; k++) ui.rect(b.rect.x + 3 + k, b.rect.y + 2 + k, 1, 7 - 2 * k, COLORS.gold); // kleiner Pfeil
       ui.text(b.row.label, b.rect.x + 12, b.rect.y, b.row.color);
       if (b.row.right) ui.text(b.row.right, b.rect.x + b.rect.w - 4 - measure(b.row.right), b.rect.y, b.row.rightColor);
     });
+    // G5: kleine Pfeile, wenn die Liste weitergeht
+    for (const a of L.book.arrows) {
+      const cx = a.rect.x + (a.dir < 0 ? 2 : 5);
+      const my = a.rect.y + Math.round(a.rect.h / 2);
+      for (let k = 0; k < 3; k++) ui.rect(cx + (a.dir < 0 ? k : -k), my - 2 + k, 1, 5 - 2 * k, COLORS.gold);
+    }
     let cy = L.book.detailY;
     ui.rect(L.x + 10, cy - 4, L.w - 20, 1, COLORS.frameDark);
     for (const l of L.book.detail) {
@@ -525,6 +592,17 @@ export class Menu {
       if (tab && input.mouse.clicked) {
         input.consumeClick();
         if (this.guard <= 0) this.turnPage(0, tab.page);
+        return;
+      }
+      // G5: Pfeil am Rand einer langen Liste – die Auswahl springt eine Spalte weiter
+      const arrow = L.book.arrows.find((a) => ui.hover(a.rect.x, a.rect.y, a.rect.w, a.rect.h));
+      if (arrow && input.mouse.clicked) {
+        input.consumeClick();
+        const rows = buttons.filter((b) => b.row);
+        const at = Math.max(0, rows.findIndex((b) => b.row.id === L.book.shown));
+        const next = rows[Math.max(0, Math.min(rows.length - 1, at + arrow.dir * BOOK_ROWS))];
+        this.focus = buttons.indexOf(next);
+        this.game.sound.play('klick');
         return;
       }
     }

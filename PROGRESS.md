@@ -5,6 +5,39 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G5: Ortskunde ✓
+
+**Auftrag (30.09.):** »Die Namen der ganzen Orte ist nicht gut.« Letzter Namensschritt aus
+`recherche/storytelling-namen.md` (2.2 und 4.6, Nr. 208). Die neuen Namen aus G1 bekommen eine
+Herkunft, die man nachlesen kann.
+
+- **Neue Seite »Orte« im Herbstbuch:** 24 Orte der Holzmark, vom Haus aus nach außen. Zu jedem
+  steht, woher der Name kommt (»Wohld ist ein altes Wort für Wald …«), und darunter, was Mika
+  seitdem erfahren hat.
+- **Von Anfang an bekannt:** die Holzmark, der Kranichsee, die alte Holzlände (auf der Karte
+  Ellerbucht), der Dämmerwohld und die alten Wege.
+- **Was später dazukommt:**
+  - Radio oder Juna: der Lange Jakob und die Seewelle.
+  - Der Wegweiser, Yusuf oder Juna: Birkhagen.
+  - Hannes' zweiter Moment: Tannrode.
+  - Die Inseln beim ersten Landgang.
+  - Die Insel im Nebel mit der Spur; ihren Namen »Apfelwerder« erst nach Marthe oder Eddas
+    Seite im Zelt.
+  - Die Zufluchtsorte, sobald jemand am Morgen der Entscheidung davon erzählt hat. Wer dorthin
+    weitergezogen ist, steht dabei.
+- **Die Einträge wachsen mit:**
+  - Die Bank auf dem Kiekwerder: »J. L. wie Jakob Lindqvist? Dann war Alma seine Frau.«
+  - Hildes Brief an die Holzlände 1.
+  - Die Katze vom Kürbisholm.
+  - Der Lange Jakob als Leuchtfeuer.
+  - Nach dem Frost: »Mikas Bucht« und der schlafende Moder.
+- **Meldung:** Ein neuer Ort erscheint als »Ortskunde: …« in der Chronik neben der Uhr.
+- **Nebenbei behoben:** Mit allen Seiten waren die Reiter des Herbstbuchs schon breiter als das
+  Buch. Jetzt brechen sie in zwei Reihen um. Seiten mit mehr als 16 Zeilen blättern
+  spaltenweise mit der Auswahl weiter, mit Pfeilen am Rand, die auch per Klick gehen.
+
+**Prüfung:** Abschnitt `orte`, 5 Prüfpunkte bestanden.
+
 ## G4: Die Uhr bis zum Frost ✓
 
 **Auftrag (30.09.):** »Die Story ist noch dünn.« Vierter Schritt aus
