@@ -5,6 +5,26 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Flackern beim Laufen: Die Schattenränder kochen nicht mehr ✓
+
+**Rückmeldung (30.09., zum Stand N8):** »Das Flackern war weiterhin während der Bewegung des
+Charakters.« Die Nebel-Korrektur von heute früh war dort noch nicht drin. Trotzdem gemessen, ob
+sie reicht: Die Zeit steht, die Kamera rückt um genau einen Pixel. Alles, was sich dann ändert,
+flackert beim Laufen, denn Gras, Wasser und Feuer bewegen sich bei stehender Zeit nicht.
+
+- **Gefunden:** Bei jedem Pixel Schwenk wechselten 0,3 bis 0,6 % des Bildes. Alle diese Pixel lagen
+  als gestreutes Muster in den weichen Schattenrändern: an Stämmen, Steinen, Kürbissen und Mika.
+- **Die Ursache:** three.js r186 dreht die fünf Stichproben des Halbschattens je Bildpunkt mit
+  einem Rauschen, das am Bildschirm hängt (`gl_FragCoord`). Rückt die Kamera weiter, bekommt jeder
+  Punkt im Halbschatten ein anderes Muster. Beim Laufen kochten dadurch alle Schattenränder, im
+  Nebel mit dem Dunst zusammen.
+- **Jetzt** ist die Drehung fest (`pixelRenderer.js`). Derselbe Weltpunkt sieht in jedem Bild
+  gleich aus, und der Rand bleibt weich, weil die Grafikkarte jede Stichprobe selbst filtert. Im
+  Bild sehen die Schatten aus wie vorher.
+- **Gemessen:** 0,3–0,6 % → höchstens 0,003 % des Bildes je Pixel Schwenk, am Tag wie im Nebel.
+- **Prüfabschnitt `nebel`**, zweiter Prüfpunkt: tiefe Sonne, lange Schatten, je drei Schritte
+  waagrecht und senkrecht. Die Gegenprobe mit dem alten Rauschen schlägt an (0,55–0,60 %).
+
 ## H4: Oberflächengröße ✓
 
 **Auftrag (30.09.):** »Mit den minimalen Pixel … erkennt man nicht, was man bauen will.« Vierter

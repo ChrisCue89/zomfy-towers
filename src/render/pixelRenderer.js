@@ -6,6 +6,14 @@ import { buildPaletteLut } from './palette.js';
 import { FULLSCREEN_VERT, POST_FRAG, BLIT_FRAG } from './shaders.js';
 import { SHADOW_LAYER } from './staticMesh.js';
 
+// Weiche Schattenränder (Rückmeldung 30.09.: »Das Flackern war weiterhin während der Bewegung
+// des Charakters«): three.js dreht die fünf Stichproben des Halbschattens je Bildpunkt mit einem
+// Rauschen, das am Bildschirm hängt (gl_FragCoord). Rückt die Kamera einen Pixel weiter, bekommt
+// jeder Punkt im Halbschatten ein anderes Muster – die Schattenränder kochten bei jedem Schritt.
+// Mit fester Drehung sieht derselbe Weltpunkt in jedem Bild gleich aus; weich bleibt der Rand,
+// weil die Grafikkarte jede Stichprobe selbst filtert.
+THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fragment.replaceAll('interleavedGradientNoise( gl_FragCoord.xy ) * PI2', '0.0');
+
 function fullscreenTriangle() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));

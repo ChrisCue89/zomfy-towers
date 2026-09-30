@@ -10213,6 +10213,28 @@ function changedShare(a, b, dx, dy) {
 }
 
 /**
+ * Anteil der Pixel im ganzen Bild (ohne 4 px Rand), die sich zwischen zwei Bildern ändern – das
+ * zweite um genau (dx, dy) Bildpunkte versetzt (die Kamera ist um so viel weitergerückt).
+ */
+function shiftedChange(a, b, dx, dy) {
+  let n = 0;
+  let all = 0;
+  for (let y = 4; y < a.h - 4; y++) {
+    const yb = y + dy;
+    if (yb < 0 || yb >= a.h) continue;
+    for (let x = 4; x < a.w - 4; x++) {
+      const xb = x + dx;
+      if (xb < 0 || xb >= a.w) continue;
+      const i = (y * a.w + x) * 3;
+      const j = (yb * a.w + xb) * 3;
+      all++;
+      if (Math.abs(a.rgb[i] - b.rgb[j]) + Math.abs(a.rgb[i + 1] - b.rgb[j + 1]) + Math.abs(a.rgb[i + 2] - b.rgb[j + 2]) > 24) n++;
+    }
+  }
+  return (n / Math.max(1, all)) * 100;
+}
+
+/**
  * Nebel (Rückmeldung 30.09.: »der Nebel flackert immer noch«): Mika geht an einem
  * Nebelmorgen nach Norden. Gemessen wird, wie viele Pixel in der oberen Bildhälfte je Bild
  * wechseln – mit und ohne den Dunst nach Norden. Dunst und Vignette hängen am Bild und
@@ -10276,6 +10298,49 @@ async function runFogFlickerChecks(browser, url) {
   const anteil = mit.rate - ohne.rate;
   if (Math.abs(mit.moved) >= 8 && anteil < 0.8) note(`✓ Nebel: Mika geht am Nebelmorgen nach Norden (${Math.abs(mit.moved)} px) – oben im Bild wechseln je Bild ${mit.rate.toFixed(2)} % der Pixel, ohne Dunst ${ohne.rate.toFixed(2)} %: Der Dunst flackert nicht (+${anteil.toFixed(2)} Prozentpunkte)`);
   else fail(`Nebel: Dunst flackert beim Gehen ${JSON.stringify({ mit, ohne, anteil })}`);
+
+  // Rückmeldung 30.09. (2): »Das Flackern war weiterhin während der Bewegung des Charakters.« Die
+  // Zeit steht, die Kamera rückt um je einen Pixel – was sich dann ändert, flackert beim Laufen.
+  // Vorher kochte der weiche Schattenrand (three.js drehte seine Stichproben mit einem Rauschen am
+  // Bildschirm): 0,6 % des Bildes je Pixel Schwenk, bei tiefer Sonne und langen Schatten.
+  const scale = await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setWeather('klar', true);
+    Z.setDay(3);
+    Z.setTime(16, 30);
+    Z.teleport(0, -2, Math.PI);
+    Z.lookAt(null);
+    const cs = document.querySelectorAll('canvas');
+    cs[cs.length - 1].style.visibility = 'hidden'; // die Oberfläche hängt am Bildschirm
+    return Z.game.pixel.scale;
+  });
+  await z(() => window.__zomfyStep(1500));
+  const schwenk = [];
+  for (const axis of ['x', 'y']) {
+    let prev = null;
+    for (let k = 0; k < 4; k++) {
+      const off = await z((ax) => {
+        const g = window.zomfy.game;
+        const r = g.rig;
+        if (ax === 'x') r.focus.x += r.px;
+        else r.focus.z -= r.px / r.sin; // ein Pixel nach oben im Bild
+        r.place();
+        g.render();
+        return [r.ditherOffset.x, r.ditherOffset.y];
+      }, axis);
+      const img = decodePng(await page.screenshot());
+      // Kamera rechts: das Bild wandert nach links; Kamera hoch: nach unten
+      if (prev) schwenk.push(+shiftedChange(prev.img, img, -(off[0] - prev.off[0]) * scale, (off[1] - prev.off[1]) * scale).toFixed(3));
+      prev = { off, img };
+    }
+  }
+  await z(() => {
+    const cs = document.querySelectorAll('canvas');
+    cs[cs.length - 1].style.visibility = '';
+  });
+  if (schwenk.length === 6 && Math.max(...schwenk) < 0.05) note(`✓ Nebel: Die Zeit steht, die Kamera rückt um je einen Pixel – höchstens ${Math.max(...schwenk).toFixed(3)} % des Bildes ändern sich (vorher kochte der weiche Schattenrand: 0,6 %)`);
+  else fail(`Nebel: Flackern beim Schwenk ${JSON.stringify(schwenk)}`);
   await z(() => {
     window.__ohneDunst = false;
     window.__zomfyHold = false; // das Bild wartet auf echte Bilder

@@ -150,6 +150,11 @@ gilt bis auf Weiteres:
   legt der Post-Pass erst nach der Palette weich über das Bild. Das Raster der Palette hängt an
   der Welt – ein Verlauf am Bildschirm davor ließe beim Gehen Tausende Pixel je Bild kippen
   (»der Nebel flackert«; der Abschnitt `nebel` misst es).
+- **Nichts Wechselndes darf am Bildschirm hängen (30.09., Flackern beim Laufen):** three.js dreht
+  die Stichproben weicher Schatten mit einem Rauschen je Bildpunkt (`gl_FragCoord`) – beim Laufen
+  kochten alle Schattenränder. `pixelRenderer.js` ersetzt es durch eine feste Drehung. Neue
+  Muster (Dithering, Rauschen) immer über `uDitherOffset` an die Welt hängen; der Abschnitt `nebel`
+  rückt die Kamera bei stehender Zeit um je einen Pixel und zählt, was sich ändert.
 - **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, Schlurfer, Turm, Loot)
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
   und im Maß 1/32 bauen (Natur 1/16).
@@ -1202,7 +1207,9 @@ Grundprinzipien:
    hintereinander sind die Tat »Drachenwetter«, Esc gibt zurück (20 Minuten weiter), bei
    Regen kommt er herunter, Speichern v32 und Migration v31 → v32 (Bilder: drachen,
    drachen-looping); ab 30.09. (Abschnitt `nebel`): Mika geht am Nebelmorgen nach Norden,
-   oben im Bild tut der Dunst kaum wechselnde Pixel dazu (Bild: nebel-dunst); ab H1
+   oben im Bild tut der Dunst kaum wechselnde Pixel dazu, und rückt die Kamera bei stehender
+   Zeit um je einen Pixel, ändert sich fast nichts (die Schattenränder kochen nicht; Bild:
+   nebel-dunst); ab H1
    (Abschnitt `oberflaeche`): zugeklappt nur der Knopf »Bauen«, Tab öffnet die Türme mit Bildern
    aus den Modellen (Kacheln 48 × 58, der Bolzenwerfer mit über 300 Punkten), Esc klappt zu, ohne
    das Pausenmenü, Q setzt zugeklappt den Bolzenwerfer (Preis am Geist, kein Bauzettel) und E baut
