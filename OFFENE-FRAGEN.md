@@ -2504,6 +2504,30 @@ Frage, mit der das Spiel beginnt: »Ich suche ein Zuhause.«
 das Spiel sagt ein Achtel«). Wer neugierig ist, liest nach; wer nicht, verpasst nichts.
 Dass die Seite mitwächst, belohnt Erkunden (Inseln, Nebel, Gespräche) ohne neue Mechanik.
 
+### 209. Wie viel steht dauerhaft im Bild? (H3)
+**Entscheidung:** Feste Zonen, und jede Tafel zeigt nur, was gerade zählt:
+
+- **Vorrat:** die Grundsorten (Holz, Stein, Fasern, Schrott, Zombieteile). Seltenes erscheint
+  beim Bauen, bei Mausberührung und nach einer Änderung.
+- **Ziel:** eine Zeile. Das Ziel geht vor dem Auftrag, der Auftrag steht als Zeichen daneben.
+  In der Welle ist die Zeile aus.
+- **Schnellleiste:** bis zum letzten belegten Platz.
+- **Fähigkeiten:** nur belegte Kacheln.
+
+Abweichend von der Recherche bleibt die Schnellleiste beim offenen Baumenü stehen: Sie ist jetzt
+kurz, liegt nicht im Weg (links statt rechts) und trägt Leben und Erfahrung.
+
+Messlatte für die Prüfung:
+- keine zwei Tafeln überlappen;
+- am Tag höchstens fünf feste Tafeln und ≤ 12 % der Fläche;
+- beim Bauen ≤ 24 %;
+- nachts ≤ 15 %.
+
+**Warum:** Die Beschwerde war Unübersichtlichkeit, nicht zu wenig Information. Was man gerade
+nicht braucht (acht leere Plätze, eine Kachel »kommt auf Stufe 3«, Moderkerne beim Holzhacken,
+ein zweizeiliges Ziel mitten in der Welle), kostet Aufmerksamkeit. Nichts davon geht verloren:
+Es erscheint, sobald es zählt.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

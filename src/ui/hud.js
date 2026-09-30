@@ -76,6 +76,12 @@ const LOW_HP_RED = hexToCss(P.f1);
 const SLOT = 20;
 const SLOT_SIZE = SLOT;
 const SLOT_GAP = 2;
+/** H3: Grundsorten stehen immer im Vorrat; der Rest nur, wenn er gerade zählt. */
+const BASE_RESOURCES = ['holz', 'stein', 'fasern', 'schrott', 'teile'];
+/** H3: So lange (s) bleibt eine Sorte im Vorrat stehen, nachdem sich ihre Menge geändert hat. */
+const RES_SHOW = 6;
+/** H3: Die Schnellleiste zeigt mindestens so viele Plätze (die Balken darüber brauchen Breite). */
+const HOTBAR_MIN = 3;
 const FLOAT_TIME = 1.2;
 
 /** Anzeigename der Tageszeit, z. B. „Vormittag“. */
@@ -84,6 +90,14 @@ export function dayPartLabel(hours) {
   let label = T.tageszeiten[T.tageszeiten.length - 1][1];
   for (const [from, name] of T.tageszeiten) if (h >= from) label = name;
   return label;
+}
+
+/** H3: Text auf eine Breite kürzen (mit »…«). */
+function clip(text, maxW) {
+  if (measure(text) <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && measure(`${t}…`) > maxW) t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
 }
 
 export class Hud {
@@ -120,6 +134,16 @@ export class Hud {
     this.chronicle = { n: 0, text: '', icon: null, t: 99 }; // H2: Neues im Buch (Lesezeichen an der Uhr)
     this.barRect = null; // H2: die Nachtleiste in diesem Bild
     this.clockRect = null;
+    this.panels = []; // H3: die Tafeln dieses Bilds { name, x, y, w, h, fixed }
+    this.lastPanels = []; // … und die des letzten (für das freie Rechteck und die Prüfung)
+    this.resLast = {}; // H3: Mengen im Vorrat beim letzten Schritt
+    this.resSeen = new Map(); // H3: Sorte → Sekunden, die sie nach einer Änderung noch steht
+    this.goalFull = null; // H3: der ganze Text eines gekürzten Ziels (steht beim Überfahren)
+  }
+
+  /** H3: eine gezeichnete Tafel merken (`fixed`: gehört fest zu einer Zone, Meldungen nicht). */
+  addPanel(name, r, fixed = true) {
+    if (r) this.panels.push({ name, x: r.x, y: r.y, w: r.w, h: r.h, fixed });
   }
 
   /**
@@ -311,6 +335,17 @@ export class Hud {
       if (this.alarm.time >= this.alarm.duration) this.alarm = null;
     }
     this.chronicle.t += dt;
+    // H3: Was sich im Vorrat ändert, steht ein paar Sekunden mit darin (auch Seltenes)
+    const inv = this.game.state.inventory;
+    for (const id of [...RESOURCES, ...QUEST_ITEMS]) {
+      const n = inv[id] || 0;
+      if (this.resLast[id] !== undefined && n !== this.resLast[id]) this.resSeen.set(id, RES_SHOW);
+      this.resLast[id] = n;
+    }
+    for (const [id, t] of this.resSeen) {
+      if (t - dt <= 0) this.resSeen.delete(id);
+      else this.resSeen.set(id, t - dt);
+    }
     for (const f of this.floaters) f.t += dt;
     this.floaters = this.floaters.filter((f) => f.t < FLOAT_TIME);
     this.itemLabel.time = Math.max(0, this.itemLabel.time - dt);
@@ -344,6 +379,8 @@ export class Hud {
    * @param {{hotbar: boolean, prompt: boolean}} show
    */
   draw(ui, show) {
+    this.lastPanels = this.panels;
+    this.panels = [];
     if (show.prompt) this.drawLowHealth(ui);
     if (show.prompt) {
       this.drawZombieBars(ui);
@@ -377,6 +414,12 @@ export class Hud {
     if (show.hotbar) this.drawHotbar(ui);
     if (show.prompt) this.drawSkills(ui);
     else this.skillPanel = null;
+    // H3: Mikas Zone – Schnellleiste samt Leben, Erfahrung, »Wahl wartet« und den Fähigkeiten daneben
+    if (show.hotbar) {
+      const r = this.hotbarGroup(ui);
+      const s = show.prompt ? this.skillPanel : null;
+      this.addPanel('schnellleiste', s ? { ...r, w: Math.max(r.w, s.x + s.w - r.x) } : r);
+    }
     if (show.prompt && this.prompt) this.drawPrompt(ui, this.prompt);
     if (show.hotbar) this.drawLabels(ui);
     if (this.debugLines) this.drawDebug(ui);
@@ -397,6 +440,7 @@ export class Hud {
     const x = 4;
     const y = 4;
     this.clockRect = { x, y, w, h: 34 };
+    this.addPanel('uhr', this.clockRect);
     ui.panel(x, y, w, 34);
     ui.inset(x + 5, y + 6, 16, 16, { fill: COLORS.inset });
     drawIcon(ui.ctx, icon, x + 7, y + 8);
@@ -430,45 +474,114 @@ export class Hud {
     drawIcon(ui.ctx, 'buch', x + 5, y + 3);
     ui.text(text, x + 17, y + 2, c.t < 4 ? COLORS.textWarm : COLORS.gold);
     this.chronicleRect = { x, y, w, h };
+    this.addPanel('chronik', this.chronicleRect, false);
   }
 
-  /** Aktuelles Ziel unter der Uhr (Einstieg in die ersten Schritte). */
+  /**
+   * H3: alle Tafeln des letzten Bilds – die des HUD, dazu Edda am Funk und der Knopf bzw. das
+   * Baumenü (samt Reitern und Bauzettel, als ein Rechteck).
+   */
+  allPanels(ui, list = this.lastPanels) {
+    const g = this.game;
+    const out = list.map((p) => ({ ...p }));
+    if (g.funk?.rect) out.push({ name: 'funk', ...g.funk.rect, fixed: false });
+    const L = g.mode === 'play' ? g.buildbar?.lastLayout : null;
+    if (L?.closed) out.push({ name: 'bauen', x: L.button.x, y: L.button.y, w: L.button.w, h: L.button.h, fixed: true });
+    else if (L) {
+      const parts = [{ x: L.x, y: L.y, w: L.w, h: L.h }, ...(L.tabRects || []), { x: L.x, y: L.y - 13, w: L.w, h: 13 }];
+      const note = g.buildbar.noteLayout(ui, L);
+      if (note) parts.push(note);
+      const x0 = Math.min(...parts.map((r) => r.x));
+      const y0 = Math.min(...parts.map((r) => r.y));
+      const x1 = Math.max(...parts.map((r) => r.x + r.w));
+      const y1 = Math.max(...parts.map((r) => r.y + r.h));
+      out.push({ name: 'baumenue', x: x0, y: y0, w: x1 - x0, h: y1 - y0, fixed: true });
+    }
+    return out;
+  }
+
+  /** H3: das freie Rechteck in der Mitte – zwischen den festen Tafeln oben und unten. */
+  freeRect(ui, list = this.lastPanels) {
+    let y0 = 14;
+    let y1 = ui.height - 14;
+    for (const p of this.allPanels(ui, list)) {
+      if (!p.fixed) continue;
+      if (p.y + p.h / 2 < ui.height / 2) y0 = Math.max(y0, p.y + p.h + 8);
+      else y1 = Math.min(y1, p.y - 8);
+    }
+    return { x0: 14, x1: ui.width - 14, y0, y1: Math.max(y0 + 40, y1) };
+  }
+
+  /** H3: für die Prüfung – Tafeln des letzten Bilds, freies Rechteck, Größe der Oberfläche. */
+  layoutInfo(ui = this.game.ui) {
+    // nach dem Zeichnen gefragt: die Tafeln dieses Bilds (samt Meldungen)
+    return { w: ui.width, h: ui.height, panels: this.allPanels(ui, this.panels), free: this.freeRect(ui, this.panels) };
+  }
+
+  /**
+   * Aktuelles Ziel unter der Uhr (Einstieg in die ersten Schritte). H3: eine Zeile – das Ziel geht
+   * vor dem Auftrag (M23); passt sie nicht, wird sie gekürzt, und der ganze Text steht beim
+   * Überfahren mit der Maus. In einer laufenden Welle ist sie aus.
+   */
   drawGoal(ui) {
     const box = this.goalBox;
     box.on = false;
     box.h = 17;
-    const goal = this.game.goal;
-    const quest = this.game.quests?.goal(); // M23: der laufende Auftrag als zweite Zeile
-    if (!goal && !quest) return;
-    const rows = [];
+    this.goalFull = null;
+    const g = this.game;
+    const goal = g.goal;
+    const quest = g.quests?.goal();
+    if ((!goal && !quest) || this.inWave()) return;
     const x = 4;
     const y = 41;
-    // H2: Die Zeile reicht nie unter die Nachtleiste – lange Ziele brechen um
+    const both = Boolean(goal && quest); // dann steht der Auftrag als Zeichen am Ende der Zeile
+    // H2: Die Zeile reicht nie unter die Nachtleiste
     const bar = this.barRect;
-    const maxText = bar && bar.y < y + 30 ? Math.max(80, bar.x - 8 - x - 24) : ui.width;
-    const add = (icon, text, main) => wrap(text, maxText).forEach((line, k) => rows.push({ icon: k ? null : icon, text: line, main }));
-    if (goal) add('ziel', goal.progress ? `${goal.text} ${goal.progress}` : goal.text, true);
-    if (quest) add(quest.icon, quest.progress ? `${quest.text} ${quest.progress}` : quest.text, false);
-    const w = Math.max(...rows.map((r) => measure(r.text))) + 24;
-    const h = 4 + rows.length * 13;
+    const maxText = (bar && bar.y < y + 30 ? Math.max(80, bar.x - 8 - x - 24) : ui.width - x - 32) - (both ? 14 : 0);
+    const line = (it) => (it.progress ? `${it.text} ${it.progress}` : it.text);
+    const full = line(goal || quest);
+    const text = clip(full, maxText);
+    const w = measure(text) + 24 + (both ? 14 : 0);
+    const h = 17;
     // Das Banner weicht ihr aus (m12-r1)
     box.on = true;
     box.x = x;
     box.y = y;
     box.w = w;
     box.h = h;
+    this.addPanel('ziel', box);
     const flash = this.goalFlash > 0 && Math.floor(this.goalFlash * 8) % 2 === 0;
     ui.panel(x, y, w, h, { frame: flash ? COLORS.gold : COLORS.frame });
-    rows.forEach((r, k) => {
-      const ry = y + k * 13;
-      if (r.icon) {
-        const size = iconSize(r.icon);
-        drawIcon(ui.ctx, r.icon, x + 5 + Math.floor((10 - size.w) / 2), ry + 3 + Math.max(0, Math.floor((11 - size.h) / 2)));
-      }
-      ui.text(r.text, x + 17, ry + 2, r.main ? (flash ? COLORS.gold : COLORS.textWarm) : COLORS.text);
-    });
+    const icon = goal ? 'ziel' : quest.icon;
+    const size = iconSize(icon);
+    drawIcon(ui.ctx, icon, x + 5 + Math.floor((10 - size.w) / 2), y + 3 + Math.max(0, Math.floor((11 - size.h) / 2)));
+    ui.text(text, x + 17, y + 2, goal ? (flash ? COLORS.gold : COLORS.textWarm) : COLORS.text);
+    if (both) {
+      const qs = iconSize(quest.icon);
+      drawIcon(ui.ctx, quest.icon, x + w - 14 + Math.floor((10 - qs.w) / 2), y + 3 + Math.max(0, Math.floor((11 - qs.h) / 2)));
+    }
+    // H3: Gekürztes und der Auftrag stehen ganz, solange die Maus auf der Zeile liegt
+    const more = [...(text !== full ? [full] : []), ...(both ? [line(quest)] : [])];
+    if (more.length) this.goalFull = more.join(' · ');
+    if (more.length && ui.hover(x, y, w, h)) {
+      const lines = more.flatMap((t) => wrap(t, Math.min(300, ui.width - 16)));
+      const tw = Math.max(...lines.map((l) => measure(l))) + 10;
+      ui.panel(x, y + h + 2, tw, 4 + lines.length * LINE_HEIGHT);
+      lines.forEach((l, k) => ui.text(l, x + 5, y + h + 4 + k * LINE_HEIGHT, k === 0 && goal ? COLORS.textWarm : COLORS.text));
+    }
   }
 
+  /** H3: Läuft gerade eine Welle (Schlurfer unterwegs oder noch im Anmarsch)? */
+  inWave() {
+    const g = this.game;
+    return Boolean(g.nights.active && g.state.night.wave > 0 && (g.nights.queue.length > 0 || g.horde.alive > 0));
+  }
+
+  /**
+   * Sorten im Vorrat. H3: die Grundsorten immer; Stoff, Zahnräder, Moderkerne nur, wenn sie gerade
+   * zählen – beim Bauen, wenn die Maus auf dem Vorrat liegt oder ein paar Sekunden nach einer
+   * Änderung. Nägel und Zucker für Marthe (N7) stehen, solange Mika sie trägt.
+   */
   visibleResources() {
     const st = this.game.state;
     const list = RESOURCES.filter((id) => {
@@ -477,7 +590,15 @@ export class Hud {
       if (RARE_RESOURCES.includes(id)) return st.inventory[id] > 0 || st.flags.fundModerkern;
       return true;
     });
-    return [...list, ...QUEST_ITEMS.filter((id) => st.inventory[id] > 0)]; // N7: Nägel und Zucker für Marthe
+    const full = this.resourcesFull();
+    return [...list.filter((id) => full || BASE_RESOURCES.includes(id) || this.resSeen.has(id)), ...QUEST_ITEMS.filter((id) => st.inventory[id] > 0)];
+  }
+
+  /** H3: Zeigt der Vorrat gerade alle Sorten? Beim Bauen und wenn die Maus darauf liegt. */
+  resourcesFull() {
+    const g = this.game;
+    const r = this.resRect;
+    return Boolean(g.buildbar?.open || g.builder?.placement || g.mode === 'craft' || (r && g.ui.hover(r.x, r.y, r.w, r.h)));
   }
 
   drawResources(ui) {
@@ -489,12 +610,14 @@ export class Hud {
     // Schmales Fenster: Vorrat unter Uhr und Ziel statt daneben
     const y = x0 < 130 ? (this.goalBox.on ? this.goalBox.y + this.goalBox.h + 4 : 42) : 4;
     this.resRect = { x: x0, y, w: total, h: 20 }; // N4: darunter hängen Nachtplan und Meldungen
+    this.addPanel('vorrat', this.resRect);
     ui.panel(x0, y, total, 20);
     let x = x0 + 6;
     const hovered = [];
     entries.forEach((e, i) => {
       drawIcon(ui.ctx, e.id, x, y + 5);
-      ui.text(e.value, x + 13, y + 3, COLORS.text);
+      // H3: eine Sorte, die sich gerade geändert hat, kurz golden
+      ui.text(e.value, x + 13, y + 3, (this.resSeen.get(e.id) || 0) > RES_SHOW - 1.5 ? COLORS.gold : COLORS.text);
       if (ui.hover(x, y, widths[i], 20)) hovered.push(e.id);
       x += widths[i] + 7;
     });
@@ -530,6 +653,7 @@ export class Hud {
   drawBossBar(ui) {
     const g = this.game;
     this.bossShown = null;
+    this.bossRect = null;
     let boss = null;
     let hp = 0;
     let max = 0;
@@ -545,6 +669,8 @@ export class Hud {
     const x = Math.round(ui.width / 2 - w / 2);
     const y = this.nightBarBottom + 3;
     ui.panel(x, y, w, 24, { frame: COLORS.gold });
+    this.bossRect = { x, y, w, h: 24 };
+    this.addPanel('boss', this.bossRect);
     ui.textCentered(B.titel, ui.width / 2, y + 2, COLORS.gold);
     const q = Math.max(0, Math.min(1, hp / Math.max(1, max)));
     ui.rect(x + 6, y + 15, w - 12, 5, COLORS.outline);
@@ -648,6 +774,7 @@ export class Hud {
       bottom = y + h;
       this.nightBarBottom = bottom;
       this.barRect = { x, y, w, h };
+      this.addPanel('nachtleiste', this.barRect);
       if (view) {
         this.planRect = this.barRect; // die Prüfung fragt, ob der Plan zu sehen ist (M16, M22)
         this.planBottom = bottom;
@@ -908,8 +1035,8 @@ export class Hud {
     const g = this.game;
     const cx = ui.width / 2;
     const cy = ui.height / 2;
-    // Pfeile liegen in einem Rahmen ohne die HUD-Tafeln (oben Uhr/Ziel/Vorrat, unten Leisten)
-    const safe = { x0: 14, x1: ui.width - 14, y0: 86, y1: ui.height - 60 };
+    // Pfeile liegen im freien Rechteck, das die Zonen lassen (H3; oben Uhr/Ziel/Vorrat, unten Leisten)
+    const safe = this.freeRect(ui);
     const sx = (safe.x0 + safe.x1) / 2;
     const sy = (safe.y0 + safe.y1) / 2;
     const edge = (ux, uy) => {
@@ -1218,9 +1345,31 @@ export class Hud {
     return top;
   }
 
+  /** H3: so viele Plätze zeigt die Schnellleiste – bis zum letzten belegten (und dem gewählten). */
+  hotbarCount() {
+    const { slots, selected } = this.game.state.hotbar;
+    let last = 0;
+    slots.forEach((item, i) => {
+      if (item) last = i + 1;
+    });
+    return Math.min(HOTBAR_SIZE, Math.max(HOTBAR_MIN, last, selected + 1));
+  }
+
   hotbarRect(ui) {
-    const width = (HOTBAR_SIZE + 1) * SLOT + HOTBAR_SIZE * SLOT_GAP + 5 + 8;
+    const n = this.hotbarCount();
+    const width = (n + 1) * SLOT + n * SLOT_GAP + 5 + 8;
     return { x: 4, y: ui.height - SLOT - 12, w: width, h: SLOT + 8 };
+  }
+
+  /** H3: Mikas Gruppe unten links – Schnellleiste mit Leben, Erfahrung und »Wahl wartet« darüber. */
+  hotbarGroup(ui) {
+    const r = this.hotbarRect(ui);
+    const top = this.groupTop(ui);
+    const g = this.game;
+    const wait = (g.state.perkChoice || g.state.skillChoice) && !g.perkChoice.isOpen;
+    const text = g.state.skillChoice ? T.faehigkeiten.wartet : T.perks.wartet;
+    const w = wait ? Math.max(r.w, measure(text) + 14) : r.w;
+    return { x: r.x, y: top, w, h: r.y + r.h - top };
   }
 
   drawHotbar(ui) {
@@ -1240,7 +1389,8 @@ export class Hud {
     ui.rect(lx + SLOT + 3, ly + 2, 1, SLOT - 4, COLORS.frameDark);
 
     this.slotRects = [];
-    for (let i = 0; i < HOTBAR_SIZE; i++) {
+    const count = this.hotbarCount();
+    for (let i = 0; i < count; i++) {
       const sx = lx + SLOT + 7 + i * (SLOT + SLOT_GAP);
       const sy = ly;
       const isSelected = i === selected;
@@ -1273,19 +1423,31 @@ export class Hud {
   skillLayout(ui) {
     const r = this.hotbarRect(ui);
     const x = r.x + r.w + 3;
-    const panel = { x, y: r.y, w: 2 * SLOT + SLOT_GAP + 8, h: r.h };
-    const tiles = [0, 1].map((k) => ({ x: x + 4 + k * (SLOT + SLOT_GAP), y: r.y + 4, w: SLOT, h: SLOT }));
+    // H3: nur belegte Plätze – der zweite erscheint mit der Wahl auf Stufe 3; `k` ist der Platz
+    const ks = [0, 1].filter((k) => this.game.skills.slot(k));
+    const n = Math.max(1, ks.length);
+    const panel = { x, y: r.y, w: n * SLOT + (n - 1) * SLOT_GAP + 8, h: r.h };
+    const tiles = ks.map((k, i) => ({ k, x: x + 4 + i * (SLOT + SLOT_GAP), y: r.y + 4, w: SLOT, h: SLOT }));
     return { panel, tiles };
   }
 
   drawSkills(ui) {
     const sk = this.game.skills;
     const L = this.skillLayout(ui);
+    // H3: Die Kacheln erscheinen erst mit der ersten Fähigkeit (Stufe 3) – Junas Leuchtfeuer steht auch ohne
+    if (!sk.slot(0) && !sk.slot(1)) {
+      this.skillPanel = null;
+      this.skillTiles = [];
+      const r = this.hotbarRect(ui);
+      this.drawJunaKey(ui, { x: r.x + r.w + 3, y: r.y + r.h - 15, w: 0, h: 0 }, true);
+      return;
+    }
     this.skillPanel = L.panel;
     this.skillTiles = L.tiles;
     ui.panel(L.panel.x, L.panel.y, L.panel.w, L.panel.h);
     let hoverK = -1;
-    L.tiles.forEach((t, k) => {
+    L.tiles.forEach((t) => {
+      const k = t.k;
       const id = sk.slot(k);
       const cool = sk.coolFraction(k);
       const flash = sk.readyFlash[k] > 0 && Math.floor(sk.readyFlash[k] * 10) % 2 === 0;
@@ -1307,24 +1469,12 @@ export class Hud {
         }
         // Rang über 1: goldene Punkte oben rechts
         for (let n = 1; n < sk.rankOf(id); n++) ui.rect(x + SLOT - 4 - (n - 1) * 3, t.y + 2, 2, 2, COLORS.gold);
-      } else {
-        drawTiny(ui.ctx, '3', x + 9, t.y + 8, COLORS.frameDark); // kommt auf Stufe 3
       }
       // Taste oben links: rechte Maustaste bzw. X
       if (k === 0) drawIcon(ui.ctx, 'maus', x + 1, t.y + 1);
       else drawTiny(ui.ctx, 'X', x + 2, t.y + 2, COLORS.textDim);
     });
-    // M23: Juna auf dem Hochsitz – das Leuchtfeuer liegt auf J
-    const juna = this.game.posts?.junaView();
-    if (juna) {
-      const text = juna.wartet > 0 ? T.posten.hudWartet(Math.ceil(juna.wartet)) : T.posten.hudBereit;
-      const w = measure(text) + 22;
-      const jx = L.panel.x + L.panel.w - w;
-      const jy = L.panel.y - 17;
-      ui.panel(jx, jy, w, 15);
-      drawIcon(ui.ctx, 'juna', jx + 4, jy + 2);
-      ui.text(text, jx + 17, jy + 1, juna.wartet > 0 ? COLORS.textDim : COLORS.gold);
-    }
+    this.drawJunaKey(ui, L.panel, false);
     // Name und Taste über den Kacheln, solange die Maus darauf zeigt
     if (hoverK >= 0) {
       const id = sk.slot(hoverK);
@@ -1335,10 +1485,28 @@ export class Hud {
     }
   }
 
+  /**
+   * M23: Juna auf dem Hochsitz – das Leuchtfeuer liegt auf J. Über den Fähigkeiten (rechtsbündig)
+   * oder, ohne Fähigkeiten (H3), rechts neben der Schnellleiste (`beside`).
+   */
+  drawJunaKey(ui, anchor, beside) {
+    const juna = this.game.posts?.junaView();
+    if (!juna) return;
+    const text = juna.wartet > 0 ? T.posten.hudWartet(Math.ceil(juna.wartet)) : T.posten.hudBereit;
+    const w = measure(text) + 22;
+    const jx = beside ? anchor.x : anchor.x + anchor.w - w;
+    const jy = beside ? anchor.y : anchor.y - 17;
+    ui.panel(jx, jy, w, 15);
+    this.addPanel('juna', { x: jx, y: jy, w, h: 15 }, false);
+    drawIcon(ui.ctx, 'juna', jx + 4, jy + 2);
+    ui.text(text, jx + 17, jy + 1, juna.wartet > 0 ? COLORS.textDim : COLORS.gold);
+  }
+
   /** Kachel der Fähigkeit unter der Maus (0, 1) oder -1. */
   skillAt(ui) {
     if (!this.skillPanel) return -1;
-    return this.skillTiles.findIndex((t) => ui.hover(t.x, t.y, t.w, t.h));
+    const t = this.skillTiles.find((r) => ui.hover(r.x, r.y, r.w, r.h));
+    return t ? t.k : -1;
   }
 
   /** Liegt die Maus über den Fähigkeiten? */
@@ -1410,8 +1578,10 @@ export class Hud {
 
   /** H2: Eine Meldung rechts, die in die Nachtleiste reichen würde, rückt unter sie. */
   toastStart(ui, y, w) {
-    const bar = this.barRect;
-    if (bar && ui.width - w - 4 < bar.x + bar.w + 4 && y < bar.y + bar.h + 3) return bar.y + bar.h + 3;
+    // H3: auch unter den Bossbalken, der unter der Nachtleiste hängt
+    for (const bar of [this.barRect, this.bossRect]) {
+      if (bar && ui.width - w - 4 < bar.x + bar.w + 4 && y < bar.y + bar.h + 3) y = bar.y + bar.h + 3;
+    }
     return y;
   }
 
@@ -1438,6 +1608,7 @@ export class Hud {
         const x = ui.width - w - 4 + Math.round((1 - slide) * 8); // N4: rechts, gleitet von rechts herein
         const yy = y;
         ui.panel(x, yy, w, 18);
+        this.addPanel('meldung', { x: ui.width - w - 4, y: yy, w, h: 18 }, false);
         let tx = x + 6;
         if (t.icon) {
           const size = iconSize(t.icon);

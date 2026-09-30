@@ -231,6 +231,7 @@ async function runBrowserChecks() {
     if (want('wald')) await runForestChecks(browser, url);
     if (want('uhr')) await runClockChecks(browser, url);
     if (want('orte')) await runPlaceChecks(browser, url);
+    if (want('zonen')) await runZoneChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10762,7 +10763,7 @@ async function runTidyChecks(browser, url) {
   const inBar = abend.view?.evening && abend.bar && JSON.stringify(abend.plan) === JSON.stringify(abend.bar);
   const clear = abend.res && abend.top === abend.res.y + abend.res.h + 4;
   const ziel = abend.goal.on && abend.goal.x + abend.goal.w + 4 <= abend.bar.x;
-  if (inBar && clear && ziel) note(`✓ Aufräumen (H2): abends steht der Plan in der Nachtleiste (${abend.view.total} Wellen, ${abend.bar.w} × ${abend.bar.h}), rechts keine Plantafel mehr, die lange Zielzeile bricht vor der Leiste um`);
+  if (inBar && clear && ziel) note(`✓ Aufräumen (H2): abends steht der Plan in der Nachtleiste (${abend.view.total} Wellen, ${abend.bar.w} × ${abend.bar.h}), rechts keine Plantafel mehr, die lange Zielzeile endet vor der Leiste (H3: gekürzt)`);
   else fail(`Aufräumen: Plan in der Nachtleiste ${JSON.stringify(abend)}`);
   await still('hud-abend');
 
@@ -11196,6 +11197,155 @@ async function runPlaceChecks(browser, url) {
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();
+}
+
+/**
+ * H3 – Zonen (recherche/hud-baumenue.md 5.2 Nr. 7 und 11): Die Tafeln liegen in ihren Zonen und
+ * überlappen sich nicht – am Tag höchstens fünf feste und ≤ 12 % der Fläche, beim Bauen ≤ 24 %,
+ * nachts ≤ 15 %. Die Schnellleiste reicht bis zum letzten belegten Platz, die zweite Fähigkeit
+ * erscheint mit der Wahl, Stoff steht nur beim Bauen oder nach einer Änderung im Vorrat, das Ziel
+ * ist eine Zeile und in der Welle aus.
+ */
+async function runZoneChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Zonen (H3)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  const lage = async () => {
+    await step(34);
+    return z(() => window.zomfy.hudLayout());
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.setDay(2);
+    Z.setTime(10, 0);
+    Z.teleport(2, 3, 0);
+    const hb = Z.game.state.hotbar;
+    hb.slots = ['axt', 'spitzhacke', null, null, null, null, null, null];
+    hb.selected = 0;
+    Z.game.state.inventory.stoff = 0;
+  });
+  await step(300);
+
+  // 1) Am Tag: wenige feste Tafeln, keine Überlappung, kurze Schnellleiste, eine Fähigkeit
+  const tag = await lage();
+  const tagFehler = zoneProblems(tag);
+  const hot = await z(() => window.zomfy.game.hud.hotbarRect(window.zomfy.game.ui));
+  const skill = await z(() => window.zomfy.game.hud.skillPanel);
+  const fest = tag.panels.filter((p) => p.fixed).map((p) => p.name);
+  if (!tagFehler.length && fest.length <= 5 && zoneShare(tag) <= 0.12 && hot?.w === 99 && skill?.w === 28) note(`✓ Zonen (H3): am Tag ${fest.length} feste Tafeln (${fest.join(', ')}), ${Math.round(zoneShare(tag) * 1000) / 10} % der Fläche, keine überlappt; die Schnellleiste reicht bis zum letzten belegten Platz (drei statt acht), nur der Laternenblitz als Fähigkeit`);
+  else fail(`Zonen: Tag ${JSON.stringify({ tagFehler, fest, share: zoneShare(tag), hot, skill })}`);
+  await still(page, 'zonen-tag');
+
+  // 2) Der Vorrat: Stoff erscheint nach einer Änderung, verschwindet wieder und steht beim Bauen
+  await step(6500); // die Änderung beim Aufsetzen (Stoff auf 0) ist vergessen
+  const vorher = await z(() => window.zomfy.visibleResources());
+  await z(() => (window.zomfy.game.state.inventory.stoff = 3));
+  await step(100);
+  const geaendert = await z(() => window.zomfy.visibleResources());
+  await step(7000);
+  const spaeter = await z(() => window.zomfy.visibleResources());
+  await tap('Tab');
+  const bauen = await lage();
+  const beimBauen = await z(() => window.zomfy.visibleResources());
+  await still(page, 'zonen-bauen');
+  await tap('Escape');
+  const bauFehler = zoneProblems(bauen);
+  if (!vorher.includes('stoff') && geaendert.includes('stoff') && !spaeter.includes('stoff') && beimBauen.includes('stoff') && ['holz', 'stein', 'fasern', 'schrott'].every((id) => spaeter.includes(id))) note('✓ Zonen (H3): im Vorrat stehen die Grundsorten, Stoff erst nach einer Änderung (ein paar Sekunden) und beim Bauen');
+  else fail(`Zonen: Vorrat ${JSON.stringify({ vorher, geaendert, spaeter, beimBauen })}`);
+  if (!bauFehler.length && zoneShare(bauen) <= 0.24 && bauen.panels.some((p) => p.name === 'baumenue')) note(`✓ Zonen (H3): mit offenem Baumenü ${Math.round(zoneShare(bauen) * 1000) / 10} % der Fläche, keine Tafel überlappt`);
+  else fail(`Zonen: Bauen ${JSON.stringify({ bauFehler, share: zoneShare(bauen), panels: bauen.panels })}`);
+
+  // 3) Abends: ein langes Ziel ist eine gekürzte Zeile vor der Nachtleiste
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setSurvivor('juna', 3); // ihr Auftrag (der Lange Jakob) ist eine lange Zielzeile
+    Z.setTime(19, 40);
+  });
+  await step(300);
+  const abend = await lage();
+  const ziel = abend.panels.find((p) => p.name === 'ziel');
+  const full = await z(() => window.zomfy.game.hud.goalFull);
+  if (ziel && ziel.h === 17 && !zoneProblems(abend).length) note(`✓ Zonen (H3): abends ist das Ziel eine Zeile (${ziel.w} × ${ziel.h})${full ? ', gekürzt – der ganze Text steht beim Überfahren' : ''}, nichts überlappt die Nachtleiste`);
+  else fail(`Zonen: Abend ${JSON.stringify({ ziel, full, fehler: zoneProblems(abend) })}`);
+
+  // 4) Nachts in der Welle: kein Ziel, die Nachtleiste, höchstens 15 % der Fläche
+  await z(() => {
+    window.zomfy.setHorde(true);
+    window.zomfy.setTime(20, 29);
+  });
+  await step(3000);
+  for (let k = 0; k < 20 && !(await z(() => window.zomfy.game.horde.alive > 0)); k++) await step(500);
+  const nacht = await lage();
+  const nachtFehler = zoneProblems(nacht);
+  const inWave = await z(() => window.zomfy.game.hud.inWave());
+  if (inWave && !nacht.panels.some((p) => p.name === 'ziel') && nacht.panels.some((p) => p.name === 'nachtleiste') && !nachtFehler.length && zoneShare(nacht) <= 0.15) note(`✓ Zonen (H3): in der Welle ohne Zielzeile, mit Nachtleiste – ${Math.round(zoneShare(nacht) * 1000) / 10} % der Fläche, keine Tafel überlappt`);
+  else fail(`Zonen: Nacht ${JSON.stringify({ inWave, nachtFehler, share: zoneShare(nacht), panels: nacht.panels })}`);
+  await still(page, 'zonen-nacht');
+
+  // 5) Ein Boss: der Balken unter der Nachtleiste, nichts überlappt; die zweite Fähigkeit erscheint
+  await z(() => {
+    const Z = window.zomfy;
+    const m = Z.mapInfo();
+    const s = m.spawns?.[0] || { x: -40, z: 0 };
+    Z.spawnZombie('holzfaeller', s.x + 3, s.z);
+    Z.learnSkill('kuerbiswurf', 1);
+  });
+  await step(300);
+  const boss = await lage();
+  const skill2 = await z(() => window.zomfy.game.hud.skillPanel);
+  if (boss.panels.some((p) => p.name === 'boss') && !zoneProblems(boss).length && skill2?.w === 50) note('✓ Zonen (H3): der Bossbalken hängt unter der Nachtleiste, nichts überlappt; mit der zweiten Fähigkeit wird die Leiste zwei Kacheln breit');
+  else fail(`Zonen: Boss ${JSON.stringify({ fehler: zoneProblems(boss), skill2, panels: boss.panels.map((p) => p.name) })}`);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+
+  // 6) Full HD: tags und nachts keine Überlappung
+  const hd = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Zonen Full HD', { viewport: { width: 1920, height: 1080 } });
+  const zh = (fn, arg) => hd.page.evaluate(fn, arg);
+  await zh(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.setDay(2);
+    Z.setTime(19, 40);
+  });
+  await zh(() => window.__zomfyStep(300));
+  const hdAbend = await zh(() => window.zomfy.hudLayout());
+  if (!zoneProblems(hdAbend).length) note(`✓ Zonen (H3): in Full HD (${hdAbend.w} × ${hdAbend.h} Oberfläche) überlappt abends keine Tafel`);
+  else fail(`Zonen: Full HD ${JSON.stringify(zoneProblems(hdAbend))}`);
+  await zh(() => (window.__zomfyHold = false));
+  checkMessages(hd);
+  await hd.context.close();
+}
+
+/** H3: Paare von Tafeln, die sich überlappen (Namen). */
+function zoneProblems(L) {
+  const out = [];
+  const p = L.panels;
+  for (let a = 0; a < p.length; a++) {
+    for (let b = a + 1; b < p.length; b++) {
+      const u = p[a];
+      const v = p[b];
+      if (u.x < v.x + v.w && u.x + u.w > v.x && u.y < v.y + v.h && u.y + u.h > v.y) out.push(`${u.name}/${v.name}`);
+    }
+  }
+  return out;
+}
+
+/** H3: Anteil der festen Tafeln an der Fläche (Meldungen und Edda kommen und gehen). */
+function zoneShare(L) {
+  return L.panels.filter((r) => r.fixed).reduce((sum, r) => sum + r.w * r.h, 0) / (L.w * L.h);
 }
 
 /** Ein Bild ohne Simulationsschritt (für Abschnitte, die mit `__zomfyHold` laufen). */

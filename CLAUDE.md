@@ -158,6 +158,16 @@ gilt bis auf Weiteres:
   zwei (H2); Alarme (`'alarm'`) stehen in der roten Zeile der Nachtleiste, Neues im Buch
   (`'chronik'`) als Lesezeichen an der Uhr. Der Nachtplan steht in der Nachtleiste, der ganze
   auf der Karte (M).
+- **Feste Zonen (H3):**
+  - Oben links: Uhr mit Chronik, darunter das Ziel (eine Zeile, in der Welle aus).
+  - Oben Mitte: Nachtleiste und Bossbalken.
+  - Oben rechts: Vorrat (Grundsorten, Seltenes nur beim Bauen, bei Mausberührung und nach einer
+    Änderung), darunter höchstens zwei Meldungen.
+  - Unten links: Mikas Leiste (bis zum letzten belegten Platz) mit Edda darüber.
+  - Unten rechts: Knopf bzw. Baumenü.
+  - Die Mitte gehört der Welt; Randmarken liegen im freien Rechteck (`hud.freeRect`).
+  - Jede neue Tafel meldet sich mit `hud.addPanel(name, rect, fest)`, damit `hud.layoutInfo()`
+    und die Prüfung sie sehen.
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
   `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
   Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
@@ -317,7 +327,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       fishingModels (Angel, Pose, Fänge, M33)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nachtleiste mit Plan und Alarmzeile, Lesezeichen an der
-                      Uhr, Lebensbalken, Randmarken), dialog, menu
+                      Uhr, Lebensbalken, Randmarken, feste Zonen und
+                      `layoutInfo`, H3), dialog, menu
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
                       buildbar (Baumenü: Knopf, Reiter, Kacheln, Bauzettel,
                       H1), buildPictures (Bilder der Kacheln aus den
@@ -1220,7 +1231,13 @@ Grundprinzipien:
    Landgang der Wartholm mit Meldung in der Chronik, die Insel im Nebel heißt erst nach Marthe
    Apfelwerder, mit allem Wissen 24 Orte in zwei blätternden Spalten (S, Klick auf den Pfeil),
    die Reiter in zwei Reihen im Buch, die Zuflucht nennt, wer dorthin weitergezogen ist
-   (Bilder: ortskunde, ortskunde-voll).
+   (Bilder: ortskunde, ortskunde-voll); ab H3 (Abschnitt `zonen`): am Tag höchstens fünf feste
+   Tafeln und ≤ 12 % der Fläche ohne Überlappung, die Schnellleiste reicht bis zum letzten
+   belegten Platz, anfangs nur die Kachel des Laternenblitzes, Stoff steht erst nach einer
+   Änderung und beim Bauen im Vorrat, mit offenem Baumenü ≤ 24 %, abends ist das Ziel eine Zeile
+   vor der Nachtleiste, in der Welle ohne Ziel und ≤ 15 %, der Bossbalken und die zweite
+   Fähigkeit passen dazu, in Full HD überlappt nichts (Bilder: zonen-tag, zonen-bauen,
+   zonen-nacht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1387,7 +1404,8 @@ Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
 Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeilen) und die
-offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen).
+offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen); ab H3 zeigt `hudLayout()` die
+Tafeln des letzten Bilds samt freiem Rechteck, `visibleResources()` die Sorten im Vorrat.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

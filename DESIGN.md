@@ -1950,6 +1950,14 @@ der Herkunft seines Namens und Zeilen, die mit der Geschichte dazukommen (Almas 
 Brief, Mikas Bucht). Neue Orte melden sich in der Chronik. Die Reiter des Buchs brechen in zwei
 Reihen um, lange Seiten blättern spaltenweise (Nr. 208).
 
+#### H3 – Zonen ✓
+
+*Umgesetzt (30.09.2026):* Jede Tafel hat ihre Zone (oben links Uhr und Ziel, oben Mitte die
+Nachtleiste, oben rechts Vorrat und Meldungen, unten links Mikas Leiste mit Edda, unten rechts
+das Baumenü), die Mitte gehört der Welt. Der Vorrat zeigt die Grundsorten und Seltenes nur,
+wenn es zählt; das Ziel ist eine Zeile und in der Welle aus; die Schnellleiste reicht bis zum
+letzten belegten Platz; Fähigkeiten zeigen nur belegte Kacheln (Nr. 209).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

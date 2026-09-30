@@ -3708,6 +3708,9 @@ export class Game {
       // M25, Teil 2: Herbstbuch – Sterne, Taten, Schmuck, Arten, Turmalbum; Taten jetzt prüfen
       book: () => game.book.view(),
       bookCheck: () => game.book.check(),
+      // H3: Zonen – die Tafeln des letzten Bilds, das freie Rechteck, der Vorrat
+      hudLayout: () => game.hud.layoutInfo(game.ui),
+      visibleResources: () => game.hud.visibleResources(),
       // G5: Ortskunde – bekannte Orte mit Namen, Zeilen und die offene Seite des Buchs samt Reitern
       places: () => {
         const st = game.state;

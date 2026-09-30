@@ -5,6 +5,38 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## H3: Zonen ✓
+
+**Auftrag (30.09.):** »Aktuell ist alles super unübersichtlich.« Dritter Schritt aus
+`recherche/hud-baumenue.md` (5.3, Nr. 209). H1 hat das Baumenü aufgeräumt, H2 die Meldungen.
+Jetzt bekommt jede Tafel ihre Zone, und es steht nur da, was gerade zählt.
+
+- **Feste Zonen:**
+  - Oben links: Uhr mit Chronik, darunter das Ziel.
+  - Oben Mitte: Nachtleiste und Bossbalken.
+  - Oben rechts: Vorrat, darunter höchstens zwei Meldungen.
+  - Unten links: Mikas Leiste, darüber Edda.
+  - Unten rechts: der Knopf »Bauen« bzw. das Baumenü.
+  - Die Mitte bleibt frei für die Welt. Die Randmarken liegen im freien Rechteck, das die Zonen
+    lassen (nicht mehr an festen Rändern).
+- **Vorrat:** Holz, Stein, Fasern, Schrott und Zombieteile stehen immer. Stoff, Zahnräder und
+  Moderkerne erscheinen nur, wenn sie zählen:
+  - beim Bauen;
+  - wenn die Maus auf dem Vorrat liegt;
+  - ein paar Sekunden nach einer Änderung, die neue Zahl kurz golden.
+- **Ziel:** immer eine Zeile. Das Ziel geht vor dem Auftrag; der Auftrag steht dann als Zeichen
+  am Ende der Zeile. Passt der Text nicht, wird er gekürzt, und der ganze steht beim Überfahren
+  mit der Maus. In einer laufenden Welle ist die Zeile aus.
+- **Schnellleiste:** Sie reicht bis zum letzten belegten Platz (mindestens drei) statt immer
+  acht.
+- **Fähigkeiten:** Nur belegte Kacheln sind zu sehen. Anfangs ist das nur der Laternenblitz,
+  die zweite Kachel kommt mit der Wahl auf Stufe 3; der leere Platz mit der »3« ist weg.
+- **Messbar:** `hud.layoutInfo()` liefert die Tafeln jedes Bilds und das freie Rechteck.
+- **Gefundene Überlappung:** Eine lange Meldung rutschte unter die Nachtleiste – auf den
+  Bossbalken. Jetzt weicht sie auch ihm aus.
+
+**Prüfung:** Abschnitt `zonen`, 9 Prüfpunkte bestanden.
+
 ## G5: Ortskunde ✓
 
 **Auftrag (30.09.):** »Die Namen der ganzen Orte ist nicht gut.« Letzter Namensschritt aus
