@@ -5,6 +5,51 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G1: Namen mit Herkunft ✓
+
+**Auftrag (30.09.):** »Die Namen der ganzen Orte sind nicht gut, das geht besser.« Umgesetzt
+nach `recherche/storytelling-namen.md` (4.6 und 5.3): nur Text und die Übersichtskarte. Die IDs
+im Code bleiben, der Spielstand ändert sich nicht (Nr. 202).
+
+- **See und Bucht:** Mika rudert über den **Kranichsee** (Ankunft, Wegweiser, Titelmusik
+  »Herbstlied am Kranichsee«). Auf der Karte heißt die Bucht **Ellerbucht**, im Alltag bleibt
+  sie die alte Holzlände.
+- **Die Seewelle** statt »Radio Stillwald« – die Sendung gehört nicht mehr drei Leuten:
+  - Junas Vater hat den Sender im Keller in **Birkhagen** gebaut.
+  - Edda hat am Langen Jakob jeden Abend Wetter und Pegel gelesen.
+  - Juna sendet weiter, seit ihr Vater Hilfe holen ging.
+
+  Das erzählen Junas Ankunft und ihr Moment 2, Edda am Funk und zu Hause, das Radio, das
+  Funkbuch und der Kartenabend.
+- **Der Lange Jakob** heißt der alte Mast am Steg (Juna, Ziel, Stufen, Radio).
+- **Inseln:** Beim ersten Anlegen steht der Name auf einem Pfahl, einem Grenzstein oder einem
+  Brett in Kinderschrift; das Bootsmenü sagt danach »Zum …«.
+  - Wartholm.
+  - Kiekwerder – die Bank heißt »Almas Ruh«, eingeritzt: »Für A. – J. L.«
+  - Kürbisholm.
+  - Die Insel im Nebel heißt ab Marthes Begrüßung **Apfelwerder**.
+- **Sichere Orte:**
+  - Norderholm – keine zweite »Nordinsel« mehr.
+  - Forsthaus Eulenbruch, Sonnenkamp, Leuchtturm Sturmhuk, Ferienlager Glühwürmchen, Hafen von
+    Aalbek, Hammermühle, Kloster Sankt Luzia.
+  - Dazu Rosas Fährhaus am Südufer, Hannes' Tannrode und Yusufs Praxis in Birkhagen.
+
+  Briefe, Stimmen und Besuche nennen die Orte, die Grammatik sitzt: »nach Norderholm«, »ins
+  Kloster Sankt Luzia«, »aus Aalbek«.
+- **Widersprüche behoben:**
+  - Der alte Brandt ist Marthes Vater vom **Wollgrashof**, nie der Vater der Kinder
+    (»Schuld nein«).
+  - Edda wohnt im dunklen Leuchtturm am **Sturmhuk** und rudert zur Heimkehr »vom Sturmhuk
+    rüber« – nicht auf Marthes Insel.
+  - Hildes letzter Brief geht an »Frau Lindqvist, Holzlände 1 – das ist hier«.
+  - Der Schildträger trägt keine Tür mehr aus dem Forsthaus, in dem Leute wohnen.
+- **Karte (M):**
+  - Unter jedem Weg steht sein alter Name: Köhlerstieg, Holzweg, Schaftrift. Der Nachtplan
+    behält die Richtung, die Leute reden von den alten Namen.
+  - Dazu kommen die Ellerbucht und die Inseln, auf denen Mika schon war.
+
+**Prüfung:** keine eigenen Prüfpunkte – die neuen Namen laufen in den Abschnitten inseln, nebelinsel, funkbuch, netzwerk und orte mit (volle Prüfung).
+
 ## H1 – Das neue Baumenü ✓
 
 Aus der Rückmeldung vom 30.09. (»Aktuell ist alles super unübersichtlich, und mit den minimalen

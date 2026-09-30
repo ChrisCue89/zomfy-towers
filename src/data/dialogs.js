@@ -281,8 +281,8 @@ export const DIALOGE = {
     return withAnswers(lines, guestAnswers(state, 'hilde', extra));
   },
   junaTreffen: [
-    { s: 'juna', t: 'Du hast mein Signal gehört? Radio Stillwald – das bin ich! Na ja, ich und dieses Funkgerät.' },
-    { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Wenn wir ihn wieder hochkriegen …' },
+    { s: 'juna', t: 'Du hast mein Signal gehört? Die Seewelle – das bin ich! Na ja, ich und dieses Funkgerät.' },
+    { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Der Lange Jakob, so sagen sie hier. Wenn wir ihn wieder hochkriegen …' },
     { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen See. Alle, die noch unterwegs sind, finden her.' },
     { s: 'mika', t: 'Ein Leuchtfeuer. Ich bin dabei. Was brauchen wir?' },
     { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht im Baumenü, Reiter „Leute“.' },
@@ -398,7 +398,7 @@ export const DIALOGE = {
   hannesEntscheidung: (state) =>
     decision(state, 'hannes', [
       { s: 'hannes', t: 'Laute Nacht. Aber eure Barrikaden haben gehalten – ich hab sie ächzen hören, und gehalten haben sie trotzdem.' },
-      { s: 'hannes', t: 'Wenn ihr mich wollt, bleib ich. Nachts flick ich, was die Horde ankratzt. Wenn nicht, ist’s auch recht: Im Forsthaus am Nordufer sucht man immer eine Hand.' },
+      { s: 'hannes', t: 'Wenn ihr mich wollt, bleib ich. Nachts flick ich, was die Horde ankratzt. Wenn nicht, ist’s auch recht: Im Forsthaus Eulenbruch am Nordufer sucht man immer eine Hand.' },
     ]),
   hannes: (state) =>
     resident(state, 'hannes', [
@@ -418,7 +418,7 @@ export const DIALOGE = {
   claraEntscheidung: (state) =>
     decision(state, 'clara', [
       { s: 'clara', t: 'Ich hab die halbe Nacht den Türmen zugehört. Einer quietscht in C-Dur. Das lässt sich richten.' },
-      { s: 'clara', t: 'Ich würde bleiben – dann wird Flicken billiger, und beim Basteln spar ich dir Teile. Sonst geh ich zum alten Leuchtturm. Da soll eine Werkstatt sein.' },
+      { s: 'clara', t: 'Ich würde bleiben – dann wird Flicken billiger, und beim Basteln spar ich dir Teile. Sonst geh ich zum Leuchtturm am Sturmhuk. Da soll eine Werkstatt sein.' },
     ]),
   clara: (state) =>
     resident(state, 'clara', [
@@ -438,7 +438,7 @@ export const DIALOGE = {
   lotteEntscheidung: (state) =>
     decision(state, 'lotte', [
       { s: 'lotte', t: 'Guten Morgen! Ich hab meinen zweiten Handschuh verloren. Und dafür einen Stern gefunden. Na ja, einen Knopf. Er glänzt.' },
-      { s: 'lotte', t: 'Wenn ich bleibe, bastle ich an euren Lampen – dann leuchten sie weiter. Sonst gehe ich zum Ferienlager am See. Da sind Kinder, und Kinder brauchen Laternen.' },
+      { s: 'lotte', t: 'Wenn ich bleibe, bastle ich an euren Lampen – dann leuchten sie weiter. Sonst gehe ich ins Ferienlager Glühwürmchen am See. Da sind Kinder, und Kinder brauchen Laternen.' },
     ]),
   lotte: (state) =>
     resident(state, 'lotte', [
@@ -459,7 +459,7 @@ export const DIALOGE = {
   gretaEntscheidung: (state) =>
     decision(state, 'greta', [
       { s: 'greta', t: 'Unruhige Nacht. Zwei Fallen ausgelöst. Gut so.' },
-      { s: 'greta', t: 'Ich bleibe, wenn ihr wollt. Stell die Fallen jeden Morgen neu. Sonst: Nordinsel. Mein Bruder.' },
+      { s: 'greta', t: 'Ich bleibe, wenn ihr wollt. Stell die Fallen jeden Morgen neu. Sonst: Norderholm. Mein Bruder.' },
     ]),
   greta: (state) =>
     resident(state, 'greta', [
@@ -479,7 +479,7 @@ export const DIALOGE = {
   fieteEntscheidung: (state) =>
     decision(state, 'fiete', [
       { s: 'fiete', t: 'Gut geschlafen. Euer Feuer knackt wie der Ofen auf meinem alten Kutter.' },
-      { s: 'fiete', t: 'Wenn ich bleibe, rede ich mit Balduin – mit mir handelt er anständig, wir kennen uns von früher. Sonst geh ich zum alten Hafen. Da liegen noch Boote.' },
+      { s: 'fiete', t: 'Wenn ich bleibe, rede ich mit Balduin – mit mir handelt er anständig, wir kennen uns von früher. Sonst geh ich runter nach Aalbek, zum alten Hafen. Da liegen noch Boote.' },
     ]),
   fiete: (state) =>
     resident(state, 'fiete', [
@@ -522,7 +522,7 @@ export const DIALOGE = {
       { s: 'marthe', t: 'Edda! Die Frau vom Funk. Jeden Morgen hat sie uns gesagt, dass wir durchhalten sollen. Dann kam nichts mehr.' },
       { s: 'mika', t: 'Sie funkt noch. Mit mir.' },
       { s: 'marthe', t: 'Dann lebt sie. Gut. … Gut.' },
-      { s: 'marthe', t: 'Ich bin Marthe. Ich hab früher Boote gebaut, drüben am alten Hof. Das sind Pim und Lu. Pim, sag Hallo. Lu – nicht mit Äpfeln werfen.' },
+      { s: 'marthe', t: 'Ich bin Marthe. Ich hab früher Boote gebaut, drüben auf dem Wollgrashof, bei meinem Vater. Jetzt wohnen wir hier, auf dem Apfelwerder. Das sind Pim und Lu. Pim, sag Hallo. Lu – nicht mit Äpfeln werfen.' },
       { s: 'pim', t: 'Hast du ein Boot? Ein echtes? Mit Riemen und allem?' },
       { s: 'lu', t: cat ? 'Gibt es bei euch eine Katze?' : 'Gibt es bei euch Tiere?' },
       { s: 'mika', t: cat ? 'Eine rote. Sie heißt Mieze.' : 'Einen Hund. Er heißt Knopf, und er bellt die Krähen an.' },
@@ -680,7 +680,7 @@ export const DIALOGE = {
   ],
   // --- Ida, die Försterin ---
   idaTreffen: [
-    { s: 'ida', t: 'Hallo. Ida. Ich war Försterin, drüben im Revier am Nordufer.' },
+    { s: 'ida', t: 'Hallo. Ida. Ich war Försterin, drüben im Revier Eulenbruch am Nordufer.' },
     { s: 'ida', t: 'Der Moder frisst den Waldboden. Aber die alten Bäume stehen noch. Die sind zäher als wir.' },
     { s: 'mika', t: 'Bleib heute Nacht am Feuer, Ida.' },
     { s: 'ida', t: 'Danke. (legt die Hand an einen Stamm) Ist doch in Ordnung, Gustav, oder?' },
@@ -690,7 +690,7 @@ export const DIALOGE = {
   idaEntscheidung: (state) =>
     decision(state, 'ida', [
       { s: 'ida', t: 'Gustav hat die Nacht gut überstanden. Ich auch.' },
-      { s: 'ida', t: 'Wenn ich bleibe, pflege ich eure Bäume – dann wachsen sie schneller nach, wenn du fällst. Sonst geh ich zum Forsthaus. Da braucht man mich auch.' },
+      { s: 'ida', t: 'Wenn ich bleibe, pflege ich eure Bäume – dann wachsen sie schneller nach, wenn du fällst. Sonst geh ich zum Forsthaus Eulenbruch. Da braucht man mich auch.' },
     ]),
   ida: (state) =>
     resident(state, 'ida', [
@@ -704,14 +704,14 @@ export const DIALOGE = {
   rosaTreffen: [
     { s: 'rosa', t: 'Hallo! Oh, ein Feuer! Wer kocht hier? Du? Lass mal riechen. (schnuppert) Hm. Fehlt Salz.' },
     { s: 'mika', t: 'Ich hab noch gar nichts gekocht.' },
-    { s: 'rosa', t: 'Eben. Rosa, Köchin. Ich hatte ein Gasthaus am Südufer, bis der Moder die Speisekammer gefressen hat.' },
+    { s: 'rosa', t: 'Eben. Rosa, Köchin. Ich hatte das Fährhaus am Südufer, bis der Moder die Speisekammer gefressen hat.' },
     { s: 'mika', t: 'Bleib heute Nacht am Feuer.' },
     { s: 'rosa', t: 'Gern – und morgen früh gibt’s was Warmes. Keine Widerrede.' },
   ],
   rosaEntscheidung: (state) =>
     decision(state, 'rosa', [
       { s: 'rosa', t: 'Guten Morgen! Ich hab schon Tee gemacht. Und Brei. Und mir Sorgen, weil ihr so wenig esst.' },
-      { s: 'rosa', t: 'Wenn ich bleibe, wird eure Suppe eine richtige Suppe – die gibt Kraft für die ganze Nacht. Sonst gehe ich zur Alten Farm. Da gibt es Hühner.' },
+      { s: 'rosa', t: 'Wenn ich bleibe, wird eure Suppe eine richtige Suppe – die gibt Kraft für die ganze Nacht. Sonst gehe ich zum Sonnenkamp. Da gibt es Hühner.' },
     ]),
   rosa: (state) =>
     resident(state, 'rosa', [
@@ -719,7 +719,7 @@ export const DIALOGE = {
       'Wer hungrig kämpft, kämpft schlecht. Das ist Wissenschaft.',
       'Bert isst alles. Das ist schön und gleichzeitig beleidigend.',
       'Kürbis geht für alles: Suppe, Kuchen, Brot. Nur nicht für Kaffee. Hab ich probiert.',
-      'In meinem Gasthaus stand auf jedem Tisch eine Kerze. Hier ist das Feuer die Kerze.',
+      'Im Fährhaus stand auf jedem Tisch eine Kerze. Hier ist das Feuer die Kerze.',
     ]),
   // --- Anton, der Musiker ---
   antonTreffen: [
@@ -731,7 +731,7 @@ export const DIALOGE = {
   antonEntscheidung: (state) =>
     decision(state, 'anton', [
       { s: 'anton', t: 'Guten Morgen! Ich hab die ganze Nacht an einer Strophe gefeilt. Sie reimt sich auf „Barrikade“.' },
-      { s: 'anton', t: 'Wenn ich bleibe, spiele ich abends am Feuer – dann schlaft ihr alle gemütlicher. Sonst ziehe ich zum Ferienlager. Kinder sind ein dankbares Publikum.' },
+      { s: 'anton', t: 'Wenn ich bleibe, spiele ich abends am Feuer – dann schlaft ihr alle gemütlicher. Sonst ziehe ich ins Ferienlager Glühwürmchen. Kinder sind ein dankbares Publikum.' },
     ]),
   anton: (state) =>
     resident(state, 'anton', [
@@ -751,7 +751,7 @@ export const DIALOGE = {
   emilEntscheidung: (state) =>
     decision(state, 'emil', [
       { s: 'emil', t: 'Morgen. Ich hab mir den Boden angesehen. Er ist gut. Er weiß es nur noch nicht.' },
-      { s: 'emil', t: 'Wenn ich bleibe, tragen eure Beete mehr, und für Dr. Yusufs Tee zieh ich Kräuter. Sonst geh ich zur Alten Farm – deren Garten braucht Hilfe.' },
+      { s: 'emil', t: 'Wenn ich bleibe, tragen eure Beete mehr, und für Dr. Yusufs Tee zieh ich Kräuter. Sonst geh ich zum Sonnenkamp – deren Garten braucht Hilfe.' },
     ]),
   emil: (state) =>
     resident(state, 'emil', [
@@ -764,7 +764,7 @@ export const DIALOGE = {
   // --- Frieda, die Schmiedin ---
   friedaTreffen: [
     { s: 'frieda', t: 'HALLO! Oh. Zu laut? Tut mir leid. Schmiede. Da wird man ein bisschen taub.' },
-    { s: 'frieda', t: 'Frieda. Ich hatte eine Schmiede an der Wassermühle, bis der Moder das Wasserrad gefressen hat.' },
+    { s: 'frieda', t: 'Frieda. Ich hatte eine Schmiede an der Hammermühle, bis der Moder das Wasserrad gefressen hat.' },
     { s: 'frieda', t: '(klopft an eine Barrikade) Holz. Hm. Das kann ich besser.' },
     { s: 'mika', t: 'Bleib heute Nacht am Feuer.' },
     { s: 'frieda', t: 'Gern. Ich schlafe wie ein Amboss.' },
@@ -772,7 +772,7 @@ export const DIALOGE = {
   friedaEntscheidung: (state) =>
     decision(state, 'frieda', [
       { s: 'frieda', t: 'MORGEN! Oh – Morgen. Ich hab von Eisen geträumt.' },
-      { s: 'frieda', t: 'Wenn ich bleibe, schmiede ich eure Metallbarrikaden – mit halb so viel Schrott. Sonst geh ich zurück zur Wassermühle. Vielleicht dreht sich das Rad wieder, wenn einer hilft.' },
+      { s: 'frieda', t: 'Wenn ich bleibe, schmiede ich eure Metallbarrikaden – mit halb so viel Schrott. Sonst geh ich zurück zur Hammermühle. Vielleicht dreht sich das Rad wieder, wenn einer hilft.' },
     ]),
   frieda: (state) =>
     resident(state, 'frieda', [
@@ -793,12 +793,12 @@ export const DIALOGE = {
   maraEntscheidung: (state) =>
     decision(state, 'mara', [
       { s: 'mara', t: 'Die Horde kam gestern zuerst über den Weg, den ich vorhergesagt hab. Nur so nebenbei.' },
-      { s: 'mara', t: 'Wenn ich bleibe, lauf ich jeden Morgen die Wege ab – dann weißt du früh, woher sie kommen. Sonst geh ich zum Kloster am Hang. Von dort sieht man drei Täler.' },
+      { s: 'mara', t: 'Wenn ich bleibe, lauf ich jeden Morgen die Wege ab – dann weißt du früh, woher sie kommen. Sonst geh ich hinauf nach Sankt Luzia, ins Kloster am Hang. Von dort sieht man drei Täler.' },
     ]),
   mara: (state) =>
     resident(state, 'mara', [
       'Schon gesehen. Alles schon gesehen. Außer Bert beim Tanzen. Das will ich noch sehen.',
-      'Vierzehn Schlurfer am Mittelweg heute Nacht. Oder fünfzehn. Einer war ein Busch.',
+      'Vierzehn Schlurfer am Holzweg heute Nacht. Oder fünfzehn. Einer war ein Busch.',
       'Karten zeichnen ist einfach. Man muss nur überall gewesen sein.',
       'Die Krähen hier sind gute Späher. Ich hab mit ihnen einen Vertrag.',
       'Ich war schon überall. Hier bin ich am liebsten.',
@@ -814,7 +814,7 @@ export const DIALOGE = {
   paulaEntscheidung: (state) =>
     decision(state, 'paula', [
       { s: 'paula', t: 'Morgen. Ich hab heute Nacht zwei Socken gestopft. Nicht meine.' },
-      { s: 'paula', t: 'Wenn ich bleibe, stelle ich jeden Morgen wieder auf, was die Horde umgeworfen hat, und flicke die Zelte. Sonst geh ich zum Kloster am Hang. Die Schwestern brauchen eine Nadel.' },
+      { s: 'paula', t: 'Wenn ich bleibe, stelle ich jeden Morgen wieder auf, was die Horde umgeworfen hat, und flicke die Zelte. Sonst geh ich ins Kloster Sankt Luzia. Die Schwestern brauchen eine Nadel.' },
     ]),
   paula: (state) =>
     resident(state, 'paula', [
@@ -897,7 +897,7 @@ export const DIALOGE = {
   eddaHeimkehr: (state) => [
     { s: 'eddaHier', t: 'Na? Erkennst du mich ohne das Rauschen?' },
     { s: 'mika', t: 'Edda! Du bist … echt.' },
-    { s: 'eddaHier', t: 'Ziemlich echt, ja. Und ziemlich durchgefroren. Ich bin die halbe Nacht gerudert – von da drüben, wo man euer Feuer sieht.' },
+    { s: 'eddaHier', t: 'Ziemlich echt, ja. Und ziemlich durchgefroren. Ich bin die halbe Nacht gerudert, vom Sturmhuk rüber. Von da oben sieht man euer Feuer.' },
     { s: 'eddaHier', t: `Ich hab dir jeden Abend zugehört, ${state.player?.name || 'Mika'}. Wie du das Tor geflickt hast. Wie du die Leute aufgenommen hast. Ich wusste nicht, ob ich mich zurücktraue.` },
     { s: 'eddaHier', t: 'Das Haus riecht nach Suppe. Früher roch es nach Fisch und Teer. Das hier ist besser.' },
     { s: 'mika', t: 'Es ist dein Haus. Soll ich …' },
@@ -909,7 +909,7 @@ export const DIALOGE = {
       [
         { s: 'eddaHier', t: 'Der See ist ruhig heute. Ich hab sogar sein Brummeln im Winter vermisst.' },
         { s: 'eddaHier', t: 'Hier hat mein Großvater gestanden und nach den Booten geschaut. Jetzt steh ich hier und schau nach euch.' },
-        { s: 'eddaHier', t: 'Der alte Funkturm. Wir hatten eine Sendung, »Radio Stillwald«. Drei Hörer. Einer davon war Balduin.' },
+        { s: 'eddaHier', t: 'Der Lange Jakob. Hier hab ich jeden Abend vorgelesen, für die Seewelle – das Wetter und den Pegel. Drei Hörer. Einer davon war Balduin.' },
         { s: 'eddaHier', t: 'Wenn abends auf den Inseln ein Licht angeht, winke ich. Man weiß ja nie.' },
         { s: 'eddaHier', t: 'Du hast aus meiner Holzlände ein Zuhause gemacht. Für viele. Weißt du das eigentlich?' },
         { s: 'eddaHier', t: 'Der Moder schläft jetzt. Im Frühjahr wacht er wieder auf – aber dann sind wir auch wach.' },
@@ -928,7 +928,7 @@ export const DIALOGE = {
         { s: 'edda', t: 'Der Moder hört auf Licht und Wärme. Merk dir das. Es wird wichtig.' },
         { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
         { s: 'edda', t: 'Krrz … schlechter Empfang heute. Das liegt am Wetter. Oder am Moder. Oder an mir.' },
-        { s: 'edda', t: 'Radio Stillwald? … So. Dann hat also doch jemand zugehört.' },
+        { s: 'edda', t: 'Die Seewelle? … So. Dann hat also doch jemand zugehört.' },
         // N8: Wenn Marthe mit den Kindern in der Bucht wohnt
         ...(state.isles?.fog?.stage === 4
           ? [
@@ -969,9 +969,9 @@ export const DIALOGE = {
           { s: 'mika', t: pick(['Heute nur Rauschen. Vielleicht morgen wieder.', 'Rauschen. Aber irgendwo da draußen ist jemand. Ich weiß es.', 'Ich drehe am Knopf. Nichts. Na gut.'], state.time.day) },
         ]
       : [
-          { s: 'radio', t: '…krrzz… hier ist … Radio Stillwald … falls uns jemand hört …' },
+          { s: 'radio', t: '…krrzz… hier ist … die Seewelle … falls uns jemand hört …' },
           { s: 'radio', t: '…bleibt auf festem Boden … nachts Licht an, Türen zu … krrzz…' },
-          { s: 'radio', t: '…der alte Mast am Steg … wenn ihn jemand wieder … krrrzzz…' },
+          { s: 'radio', t: '…der Lange Jakob, der alte Mast am Steg … wenn ihn jemand wieder … krrrzzz…' },
           { s: 'mika', t: 'Da war eine Stimme! Da draußen ist noch jemand.' },
         ],
 
@@ -1030,7 +1030,7 @@ export const DIALOGE = {
   ],
 
   schild: [
-    { s: 'schild', t: '„→ Fischerhaus am Stillsee“\n„← Moosbach 12 km – Weg gesperrt“\n„Bitte Füße abtreten.“' },
+    { s: 'schild', t: '„→ Alte Holzlände am Kranichsee“\n„← Birkhagen 12 km – Weg gesperrt“\n„Bitte Füße abtreten.“' },
     { s: 'mika', t: 'Füße abtreten. Die Schlurfer lesen das bestimmt.' },
   ],
 
@@ -1175,10 +1175,10 @@ export const DIALOGE = {
   ],
   hildeMoment2: [
     { s: 'hilde', t: 'Weißt du, was ich am meisten vermisse? Nicht die Leute. Die sind ja noch da, irgendwo, hoffentlich.' },
-    { s: 'hilde', t: 'Den letzten Brief. Der steckte noch in meiner Tasche, als der Moder kam. An Frau Lindqvist, Am Seeufer 4.' },
-    { s: 'hilde', t: 'Aufgemacht hab ich ihn nie. Das tut man nicht.' },
-    { s: 'mika', t: 'Vielleicht ist sie noch da. Irgendwo am Ufer.' },
-    { s: 'hilde', t: 'Vielleicht. Wenn Juna mal jemanden am See erreicht, frag ich nach. So lange trag ich ihn eben weiter.' },
+    { s: 'hilde', t: 'Den letzten Brief. Der steckte noch in meiner Tasche, als der Moder kam. An Frau Lindqvist, Holzlände 1.' },
+    { s: 'hilde', t: 'Holzlände 1, Kindchen. Das ist hier. Das ist dein Haus.' },
+    { s: 'mika', t: 'Und Frau Lindqvist?' },
+    { s: 'hilde', t: 'Fort, seit drei Herbsten. Aufgemacht hab ich ihn nie, das tut man nicht. Ich trag ihn, bis sie wiederkommt. Die Post gibt nicht auf.' },
   ],
   hildeMoment3: [
     { s: 'hilde', t: 'Mikachen. Setz dich. Ich hab was für dich.' },
@@ -1197,8 +1197,8 @@ export const DIALOGE = {
   ],
   junaMoment2: [
     { s: 'juna', t: 'Käpt’n? Darf ich dir was sagen, ohne dass du es weitererzählst?' },
-    { s: 'juna', t: 'Radio Stillwald – das gab es wirklich. Mein Vater hat es gemacht, aus dem Keller, jeden Abend um acht.' },
-    { s: 'juna', t: 'Als der Moder kam, hat er gesagt: Sende weiter, egal was passiert. Dann ist er losgegangen, Hilfe holen.' },
+    { s: 'juna', t: 'Die Seewelle – das gab es wirklich. Mein Vater hat den Sender gebaut, unten in unserem Keller in Birkhagen. Und eine Frau hat vorgelesen, jeden Abend um acht: das Wetter und den Pegel.' },
+    { s: 'juna', t: 'Wie sie hieß, weiß ich nicht mal. Als der Moder kam, hat Papa gesagt: Sende weiter, egal was passiert. Dann ist er losgegangen, Hilfe holen.' },
     { s: 'mika', t: 'Und du sendest.' },
     { s: 'juna', t: 'Jeden Abend um acht. Wenn er irgendwo ein Radio hat, weiß er, dass ich noch da bin. (lacht, ein bisschen zu laut) Na ja. Und jetzt weiß er auch, dass es hier Kürbisse gibt.' },
   ],
@@ -1241,7 +1241,7 @@ export const DIALOGE = {
     { s: 'yusuf', t: 'Dann Ringelblumensalbe. Das mit dem Holzhacken war ohnehin nur als Scherz gemeint.' },
   ],
   yusufMoment2: [
-    { s: 'yusuf', t: 'Ich hatte eine Praxis im Dorf hinter dem Wald. Hunde, Katzen, einmal ein Esel mit Liebeskummer.' },
+    { s: 'yusuf', t: 'Ich hatte eine Praxis in Birkhagen, hinter dem Wald. Hunde, Katzen, einmal ein Esel mit Liebeskummer.' },
     { s: 'yusuf', t: 'Als der Moder kam, habe ich die Tiere freigelassen. Alle. Die Käfige offen, die Tür offen. Lauft.' },
     { s: 'yusuf', t: 'Manchmal frage ich mich, ob das richtig war.' },
     { s: 'mika', t: 'Knopf ist auch irgendwo losgelaufen. Und jetzt ist er hier.' },
@@ -1251,7 +1251,7 @@ export const DIALOGE = {
     { s: 'yusuf', t: 'Ich möchte dir etwas schenken. Es ist albern. Das ist der Sinn der Sache.' },
     { s: 'mika', t: 'Ein Hut? Mit einem … Plüschschaf obendrauf?' },
     { s: 'yusuf', t: 'Mein Doktorhut. Die Kollegen haben ihn gebastelt, als ich fertig war. Das Schaf war meine erste Patientin.' },
-    { s: 'yusuf', t: 'Ich habe ihn aus dem Dorf mitgenommen statt einer zweiten Hose. Man muss Prioritäten setzen.' },
+    { s: 'yusuf', t: 'Ich habe ihn aus der Praxis mitgenommen statt einer zweiten Hose. Man muss Prioritäten setzen.' },
     { s: 'yusuf', t: 'Stell ihn ins Regal. Wenn es schwer wird, schau ihn an. Niemand kann traurig bleiben, wenn ein Schaf auf ihn herabblickt.' },
   ],
 
@@ -1265,7 +1265,7 @@ export const DIALOGE = {
   hannesMoment2: [
     { s: 'hannes', t: 'Auf der Walz darf man seinem Heimatort nicht näher als fünfzig Kilometer kommen. Drei Jahre und einen Tag.' },
     { s: 'hannes', t: 'Ich hatte noch vier Monate. Dann wär ich heimgegangen, mit dem Wanderbuch voller Stempel.' },
-    { s: 'hannes', t: 'Jetzt gibt es den Ort nicht mehr. Der Moder hat ihn eingewickelt wie ein Päckchen.' },
+    { s: 'hannes', t: 'Jetzt gibt es Tannrode nicht mehr. Der Moder hat es eingewickelt wie ein Päckchen.' },
     { s: 'mika', t: 'Dann bist du jetzt für immer auf der Walz?' },
     { s: 'hannes', t: 'Oder angekommen. (klopft auf den Balken) Kommt drauf an, wie man’s sieht. Ich seh’s gerade ganz gut.' },
   ],

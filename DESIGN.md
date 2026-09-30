@@ -129,7 +129,7 @@ Struktur, wird sie angepasst – neue Ideen kommen nicht bloß daneben.
 
 ## 1. Vision
 
-Nach dem Zusammenbruch ist die Welt still geworden. Am Ufer des **Stillsees**,
+Nach dem Zusammenbruch ist die Welt still geworden. Am Ufer des **Kranichsees**,
 eines großen, kalten Sees im Norden, steht ein altes Fischerhaus mit einem
 wackligen Steg. Die Birken leuchten orange, zwischen den Tannen liegt Nebel,
 und morgens ziehen Krähen über das Wasser. Es ist keine Welt voller
@@ -142,7 +142,7 @@ reden, am Steg mit Balduin handeln. Höchstens ein einzelner Schlurfer
 verirrt sich her – sonst nur Herbstwind und Arbeit.
 
 **Die Nacht** ist Tower Defense an einem Netz aus Wegen: Die Horde kommt aus
-dem Stillwald über alte Holzfäller- und Wildpfade, die sich verzweigen und
+dem Dämmerwohld über alte Holzfäller- und Wildpfade, die sich verzweigen und
 kurz vor der Bucht zusammenlaufen. Türme neben den Wegen schießen,
 Barrikaden auf den Wegen stauen die Horde und gehen zu Bruch. Was durchkommt,
 erreicht den Hof vor dem Haus – dort kämpft die Figur selbst. Jede Nacht wird
@@ -327,23 +327,24 @@ warmes Licht macht den Moder müde und die Schlurfer langsam (Laternen, das
 Leuchtfeuer). Die Städte sind leer, das Netz ist still; wer übrig ist, lebt
 verstreut an Seen und auf Inseln.
 
-**Warum sie nur über die Wege kommen (M15):** Im Stillwald ist der Boden
+**Warum sie nur über die Wege kommen (M15):** Im Dämmerwohld ist der Boden
 unter dem Laub ein einziges Modergeflecht – weich wie Moos, zäh wie Leim.
 Wer abseits hineintritt, sinkt bis zu den Knien ein, Schlurfer genauso wie
 Mika. Fest ist der Boden nur, wo nichts wächst: auf den alten
 **Holzfällerwegen** (geschottert, damit die Laster durchkamen), auf
-Wildwechseln und der gesperrten Straße nach Moosbach. Man sieht es: Im
+Wildwechseln und der gesperrten Straße nach Birkhagen. Man sieht es: Im
 Unterholz liegen violette Matten und Fäden, blasse Moderpilze und
 Hexenringe, die nachts glimmen. **Wasser** spült den Moder ab – die
 Seeseite und die Inseln (Fels und Wind) sind frei; von dort kommt Balduin.
 
 ### 4.2 Der Ort
 
-Eine kleine **Bucht am Stillsee**: ein altes Fischerhaus mit Steg und
+Eine kleine **Bucht am Kranichsee** (auf der Karte die Ellerbucht, im Alltag die alte
+Holzlände, G1): ein altes Fischerhaus mit Steg und
 Veranda, ein Hof mit Feuerstelle, ein verwilderter Garten. Früher war hier
 die **alte Holzlände**: Die Holzfäller rollten ihre Stämme ins Wasser –
 deshalb laufen alle Wege aus dem Wald genau hier zusammen. Landeinwärts
-steigt der **Stillwald** an – dicht, felsig, voller Hänge, der Boden voller
+steigt der **Dämmerwohld** an – dicht, felsig, voller Hänge, der Boden voller
 Moder. Nur ein paar alte **Holzfäller- und Wildpfade** führen hindurch; sie
 verzweigen sich und laufen kurz vor der Bucht zusammen. Über sie kommt die
 Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
@@ -362,7 +363,7 @@ Mikas Aufgabe, wie Edda sie bei der Ankunft über Funk erklärt (N5): **die Näc
 halten** (Türme neben die Wege, Barrikaden darauf, zur Not selbst am Hof),
 **ein Zuhause bauen** und **Zuflucht sein** für alle, die noch unterwegs
 sind. Aus dem alten Fischerhaus wird ein Zuhause, aus dem Zuhause ein
-Zufluchtsort für andere Überlebende. Mit Juna wird der alte **Leuchtmast am Steg** wieder
+Zufluchtsort für andere Überlebende. Mit Juna wird der alte Mast am Steg, der **Lange Jakob**, wieder
 zum **Leuchtfeuer** über dem See, das alle, die noch unterwegs sind, in die
 Bucht führt und die Horde zurückdrängt. Und irgendwann stellt sich die Frage,
 was Balduin eigentlich mit all den Zombieteilen macht. Danach geht das Spiel
@@ -436,7 +437,7 @@ Bild, z nach Süden = unten im Bild; die Kamera blickt nach Norden):
  └──────────────┘   (Barrikaden liegen auf den Wegen ══)                  ~ ~ ~
 ```
 
-- **Rechts** liegt der Stillsee. Am Ufer steht das Fischerhaus mit Steg, davor
+- **Rechts** liegt der Kranichsee. Am Ufer steht das Fischerhaus mit Steg, davor
   der **Hof** – die letzte Verteidigung.
 - **Links** liegt die Landseite mit dem dichten Wald und mehreren **Spawns**
   am Kartenrand. Von dort führen **Zuführungen** (etwa drei) nach rechts; sie
@@ -816,7 +817,7 @@ darauf ein und reißt sie nieder, wenn die Türme nicht genug Schaden machen.
   Funk (was heute Nacht kommt: Arten, Anführer – keine feste Richtung); Bert
   flickt billiger und nachts Barrikaden
   und Türme; Dr. Yusuf kocht Tee und verarztet Mika einmal je Nacht.
-- **Roter Faden – das Leuchtfeuer:** Mit Juna in drei Stufen am Leuchtmast
+- **Roter Faden – das Leuchtfeuer:** Mit Juna in drei Stufen am Langen Jakob
   auf dem Steg: Leiter und Plattform, Antenne mit Kabeln, Leuchtfeuer
   (braucht einen Moderkern). Das Leuchtfeuer brennt jede Nacht über dem See
   und bremst Schlurfer in seinem Schein.
@@ -902,7 +903,7 @@ der Klang startet mit der ersten Eingabe.
   das in drei Stufen dichter wird, je näher die Horde dem Haus und Mika
   kommt. Zwischen den ruhigen Stücken bleibt Stille für Wind, Vögel und
   Wellen. Balduins Ankunftsfanfare (M9.1) duckt die Musik.
-- **Titelmusik (N2):** »Herbstlied am Stillsee« (G-Dur, 72 Schläge pro Minute:
+- **Titelmusik (N2):** »Herbstlied am Kranichsee« (G-Dur, 72 Schläge pro Minute:
   Spieluhr und Flöte im Wechsel über E-Piano, Gitarre und weichem Bass, im
   Mittelteil Streicher) läuft auf dem Titelbild in Schleife und macht beim
   Losspielen gleich Platz. Davor, auf dem Startbild, die **Spieluhr von Tales
@@ -1877,6 +1878,19 @@ misst es bei jedem Lauf.
 Modellen, Preisen in der Hauptschrift und einem Bauzettel; Preis und Grund am Baugeist,
 Rückfragen auf der Kachel, »weiter« statt stiller Kürzung, Reiter »Helfer« und »Leute«, Edda
 kompakt unten links (Nr. 201).
+
+#### G1 – Namen mit Herkunft ✓
+
+*Umgesetzt (30.09.2026):* See, Bucht, Inseln, Dörfer und sichere Orte tragen Namen mit Herkunft
+(Nr. 202):
+
+- Kranichsee, Ellerbucht und die alte Holzlände.
+- Die Inseln Wartholm, Kiekwerder und Kürbisholm, dazu der Apfelwerder.
+- Norderholm, Eulenbruch, Sonnenkamp, Sturmhuk, Glühwürmchen, Aalbek, Hammermühle, Sankt Luzia.
+
+Die Seewelle ist jetzt eine Geschichte (Junas Vater baut, Edda liest, Juna sendet), der alte
+Mast heißt der Lange Jakob, Brandt ist Marthes Vater, Edda wohnt am Sturmhuk. Die Karte zeigt
+die alten Wegnamen, die Bucht und die besuchten Inseln. Nur Text und Karte, die IDs bleiben.
 
 ## 9. Ideen-Parkplatz
 

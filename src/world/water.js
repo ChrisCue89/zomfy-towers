@@ -1,4 +1,4 @@
-// Der Stillsee (Meilenstein 9): Der Seegrund ist ins Gelände gemalt; darüber
+// Der Kranichsee (Meilenstein 9): Der Seegrund ist ins Gelände gemalt; darüber
 // liegen zwei Schichten Wellenkämme, die langsam treiben. Die Kämme sind
 // einzelne Texel einer kleinen, sich wiederholenden Textur – alles andere
 // wird verworfen (alphaTest), damit Tiefenpuffer und Umrisse stimmen. Die

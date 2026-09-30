@@ -239,7 +239,7 @@ export const SCENES = [
     when: 'abend',
     roles: [['verlaesslich', 'stolz'], ['vertraeumt', 'herzlich']],
     lines: [
-      [0, 'Morgen setzen wir die Barrikade am Nordweg neu. Früh.'],
+      [0, 'Morgen setzen wir die Barrikade am Köhlerstieg neu. Früh.'],
       [1, 'Und danach backen wir was. Irgendwas mit Kürbis.'],
       [0, 'Erst die Barrikade.'],
       [1, 'Erst die Barrikade. Dann der Kürbis. Abgemacht.'],

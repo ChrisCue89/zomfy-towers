@@ -9,7 +9,7 @@
 //          Spieluhr. Läuft auch auf dem Titelbild.
 //   abend  »Laternenzeit« – d-Moll, 66 Schläge pro Minute: Streicherfläche,
 //          E-Piano, einzelne Gitarrentöne, eine etwas wehmütige Flöte.
-//   titel  »Herbstlied am Stillsee« (N2) – G-Dur, 72 Schläge pro Minute: Spieluhr
+//   titel  »Herbstlied am Kranichsee« (N2) – G-Dur, 72 Schläge pro Minute: Spieluhr
 //          und Flöte im Wechsel über E-Piano, Gitarre und weichem Bass, im
 //          Mittelteil Streicher. Läuft auf dem Titelbild, nach kurzer Pause
 //          wieder von vorn. Davor, auf dem Startbild, die Spieluhr von Tales of

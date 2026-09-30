@@ -1,5 +1,5 @@
 // Die Karte an der Bucht (Meilenstein 9, DESIGN.md 0 und 6.2). Rechts liegt
-// der Stillsee mit der festen Bucht (Haus, Steg, Hof), links die Landseite
+// der Kranichsee mit der festen Bucht (Haus, Steg, Hof), links die Landseite
 // mit einem Wegenetz, das bei jedem neuen Spiel aus einem eigenen Startwert
 // entsteht: drei Zuführungen von den Spawns am linken Rand, die sich treffen
 // und kurz vor dem Hof in einen gemeinsamen letzten Abschnitt münden.

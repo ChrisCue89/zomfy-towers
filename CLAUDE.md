@@ -55,6 +55,10 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
   Mikas Bucht. Wasser spült den Moder ab, Licht und Wärme machen ihn müde.
   Mikas Aufgabe: die Nächte halten, ein Zuhause bauen, Zuflucht sein. Neue
   Inhalte bleiben in dieser Geschichte.
+- **Namen mit Herkunft (G1, Nr. 202):** der Kranichsee, die Ellerbucht (im Alltag die alte
+  Holzlände), der Lange Jakob am Steg, die Seewelle im Radio (Junas Vater baute den Sender, Edda
+  las, Juna sendet), die Inseln Wartholm, Kiekwerder, Kürbisholm und Apfelwerder, Edda am
+  Sturmhuk. Neue Orte bekommen Namen mit Herkunft statt Platzhaltern; im Code bleiben die IDs.
 - **Kein Umlenken (OFFENE-FRAGEN Nr. 66, entschieden):** Die Horde wird nicht
   auf Umwege gelenkt, das Wegenetz bleibt ein Baum; die Wegvorschau bleibt.
 - **Ein Spiel hat ein Ende (Nr. 117):** Finale nach einem Herbst, danach
@@ -245,7 +249,7 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Quellen), terrain, water (Wellen auf dem See), nature,
                       shelter (das Haus von außen, Stufen), interior (Innenraum
                       als eigenes Bild: Räume je Stufe, Licht, Tür, M11),
-                      props (Steg, Leuchtmast, Wrack,
+                      props (Steg, Langer Jakob, Wrack,
                       Warnpfähle, Herbstschmuck: Kürbisse, Kürbislaternen,
                       Laubhaufen, Treibholz, Sitzplätze der Krähen,
                       Briefkasten mit Fahne, Signalfeuer auf den Inseln,
@@ -1144,7 +1148,7 @@ Grundprinzipien:
    2/2), beim zweiten Besuch flickt Marthe den Kahn, am Morgen danach gleitet er an
    den Steg, Marthe am Steg, die Kinder spielen im Hof, die Reuse gibt Fisch (einmal
    am Tag), Lu erzählt, abends schlafen sie im Kahn, Hilde bleibt in der Bucht,
-   während Mika auf der Nordinsel ist, Speichern v31 und Migration v30 → v31
+   während Mika auf dem Wartholm ist, Speichern v31 und Migration v30 → v31
    (Bilder: nebelfahrt, marthe-treffen, nebelinsel, marthe-bucht); ab N8 (Abschnitt
    `funkbuch`): drei Seiten auf den Inseln mit echten Tasten (unter dem Stein – der
    bleibt –, in der Dose, im Zelt), das Herbstbuch mit Esc, S, E und D bis »Funkbuch«
@@ -1163,7 +1167,7 @@ Grundprinzipien:
    aus den Modellen (Kacheln 48 × 58, der Bolzenwerfer mit über 300 Punkten), Esc klappt zu, ohne
    das Pausenmenü, Q setzt zugeklappt den Bolzenwerfer (Preis am Geist, kein Bauzettel) und E baut
    ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; »Leute« mit mehr
-   als sechs Möglichkeiten zeigt »weiter« und dort den Leuchtmast; Edda spricht unten links, nie
+   als sechs Möglichkeiten zeigt »weiter« und dort den Langen Jakob; Edda spricht unten links, nie
    auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in

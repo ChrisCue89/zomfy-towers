@@ -2869,7 +2869,7 @@ async function runTour(browser, url) {
     const titelMusik = await intro.page.evaluate(() => window.zomfy.sound());
     const texte = vorDruck.bild?.texte || [];
     if (texte.includes('Tales of Cue') && texte.includes('präsentiert') && texte.includes('Taste drücken') && vorDruck.klang.state === null && nachDruck.klang.jingles === 1 && nachDruck.bild?.spieluhr && titelMusik.music === 'titel') {
-      note('✓ Startbild (N2): »Tales of Cue präsentiert«, vor dem Tastendruck kein Klang – die echte Taste startet die Spieluhr, dann das Titelbild mit »Herbstlied am Stillsee«');
+      note('✓ Startbild (N2): »Tales of Cue präsentiert«, vor dem Tastendruck kein Klang – die echte Taste startet die Spieluhr, dann das Titelbild mit »Herbstlied am Kranichsee«');
     } else fail(`Startbild (N2): ${JSON.stringify({ vorDruck, nachDruck, titelMusik })}`);
     // Titelbild (Meilenstein 7): ohne Spielstand ist »Neues Spiel« vorgewählt
     await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });

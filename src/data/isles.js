@@ -25,12 +25,15 @@ export const TRIP = {
  * sucht den Rand), `shore` ist, wo Mika an Land steht (sicher auf der Insel, auch wenn
  * ihr Rand je Karte ein wenig anders ausfällt), `via` sind Wegpunkte ab dem Steg – um
  * das Stegende herum, nie über Balduins Anleger. Zurück geht es dieselben Punkte rückwärts.
+ * `label` ist die Oberkante des Namens auf der Übersichtskarte (G1, sobald Mika dort war).
  */
 export const ISLES = {
-  nord: { index: 0, side: { x: -0.99, z: 0.12 }, shore: { x: 21.0, z: -8.375 }, via: [[17.3, -5.6]] },
-  mitte: { index: 1, side: { x: -0.68, z: -0.73 }, shore: { x: 25.75, z: 4.125 }, via: [[20.6, -3.1], [22.6, -1.4]] },
-  sued: { index: 2, side: { x: 0, z: -1 }, shore: { x: 20.5, z: 11.75 }, via: [[20.6, -3.1], [22.6, -1.2], [22.4, 3.5], [20.8, 7.0]] },
+  nord: { index: 0, side: { x: -0.99, z: 0.12 }, shore: { x: 21.0, z: -8.375 }, via: [[17.3, -5.6]], label: { x: 22.75, z: -13.5 } },
+  mitte: { index: 1, side: { x: -0.68, z: -0.73 }, shore: { x: 25.75, z: 4.125 }, via: [[20.6, -3.1], [22.6, -1.4]], label: { x: 27.75, z: 7.0 } },
+  sued: { index: 2, side: { x: 0, z: -1 }, shore: { x: 20.5, z: 11.75 }, via: [[20.6, -3.1], [22.6, -1.2], [22.4, 3.5], [20.8, 7.0]], label: { x: 21.0, z: 15.25 } },
 };
+/** G1: Wo auf der Übersichtskarte der Name der Bucht steht (zwischen Wartholm und Steg). */
+export const BAY_LABEL = { x: 28.5, z: -4.5 };
 export const ISLE_ORDER = ['nord', 'mitte', 'sued'];
 
 /**

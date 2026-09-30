@@ -11,6 +11,7 @@ import { T } from '../data/texts.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { MAP, shoreX } from '../world/map.js';
 import { LAYOUT } from '../world/layout.js';
+import { ISLES, ISLE_ORDER, BAY_LABEL } from '../data/isles.js';
 
 const PX = 4; // Pixel je Meter
 const W = (MAP.x1 - MAP.x0) * PX;
@@ -161,6 +162,20 @@ export class MapView {
       for (let k = 0; k < 4; k++) ui.rect(p.x - 6 + k, p.y - 3 + k, 2, 7 - k * 2, COLORS.outline);
       for (let k = 0; k < 3; k++) ui.rect(p.x - 5 + k, p.y - 2 + k, 1, 5 - k * 2, COLORS.buildBad);
       ui.text(T.horde.richtungKurz[s.name], p.x + 2, p.y - LINE_HEIGHT / 2 - 1, COLORS.textWarm, { outline: COLORS.outline });
+      // G1: darunter der alte Name des Holzfällerwegs (nur auf der großen Karte)
+      if (k === 1) ui.text(T.karte.alteWege[s.name], p.x + 2, p.y + LINE_HEIGHT / 2 - 1, COLORS.textDim, { outline: COLORS.outline });
+    }
+
+    // G1: der Name der Bucht und der Inseln, auf denen Mika schon war – mittig, in der Karte
+    if (k === 1) {
+      const name = (text, wx, wz) => {
+        const p = at(wx, wz);
+        const w = measure(text);
+        ui.text(text, Math.max(ox + 2, Math.min(ox + W - 2 - w, p.x - Math.round(w / 2))), p.y, COLORS.textDim, { outline: COLORS.outline });
+      };
+      name(T.karte.bucht, BAY_LABEL.x, BAY_LABEL.z);
+      const visited = g.state.isles?.visited || [];
+      for (const id of ISLE_ORDER) if (visited.includes(id)) name(T.karte.inseln[id], ISLES[id].label.x, ISLES[id].label.z);
     }
 
     // Liegende Überreste: kleine goldene Punkte

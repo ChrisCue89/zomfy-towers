@@ -40,13 +40,13 @@ export const PARCELS = {
  * sieht. Stellen am Westrand der Inseln (zur Bucht hin), auf 1/8 m, frei von Tannen und Fels.
  */
 export const SIGNAL_SPOTS = {
-  nordinsel: { x: 20.75, z: -8.5 }, // Nordinsel (22,5 | −8,5)
+  nordinsel: { x: 20.75, z: -8.5 }, // auf dem Wartholm (22,5 | −8,5) – die Leute aus Norderholm rudern herüber
   kloster: { x: 21.25, z: -7.5 },
   forsthaus: { x: 22.5, z: -7.125 },
-  leuchtturm: { x: 24.75, z: 5.5 }, // mittlere Insel (27 | 5,5)
+  leuchtturm: { x: 24.75, z: 5.5 }, // Kiekwerder (27 | 5,5)
   muehle: { x: 25.375, z: 6.75 },
   ferienlager: { x: 27.0, z: 7.375 },
-  farm: { x: 19.625, z: 12.5 }, // Südinsel (20,5 | 12,5)
+  farm: { x: 19.625, z: 12.5 }, // Kürbisholm (20,5 | 12,5)
   hafen: { x: 20.5, z: 13.125 },
 };
 export const SIGNAL_HELP = {

@@ -1990,6 +1990,11 @@ Geschichte, ohne etwas zu verbiegen: Die Stimme im Radio, der Kamin, »der schon
 immer nach links zieht«, und Balduins Geheimnis bekommen einen Menschen. Im
 Spiel bleibt es bei Andeutungen, bis M32 sie auflöst.
 
+*Nachtrag G1 (30.09.2026):* Edda wohnt im dunklen Leuchtturm am **Sturmhuk** – die Insel im
+Nebel gehört seit N7 Marthe (Nr. 202). Die Sendung heißt **Die Seewelle**: Junas Vater hat den
+Sender gebaut, Edda hat jeden Abend am Langen Jakob vorgelesen; »Der alte Mast am Steg …« im
+Radio ist heute Juna.
+
 ### 181. Wie kommen Möbel ins Haus? (N4)
 **Entscheidung:** Über **Balduins Katalog**: Das Funkgerät in der Stube erreicht
 sein Boot. Jede Seite ist ein Raum und öffnet sich mit dessen Ausbaustufe; jedes
@@ -2360,6 +2365,35 @@ Prozent von der Palette ab (höchstens 8 % Richtung Dunstfarbe, in den Ecken dun
 
 **Warum:** Die Kacheln waren groß genug, ihr Inhalt nicht. Ein Bild aus dem Modell zeigt, was
 danach dasteht; ein Knopf statt einer immer offenen Leiste gibt das Bild frei, bis man baut.
+
+### 202. Wie heißen die Orte? (G1)
+**Entscheidung:** Namen mit Herkunft, in Schichten – so wie deutsche Landschaften ihre Namen
+tragen:
+
+- Uralt ist das Wasser: der **Kranichsee**.
+- Alt sind die Dörfer: Birkhagen, Tannrode, Aalbek.
+- Nüchtern sind die Werkplätze: die alte Holzlände, die Hammermühle, die Wege Köhlerstieg,
+  Holzweg und Schaftrift.
+- Neu sind die Spitznamen: der Lange Jakob.
+
+Übernommen sind die Empfehlungen aus `recherche/storytelling-namen.md` 4.6: Ellerbucht auf der
+Karte, Wartholm, Kiekwerder (die Bank »Almas Ruh«), Kürbisholm, Apfelwerder, Norderholm,
+Forsthaus Eulenbruch, Sonnenkamp, Leuchtturm Sturmhuk, Ferienlager Glühwürmchen, Hafen von
+Aalbek, Hammermühle, Kloster Sankt Luzia, Fährhaus am Südufer, Wollgrashof und die Seewelle.
+
+Was Mika nicht kennen kann, lernt Mika im Spiel: Die Inselnamen stehen beim ersten Anlegen auf
+Pfahl, Stein und Brett; den Apfelwerder nennt Marthe. Die IDs im Code bleiben, nur die Anzeige
+ändert sich – kein neuer Spielstand. Der Nachtplan sagt weiter Nord-, Mittel- und Südweg (das
+liest sich in der Nacht schneller); die Karte schreibt den alten Namen darunter, und die Leute
+benutzen ihn (»Vierzehn Schlurfer am Holzweg«).
+**Warum:** Die alten Namen waren Platzhalter (dreimal »Still-«) oder Inventarlisten
+(Netz-, Bank-, Kürbisinsel). Liebgewinnen kann man nur, was eine Herkunft hat. Zugleich lösen
+die Namen vier Widersprüche:
+
+- Die Sendung gehörte drei Leuten.
+- Die »Nordinsel« gab es zweimal.
+- Edda wohnte auf Marthes Insel.
+- »Brandt« las sich wie der Vater von Pim und Lu in der Horde.
 
 ## Technik mit Auswirkung aufs Design
 
