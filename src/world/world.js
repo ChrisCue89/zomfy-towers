@@ -15,6 +15,8 @@ import { LAYOUT } from './layout.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
 import { createIsleProps } from './isleProps.js';
+import { createFogIsle } from './fogIsle.js';
+import { FOG_ISLE, fogIsleEdge } from '../data/fogIsle.js';
 import { CAT, HOME_PUMPKINS } from '../data/isles.js';
 import { createInterior, INTERIOR_FLOOR, WOHN } from './interior.js';
 import { armsModel } from '../entities/characters.js';
@@ -77,6 +79,7 @@ export class World {
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
     this.questInteractions = []; // Fundstücke der Nebenaufträge (core/quests.js, M23)
     this.isleInteractions = []; // N6: Ruderboot und Fundstellen auf den Inseln (core/isles.js)
+    this.fogInteractions = []; // N7: Nebelinsel, Marthe und die Kinder, Reuse (core/fogIsle.js)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed, this.map);
@@ -104,6 +107,9 @@ export class World {
     // N6: was auf den Inseln steht (Fundstellen, die Katze zu Hause)
     this.isleProps = createIsleProps({ seed, materials: this.materials, colliders: this.colliders });
     scene.add(this.isleProps.group);
+    // N7: die Insel im Nebel (weit draußen im Nordosten), Seenebel, Marthes Kahn am Steg
+    this.fogIsle = createFogIsle({ seed, materials: this.materials, colliders: this.colliders });
+    scene.add(this.fogIsle.group, this.fogIsle.bay, this.fogIsle.sea.group);
 
     this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed, map: this.map });
 
@@ -294,7 +300,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */
@@ -543,6 +549,8 @@ export class World {
 
   /** Bodenhöhe an einer Stelle (Hausboden, Stufe, sonst 0). */
   heightAt(x, z) {
+    // N7: Der Boden der Nebelinsel liegt ein Voxel über dem Wasser
+    if (x > FOG_ISLE.x - 8 && x < FOG_ISLE.x + 8) return fogIsleEdge(x, z) < 0.2 ? FOG_ISLE.top : 0;
     for (const zone of this.heightZones) {
       if (x >= zone.minX && x <= zone.maxX && z >= zone.minZ && z <= zone.maxZ) return zone.y;
     }

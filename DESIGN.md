@@ -1814,12 +1814,23 @@ vor der Tür sitzt. Um halb sieben geht es von selbst heim. Spielstand v30.
 *Als Nächstes (N7):* die Insel im Nebel – bei Morgennebel und Windstille der Glocke
 nach, Marthe und die Kinder in die Bucht holen.
 
+#### N7 – Die Insel im Nebel ✓
+
+*Umgesetzt (30.09.2026):* Nach der Spur (Eddas Funkbuch im Zelt oder die dritte
+Flaschenpost) läutet morgens von 07:00 bis 09:30 Marthes Schiffsglocke im Nordosten
+(Nr. 194). »Der Glocke nach«: Mika rudert in den Seenebel und lenkt selbst dem Klang
+nach (WASD, Strömung, Glocken-Marke); wer sie verliert, versucht es am nächsten
+Morgen. Auf der Insel warten Marthe und ihre Kinder Pim und Lu (kleineres Rig); ihr
+Kahn leckt. Mit Nägeln (Werkbank) und Zucker (Balduin oder Hilde) flickt Marthe ihn,
+am Morgen danach gleitet der Kahn an den Steg: Marthe stellt eine Reuse auf, die
+Kinder spielen im Hof. Spielstand v31.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen).
-- Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (N7).
+- Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (umgesetzt: N7).
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte (eingeplant: Netzwerk, M32).
 - Fotomodus.

@@ -9,6 +9,7 @@
 // Wegfindung der Horde und die Begrenzung der Figur.
 
 import { Rng, valueNoise, fbm } from '../core/rng.js';
+import { fogIsleEdge } from '../data/fogIsle.js';
 
 /** Ausdehnung des Geländes. */
 export const MAP = { x0: -62, x1: 34, z0: -30, z1: 30 };
@@ -239,8 +240,9 @@ export class GameMap {
     return x > shoreX(z) && !this.onDock(x, z) && !this.onIsland(x, z);
   }
 
-  /** N6: Abstand zum Rand der Insel `i` (gestreckt wie onIsland; negativ: an Land). */
+  /** N6: Abstand zum Rand der Insel `i` (gestreckt wie onIsland; negativ: an Land). N7: 'nebel' ist die Nebelinsel. */
   isleEdge(i, x, z) {
+    if (i === 'nebel') return fogIsleEdge(x, z);
     const s = ISLANDS[i];
     return Math.hypot(x - s.x, (z - s.z) * 1.25) - s.r - (this.noise(x, z, 0.9, 71) - 0.5) * 0.8;
   }
@@ -367,7 +369,9 @@ export class GameMap {
   pushInside(pos, radius, horde = false) {
     // N6: Wer auf einer Insel an Land ist, läuft nur auf ihr – am echten Rand entlang
     // (Newton-Schritte auf das Abstandsmaß der Insel, so gleitet man am Ufer weiter)
-    if (this.isle !== null && this.isle !== undefined && !horde) {
+    // N7: nur in der Nähe der Insel – wer in der Bucht läuft (Überlebende, Balduin), wurde
+    // sonst an den Inselrand gezogen, solange Mika drüben war
+    if (this.isle !== null && this.isle !== undefined && !horde && this.isleEdge(this.isle, pos.x, pos.z) < 4) {
       const m = radius + 0.1;
       const e = 0.05;
       let moved = false;

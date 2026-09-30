@@ -3,6 +3,8 @@
 // Steg) fährt tagsüber zu den drei Felsinseln. Jede hat etwas zu finden; wer auf einer
 // Insel ist, läuft nur auf ihr (map.pushInside mit `isle`). Hier wird balanciert.
 
+import { newFog, sanitizeFog } from './fogIsle.js';
+
 /** Wann und wie gerudert wird. */
 export const TRIP = {
   from: 60, // ab 07:00 (Minuten ab 06:00)
@@ -65,18 +67,19 @@ export function isleClearings() {
   return [...finds, ...ISLE_ORDER.map((id) => ({ x: ISLES[id].shore.x, z: ISLES[id].shore.z, r: 0.75 }))];
 }
 
-/** Leerer Eintrag (state.isles): Boot abgedichtet, besuchte Inseln, Gefundenes, Katze. */
+/** Leerer Eintrag (state.isles): Boot abgedichtet, besuchte Inseln, Gefundenes, Katze, N7: die Nebelinsel. */
 export function newIsles() {
-  return { boat: false, visited: [], found: [], cat: false };
+  return { boat: false, visited: [], found: [], cat: false, fog: newFog() };
 }
 
-/** Prüfen und reparieren (sanitizeState). */
-export function sanitizeIsles(raw) {
+/** Prüfen und reparieren (sanitizeState); `bottles` (M33) gehört zur Spur der Nebelinsel. */
+export function sanitizeIsles(raw, bottles = 0) {
   const out = newIsles();
   if (!raw || typeof raw !== 'object') return out;
   out.visited = Array.isArray(raw.visited) ? [...new Set(raw.visited.filter((id) => ISLES[id]))] : [];
   out.found = Array.isArray(raw.found) ? [...new Set(raw.found.filter((id) => FINDS[id]))] : [];
   out.cat = raw.cat === true || out.found.includes('katze');
   out.boat = raw.boat === true || out.visited.length > 0;
+  out.fog = sanitizeFog(raw.fog, { found: out.found, bottles });
   return out;
 }

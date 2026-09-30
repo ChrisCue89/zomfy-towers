@@ -14,4 +14,6 @@ export const RECIPES = [
   // M30: Munition für den Waffenschrank (erst, wenn er offen ist)
   { id: 'schrot', icon: 'schrot', cost: { schrott: 2 }, gives: { inventory: { schrot: 4 } }, arms: true },
   { id: 'leuchtkugeln', icon: 'leuchtkugeln', cost: { schrott: 1, fasern: 1 }, gives: { inventory: { leuchtkugeln: 2 } }, arms: true },
+  // N7: Nägel für Marthes Kahn (nur, solange sie darauf wartet)
+  { id: 'naegel', icon: 'naegel', cost: { schrott: 3 }, gives: { inventory: { naegel: 1 } }, fog: true },
 ];

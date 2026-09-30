@@ -73,7 +73,9 @@ import { Post } from './post.js';
 import { Fishing } from './fishing.js';
 import { FishingView } from '../ui/fishingView.js';
 import { Isles } from './isles.js';
+import { FogIsle } from './fogIsle.js';
 import { ISLE_VIEW } from '../data/isles.js';
+import { FOG_VIEW } from '../data/fogIsle.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
 import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
@@ -378,6 +380,7 @@ export class Game {
     this.fishing = new Fishing(this); // M33: Angeln am Steg
     this.fishingView = new FishingView(this);
     this.isles = new Isles(this); // N6: mit dem Ruderboot zu den Inseln
+    this.fogIsle = new FogIsle(this); // N7: die Insel im Nebel – Marthe und die Kinder
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -560,6 +563,7 @@ export class Game {
     this.world.refreshFishingSpot(st.fishing.rod); // M33: der Angelplatz, sobald es eine Angel gibt
     this.world.setSignalFires(this.nights.active && this.autumn.planMode(st.night.n) === 'finale' ? this.post.places() : []);
     this.isles.apply(); // N6: wer auf einer Insel gespeichert hat, wacht am Steg auf
+    this.fogIsle.apply(); // N7: auch von der Nebelinsel; Kahn und Reuse, wenn die drei in der Bucht wohnen
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -725,7 +729,7 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.cardNight?.match || this.fishing?.session || this.isles?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See
+    const view = this.cardNight?.match || this.fishing?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See, N7: im Nebel
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
@@ -743,6 +747,10 @@ export class Game {
     if (!this.viewInside) {
       rig.bounds = this.isles?.away ? { ...LAYOUT.cameraBounds, maxX: ISLE_VIEW.maxX } : LAYOUT.cameraBounds; // N6: über den See bis zu den Inseln
       rig.limits = TERRAIN_AREA;
+      if (this.fogIsle?.away) {
+        rig.bounds = FOG_VIEW; // N7: hinaus in den Nebel bis zur Nebelinsel (dort ist nur noch See)
+        rig.limits = null;
+      }
       return;
     }
     const inner = this.world.interior;
@@ -859,6 +867,13 @@ export class Game {
       else this.goal.progress = errand.progress;
       return;
     }
+    // N7: Marthe wartet auf Nägel und Zucker (erst, wenn die ersten Ziele geschafft sind)
+    const fog = current ? null : this.fogIsle?.goal();
+    if (fog) {
+      if (this.goal?.id !== fog.id) this.goal = fog;
+      else Object.assign(this.goal, fog);
+      return;
+    }
     if (current?.id !== this.goal?.id) {
       this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
     }
@@ -948,6 +963,9 @@ export class Game {
       else this.fishing.begin(null);
     }
     else if (it.boat) this.isles.use(); // N6: mit dem Ruderboot hinaus (oder zurück)
+    else if (it.fogBoat) this.fogIsle.leave(); // N7: von der Nebelinsel zurück
+    else if (it.fogLook) this.fogIsle.look(it.fogLook);
+    else if (it.fogTrap) this.fogIsle.emptyTrap(); // N7: Marthes Reuse am Steg
     else if (it.isleFind) this.isles.find(it.isleFind);
     else if (it.homeCat) {
       this.hud.say(T.inseln.mieze[this.state.time.day % T.inseln.mieze.length], 3.5);
@@ -2603,6 +2621,9 @@ export class Game {
       case 'rudern': // N6: über den See – die Uhr steht, die Fahrt kostet danach eine Viertelstunde
         this.isles.update(realDt, input);
         break;
+      case 'nebelfahrt': // N7: der Glocke nach durch den Nebel – die Uhr steht
+        this.fogIsle.updateTrip(realDt, input);
+        break;
       case 'report':
         if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
@@ -2662,6 +2683,7 @@ export class Game {
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
     this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
     this.quests.update(dt);
+    this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
     this.autumn.update(this.mode === 'play' ? dt : 0);
     if (this.mode === 'play') this.book.update(dt); // M25: gelungene Taten eintragen
     if (this.mode === 'play') this.bonds.update(); // M29: die Vertrauten grüßen morgens
@@ -3198,6 +3220,7 @@ export class Game {
     if (atTable) this.cardTable.draw(ui);
     if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
     if (this.mode === 'rudern') this.isles.draw(ui); // N6
+    this.fogIsle.draw(ui); // N7: Glocken-Marke am Rand, Nebelfahrt
     if (playing) this.buildbar.draw(ui);
     if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda unten rechts über der Bauleiste
     else this.funk.rect = null;
@@ -4070,6 +4093,23 @@ export class Game {
           cozy: game.furnishing.cozy,
         };
       },
+      /** N7: Nebelinsel – Stufe, Glocke, Fahrt, Boot, Menschen, Nebel, Ziel. */
+      fogIsle: () => {
+        const p = game.player.position;
+        return { ...game.fogIsle.info(), mode: game.mode, player: { x: p.x, z: p.z, seated: Boolean(game.player.seated), edge: game.world.map.isle === 'nebel' ? game.world.map.isleEdge('nebel', p.x, p.z) : null }, inventory: { naegel: game.state.inventory.naegel || 0, zucker: game.state.inventory.zucker || 0 }, basket: game.state.fishing.basket, interactions: game.world.fogInteractions.map((q) => ({ id: q.id, enabled: q.enabled, prompt: q.prompt, x: q.x, z: q.z })) };
+      },
+      /** N7: Stufe setzen (0 nichts, 1 Spur, 2 Auftrag, 3 geflickt, 4 in der Bucht), `from`/`arrive` auf heute. */
+      setFog(stage) {
+        const f = game.state.isles.fog;
+        f.stage = stage;
+        f.from = game.state.time.day;
+        f.lost = 0;
+        f.arrive = game.state.time.day;
+        game.fogIsle.apply();
+        game.updateGoals(true);
+      },
+      /** N7: Die Glocke sofort schlagen lassen (sonst alle 3,6 s, solange sie läutet). */
+      fogStrike: () => game.fogIsle.strike(),
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
       post: () => {
         const e = game.survivors.npcs.list.get('edda');

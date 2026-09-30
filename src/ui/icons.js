@@ -1449,6 +1449,37 @@ const ICONS = {
       '.kk....kk.',
     ],
   },
+  // N7: Nägel (eine Handvoll, Köpfe oben) und eine Dose Zucker mit Deckel
+  naegel: {
+    legend: { k: P.n1, s: P.s5, S: P.s7, W: P.s9, d: P.s3 },
+    rows: [
+      '..........',
+      '.kkk..kkk.',
+      '.kSk..kSk.',
+      '..kk.kkk..',
+      '..ks.kSk..',
+      '..ks.ksk..',
+      'kkkskksdk.',
+      'kSSSSkdk..',
+      '.kdddskk..',
+      '..kkkk....',
+    ],
+  },
+  zucker: {
+    legend: { k: P.n1, b: P.b3, B: P.b4, w: P.s9, W: P.s8, r: P.r3 },
+    rows: [
+      '..kkkkkk..',
+      '.kBBBBBBk.',
+      '.kbbbbbbk.',
+      '.kkkkkkkk.',
+      '.kwwwwwWk.',
+      '.krrrrrrk.',
+      '.kwWwWwWk.',
+      '.kwwwwwWk.',
+      '.kWWWWWWk.',
+      '..kkkkkk..',
+    ],
+  },
   glocke: {
     legend: { k: P.e1, b: P.f3, B: P.f5, h: P.f7, s: P.s5 },
     rows: [

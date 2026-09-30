@@ -13,6 +13,7 @@ import { LOSSES_DEFAULT, newBell } from '../data/bell.js';
 import { newPost } from '../data/network.js';
 import { newFishing } from '../data/fishing.js';
 import { newIsles } from '../data/isles.js';
+import { newFog } from '../data/fogIsle.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -133,6 +134,9 @@ const MIGRATIONS = {
   28: (data) => ({ ...data, version: 29, fishing: newFishing() }),
   // v29 -> v30: N6 (Inseln). Noch keine Insel besucht – das Ruderboot liegt schon am Steg (N5).
   29: (data) => ({ ...data, version: 30, isles: newIsles() }),
+  // v30 -> v31: N7 (Die Insel im Nebel). Wer das Zelt schon durchsucht oder die dritte Flaschenpost hat,
+  // hört ab dem nächsten Morgen die Glocke (sanitizeIsles); Nägel und Zucker kommen in den Vorrat.
+  30: (data) => ({ ...data, version: 31, isles: { ...(data.isles || newIsles()), fog: newFog() }, inventory: { ...(data.inventory || {}), naegel: 0, zucker: 0 } }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

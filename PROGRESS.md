@@ -5,6 +5,74 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N7 – Die Insel im Nebel ✓
+
+Fortsetzung des Wunschs vom 29.09. (»… mit einem Boot zu anderen Inseln Abenteuer
+erleben … sei kreativ«, OFFENE-FRAGEN 194). Die Spur aus N6 und M33 führt ans Ziel:
+Marthe und ihre Kinder auf der Insel im Nebel.
+
+- **Die Spur**: Eddas Seite aus dem Funkbuch im Zelt der Nordinsel (N6) oder die
+  dritte Flaschenpost (M33). Ab dem nächsten Morgen läutet von 07:00 bis 09:30 von
+  Nordosten eine Schiffsglocke – zwei Schläge, alle paar Sekunden, im Stereo aus
+  ihrer Richtung. Am Rand steht dann eine kleine Glocken-Marke, draußen im Nordosten
+  liegt Seenebel, und Edda funkt beim ersten Mal: »Das ist Marthes Schiffsglocke!
+  Sie leben!« (mit leckem Boot: erst abdichten).
+- **Die Nebelfahrt** (Modus `nebelfahrt`): Solange die Glocke läutet, steht am Boot
+  »Der Glocke nach« ganz oben (vorgewählt bleibt »Doch lieber an Land«). Mika rudert
+  zwischen den Felsinseln hinaus in den Nebel; dort lenkt man selbst – WASD wie beim
+  Laufen, das Boot dreht sich dorthin und nimmt Fahrt auf, eine Strömung treibt es
+  nach Süden. Um das Boot bleibt ein kleines Loch im Grau (auf Kurs etwas größer),
+  die Glocken-Marke zeigt, woher der Klang kommt; nahe der Insel tritt sie aus dem
+  Nebel. Die Uhr steht, die Fahrt kostet danach 20 Minuten.
+  - Wer lange vom Klang weg rudert, zu weit abtreibt oder zu lange sucht, verliert
+    die Glocke: Nebelweiß, zurück am Steg, eine halbe Stunde später – und heute
+    läutet sie nicht mehr (»Morgen früh wieder«). Esc kehrt um, ohne zu verlieren.
+  - Der Seenebel sind zwei gerasterte Lagen über dem See (fest in der Welt, wie die
+    Nebelbänke seit N4); die freie Sicht um Boot und Insel wandert je Lage mit.
+- **Die Insel**: weit draußen östlich der Karte (dort ist nur noch See) – Kiesstrand,
+  Gras mit Laub, bemooste Felsen, ein Apfelbaum mit Fallobst (1/16), eine Hütte aus
+  Treibholz mit Bullauge und Netz, das Glockengestell mit der Schiffsglocke (sie
+  schwingt beim Läuten), Kinderwäsche auf der Leine, die Feuerstelle mit Kessel und
+  Marthes Kahn mit dem Loch in der Seite (1/32). Mika läuft nur auf der Insel.
+- **Marthe, Pim und Lu** (Figuren nach N1): Marthe mit türkiser Hafenmütze, dickem
+  grau durchzogenem Zopf, Lederschürze und gelbem Zollstock; Pim mit Zeitungshut,
+  Sommersprossen und Ringelpulli; Lu mit zwei abstehenden Zöpfen, roter Regenjacke
+  und einem Apfel in der Hand. Die Kinder stehen auf einem kleineren Rig (kürzere
+  Beine, kleinerer Rumpf, der Kopf so groß wie bei den Erwachsenen – Gesichter,
+  Lider und Porträts passen). Alle drei haben Porträts für die Dialoge.
+  - Bei der ersten Landung kommt Marthe herüber und erzählt: Sie kennt Edda vom Funk,
+    die Kinder fragen nach Boot und Katze (oder Hund), der Kahn leckt. Der Auftrag:
+    **Nägel** (Werkbank, 3 Schrott – nur, solange sie wartet) und **Zucker** (Balduin
+    für 3 Zombieteile, oder Hilde schenkt die ganze Dose, wenn sie im Lager wohnt).
+    Das Ziel steht im Zielkasten (»Nägel und Zucker für Marthe (1/2)«).
+  - Beim zweiten Besuch flickt Marthe den Kahn (»Riecht nach Karamell, oder?«). Am
+    nächsten Morgen um sieben gleitet der Kahn aus dem Nebel an den Steg, die drei
+    sitzen darin; Edda funkt, wie froh sie ist.
+- **In der Bucht**: Marthes Kahn liegt südlich am Steg, sie steht tagsüber daneben;
+  ihre Reuse im Wasser gibt jeden Morgen ein, zwei Fische für den Korb (M33, Balduin
+  nimmt sie) – E am Steg, einmal am Tag. Pim und Lu spielen im Hof Fangen. Abends
+  schlafen die drei im Kahn (keine Bewohner mit Platz, wie Edda – Kinder kämpfen nie).
+- **Nebenbei behoben (N6)**: Solange Mika auf einer Insel war, zog die Begrenzung
+  jeden, der in der Bucht lief (Überlebende, Balduin), an den Inselrand. Jetzt gilt
+  die Insel nur in ihrer Nähe.
+- **Spielstand v31** mit Migration: Wer das Zelt schon durchsucht oder drei
+  Flaschenposts hat, hört die Glocke ab dem nächsten Morgen; Nägel und Zucker im
+  Vorrat.
+- Prüfabschnitt `nebelinsel` (Bilder: nebelfahrt, marthe-treffen, nebelinsel,
+  marthe-bucht): 17 Prüfpunkte, bestanden. Beim Prüfen und Ansehen der Bilder behoben:
+  - Die Einblendung am Kahn lag im Wasser (Mika wurde an Land geschoben, zu Lu) – jetzt
+    von der Insel aus; Marthe geht nach dem ersten Gespräch zurück an ihren Kahn.
+  - Nach der Ankunft steckten die Kinder am Steg fest (geradeaus übers Wasser) – sie
+    laufen erst den Steg entlang ans Ufer.
+  - In der Bucht stand Marthe so nah an der Reuse, dass sie die Einblendung nahm – sie
+    steht jetzt am Strand neben dem Kahn, die Reuse liegt nördlich am Steg.
+  - Auf der Insel lag das Boot am Anleger im Nebel – um Mika bleibt es jetzt frei.
+  - Pims Porträt zeigte fast nur den Zeitungshut – der Hut ist flacher, im Porträt
+    nur sein Rand.
+  - Der rosa Fleck neben der Glocke war ein fallendes Herbstblatt (keine Änderung).
+  - Unter Last dauert das Neuladen im Prüflauf knapp 30 s (die alte Frist) – der
+    Abschnitt wartet jetzt bis zu 180 s.
+
 ## N6 – Mit dem Ruderboot zu den Inseln ✓
 
 Wunsch des Auftraggebers (29.09.): »… vielleicht erweiterst du die Karte, man kann

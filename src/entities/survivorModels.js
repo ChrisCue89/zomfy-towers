@@ -15,7 +15,7 @@
 import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
 import { shade, sculpt, capsule, roundBox, roundTone, blob, subtract } from '../world/voxelKit.js';
-import { HEAD, TORSO, headShape, onFace, onChest, sculptHeadBase, facePlate, facLids, sculptEars, sculptTorsoBase, sculptCollar, sculptArm, sculptLeg } from './figureKit.js';
+import { HEAD, TORSO, headShape, onFace, onChest, sculptHeadBase, facePlate, facLids, sculptEars, sculptTorsoBase, sculptCollar, sculptArm, sculptLeg, frontMap } from './figureKit.js';
 
 /** Gesicht auf der Vorderseite (z = 3): Augen, Brauen, Wangen, Mund. */
 function face(spec, x, y, { glasses = false, beard = false } = {}) {
@@ -855,6 +855,11 @@ export function survivorParts32(id) {
     }
     case 'edda':
       return eddaParts32(); // M32: Edda kommt nach dem Herbst nach Hause
+    case 'marthe':
+      return martheParts32(); // N7: die Bootsbauerin von der Insel im Nebel …
+    case 'pim':
+    case 'lu':
+      return childParts32(id); // … und ihre Kinder (kleineres Rig, npcs.js)
     default:
       return wandererParts32(id); // M27: die Wanderer
   }
@@ -1833,6 +1838,290 @@ export function eddaParts32(s = EDDA) {
     arm: baseArm32({ sleeve: s.shawl, sleeveDark: s.shawlDark, cuff: s.blouse, skin: s.skin, skinShade: s.skinShade }),
     leg: baseLeg32({ shoe: s.shoes, shoeLight: P.e2, low: s.skirtDark, high: { light: s.skirt, dark: s.skirtDark }, top: s.skirt }),
   };
+}
+
+// --- N7: Marthe und die Kinder -------------------------------------------------------
+// Die Bootsbauerin von der Insel im Nebel und ihre beiden Kinder. Merkmale:
+//   Marthe – türkise Hafenmütze mit umgeschlagenem Rand, dicker, grau durchzogener Zopf
+//            über der Schulter, Lederschürze mit gelbem Zollstock, heller Zopfpullover
+//            mit hochgekrempelten Ärmeln, Bleistift hinter dem Ohr
+//   Pim    – Hut aus gefaltetem Zeitungspapier, rote Haare mit Sommersprossen,
+//            Ringelpulli (blau-weiß), grüne Gummistiefel
+//   Lu     – zwei abstehende Zöpfe mit roten Bändern, rote Regenjacke mit Knebeln,
+//            gelbe Gummistiefel, ein Apfel in der rechten Hand
+// Die Kinder stehen auf einem kleineren Rig (npcs.js, `child`): Beine y 0–6, Rumpf y 7–17,
+// Arme 10 Voxel. Der Kopf ist so groß wie bei den Erwachsenen (Modell y 28–43, im Rig ab
+// y 18) – so wirken sie jünger, und Gesichtsplatten, Lider und Porträts passen.
+
+export const MARTHE = {
+  skin: P.h3,
+  skinShade: P.h2,
+  cheek: P.a0,
+  eyes: P.n1,
+  brow: P.e3,
+  hair: P.e5,
+  hairDark: P.e4,
+  hairGrey: P.s7,
+  cap: P.a5,
+  capDark: P.t2,
+  capLight: P.a6,
+  sweater: P.s8,
+  sweaterDark: P.s6,
+  sweaterLight: P.s9,
+  apron: P.e4,
+  apronDark: P.e2,
+  apronLight: P.e5,
+  rule: P.f6,
+  ruleDark: P.f4,
+  tie: P.r3,
+  pencil: P.f5,
+  pants: P.b1,
+  pantsDark: P.b0,
+  boots: P.e1,
+};
+
+export const PIM = {
+  skin: P.h4,
+  skinShade: P.h3,
+  cheek: P.a1,
+  eyes: P.n1,
+  brow: P.r2,
+  hair: P.r4,
+  hairDark: P.r3,
+  freckle: P.h2,
+  paper: P.s9,
+  paperDark: P.s7,
+  ink: P.s4,
+  stripe: P.b3,
+  stripeDark: P.b2,
+  wool: P.s9,
+  woolDark: P.s7,
+  pants: P.e3,
+  boots: P.g3,
+  bootsLight: P.g5,
+};
+
+export const LU = {
+  skin: P.h4,
+  skinShade: P.h3,
+  cheek: P.a0,
+  eyes: P.n1,
+  brow: P.e1,
+  hair: P.e2,
+  hairDark: P.e1,
+  band: P.r4,
+  coat: P.r3,
+  coatDark: P.r2,
+  coatLight: P.r4,
+  toggle: P.e8,
+  boots: P.f6,
+  bootsLight: P.f7,
+  apple: P.f2,
+  appleLight: P.r4,
+  leaf: P.g6,
+  pants: P.n3,
+};
+
+/** Hafenmütze: runde Strickmütze mit dickem, geripptem Umschlag, oben etwas flach. */
+function harborCap(m, s) {
+  sculpt(m, roundBox(-0.5, 45.5, -2.5, 12.7, 4.6, 10.7, 4), -14, 41, -14, 13, 51, 9, (x, y, z, n) => {
+    if (y <= 43) return (x + z + 40) % 2 === 0 ? s.capDark : s.cap; // Umschlag mit Rippen
+    if (n.y > 0.7) return (x * 3 + z) % 7 === 0 ? s.cap : s.capLight;
+    return (x + 40) % 3 === 0 ? s.capDark : roundTone(s.cap, n, { light: 0 });
+  });
+  return m;
+}
+
+function martheHead32(s) {
+  const m = baseHead32(s);
+  // Graue Strähnen im kastanienbraunen Haar
+  m.forEach((x, y, z, c) => {
+    if ((c === s.hair || c === s.hairDark) && (x * 7 + y * 3 + z * 5) % 11 === 0) m.set(x, y, z, s.hairGrey);
+  });
+  harborCap(m, s);
+  // Der Zopf fällt hinter dem rechten Ohr herab (weiter geht er vorn über die Schulter, Rumpf)
+  for (let y = 28; y <= 35; y++) for (const x of [9, 10]) m.set(x, y, -7, (y + x) % 3 === 0 ? s.hairGrey : y % 2 ? s.hair : s.hairDark);
+  // Bleistift hinter dem linken Ohr
+  for (let z = -3; z <= 2; z++) m.set(-14, 36, z, z === 2 ? P.s3 : s.pencil);
+  return m;
+}
+
+function martheTorso32(s) {
+  const m = sculptTorsoBase((x, y, z, n, front) => {
+    // Zopfmuster: zwei Zöpfe vorn, dazwischen glatte Maschen
+    if (front && (x === -6 || x === 5) && y >= 18) return (y % 3 === 0) ? s.sweaterDark : s.sweaterLight;
+    if (front && (x + 13) % 2 === 0 && y >= 18) return s.sweater;
+    return roundTone(s.sweater, n, { light: 1 });
+  });
+  sculptCollar(m, s.sweaterDark, { r: 2 });
+  // Lederschürze mit Latz, Tasche und Zollstock
+  for (let x = -9; x <= 8; x++) {
+    for (let y = 12; y <= 23; y++) {
+      if (y >= 20 && (x < -6 || x > 5)) continue; // der Latz ist schmaler
+      const edge = x === -9 || x === 8 || (y >= 20 && (x === -6 || x === 5));
+      const pocket = y >= 14 && y <= 17 && x >= -7 && x <= -1;
+      let c = (x * 5 + y * 3) % 13 === 0 ? s.apronLight : s.apron; // Leder mit Narben
+      if (pocket) c = y === 17 || x === -7 || x === -1 ? s.apronDark : s.apronLight;
+      if (edge || y === 23) c = s.apronDark;
+      onChest(m, x, y, 1, c);
+    }
+  }
+  // Zollstock aus der Tasche: gelb, schwarze Striche
+  for (let y = 16; y <= 20; y++) onChest(m, -5, y, 2, y % 2 ? s.rule : s.ruleDark);
+  onChest(m, -4, 20, 2, s.rule);
+  // Träger der Schürze über die Schultern
+  for (let y = 24; y <= 27; y++) for (const x of [-6, 5]) onChest(m, x, y, 1, s.apronDark);
+  // Der dicke Zopf über der rechten Schulter, grau durchzogen, unten ein rotes Band
+  for (let y = 16; y <= 27; y++) {
+    for (const x of [7, 8]) {
+      const c = y === 16 ? s.hairDark : y === 17 ? s.tie : (x + y) % 3 === 0 ? s.hairGrey : (y + (x === 7 ? 0 : 1)) % 2 ? s.hair : s.hairDark;
+      onChest(m, x, y, 2, c);
+      if (y >= 25) onChest(m, x, y, 1, s.hair);
+    }
+  }
+  return m;
+}
+
+/** Marthe im Maß 1/32 (N7). */
+function martheParts32() {
+  const s = MARTHE;
+  return {
+    skin: s.skin,
+    head: martheHead32(s),
+    faces: faceSet32(s),
+    lids: lids32(s),
+    torso: martheTorso32(s),
+    arm: baseArm32({ sleeve: s.sweater, sleeveDark: s.sweaterDark, cuff: s.sweaterDark, skin: s.skin, skinShade: s.skinShade, forearm: s.skin }),
+    leg: baseLeg32({ shoe: s.boots, shoeLight: P.e3, low: s.pantsDark, high: { light: s.pants, dark: s.pantsDark } }),
+  };
+}
+
+// Kinder-Rumpf: kleiner, runder, y 7–17 (im Rig ab der Hüfte y 7)
+const childTorsoShape = roundBox(-0.5, 12.5, -0.5, 8.5, 5.5, 5.5, 2.8);
+const CHILD_TORSO = frontMap(childTorsoShape, -10, 9, 7, 17, 6, -8);
+
+/** Voxel dz vor der Rundung des Kinder-Rumpfs (Knebel, Streifen, Apfel). */
+function onChildChest(m, x, y, dz, color) {
+  const z = CHILD_TORSO.front(x, y);
+  if (z !== undefined) m.set(x, y, z + dz, color);
+  return m;
+}
+
+function sculptChildTorso(paint) {
+  const m = new VoxelModel();
+  sculpt(m, childTorsoShape, -10, 7, -7, 9, 17, 6, (x, y, z, n) => paint(x, y, z, n, z === CHILD_TORSO.front(x, y)));
+  return m;
+}
+
+/** Kinder-Arm (lokal x 0..3, y 0..9): Ärmel mit Bündchen, Hand – `apple` legt einen Apfel hinein. */
+function childArm({ sleeve, sleeveDark, cuff, skin, skinShade, stripe = null }, apple = null) {
+  const m = new VoxelModel();
+  sculpt(m, capsule(2, 8.6, 4, 2, 4.8, 4.1, 2.35, 2.1), -1, 4, 1, 5, 9, 7, (x, y, z, n) => {
+    if (y === 4) return (x & 1) === 0 ? cuff : shade(cuff, -1);
+    if (stripe && y % 3 === 0) return stripe;
+    if (n.z < -0.5 || n.x > 0.7) return sleeveDark;
+    return y >= 9 ? shade(sleeve, 1) : sleeve;
+  });
+  sculpt(m, blob(2, 2, 4.4, 1.85, 2.2, 2.1), -1, 0, 1, 5, 3, 7, (x, y, z, n) => {
+    if (n.z > 0.55 && y === 1) return skinShade;
+    return n.y < -0.4 ? skinShade : skin;
+  });
+  if (apple) {
+    // Ein roter Apfel in der Hand, mit Lichtpunkt, Stiel und Blatt
+    sculpt(m, blob(2, 1.5, 7.2, 2.1, 2, 2.1), -1, -1, 5, 5, 4, 10, (x, y, z, n) => (n.y > 0.5 && n.x < 0 ? apple.light : n.y < -0.4 ? shade(apple.color, -1) : apple.color));
+    m.set(2, 4, 7, P.e2).set(3, 4, 7, apple.leaf);
+  }
+  return m;
+}
+
+function pimHead32(s) {
+  const m = baseHead32(s);
+  // Wuschel, die unter dem Hut hervorschauen
+  for (const [x, y] of [[-12, 40], [-11, 41], [11, 40], [10, 41], [-13, 38]]) m.set(x, y, (HEAD.front(Math.max(-12, Math.min(11, x)), 39) ?? 4) - 2, s.hair);
+  // Hut aus Zeitungspapier: Krempe als Band um den Kopf, darüber das Dreieck (von vorn zu sehen)
+  sculpt(m, roundBox(-0.5, 43.5, -2.5, 12.9, 1.6, 10.9, 1.5), -14, 42, -14, 13, 45, 9, (x, y, z) => (y === 42 ? s.paperDark : (x + z) % 7 === 0 ? s.ink : s.paper));
+  for (let y = 46; y <= 53; y++) {
+    const half = Math.round(12.5 - (y - 46) * 1.6);
+    for (let x = -half; x < half; x++) {
+      for (let z = -5; z <= 0; z++) {
+        const rim = x === -half || x === half - 1;
+        const text = y % 2 === 0 && (x * 3 + y) % 5 < 3 && z === 0 && !rim;
+        m.set(x, y, z, rim || y === 46 ? s.paperDark : text ? s.ink : s.paper);
+      }
+    }
+  }
+  return m;
+}
+
+function pimTorso32(s) {
+  const m = sculptChildTorso((x, y, z, n) => {
+    if (y <= 8) return y === 8 ? shade(s.pants, -1) : s.pants; // der Hosenbund unter dem Pulli
+    if (y % 3 === 0) return n.z < -0.6 ? s.stripeDark : s.stripe; // Ringel
+    return n.y < -0.4 || n.z < -0.7 ? s.woolDark : s.wool;
+  });
+  // Rollkragen
+  sculpt(m, (x, y, z) => Math.hypot(Math.hypot(x + 0.5, (z + 0.5) * 1.1) - 4.6, (y - 17.5) * 1.4) - 1.4, -8, 16, -7, 7, 18, 6, s.stripe);
+  m.remove(-10, 18, -8, 9, 18, 7); // der Kopf sitzt darauf
+  return m;
+}
+
+function luHead32(s) {
+  const m = baseHead32(s);
+  // Scheitel in der Mitte, zwei abstehende Zöpfe mit roten Bändern
+  for (let z = -10; z <= 4; z++) {
+    const y = z > 0 ? 43 : 44;
+    if (m.has(0, y - 1, z) || m.has(0, y, z)) m.set(0, y, z, s.hairDark);
+  }
+  for (const side of [-1, 1]) {
+    const cx = side < 0 ? -17 : 16;
+    sculpt(m, capsule(cx - side * 2.5, 37, -3, cx + side * 3, 34, -3, 2.2, 1.6), cx - 7, 30, -7, cx + 7, 41, 1, (x, y, z, n) => ((x + y) % 2 ? s.hair : n.y > 0.4 ? shade(s.hair, 1) : s.hairDark));
+    // Band an der Wurzel
+    sculpt(m, blob(cx - side * 2.2, 37, -3, 1.2, 2.2, 2.2), cx - 5, 34, -6, cx + 5, 40, 0, (x, y) => (y >= 38 ? s.band : shade(s.band, -1)));
+  }
+  return m;
+}
+
+function luTorso32(s) {
+  const m = sculptChildTorso((x, y, z, n, front) => {
+    if (y <= 7) return s.coatDark; // Saum
+    if (front && (x === -1 || x === 0)) return s.coatDark; // Leiste
+    return roundTone(s.coat, n, { light: 1 });
+  });
+  // Knebel aus hellem Holz in zwei Reihen, mit Schlaufen
+  for (const y of [10, 13, 16]) {
+    onChildChest(m, -3, y, 1, s.toggle).set(-2, y, (CHILD_TORSO.front(-2, y) ?? 4) + 1, s.coatDark);
+    onChildChest(m, 2, y, 1, s.toggle).set(1, y, (CHILD_TORSO.front(1, y) ?? 4) + 1, s.coatDark);
+  }
+  // Kapuze hinten im Nacken
+  sculpt(m, blob(-0.5, 15.5, -6.5, 6.5, 2.8, 2.4), -8, 13, -10, 7, 18, -4, (x, y, z, n) => (n.y > 0.4 ? s.coatLight : s.coat));
+  return m;
+}
+
+/** Pim und Lu im Maß 1/32 (N7) – `child` stellt sie in npcs.js auf das kleine Rig. */
+function childParts32(id) {
+  const s = id === 'pim' ? PIM : LU;
+  const pim = id === 'pim';
+  const arm = { sleeve: pim ? s.wool : s.coat, sleeveDark: pim ? s.woolDark : s.coatDark, cuff: pim ? s.stripe : s.coatDark, skin: s.skin, skinShade: s.skinShade, stripe: pim ? s.stripe : null };
+  const leg = sculptLeg({ shoe: s.boots, shoeLight: s.bootsLight, low: s.boots, high: { light: s.pants, dark: s.pants } }, 'unten');
+  return {
+    child: true,
+    skin: s.skin,
+    head: pim ? pimHead32(s) : luHead32(s),
+    faces: pim ? freckledFaces(s) : faceSet32(s),
+    lids: lids32(s),
+    torso: pim ? pimTorso32(s) : luTorso32(s),
+    arm: childArm(arm),
+    armR: pim ? null : childArm(arm, { color: s.apple, light: s.appleLight, leaf: s.leaf }), // Lu hält einen Apfel
+    leg,
+    portraitTop: pim ? 48 : null, // im Porträt nur der Rand des Zeitungshuts – sonst passt das Gesicht nicht ins Fenster
+  };
+}
+
+/** Gesichter mit Sommersprossen auf Nase und Wangen (Pim). */
+function freckledFaces(s) {
+  const dots = new Set(['-9,33', '-7,32', '-10,31', '8,33', '6,32', '9,31', '-3,33', '2,33']);
+  const plate = (expr) => facePlate((x, y) => (dots.has(`${x},${y}`) ? s.freckle : faceColor32(s, x, y, expr)));
+  return { normal: plate('normal'), froh: plate('froh'), eyesClose: true };
 }
 
 /** Schlafsack am Gästeplatz (M27): Unterlage, gesteppter Sack, Kissen, karierte Decke, Blechbecher. */

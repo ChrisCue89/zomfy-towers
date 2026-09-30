@@ -14,6 +14,7 @@ import { cardsOffered } from './cards.js';
 import { fishingOffered } from './fishing.js';
 import { stepsLeft } from './arms.js';
 import { REPAIR } from './isles.js';
+import { bellRings } from './fogIsle.js';
 
 // M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
 const UEBEN_ORDER = ['hilde', 'juna', 'bert', 'yusuf', ...Object.keys(WANDERERS)];
@@ -49,6 +50,10 @@ export const SPRECHER = {
   paula: { name: 'Paula', portrait: 'paula' },
   edda: { name: 'Edda', portrait: 'edda' }, // N4: nur über Funk, als altes Foto
   eddaHier: { name: 'Edda', portrait: 'eddaHeute' }, // M32: nach dem Herbst zu Hause, silbernes Haar
+  // N7: die Insel im Nebel
+  marthe: { name: 'Marthe', portrait: 'marthe' },
+  pim: { name: 'Pim', portrait: 'pim' },
+  lu: { name: 'Lu', portrait: 'lu' },
 };
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
@@ -479,12 +484,133 @@ export const DIALOGE = {
   bootFahrt: (state) => [
     {
       s: 'mika',
-      t: T.inseln.frage,
+      t: bellRings(state) ? T.nebel.frage : T.inseln.frage,
       antworten: [
+        ...(bellRings(state) ? [{ t: T.nebel.derGlockeNach, aktion: 'nebel' }] : []), // N7: solange die Glocke läutet
         ...['nord', 'mitte', 'sued'].map((id) => ({ t: (state.isles?.visited || []).includes(id) ? T.inseln.namenBekannt[id] : T.inseln.namen[id], aktion: `insel:${id}` })),
         { t: T.inseln.bleiben, standard: true },
       ],
     },
+  ],
+  // --- N7: Die Insel im Nebel -------------------------------------------------------
+  // Erste Begegnung: Marthe kommt zum Anleger, die Kinder hinterher
+  martheTreffen: (state) => {
+    const cat = Boolean(state.isles?.cat);
+    return [
+      { s: 'marthe', t: 'Halt! Wer … ach. Du bist von der Bucht, oder? Die mit dem Feuer jede Nacht.' },
+      { s: 'mika', t: `Ich bin ${state.player?.name || 'Mika'}. Ich hab eure Glocke gehört. Und Edda hat von euch geschrieben – in ihrem Funkbuch.` },
+      { s: 'marthe', t: 'Edda! Die Frau vom Funk. Jeden Morgen hat sie uns gesagt, dass wir durchhalten sollen. Dann kam nichts mehr.' },
+      { s: 'mika', t: 'Sie funkt noch. Mit mir.' },
+      { s: 'marthe', t: 'Dann lebt sie. Gut. … Gut.' },
+      { s: 'marthe', t: 'Ich bin Marthe. Ich hab früher Boote gebaut, drüben am alten Hof. Das sind Pim und Lu. Pim, sag Hallo. Lu – nicht mit Äpfeln werfen.' },
+      { s: 'pim', t: 'Hast du ein Boot? Ein echtes? Mit Riemen und allem?' },
+      { s: 'lu', t: cat ? 'Gibt es bei euch eine Katze?' : 'Gibt es bei euch Tiere?' },
+      { s: 'mika', t: cat ? 'Eine rote. Sie heißt Mieze.' : 'Einen Hund. Er heißt Knopf, und er bellt die Krähen an.' },
+      { s: 'lu', t: cat ? 'MIEZE!' : 'Knopf! Das ist ein guter Name. Für einen Hund.' },
+      { s: 'marthe', t: 'Unser Kahn leckt. Mit Nägeln und ein bisschen Zucker krieg ich ihn dicht – Zucker und Harz, das ist der beste Leim, den ich kenne.' },
+      { s: 'marthe', t: 'Und die Kinder hatten seit Wochen nichts Süßes. Aber sag ihnen nicht, dass ich das gesagt hab.' },
+      {
+        s: 'marthe',
+        t: 'Bringst du uns beides? Dann kommen wir rüber. Zu euch.',
+        antworten: [
+          { t: 'Ich bringe Nägel und Zucker.', standard: true },
+          { t: 'Kommt doch gleich mit!', aktion: 'gleich' },
+        ],
+      },
+    ];
+  },
+  martheGleich: [
+    { s: 'marthe', t: 'Zu viert in deiner Nussschale? Bei dem Nebel? Nein, nein.' },
+    { s: 'marthe', t: 'Wir kommen mit dem Kahn. Wenn er dicht ist. Nägel und Zucker – eine Handvoll von jedem reicht.' },
+  ],
+  // Solange noch etwas fehlt
+  martheWarten: (state) => {
+    const inv = state.inventory || {};
+    const fehlt = [!(inv.naegel >= 1) && 'Nägel', !(inv.zucker >= 1) && 'Zucker'].filter(Boolean).join(' und ');
+    return [
+      pick(
+        [
+          { s: 'marthe', t: `Noch fehlen ${fehlt}. Nägel schmiedet man aus Schrott – an deiner Werkbank geht das bestimmt.` },
+          { s: 'marthe', t: `${fehlt}, dann ist der Kahn dicht. Zucker hat vielleicht euer Händler. Händler haben immer Zucker.` },
+          { s: 'marthe', t: 'Die Kinder fragen jeden Morgen, ob heute der Tag ist. Ich sag: bald.' },
+        ],
+        state.time.day
+      ),
+    ];
+  },
+  // Nägel und Zucker sind da: Marthe flickt den Kahn
+  martheFlicken: [
+    { s: 'mika', t: 'Nägel. Und eine Dose Zucker.' },
+    { s: 'marthe', t: 'Gib her. … So. Das Brett hier, drei Nägel, und die Fuge mit Harz und Zucker. Riecht nach Karamell, oder?' },
+    { s: 'lu', t: 'Darf ich den Rest?' },
+    { s: 'marthe', t: 'Einen Löffel. Einen, Lu!' },
+    { s: 'marthe', t: 'Morgen früh sind wir bei euch. Setzt schon mal Wasser auf.' },
+  ],
+  // Der Kahn ist dicht – morgen kommen sie
+  martheBald: [
+    { s: 'marthe', t: 'Morgen früh, mit dem ersten Licht. Ich will den Leim noch eine Nacht trocknen lassen.' },
+  ],
+  pimInsel: (state) => [
+    pick(
+      [
+        { s: 'pim', t: 'Ich hab einen Hut aus Zeitung. Mama sagt, Kapitäne tragen so was. Glaub ich nicht. Aber er ist gut.' },
+        { s: 'pim', t: 'Die Glocke hab ich geläutet! Jeden Morgen. Man muss zweimal ziehen. Zweimal!' },
+        { s: 'pim', t: 'Nachts sehen wir euer Feuer. Lu glaubt, da wohnen Riesen. Ich weiß, dass da Leute wohnen. Sind da Riesen?' },
+      ],
+      state.time.day
+    ),
+  ],
+  luInsel: (state) => [
+    pick(
+      [
+        { s: 'lu', t: 'Willst du einen Apfel? Der ist nur ein bisschen angebissen.' },
+        { s: 'lu', t: 'Ich hab nicht mit Äpfeln geworfen. Ich hab sie nur ganz schnell getragen.' },
+        { s: 'lu', t: 'Wenn wir bei euch wohnen – darf ich dann den Hund streicheln? Und die Katze? Und dich?' },
+      ],
+      state.time.day
+    ),
+  ],
+  // Hilde gibt Zucker für die Kinder
+  hildeZucker: [
+    { s: 'mika', t: 'Hilde, hast du Zucker? Auf der Insel im Nebel sind Kinder. Und ein Kahn, der leckt.' },
+    { s: 'hilde', t: 'Zucker? Für Kinder? Da, nimm die ganze Dose. Ich hab sie für schlechte Tage aufgehoben.' },
+    { s: 'hilde', t: 'Und sag der Mutter, sie soll mit dem Kahn vorsichtig sein. Ich hab schon genug Leute aus dem Wasser gezogen. Im Kopf, meine ich.' },
+  ],
+  // In der Bucht: Marthe am Steg, die Kinder im Hof
+  martheDa: (state) => [
+    pick(
+      [
+        { s: 'marthe', t: 'Die Reuse ist aus Weide. Hab ich auf der Insel geflochten, als die Kinder schliefen. Morgens liegt was drin – du darfst leeren.' },
+        { s: 'marthe', t: 'Dein Ruderboot hat eine lockere Dolle. Ich mach das, wenn du nicht hinsiehst.' },
+        { s: 'marthe', t: 'Ich hab Edda gestern über Funk gehabt. Sie hat geweint. Ich auch. Wir haben dann über Boote geredet.' },
+        { s: 'marthe', t: 'Pim will Bootsbauer werden. Lu will Katze werden. Ich sag beiden: Übt fleißig.' },
+        { s: 'marthe', t: 'Nachts schlafen wir im Kahn, unter der Plane. Da hat jeder seinen Platz. Mach dir keine Sorgen.' },
+        { s: 'marthe', t: 'Auf der Insel war es still. Hier ist es laut. Das ist gut – laut heißt: Da sind Leute.' },
+      ],
+      state.time.day
+    ),
+  ],
+  pimDa: (state) => [
+    pick(
+      [
+        { s: 'pim', t: 'Fangen! Du bist! … Du musst jetzt rennen. Warum rennst du nicht?' },
+        { s: 'pim', t: 'Ich hab den Hund gesehen! Er hat mich abgeschleckt. Am Ohr!' },
+        { s: 'pim', t: 'Wenn ich groß bin, bau ich ein Boot mit Segel. Dann fahren wir alle zur Insel und pflücken Äpfel.' },
+        { s: 'pim', t: 'Zählst du die Türme? Ich hab bis vierzehn gezählt. Dann kam ein Schmetterling.' },
+      ],
+      state.time.day
+    ),
+  ],
+  luDa: (state) => [
+    pick(
+      [
+        { s: 'lu', t: state.isles?.cat ? 'Mieze hat mich angeguckt. Ganz lange. Ich glaub, wir sind jetzt Freundinnen.' : 'Knopf mag mich. Er hat mir einen Stock gebracht. Einen nassen.' },
+        { s: 'lu', t: 'Ich hab dir einen Apfel aufgehoben. Den mit dem Wurm hab ich schon gegessen.' },
+        { s: 'lu', t: 'Wohnen hier Riesen? Pim sagt nein. Aber das Feuer ist so groß.' },
+        { s: 'lu', t: 'Mama sagt, wir sind jetzt zu Hause. Ist das hier zu Hause?' },
+      ],
+      state.time.day
+    ),
   ],
   // M33: Fiete bringt Mika das Angeln bei
   fieteAngeln: [

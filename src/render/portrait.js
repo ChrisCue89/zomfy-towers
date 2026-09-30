@@ -107,8 +107,9 @@ function buildRadioModel() {
 function portrait32(id) {
   const parts = survivorParts32(id);
   const bust = new VoxelModel();
-  const add = (model) => model.forEach((x, y, z, c) => y >= 20 && bust.set(x, y, z, c));
-  add(parts.torso);
+  const top = parts.portraitTop ?? Infinity;
+  const add = (model, lift = 0) => model.forEach((x, y, z, c) => y + lift >= 20 && y + lift <= top && bust.set(x, y + lift, z, c));
+  add(parts.torso, parts.child ? 10 : 0); // N7: Der Rumpf der Kinder endet tiefer – er rückt unter den Kopf
   add(parts.head);
   if (parts.faces) add(parts.faces.normal);
   return renderVoxelPortrait(bust, { top: 1, w: 2, t: 1, f: 1.5 });
@@ -263,5 +264,8 @@ export function renderPortraits() {
     ...Object.fromEntries(WANDERER_ORDER.map((id) => [id, portrait32(id)])), // M27: die Wanderer
     edda: eddaPortrait(), // N4: nur als altes Foto bekannt
     eddaHeute: portrait32('edda'), // M32: zu Hause, in Farbe, das Haar silbern
+    marthe: portrait32('marthe'), // N7: die Insel im Nebel
+    pim: portrait32('pim'),
+    lu: portrait32('lu'),
   };
 }

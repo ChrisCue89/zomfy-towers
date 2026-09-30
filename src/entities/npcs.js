@@ -12,11 +12,22 @@ import { damp, dampAngle, clamp } from '../core/math.js';
 
 const U = 1 / 32; // M13g: doppelt fein wie Mika – Gelenke der 1/16-Figur mal zwei
 const WALK_SPEED = 1.6;
-const HIP = 12 * U; // Höhe des Hüftgelenks im Stehen (M28: Sitzen)
 
-/** Menschliche Figur aus Teilen – Gelenke wie bei Mika (characters.js). */
+/**
+ * Gelenke im Maß 1/32: je Teil [Gelenk, Ursprung des Modells]; `hip` ist die Höhe des
+ * Hüftgelenks im Stehen (M28: Sitzen), `hand` die Hand unter der Schulter (M31: Waffe).
+ * Kinder (N7) stehen auf kürzeren Beinen und einem kleineren Rumpf – der Kopf bleibt so
+ * groß wie bei den Erwachsenen (sein Modell liegt weiter bei y 28, das Gelenk tiefer).
+ */
+const RIGS = {
+  adult: { hip: 12, hand: -16, legL: [[-4, 12, 0], [-8, 0, -4]], legR: [[4, 12, 0], [0, 0, -4]], torso: [[0, 12, 0], [0, 0, 0]], head: [[0, 28, -4], [0, 0, 0]], armL: [[-14, 28, 0], [-16, 12, -4]], armR: [[14, 28, 0], [12, 12, -4]] },
+  child: { hip: 7, hand: -10, legL: [[-4, 7, 0], [-8, 0, -4]], legR: [[4, 7, 0], [0, 0, -4]], torso: [[0, 7, 0], [0, 0, 0]], head: [[0, 18, -4], [0, -10, 0]], armL: [[-11, 17, 0], [-13, 7, -4]], armR: [[10, 17, 0], [8, 7, -4]] },
+};
+
+/** Menschliche Figur aus Teilen – Gelenke wie bei Mika (characters.js), Kinder kleiner (N7). */
 function buildSurvivor(id, seed) {
   const parts = survivorParts32(id);
+  const rig = parts.child ? RIGS.child : RIGS.adult;
   const material = createWorldMaterial({ selfLight: 0.3 });
   const geo = (model) => model.toGeometry({ jitter: 0.03, seed, size: U });
   const part = (model, joint, offset = [0, 0, 0]) => {
@@ -33,13 +44,13 @@ function buildSurvivor(id, seed) {
   root.name = id;
   const body = new THREE.Group();
   root.add(body);
-  const legL = part(parts.leg, [-4, 12, 0], [-8, 0, -4]);
-  const legR = part(parts.leg, [4, 12, 0], [0, 0, -4]);
+  const legL = part(parts.leg, ...rig.legL);
+  const legR = part(parts.leg, ...rig.legR);
   root.add(legL, legR);
-  const torso = part(parts.torso, [0, 12, 0]);
-  const head = part(parts.head, [0, 28, -4]);
-  const armL = part(parts.arm, [-14, 28, 0], [-16, 12, -4]);
-  const armR = part(parts.arm, [14, 28, 0], [12, 12, -4]);
+  const torso = part(parts.torso, ...rig.torso);
+  const head = part(parts.head, ...rig.head);
+  const armL = part(parts.arm, ...rig.armL);
+  const armR = part(parts.armR || parts.arm, ...rig.armR); // Lu hält rechts einen Apfel
   body.add(torso, head, armL, armR);
   // Lider: Haut vor den Augen, meist versteckt
   const eyelids = new THREE.Mesh(geo(parts.lids), material);
@@ -60,7 +71,7 @@ function buildSurvivor(id, seed) {
       faces[expr] = plate;
     }
   }
-  return { root, material, parts: { body, torso, head, armL, armR, legL, legR, eyelids, faces }, smileEyes: Boolean(parts.faces?.eyesClose) };
+  return { root, material, parts: { body, torso, head, armL, armR, legL, legR, eyelids, faces }, smileEyes: Boolean(parts.faces?.eyesClose), hip: rig.hip * U, hand: rig.hand * U, child: Boolean(parts.child) };
 }
 
 export class Npcs {
@@ -133,7 +144,7 @@ export class Npcs {
   sync(n) {
     const root = n.model.root;
     // M28: Wer sitzt, hat die Hüfte auf Sitzhöhe (seatY über dem Boden)
-    const seat = !n.dog && n.seatY !== null && n.seatY !== undefined ? (n.seatY - HIP) * n.sit : 0;
+    const seat = !n.dog && n.seatY !== null && n.seatY !== undefined ? (n.seatY - n.model.hip) * n.sit : 0;
     root.position.set(n.x, (n.y ?? this.world.heightAt(n.x, n.z)) + seat, n.z);
     root.rotation.y = n.facing;
     // M31: zu Boden gegangen – liegt auf dem Rücken (nach der Lagerglocke), die Hüfte auf dem Boden
@@ -266,7 +277,7 @@ export class Npcs {
     const p = n.model.parts;
     if (!p.hand) {
       p.hand = new THREE.Group();
-      p.hand.position.set(0, -16 * U, 0);
+      p.hand.position.set(0, n.model.hand, 0);
       p.armR.add(p.hand);
       p.held = {};
     }

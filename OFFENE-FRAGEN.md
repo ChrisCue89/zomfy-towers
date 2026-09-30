@@ -2208,6 +2208,31 @@ gespeichert).
 - Die Insel im Nebel mit Marthe und den Kindern ist das Ziel der Geschichte
   (Flaschenpost, Eddas Funkbuch); N6 legt die Spur.
 
+### 194. Die Insel im Nebel (N7)
+**Entscheidung:**
+- **Wo:** eine vierte Insel weit draußen im Nordosten, östlich der Karte, wo nur noch
+  See ist – keine eigene Bühne wie der Innenraum. So bleibt die Fahrt ein Stück: aus
+  der Bucht zwischen den Felsinseln hindurch in den Nebel, ohne Schnitt.
+- **Wann:** nur morgens von 07:00 bis 09:30, wenn die Glocke läutet (ab dem Morgen
+  nach der Spur). Seenebel ist dafür kein Wetter: Morgennebel an vielen Tagen wäre zu
+  selten und zu zufällig gewesen (1 von 40 Tagen Nebel).
+- **Wie:** Hier lenkt man selbst (WASD wie beim Laufen) – die Glocke ist das Ziel,
+  der Nebel das Hindernis, die Strömung die kleine Aufgabe. Die Glocken-Marke am Rand
+  zeigt die Richtung auch ohne Ton. Wer sie verliert, verliert nur den Morgen.
+- **Wer:** Marthe (Bootsbauerin) mit Pim und Lu. Sie sind keine Bewohner mit Platz
+  (wie Edda): Sie wohnen im geflickten Kahn am Steg. Kinder kämpfen nie und läuten
+  keine Lagerglocke; nachts schlafen sie im Kahn.
+- **Was es bringt:** Marthes Reuse (ein, zwei Fische am Tag für Balduin) und Leben im
+  Hof – keine Kampfkraft. Der Auftrag (Nägel, Zucker) kostet wenig und führt zu
+  Werkbank, Balduin oder Hilde.
+
+**Warum:**
+- Die Geschichte war schon gelegt (Eddas Funkbuch, die Flaschenpost) – N7 löst sie ein,
+  und Edda bekommt eine Freundin zurück.
+- »Zuflucht sein« (Nr. 161): Menschen kommen, Mika holt sie – diesmal sogar über den
+  See. Kinder im Hof machen die Bucht zu einem Zuhause, ohne das Gleichgewicht der
+  Nächte zu ändern.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

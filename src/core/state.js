@@ -3,7 +3,7 @@
 
 import { BUILDINGS, HOUSE_LEVELS, HOUSE_MAX, GEAR } from '../data/buildings.js';
 import { INTERIOR_ENTRY, INTERIOR_EXTENT } from '../world/interior.js';
-import { RESOURCES, HOTBAR_SIZE, ITEMS } from '../data/items.js';
+import { RESOURCES, QUEST_ITEMS, HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPON_ORDER } from '../data/weapons.js';
 import { PERKS, PERK_IDS } from '../data/perks.js';
 import { SURVIVOR_ORDER } from '../data/survivors.js';
@@ -30,7 +30,7 @@ import { newPost, sanitizePost } from '../data/network.js';
 import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
 
-export const SAVE_VERSION = 30;
+export const SAVE_VERSION = 31;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {
@@ -61,7 +61,7 @@ export function createNewState(config, mapSeed = 1) {
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
     player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, soup: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
     // M30: Munition (patronen, schrot, leuchtkugeln) liegt ebenfalls im Vorrat – sie gehört allen
-    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0, patronen: 0, schrot: 0, leuchtkugeln: 0 },
+    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0, patronen: 0, schrot: 0, leuchtkugeln: 0, naegel: 0, zucker: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
@@ -171,7 +171,7 @@ export function sanitizeState(data, config) {
   out.player.soup = Math.floor(num(data.player?.soup, 0, 0, 1e6)); // Tag der letzten Suppe (M11)
   out.player.name = cleanName(data.player?.name);
   out.player.look = Object.fromEntries(LOOK_KEYS.map((k) => [k, LOOKS[k][data.player?.look?.[k]] ? data.player.look[k] : DEFAULT_LOOK[k]]));
-  for (const r of [...RESOURCES, ...AMMO]) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
+  for (const r of [...RESOURCES, ...AMMO, ...QUEST_ITEMS]) out.inventory[r] = Math.floor(num(data.inventory?.[r], base.inventory[r], 0, 99999));
   for (const id of TOWER_PART_IDS) out.towerParts[id] = Math.floor(num(data.towerParts?.[id], 0, 0, 99));
   if (Array.isArray(data.hotbar?.slots)) {
     out.hotbar.slots = base.hotbar.slots.map((fallback, i) => {
@@ -268,7 +268,7 @@ export function sanitizeState(data, config) {
   out.post = sanitizePost(data.post); // M32
   out.edda = { home: Math.floor(num(data.edda?.home, 0, 0, 1e6)), met: data.edda?.met === true };
   out.fishing = sanitizeFishing(data.fishing); // M33
-  out.isles = sanitizeIsles(data.isles); // N6
+  out.isles = sanitizeIsles(data.isles, out.fishing.bottles); // N6 (N7: mit der Nebelinsel)
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

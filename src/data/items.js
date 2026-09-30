@@ -3,6 +3,9 @@
 /** Reihenfolge der Ressourcen im HUD. */
 export const RESOURCES = ['holz', 'stein', 'fasern', 'stoff', 'schrott', 'teile', 'zahnraeder', 'moderkerne'];
 
+/** N7: Was Marthe für ihren Kahn braucht – im Vorrat, im HUD nur, solange man es hat. */
+export const QUEST_ITEMS = ['naegel', 'zucker'];
+
 /** Seltene Vorräte, die erst nach dem ersten Fund im HUD erscheinen. */
 export const RARE_RESOURCES = ['moderkerne'];
 

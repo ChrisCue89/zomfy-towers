@@ -32,6 +32,7 @@ import { canAfford, pay, gain } from './inventory.js';
 import { BUILDINGS, maxHpOf } from '../data/buildings.js';
 import { WANDERERS, WANDERER_ORDER, ABILITIES, ARRIVE_SPOTS, GUEST_SPOTS, EXIT_ROUTES, PLACES, GUEST_ROOM_LEVEL, LETTER_DELAY } from '../data/wanderers.js';
 import { KEEPSAKES } from '../data/bonds.js';
+import { FOG_PEOPLE } from '../data/fogIsle.js';
 
 const OUT_FROM = 6.5; // ab dann sind die Menschen draußen
 const OUT_UNTIL = 20.25; // bis dann (kurz vor der ersten Welle)
@@ -208,6 +209,7 @@ export class Survivors {
     const out = this.isOutsideTime();
     for (const id of PEOPLE) this.placeOne(id, out, jump);
     this.placeEdda(out, jump);
+    this.game.fogIsle?.placePeople(jump); // N7: Marthe und die Kinder (tagsüber in der Bucht)
     this.updateBedrolls();
   }
 
@@ -493,6 +495,7 @@ export class Survivors {
   talk(id) {
     const g = this.game;
     if (id === 'edda') return this.talkEdda(); // M32
+    if (FOG_PEOPLE.includes(id)) return g.fogIsle.talk(id); // N7: Marthe und die Kinder
     const stage = this.stage(id);
     if (isWanderer(id)) {
       this.talkWanderer(id);
@@ -512,6 +515,8 @@ export class Survivors {
       });
       return;
     }
+    // N7: Hilde hat Zucker für Marthes Kinder (einmal, solange Marthe darauf wartet)
+    if (id === 'hilde' && this.resident(id) && g.fogIsle.hildeSugar()) return;
     // M29: Wartet ein Bindungsmoment, erzählt die Figur ihn statt des gewohnten Gesprächs
     if (this.resident(id) && g.bonds.talk(id)) return;
     g.bonds.onTalk(id);

@@ -117,6 +117,17 @@ const SFX = {
     s.tone('sine', f * 2.66, t, 0.7, { peak: 0.04 * v, attack: 0.001, out: o });
     s.noise(t, 0.03, { type: 'bandpass', freq: 2400, q: 2, peak: 0.12 * v, out: o });
   },
+  // N7: Marthes Schiffsglocke im Nebel – zwei helle Schläge (glasen), gedämpft von der Ferne
+  nebelglocke: (s, t, v, o) => {
+    for (const dt of [0, 0.46]) {
+      const f = 698.5;
+      s.noise(t + dt, 0.025, { type: 'bandpass', freq: 2800, q: 2, peak: 0.05 * v, out: o });
+      s.tone('sine', f / 2, t + dt, 1.9, { peak: 0.04 * v, attack: 0.004, out: o });
+      s.tone('sine', f, t + dt, 1.6, { peak: 0.09 * v, attack: 0.002, out: o });
+      s.tone('sine', f * 1.19, t + dt, 1.0, { peak: 0.035 * v, attack: 0.002, out: o });
+      s.tone('sine', f * 2, t + dt, 0.7, { peak: 0.04 * v, attack: 0.002, out: o });
+    }
+  },
   // Balduins Wagenglöckchen und das Rumpeln der Räder (Meilenstein 8)
   bimmel: (s, t, v, o) => {
     for (const dt of [0, 0.15, 0.3]) {

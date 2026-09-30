@@ -53,9 +53,12 @@ export const T = {
     patronen: 'Patronen',
     schrot: 'Schrot',
     leuchtkugeln: 'Leuchtkugeln',
+    // N7: für Marthes Kahn
+    naegel: 'Nägel',
+    zucker: 'Zucker',
   },
   /** Einzahl (»1 Zahnrad«), sonst wie oben. */
-  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern', patronen: 'Patrone', leuchtkugeln: 'Leuchtkugel' },
+  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern', patronen: 'Patrone', leuchtkugeln: 'Leuchtkugel', naegel: 'Handvoll Nägel', zucker: 'Dose Zucker' },
   /** Menge mit passendem Namen: »1 Zahnrad«, »3 Zahnräder«. */
   menge: (n, res) => `${n} ${(n === 1 && T.ressourcenEins[res]) || T.ressourcen[res] || res}`,
   gegenstaende: {
@@ -194,6 +197,7 @@ export const T = {
     stoffAusFasern: 'Fasern zu Stoff weben',
     schrot: 'Schrot gießen',
     leuchtkugeln: 'Leuchtkugeln drehen',
+    naegel: 'Nägel schmieden', // N7
   },
   rezeptInfo: {
     spitzhacke: 'Damit lassen sich große Felsen abbauen.',
@@ -206,6 +210,7 @@ export const T = {
     stoffAusFasern: '4 Fasern werden zu 1 Stoff.',
     schrot: 'Munition für die Doppelflinte: 2 Schrott werden zu 4 Schrot.',
     leuchtkugeln: 'Für die Signalpistole: 2 Leuchtkugeln aus Schrott und Fasern.',
+    naegel: 'Für Marthes Kahn: 3 Schrott werden zu einer Handvoll Nägel.',
   },
   bauleiste: {
     reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten', schmuck: 'Schmuck' },
@@ -623,6 +628,7 @@ export const T = {
     angeln: 'Angeln', // M33: am Steg
     rudern: 'Hinausrudern', // N6: das Ruderboot am Steg
     zurueckRudern: 'Zurück zur Bucht',
+    reuseLeeren: 'Reuse leeren', // N7: Marthes Reuse am Steg
     mitnehmen: 'Mitnehmen',
     oeffnen: 'Öffnen',
     ansehen: 'Ansehen',
@@ -1495,6 +1501,10 @@ export const T = {
       kiesel: 'Stein liegt als Kiesel am Ufer und an den Wegen. Einfach aufsammeln.',
     },
     boot: 'Das Boot schwimmt wieder? Dann ruder mal zu den Inseln rüber – tagsüber, und vor der Dämmerung zurück. Früher haben da draußen Leute gezeltet.',
+    // N7: die Insel im Nebel
+    nebelglocke: 'Hörst du das? Eine Glocke, draußen im Nebel … das ist Marthes Schiffsglocke! Sie leben! Nimm das Boot und rudere dem Klang nach – nur morgens, solange sie läutet.',
+    nebelglockeLeck: 'Hörst du das? Die Glocke da draußen – das ist Marthe! Sie lebt! Dein Boot leckt noch, oder? Dichte es ab, dann kannst du dem Klang nachrudern.',
+    martheDa: 'Marthe? … Marthe! Ihr seid in der Bucht? Oh, Kinder … Ich hab jeden Morgen auf eure Glocke gehört.',
     laterne: 'Es wird dunkel. Nimm die Laterne – Taste F. Licht macht den Moder müde, und die Schlurfer werden langsam.',
     spaet: 'Geschafft für heute. Geh schlafen, Mika – das Bett steht in der Stube. Ich halte das Funkgerät warm.',
     ruhe: 'Alles erledigt? Setz dich in den Ohrensessel am Feuer und ruh dich bis zum Abend aus.',
@@ -2043,6 +2053,35 @@ export const T = {
       frieda: ['MORGEN, {name}! Oh. Zu laut.', 'Morgen, {name}! Das Eisen ist heiß.', '{name}! Brauchst du was gerichtet?'],
       mara: ['Morgen, {name}. Schon gesehen: alles ruhig.', '{name}. Die Wege sind abgelaufen.', 'Morgen, {name}! Dreiundzwanzig Krähen heute.'],
       paula: ['Morgen, {name}. Halt mal still.', 'Guten Morgen, {name}. Dein Kragen sitzt schief.', 'Morgen, {name}. Alles geflickt.'],
+    },
+  },
+  // N7: Die Insel im Nebel (OFFENE-FRAGEN 194)
+  nebel: {
+    frage: 'Draußen im Nebel läutet eine Glocke. Wohin?',
+    derGlockeNach: 'Der Glocke nach',
+    fahrt: 'Der Glocke nach',
+    hinaus: 'Hinaus in den Nebel …',
+    steuern: 'WASD: rudern · Esc: umkehren',
+    grau: 'Nichts als Grau. Nur die Glocke.',
+    wegVomKlang: 'Wo ist sie hin? … Da. Da drüben.',
+    verloren: 'Ich hab die Glocke verloren. Morgen früh wieder.',
+    umkehren: 'Zurück. Ein andermal.',
+    ankunft: 'Ein Anleger aus Treibholz. Ein Apfelbaum. Und Wäsche auf der Leine.',
+    wieder: 'Die Nebelinsel. Es riecht nach Äpfeln und Rauch.',
+    auftrag: 'Für Marthes Kahn: Nägel und Zucker',
+    geflickt: 'Der Kahn ist dicht! Morgen früh kommen sie.',
+    inDerBucht: 'Marthe und die Kinder sind in der Bucht!',
+    ziel: 'Nägel und Zucker für Marthe',
+    zielZurueck: 'Nägel und Zucker zur Nebelinsel bringen',
+    zuckerAngebot: 'Eine Dose Zucker',
+    zuckerInfo: 'Für Marthes Kahn – und für die Kinder.',
+    reuse: (n) => (n === 1 ? 'Ein Fisch in der Reuse – ab in den Korb.' : `${n} Fische in der Reuse – ab in den Korb.`),
+    reuseLeer: 'Die Reuse ist leer. Morgen früh wieder.',
+    ansehen: {
+      glocke: 'Eine alte Schiffsglocke, blank gerieben. Eingraviert: »Holzlände«. Die ist von uns drüben.',
+      baum: 'Die unteren Äpfel sind alle gepflückt. Da war jemand fleißig. Und klein.',
+      huette: 'Eine Hütte aus Treibholz. Durchs Bullauge sieht man drei Schlafsäcke und viele Zeichnungen.',
+      kahn: 'Marthes Kahn. In der Seite klafft ein Loch, groß wie eine Hand.',
     },
   },
   debug: {

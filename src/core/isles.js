@@ -61,6 +61,7 @@ export class Isles {
     b.x = spot.x;
     b.z = spot.z;
     b.prompt = !this.data.boat ? 'bootFlicken' : this.boatAt ? 'zurueckRudern' : 'rudern';
+    b.enabled = !this.game.fogIsle?.away; // N7: das Boot liegt an der Nebelinsel
     w.isleProps.setFound(this.data.found, this.data.cat);
     // Fundstellen nur auf der Insel, auf der Mika gerade ist (sonst ragen sie über das Wasser)
     for (const it of w.isleProps.interactions) if (it.isleFind) it.enabled = it.enabled && FINDS[it.isleFind].isle === this.at;
@@ -98,7 +99,8 @@ export class Isles {
       return;
     }
     g.startDialog('bootFahrt', (aktion) => {
-      if (typeof aktion === 'string' && aktion.startsWith('insel:')) this.row(aktion.slice(6));
+      if (aktion === 'nebel') g.fogIsle.start(); // N7: der Glocke nach
+      else if (typeof aktion === 'string' && aktion.startsWith('insel:')) this.row(aktion.slice(6));
     });
   }
 

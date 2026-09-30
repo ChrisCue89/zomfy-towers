@@ -202,7 +202,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Stimmen, Besuch, Rückkehr, Signalfeuer, M32), fishing
                       (Angeln am Steg: Wurf, Biss, Drill, Fang, M33), isles
                       (Ruderboot und Inseln: Abdichten, Fahrt, Landung, Funde,
-                      N6), quests
+                      N6), fogIsle (die Insel im Nebel: Spur, Glocke,
+                      Nebelfahrt, Marthe und die Kinder, Kahn, Reuse, N7), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -264,6 +265,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       questModels (Fundstücke der Nebenaufträge, M23),
                       isleModels + isleProps (Zelt, Netz, Steinbank, Kiste,
                       Kürbisse und Katze auf den Inseln und vor der Tür, N6),
+                      fogIsle (Nebelinsel: Boden, Apfelbaum, Treibholzhütte,
+                      Glockengestell, Wäsche, Kahn, Reuse, Seenebel, N7),
                       cardModels (Klapptisch, Hackklötze, Einsätze, M28),
                       keepsakeModels (die siebzehn Erinnerungsstücke, M29),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
@@ -280,8 +283,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       Bienenschwärme, Vogelscheuche), traps (Fallen auf den
                       Wegen, M19), loot (Brocken,
                       Magnet, Zerfall), npcs (Überlebende in der Welt:
-                      Laufen, Winken, Bellen, Lächeln), survivorModels (auch
-                      Balduin), dogModel, traderModels (Balduins Boot, Mikas
+                      Laufen, Winken, Bellen, Lächeln; Kinder-Rig, N7),
+                      survivorModels (auch Balduin, Marthe, Pim und Lu), dogModel, traderModels (Balduins Boot, Mikas
                       Ruderboot, N5),
                       crows (Krähen: sitzen, picken, fliegen auf, M12),
                       fishingModels (Angel, Pose, Fänge, M33)
@@ -322,7 +325,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Signalfeuer, M32), motifs (Motive der Figuren für die
                       Spieluhr, M32), fishing (Angeln: Platz, Zeiten, Fische,
                       Hilfe der Freunde, Korb, M33), isles (Inseln: Fahrt,
-                      Landeplätze, Funde, Abdichten, N6),
+                      Landeplätze, Funde, Abdichten, N6), fogIsle (Nebelinsel:
+                      Form, Stellen, Glocke, Fahrt, Seenebel, Auftrag, Reuse,
+                      Stufen, N7),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -359,7 +364,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -700,6 +705,28 @@ Grundprinzipien:
   - Tannen der Inseln lassen `isleClearings()` frei, ohne den Zufall der Natur zu
     verschieben. Nach dem Laden wacht, wer auf einer Insel war, am Steg auf
     (`isles.apply`).
+- **Die Insel im Nebel (N7, `core/fogIsle.js`, `data/fogIsle.js`, `world/fogIsle.js`):**
+  - `state.isles.fog.stage`: 0 nichts, 1 Spur (Zelt oder dritte Flaschenpost, `from` =
+    Tag danach), 2 Auftrag, 3 Kahn geflickt (`arrive` = Tag danach), 4 in der Bucht.
+    `bellRings(state)` (auch in dialogs.js) sagt, ob die Glocke läutet (Stufe 1–2,
+    07:00–09:30, nicht am Tag `lost`).
+  - Die Insel liegt östlich der Karte (x ≈ 57), nur See; ihre Form ist fest
+    (`fogIsleEdge`, nicht aus dem Kartenstartwert). `map.isle = 'nebel'` hält Mika auf
+    ihr, `world.heightAt` gibt ihren Boden (ein Voxel über dem Wasser). Die Insel ist nur
+    sichtbar, solange Mika unterwegs oder dort ist (`setShown`).
+  - Modus `nebelfahrt`: Phasen `hinaus` (von selbst bis `FOG_TRIP.start`), `suchen`
+    (WASD wie beim Laufen, Strömung, Gleiten am Inselrand, verloren nach Kurs, Zeit oder
+    Abtrift), `anlegen`, `heim`, `verloren` (Nebelweiß mit `ui.ditherFill`). Kamera:
+    `FOG_VIEW`, ohne Geländegrenze. Der Seenebel (`SeaFog`) hat zwei gerasterte Lagen mit
+    freier Sicht um Boot und Insel (je Lage nach Süden verschoben, wie die Kamera
+    blickt).
+  - Marthe, Pim und Lu sind wie Edda keine Bewohner (`FOG_PEOPLE`, nicht in `PEOPLE`):
+    `survivors.talk` leitet zu `fogIsle.talk`, `placeAll` zu `fogIsle.placePeople`. Die
+    Kinder nutzen `RIGS.child` in npcs.js (Modelle mit `child: true`). Nägel sind ein
+    Werkbank-Rezept mit `fog`, Zucker ein Angebot Balduins und Hildes Dose
+    (`hildeSugar`); beides liegt als `QUEST_ITEMS` im Vorrat.
+  - `map.pushInside` hält nur, wer in der Nähe der Insel ist, auf ihr – wer in der Bucht
+    läuft, bleibt dort (vorher zog es Überlebende an den Inselrand).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1063,8 +1090,19 @@ Grundprinzipien:
    Stange bleibt), E am Boot rudert zurück an den Steg, die Katze der kleinen
    Insel kommt mit (Gemütlichkeit +1, vor der Tür, E streichelt), um halb sieben
    rudert Mika von der großen Insel heim, abends bleibt das Boot am Steg,
-   Speichern v30 auf der Insel wacht am Steg auf, Migration v29 → v30 (Bilder:
-   rudern, insel, katze-daheim).
+   Speichern v31 auf der Insel wacht am Steg auf, Migration v29 → v31 (Bilder:
+   rudern, insel, katze-daheim); ab N7 (Abschnitt `nebelinsel`): das Zelt ist die
+   Spur, am nächsten Morgen läutet ab 07:00 die Glocke (Marke rechts, Seenebel, Edda
+   funkt), E am Boot bietet »Der Glocke nach« (vorgewählt bleibt »Doch lieber an
+   Land«), im Nebel führt A gehalten vom Klang weg – verloren, zurück am Steg, heute
+   nicht mehr –, am nächsten Morgen dem Klang nach mit WASD bis zum Anleger, Marthe
+   kommt herüber und erzählt (Kinder kleiner, Porträts), Marthe wartet, Pim erzählt,
+   E am Kahn, E am Boot zurück, Nägel an der Werkbank, Zucker von Hilde (Ziel
+   2/2), beim zweiten Besuch flickt Marthe den Kahn, am Morgen danach gleitet er an
+   den Steg, Marthe am Steg, die Kinder spielen im Hof, die Reuse gibt Fisch (einmal
+   am Tag), Lu erzählt, abends schlafen sie im Kahn, Hilde bleibt in der Bucht,
+   während Mika auf der Nordinsel ist, Speichern v31 und Migration v30 → v31
+   (Bilder: nebelfahrt, marthe-treffen, nebelinsel, marthe-bucht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1211,7 +1249,10 @@ Einladung, Besuch, Fahne, Signalfeuer, Edda und die offene Karte
 Fänge, Korb, die laufende Runde (Phase, Kescher, Fangkarte) und den Angelplatz,
 `giveRod()` gibt die Angel; ab N6 zeigt `isles()` Boot (dicht?), besuchte Inseln,
 Funde, Katze, wo Mika und das Boot sind, die laufende Fahrt, Landeplätze,
-Einblendungen, sichtbare Inselmodelle und die Gemütlichkeit.
+Einblendungen, sichtbare Inselmodelle und die Gemütlichkeit; ab N7 zeigt
+`fogIsle()` Stufe, Glocke (läutet, Schläge, Marke), Fahrt (Phase, Kurs, Abstand),
+Boot, Menschen (Stelle, sichtbar, Kind), Seenebel, Ziel, Vorrat und Korb,
+`setFog(stufe)` setzt die Geschichte auf eine Stufe, `fogStrike()` schlägt die Glocke.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
 `lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
 wieder Mika, M32).

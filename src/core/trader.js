@@ -23,6 +23,7 @@ import { FISHING, ROD_OFFER, FISH_PRICE } from '../data/fishing.js';
 import { AMMO_TRADE, ARMS_REPLACE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
+import { SUGAR } from '../data/fogIsle.js';
 
 const U = BOAT_UNIT;
 const DECK_Y = (BOAT.deck + 1) * U; // hier steht Balduin im Boot
@@ -339,6 +340,10 @@ export class Trader {
     const fishing = st.fishing;
     if (fishing && !fishing.rod && st.time.day >= ROD_OFFER.day) {
       list.push({ id: 'tausch-angel', key: 'angel', cost: ROD_OFFER.cost, trade: true, icon: 'angel', name: T.angeln.angelAngebot, info: T.angeln.angelInfo, gives: { rod: true }, affordable: canAfford(st.inventory, ROD_OFFER.cost) });
+    }
+    // N7: Zucker für Marthes Kahn (solange sie darauf wartet)
+    if (st.isles?.fog?.stage === 2 && !(st.inventory.zucker > 0)) {
+      list.push({ id: 'tausch-zucker', key: 'zucker', cost: SUGAR, trade: true, icon: 'zucker', name: T.nebel.zuckerAngebot, info: T.nebel.zuckerInfo, gives: { inventory: { zucker: 1 } }, affordable: canAfford(st.inventory, SUGAR) });
     }
     if (fishing?.basket > 0) {
       const left = Math.max(0, FISHING.sell.perDay - this.soldToday('fisch'));

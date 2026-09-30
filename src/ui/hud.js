@@ -3,7 +3,7 @@
 // Unten links die Schnellleiste, unten rechts die Bauleiste (eigene Datei).
 
 import { T } from '../data/texts.js';
-import { RESOURCES, RARE_RESOURCES, ITEMS, HOTBAR_SIZE } from '../data/items.js';
+import { RESOURCES, RARE_RESOURCES, QUEST_ITEMS, ITEMS, HOTBAR_SIZE } from '../data/items.js';
 import { HOUSE_LEVELS, maxHpOf } from '../data/buildings.js';
 import { clockText, hoursOf } from '../core/state.js';
 import { COLORS } from './ui.js';
@@ -397,12 +397,13 @@ export class Hud {
 
   visibleResources() {
     const st = this.game.state;
-    return RESOURCES.filter((id) => {
+    const list = RESOURCES.filter((id) => {
       if (id === 'zahnraeder') return st.inventory.zahnraeder > 0 || st.flags.fundZahnrad;
       if (id === 'teile') return st.inventory.teile > 0 || st.flags.fundTeile;
       if (RARE_RESOURCES.includes(id)) return st.inventory[id] > 0 || st.flags.fundModerkern;
       return true;
     });
+    return [...list, ...QUEST_ITEMS.filter((id) => st.inventory[id] > 0)]; // N7: Nägel und Zucker für Marthe
   }
 
   drawResources(ui) {

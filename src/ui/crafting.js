@@ -82,7 +82,8 @@ export class CraftingMenu {
       const karten = !g.cardNight.blocked('balduin') ? [{ id: 'karten', cards: true, icon: 'buch', name: T.karten.einladenBalduin, info: T.karten.titel, cost: {}, gives: {}, affordable: true }] : [];
       return [...g.trader.offers(), ...(bitte ? [bitte] : []), ...karten, bye];
     }
-    const list = RECIPES.filter((r) => !r.arms || g.state.arms?.unlocked).map((r) => {
+    const fogOpen = g.state.isles?.fog?.stage === 2 && !(g.state.inventory.naegel > 0); // N7: Marthe wartet auf Nägel
+    const list = RECIPES.filter((r) => (!r.arms || g.state.arms?.unlocked) && (!r.fog || fogOpen)).map((r) => {
       const owned = r.once && ((r.gives.tool && g.state.tools[r.gives.tool]) || (r.gives.weapon && g.state.weapons[r.gives.weapon]));
       return { ...r, owned, affordable: !owned && canAfford(g.state.inventory, r.cost) };
     });
