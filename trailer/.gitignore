@@ -1,3 +1,4 @@
 node_modules/
 # Masterfassung (87 MB) bleibt lokal, im Repo liegt die leichtere Fassung
 out/*-master.mp4
+out/*-vorschau.mp4
