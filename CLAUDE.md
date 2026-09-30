@@ -148,7 +148,7 @@ gilt bis auf Weiteres:
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
   und im Maß 1/32 bauen (Natur 1/16).
 - **Die Bildmitte gehört dem Spiel (N4):** Hinweise und Erklärungen spricht
-  Edda über Funk unten rechts (`game.funk.say`, einmalig `funk.once(flag,
+  Edda über Funk unten links (seit H1; `game.funk.say`, einmalig `funk.once(flag,
   text)`), nie ein Kasten in der Mitte und nie ein Dialog; Meldungen
   (`hud.toast`) stehen rechtsbündig unter Vorrat und Nachtplan.
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
@@ -184,7 +184,7 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       arrival (die Ankunft: Titelkarte, Ruderboot, Steg,
                       Funkgerät, N5), tutorial (Einführung mit Edda, N5),
                       state.js (Spielzustand), save.js (Speichern, Migration),
-                      inventory (Kosten/Vorrat), builder (Bauleiste, Platzieren,
+                      inventory (Kosten/Vorrat), builder (Baumenü, Platzieren,
                       Auswahl, Turm-Ausbau, Reparieren, Abreißen, Hausausbau,
                       Wegvorschau), gathering (Sammeln, Durchsuchen), nights
                       (Tagesschlurfer, Wellen, Sieg/Niederlage, Bericht),
@@ -298,7 +298,9 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
-                      buildbar (Bauleiste), crafting (Werkbank und
+                      buildbar (Baumenü: Knopf, Reiter, Kacheln, Bauzettel,
+                      H1), buildPictures (Bilder der Kacheln aus den
+                      Modellen, H1), crafting (Werkbank und
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), cardTable
                       (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
@@ -380,9 +382,10 @@ Grundprinzipien:
   gehen sie bei der Schrittsimulation verloren). Layouts, die beides
   brauchen, berechnet eine eigene `layout()`-Methode.
 - Die Oberfläche ist ein 2D-Canvas in Spielauflösung, sofort-modus gezeichnet.
-- **Eingaben im Spielmodus, in dieser Reihenfolge:** Bauleiste (Kacheln,
-  Q R T G C V, Tab; Abreißen liegt immer auf V) → Schnellleiste und
-  Fähigkeiten-Kacheln → Abbrechen (Esc/Rechtsklick, vor dem Menü) → Karte (M),
+- **Eingaben im Spielmodus, in dieser Reihenfolge:** Baumenü (Kacheln,
+  Q R T G C V – zugeklappt immer die Türme –, Tab öffnet und wechselt den Reiter;
+  Abreißen liegt immer auf V) → Schnellleiste und Fähigkeiten-Kacheln → Abbrechen
+  bzw. Baumenü zuklappen (Esc/Rechtsklick, vor dem Pausenmenü) → Karte (M),
   Ansicht (Z), Welle rufen (N), Zeitraffer (B), Junas Leuchtfeuer (J, M23),
   Fähigkeiten (Rechtsklick –
   nur wenn er nicht gerade das Bauen abbricht – und X, M16) → Bewegung
@@ -776,8 +779,8 @@ Grundprinzipien:
   `data/cards.js`; `node tools/karten.mjs` prüft Fairness und Ticks.
 - **Edda und der Katalog (N4, `ui/funk.js`, `ui/catalog.js`):** `Funk` hält
   eine Warteschlange (höchstens fünf), tippt die laufende Zeile in eine
-  Sprechblase neben Eddas Foto (`eddaPortrait` in `portrait.js`) und liegt über
-  den Reitern der Bauleiste; ein Klick tippt fertig bzw. schließt (vor dem
+  Sprechblase neben Eddas Foto (`eddaPortrait` in `portrait.js`) und liegt seit H1
+  unten links über Mikas Leiste (`hud.groupTop`); ein Klick tippt fertig bzw. schließt (vor dem
   Builder ausgewertet, `pointerFree` schließt das Feld aus). `funk.once` merkt
   sich Erklärungen in `state.flags` (`funk_…`). Das Funkgerät in der Stube ist
   ein Menü (Katalog nach Balduins erstem Besuch, Edda, Radio). Der Katalog zeigt
@@ -790,6 +793,16 @@ Grundprinzipien:
   `WOHN` (`interior.js`) – Möbelmodelle rechnen von dort aus. Werkzeug und Waffe
   hängen auf dem Rücken (`character.backTools`, gleiche Geometrie wie in der
   Hand); `player.keepDrawn(s)` hält sie gezogen (Schlurfer in 5 m).
+- **Das Baumenü (H1, `ui/buildbar.js`, `ui/buildPictures.js`):** Offen ist es, wenn
+  `userOpen` (Tab, Klick auf den Knopf), `quick` (Q … bei zugeklapptem Menü – klappt nach dem
+  Setzen wieder zu) oder gerade gesetzt bzw. ein Bau ausgewählt wird. `handleClose` klappt es vor
+  dem Pausenmenü zu; `builder.handleCancel` sagt, wofür Esc verbraucht wurde ('abgebrochen',
+  'fertig'). Optionen tragen `picture` (Schlüssel `bau:art`, `turm:art:stufe:spez`,
+  `barrikade:stufe`, `teil:id`); `BuildPictures` rechnet sie in der Schrägsicht der Welt auf der
+  CPU (höchstens eins je Bild, bis dahin das Symbol doppelt so groß). Mehr als sechs Möglichkeiten
+  werden Seiten mit »weiter«. Der Bauzettel (`noteLayout`) zeigt die Kachel unter der Maus oder
+  die wartende Rückfrage; beim Setzen trägt das Schild am Geist Preis und Grund
+  (`builder.drawGhostLabel`).
 - **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
   { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
@@ -1145,7 +1158,13 @@ Grundprinzipien:
    hintereinander sind die Tat »Drachenwetter«, Esc gibt zurück (20 Minuten weiter), bei
    Regen kommt er herunter, Speichern v32 und Migration v31 → v32 (Bilder: drachen,
    drachen-looping); ab 30.09. (Abschnitt `nebel`): Mika geht am Nebelmorgen nach Norden,
-   oben im Bild tut der Dunst kaum wechselnde Pixel dazu (Bild: nebel-dunst).
+   oben im Bild tut der Dunst kaum wechselnde Pixel dazu (Bild: nebel-dunst); ab H1
+   (Abschnitt `oberflaeche`): zugeklappt nur der Knopf »Bauen«, Tab öffnet die Türme mit Bildern
+   aus den Modellen (Kacheln 48 × 58, der Bolzenwerfer mit über 300 Punkten), Esc klappt zu, ohne
+   das Pausenmenü, Q setzt zugeklappt den Bolzenwerfer (Preis am Geist, kein Bauzettel) und E baut
+   ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; »Leute« mit mehr
+   als sechs Möglichkeiten zeigt »weiter« und dort den Leuchtmast; Edda spricht unten links, nie
+   auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1301,7 +1320,10 @@ Fenster, Looping, Reihe, Kinder und Pims Einblendung, `setKite(stufe)` setzt die
 des Drachens (3: fertig), `kiteGust()` schickt gleich eine Böe.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
 `lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
-wieder Mika, M32).
+wieder Mika, M32). Ab H1 klappt `buildbarLayout()` das Baumenü für echte Klicks auf
+(`{ open: false }` nicht), `buildMenu()` zeigt offen/zu, Reiter, Kacheln (mit Bildschlüssel und
+gezeichneten Punkten), Knopf, Bauzettel, wartende Rückfrage und die Warteschlange der Bilder,
+`buildPicture(schlüssel)` rechnet ein Bild sofort (Punkte, Brustbild, Maßstab).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

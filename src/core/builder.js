@@ -168,6 +168,7 @@ export class Builder {
         {
           id: type,
           icon: def.icon,
+          picture: `bau:${type}`, // H1: das Bild der Kachel aus dem Modell
           name: T.bauten[type],
           info: this.infoFor(type),
           hint: def.tower && buildings.count(type) > 0 ? T.bauleiste.staffel(TOWER_EXTRA) : null,
@@ -373,17 +374,17 @@ export class Builder {
     if (def.tower) {
       const t = TOWERS[b.type];
       if (b.level === 1) {
-        options.push(this.option({ id: 'stufe2', icon: def.icon, badge: '2', name: T.bauleiste.stufe(2), info: this.statLine(b.type, 2, null), cost: t.base[1].cost, buy: true, action: () => this.upgradeTower(b, 2, null) }, inv));
+        options.push(this.option({ id: 'stufe2', icon: def.icon, picture: `turm:${b.type}:2:-`, badge: '2', name: T.bauleiste.stufe(2), info: this.statLine(b.type, 2, null), cost: t.base[1].cost, buy: true, action: () => this.upgradeTower(b, 2, null) }, inv));
       } else if (b.level === 2) {
         for (const spec of ['A', 'B']) {
           const [name, info] = T.tuerme[spec][b.type];
-          options.push(this.option({ id: `spec${spec}`, icon: def.icon, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, buy: true, action: () => this.upgradeTower(b, 3, spec) }, inv));
+          options.push(this.option({ id: `spec${spec}`, icon: def.icon, picture: `turm:${b.type}:3:${spec}`, badge: spec, name, info: `${info} ${this.statLine(b.type, 3, spec)}`, cost: t.specs[spec].levels[0].cost, buy: true, action: () => this.upgradeTower(b, 3, spec) }, inv));
         }
       } else if (b.level < 5) {
         const [name] = def.mix ? T.misch[b.type] : T.tuerme[b.spec][b.type];
-        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, buy: true, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
+        options.push(this.option({ id: `stufe${b.level + 1}`, icon: def.icon, picture: `turm:${b.type}:${b.level + 1}:${b.spec}`, badge: String(b.level + 1), name: `${name} ${b.level + 1}`, info: this.statLine(b.type, b.level + 1, b.spec), cost: t.specs[b.spec].levels[b.level - 2].cost, buy: true, action: () => this.upgradeTower(b, b.level + 1, b.spec) }, inv));
       } else {
-        options.push({ id: 'max', icon: def.icon, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
+        options.push({ id: 'max', icon: def.icon, picture: `turm:${b.type}:5:${b.spec}`, badge: '5', name: T.bauleiste.hoechste, info: this.statLine(b.type, 5, b.spec), cost: {}, affordable: false, disabled: true, disabledText: T.bauleiste.hoechste, progress: 1 });
       }
     }
     // Mischtürme (M20): mit einem Nachbarn verbinden
@@ -393,7 +394,7 @@ export class Builder {
       const room = 5 - options.length - (def.hp && b.hp < maxHpOf(b) ? 1 : 0);
       for (const id of TOWER_PART_IDS.filter((p) => this.game.state.towerParts[p] > 0 && partFits(b.type, p) && !hasPart(b, p)).slice(0, Math.max(0, room))) {
         const [name, info] = T.turmteile[id];
-        options.push({ id: `teil-${id}`, icon: id, name: T.turmteile.einbauen(name), info: `${T.turmteile.seltenheit[TOWER_PARTS[id].rarity]} · ${info}`, cost: {}, affordable: true, progress: 1, action: () => this.mountPart(b, id) });
+        options.push({ id: `teil-${id}`, icon: id, picture: `teil:${id}`, name: T.turmteile.einbauen(name), info: `${T.turmteile.seltenheit[TOWER_PARTS[id].rarity]} · ${info}`, cost: {}, affordable: true, progress: 1, action: () => this.mountPart(b, id) });
       }
     }
     if (b.type === 'barrikade') {
@@ -403,7 +404,7 @@ export class Builder {
       } else if (b.level < BARRICADE_LEVELS.length - 1) {
         const next = b.level + 1;
         const [name, info] = T.barrikaden[BARRICADE_LEVELS[next].key];
-        options.push(this.option({ id: `stufe${next}`, icon: def.icon, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: this.barricadeUpgradeCost(next), buy: true, action: () => this.upgradeBarricade(b) }, inv));
+        options.push(this.option({ id: `stufe${next}`, icon: def.icon, picture: `barrikade:${next}`, badge: String(next), name, info: `${info} ${T.barrikaden.haelt(barricadeLevel(next).hp)}`, cost: this.barricadeUpgradeCost(next), buy: true, action: () => this.upgradeBarricade(b) }, inv));
       }
       options.push(...this.gearOptions(b, inv)); // Zubehör (M17e)
     }
@@ -488,7 +489,7 @@ export class Builder {
         const known = Boolean(this.game.state.recipes?.[id]);
         const name = known ? T.misch[id][0] : T.misch.unbekannt;
         const info = known ? `${T.misch[id][1]} ${this.statLine(id, Math.min(b.level, c.level), 'A')}` : `${T.misch.unbekanntInfo} ${T.misch.verbindenInfo}`;
-        return this.option({ id: `misch-${c.id}`, icon: known ? id : 'misch', name: T.misch.verbinden(name), info, cost: MIX_COST, confirm: true, confirmText: T.misch.nochmal(name), confirmIcon: 'misch', disabled: busy, locked: busy, disabledText: T.bauleiste.erstWelle, action: () => this.mergeTowers(b, c) }, inv);
+        return this.option({ id: `misch-${c.id}`, icon: known ? id : 'misch', picture: known ? `turm:${id}:3:A` : null, name: T.misch.verbinden(name), info, cost: MIX_COST, confirm: true, confirmText: T.misch.nochmal(name), confirmIcon: 'misch', disabled: busy, locked: busy, disabledText: T.bauleiste.erstWelle, action: () => this.mergeTowers(b, c) }, inv);
       });
   }
 
@@ -816,6 +817,8 @@ export class Builder {
 
   startPlacement(type, { byMouse = false } = {}) {
     this.selection = null;
+    // H1: Was Kreis, Pünktchen und Kreuz bedeuten, erklärt Edda einmal in der Einführung (vorher stand es bei jedem Setzen in einer Tafel)
+    if (BUILDINGS[type].tower) this.game.tutorial.teach('bauenWege', T.bauleiste.wegeHinweis);
     const turns = this.placement?.type === type ? this.placement.turns : 0;
     this.placement = { type, optionId: type, name: T.bauten[type], info: this.infoFor(type), cost: this.costOf(type), turns, i: 0, j: 0, ok: false, reason: null };
     this.useMouse = byMouse;
@@ -828,17 +831,18 @@ export class Builder {
   }
 
   /**
-   * Abbrechen per Esc oder Rechtsklick. Gibt true zurück, wenn Esc dafür
-   * verbraucht wurde (dann öffnet es nicht das Menü).
+   * Abbrechen per Esc oder Rechtsklick. Gibt zurück, wofür der Druck verbraucht wurde
+   * ('abgebrochen': Setzen oder Auswahl; 'fertig': Esc gleich nach dem Setzen – H1: dann
+   * klappt auch das Baumenü zu), sonst false (dann öffnet Esc das Menü).
    */
   handleCancel(input) {
     if (!this.placement && this.selection === null) {
       // Esc gleich nach dem letzten Setzen heißt »fertig«, nicht »Menü«
-      return input.pressed('cancel') && this.game.clock - this.endedAt < 2;
+      return input.pressed('cancel') && this.game.clock - this.endedAt < 2 ? 'fertig' : false;
     }
     if (input.pressed('cancel') || input.mouse.rightClicked) {
       this.cancel();
-      return true;
+      return 'abgebrochen';
     }
     return false;
   }
@@ -946,23 +950,51 @@ export class Builder {
     const bottom = g.worldToUi(pl.i + w, 0, pl.j + d);
     // Der Hinweis unter dem Geist gehört dazu – die Tafel darf ihn nicht verdecken (M26)
     const note = this.ghostNote(pl);
-    const label = note ? LINE_HEIGHT + 10 : 0;
+    const label = (note ? LINE_HEIGHT : 0) + 18; // H1: Preis und Grund am Geist
     const half = Math.max(40 + (bottom.x - top.x) / 2, note ? measure(note.text) / 2 + 8 : 0);
     const mid = (top.x + bottom.x) / 2;
     return { x: mid - half, y: top.y - 4, w: half * 2, h: bottom.y - top.y + 8 + label };
   }
 
-  /** Der Hinweis unter dem Geist – nach der Bauleiste gezeichnet, damit ihn ihre Tafel nie verdeckt (M26). */
+  /**
+   * Das Schild unter dem Geist – nach dem Baumenü gezeichnet, damit es nie verdeckt ist (M26).
+   * H1: Es trägt den Preis (was fehlt, rot) und darunter den Grund, wenn es nicht geht.
+   */
   drawGhostLabel(ui) {
     const l = this.ghostLabel;
     this.ghostLabel = null;
-    if (!l || !this.placement) return;
-    const tw = measure(l.text) + 8;
-    const tx = Math.round(l.x - tw / 2);
-    const ty = Math.round(l.y);
-    ui.rect(tx - 1, ty - 1, tw + 2, LINE_HEIGHT + 5, COLORS.outline);
-    ui.rect(tx, ty, tw, LINE_HEIGHT + 3, COLORS.fill);
-    ui.text(l.text, tx + 4, ty + 1, l.why ? COLORS.buildBad : COLORS.gold);
+    const pl = this.placement;
+    if (!l || !pl) return;
+    const inv = this.game.state.inventory;
+    const cost = Object.entries(pl.cost || {}).filter(([, v]) => v > 0);
+    const costW = cost.reduce((w, [, v]) => w + measure(String(v)) + 13, -2);
+    const tw = Math.max(cost.length ? costW : 0, l.text ? measure(l.text) : 0) + 8;
+    const th = (cost.length ? 13 : 0) + (l.text ? LINE_HEIGHT : 0) + 3;
+    if (th <= 3) return;
+    let tx = Math.round(l.x - tw / 2);
+    let ty = Math.round(l.y);
+    // Nie auf dem Baumenü: erst nach links ausweichen, reicht das nicht, darüber
+    const m = this.game.buildbar.menuRect(ui);
+    if (tx < m.x + m.w && tx + tw > m.x && ty < m.y + m.h && ty + th > m.y) {
+      if (m.x - 6 - tw >= 2) tx = m.x - 6 - tw;
+      else ty = m.y - th - 6;
+    }
+    const dx = tx - Math.round(l.x - tw / 2); // Inhalt wandert mit
+    ui.rect(tx - 1, ty - 1, tw + 2, th + 2, COLORS.outline);
+    ui.rect(tx, ty, tw, th, COLORS.fill);
+    let y = ty + 1;
+    if (cost.length) {
+      let x = Math.round(l.x - costW / 2) + dx;
+      for (const [res, v] of cost) {
+        const text = String(v);
+        ui.text(text, x, y, (inv[res] || 0) >= v ? COLORS.text : COLORS.red);
+        x += measure(text) + 1;
+        drawIcon(ui.ctx, res, x, y + 2);
+        x += 12;
+      }
+      y += 13;
+    }
+    if (l.text) ui.text(l.text, Math.round(l.x - measure(l.text) / 2) + dx, y, l.why ? COLORS.buildBad : COLORS.gold);
   }
 
   /** Hinweis am Geist: warum er rot ist, oder dass er so nichts nützt. null = nichts zu sagen. */
@@ -1251,7 +1283,7 @@ export class Builder {
       // Warum rot – oder passt, aber nutzlos? Gleich am Geist sagen (m3-r2, m12-r1, m16-r1)
       // Gezeichnet wird er erst nach der Bauleiste (drawGhostLabel) – so liegt er über ihrer Tafel
       const note = this.ghostNote(pl);
-      this.ghostLabel = note ? { ...note, x: r.x + r.w / 2, y: r.y + r.h + 5 } : null;
+      this.ghostLabel = { text: note?.text || null, why: note?.why || false, x: r.x + r.w / 2, y: r.y + r.h + 5 };
     }
     if (sel) {
       const b = this.world.buildings.bounds(sel);

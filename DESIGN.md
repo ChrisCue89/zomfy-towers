@@ -1871,6 +1871,13 @@ Dunst und Vignette hingen am Bildschirm vor dem Raster der Palette und ließen b
 Norden Tausende Pixel kippen. Jetzt liegen sie weich dahinter (Nr. 200), der Abschnitt `nebel`
 misst es bei jedem Lauf.
 
+#### H1 – Das neue Baumenü ✓
+
+*Umgesetzt (30.09.2026):* Zugeklappt ein Knopf »Bauen [Tab]«, offen Kacheln mit Bildern aus den
+Modellen, Preisen in der Hauptschrift und einem Bauzettel; Preis und Grund am Baugeist,
+Rückfragen auf der Kachel, »weiter« statt stiller Kürzung, Reiter »Helfer« und »Leute«, Edda
+kompakt unten links (Nr. 201).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

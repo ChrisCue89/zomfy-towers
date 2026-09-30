@@ -1111,6 +1111,20 @@ export class Hud {
     ui.rect(tx, edge + 2 * dir, 1, 1, COLORS.outline);
   }
 
+  /**
+   * H1: Oberkante von Mikas Gruppe unten links (Schnellleiste, Leben, Erfahrung, wartende
+   * Wahl) – darüber spricht Edda über Funk.
+   */
+  groupTop(ui) {
+    const r = this.hotbarRect(ui);
+    const g = this.game;
+    let top = r.y;
+    if (g.state.player.hp < g.combat.maxHp - 0.5 || g.nights.active) top = r.y - 13; // Lebensbalken
+    else if (g.state.player.level > 1 || g.state.player.xp > 0) top = r.y - 7; // Erfahrung
+    if ((g.state.perkChoice || g.state.skillChoice) && !g.perkChoice.isOpen) top = r.y - 35; // »Wahl wartet«
+    return top;
+  }
+
   hotbarRect(ui) {
     const width = (HOTBAR_SIZE + 1) * SLOT + HOTBAR_SIZE * SLOT_GAP + 5 + 8;
     return { x: 4, y: ui.height - SLOT - 12, w: width, h: SLOT + 8 };

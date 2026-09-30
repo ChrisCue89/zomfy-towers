@@ -2077,6 +2077,11 @@ const ICONS = {
     ],
   },
   // Baugeist (M26): passt – passt nicht, dazu die Farbe (nie Farbe allein)
+  // H1: gesperrte Kachel im Baumenü (drinnen, während der Welle)
+  schloss: {
+    legend: { k: P.n0, s: P.s6, S: P.s8, y: P.f5 },
+    rows: ['..kkkk..', '.ks..sk.', '.ks..sk.', 'kkkkkkkk', 'kSSSSSSk', 'kSSkkSSk', 'kSSkkSSk', 'kSSSSSSk', 'kkkkkkkk'],
+  },
   passt: {
     legend: { g: P.g9, k: P.n0 },
     rows: [

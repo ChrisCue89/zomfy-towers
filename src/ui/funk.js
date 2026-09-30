@@ -1,8 +1,8 @@
 // Hinweise über Funk (N4, Probespiel 29.09.): Anweisungen stehen nicht mehr mitten im
-// Bild, sondern unten rechts in einem Comic-Feld über der Bauleiste. Edda – der früher
-// die Holzlände gehörte – spricht über das alte Funkgerät an Mikas Gürtel: ihr Foto
-// (sepia, mit Klebeband) rechts, eine helle Sprechblase links daneben, in die sich der
-// Text tippt. Sie erklärt das nächste Ziel und jede Funktion beim ersten Mal und
+// Bild, sondern in einem Comic-Feld am Rand – seit H1 unten links über Mikas Leiste (das
+// Funkgerät hängt an Mikas Gürtel, unten rechts ist das Baumenü). Edda – der früher die
+// Holzlände gehörte – spricht über das alte Funkgerät: ihr Foto (sepia, mit Klebeband)
+// links, eine helle Sprechblase rechts daneben, in die sich der Text tippt. Sie erklärt das nächste Ziel und jede Funktion beim ersten Mal und
 // deutet ihre eigene Geschichte an. Nie ein Dialog: Das Spiel läuft weiter, ein Klick
 // auf das Feld tippt fertig bzw. schließt es.
 
@@ -12,7 +12,7 @@ import { eddaPortrait } from '../render/portrait.js';
 import { T } from '../data/texts.js';
 
 /** Tippen (Zeichen je s), Lesezeit, Ein- und Ausfahren (s), Breite der Blase (UI-Pixel). */
-export const FUNK = { type: 55, read: 2.6, perChar: 0.045, min: 4.5, slide: 0.22, bubble: 172, queue: 5 };
+export const FUNK = { type: 55, read: 2.6, perChar: 0.045, min: 4.5, slide: 0.22, bubble: 188, photo: 44, queue: 5 };
 
 const PAPER = hexToCss(P.e9);
 const INK = hexToCss(P.n1);
@@ -93,26 +93,25 @@ export class Funk {
   }
 
   /**
-   * Lage des Felds: rechts unten, über den Reitern der Bauleiste.
+   * Lage des Felds: unten links über Mikas Gruppe (Schnellleiste, Leben, Erfahrung) – H1.
    * @returns {{x:number, y:number, w:number, h:number, bx:number, by:number, bw:number, bh:number, px:number, py:number}|null}
    */
   layout(ui) {
     const c = this.current;
     if (!c) return null;
-    this.photo ||= eddaPortrait({ frame: true, size: 60 }); // etwas größer als im Dialog: mit Schultern und Brosche
+    this.photo ||= eddaPortrait({ frame: true, size: FUNK.photo }); // H1: kompakt, Kopf und Schultern
     const pw = this.photo.width;
     const ph = this.photo.height;
     const bw = FUNK.bubble;
     const bh = Math.max(ph - 12, 18 + c.lines.length * LINE_HEIGHT);
-    const w = bw + 8 + pw;
+    const w = pw + 8 + bw;
     const h = Math.max(ph, bh + 6);
-    const bb = this.game.buildbar?.lastLayout || this.game.buildbar?.layout(ui);
-    const top = bb ? Math.min(bb.y - 15, ...(bb.tabRects || []).map((r) => r.y)) : ui.height;
+    const top = this.game.hud?.groupTop ? this.game.hud.groupTop(ui) : ui.height;
     const k = Math.min(1, c.t / FUNK.slide, (c.total - c.t) / FUNK.slide);
     const slide = Math.round((1 - Math.max(0, k)) * (w + 10));
-    const x = ui.width - 6 - w + slide;
+    const x = 6 - slide; // gleitet von links herein
     const y = Math.round(top - 6 - h);
-    return { x, y, w, h, bx: x, by: y + 4, bw, bh, px: x + bw + 8, py: y };
+    return { x, y, w, h, px: x, py: y, bx: x + pw + 8, by: y + 4, bw, bh };
   }
 
   /** @param {import('./ui.js').UICanvas} ui */
@@ -129,14 +128,14 @@ export class Funk {
     ctx.fillRect(L.bx - 1, L.by - 1, L.bw + 2, L.bh + 2);
     ctx.fillStyle = PAPER;
     ctx.fillRect(L.bx, L.by, L.bw, L.bh);
-    // Zipfel zum Foto
+    // Zipfel zum Foto (links)
     const ty = L.by + 12;
     for (let k = 0; k < 5; k++) {
       ctx.fillStyle = LINE;
-      ctx.fillRect(L.bx + L.bw + k, ty - 4 + k, 1, 9 - 2 * k);
+      ctx.fillRect(L.bx - 1 - k, ty - 4 + k, 1, 9 - 2 * k);
       if (k < 4) {
         ctx.fillStyle = PAPER;
-        ctx.fillRect(L.bx + L.bw - 1 + k, ty - 3 + k, 1, Math.max(1, 7 - 2 * k));
+        ctx.fillRect(L.bx - k, ty - 3 + k, 1, Math.max(1, 7 - 2 * k));
       }
     }
     // Name oben links in der Blase

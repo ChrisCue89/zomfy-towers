@@ -2754,9 +2754,11 @@ export class Game {
         input.consumeClick();
       }
     }
-    const cancelling = this.builder.placement || this.builder.selection !== null;
+    const cancelling = this.builder.placement || this.builder.selection !== null || this.buildbar.userOpen;
     const escUsed = this.builder.handleCancel(input);
-    if (!escUsed && input.pressed('menu')) {
+    if (escUsed === 'fertig') this.buildbar.close(); // H1: Esc gleich nach dem Setzen – fertig gebaut
+    const closed = !escUsed && this.buildbar.handleClose(input); // H1: Esc/Rechtsklick klappen das Baumenü zu
+    if (!escUsed && !closed && input.pressed('menu')) {
       this.openMenu();
       return;
     }
@@ -3239,7 +3241,7 @@ export class Game {
     if (this.mode === 'rudern') this.isles.draw(ui); // N6
     this.fogIsle.draw(ui); // N7: Glocken-Marke am Rand, Nebelfahrt
     if (playing) this.buildbar.draw(ui);
-    if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda unten rechts über der Bauleiste
+    if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda über Funk – seit H1 unten links über Mikas Leiste
     else this.funk.rect = null;
     if (playing) this.builder.drawGhostLabel(ui); // M26: über der Tafel der Bauleiste
     this.crafting.draw(ui);
@@ -4252,11 +4254,47 @@ export class Game {
       },
       selectBuilding: (id) => game.builder.select(id),
       demolish: (id) => game.builder.demolish(id),
-      /** Kacheln der Bauleiste in CSS-Pixeln (Mittelpunkt). */
-      buildbarLayout() {
+      /** Kacheln des Baumenüs in CSS-Pixeln (Mittelpunkt); klappt es dafür auf (H1). */
+      buildbarLayout({ open = true } = {}) {
+        if (open) game.buildbar.openMenu();
         const L = game.buildbar.layout(game.ui);
+        game.buildbar.lastLayout = L;
         const f = game.pixel.uiScale / (window.devicePixelRatio || 1);
-        return { tiles: L.tiles.map((t) => ({ id: t.option.id, x: (t.rect.x + t.rect.w / 2) * f, y: (t.rect.y + t.rect.h / 2) * f })) };
+        return {
+          open: !L.closed,
+          tab: game.buildbar.tab,
+          button: L.closed ? { x: (L.button.x + L.button.w / 2) * f, y: (L.button.y + L.button.h / 2) * f, w: L.button.w, h: L.button.h } : null,
+          tiles: L.tiles.map((t) => ({ id: t.option.id, key: t.key, x: (t.rect.x + t.rect.w / 2) * f, y: (t.rect.y + t.rect.h / 2) * f, w: t.rect.w, h: t.rect.h, picture: t.option.picture || null })),
+        };
+      },
+      /** H1: Zustand des Baumenüs – offen, Reiter, Kacheln, Bauzettel, Bilder, Rückfrage. */
+      buildMenu() {
+        const bb = game.buildbar;
+        const L = bb.layout(game.ui);
+        const note = L.closed ? null : bb.noteLayout(game.ui, L);
+        return {
+          open: !L.closed,
+          userOpen: bb.userOpen,
+          quick: bb.quick,
+          tab: bb.tab,
+          tabs: L.tabs.map((t) => T.bauleiste.reiter[t]),
+          all: L.all ? L.all.map((o) => o.id) : null,
+          tiles: L.tiles.map((t) => {
+            const pic = t.option.picture ? bb.pictures.done.get(t.option.picture) : null;
+            return { id: t.option.id, key: t.key, w: t.rect.w, h: t.rect.h, picture: t.option.picture || null, filled: pic ? pic.filled : 0, bust: pic ? pic.bust : null };
+          }),
+          button: L.closed ? { w: L.button.w, h: L.button.h, x: L.button.x, y: L.button.y } : null,
+          note: note ? { name: note.option.name, lines: note.lines.map(([t]) => t), w: note.w, h: note.h, x: note.x, y: note.y } : null,
+          armed: bb.armed ? { id: bb.armed.id, key: bb.armed.key } : null,
+          rect: L.closed ? null : { x: L.x, y: bb.top(game.ui), w: L.w, h: L.y + L.h - bb.top(game.ui) },
+          pictures: bb.pictures.rendered,
+          queue: bb.pictures.queue.length,
+        };
+      },
+      /** H1: ein Bild des Baumenüs sofort rechnen (Schlüssel wie »bau:bolzen«). */
+      buildPicture(key) {
+        const pic = game.buildbar.pictures.now(key);
+        return pic ? { filled: pic.filled, bust: pic.bust, scale: pic.scale, w: pic.canvas.width, h: pic.canvas.height } : null;
       },
       /** Bildschirmposition (CSS-Pixel) eines Weltpunkts – für echte Mausklicks im Test. */
       screenOf(x, y, z) {

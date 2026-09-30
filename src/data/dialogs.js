@@ -285,7 +285,7 @@ export const DIALOGE = {
     { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Wenn wir ihn wieder hochkriegen …' },
     { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen See. Alle, die noch unterwegs sind, finden her.' },
     { s: 'mika', t: 'Ein Leuchtfeuer. Ich bin dabei. Was brauchen wir?' },
-    { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht in der Bauleiste, Reiter „Einrichten“.' },
+    { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht im Baumenü, Reiter „Leute“.' },
   ],
   juna: (state) => {
     const stage = state.world?.tower || 0;
@@ -1049,7 +1049,7 @@ export const DIALOGE = {
 
   axtFund: [
     { s: 'mika', t: 'Eine Axt! Stumpf, aber sie tut’s. Damit kann ich Bäume fällen.' },
-    { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Und in den Schrotthaufen findet sich Kram für einen Turm – die Leiste unten rechts zeigt, was geht.' },
+    { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Und in den Schrotthaufen findet sich Kram für einen Turm – das Baumenü unten rechts (Tab) zeigt, was geht.' },
   ],
 
   werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],

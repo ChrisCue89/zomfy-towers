@@ -172,7 +172,16 @@ export function eddaPortrait({ frame = false, size: area = 52 } = {}) {
   add(parts.torso);
   add(parts.head);
   add(parts.faces.normal);
-  const src = renderVoxelPortrait(bust, { size: area, top: 2, w: 2, t: 1, f: 1.5 });
+  // Immer im vollen Maß gerechnet; ein kleineres Foto (Funk, H1) ist ein Ausschnitt um das
+  // Gesicht – mit kleinerer Leinwand blieben sonst nur Zopfkranz und Stirn übrig
+  const full = renderVoxelPortrait(bust, { size: 52, top: 2, w: 2, t: 1, f: 1.5 });
+  let src = full;
+  if (area < 52) {
+    src = document.createElement('canvas');
+    src.width = area;
+    src.height = area;
+    src.getContext('2d', { willReadFrequently: true }).drawImage(full, -Math.round((52 - area) / 2), -(52 - area));
+  }
   const size = src.width;
   const pad = frame ? 4 : 0;
   const canvas = document.createElement('canvas');

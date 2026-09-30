@@ -5,6 +5,40 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## H1 – Das neue Baumenü ✓
+
+Aus der Rückmeldung vom 30.09. (»Aktuell ist alles super unübersichtlich, und mit den minimalen
+Pixeln im Baueditor erkennt man nicht, was man bauen will«; Recherche `hud-baumenue.md`,
+OFFENE-FRAGEN 197): Die Bauleiste war nicht zu klein, sondern zu leer – ein 12 × 12-Symbol mit
+rund 44 Punkten in einer großen Kachel, gerastert, sobald etwas zu teuer war.
+
+- **Zu ist es ein Knopf:** unten rechts »Bauen« mit Hammer und der Taste Tab. Tab öffnet das
+  Menü beim zuletzt benutzten Reiter, jedes weitere Tab wechselt den Reiter; Esc oder Rechtsklick
+  klappen es zu (vor dem Pausenmenü). Q R T G C bauen auch zugeklappt sofort einen Turm; reicht
+  der Vorrat, geht das Setzen weiter wie bisher, und ist es vorbei (Esc), ist das Menü wieder zu.
+  Wird etwas bezahlbar, funkelt der Knopf.
+- **Bilder statt Symbole:** Jede Kachel (48 × 58) zeigt den Bau so, wie er danach in der Welt
+  steht – aus seinem eigenen Voxel-Modell und mit der Schrägsicht der Welt, auf der CPU gerechnet
+  (`ui/buildPictures.js`, kein Auslesen der GPU), hohe Türme als Brustbild (mindestens 70 % der
+  Höhe). Der Bolzenwerfer hat jetzt 987 Punkte statt 44. Ausbauten zeigen die nächste Stufe,
+  Turmteile ihr Modell; Figur, Reparieren, Abreißen und Hausausbau ihr Symbol doppelt so groß.
+- **Preise lesbar:** in der Hauptschrift mit dem Rohstoffzeichen, was fehlt, rot – das Bild bleibt
+  klar, auch wenn der Bau zu teuer ist. Gesperrtes trägt ein Schloss.
+- **Bauzettel** über dem Menü, sobald die Maus auf einer Kachel liegt oder eine Rückfrage wartet:
+  Name, voller Preis, was der Bau tut, seine Werte, was fehlt. Rückfragen (kaufen, abreißen)
+  stehen auf der Kachel (»nochmal«) und im Zettel statt als Meldung am anderen Bildrand.
+- **Beim Setzen** trägt das Schild unter dem Baugeist den Preis und darunter den Grund, wenn es
+  nicht geht; es weicht dem offenen Menü aus (nach links, sonst darüber). Über dem Menü steht
+  nur noch eine blasse Tastenzeile. Was Kreis, Pünktchen und
+  Kreuz bedeuten, erklärt Edda in der Einführung einmal.
+- **Nichts fällt mehr weg:** Mehr als sechs Möglichkeiten (»Leute« mit Lagerglocke und
+  Leuchtmast) – die sechste Kachel heißt »weiter« und zeigt den Rest mit denselben Tasten. Vorher
+  fehlte der Leuchtmast ohne Hinweis.
+- **Reiter:** »Türme 2« heißt »Helfer«, »Einrichten« heißt »Leute« (die IDs bleiben).
+- **Edda spricht kompakt unten links** über Mikas Leiste (das Funkgerät hängt an Mikas Gürtel),
+  unten rechts bleibt fürs Bauen frei: 248 × 60 statt 249 × 81.
+- Prüfabschnitt `oberflaeche` (Bilder: hud-tag, bau-menue, bau-setzen): 7 Prüfpunkte bestanden.
+
 ## Nebel: Der Dunst flackert nicht mehr ✓
 
 Rückmeldung vom 30.09.: »Der Nebel flackert immer noch.« Diesmal gemessen statt vermutet: je

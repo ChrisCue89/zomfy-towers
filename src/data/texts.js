@@ -213,7 +213,17 @@ export const T = {
     naegel: 'Für Marthes Kahn: 3 Schrott werden zu einer Handvoll Nägel.',
   },
   bauleiste: {
-    reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Türme 2', fallen: 'Fallen', figur: 'Figur', einrichten: 'Einrichten', schmuck: 'Schmuck' },
+    // H1: »Türme 2« war eine Seitenzahl, »Einrichten« enthält seit N4 keine Möbel mehr (IDs bleiben)
+    reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Helfer', fallen: 'Fallen', figur: 'Figur', einrichten: 'Leute', schmuck: 'Schmuck' },
+    // H1: das Baumenü – zu ein Knopf, offen Kacheln mit Bildern und der Bauzettel
+    bauen: 'Bauen',
+    tab: 'Tab',
+    weiter: (n, m) => `Weitere Möglichkeiten (Seite ${n} von ${m})`,
+    weiterKachel: 'weiter »',
+    weiterInfo: 'Zeigt die übrigen Möglichkeiten – mit denselben Tasten.',
+    setzenKurz: 'Klick oder E setzt · Mausrad dreht · Esc: zurück',
+    nochmalKachel: 'nochmal',
+    nochmalZettel: (key, danger) => (danger ? `Noch einmal ${key}: abreißen.` : `Noch einmal ${key}: kaufen.`),
     stufe: (n) => `Stufe ${n}`,
     hoechste: 'Höchste Stufe erreicht.',
     grund: { max: 'Schon gebaut', belegt: 'Kein Platz', figur: 'Ich stehe im Weg', weg: 'Versperrt den letzten Weg', teuer: 'Zu teuer', aufWeg: 'Auf dem Weg nur Barrikaden und Fallen', nurWeg: 'Nur auf den Weg', locke: 'Nur auf einen Weg nahe dem Waldrand', nurHof: 'Nur im Hof, innerhalb des Walls' },
@@ -682,7 +692,7 @@ export const T = {
       yusuf: 'Unten am Strand wartet ein Mann mit einer Arzttasche.',
     },
     zeltFrei: (name) => `${name} könnte ins freie Zelt ziehen – ich frag mal.`,
-    zeltBauen: 'Wer bleiben will, braucht einen Schlafplatz. Ein Zelt aus der Bauleiste (Einrichten).',
+    zeltBauen: 'Wer bleiben will, braucht einen Schlafplatz. Ein Zelt aus dem Baumenü (Reiter »Leute«).',
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
     zeltUmgeworfen: (name) => `${name}s Zelt liegt am Boden – heute bringt ${name} nichts.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
@@ -993,7 +1003,7 @@ export const T = {
       ziel: 'Dr. Yusuf: Bring 6 Fasern und 1 Stoff für Kamillentee.',
       fertig: 'Kamillentee! Dr. Yusufs Tee heilt jetzt noch schneller.',
     },
-    funkturm: (stufe) => `Juna: Baut den Leuchtmast aus (Stufe ${stufe}/3, Reiter „Einrichten“).`,
+    funkturm: (stufe) => `Juna: Baut den Leuchtmast aus (Stufe ${stufe}/3, Reiter „Leute“).`,
   },
   funkturm: {
     stufe: [null, 'Leuchtmast: Leiter und Plattform', 'Leuchtmast: Antenne', 'Leuchtmast: Leuchtfeuer'],

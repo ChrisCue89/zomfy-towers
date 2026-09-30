@@ -224,6 +224,7 @@ async function runBrowserChecks() {
     if (want('funkbuch')) await runPageChecks(browser, url);
     if (want('drachen')) await runKiteChecks(browser, url);
     if (want('nebel')) await runFogFlickerChecks(browser, url);
+    if (want('oberflaeche')) await runMenuChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -935,7 +936,7 @@ async function runPlaytest16Checks(browser, url) {
     window.zomfy.give({ holz: 2 - (s.inventory.holz || 0), schrott: 10 - (s.inventory.schrott || 0) });
     return window.zomfy.state().world.homeHp;
   });
-  for (let k = 0; k < 4 && (await z(() => window.zomfy.game.buildbar.tab)) !== 'zuhause'; k++) await tap('Tab');
+  for (let k = 0; k < 8 && (await z(() => window.zomfy.game.buildbar.tab)) !== 'zuhause'; k++) await tap('Tab'); // H1: das erste Tab öffnet das Baumenü
   const repKey = await z(() => {
     const g = window.zomfy.game;
     const tile = g.buildbar.layout(g.ui).tiles.find((t) => t.option.id === 'reparieren');
@@ -948,7 +949,10 @@ async function runPlaytest16Checks(browser, url) {
   const nachfrage = einmal.toasts.find((t) => t.includes('nochmal drücken'));
   if (repKey && einmal.hp === vorRep && einmal.holz === 2 && nachfrage && zweimal.hp > vorRep && zweimal.holz === 0) note(`✓ Reparieren (m16-r1): Vorrat reicht nur teilweise – der erste Druck fragt (»${nachfrage}«), der zweite flickt (${vorRep} → ${Math.round(zweimal.hp)})`);
   else fail(`Teilreparatur mit Rückfrage: ${JSON.stringify({ repKey, vorRep, einmal, zweimal })}`);
-  await z(() => window.zomfy.setHomeHp(300));
+  await z(() => {
+    window.zomfy.setHomeHp(300);
+    window.zomfy.game.buildbar.close(); // H1: das Baumenü wieder zuklappen
+  });
 
   // F4: Mikas Laterne am Tag nur ein Schimmer, der Blitz flammt hell auf
   await z(() => {
@@ -1588,6 +1592,7 @@ async function runToyChecks(browser, url) {
     const Z = window.zomfy;
     for (const id of ['glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche', 'stachelbrett', 'leimtopf', 'klettenteppich', 'knallerbsen', 'oelspur']) Z.giveBlueprint(id);
     Z.game.buildbar.tabId = 'tuerme';
+    Z.game.buildbar.openMenu(); // H1: offen wechselt Tab den Reiter (zu öffnet es nur)
     const b = Z.game.builder;
     return { tabs: b.tabs(), eins: b.options('tuerme').map((o) => o.id), zwei: b.options('tuerme2').map((o) => o.id), fallen: b.options('fallen').map((o) => o.id) };
   });
@@ -3292,12 +3297,14 @@ async function runBuildChecks(browser, url) {
   if (erste >= 2 && st2.inventory.schrott === st.inventory.schrott) note(`✓ Durchsuchen: +${erste} Schrott, zweites Mal am selben Tag leer`);
   else fail(`Durchsuchen: Ertrag ${erste}, danach ${st2.inventory.schrott - st.inventory.schrott}`);
 
-  // Werkbank über die Bauleiste: Tab zweimal (Türme → Figur → Zuhause), Q, dann E setzt vor der Figur
+  // Werkbank über das Baumenü: Tab öffnet (Türme), zweimal weiter (Figur → Zuhause), Q, dann E setzt vor der Figur (H1)
   await z(() => {
     window.zomfy.give({ holz: 20, stein: 10 });
     window.zomfy.teleport(3.5, 2.5, 0);
   });
   await settle(page, 3);
+  await page.keyboard.press('Tab');
+  await settle(page, 2);
   await page.keyboard.press('Tab');
   await settle(page, 2);
   await page.keyboard.press('Tab');
@@ -4017,8 +4024,12 @@ async function runNightChecks(browser, url) {
       await step(100);
     }
     const stehtNoch = (await z(() => window.zomfy.buildings())).some((b) => b.id === turm.id);
-    const rueckfrage = ((await z(() => window.zomfyView())).meldungen || []).some((m) => m.startsWith('Nochmal'));
-    if (stehtNoch && rueckfrage) note('✓ Auswahl: R reißt nichts ab, Abreißen liegt auf V (mit Rückfrage)');
+    // H1: Die Rückfrage steht auf der Kachel (»nochmal«) und im Bauzettel, nicht mehr als Meldung
+    const rueckfrage = await z(() => {
+      const m = window.zomfy.buildMenu();
+      return m.armed && m.armed.id.startsWith('abriss') && m.armed.key === 'V' && m.note?.lines.some((l) => l.startsWith('Noch einmal V'));
+    });
+    if (stehtNoch && rueckfrage) note('✓ Auswahl: R reißt nichts ab, Abreißen liegt auf V (mit Rückfrage auf der Kachel)');
     else fail(`Auswahl: Turm steht noch ${stehtNoch}, Rückfrage ${rueckfrage}`);
     await page.keyboard.press('Escape');
     await step(100);
@@ -4340,9 +4351,9 @@ async function runSurvivorChecks(browser, url) {
 
   // Einrichten: Reiter mit Tab, Möbel kaufen, Gemütlichkeit
   let titel = null;
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < 8; k++) {
     titel = (await view()).bauleiste?.titel;
-    if (titel === 'Einrichten') break;
+    if (titel === 'Leute') break; // H1: der Reiter »Einrichten« heißt jetzt »Leute«
     await press('Tab', 60);
   }
   const optionen = ((await view()).bauleiste?.optionen || []).map((o) => o.name);
@@ -4350,7 +4361,7 @@ async function runSurvivorChecks(browser, url) {
   await z(() => window.zomfy.give({ teile: 54 }));
   for (const id of ['bild', 'teekanne', 'wimpel', 'lichterkette', 'stehlampe', 'koerbchen']) await z((i) => window.zomfy.buyFurniture(i), id);
   const cozy = await z(() => window.zomfy.cozy());
-  if (titel === 'Einrichten' && optionen.includes('Schlafzelt') && cozy === 8) note(`✓ Einrichten: Reiter mit ${optionen.join(', ')} – Gemütlichkeit ${cozy}`);
+  if (titel === 'Leute' && optionen.includes('Schlafzelt') && cozy === 8) note(`✓ Einrichten: Reiter »Leute« mit ${optionen.join(', ')} – Gemütlichkeit ${cozy}`);
   else fail(`Einrichten: Titel ${titel}, Optionen ${JSON.stringify(optionen)}, Gemütlichkeit ${cozy}`);
 
   // Morgen: Gaben der Eingezogenen und Bonus für Gemütlichkeit
@@ -4859,7 +4870,10 @@ async function runCombatChecks(browser, url) {
     await step(100);
   }
 
-  // Waffen-Aufwertung über den Reiter »Figur« (C = Waffe in der Hand)
+  // Waffen-Aufwertung über den Reiter »Figur« (C = Waffe in der Hand) – H1: Tab öffnet das Baumenü, das zweite wechselt
+  await z(() => window.zomfy.game.buildbar.close());
+  await page.keyboard.press('Tab');
+  await step(100);
   await page.keyboard.press('Tab');
   await step(100);
   await page.keyboard.press('KeyC');
@@ -5801,6 +5815,7 @@ async function runRiskChecks(browser, url) {
     const bau = j !== undefined ? Z.build('moderlocke', -44, j) : 'kein Feld';
     Z.teleport(-42.5, (j ?? 0) + 2, 0);
     g.buildbar.tabId = 'fallen'; // die Kachel wird gezeichnet (Kosten in Zombieteilen)
+    g.buildbar.openMenu(); // H1: das Baumenü ist dafür offen
     return { vorher, nachher, j, hinten, neben, bau, lure: Z.risk().lure };
   });
   await step(200);
@@ -10261,6 +10276,149 @@ async function runFogFlickerChecks(browser, url) {
     window.zomfy.teleport(9, 1.5, 0);
     window.zomfy.lookAt(12, -2);
   });
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * H1 – Das neue Baumenü (recherche/hud-baumenue.md 5.2): zu ein Knopf, Tab öffnet und Esc
+ * schließt; Q baut bei zugeklapptem Menü den Bolzenwerfer (danach wieder zu); Kacheln mit
+ * Bildern aus den Modellen (mindestens 48 × 56, Bild 44 × 40, mindestens 300 Punkte); der
+ * Bauzettel nennt die Kachel unter der Maus; beim Setzen stehen Preis und Grund am Geist;
+ * mehr als sechs Möglichkeiten gehen über »weiter«; Edda spricht kompakt unten links.
+ */
+async function runMenuChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Baumenü (H1)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-h1')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-h1', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  const menu = () => z(() => window.zomfy.buildMenu());
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setHorde(false);
+    // Einführungen und der Dialog zum ersten Turm sind schon erledigt (der Dialog hielte das Spiel an)
+    for (const f of ['introGesehen', 'abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'ersterTurm']) Z.setFlag(f);
+    Z.setDay(3);
+    Z.setTime(10, 0);
+    Z.teleport(1.5, 4.5, 0);
+    Z.give({ schrott: 60, holz: 40, stein: 20, fasern: 20, stoff: 10 });
+    Z.game.funk.clear();
+    Z.game.hud.toasts.length = 0;
+  });
+  await step(300);
+
+  // 1) Zu: nur der Knopf »Bauen« (Hammer, Taste Tab) – das Bild bleibt frei
+  const zu = await menu();
+  await shot(page, 'hud-tag', () => {
+    window.zomfy.game.funk.clear();
+  });
+  if (!zu.open && zu.button && zu.button.w <= 56 && zu.button.h <= 32 && zu.tiles.length === 0) note(`✓ Baumenü (H1): zugeklappt steht unten rechts nur der Knopf »Bauen« (${zu.button.w} × ${zu.button.h})`);
+  else fail(`Baumenü zu: ${JSON.stringify(zu)}`);
+
+  // 2) Tab öffnet (Reiter bleibt »Türme«), Kacheln groß mit Bildern aus den Modellen, Esc schließt
+  await tap('Tab');
+  for (let k = 0; k < 30 && (await menu()).queue > 0; k++) await step(100); // Bilder im Hintergrund fertig rechnen
+  const auf = await menu();
+  const bolzen = await z(() => window.zomfy.buildPicture('bau:bolzen'));
+  const kachel = auf.tiles.find((t) => t.id === 'bolzen');
+  await tap('Escape');
+  const nachEsc = await z(() => ({ menu: window.zomfy.buildMenu(), mode: window.zomfy.mode }));
+  const bilder = auf.tiles.filter((t) => t.picture && t.filled >= 300).length;
+  if (auf.open && auf.tab === 'tuerme' && kachel && kachel.w >= 48 && kachel.h >= 56 && bolzen && bolzen.w >= 44 && bolzen.h >= 38 && bolzen.filled >= 300 && bilder >= 5 && !nachEsc.menu.open && nachEsc.mode === 'play') {
+    note(`✓ Baumenü: Tab öffnet die Türme – Kacheln ${kachel.w} × ${kachel.h}, Bilder ${bolzen.w} × ${bolzen.h} aus den Modellen (Bolzenwerfer ${bolzen.filled} Punkte, ${bilder} Kacheln mit Bild); Esc klappt es zu, ohne das Pausenmenü`);
+  } else fail(`Baumenü auf: ${JSON.stringify({ auf, bolzen, nachEsc })}`);
+
+  // 3) Q bei zugeklapptem Menü: Türme, Bolzenwerfer setzen; E baut; danach ist es wieder zu
+  const vorQ = await z(() => window.zomfy.buildings().filter((b) => b.type === 'bolzen').length);
+  await z(() => window.zomfy.teleport(1.5, 4.5, 0));
+  await step(200);
+  await tap('KeyQ');
+  const beimSetzen = await z(() => ({ menu: window.zomfy.buildMenu(), placement: window.zomfy.placement }));
+  await shot(page, 'bau-setzen', () => {
+    window.zomfy.game.funk.clear();
+  });
+  const geist = await z(() => {
+    const g = window.zomfy.game;
+    return { label: Boolean(g.builder.placement), cost: g.builder.placement ? { ...g.builder.placement.cost } : null };
+  });
+  await tap('KeyE');
+  await step(300);
+  const nachE = await z(() => ({ menu: window.zomfy.buildMenu(), n: window.zomfy.buildings().filter((b) => b.type === 'bolzen').length, placing: Boolean(window.zomfy.game.builder.placement) }));
+  // Reicht der Schrott für den nächsten, geht das Setzen weiter (wie bisher) – Esc beendet es
+  if (nachE.placing) await tap('Escape');
+  const zuDanach = await z(() => ({ menu: window.zomfy.buildMenu(), mode: window.zomfy.mode }));
+  if (beimSetzen.placement?.type === 'bolzen' && beimSetzen.menu.open && !beimSetzen.menu.note && geist.cost?.schrott > 0 && nachE.n === vorQ + 1 && !zuDanach.menu.open && zuDanach.mode === 'play') {
+    note(`✓ Baumenü: Q bei zugeklapptem Menü setzt den Bolzenwerfer (Preis ${geist.cost.schrott} Schrott am Geist, kein Bauzettel beim Setzen), E baut ihn${nachE.placing ? ' – bei genug Schrott geht das Setzen weiter, Esc beendet es –' : ''}, danach ist das Menü wieder zu`);
+  } else fail(`Baumenü Q: ${JSON.stringify({ beimSetzen, geist, nachE, zuDanach, vorQ })}`);
+
+  // 4) Offen: Der Bauzettel nennt die Kachel unter der Maus
+  const L = await z(() => window.zomfy.buildbarLayout());
+  const katapult = L.tiles.find((t) => t.id === 'katapult');
+  await page.mouse.move(katapult.x, katapult.y);
+  await step(100);
+  const zettel = await menu();
+  await shot(page, 'bau-menue', () => {
+    window.zomfy.game.funk.clear();
+  });
+  if (zettel.note && /katapult/i.test(zettel.note.name) && zettel.note.lines.some((l) => /Schaden|Kürbis/.test(l))) note(`✓ Baumenü: Der Bauzettel über dem Menü nennt die Kachel unter der Maus – „${zettel.note.name}“, ${zettel.note.lines.length} Zeilen (${zettel.note.w} breit)`);
+  else fail(`Bauzettel: ${JSON.stringify(zettel)}`);
+  await page.mouse.move(640, 200);
+  await tap('Escape');
+
+  // 5) Mehr als sechs Möglichkeiten: »Leute« mit Lagerglocke und Leuchtmast – der Rest über »weiter«
+  const leute = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    Z.setSurvivor('juna', 3); // Juna eingezogen: der Leuchtmast steht im Reiter
+    Z.setSurvivor('hilde', 3);
+    g.state.arms = { ...(g.state.arms || {}), unlocked: true };
+    g.buildbar.openMenu();
+    g.buildbar.tabId = 'einrichten';
+    return Z.buildMenu();
+  });
+  const seite1 = leute.tiles.map((t) => t.id);
+  const weiter = leute.tiles.find((t) => t.id === 'weiter');
+  if (weiter) await tap(['KeyQ', 'KeyR', 'KeyT', 'KeyG', 'KeyC', 'KeyV'][leute.tiles.indexOf(weiter)]);
+  const seite2 = (await menu()).tiles.map((t) => t.id);
+  const alle = new Set([...seite1, ...seite2]);
+  const funkturm = alle.has('funkturm');
+  if (leute.all && leute.all.length > 6 && weiter && [...leute.all].every((id) => alle.has(id)) && funkturm) note(`✓ Baumenü: Reiter »${leute.tabs[leute.tabs.length - 1] || 'Leute'}« mit ${leute.all.length} Möglichkeiten – die sechste Kachel heißt »weiter«, dort liegt der Rest (${seite2.filter((id) => id !== 'weiter').join(', ')})`);
+  else fail(`Baumenü weiter: ${JSON.stringify({ leute, seite2 })}`);
+  await tap('Escape');
+
+  // 6) Edda kompakt unten links über Mikas Leiste – nie auf dem Menü
+  const funk = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.buildbar.openMenu();
+    g.funk.clear();
+    g.funk.say('Das hier ist ein Probespruch über Funk, der ein wenig länger ist als eine Zeile.');
+    return true;
+  });
+  for (let k = 0; k < 10; k++) await step(100);
+  const lage = await z(() => {
+    const Z = window.zomfy;
+    const f = Z.funk();
+    const hot = Z.game.hud.hotbarRect(Z.game.ui);
+    const m = Z.buildMenu();
+    return { f, hot, m: m.rect };
+  });
+  const r = lage.f.rect;
+  const overlap = (a, b) => a && b && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  if (funk && r && r.x < 40 && r.w * r.h <= 15000 && !overlap(r, lage.hot) && !overlap(r, lage.m)) note(`✓ Funk (H1): Edda spricht unten links über Mikas Leiste (${r.w} × ${r.h} = ${r.w * r.h} px²), weder auf der Schnellleiste noch auf dem Baumenü`);
+  else fail(`Funk unten links: ${JSON.stringify(lage)}`);
+
   checkMessages(session);
   await session.context.close();
 }

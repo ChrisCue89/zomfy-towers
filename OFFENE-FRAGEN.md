@@ -2343,6 +2343,24 @@ Prozent von der Palette ab (höchstens 8 % Richtung Dunstfarbe, in den Ecken dun
 - Erwogen: den Dunst an die Welt hängen (nach Norden im Gelände) – dann wäre er nur am Nordrand
   der Karte zu sehen; ganz weglassen – dann fehlte die Tiefe über dem See.
 
+### 201. Das Baumenü im Einzelnen (H1)
+**Entscheidung:**
+- **Zu als Standard**, ein Knopf »Bauen [Tab]«. Offen bleibt es, bis Esc oder Rechtsklick es
+  zuklappen – auch nach dem Setzen, damit man mehrere Dinge nacheinander baut.
+- **Q R T G C zugeklappt gehören immer den Türmen** (so baut ein Q nach einem vergessenen Tab
+  nie etwas anderes); das Menü klappt danach wieder zu. Offen gelten die Tasten der sichtbaren
+  Kacheln, Abreißen liegt weiter immer auf V.
+- **Bilder aus den Modellen** in der Schrägsicht der Welt (w = s, Oberseite 0,6 s, Vorderseite
+  0,8 s je 1/32-Voxel), einmal gerechnet und gemerkt, höchstens eins je Bild – bis dahin das
+  Symbol doppelt so groß. Hohe Türme als Brustbild, mindestens 70 % der Höhe sichtbar.
+- **Rückfragen auf der Kachel.** Als Meldung bleibt eine Rückfrage nur, wenn sie etwas erklärt:
+  Teilreparatur (was sie kostet), Mischturm, bewohntes Zelt.
+- **Edda unten links** (Antwort auf Frage 1 der Recherche, wie empfohlen). Meldungen nach Art,
+  der Nachtplan in der Nachtleiste und die Oberflächengröße folgen mit H2–H4.
+
+**Warum:** Die Kacheln waren groß genug, ihr Inhalt nicht. Ein Bild aus dem Modell zeigt, was
+danach dasteht; ein Knopf statt einer immer offenen Leiste gibt das Bild frei, bis man baut.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
