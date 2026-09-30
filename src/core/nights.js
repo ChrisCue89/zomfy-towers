@@ -150,21 +150,22 @@ export class Nights {
     return this.game.survivors?.ability('spaehen') ? Math.max(PLAN_AHEAD, NIGHT_START - (ABILITIES.spaehen.planFrom - 6) * 60) : PLAN_AHEAD;
   }
 
-  planView() {
+  /** `all` (H2): für die Karte – alle kommenden Wellen, auch während eine Welle läuft. */
+  planView(all = false) {
     const g = this.game;
     const st = g.state;
     const minute = st.time.minute;
     let plan = null;
     let from = 0;
     if (this.active) {
-      if (!this.canCall()) return null; // während einer Welle genügt die Nachtleiste
+      if (!this.canCall() && !all) return null; // während einer Welle genügt die Nachtleiste (die Karte zeigt alles)
       plan = this.plan;
       from = this.state.wave;
     } else if (this.state.n !== st.time.day && minute >= NIGHT_START - this.planAhead() && minute < NIGHT_START) {
       plan = this.planFor(st.time.day);
     } else return null;
     const juna = Boolean(g.survivors?.resident('juna'));
-    const rows = plan.waves.slice(from, from + PLAN_ROWS).map((w, k) => ({
+    const rows = plan.waves.slice(from, all ? undefined : from + PLAN_ROWS).map((w, k) => ({
       n: from + k + 1,
       at: w.at,
       entries: w.entries,

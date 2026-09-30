@@ -553,7 +553,7 @@ export class Builder {
     g.sound.play('aufwertung', { rate: 1 + UPGRADE_PITCH * 3 });
     if (fresh) {
       g.hud.showBanner(T.misch.neu(T.misch[id][0]));
-      g.hud.toast(T.werkstattbuch.neu(T.misch[id][0]), 'buch', 4);
+      g.hud.toast(T.werkstattbuch.neu(T.misch[id][0]), 'buch', 4, 'chronik');
     } else g.hud.toast(T.misch.gebaut(T.misch[id][0]), id, 3);
     g.quietSave();
     return m;
@@ -618,11 +618,14 @@ export class Builder {
     };
   }
 
-  /** Eine Option ist gerade bezahlbar geworden (Bauleiste lässt sie aufleuchten). */
+  /**
+   * Eine Option ist gerade bezahlbar geworden (das Baumenü lässt sie aufleuchten). H2: keine
+   * Meldung mehr – bei den wichtigen ersten Bauten funkelt der Knopf länger.
+   */
   onOptionAffordable(option) {
     if (!ANNOUNCE.has(option.id) || this.announced.has(option.id)) return;
     this.announced.add(option.id);
-    this.game.hud.toast(T.meldungen.bereit(option.name), option.icon, 3.2);
+    this.game.buildbar.buttonFlash = Math.max(this.game.buildbar.buttonFlash, 3);
   }
 
   // --- Figur und Türme ausbauen -------------------------------------------------------

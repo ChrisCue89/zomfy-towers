@@ -1903,6 +1903,18 @@ Einstellungen: »Schlurfer: 2D (Probe)«.
 
 Die übrigen Arten bleiben Voxel, bis der Auftraggeber über F2–F4 entscheidet.
 
+#### H2 – Aufräumen ✓
+
+*Umgesetzt (30.09.2026):* Meldungen nach Art (Nr. 204):
+
+- Rechts stehen höchstens zwei.
+- Alarme stehen rot in der Nachtleiste.
+- Neues im Buch hängt als Lesezeichen an der Uhr.
+
+Der Nachtplan steht in der Nachtleiste (die nächste Welle, »N«, »M: der ganze Plan«), der ganze
+Plan auf der Karte. Der Zeitraffer ist ein Zeichen, die Zahlen stehen in der Hauptschrift. Die
+Überlappungen aus der Recherche (Ziel, Meldungen, Boss, Champion) sind behoben.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

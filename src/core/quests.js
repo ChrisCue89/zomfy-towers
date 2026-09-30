@@ -247,7 +247,7 @@ export class Quests {
       g.gainPart(id);
       g.hud.toast(T.nebenauftraege.teil(T.turmteile[id][0], T.turmteile.seltenheit[TOWER_PARTS[id].rarity]), id, 4.5);
     }
-    if (q.reward.blueprint && g.offerBlueprint('auftrag')) g.hud.toast(T.bauplaene.wartet, 'bauplan', 3);
+    if (q.reward.blueprint && g.offerBlueprint('auftrag')) g.hud.toast(T.bauplaene.wartet, 'bauplan', 3, 'chronik');
     g.sound.play('stufe');
     st.stats.quests = (st.stats.quests || 0) + 1;
     g.quietSave();

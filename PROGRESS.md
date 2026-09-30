@@ -5,6 +5,38 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## H2: Die Oberfläche aufgeräumt ✓
+
+**Auftrag (30.09.):** »Aktuell ist alles super unübersichtlich.« Nach dem Baumenü (H1) folgt der
+zweite Schritt aus `recherche/hud-baumenue.md` (4.4 und 4.6, Nr. 204).
+
+- **Meldungen nach Art:**
+  - Rechts stehen höchstens zwei Meldungen, die zwei neuesten.
+  - **Alarme** stehen in der roten Zeile der Nachtleiste: Schlurfer im Lager, Tor und Wall
+    angegriffen, Umgeworfenes, »Bald kommt die Horde«, jemand liegt am Boden. Beim Eintreffen
+    blinkt der Rahmen der Leiste rot.
+  - **Neues im Buch** hängt als Lesezeichen rechts an der Uhr: gelungene Taten, Schlurferkunde,
+    Notiz- und Werkstattbuch, Herbstschmuck, wartende Baupläne. Erst mit Text, dann nur als
+    »+n«; das Pausenmenü räumt es ab.
+  - Das »… ist jetzt bezahlbar« ist keine Meldung mehr – der Knopf des Baumenüs funkelt.
+- **Der Nachtplan steht in der Nachtleiste** (oben in der Mitte):
+  - Abends: »Heute Nacht: 3 Wellen«, die erste mit Uhrzeit und Weg (dazu Merkmal, Boss, mit
+    Juna die schweren Arten), die Moderlocke, »N: Ich bin bereit« und »M: der ganze Plan«.
+  - Nachts: Welle, Haus, Tor und woher die Horde kommt; in der Pause die nächste Welle.
+  - Den ganzen Plan zeigt die **Karte (M)**. Die eigene Tafel rechts ist weg.
+- **Zeitraffer** als »»« neben der Welle, keine Meldung mehr.
+- **Zahlen in der Hauptschrift:** Haus und Tor in der Nachtleiste lesen sich wie der Rest,
+  nicht mehr in 3 × 5-Ziffern.
+- **Überlappungen behoben:**
+  - Die Zielzeile bricht vor der Nachtleiste um (»Juna: Baut den Langen Jakob aus …« lag
+    darunter). Dafür zeichnet das HUD Vorrat und Nachtleiste vor dem Ziel – sonst sah das Ziel
+    im ersten Bild des Abends noch keine Leiste.
+  - Meldungen rücken unter die Leiste, statt in sie hinein.
+  - »holt aus!« steht nur noch in der Bossleiste (dazu der Ring am Boden).
+  - »Schild bricht!« steigt über Name und Merkmale des Champions.
+
+**Prüfung:** Abschnitt `aufraeumen`, 7 Prüfpunkte bestanden. Bilder: `hud-abend`, `hud-nacht`, `karte-plan`.
+
 ## F1: Ein Schlurfer auf Papier (Sprite-Probe) ✓
 
 **Auftrag (30.09.):** »Die 3D-Modelle der Schlurfer sind schrecklich. Wollen wir die nicht

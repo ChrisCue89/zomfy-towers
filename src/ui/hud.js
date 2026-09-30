@@ -115,18 +115,53 @@ export class Hud {
     this.debugLines = null;
     this.slotRects = [];
     this.lanternRect = null;
+    this.alarm = null; // H2: { text, time, duration } – die rote Zeile der Nachtleiste
+    this.chronicle = { n: 0, text: '', icon: null, t: 99 }; // H2: Neues im Buch (Lesezeichen an der Uhr)
+    this.barRect = null; // H2: die Nachtleiste in diesem Bild
+    this.clockRect = null;
   }
 
-  toast(text, icon = null, duration = 2.8) {
+  /**
+   * Meldung. H2 (recherche/hud-baumenue.md 4.6): `kind` sagt, wohin sie gehört – 'alarm' in die
+   * rote Zeile der Nachtleiste, 'chronik' als Lesezeichen an die Uhr (Neues im Herbst-, Notiz-
+   * oder Werkstattbuch, wartende Baupläne), sonst rechts unter den Vorrat, höchstens zwei auf
+   * einmal (die neuesten). `toasts` behält alle – die Prüfung liest sie.
+   */
+  toast(text, icon = null, duration = 2.8, kind = null) {
     // Gleiche Meldung nicht stapeln, sondern auffrischen
     const same = this.toasts.find((t) => t.text === text);
     if (same) {
       same.time = Math.min(same.time, 0.2);
       same.duration = Math.max(same.duration, duration);
+      if (kind === 'alarm' && this.alarm?.text === text) this.alarm.time = Math.min(this.alarm.time, 0.2);
       return;
     }
-    this.toasts.push({ text, icon, time: 0, duration });
-    if (this.toasts.length > 4) this.toasts.shift();
+    this.toasts.push({ text, icon, time: 0, duration, kind });
+    if (this.toasts.length > 6) this.toasts.shift();
+    if (kind === 'alarm') this.alarm = { text, icon, time: 0, duration: Math.max(4, duration) };
+    if (kind === 'chronik') {
+      const c = this.chronicle;
+      c.n++;
+      c.text = text;
+      c.icon = icon;
+      c.t = 0;
+    }
+  }
+
+  /** H2: Welche Meldungen rechts stehen – die zwei neuesten gewöhnlichen (Alarme ohne Nachtleiste auch). */
+  visibleToasts() {
+    const out = [];
+    for (let k = this.toasts.length - 1; k >= 0 && out.length < 2; k--) {
+      const t = this.toasts[k];
+      if (t.kind === 'chronik' || (t.kind === 'alarm' && this.barRect)) continue;
+      out.unshift(t);
+    }
+    return out;
+  }
+
+  /** H2: Das Buch ist gesehen (Pausenmenü offen) – das Lesezeichen an der Uhr verschwindet. */
+  clearChronicle() {
+    this.chronicle.n = 0;
   }
 
   /**
@@ -270,6 +305,11 @@ export class Hud {
     this.bubbles = this.bubbles.filter((b) => b.time < b.duration && b.n.model.root.visible);
     for (const t of this.toasts) t.time += dt;
     this.toasts = this.toasts.filter((t) => t.time < t.duration);
+    if (this.alarm) {
+      this.alarm.time += dt;
+      if (this.alarm.time >= this.alarm.duration) this.alarm = null;
+    }
+    this.chronicle.t += dt;
     for (const f of this.floaters) f.t += dt;
     this.floaters = this.floaters.filter((f) => f.t < FLOAT_TIME);
     this.itemLabel.time = Math.max(0, this.itemLabel.time - dt);
@@ -315,16 +355,17 @@ export class Hud {
       this.drawWords(ui);
     }
     this.drawClock(ui);
-    this.drawGoal(ui);
+    this.drawChronicle(ui);
+    // Vorrat und Nachtleiste vor dem Ziel: Die Zielzeile endet vor der Leiste dieses Bilds
+    // (vorher sah sie im ersten Bild des Abends noch die Leiste des letzten – also keine)
     this.drawResources(ui);
     this.drawNightBar(ui);
+    this.drawGoal(ui);
     this.drawBossBar(ui);
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
     if (show.prompt && !this.game.viewInside) this.drawGoalMarker(ui);
     if (show.prompt) this.drawTargetMark(ui);
-    // Nachtplan (M16) über den Markierungen – sonst läge der Zielpfeil im Text
-    if (show.prompt) this.drawNightPlan(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
     if (show.hotbar) this.drawXp(ui);
@@ -353,6 +394,7 @@ export class Hud {
     const w = Math.max(measure(line1), measure(line2)) + 32;
     const x = 4;
     const y = 4;
+    this.clockRect = { x, y, w, h: 34 };
     ui.panel(x, y, w, 34);
     ui.inset(x + 5, y + 6, 16, 16, { fill: COLORS.inset });
     drawIcon(ui.ctx, icon, x + 7, y + 8);
@@ -364,6 +406,30 @@ export class Hud {
     ui.rect(x + 5, y + 27, Math.max(1, Math.round((w - 10) * progress)), 2, COLORS.goldDark);
   }
 
+  /**
+   * H2: Neues im Buch als Lesezeichen rechts an der Uhr – ein paar Sekunden mit dem Text, danach
+   * nur das Buch und wie viel Neues wartet. Das Pausenmenü räumt es ab.
+   */
+  drawChronicle(ui) {
+    const c = this.chronicle;
+    this.chronicleRect = null;
+    if (!c.n || !this.clockRect) return;
+    const r = this.clockRect;
+    const x = r.x + r.w + 3;
+    const limit = this.barRect ? this.barRect.x - 4 : ui.width - 8;
+    const count = `+${c.n}`;
+    let text = c.t < 4 ? c.text : count;
+    if (x + measure(text) + 22 > limit) text = count;
+    const w = measure(text) + 22;
+    const h = 16;
+    const y = r.y + 1;
+    const fresh = c.t < 2 && Math.floor(c.t * 6) % 2 === 0;
+    ui.panel(x, y, w, h, { frame: fresh ? COLORS.gold : COLORS.frame });
+    drawIcon(ui.ctx, 'buch', x + 5, y + 3);
+    ui.text(text, x + 17, y + 2, c.t < 4 ? COLORS.textWarm : COLORS.gold);
+    this.chronicleRect = { x, y, w, h };
+  }
+
   /** Aktuelles Ziel unter der Uhr (Einstieg in die ersten Schritte). */
   drawGoal(ui) {
     const box = this.goalBox;
@@ -373,10 +439,14 @@ export class Hud {
     const quest = this.game.quests?.goal(); // M23: der laufende Auftrag als zweite Zeile
     if (!goal && !quest) return;
     const rows = [];
-    if (goal) rows.push({ icon: 'ziel', text: goal.progress ? `${goal.text} ${goal.progress}` : goal.text, main: true });
-    if (quest) rows.push({ icon: quest.icon, text: quest.progress ? `${quest.text} ${quest.progress}` : quest.text, main: false });
     const x = 4;
     const y = 41;
+    // H2: Die Zeile reicht nie unter die Nachtleiste – lange Ziele brechen um
+    const bar = this.barRect;
+    const maxText = bar && bar.y < y + 30 ? Math.max(80, bar.x - 8 - x - 24) : ui.width;
+    const add = (icon, text, main) => wrap(text, maxText).forEach((line, k) => rows.push({ icon: k ? null : icon, text: line, main }));
+    if (goal) add('ziel', goal.progress ? `${goal.text} ${goal.progress}` : goal.text, true);
+    if (quest) add(quest.icon, quest.progress ? `${quest.text} ${quest.progress}` : quest.text, false);
     const w = Math.max(...rows.map((r) => measure(r.text))) + 24;
     const h = 4 + rows.length * 13;
     // Das Banner weicht ihr aus (m12-r1)
@@ -389,8 +459,10 @@ export class Hud {
     ui.panel(x, y, w, h, { frame: flash ? COLORS.gold : COLORS.frame });
     rows.forEach((r, k) => {
       const ry = y + k * 13;
-      const size = iconSize(r.icon);
-      drawIcon(ui.ctx, r.icon, x + 5 + Math.floor((10 - size.w) / 2), ry + 3 + Math.max(0, Math.floor((11 - size.h) / 2)));
+      if (r.icon) {
+        const size = iconSize(r.icon);
+        drawIcon(ui.ctx, r.icon, x + 5 + Math.floor((10 - size.w) / 2), ry + 3 + Math.max(0, Math.floor((11 - size.h) / 2)));
+      }
       ui.text(r.text, x + 17, ry + 2, r.main ? (flash ? COLORS.gold : COLORS.textWarm) : COLORS.text);
     });
   }
@@ -480,6 +552,12 @@ export class Hud {
     this.nightBarBottom = y + 24;
   }
 
+  /**
+   * Die Nachtleiste (H2, recherche/hud-baumenue.md 4.4): oben in der Mitte steht alles über die
+   * Nacht an einer Stelle. Abends: wie viele Wellen, die erste mit Uhrzeit und Weg, »N: Ich bin
+   * bereit«. Nachts: Welle, Haus, Tor, woher die Horde kommt, in der Pause die nächste Welle.
+   * Ganz unten die Alarmzeile in Rot. Den ganzen Plan zeigt die Karte (M).
+   */
   drawNightBar(ui) {
     const g = this.game;
     const st = g.state;
@@ -490,45 +568,88 @@ export class Hud {
     const gateMax = gate ? maxHpOf(gate) : 0;
     const gateHurt = Boolean(gate && (gate.broken || gate.hp < gateMax - 0.5));
     const damaged = st.world.homeHp < max - 0.5 || gateHurt;
+    const view = g.nights.planView();
+    const alarm = this.alarm;
     this.nightBarBottom = 4;
     this.bannerBottom = null;
-    if (!active && !damaged && !this.banner) return;
+    this.barRect = null;
+    this.planRect = null;
+    this.planBottom = null;
     const cx = Math.round(ui.width / 2);
     let bottom = 34;
-    if (active || damaged) {
+    if (active || damaged || view || alarm) {
       const plan = g.nights.plan;
-      // Woher kommt die Welle – und zwischen den Wellen: woher kommt die nächste? (m3-r1)
-      const from = active && plan ? g.nights.directionText() : null;
-      const w = Math.max(124, from ? measure(from) + 12 : 0);
-      const x = Math.round(cx - w / 2);
+      const bars = active || damaged;
+      const gateRow = bars && gate && (active || gateHurt);
+      // Kopfzeile: Nacht und Welle (Zeitraffer als »»), abends die Zahl der Wellen
+      const title = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}` : view?.evening ? T.nacht.planAbend(view.total) : T.horde.zuhause;
+      const fast = active && g.fast ? ' »»' : '';
+      // Textzeilen unter den Balken: [Text, Farbe]
+      const lines = [];
+      if (view && view.rows.length) {
+        const r = view.rows[0];
+        const wege = r.entries.map((e) => T.horde.richtungKurz[e]).join(' + ');
+        const merkmal = `${r.trait ? ` · ${T.wellen.merkmale[r.trait][0]}` : ''}${r.boss ? ` · ${T.bosse.plan(T.bosse[r.boss].titel)}` : ''}`; // M22: immer angekündigt
+        const schwer = r.heavy.length ? ` · ${T.nacht.mit(r.heavy.map((t) => T.horde.arten[t][1]).join(', '))}` : '';
+        lines.push([`${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${merkmal}${schwer}`, view.evening ? COLORS.text : COLORS.textWarm]);
+        if (view.lure) lines.push([T.wagnis.planLocke(T.horde.richtungKurz[view.lure]), COLORS.text]); // M24
+        if (view.canCall) lines.push([view.evening ? T.nacht.rufenAbend : T.nacht.rufenHinweis, COLORS.textWarm]);
+        else if (view.evening && !view.juna) lines.push([T.nacht.planOhneJuna, COLORS.textDim]);
+        if (view.rows.length > 1 || view.more) lines.push([T.nacht.planKarte, COLORS.textDim]);
+      } else if (active && plan) {
+        // Woher kommt die Welle – und zwischen den Wellen: woher kommt die nächste? (m3-r1)
+        const from = g.nights.directionText();
+        if (from) lines.push([from, COLORS.gold]);
+      }
+      // Zwischen Uhr (samt Lesezeichen) und Vorrat: mittig, wenn Platz ist – lange Zeilen brechen um
+      const left = Math.max(this.clockRect ? this.clockRect.x + this.clockRect.w + 4 : 4, this.chronicleRect ? this.chronicleRect.x + this.chronicleRect.w + 4 : 0);
+      const right = this.resRect && this.resRect.y < 30 ? this.resRect.x - 4 : ui.width - 4;
+      const maxW = Math.max(150, right - left);
+      const rows = [];
+      for (const [text, color] of lines) for (const part of wrap(text, maxW - 14)) rows.push([part, color]);
+      const alarmRows = alarm ? wrap(alarm.text, maxW - 14) : [];
+      const textW = Math.max(measure(title + fast), ...rows.map(([t]) => measure(t)), ...alarmRows.map((t) => measure(t)));
+      const w = Math.min(maxW, Math.max(bars ? 150 : 124, textW + 14));
+      const x = Math.round(Math.max(left, Math.min(right - w, cx - w / 2)));
       const y = 4;
-      const gateRow = gate && (active || gateHurt) ? 13 : 0;
-      ui.panel(x, y, w, (from ? 42 : 30) + gateRow);
-      bottom = y + (from ? 42 : 30) + gateRow;
-      const label = active && plan ? `${T.horde.nacht(st.night.n)} · ${T.horde.welleKurz(Math.max(1, st.night.wave), plan.waves.length)}${g.fast ? ` · ${T.nacht.raffer}` : ''}` : T.horde.zuhause;
-      ui.textCentered(label, cx, y + 2, active ? COLORS.textWarm : COLORS.text);
-      if (from) ui.textCentered(from, cx, y + 28 + gateRow, COLORS.gold);
+      const h = 15 + (bars ? 13 : 0) + (gateRow ? 13 : 0) + rows.length * 11 + alarmRows.length * 11 + (alarmRows.length ? 1 : 0) + 3;
+      const mid = x + w / 2;
+      ui.panel(x, y, w, h, { frame: alarm && alarm.time < 1.5 && Math.floor(alarm.time * 6) % 2 === 0 ? COLORS.red : COLORS.frame });
+      const titleColor = active ? COLORS.textWarm : view?.evening ? COLORS.gold : COLORS.text;
+      ui.textCentered(title + fast, mid, y + 2, titleColor);
+      let ry = y + 15;
+      if (bars) {
+        const q = Math.max(0, Math.min(1, st.world.homeHp / max));
+        const hit = this.homeFlash > 0 && Math.floor(this.homeFlash * 12) % 2 === 0;
+        this.drawBar(ui, x, ry, w, 'haus', q, `${Math.round(st.world.homeHp)}/${max}`, hit, false);
+        ry += 13;
+      }
       if (gateRow) {
         // Tor: eigener Balken unter dem Zuhause; eingestürzt blinkt die Zeile
         const gq = gate.broken ? 0 : Math.max(0, Math.min(1, gate.hp / gateMax));
-        const gText = gate.broken ? T.lager.offen : `${Math.ceil(gate.hp)}/${gateMax}`;
-        const gW = w - 26 - gText.length * 4 - 3;
-        drawIcon(ui.ctx, 'tor', x + 5, y + 28);
-        ui.rect(x + 20, y + 31, gW, 5, COLORS.outline);
         const blink = gate.broken && Math.floor(g.clock * 3) % 2 === 0;
-        ui.rect(x + 21, y + 32, Math.max(0, Math.round((gW - 2) * gq)), 3, gq > 0.5 ? COLORS.buildOk : gq > 0.25 ? COLORS.gold : COLORS.buildBad);
-        drawTiny(ui.ctx, gText, x + 20 + gW + 3, y + 31, blink ? COLORS.buildBad : COLORS.textWarm);
+        this.drawBar(ui, x, ry, w, 'tor', gq, gate.broken ? T.lager.offen : `${Math.ceil(gate.hp)}/${gateMax}`, false, blink);
+        ry += 13;
       }
-      const q = Math.max(0, Math.min(1, st.world.homeHp / max));
-      drawIcon(ui.ctx, 'haus', x + 5, y + 15);
-      // Standfestigkeit auch als Zahl (m3-r2: »nur ein Balken ohne Zahl«)
-      const hpText = `${Math.round(st.world.homeHp)}/${max}`;
-      const barW = w - 26 - hpText.length * 4 - 3;
-      ui.rect(x + 20, y + 19, barW, 5, COLORS.outline);
-      const hit = this.homeFlash > 0 && Math.floor(this.homeFlash * 12) % 2 === 0;
-      ui.rect(x + 21, y + 20, Math.max(0, Math.round((barW - 2) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
-      drawTiny(ui.ctx, hpText, x + 20 + barW + 3, y + 19, hit ? COLORS.text : COLORS.textWarm);
+      for (const [text, color] of rows) {
+        ui.textCentered(text, mid, ry, color);
+        ry += 11;
+      }
+      if (alarmRows.length) {
+        // Die Alarmzeile (H2): Schlurfer im Lager, das Tor, Umgeworfenes – rot, erst blinkend
+        const on = alarm.time > 1 || Math.floor(alarm.time * 8) % 2 === 0;
+        for (const text of alarmRows) {
+          if (on) ui.textCentered(text, mid, ry + 1, COLORS.red);
+          ry += 11;
+        }
+      }
+      bottom = y + h;
       this.nightBarBottom = bottom;
+      this.barRect = { x, y, w, h };
+      if (view) {
+        this.planRect = this.barRect; // die Prüfung fragt, ob der Plan zu sehen ist (M16, M22)
+        this.planBottom = bottom;
+      }
     }
     this.bannerBottom = null;
     if (this.banner) {
@@ -542,44 +663,14 @@ export class Hud {
     }
   }
 
-  /**
-   * Nachtplan (M16): Tafel unter der Nachtleiste (und unter einem Banner) – welche
-   * Wellen wann über welche Wege kommen; in den Pausen der Hinweis auf N.
-   */
-  drawNightPlan(ui) {
-    this.planBottom = null;
-    this.planRect = null;
-    const view = this.game.nights.planView();
-    if (!view) return;
-    const lines = view.rows.map((r) => {
-      const wege = r.entries.map((e) => T.horde.richtungKurz[e]).join(' + ');
-      const schwer = r.heavy.length ? ` · ${T.nacht.mit(r.heavy.map((t) => T.horde.arten[t][1]).join(', '))}` : '';
-      const merkmal = `${r.trait ? ` · ${T.wellen.merkmale[r.trait][0]}` : ''}${r.boss ? ` · ${T.bosse.plan(T.bosse[r.boss].titel)}` : ''}`; // M22: immer angekündigt
-      return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${merkmal}${schwer}`;
-    });
-    if (view.more) lines.push(T.nacht.weitere(view.more));
-    const title = view.evening ? T.nacht.planAbend(view.total) : T.nacht.planPause;
-    // Hinweise: N (abends »Ich bin bereit«, nachts die nächste Welle), abends ohne Juna das Funkgerät
-    const hints = [];
-    if (view.canCall) hints.push(view.evening ? T.nacht.rufenAbend : T.nacht.rufenHinweis);
-    if (view.evening && !view.juna) hints.push(T.nacht.planOhneJuna);
-    if (view.lure) hints.push(T.wagnis.planLocke(T.horde.richtungKurz[view.lure])); // M24
-    const w = Math.max(measure(title), ...hints.map((l) => measure(l)), ...lines.map((l) => measure(l))) + 14;
-    const h = 16 + lines.length * 11 + (hints.length ? 4 + hints.length * 11 : 2);
-    // N4 (Probespiel): nicht mehr mitten im Bild – rechts oben unter dem Vorrat
-    const x = ui.width - w - 4;
-    const r = this.resRect;
-    let y = Math.max(r && r.x + r.w > x ? r.y + r.h + 4 : 4, this.bannerBottom && x < ui.width / 2 + 120 ? this.bannerBottom + 2 : 0);
-    // m16-r1: nicht über die Zielzeile (bei schmalem Fenster liegt sie womöglich darunter)
-    const gb = this.goalBox;
-    if (gb.on && x < gb.x + gb.w + 4 && y < gb.y + gb.h + 2) y = gb.y + gb.h + 4;
-    this.planRect = { x, y, w, h };
-    const cx = x + w / 2;
-    ui.panel(x, y, w, h);
-    ui.textCentered(title, cx, y + 3, COLORS.gold);
-    lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 && !view.evening ? COLORS.textWarm : COLORS.text));
-    hints.forEach((l, k) => ui.textCentered(l, cx, y + 16 + lines.length * 11 + 1 + k * 11, k === 0 && view.canCall ? COLORS.textWarm : COLORS.textDim));
-    this.planBottom = y + h; // Meldungen erscheinen darunter
+  /** Ein Balken der Nachtleiste (Haus, Tor): Zeichen, Balken und die Zahl in der Hauptschrift (H2). */
+  drawBar(ui, x, y, w, icon, q, text, hit, blink) {
+    const tw = measure(text);
+    const barW = w - 26 - tw - 4;
+    drawIcon(ui.ctx, icon, x + 5, y);
+    ui.rect(x + 20, y + 4, barW, 5, COLORS.outline);
+    ui.rect(x + 21, y + 5, Math.max(0, Math.round((barW - 2) * q)), 3, hit ? COLORS.text : q > 0.5 ? COLORS.buildOk : q > 0.25 ? COLORS.gold : COLORS.buildBad);
+    ui.text(text, x + w - 6 - tw, y + 1, hit ? COLORS.text : blink ? COLORS.buildBad : COLORS.textWarm);
   }
 
   /** Balken über Mikas Kopf beim Durchsuchen und Ernten: hier stehen bleiben. */
@@ -1312,21 +1403,33 @@ export class Hud {
   /** N4: Meldungen stehen rechts unter Vorrat und Nachtplan, nicht mehr mitten im Bild. */
   toastTop() {
     const r = this.resRect;
-    return Math.max(r ? r.y + r.h + 4 : 28, (this.planBottom || 0) + 4);
+    return r ? r.y + r.h + 4 : 28;
+  }
+
+  /** H2: Eine Meldung rechts, die in die Nachtleiste reichen würde, rückt unter sie. */
+  toastStart(ui, y, w) {
+    const bar = this.barRect;
+    if (bar && ui.width - w - 4 < bar.x + bar.w + 4 && y < bar.y + bar.h + 3) return bar.y + bar.h + 3;
+    return y;
   }
 
   /** Wo die Meldungen im Spiel liegen (wie `drawToasts` sie legt) – für die Sprechblase (M27). */
   toastRects(ui, y = this.toastTop()) {
-    return this.toasts.map((t, k) => {
+    return this.visibleToasts().map((t) => {
       const w = measure(t.text) + (t.icon ? 26 : 12);
-      return { x: ui.width - w - 4, y: y + k * 21, w, h: 18 };
+      y = this.toastStart(ui, y, w);
+      const r = { x: ui.width - w - 4, y, w, h: 18 };
+      y += 21;
+      return r;
     });
   }
 
-  /** Meldungen untereinander, ab Höhe `y` (Standard: unter dem Ziel). */
+  /** Meldungen untereinander, ab Höhe `y` (Standard: unter dem Ziel) – höchstens zwei (H2). */
   drawToasts(ui, y = 64) {
-    for (const t of this.toasts) {
+    this.shown = this.visibleToasts();
+    for (const t of this.shown) {
       const w = measure(t.text) + (t.icon ? 26 : 12);
+      y = this.toastStart(ui, y, w);
       const slide = Math.min(1, t.time / 0.18);
       const out = t.duration - t.time < 0.35 && Math.floor(t.time * 12) % 2 === 0;
       if (!out) {

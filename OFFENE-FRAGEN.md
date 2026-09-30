@@ -2419,6 +2419,21 @@ Auftraggeber entschieden hat.
 - Die Einstellung zeigt 3D und 2D in derselben Szene. Das Prüfskript legt dieselben Bilder
   nebeneinander.
 
+### 204. Wohin mit Meldungen, Plan und Alarmen? (H2)
+**Entscheidung:** Jede Meldung hat eine Art (`hud.toast(text, zeichen, dauer, art)`):
+
+- Gewöhnliche Meldungen (Ergebnisse, Gründe) stehen rechts, höchstens zwei.
+- Alarme stehen in der roten Zeile der Nachtleiste.
+- Neues im Buch ist ein Lesezeichen an der Uhr, bis das Pausenmenü offen war.
+
+Der Nachtplan zieht in die Nachtleiste: Sie zeigt nur die nächste Welle, die Karte (M) alle.
+Der Zeitraffer ist ein Zeichen, »bezahlbar« ein Funkeln am Baumenü. `hud.toasts` behält alle
+Meldungen – die Prüfung liest sie; `hud.shown` sagt, was rechts steht.
+**Warum:** Bis zu vier gleich wichtige Meldungen, eine Plantafel rechts, Richtungsangaben an drei
+Stellen und dreifache Hinweise auf »bezahlbar« machten das Bild unruhig (recherche 1.5). Wichtig
+ist, was die Nacht betrifft – das steht jetzt an einer Stelle oben in der Mitte. Was wartet
+(Buch), braucht keine Eile. Was nur bestätigt, darf verschwinden.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -126,7 +126,7 @@ export class Gathering {
         st.world.searched[id] = st.time.day;
         if (id === 'wrack') {
           st.flags.wrackLeer = true;
-          if (g.offerBlueprint('wrack')) g.hud.toast(T.bauplaene.wartet, 'bauplan', 3); // M19: alte Baupläne im Wrack
+          if (g.offerBlueprint('wrack')) g.hud.toast(T.bauplaene.wartet, 'bauplan', 3, 'chronik'); // M19: alte Baupläne im Wrack
         }
         const loot = this.roll(SEARCH_LOOT[lootKey]);
         g.effects.chips(pos.x, 0.4, pos.z, 'schrott', 8);

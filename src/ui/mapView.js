@@ -12,6 +12,7 @@ import { BUILDINGS } from '../data/buildings.js';
 import { MAP, shoreX } from '../world/map.js';
 import { LAYOUT } from '../world/layout.js';
 import { ISLES, ISLE_ORDER, BAY_LABEL } from '../data/isles.js';
+import { clockText } from '../core/state.js';
 
 const PX = 4; // Pixel je Meter
 const W = (MAP.x1 - MAP.x0) * PX;
@@ -147,6 +148,34 @@ export class MapView {
     this.drawMap(ui, ox, oy, k);
   }
 
+  /**
+   * H2: Der Nachtplan auf der Karte – alle kommenden Wellen mit Uhrzeit, Wegen, Merkmal und Boss
+   * (mit Juna auch die schweren Arten). Oben links, rechts neben den Wegnamen, wenn sie im Weg sind.
+   */
+  drawPlan(ui, ox, oy, spawns) {
+    this.planRect = null;
+    const view = this.game.nights.planView(true);
+    if (!view || !view.rows.length) return;
+    const lines = view.rows.map((r) => {
+      const wege = r.entries.map((e) => T.horde.richtungKurz[e]).join(' + ');
+      const schwer = r.heavy.length ? ` · ${T.nacht.mit(r.heavy.map((t) => T.horde.arten[t][1]).join(', '))}` : '';
+      const merkmal = `${r.trait ? ` · ${T.wellen.merkmale[r.trait][0]}` : ''}${r.boss ? ` · ${T.bosse.plan(T.bosse[r.boss].titel)}` : ''}`;
+      return `${T.horde.welleKurz(r.n, view.total)} · ${clockText(r.at)} · ${wege}${merkmal}${schwer}`;
+    });
+    const title = view.evening ? T.nacht.planAbend(view.total) : T.nacht.planPause;
+    const w = Math.max(measure(title), ...lines.map((l) => measure(l))) + 14;
+    const h = 16 + lines.length * 11 + 2;
+    let x = ox + 4;
+    const y = oy + 4;
+    // Die Namen der Wege stehen am linken Rand – liegt einer darunter, rückt der Plan nach rechts
+    const labelW = Math.max(...['nord', 'mitte', 'sued'].map((n) => Math.max(measure(T.horde.richtungKurz[n]), measure(T.karte.alteWege[n])))) + 10;
+    if (spawns.some((p) => p.y - LINE_HEIGHT < y + h && p.y + LINE_HEIGHT * 1.5 > y)) x = Math.max(...spawns.map((p) => p.x)) + labelW;
+    ui.panel(x, y, w, h);
+    ui.textCentered(title, x + w / 2, y + 3, COLORS.gold);
+    lines.forEach((l, k) => ui.text(l, x + 7, y + 16 + k * 11, k === 0 ? COLORS.textWarm : COLORS.text));
+    this.planRect = { x, y, w, h };
+  }
+
   /** Karte mit Spawns, Überresten, Bauten, Schlurfern, Mika und dem Zuhause (k: Maßstab). */
   drawMap(ui, ox, oy, k = 1) {
     const g = this.game;
@@ -177,6 +206,9 @@ export class MapView {
       const visited = g.state.isles?.visited || [];
       for (const id of ISLE_ORDER) if (visited.includes(id)) name(T.karte.inseln[id], ISLES[id].label.x, ISLES[id].label.z);
     }
+
+    // H2: der ganze Plan der Nacht – die Nachtleiste zeigt nur die nächste Welle
+    if (k === 1) this.drawPlan(ui, ox, oy, map.spawns.map((s) => at(s.x + 1.5, s.z)));
 
     // Liegende Überreste: kleine goldene Punkte
     for (const it of g.loot.items) {

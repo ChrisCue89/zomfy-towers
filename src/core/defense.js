@@ -477,7 +477,7 @@ export class Defense {
         g.hud.bubble(n, T.glocke.hilfe, 2.2);
         g.survivors.npcs.hold(n, null);
       }
-      g.hud.toast(T.glocke.liegt(personOf(id).name), 'herz', 3);
+      g.hud.toast(T.glocke.liegt(personOf(id).name), 'herz', 3, 'alarm');
       g.sound.play('herzschlag');
     }
   }

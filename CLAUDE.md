@@ -154,7 +154,10 @@ gilt bis auf Weiteres:
 - **Die Bildmitte gehört dem Spiel (N4):** Hinweise und Erklärungen spricht
   Edda über Funk unten links (seit H1; `game.funk.say`, einmalig `funk.once(flag,
   text)`), nie ein Kasten in der Mitte und nie ein Dialog; Meldungen
-  (`hud.toast`) stehen rechtsbündig unter Vorrat und Nachtplan.
+  (`hud.toast(text, zeichen, dauer, art)`) stehen rechtsbündig unter dem Vorrat, höchstens
+  zwei (H2); Alarme (`'alarm'`) stehen in der roten Zeile der Nachtleiste, Neues im Buch
+  (`'chronik'`) als Lesezeichen an der Uhr. Der Nachtplan steht in der Nachtleiste, der ganze
+  auf der Karte (M).
 - Wind und Flattern nur im Vertex-Shader (`createWorldMaterial({ wind })`,
   `wind: 'hang'` für Hängendes), nie per Neuaufbau von Geometrie. Das
   Wetter (M12) ändert über `uWind` nur die Stärke, nie die Phase (sonst
@@ -313,7 +316,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       kiteModels (Pims Drachen, Schleifen, Spule, Schnüre, N9),
                       fishingModels (Angel, Pose, Fänge, M33)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
-                      Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
+                      Nachtleiste mit Plan und Alarmzeile, Lesezeichen an der
+                      Uhr, Lebensbalken, Randmarken), dialog, menu
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
                       buildbar (Baumenü: Knopf, Reiter, Kacheln, Bauzettel,
                       H1), buildPictures (Bilder der Kacheln aus den
@@ -1187,7 +1191,12 @@ Grundprinzipien:
    Hysterese und ohne Flackern, in der Nebelwelle nur die Augen, Treffer und Zusammensacken in
    vier Bildern ohne Umriss, ein Pulk von 24 als Sprites, Dreiecke und Haltung von 120
    Schlurfern im Vergleich (Bilder: sprites-reihe-3d, sprites-reihe-2d, sprites-reihe-nah,
-   sprites-pulk-3d, sprites-pulk-2d, sprites-nacht-3d, sprites-nacht-2d, sprites-bogen).
+   sprites-pulk-3d, sprites-pulk-2d, sprites-nacht-3d, sprites-nacht-2d, sprites-bogen); ab H2
+   (Abschnitt `aufraeumen`): abends steht der Plan in der Nachtleiste (rechts keine Tafel mehr,
+   die lange Zielzeile bricht davor um), von vier Meldungen stehen rechts die zwei neuesten, Neues
+   im Buch hängt als Lesezeichen an der Uhr und Esc räumt es ab, ein Schlurfer im Lager steht als
+   Alarm in der roten Zeile der Nachtleiste, B schaltet den Zeitraffer ohne Meldung, die Karte
+   zeigt den ganzen Plan (Bilder: hud-abend, hud-nacht, karte-plan).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1349,7 +1358,8 @@ gezeichneten Punkten), Knopf, Bauzettel, wartende Rückfrage und die Warteschlan
 `buildPicture(schlüssel)` rechnet ein Bild sofort (Punkte, Brustbild, Maßstab).
 Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backen)` zeigt, wie
 viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` backt es sofort
-alles).
+alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
+Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

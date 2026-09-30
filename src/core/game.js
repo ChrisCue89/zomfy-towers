@@ -324,7 +324,7 @@ export class Game {
       onShieldBreak: (z) => {
         this.effects.splat(z.x, 1.1, z.z, 'funken', 12, 0.9);
         this.sound.play('klirr', { x: z.x, z: z.z });
-        this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.champions.schildBricht, hexToCss(P.f5));
+        this.hud.popWord(z.x, 2.05 * z.def.scale * (z.size || 1) + 0.9, z.z, T.champions.schildBricht, hexToCss(P.f5)); // H2: über Name und Merkmalen
       },
     });
     this.horde.spriteLook = this.settings.horde === '2d'; // F1: Einstellung »Schlurfer«
@@ -1244,7 +1244,7 @@ export class Game {
       // Bauplan von Balduin (M19): drei zur Wahl, sobald das Handelsfenster zu ist
       this.trader.sold(recipe);
       this.offerBlueprint('balduin');
-      this.hud.toast(T.bauplaene.wartet, 'bauplan', 3);
+      this.hud.toast(T.bauplaene.wartet, 'bauplan', 3, 'chronik');
       this.sound.play('aufwertung');
       this.quietSave();
       return true;
@@ -1674,11 +1674,10 @@ export class Game {
     return out;
   }
 
-  /** Ankündigung: Ring am Boden, Wort über dem Kopf, ein tiefer Ton. */
+  /** Ankündigung: Ring am Boden, die Warnung in der Bossleiste (H2: nicht noch einmal über dem Kopf), ein tiefer Ton. */
   onBossTelegraph(z, kind) {
     const a = BOSS_ATTACKS[kind];
     this.hud.warn(z.x, z.z, a.radius, a.telegraph);
-    this.hud.popWord(z.x, 2.2 * z.def.scale, z.z, T.bosse[z.type].warnung, hexToCss(P.f5));
     this.sound.play('stoehnen', { x: z.x, z: z.z, volume: 1, pitch: 55 });
     this.bossStats.telegraphs++;
   }
@@ -2164,7 +2163,7 @@ export class Game {
   onCampBreach(b) {
     const gate = BUILDINGS[b.type].camp === 'tor';
     this.hud.showBanner(gate ? T.lager.torGefallen : T.lager.wallGefallen);
-    this.hud.toast(T.lager.durchbruch, 'warnung', 5);
+    this.hud.toast(T.lager.durchbruch, 'warnung', 5, 'alarm');
     this.sound.play('zuhause', { volume: 1 });
     const c = this.world.buildings.bounds(b);
     this.feel('durchbruch', { x: c.x, z: c.z });
@@ -2186,14 +2185,14 @@ export class Game {
     this.effects.chips(c.x, 0.5, c.z, b.type === 'beet' ? 'gras' : 'holz', 4);
     if (this.clock - (this.raidWarned || -99) > 10) {
       this.raidWarned = this.clock;
-      this.hud.toast(T.lager.angriffAuf(b.type), 'warnung', 3);
+      this.hud.toast(T.lager.angriffAuf(b.type), 'warnung', 3, 'alarm');
     }
     if (b.hp > 0) return;
     this.world.buildings.wreck(b);
     this.world.refreshInteractions();
     this.effects.dust(c.x, c.z, 1.3, 28);
     this.sound.play('abriss', { x: c.x, z: c.z });
-    this.hud.toast(T.lager.umgeworfen(b.type), BUILDINGS[b.type].icon, 3.5);
+    this.hud.toast(T.lager.umgeworfen(b.type), BUILDINGS[b.type].icon, 3.5, 'alarm');
     if (this.nights.active) (this.state.night.raided ||= []).push(b.type);
     this.state.world.buildings = this.world.buildings.toState();
   }
@@ -2211,7 +2210,7 @@ export class Game {
     if (b.hp > 0) return;
     this.effects.dust(c.x, c.z, 1, 18);
     this.sound.play('abriss', { x: c.x, z: c.z, volume: 0.6 });
-    this.hud.toast(T.lager.umgeworfen('vogelscheuche'), 'vogelscheuche', 3);
+    this.hud.toast(T.lager.umgeworfen('vogelscheuche'), 'vogelscheuche', 3, 'alarm');
   }
 
   /** Ein Schlurfer ist hinter Wall und Tor (M17d): mitzählen; ohne Durchbruch-Banner einmal warnen. */
@@ -2219,7 +2218,7 @@ export class Game {
     if (!this.nights.active || z.day) return;
     const night = this.state.night;
     night.inCamp = (night.inCamp || 0) + 1;
-    if (night.inCamp === 1 && !night.breach) this.hud.toast(T.lager.imLager, 'warnung', 4);
+    if (night.inCamp === 1 && !night.breach) this.hud.toast(T.lager.imLager, 'warnung', 4, 'alarm');
   }
 
   /**
@@ -2235,7 +2234,7 @@ export class Game {
     const notes = this.state.notes;
     if (notes[kind]) return;
     notes[kind] = this.state.time.day;
-    this.hud.toast(T.notizbuch.neu(name), 'buch', 4);
+    this.hud.toast(T.notizbuch.neu(name), 'buch', 4, 'chronik');
     this.sound.play('aufwertung');
   }
 
@@ -2327,6 +2326,7 @@ export class Game {
   openMenu() {
     this.mode = 'menu';
     this.menu.open();
+    this.hud.clearChronicle(); // H2: das Neue im Buch ist gesehen
   }
 
   closeMenu() {
@@ -2470,8 +2470,7 @@ export class Game {
       this.hud.toast(T.nacht.rafferNurNachts, null, 2.2);
       return;
     }
-    this.fast = !this.fast;
-    this.hud.toast(this.fast ? T.nacht.rafferAn : T.nacht.rafferAus, null, 2);
+    this.fast = !this.fast; // H2: »»« in der Nachtleiste statt einer Meldung
     this.sound.play('klick');
   }
 
@@ -2970,7 +2969,7 @@ export class Game {
     const h = hoursOf(time.minute);
     const flags = this.state.flags;
     const before = hoursOf(time.minute - dt / CONFIG.time.secondsPerGameMinute);
-    if (before < 20 && h >= 20 && h < 20.5 && !this.nights.active) this.hud.toast(T.horde.bald, 'warnung', 4); // m16-r1: nicht, wenn sie schon gerufen ist
+    if (before < 20 && h >= 20 && h < 20.5 && !this.nights.active) this.hud.toast(T.horde.bald, 'warnung', 4, 'alarm'); // m16-r1: nicht, wenn sie schon gerufen ist
     // N4 (Probespiel): Am hellen Morgen löscht Mika die Laterne und steckt sie weg – tagsüber
     // lief sie sonst immer mit Licht in der Hand herum
     if (before < 7.5 && h >= 7.5 && h < 9 && this.player.holdingLantern && !this.nights.active) {

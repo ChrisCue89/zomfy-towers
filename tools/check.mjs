@@ -226,6 +226,7 @@ async function runBrowserChecks() {
     if (want('nebel')) await runFogFlickerChecks(browser, url);
     if (want('oberflaeche')) await runMenuChecks(browser, url);
     if (want('sprites')) await runSpriteChecks(browser, url);
+    if (want('aufraeumen')) await runTidyChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10712,6 +10713,105 @@ async function runSpriteChecks(browser, url) {
     document.querySelector('#ui').style.visibility = 'visible';
     window.__zomfyHold = false;
   });
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * H2 – Aufräumen (recherche/hud-baumenue.md 4.4 und 4.6): Abends steht der Plan in der
+ * Nachtleiste (rechts keine Plantafel mehr, der ganze Plan auf der Karte), rechts höchstens zwei
+ * Meldungen, Alarme in der roten Zeile der Nachtleiste, Neues im Buch als Lesezeichen an der Uhr
+ * (das Pausenmenü räumt es ab), der Zeitraffer ohne Meldung, die Zielzeile nie unter der Leiste.
+ */
+async function runTidyChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Aufräumen (H2)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  const still = async (name) => {
+    await z(() => window.zomfy.game.render());
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
+    note(`  Screenshot: screenshots/${name}.png`);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.setSurvivor('juna', 3); // ihr Auftrag (der Lange Jakob) ist die lange Zielzeile
+    Z.setDay(2);
+    Z.setTime(19, 40);
+    Z.teleport(2, 3, 0);
+  });
+  await step(300);
+
+  // 1) Abends: der Plan in der Nachtleiste, rechts nichts als Vorrat und Meldungen
+  const abend = await z(() => {
+    const h = window.zomfy.game.hud;
+    return { view: window.zomfy.planView(), bar: h.barRect, plan: h.planRect, top: h.toastTop(), res: h.resRect, goal: { ...h.goalBox } };
+  });
+  const inBar = abend.view?.evening && abend.bar && JSON.stringify(abend.plan) === JSON.stringify(abend.bar);
+  const clear = abend.res && abend.top === abend.res.y + abend.res.h + 4;
+  const ziel = abend.goal.on && abend.goal.x + abend.goal.w + 4 <= abend.bar.x;
+  if (inBar && clear && ziel) note(`✓ Aufräumen (H2): abends steht der Plan in der Nachtleiste (${abend.view.total} Wellen, ${abend.bar.w} × ${abend.bar.h}), rechts keine Plantafel mehr, die lange Zielzeile bricht vor der Leiste um`);
+  else fail(`Aufräumen: Plan in der Nachtleiste ${JSON.stringify(abend)}`);
+  await still('hud-abend');
+
+  // 2) Vier Meldungen auf einmal: rechts stehen die zwei neuesten, `toasts` behält alle
+  await z(() => ['Eins', 'Zwei', 'Drei', 'Vier'].forEach((t) => window.zomfy.game.hud.toast(`Meldung ${t}`)));
+  await step(34);
+  const zwei = await z(() => ({ all: window.zomfy.game.hud.toasts.map((t) => t.text), shown: window.zomfy.game.hud.shown.map((t) => t.text) }));
+  if (zwei.shown.join() === 'Meldung Drei,Meldung Vier' && ['Eins', 'Zwei', 'Drei', 'Vier'].every((t) => zwei.all.includes(`Meldung ${t}`))) note('✓ Aufräumen (H2): vier Meldungen auf einmal – rechts stehen nur die zwei neuesten');
+  else fail(`Aufräumen: Meldungen ${JSON.stringify(zwei)}`);
+
+  // 3) Neues im Buch: ein Lesezeichen an der Uhr statt einer Meldung – das Pausenmenü räumt es ab
+  await z(() => window.zomfy.game.hud.toast('Tat gelungen: Probe', 'buch', 4, 'chronik'));
+  await step(34);
+  const buch = await z(() => ({ n: window.zomfy.game.hud.chronicle.n, rect: window.zomfy.game.hud.chronicleRect, shown: window.zomfy.game.hud.shown.map((t) => t.text) }));
+  await tap('Escape');
+  const menu = await z(() => ({ mode: window.zomfy.mode, n: window.zomfy.game.hud.chronicle.n }));
+  await tap('Escape');
+  if (buch.n === 1 && buch.rect && !buch.shown.includes('Tat gelungen: Probe') && menu.mode === 'menu' && menu.n === 0) note('✓ Aufräumen (H2): Neues im Buch steht als Lesezeichen an der Uhr, nicht rechts – Esc (Pausenmenü) räumt es ab');
+  else fail(`Aufräumen: Chronik ${JSON.stringify({ buch, menu })}`);
+
+  // 4) Nacht: ein Schlurfer im Lager ist ein Alarm in der roten Zeile der Nachtleiste
+  await z(() => {
+    window.zomfy.setTime(20, 29);
+    window.zomfy.game.hud.toasts.length = 0;
+  });
+  await step(3000);
+  const vorher = await z(() => ({ active: window.zomfy.game.nights.active, h: window.zomfy.game.hud.barRect?.h || 0 }));
+  await z(() => window.zomfy.spawnZombie('schlurfer', 6, 1.5));
+  await step(600);
+  const alarm = await z(() => {
+    const h = window.zomfy.game.hud;
+    return { alarm: h.alarm?.text || null, shown: h.shown.map((t) => t.text), all: h.toasts.map((t) => t.text), h: h.barRect?.h || 0 };
+  });
+  const imLager = await z(() => window.zomfy.game.hud.alarm && window.zomfy.game.hud.alarm.text);
+  if (vorher.active && imLager && alarm.all.includes(imLager) && !alarm.shown.includes(imLager) && alarm.h > vorher.h) note(`✓ Aufräumen (H2): »${imLager}« steht als Alarm in der roten Zeile der Nachtleiste (Leiste ${vorher.h} → ${alarm.h} hoch), nicht rechts`);
+  else fail(`Aufräumen: Alarm ${JSON.stringify({ vorher, alarm })}`);
+
+  // 5) Zeitraffer: B schaltet ihn an – ein Zeichen in der Leiste, keine Meldung
+  await tap('KeyB');
+  const raffer = await z(() => ({ fast: window.zomfy.game.fast, toasts: window.zomfy.game.hud.toasts.map((t) => t.text) }));
+  if (raffer.fast && !raffer.toasts.some((t) => t.startsWith('Zeitraffer'))) note('✓ Aufräumen (H2): B schaltet den Zeitraffer ein – »»« in der Nachtleiste, keine Meldung');
+  else fail(`Aufräumen: Zeitraffer ${JSON.stringify(raffer)}`);
+  await still('hud-nacht');
+  await tap('KeyB');
+
+  // 6) Die Karte zeigt den ganzen Plan
+  await tap('KeyM');
+  const karte = await z(() => ({ open: window.zomfy.game.mapView.isOpen, plan: window.zomfy.game.mapView.planRect || null, rows: window.zomfy.game.nights.planView(true)?.rows.length || 0 }));
+  await still('karte-plan');
+  await tap('KeyM');
+  if (karte.open && karte.plan && karte.rows >= 1) note(`✓ Aufräumen (H2): die Karte (M) zeigt den ganzen Plan (${karte.rows} ${karte.rows === 1 ? 'Welle' : 'Wellen'})`);
+  else fail(`Aufräumen: Plan auf der Karte ${JSON.stringify(karte)}`);
+  await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();
 }

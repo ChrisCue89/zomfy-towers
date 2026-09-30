@@ -1913,6 +1913,7 @@ export const T = {
     planAbend: (n) => `Heute Nacht: ${n} Wellen`,
     planPause: 'Als Nächstes',
     planOhneJuna: 'Mit einem Funkgerät wüsste man mehr …',
+    planKarte: 'M: der ganze Plan', // H2: die Nachtleiste zeigt nur die nächste Welle
     mit: (arten) => `mit ${arten}`,
     weitere: (n) => (n === 1 ? '… und noch eine Welle' : `… und noch ${n} Wellen`),
   },

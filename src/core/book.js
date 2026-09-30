@@ -56,7 +56,7 @@ export class Book {
     if (!KIND_ORDER.includes(type)) return;
     const first = !this.st.kinds[type];
     this.st.kinds[type] = (this.st.kinds[type] || 0) + 1;
-    if (first) this.game.hud.toast(T.buch.kundeNeu(T.buch.art[type][0]), 'buch', 3);
+    if (first) this.game.hud.toast(T.buch.kundeNeu(T.buch.art[type][0]), 'buch', 3, 'chronik');
   }
 
   /** Eine Welle wurde früh gerufen (Tat »Wer wagt …«). */
@@ -136,10 +136,10 @@ export class Book {
     }
     if (quiet || !fresh.length) return fresh;
     const g = this.game;
-    for (const id of fresh) g.hud.toast(T.buch.tatNeu(T.buch.taten[id][0]), 'buch', 4);
+    for (const id of fresh) g.hud.toast(T.buch.tatNeu(T.buch.taten[id][0]), 'buch', 4, 'chronik');
     g.sound.play('aufwertung');
     const deco = this.decoUnlocked();
-    for (const type of deco.slice(before)) g.hud.toast(T.buch.schmuckNeu(T.bauten[type]), BUILDINGS[type].icon, 5);
+    for (const type of deco.slice(before)) g.hud.toast(T.buch.schmuckNeu(T.bauten[type]), BUILDINGS[type].icon, 5, 'chronik');
     return fresh;
   }
 
