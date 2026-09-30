@@ -128,8 +128,8 @@ async function shot(page, name, setup) {
 }
 
 /**
- * Startbild (N2): auf »Tales of Cue präsentiert« warten, eine echte Taste drücken
- * (erst dann darf Klang entstehen), dann ist das Titelbild da.
+ * Startbild (N2): auf »Tales of Cue präsentiert« warten und es mit einer echten Taste
+ * überspringen (seit N11 liefe es auch von selbst weiter), dann ist das Titelbild da.
  */
 async function passSplash(page) {
   await page.waitForFunction(() => window.zomfy.mode === 'splash', null, { timeout: 180000 });
@@ -2861,34 +2861,78 @@ async function runFigureChecks(browser, url) {
 async function runTour(browser, url) {
   {
     // --- 0. Erster Eindruck: neues Spiel mit Einblenden und Intro -----------------
-    const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart');
+    // N11: wie ein frischer Besuch ohne Eingabe – Playwrights eigene Auswertungen zählen im Browser
+    // sonst schon als Nutzeraktivierung, und das Startbild dürfte gleich klingen
+    const fresh = () => Object.defineProperty(Navigator.prototype, 'userActivation', { configurable: true, get: () => ({ hasBeenActive: false, isActive: false }) });
+    const intro = await openGame(browser, `${url}index.html?debug&nosave`, 'Spielstart', { init: fresh });
     await intro.page.evaluate(() => window.zomfy.setDebug(false));
-    // Startbild (N2): »Tales of Cue präsentiert«, vor dem ersten Druck kein Klang; die
-    // echte Taste startet die Spieluhr, danach blendet das Titelbild mit seiner Musik ein
+    // Startbild (N2, seit N11 von selbst): »Tales of Cue präsentiert« läuft ohne jede Taste und
+    // still (Klang erst nach einer echten Eingabe), dann blendet das Titelbild ein. Dort steht
+    // unten rechts, dass die Musik mit der ersten Taste beginnt – und die erste Taste startet sie.
     await intro.page.waitForFunction(() => window.zomfy.mode === 'splash', null, { timeout: 180000 });
     await intro.page.waitForFunction(() => window.zomfy.game.splash.t > 1.6, null, { timeout: 180000 });
     await settle(intro.page, 4);
-    const vorDruck = await intro.page.evaluate(() => ({ bild: window.zomfyView().startbild, klang: window.zomfy.sound() }));
+    const imBild = await intro.page.evaluate(() => ({ bild: window.zomfyView().startbild, klang: window.zomfy.sound() }));
     await intro.page.screenshot({ path: join(SHOTS, 'startbild.png') });
     note('  Screenshot: screenshots/startbild.png');
-    await intro.page.keyboard.press('Space');
-    await settle(intro.page, 6);
-    const nachDruck = await intro.page.evaluate(() => ({ bild: window.zomfyView().startbild, klang: window.zomfy.sound() }));
     await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
-    await intro.page.waitForFunction(() => window.zomfy.sound().music === 'titel', null, { timeout: 180000 }).catch(() => {});
-    const titelMusik = await intro.page.evaluate(() => window.zomfy.sound());
-    const texte = vorDruck.bild?.texte || [];
-    if (texte.includes('Tales of Cue') && texte.includes('präsentiert') && texte.includes('Taste drücken') && vorDruck.klang.state === null && nachDruck.klang.jingles === 1 && nachDruck.bild?.spieluhr && titelMusik.music === 'titel') {
-      note('✓ Startbild (N2): »Tales of Cue präsentiert«, vor dem Tastendruck kein Klang – die echte Taste startet die Spieluhr, dann das Titelbild mit »Herbstlied am Kranichsee«');
-    } else fail(`Startbild (N2): ${JSON.stringify({ vorDruck, nachDruck, titelMusik })}`);
+    const vonSelbst = await intro.page.evaluate(() => ({ t: +window.zomfy.game.splash.t.toFixed(2), klang: window.zomfy.sound(), gesehen: localStorage.getItem('zomfy-towers.startbild') }));
     // Titelbild (Meilenstein 7): ohne Spielstand ist »Neues Spiel« vorgewählt
-    await intro.page.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
     await settle(intro.page, 60);
     await intro.page.screenshot({ path: join(SHOTS, 'titel.png') });
     note('  Screenshot: screenshots/titel.png');
+    const still = await intro.page.evaluate(() => ({ klang: window.zomfy.sound(), hinweis: window.zomfyView().titel?.tonHinweis }));
+    // Beim zweiten Mal die kurze Fassung (nur geöffnet und gleich wieder geschlossen, das Titelbild bleibt)
+    const kurz = await intro.page.evaluate(() => {
+      const sp = window.zomfy.game.splash;
+      const t = sp.t;
+      sp.open(() => {});
+      const v = sp.view();
+      sp.close();
+      sp.t = t;
+      return { kurz: v.kurz, dauer: v.dauer, texte: v.texte };
+    });
+    const texte = imBild.bild?.texte || [];
+    const n11 =
+      texte.includes('Tales of Cue') &&
+      texte.includes('präsentiert') &&
+      !texte.some((x) => /Taste/.test(x)) &&
+      imBild.bild?.kurz === false &&
+      imBild.klang.state === null &&
+      vonSelbst.t >= 3 &&
+      vonSelbst.t <= 4.5 &&
+      vonSelbst.klang.state === null &&
+      vonSelbst.klang.jingles === 0 &&
+      vonSelbst.gesehen === '1' &&
+      still.klang.state === null &&
+      still.hinweis === true &&
+      kurz.kurz === true &&
+      kurz.dauer < 2;
+    if (n11) note(`✓ Startbild (N11): »Tales of Cue präsentiert« läuft ohne Taste und still, nach ${String(vonSelbst.t).replace('.', ',')} s ist das Titelbild da; dort steht unten rechts, dass die Musik mit der ersten Taste beginnt; beim zweiten Mal die kurze Fassung (${String(kurz.dauer).replace('.', ',')} s)`);
+    else fail(`Startbild (N11): ${JSON.stringify({ imBild, vonSelbst, still, kurz })}`);
     const titel = await intro.page.evaluate(() => window.zomfyView().titel);
     await intro.page.keyboard.press('Enter');
     await settle(intro.page, 20);
+    // Die erste Taste weckt den Klang: das Titelstück beginnt, der Hinweis ist fort
+    await intro.page.waitForFunction(() => window.zomfy.sound().music === 'titel', null, { timeout: 180000 }).catch(() => {});
+    const musik = await intro.page.evaluate(() => ({ klang: window.zomfy.sound(), hinweis: window.zomfyView().titel?.tonHinweis }));
+    // Hatte die Seite schon eine Eingabe (jetzt ja), spielt die Spieluhr zum Glanz des Startbilds –
+    // das Startbild einmal kurz ohne Taste durchlaufen lassen (die Szene bleibt beim Titelbild)
+    const spieluhr = await intro.page.evaluate(() => {
+      const g = window.zomfy.game;
+      const sp = g.splash;
+      const t = sp.t;
+      const vor = g.sound.jingles;
+      sp.open(() => {});
+      const input = { anyPressed: false, consumeClick() {} };
+      for (let k = 0; k < 6; k++) sp.update(input, 0.1);
+      const gespielt = sp.jinglePlayed;
+      sp.close();
+      sp.t = t;
+      return { gespielt, neu: g.sound.jingles - vor };
+    });
+    if (musik.klang.music === 'titel' && musik.hinweis === false && spieluhr.gespielt && spieluhr.neu === 1) note('✓ Titelbild (N11): die erste Taste startet »Herbstlied am Kranichsee«, der Hinweis verschwindet; ist Klang erlaubt, spielt die Spieluhr zum Glanz des Startbilds');
+    else fail(`Titelbild (N11): Musik nach der ersten Taste ${JSON.stringify({ musik, spieluhr })}`);
     // Figur: Mütze mit D weiterschalten, Namen tippen (E am Namen, Enter beendet), dann »Los geht’s!«
     const figurSeite = await intro.page.evaluate(() => window.zomfyView().titel?.seite);
     // Jeder Druck in einem eigenen Bild (gleiche Tasten im selben Bild zählen einmal)
@@ -7271,8 +7315,13 @@ async function runArrivalChecks(browser, url) {
   await tp.evaluate(() => window.zomfy.setDebug(false));
   await tp.waitForFunction(() => window.zomfy.mode === 'splash', null, { timeout: 180000 });
   await tp.waitForFunction(() => window.zomfy.game.splash.t > 1.6, null, { timeout: 180000 });
+  // N11: Eine Taste überspringt das Startbild sofort (kurz ausblenden, dann das Titelbild)
+  const vorSprung = await tp.evaluate(() => window.zomfy.game.splash.t);
   await tp.keyboard.press('Space');
   await tp.waitForFunction(() => window.zomfy.mode === 'title', null, { timeout: 180000 });
+  const sprung = await tp.evaluate((t0) => ({ dt: +(window.zomfy.game.splash.t - t0).toFixed(2), uebersprungen: window.zomfy.game.splash.skipped }), vorSprung);
+  if (sprung.uebersprungen && sprung.dt < 0.6) note(`✓ Startbild (N11): eine Taste überspringt es sofort (nach ${String(sprung.dt).replace('.', ',')} s ist das Titelbild da)`);
+  else fail(`Startbild (N11): Überspringen ${JSON.stringify(sprung)}`);
   await settle(tp, 40);
   const press = async (key) => {
     await tp.keyboard.press(key);

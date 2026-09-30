@@ -2010,6 +2010,13 @@ der Standard (Nr. 213, Einstellung »Schlurfer: 3D/2D«).
 - **Unter den Füßen liegt das Bild auf dem Boden:** Laub, der vordere Fuß und eine hingesunkene
   Figur versinken nicht mehr in der Erde.
 
+#### N11 – Das Startbild läuft von selbst ✓
+
+*Umgesetzt (30.09.2026):* »Tales of Cue präsentiert« blendet von selbst ein und aus, etwa 3,5 s
+lang, beim zweiten Mal kürzer. Jede Taste überspringt es. Die Titelmusik beginnt mit der ersten
+Taste im Titelbild (der Browser erlaubt Klang erst dann), bis dahin zeigt ein stummer Lautsprecher
+den Hinweis (Nr. 214, `recherche/praesentation.md`).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

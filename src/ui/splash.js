@@ -1,10 +1,12 @@
-// Startbild (N2, Wunsch des Auftraggebers): »Tales of Cue präsentiert« in
-// Pixelschrift über einem offenen Buch, auf dem eine warme Laterne steht, dazu
-// fallendes Laub. Klang darf erst nach einer echten Eingabe beginnen (CLAUDE.md,
-// Regel 5) – deshalb wartet das Bild auf einen Tastendruck, spielt dann eine
-// kleine Spieluhr-Melodie und blendet ins Titelbild über. Ein zweiter Druck
-// springt gleich weiter. Alles im Code gezeichnet, keine fremden Assets.
-// Tasten werden in update() ausgewertet (siehe CLAUDE.md).
+// Startbild (N2, seit N11 von selbst): »Tales of Cue präsentiert« in Pixelschrift über einem
+// offenen Buch, auf dem eine warme Laterne steht, dazu fallendes Laub. Wie ein Studio-Logo in
+// einem fertigen Spiel läuft es ohne Zutun (recherche/praesentation.md): aus dem Dunkel
+// einblenden, kurz stehen, ausblenden – beim ersten Mal rund dreieinhalb Sekunden, danach
+// kürzer –, und jede Taste oder ein Klick springt sofort ins Titelbild.
+// Klang darf erst nach einer echten Eingabe beginnen (CLAUDE.md, Regel 5). Hatte die Seite schon
+// eine (der Browser erlaubt dann Klang), spielt zum Schriftzug die Spieluhr; sonst bleibt das Bild
+// still, und die Titelmusik beginnt mit der ersten Taste im Titelbild.
+// Alles im Code gezeichnet, keine fremden Assets. Tasten werden in update() ausgewertet.
 
 import { T } from '../data/texts.js';
 import { P, hexToCss } from '../render/palette.js';
@@ -12,9 +14,17 @@ import { COLORS } from './ui.js';
 import { measure, drawText } from './font.js';
 import { BAYER } from './bayer.js';
 
-const FADE_IN = 0.9; // Einblenden aus dem Dunkel
-const JINGLE = 2.9; // so lange spielt die Spieluhr, bevor ausgeblendet wird
-const FADE_OUT = 0.7;
+/**
+ * Ablauf in Sekunden: einblenden, der Glanz (Laterne flammt auf, Funken, Glanz über dem
+ * Schriftzug, die Spieluhr) kurz danach, stehen, ausblenden. Beim zweiten Mal in diesem Browser
+ * die kurze Fassung (Spielekonsolen zeigen Studio-Logos nach dem ersten Mal gar nicht mehr).
+ */
+const TIMING = {
+  lang: { fadeIn: 0.7, glow: 0.45, hold: 2.9, fadeOut: 0.6 },
+  kurz: { fadeIn: 0.35, glow: 0.2, hold: 1.2, fadeOut: 0.4 },
+};
+const SKIP_FADE = 0.25; // eine Taste überspringt: kurz ausblenden
+const SEEN_KEY = 'zomfy-towers.startbild'; // schon einmal gesehen (eigener Schlüssel, nicht im Spielstand)
 const LOGO_SCALE = 3;
 const LEAVES = 16;
 const LEAF_COLORS = [P.f2, P.f3, P.f4, P.f5, P.e6, P.f4];
@@ -158,12 +168,29 @@ function textCanvas(text, color) {
   return c;
 }
 
+/** Schon einmal gesehen? (Speicher gesperrt: wie beim ersten Mal) */
+function seenBefore() {
+  try {
+    return globalThis.localStorage?.getItem(SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markSeen() {
+  try {
+    globalThis.localStorage?.setItem(SEEN_KEY, '1');
+  } catch {
+    // privates Fenster: dann eben jedes Mal die lange Fassung
+  }
+}
+
 export class SplashScreen {
   /** @param {import('../core/game.js').Game} game */
   constructor(game) {
     this.game = game;
     this.isOpen = false;
-    this.phase = 'warten'; // warten · klang · aus
+    this.phase = 'ein'; // ein · glanz · aus
     this.t = 0; // seit dem Öffnen
     this.pt = 0; // seit dem letzten Phasenwechsel
     this.onDone = null;
@@ -171,8 +198,11 @@ export class SplashScreen {
     this.sparks = [];
     this.jinglePending = false;
     this.jinglePlayed = false;
+    this.skipped = false;
     this.images = null;
     this.frames = 0;
+    this.timing = TIMING.lang;
+    this.fadeOut = this.timing.fadeOut;
   }
 
   /** Die Szene dahinter muss nicht gezeichnet werden (nach den ersten Bildern, bis zum Ausblenden). */
@@ -183,7 +213,7 @@ export class SplashScreen {
   /** @param {() => void} onDone wird aufgerufen, wenn das Startbild ausgeblendet ist */
   open(onDone) {
     this.isOpen = true;
-    this.phase = 'warten';
+    this.phase = 'ein';
     this.t = 0;
     this.pt = 0;
     this.onDone = onDone;
@@ -191,7 +221,12 @@ export class SplashScreen {
     this.sparks = [];
     this.jinglePending = false;
     this.jinglePlayed = false;
+    this.skipped = false;
     this.frames = 0;
+    this.short = seenBefore();
+    this.timing = this.short ? TIMING.kurz : TIMING.lang;
+    this.fadeOut = this.timing.fadeOut;
+    markSeen();
   }
 
   close() {
@@ -222,29 +257,37 @@ export class SplashScreen {
     if (!this.isOpen) return;
     this.t += dt;
     this.pt += dt;
-    const pressed = input.anyPressed;
-    if (this.phase === 'warten' && pressed && this.t > 0.2) {
-      this.phase = 'klang';
-      this.pt = 0;
-      this.jinglePending = true;
-      input.consumeClick();
-    } else if (this.phase === 'klang' && pressed && this.pt > 0.35) {
-      // zweiter Druck: gleich weiter zum Titelbild
+    const T0 = this.timing;
+    // Jede Taste, jeder Klick: sofort weiter (die Eingabe weckt nebenbei den Klang für das Titelbild).
+    // Auch gleich zu Beginn – wer schon beim Laden drückt, will weiter.
+    if (this.phase !== 'aus' && input.anyPressed) {
       this.phase = 'aus';
       this.pt = 0;
+      this.fadeOut = SKIP_FADE;
+      this.skipped = true;
       input.consumeClick();
     }
+    // Der Glanz: die Laterne flammt auf, Funken steigen, ein Glanz läuft über den Schriftzug – und
+    // hatte die Seite schon eine Eingabe, spielt die Spieluhr dazu
+    if (this.phase === 'ein' && this.t >= T0.glow) {
+      this.phase = 'glanz';
+      this.pt = 0;
+      if (this.game.sound.allowed()) {
+        this.game.sound.unlock();
+        this.jinglePending = true;
+      }
+    }
     if (this.jinglePending) {
-      // Der Klang entsteht mit dem Tastendruck; läuft er noch nicht, im nächsten Bild noch einmal.
-      // Ohne Klang (stumm, verboten) geht es nach einer Sekunde trotzdem weiter.
+      // Der Klang entsteht gerade erst; läuft er noch nicht, im nächsten Bild noch einmal
       if (this.game.sound.jingle()) {
         this.jinglePending = false;
         this.jinglePlayed = true;
-      } else if (this.pt > 1) this.jinglePending = false;
+      } else if (this.pt > 0.6) this.jinglePending = false;
     }
-    if (this.phase === 'klang' && this.pt >= JINGLE) {
+    if (this.phase === 'glanz' && this.t >= T0.hold) {
       this.phase = 'aus';
       this.pt = 0;
+      this.fadeOut = T0.fadeOut;
     }
     // Laub fällt, Funken steigen
     for (let i = 0; i < this.leaves.length; i++) {
@@ -252,7 +295,7 @@ export class SplashScreen {
       l.y += l.speed * dt;
       if (l.y > 1.05) this.leaves[i] = this.leaf(i + Math.floor(this.t * 10), false);
     }
-    if (this.phase === 'klang' && this.pt < 1.4) {
+    if (this.phase === 'glanz' && this.pt < 1.4) {
       for (let k = 0; k < 2; k++) {
         if (Math.random() < dt * 22) this.sparks.push({ x: (Math.random() - 0.5) * 60, y: 0, vy: 18 + Math.random() * 22, vx: (Math.random() - 0.5) * 6, life: 1.1 + Math.random() * 0.9, age: 0 });
       }
@@ -264,15 +307,20 @@ export class SplashScreen {
       s.x += s.vx * dt;
       if (s.age >= s.life) this.sparks.splice(k, 1);
     }
-    if (this.phase === 'aus' && this.pt >= FADE_OUT) this.close();
+    if (this.phase === 'aus' && this.pt >= this.fadeOut) this.close();
   }
 
   /** Stand für die Playtest-Brücke und die Prüfung. */
   view() {
+    const T0 = this.timing;
     return {
       phase: this.phase,
-      texte: [T.startbild.studio, T.startbild.praesentiert, ...(this.phase === 'warten' ? [T.startbild.taste] : [])],
+      t: +this.t.toFixed(2),
+      texte: [T.startbild.studio, T.startbild.praesentiert],
       spieluhr: this.jinglePlayed,
+      kurz: this.short,
+      dauer: +(T0.hold + T0.fadeOut).toFixed(2),
+      uebersprungen: this.skipped,
     };
   }
 
@@ -314,7 +362,8 @@ export class SplashScreen {
     const lantern = img.lantern;
     const lx = Math.round(W / 2 - lantern.width / 2);
     const ly = by - lantern.height + 5;
-    const burst = this.phase === 'klang' ? Math.max(0, 1 - this.pt / 1.6) : 0;
+    const glowT = this.t - this.timing.glow; // seit dem Glanz
+    const burst = glowT >= 0 ? Math.max(0, 1 - glowT / 1.6) : 0;
     const flicker = Math.sin(this.t * 7.3) * 0.6 + Math.sin(this.t * 13.1) * 0.4;
     const glow = glowCanvas(Math.round(30 + flicker * 1.5 + burst * 16));
     // Der Schein liegt über dem Buch, nicht darunter
@@ -324,7 +373,7 @@ export class SplashScreen {
     if (cut > 0) ctx.drawImage(glow, 0, 0, glow.width, cut, gx, gy, glow.width, cut);
     ctx.drawImage(book, bx, by);
     ctx.drawImage(burst > 0.2 || flicker > 0.75 ? img.lanternBright : img.lantern, lx, ly);
-    // Funken über dem Buch (nach dem Tastendruck)
+    // Funken über dem Buch (mit dem Glanz)
     for (const s of this.sparks) {
       const k = s.age / s.life;
       ctx.fillStyle = css(k < 0.4 ? P.f8 : k < 0.75 ? P.f7 : P.f5);
@@ -340,8 +389,8 @@ export class SplashScreen {
     ctx.drawImage(logo, tx + LOGO_SCALE, ty + LOGO_SCALE, lw, lh);
     ctx.globalAlpha = 1;
     ctx.drawImage(logo, tx, ty, lw, lh);
-    if (this.phase === 'klang' && this.pt < 1.8) {
-      const sweep = Math.floor((this.pt / 1.8) * (logo.width + 8)) - 4;
+    if (glowT >= 0 && glowT < 1.8) {
+      const sweep = Math.floor((glowT / 1.8) * (logo.width + 8)) - 4;
       for (let k = 0; k < 3; k++) {
         const sx = sweep + k;
         if (sx < 0 || sx >= logo.width) continue;
@@ -349,12 +398,8 @@ export class SplashScreen {
       }
     }
     ui.textCentered(T.startbild.praesentiert, W / 2, ty + lh + 4, COLORS.textWarm, { outline: COLORS.outline });
-    // Bis zum ersten Druck: »Taste drücken« (erst dann darf der Klang beginnen)
-    if (this.phase === 'warten' && this.t > FADE_IN && Math.floor((this.t - FADE_IN) * 1.5) % 2 === 0) {
-      ui.textCentered(T.startbild.taste, W / 2, H - 30, COLORS.textDim, { outline: COLORS.outline });
-    }
-    // Ein- und Ausblenden
-    const fade = Math.max(Math.max(0, 1 - this.t / FADE_IN), this.phase === 'aus' ? Math.min(1, this.pt / FADE_OUT) : 0);
+    // Ein- und Ausblenden (kein »Taste drücken« mehr: das Bild läuft von selbst, N11)
+    const fade = Math.max(Math.max(0, 1 - this.t / this.timing.fadeIn), this.phase === 'aus' ? Math.min(1, this.pt / this.fadeOut) : 0);
     ui.ditherFill(fade);
   }
 }

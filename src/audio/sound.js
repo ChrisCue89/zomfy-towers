@@ -369,6 +369,16 @@ export class Sound {
     return Boolean(this.ctx) && this.ctx.state === 'running';
   }
 
+  /**
+   * N11: Darf Klang schon entstehen, ohne dass der Browser warnt? Nur, wenn die Seite bereits eine
+   * echte Eingabe hatte (dauerhafte Nutzeraktivierung) – kennt der Browser das nicht, nie.
+   */
+  allowed() {
+    if (this.ready) return true;
+    const ua = globalThis.navigator?.userActivation;
+    return Boolean(ua && (ua.hasBeenActive || ua.isActive));
+  }
+
   /** Erste echte Eingabe: Klang anlegen bzw. wieder aufwecken. */
   unlock() {
     if (this.failed) return;

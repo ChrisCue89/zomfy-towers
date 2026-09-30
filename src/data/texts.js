@@ -1977,11 +1977,11 @@ export const T = {
     fertig: 'E: Gute Nacht',
     angezuendet: 'Die Laterne am Brett brennt.',
   },
-  // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch
+  // Startbild (N2): Wunsch des Auftraggebers, »Produced by Tales of Cue« auf Deutsch; seit N11
+  // läuft es von selbst (kein »Taste drücken« mehr)
   startbild: {
     studio: 'Tales of Cue',
     praesentiert: 'präsentiert',
-    taste: 'Taste drücken',
   },
   // Die Nacht in der Hand (M16): Welle rufen, Zeitraffer, Nachtplan
   nacht: {
@@ -2019,6 +2019,7 @@ export const T = {
   },
   titel: {
     untertitel: 'Ein gemütliches Zuhause am See',
+    tonHinweis: 'Mit der ersten Taste beginnt die Musik.', // N11: der Browser erlaubt Klang erst danach
     weiter: 'Weiterspielen',
     neu: 'Neues Spiel',
     figur: 'Wer bist du?',

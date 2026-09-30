@@ -226,6 +226,43 @@ export class TitleScreen {
     const focused = L.rows[this.focus];
     this.infoRect = null;
     if (figur && focused?.info) this.drawInfo(ui, focused.info, focused.rect);
+    // N11: Der Browser erlaubt Klang erst nach der ersten Taste – bis dahin ein leiser Hinweis
+    if (this.soundHint()) this.drawSoundHint(ui);
+  }
+
+  /** Noch kein Klang, aber er käme mit der ersten Taste (nicht, wenn Musik und Ton aus sind)? */
+  soundHint() {
+    const s = this.game.sound;
+    return !s.ready && !s.failed && s.volumes.master > 0 && s.volumes.music > 0;
+  }
+
+  /** Unten rechts: ein stummer Lautsprecher und die Zeile, dass die Musik mit der ersten Taste beginnt. */
+  drawSoundHint(ui) {
+    const text = T.titel.tonHinweis;
+    const x = ui.width - measure(text) - 8;
+    const y = ui.height - LINE_HEIGHT - 5;
+    ui.text(text, x, y, COLORS.textWarm, { outline: COLORS.outline });
+    // Lautsprecher (o) mit einem kleinen Kreuz (x): stumm; mit dunkler Kontur wie die Schrift
+    const ctx = ui.ctx;
+    const rows = ['....o......', '...oo......', 'ooooo..x.x.', 'ooooo...x..', 'ooooo..x.x.', '...oo......', '....o......'];
+    const ix = x - 15;
+    const iy = y;
+    const lit = (i, j) => rows[j] && rows[j][i] && rows[j][i] !== '.';
+    ctx.fillStyle = COLORS.outline;
+    for (let j = -1; j <= rows.length; j++) {
+      for (let i = -1; i <= rows[0].length; i++) {
+        if (lit(i, j)) continue;
+        if (lit(i - 1, j) || lit(i + 1, j) || lit(i, j - 1) || lit(i, j + 1)) ctx.fillRect(ix + i, iy + j, 1, 1);
+      }
+    }
+    rows.forEach((row, j) =>
+      [...row].forEach((ch, i) => {
+        if (ch === '.') return;
+        ctx.fillStyle = ch === 'x' ? COLORS.gold : COLORS.textWarm;
+        ctx.fillRect(ix + i, iy + j, 1, 1);
+      }),
+    );
+    this.soundHintRect = { x: ix - 1, y: y - 1, w: ui.width - 8 - ix + 1, h: LINE_HEIGHT + 1 };
   }
 
   /** Erklärkasten links an einer Zeile: warmes Papier auf dunklem Rahmen, Zipfel zur Zeile. */

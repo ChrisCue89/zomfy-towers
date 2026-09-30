@@ -8,7 +8,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
-| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern) |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern), die Präsentation am Anfang (`praesentation.md`, N11) |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
@@ -91,7 +91,9 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
 5. **Konsole sauber halten.** Keine Fehler, keine Warnungen. In r186 veraltet
    bzw. entfernt: `THREE.Clock`, `PCFSoftShadowMap`. Kein synchrones Auslesen
    der GPU (`readPixels`) – das erzeugt »GPU stall«-Warnungen. Den
-   AudioContext erst bei einer echten Eingabe anlegen (sonst Warnung).
+   AudioContext erst bei einer echten Eingabe anlegen (sonst Warnung) – oder
+   wenn `sound.allowed()` sagt, dass die Seite schon eine hatte (N11). Nie
+   eine Taste nur verlangen, damit Klang entstehen darf (Startbild, N11).
 6. **Spielstand nie kaputt machen.** Änderungen am Speicherformat erhöhen
    `SAVE_VERSION` in `src/core/state.js` und bekommen eine Migration in
    `src/core/save.js`; `sanitizeState` ergänzen. Alte Stände müssen laden.
@@ -374,7 +376,10 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Handel mit Balduin), mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), cardTable
                       (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
-                      (Startbild, N2), title (Titelbild, Name und Aussehen),
+                      (Startbild, N2: läuft seit N11 von selbst, Taste
+                      überspringt), title (Titelbild, Name und Aussehen;
+                      Musikhinweis, solange der Browser noch keinen Klang
+                      erlaubt),
                       armory (Fenster des Waffenschranks, M30),
                       funk (Edda über Funk: Comic-Feld unten rechts, N4),
                       catalog (Balduins Katalog und Lieferkarte, N4),
@@ -1044,11 +1049,13 @@ Grundprinzipien:
    Schlurfer-Arten, den Überlebenden, Balduin und Knopf sind gewölbt (höchstens
    rund die Hälfte einer Vorderseite in einer Ebene), Mika beugt beim Gehen mit
    echter Taste die Knie und hält die Laterne (F) mit angewinkeltem Arm (Bild:
-   figuren); ab N2 (im Spielstart): zuerst das Startbild »Tales of Cue
-   präsentiert« ohne jeden Klang, eine echte Taste startet die Spieluhr, dann
-   blendet das Titelbild mit der Titelmusik ein; nach »Los geht’s!« ist sie
-   aus; Titelstück und Spieluhr rechnen offline ohne Übersteuerung (Bild:
-   startbild); ab M16 (Abschnitt `nacht16`, dazu die neue Zeile
+   figuren); ab N2 (im Spielstart, seit N11): zuerst das Startbild »Tales of
+   Cue präsentiert« – es läuft ohne Taste und still ins Titelbild (rund 3,5 s),
+   dort steht der Musikhinweis unten rechts, die erste echte Taste startet
+   die Titelmusik und der Hinweis verschwindet, beim zweiten Mal die kurze
+   Fassung, in der Ankunft überspringt eine Taste es sofort; nach »Los
+   geht’s!« ist die Titelmusik aus; Titelstück und Spieluhr rechnen offline
+   ohne Übersteuerung (Bild: startbild); ab M16 (Abschnitt `nacht16`, dazu die neue Zeile
    »Schwierigkeit« im Titelbild): Nacht 1 kommt über je einen Weg, ab Nacht 2
    auch über zwei oder drei, die Schwierigkeit ändert das Budget; am Abend
    zeigen Nachtplan und Randmarke die erste Welle; N ruft in der Pause die
@@ -1388,7 +1395,9 @@ ab M9.1 einen Schlurfer mit einer bestimmten Ursache erledigen
 ab M10d berechnet `renderMusic(id, s, stufe)` ein Musikstück ohne
 Lautsprecher (Spitze, Mittelpegel), `sound().music` nennt das laufende
 (ab N2 auch `renderMusic('titel' | 'jingle')`, `sound().jingles` zählt die
-Spieluhr, `zomfyView().startbild` zeigt Phase und Texte des Startbilds);
+Spieluhr, `zomfyView().startbild` zeigt Phase und Texte des Startbilds, seit N11 auch Zeit,
+kurze Fassung, Dauer und ob übersprungen wurde; `zomfyView().titel.tonHinweis`, ob der
+Musikhinweis steht);
 ab M11 zeigt `interior()` Eingang, Ausgang, Grenzen, Räume, Maßstab und ob
 Mika drinnen ist, `wakeSpot()` liegt im Innenraum; ab M12 zeigt `weather()`
 Art, Regen, Wind, Tropfen und Nebel, `setWeather(art, sofort)` erzwingt ein

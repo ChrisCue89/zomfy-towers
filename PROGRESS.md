@@ -5,6 +5,30 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N11: Das Startbild läuft von selbst ✓
+
+**Rückmeldung (30.09.):** »am Anfang muss man das Tales of Cue weg drücken. Voll doof. Schau mal
+wie so eine Präsentation richtig geht.« Recherche in `recherche/praesentation.md` (Nr. 214).
+
+- **Von selbst:**
+  - »Tales of Cue präsentiert« blendet ein, die Laterne flammt auf, ein Glanz läuft über den
+    Schriftzug, dann blendet es aus.
+  - Nach rund 3,5 s ist das Titelbild da. Kein »Taste drücken« mehr.
+- **Jede Taste, jeder Klick überspringt sofort.** Die Eingabe startet nebenbei die Titelmusik.
+- **Beim zweiten Mal kürzer:** rund 1,6 s, gemerkt im Browser (`zomfy-towers.startbild`), nicht
+  im Spielstand – wie Konsolen, die Studio-Logos nach dem ersten Start nicht mehr zeigen.
+- **Ton ohne Zwang:**
+  - Hatte die Seite schon eine Eingabe (`sound.allowed()`), spielt die Spieluhr zum Glanz.
+  - Sonst ist das Startbild still, und im Titelbild steht unten rechts neben einem stummen
+    Lautsprecher: »Mit der ersten Taste beginnt die Musik.« Die erste Taste startet das
+    Titelstück, der Hinweis verschwindet.
+- **Prüfung** (im Spielstart):
+  - Das Startbild läuft ohne Taste und still ins Titelbild; der Hinweis steht da; die erste
+    Taste startet »Herbstlied am Kranichsee«; beim zweiten Mal die kurze Fassung.
+  - In der Ankunft überspringt eine Taste es sofort.
+
+---
+
 ## F2: Die Horde als Sprites im Spiel ✓
 
 **Auftrag (30.09.):** »Mache ruhig weiter, die neuen Optiken gefallen mir.« Alle 17 Formen aus dem

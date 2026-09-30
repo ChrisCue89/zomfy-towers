@@ -3518,7 +3518,7 @@ export class Game {
         : null,
       menue: this.menu.isOpen ? this.menu.screen : null,
       startbild: this.mode === 'splash' ? this.splash.view() : null,
-      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`), tasten: !(this.title.guard > 0), bereit: !(this.title.startGuard > 0), erklaerung: this.title.infoRect ? { ...this.title.infoRect } : null } : null,
+      titel: this.mode === 'title' ? { seite: this.title.screen, knoepfe: this.title.rows().map((r, i) => `${i === this.title.focus ? '> ' : ''}${r.label}`), tasten: !(this.title.guard > 0), bereit: !(this.title.startGuard > 0), erklaerung: this.title.infoRect ? { ...this.title.infoRect } : null, tonHinweis: this.title.soundHint() } : null,
       leben: `${Math.round(st.player.hp)}/${this.combat.maxHp}`,
       zuhause: `${Math.round(st.world.homeHp)}/${HOUSE_LEVELS[st.world.houseLevel].hp}`,
       nacht: this.nights.active && this.nights.plan ? { nacht: st.night.n, welle: `${st.night.wave}/${this.nights.plan.waves.length}`, richtung: this.nights.directionText() } : null,

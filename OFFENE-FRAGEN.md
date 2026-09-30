@@ -2635,6 +2635,27 @@ Spielen sieht, ohne erst eine Einstellung zu suchen. Der Umschalter bleibt für 
 Voxel-Look lieber mögen. Worker, Reihenfolge und das Warten in Voxeln sorgen dafür, dass nie ein
 Bild ruckelt und nie ein Schlurfer fehlt.
 
+### 214. Wie läuft die Präsentation am Anfang? (N11)
+**Entscheidung:** Wie ein Studio-Logo in einem fertigen Spiel (`recherche/praesentation.md`):
+Es läuft von selbst, ist kurz und lässt sich mit jeder Taste sofort überspringen.
+
+- **Ablauf:**
+  - einblenden (0,7 s);
+  - der Glanz (Laterne, Funken, Glanz über dem Schriftzug);
+  - stehen bis 2,9 s, ausblenden (0,6 s).
+  - Beim zweiten Mal in diesem Browser die kurze Fassung (rund 1,6 s).
+- **Ton:**
+  - Die Spieluhr spielt nur, wenn der Browser Klang schon erlaubt (die Seite hatte eine
+    Eingabe). Wir fragen vorher (`navigator.userActivation`) – sonst gäbe es eine Warnung.
+  - Sonst ist das Startbild still. Im Titelbild zeigt ein stummer Lautsprecher mit einer Zeile,
+    dass die Musik mit der ersten Taste beginnt. Diese Taste wirkt zugleich im Menü.
+- **Kein Überspringen der ganzen Präsentation:** Das Logo ist der Wunsch des Auftraggebers
+  (N2). Es bleibt, hält aber nicht mehr auf.
+
+**Warum:** Ein Logo, das man wegdrücken muss, fühlt sich wie ein Hindernis an. Überall sonst läuft
+es von selbst, und wer es schon kennt, überspringt es. Der Ton darf im Browser nicht ohne Eingabe
+beginnen. Also beginnt er dort, wo der Spieler ohnehin drückt: im Titelbild.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?
