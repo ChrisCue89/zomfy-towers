@@ -1583,6 +1583,10 @@ export const T = {
     ersteNacht: 'Die erste Nacht – gehalten. Weißt du, wie lange keiner mehr so etwas über die Holzlände sagen konnte?',
     balduin: 'Das ist Balduins Horn. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
     frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst – und ich bleib die ganze Nacht dran.',
+    // G6: Der Sturmhuk blinkt in der Frostnacht; der See singt beim ersten Eis
+    sturmhuk: 'Schau nach Nordosten, Mika. Kurz, kurz, lang – das ist der Sturmhuk. Ich hab die Lampe angezündet. Zum ersten Mal seit drei Jahren. Für euch.',
+    sturmhukClara: 'Schau nach Nordosten, Mika. Kurz, kurz, lang – Clara und ich halten die Lampe am Sturmhuk an. Die ganze Nacht. Für euch.',
+    seeSingt: 'Hörst du? Der See singt. Das tut er nur beim ersten Eis.',
     // G4: Eddas Jahrestage (STORY_DAYS in data/autumn.js)
     tage: {
       12: 'Drei Jahre hab ich jeden Abend auf dieser Frequenz gehört. Nur Rauschen. Dann hat es geknistert – und da warst du.',
@@ -2274,6 +2278,8 @@ export const T = {
         name: 'Leuchtturm Sturmhuk',
         herkunft: 'Ein Huk ist eine Landspitze, an der sich der Wind bricht. Der Leuchtturm darauf stand lange dunkel.',
         edda: 'Dort hat Edda drei Jahre gewohnt. Von oben sah sie unser Feuer.',
+        blinkt: 'In der Frostnacht blinkte die Lampe wieder: kurz, kurz, lang – zum ersten Mal seit drei Jahren.',
+        gruss: 'Jeden Abend um Viertel vor acht blinkt es herüber: kurz, kurz, lang. Gute Nacht, Bucht.',
       },
       eulenbruch: {
         name: 'Forsthaus Eulenbruch',
@@ -2364,6 +2370,42 @@ export const T = {
     hinweisLooping: 'Looping!',
     reihe: (n, von) => (n >= von ? `${n} in Reihe!` : `In Reihe: ${n} von ${von}`),
     loslassen: 'Esc: zurückgeben',
+  },
+  // G6: Kleine Wunder – Stümpfe mit drei Kreuzen, der Sturmhuk, Balduins Plane
+  wunder: {
+    stumpf: {
+      // bevor Hilde von den Moosleuten erzählt hat
+      erst: [
+        'Ein alter Stumpf. In die Schnittfläche hat jemand drei Kreuze geschlagen – tief und sorgfältig.',
+        'Noch einer mit drei Kreuzen. Das war kein Zufall. Das war ein Brauch.',
+        'Drei Kreuze, fast zugewachsen. Wer hat die geschlagen – und für wen?',
+      ],
+      // danach
+      moosleute: [
+        'Drei Kreuze für die Moosleute. Auf so einem Stumpf finden sie Ruhe, sagt Hilde.',
+        'Das Moos wächst schon über die Kreuze. Die Holzhauer sind fort – die Moosleute vielleicht nicht.',
+        'Yusuf sagt: Pilz. Hilde sagt: Moosleute. Der Stumpf sagt nichts. Er hat nur drei Kreuze.',
+      ],
+      schnee: [
+        'Schnee liegt auf den drei Kreuzen. Heute Nacht haben die Moosleute ihre Ruhe.',
+        'Unter dem Schnee sieht man die Kreuze kaum. Aber sie sind noch da.',
+      ],
+    },
+    // Abends vom Sturmhuk: kurz, kurz, lang
+    gruss: {
+      edda: 'Kurz, kurz, lang – vom Sturmhuk. Gute Nacht, Edda.',
+      bei: (name) => `Kurz, kurz, lang – vom Sturmhuk. Gute Nacht, ${name}.`,
+    },
+    // Balduin ab Tag 20 (die Plane) und nach dem Herbst (die Sammlung)
+    balduinPlane: [
+      '„Die Plane? Welche Plane? Da ist keine Plane.“',
+      '„Das da vorn im Boot? Frag nicht. Wirklich. Frag nicht.“',
+      '„Es ist fast fertig. Und nein, es beißt nicht. Meistens.“',
+    ],
+    balduinDanach: [
+      '„Die Sammlung? Nächsten Herbst. Vielleicht.“',
+      '„Das unter der Plane schläft jetzt. Wie der Moder. Frag nicht.“',
+    ],
   },
   debug: {
     titel: 'Entwickler',

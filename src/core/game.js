@@ -79,6 +79,7 @@ import { FishingView } from '../ui/fishingView.js';
 import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
+import { Wonders } from './wonders.js';
 import { ISLE_VIEW } from '../data/isles.js';
 import { FOG_VIEW } from '../data/fogIsle.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
@@ -393,6 +394,7 @@ export class Game {
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
+    this.wonders = new Wonders(this); // G6: Stümpfe mit drei Kreuzen, der Sturmhuk blinkt, der See singt
     this.book = new Book(this); // M25, Teil 2: Herbstbuch (Sterne, Taten, Schlurferkunde, Turmalbum)
     this.cardNight = new CardNight(this); // M28: Kartenabend »Letzte Runde«
     this.bonds = new Bonds(this); // M29: Bindung – gemeinsame Zeit, stille Stufen, Momente
@@ -1006,6 +1008,7 @@ export class Game {
     else if (it.kite) this.kite.take(); // N9: Pim gibt Mika die Leine
     else if (it.npc) this.survivors.talk(it.npc);
     else if (it.questItem !== undefined) this.quests.pick(it.questItem); // M23: Fundstück eines Auftrags
+    else if (it.stump !== undefined) this.hud.say(this.wonders.stumpThought(it.stump), 5); // G6: Gedanke statt Dialog
     else if (this.gathering.interact(it)) return;
     else if (it.thought) this.hud.say(T.geschichte[it.thought], 5); // M15: Gedanke statt Dialog
     else if (it.dialog) this.startDialog(it.dialog);
@@ -1401,7 +1404,10 @@ export class Game {
     const ax = p.x + (move.x / len) * 0.7;
     const az = p.z + (move.z / len) * 0.7;
     const forest = m.edgeDistance(p.x, p.z) > -0.5 && m.edgeDistance(ax, az) > 0.1 && !m.isWater(ax, az) && !m.onIsland(ax, az) && !m.inBay(ax, az);
-    const stuck = Math.hypot(this.player.velocity.x, this.player.velocity.z) < 1.2;
+    // G6: zählt das Tempo in Laufrichtung – wer gegen einen schrägen Waldsaum drückt, gleitet an ihm
+    // entlang (vorher blieb der Gedanke dort aus; die Stümpfe schoben die Prüfung an so eine Stelle)
+    const v = this.player.velocity;
+    const stuck = (v.x * move.x + v.z * move.z) / len < 1.2;
     this.forestPush = forest && stuck ? this.forestPush + dt : 0;
     if (this.forestPush < 0.6) return;
     this.forestPush = 0;
@@ -2727,6 +2733,7 @@ export class Game {
     this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
     this.kite.update(dt); // N9: Pims Drachen
     this.autumn.update(this.mode === 'play' ? dt : 0);
+    this.wonders.update(this.mode === 'play' ? dt : 0); // G6
     if (this.mode === 'play') this.book.update(dt); // M25: gelungene Taten eintragen
     if (this.mode === 'play') this.bonds.update(); // M29: die Vertrauten grüßen morgens
     this.scenes.update(dt); // M29: zwei Bewohner reden miteinander
@@ -3595,6 +3602,7 @@ export class Game {
           kraehen: step(w.crows.group),
           beute: step(...Object.values(game.loot.meshes)),
           boot: step(game.trader.boat.root),
+          stuempfe: step(w.stumps.group), // G6
         };
       },
       // N5: die Ankunft und die Einführung
@@ -4207,6 +4215,8 @@ export class Game {
       },
       /** N9: gleich eine Böe. */
       kiteGust: () => game.kite.gustNow(),
+      /** G6: Stümpfe, Sturmhuk (blinkt? Lampe an? wer?), Abendgruß, Eisgesang, Plane – dazu die Randmarke. */
+      wonders: () => ({ ...game.wonders.info(), mark: (game.hud.edgeMarks || []).find((m) => m.art === 'sturmhuk') || null, speech: game.hud.speech?.text || null, mode: game.mode, minute: game.state.time.minute }),
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
       post: () => {
         const e = game.survivors.npcs.list.get('edda');

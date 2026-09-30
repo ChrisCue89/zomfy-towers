@@ -5,6 +5,51 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G6: Kleine Wunder ✓
+
+**Auftrag (30.09.):** »Die Story ist noch dünn.« Nach G1–G5 kommen die optionalen Stücke aus
+`recherche/storytelling-namen.md` (4.3 und 5.2) dazu. Die Welt erzählt dabei selbst, was Texte
+bisher nur behaupteten. Balance und Spielstand ändern sich nicht (nur Flags).
+
+- **Die Stümpfe mit den drei Kreuzen:**
+  - Am Waldrand der Zuläufe und am Südrand der Bucht stehen alte Stümpfe. In ihre Schnittfläche
+    hat jemand drei Kreuze geschlagen. Dazu kommen Moos, ein Baumschwamm und abgefallene Rinde
+    (Modell im Maß 1/32).
+  - E gibt einen Gedanken (nie einen Dialog). Hat Hilde von den Moosleuten erzählt, denkt Mika
+    an sie, im Schnee an ihre Ruhe.
+  - Die Stümpfe werden nach der Natur auf freie Stellen gesetzt, der Zufall des Waldes bleibt
+    derselbe. Im Norden der Bucht hätten Haus, Birke und Eiche sie verdeckt.
+- **Der Sturmhuk blinkt: kurz, kurz, lang.**
+  - Der Leuchtturm liegt weit außerhalb des Bildes. Er erscheint als kleine Leuchtturm-Marke am
+    Rand, in Richtung Nordosten, und ihre Lampe folgt der Blinkfolge. Eine Lichtquelle kommt
+    nicht dazu.
+  - In der Frostnacht blinkt er die ganze Nacht. Edda: »Ich hab die Lampe angezündet. Zum
+    ersten Mal seit drei Jahren. Für euch.« Ist Clara schon dort, halten beide sie an.
+  - Solange jemand am Sturmhuk ist (Clara, oder Edda nach der Frostnacht bis zu ihrer
+    Heimkehr), blinkt es jeden Abend ab Viertel vor acht dreimal. Mika denkt: »Gute Nacht,
+    Clara.« Claras Brief und ihr Funkspruch hatten das Blinken schon angekündigt, jetzt sieht
+    man es.
+  - Die Ortskunde erzählt vom Blinken und vom Abendgruß.
+- **Der See singt:** Ist die Frostnacht gehalten (ob das Herz fiel oder im Morgengrauen
+  erstarrte), klingt das erste Eis. Hohe Pfeiftöne gleiten hinunter, dazwischen dumpfes
+  Wummern – ein neues Klangrezept. Edda: »Hörst du? Der See singt. Das tut er nur beim ersten
+  Eis.«
+- **Balduins Plane:** Ab Tag 20 liegt vorn in seinem Boot etwas Großes unter einer olivgrünen
+  Plane. Etwas Spitzes drückt von innen dagegen. »Das da vorn im Boot? Frag nicht.« Nach dem
+  Herbst sagt er: »Die Sammlung? Nächsten Herbst. Vielleicht.« Die Plane geht nie auf.
+- **Hilde über Balduin:** Kennt Mika ihn, erzählt Hilde ab Tag 9 einmal von der Seepost:
+  »Immer eine Stunde schneller als ich – weil der Herr nicht klingeln musste. Angeber.«
+
+- **Nebenbei (Gedanke am Waldrand):** Ein Stumpf stand genau dort, wo die Prüfung den Gedanken
+  am Waldrand auslöst. Sie wich an einen schrägen Waldsaum aus – und dort blieb der Gedanke aus,
+  weil Mika beim Dagegenlaufen am Saum entlanggleitet und nie stillsteht. Jetzt zählt das Tempo
+  in Laufrichtung (`checkForestEdge`), der Gedanke kommt auch am schrägen Rand.
+
+**Prüfung:** Neuer Abschnitt `wunder` (Stümpfe mit echter Taste, Abendgruß mit Clara,
+Frostnacht mit Blinken und Eisgesang, Plane, Seepost) und alle berührten Abschnitte grün
+(ansicht, geschichte, finale, knoten, orte, uhr, haendler: 52 Prüfpunkte). Der Detailgrad misst
+die Stümpfe mit (Maß 1/32), die Bildlast im Hof bleibt bei 1,17 Mio. Dreiecken.
+
 ## H4b: Jedes Fenster passt ✓
 
 Nachgemessen nach H4: Bei »Oberfläche: groß« (270 Zeilen, 1080p im Vollbild) ragten mehrere

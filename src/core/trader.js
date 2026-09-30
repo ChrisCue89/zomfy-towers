@@ -24,6 +24,7 @@ import { AMMO_TRADE, ARMS_REPLACE } from '../data/arms.js';
 import { buildBoat, buildRope, BOAT, BOAT_UNIT, CLEAT } from '../entities/traderModels.js';
 import { LAYOUT } from '../world/layout.js';
 import { SUGAR } from '../data/fogIsle.js';
+import { TARP } from '../data/wonders.js';
 
 const U = BOAT_UNIT;
 const DECK_Y = (BOAT.deck + 1) * U; // hier steht Balduin im Boot
@@ -277,6 +278,7 @@ export class Trader {
     const visible = id !== 'weg';
     n.model.root.visible = visible;
     this.boat.root.visible = visible;
+    this.boat.tarp.visible = g.state.time.day >= TARP.fromDay; // G6: etwas Großes unter einer Plane
     if (id === 'kommt' && prev === 'weg') {
       // Balduins Auftritt: Schiffshorn, Paukenwirbel, Fanfare – der Schlussakkord fällt aufs Anlegen
       this.fanfares += 1;
@@ -400,8 +402,12 @@ export class Trader {
   quote() {
     const st = this.game.state;
     if (!(st.inventory.teile > 0)) return T.haendler.keineTeile;
+    const day = st.time.day;
+    // G6: Ab Tag 20 fragt keiner nach der Plane, nach dem Herbst nach der Sammlung (jeden zweiten Tag)
+    const extra = st.autumn?.frost ? T.wunder.balduinDanach : day >= TARP.fromDay ? T.wunder.balduinPlane : null;
+    if (extra && day % 2 === 0) return extra[(day >> 1) % extra.length];
     const list = T.haendler.sprueche;
-    return list[(st.time.day * 7) % list.length];
+    return list[(day * 7) % list.length];
   }
 
   talk() {

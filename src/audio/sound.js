@@ -141,6 +141,16 @@ const SFX = {
     s.tone('triangle', 196, t, 0.18, { freqEnd: 150, peak: 0.08 * v, out: o });
     s.noise(t, 0.08, { type: 'bandpass', freq: 1400, q: 1.5, peak: 0.04 * v, out: o });
   },
+  // G6: Der See singt beim ersten Eis – Spannung läuft als »Piuu« über die Eisfläche: hohe
+  // Pfeiftöne, die schnell hinuntergleiten (die hohen kommen zuerst an), dazwischen dumpfes Wummern
+  eisgesang: (s, t, v, o) => {
+    const chirps = [[0, 2600, 0.42], [0.55, 1900, 0.5], [1.3, 3100, 0.36], [1.62, 2300, 0.46], [2.5, 1700, 0.62], [3.3, 2800, 0.4], [4.15, 2050, 0.56]];
+    chirps.forEach(([dt, f, dur], k) => {
+      s.tone('sine', f, t + dt, dur, { freqEnd: f * 0.12, peak: 0.05 * v, attack: 0.004, out: o });
+      if (k % 2 === 0) s.tone('sine', f * 1.5, t + dt + 0.02, dur * 0.6, { freqEnd: f * 0.2, peak: 0.016 * v, attack: 0.004, out: o });
+    });
+    for (const dt of [0.3, 2.1, 3.9]) s.tone('sine', 70, t + dt, 0.55, { freqEnd: 38, peak: 0.12 * v, attack: 0.01, out: o });
+  },
   // Balduins Wagenglöckchen und das Rumpeln der Räder (Meilenstein 8)
   bimmel: (s, t, v, o) => {
     for (const dt of [0, 0.15, 0.3]) {

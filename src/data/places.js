@@ -57,7 +57,13 @@ export const PLACES = {
   tannrode: { art: 'dorf', known: (st) => moment(st, 'hannes') >= 2, lines: () => ['hannes'] },
   faehrhaus: { art: 'gasthaus', known: (st) => stage(st, 'rosa') >= 2, lines: () => ['rosa'] },
   // Die sicheren Orte (M32): die Namen aus G1
-  sturmhuk: { art: 'sicher', place: 'leuchtturm', known: (st) => safe('leuchtturm')(st) || Boolean(st.edda?.met), lines: (st) => [st.edda?.met && 'edda'] },
+  sturmhuk: {
+    art: 'sicher',
+    place: 'leuchtturm',
+    // G6: auch, sobald die Lampe in der Frostnacht geblinkt hat (Edda nennt den Namen im Funk)
+    known: (st) => safe('leuchtturm')(st) || Boolean(st.edda?.met) || flag(st, 'sturmhukGeblinkt'),
+    lines: (st) => [st.edda?.met && 'edda', flag(st, 'sturmhukGeblinkt') && 'blinkt', flag(st, 'sturmhukTag') && 'gruss'],
+  },
   eulenbruch: { art: 'sicher', place: 'forsthaus', known: safe('forsthaus'), lines: () => [] },
   sonnenkamp: { art: 'sicher', place: 'farm', known: safe('farm'), lines: () => [] },
   gluehwuermchen: { art: 'sicher', place: 'ferienlager', known: safe('ferienlager'), lines: () => [] },

@@ -74,6 +74,7 @@ export class Autumn {
       this.game.hud.toast(T.herbst.frostnacht, 'warnung', 7);
       this.game.funk?.once('frost', T.funk.frost); // N4: Edda ist näher, als man denkt
       this.game.post?.signalFires(); // M32: auf den Inseln brennt für jeden Weitergezogenen ein Feuer
+      this.game.wonders?.frostNight(); // G6: der Sturmhuk blinkt – zum ersten Mal seit drei Jahren
     }
   }
 
@@ -159,6 +160,7 @@ export class Autumn {
     st.frost = night.n;
     this.frostNow = true;
     if (!this.heartFell) this.game.hud.showBanner(T.herbst.herzErstarrt); // im Morgengrauen erstarrt
+    this.game.wonders?.sing(); // G6: Fällt oder erstarrt das Herz, singt der See – das erste Eis
     return { heart: this.heartFell };
   }
 

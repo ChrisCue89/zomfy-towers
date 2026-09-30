@@ -1970,6 +1970,14 @@ sich der Höhe an, Edda weicht dem offenen Baumenü aus; die Kacheln bleiben gro
 *Umgesetzt (30.09.2026):* Waffenschrank, Morgenbericht, Werkbank/Handel und Katalog passen auch
 bei 270 Zeilen (»Oberfläche: groß«) ins Bild; der Abschnitt `groesse` misst sie.
 
+#### G6 – Kleine Wunder ✓
+
+*Umgesetzt (30.09.2026):* Alte Stümpfe mit drei Kreuzen stehen am Waldrand (E: ein Gedanke,
+nach Hildes Geschichte über die Moosleute). Der Sturmhuk blinkt kurz, kurz, lang als Randmarke,
+ohne neue Lichtquelle: die ganze Frostnacht und abends, solange jemand dort ist. Der See singt,
+sobald die Frostnacht gehalten ist. Balduins Plane liegt ab Tag 20 im Boot, und Hilde erzählt
+von der Seepost (Nr. 211).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

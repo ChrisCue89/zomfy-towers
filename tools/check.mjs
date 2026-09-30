@@ -233,6 +233,7 @@ async function runBrowserChecks() {
     if (want('orte')) await runPlaceChecks(browser, url);
     if (want('zonen')) await runZoneChecks(browser, url);
     if (want('groesse')) await runSizeChecks(browser, url);
+    if (want('wunder')) await runWonderChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -11530,6 +11531,237 @@ async function runSizeChecks(browser, url) {
   await setUi('mittel');
   if (browser955.lines === Math.ceil(955 / 3) && browser955.applied === 0 && browser955.row.includes('hier wie mittel') && laptop.lines === 360 && laptop.applied === 0) note(`✓ Größe (H4): im Browserfenster 1920 × 955 bleibt es bei ${browser955.lines} Zeilen – »${browser955.row}«; bei 1280 × 720 bleibt »klein« bei ${laptop.lines}`);
   else fail(`Größe: kleine Fenster ${JSON.stringify({ browser955, laptop })}`);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * G6 – Kleine Wunder (recherche/storytelling-namen.md 4.3 und 5.2): Stümpfe mit drei Kreuzen am
+ * Waldrand (echte Taste: ein Gedanke, nach Hildes Geschichte von den Moosleuten), der Sturmhuk
+ * blinkt abends zum Gruß (nur, solange jemand dort ist) und die ganze Frostnacht (Randmarke: kurz,
+ * kurz, lang – keine Lichtquelle), der See singt, sobald die Frostnacht gehalten ist, Balduins
+ * Plane ab Tag 20 und Hildes Seepost.
+ */
+async function runWonderChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Kleine Wunder (G6)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(100);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.quietChoices(); // Wahlen nach der Frostnacht still entscheiden
+  });
+  await step(300);
+
+  // 1) Die Stümpfe: an den Zuläufen und am Südrand der Bucht, knapp hinter dem Rand des Begehbaren.
+  //    E am Stumpf (echte Taste) gibt einen Gedanken; nach Hildes Geschichte denkt Mika an die Moosleute
+  const stumps = await z(() => {
+    const g = window.zomfy.game;
+    const m = g.world.map;
+    return g.world.stumps.spots.map((s) => ({ ...s, edge: +m.edgeDistance(s.x, s.z).toFixed(2), path: +m.pathDistance(s.x, s.z).toFixed(2), walk: m.walkableRaw(s.x, s.z), water: m.isWater(s.x, s.z) }));
+  });
+  const bay = stumps.find((s) => s.where === 'bucht');
+  const feeders = new Set(stumps.filter((s) => s.where !== 'bucht').map((s) => s.where));
+  const placed = stumps.length >= 5 && stumps.every((s) => !s.walk && !s.water && s.edge >= 0.25 && s.edge <= 1 && s.path >= 1.5) && Boolean(bay) && feeders.size >= 2;
+  const ansehen = async () => {
+    await z((s) => {
+      const Z = window.zomfy;
+      Z.game.hud.speech = null;
+      Z.teleport(s.x, s.z - 1.0, 0);
+    }, bay);
+    await step(300);
+    const hinweis = (await z(() => window.zomfyView())).hinweis;
+    await page.keyboard.press('KeyE');
+    await step(200);
+    return { hinweis, mode: await z(() => window.zomfy.game.mode), speech: await z(() => window.zomfy.wonders().speech) };
+  };
+  let erst = null;
+  let danach = null;
+  if (bay) {
+    await z(() => window.zomfy.setTime(10, 0));
+    erst = await ansehen();
+    await z(() => window.zomfy.setFlag('moosleute')); // Hilde hat von den Moosleuten erzählt
+    danach = await ansehen();
+    // Nah heran (echte Taste Z) – die Kreuze auf der Schnittfläche
+    await tap('KeyZ');
+    await step(400);
+    await still(page, 'stumpf');
+    await tap('KeyZ');
+    await step(300);
+  }
+  if (placed && /Ansehen/.test(erst?.hinweis || '') && erst.mode === 'play' && /drei Kreuze/i.test(erst.speech || '') && /Moosleute/.test(danach?.speech || '')) note(`✓ Wunder (G6): ${stumps.length} alte Stümpfe mit drei Kreuzen am Waldrand (an ${feeders.size} Zuläufen und am Südrand der Bucht, nie auf dem Weg); E: »${erst.speech}« – nach Hildes Geschichte: »${danach.speech}«`);
+  else fail(`Wunder: Stümpfe ${JSON.stringify({ stumps, erst, danach })}`);
+
+  // 2) Abendgruß: Ohne jemanden am Sturmhuk blinkt nichts. Ist Clara dorthin gezogen, blinkt es ab
+  //    Viertel vor acht dreimal (kurz, kurz, lang) als Randmarke, und Mika sagt gute Nacht – einmal am Tag
+  await z(() => {
+    const Z = window.zomfy;
+    Z.game.hud.speech = null;
+    Z.setDay(5);
+    Z.setTime(19, 46);
+    Z.teleport(2, 3, 0);
+  });
+  await step(600);
+  const ohne = await z(() => window.zomfy.wonders());
+  await z(() => {
+    const Z = window.zomfy;
+    Z.game.hud.speech = null;
+    Z.setSurvivor('clara', 4);
+    Z.setDay(6);
+    Z.setTime(19, 46);
+  });
+  await step(300);
+  const gruss = await z(() => window.zomfy.wonders());
+  await still(page, 'sturmhuk-gruss');
+  // Die Blinkfolge über zwei Runden abtasten (Schritte zu 1/30 s, ohne Zeichnen)
+  const folge = await z(() => {
+    const g = window.zomfy.game;
+    const out = [];
+    for (let k = 0; k < 246; k++) {
+      g.step(1 / 30);
+      out.push(g.wonders.lampOn() ? 1 : 0);
+    }
+    g.render();
+    return out;
+  });
+  const runs = [];
+  let run = 0;
+  for (const v of folge) {
+    if (v) run++;
+    else if (run) {
+      runs.push(run);
+      run = 0;
+    }
+  }
+  if (run) runs.push(run);
+  const inner = runs.slice(1, -1); // die erste und letzte Leuchtzeit können angeschnitten sein
+  const kind = inner.map((n) => (n <= 12 ? 'k' : n >= 25 ? 'L' : '?')).join('');
+  await step(4500);
+  const vorbei = await z(() => window.zomfy.wonders());
+  await z(() => window.zomfy.setTime(19, 50));
+  await step(300);
+  const nochmal = await z(() => window.zomfy.wonders());
+  // kurz, kurz, lang: zwei kurze Leuchtzeiten (0,3 s), dann eine lange (1 s)
+  if (!ohne.blinking && !ohne.mark && gruss.blinking && gruss.keeper === 'clara' && /oben/.test(gruss.mark?.richtung || '') && /Gute Nacht, Clara/.test(gruss.speech || '') && kind.includes('kkL') && !kind.includes('?') && !vorbei.blinking && !nochmal.blinking && nochmal.stats.goodnights === 1) note(`✓ Wunder (G6): abends ohne jemanden am Sturmhuk kein Blinken; mit Clara dort blinkt es ab 19:45 am Rand (${gruss.mark.richtung}) – kurz, kurz, lang (${inner.map((n) => Math.round((n * 1000) / 30)).join('/')} ms) –, Mika sagt »${gruss.speech}«; nach drei Runden aus, am selben Abend nicht noch einmal`);
+  else fail(`Wunder: Abendgruß ${JSON.stringify({ ohne: { blinking: ohne.blinking, mark: ohne.mark }, gruss, runs, kind, vorbei: vorbei.blinking, nochmal: { blinking: nochmal.blinking, stats: nochmal.stats } })}`);
+
+  // 3) Frostnacht: Der Sturmhuk blinkt die ganze Nacht, Edda sagt es im Funk; fällt das Herz, ist
+  //    die Nacht gehalten – und der See singt (einmal)
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setSurvivor('clara', 0);
+    Z.game.funk.clear();
+    Z.game.hud.speech = null;
+    Z.setDay(30);
+    Z.setTime(20, 29);
+    Z.game.nights.enabled = true;
+  });
+  await step(1500);
+  const frost = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.nights.enabled = false;
+    g.horde.clear();
+    g.nights.queue.length = 0;
+    const f = Z.funk();
+    return { w: Z.wonders(), finale: Boolean(g.nights.plan?.finale), funk: [f.current?.key, ...f.queue].filter(Boolean), flag: Boolean(g.state.flags.funk_sturmhuk) };
+  });
+  await step(2000);
+  const frostSpaeter = await z(() => window.zomfy.wonders());
+  await still(page, 'sturmhuk-frost');
+  const herz = await z(() => {
+    const Z = window.zomfy;
+    const col = Z.pathColumn(-14);
+    const id = Z.spawnHeart(-15, col[Math.floor(col.length / 2)] + 0.5);
+    Z.game.horde.list.find((q) => q.id === id).speed = 0;
+    return id;
+  });
+  await step(300);
+  const vorGesang = await z(() => window.zomfy.wonders().stats.songs);
+  await z((id) => {
+    window.zomfy.game.nights.enabled = true;
+    window.zomfy.killZombie(id, 'turm');
+  }, herz);
+  await step(2000);
+  const gesang = await z(() => {
+    const Z = window.zomfy;
+    const f = Z.funk();
+    return { w: Z.wonders(), frost: Z.game.state.autumn.frost, funk: [f.current?.key, ...f.queue].filter(Boolean), said: Boolean(Z.game.state.flags.funk_seeSingt), places: Z.places() };
+  });
+  const frostOk = frost.finale && frost.w.blinking && frost.w.frostBlinked && frost.w.mark && frost.flag && frost.funk.includes('sturmhuk') && frostSpaeter.blinking;
+  const gesangOk = vorGesang === 0 && gesang.frost === 30 && gesang.w.sung && gesang.w.stats.songs === 1 && gesang.said && gesang.places.known.includes('sturmhuk') && gesang.places.lines.sturmhuk.includes('blinkt') && gesang.places.lines.sturmhuk.includes('gruss');
+  if (frostOk && gesangOk) note('✓ Wunder (G6): in der Frostnacht blinkt der Sturmhuk die ganze Nacht am Rand, Edda sagt: »Ich hab die Lampe angezündet. Zum ersten Mal seit drei Jahren.« – das Herz fällt, die Nacht ist gehalten, und der See singt (einmal); die Ortskunde erzählt vom Blinken und vom Abendgruß');
+  else fail(`Wunder: Frostnacht ${JSON.stringify({ frost, frostSpaeter: frostSpaeter.blinking, vorGesang, gesang: { ...gesang, places: { known: gesang.places.known.includes('sturmhuk'), lines: gesang.places.lines.sturmhuk } } })}`);
+
+  // 4) Balduins Plane: an Tag 19 nicht, ab Tag 20 liegt etwas Großes im Boot – und er sagt »Frag nicht«
+  const planeAm = async (day) => {
+    await z((d) => {
+      const Z = window.zomfy;
+      Z.game.state.autumn.frost = 0; // wieder mitten im Herbst
+      Z.setDay(d);
+      Z.setTime(6, 38);
+      Z.teleport(12.5, -1.0, 0);
+    }, day);
+    await step(3000);
+    return z(() => ({ phase: window.zomfy.trader().phase, tarp: window.zomfy.wonders().tarp, quote: window.zomfy.game.trader.quote() }));
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    for (let k = 0; k < 4 && g.state.blueprintChoice; k++) g.chooseBlueprint(g.state.blueprintChoice.options[0]);
+    g.state.report = null; // der Bericht der Frostnacht gehört nicht hierher
+    g.autumn.frostNow = false; // und kein Schnee an Tag 20
+    g.mode = 'play';
+    g.funk.clear();
+    Z.give({ teile: 5 });
+  });
+  const tag19 = await planeAm(19);
+  const tag20 = await planeAm(20);
+  await step(9000);
+  await z(() => window.zomfy.lookAt(18.5, 1.5));
+  await step(200);
+  await still(page, 'balduin-plane');
+  await z(() => window.zomfy.lookAt(null));
+  if (tag19.phase === 'kommt' && !tag19.tarp && tag20.phase === 'kommt' && tag20.tarp && /Frag nicht|Plane|fertig/.test(tag20.quote)) note(`✓ Wunder (G6): an Tag 19 ist Balduins Boot wie immer, ab Tag 20 liegt vorn etwas Großes unter einer Plane – »${tag20.quote}«`);
+  else fail(`Wunder: Plane ${JSON.stringify({ tag19, tag20 })}`);
+
+  // 5) Hilde erzählt (ab Tag 9, wenn Mika Balduin kennt) von der Seepost – einmal, statt des Gesprächs
+  const seepost = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    for (const f of ['hildeKenntEdda', 'moosleute', 'frauHolle', 'briefZugestellt']) g.state.flags[f] = true; // frühere Knoten sind erzählt
+    Z.setDay(9);
+    Z.setTime(10, 0);
+    Z.setSurvivor('hilde', 3);
+    const talk = () => {
+      Z.talkTo('hilde');
+      const lines = [];
+      let guard = 30;
+      while (g.dialog.active && guard-- > 0) {
+        lines.push(g.dialog.line?.t || '');
+        g.dialog.advance();
+      }
+      return lines;
+    };
+    const ohneBalduin = talk();
+    Z.setFlag('balduinGetroffen');
+    const mit = talk();
+    const wieder = talk();
+    return { ohneBalduin, mit, wieder };
+  });
+  const post = (lines) => lines.some((t) => t.includes('Seepost'));
+  if (!post(seepost.ohneBalduin) && post(seepost.mit) && seepost.mit.some((t) => t.includes('Angeber')) && !post(seepost.wieder)) note('✓ Wunder (G6): kennt Mika Balduin, erzählt Hilde ab Tag 9 von der Seepost – »Immer eine Stunde schneller … Angeber.« – nur einmal');
+  else fail(`Wunder: Seepost ${JSON.stringify(seepost)}`);
+
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();

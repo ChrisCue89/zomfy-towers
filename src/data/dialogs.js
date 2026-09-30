@@ -1271,6 +1271,13 @@ export const DIALOGE = {
     { s: 'hilde', t: 'Hab ich was anderes gesagt?' },
     { s: 'yusuf', t: '… Nein. Eigentlich nicht.' },
   ],
+  // G6: Hilde über Balduin
+  hildeSeepost: [
+    { s: 'hilde', t: 'Der Herr mit den Einmachgläsern war wieder da, ja? Balduin! Der fuhr früher die Seepost.' },
+    { s: 'hilde', t: 'Immer eine Stunde schneller als ich – weil der Herr nicht klingeln musste. Angeber.' },
+    { s: 'mika', t: 'Und was macht er mit den Zombieteilen?' },
+    { s: 'hilde', t: '(lacht) Kindchen, bei Balduin fragt man nicht. Das hab ich in vierzig Jahren gelernt.' },
+  ],
   // G4: nach dem ersten Frost
   frauHolle: [
     { s: 'hilde', t: 'Guck mal raus, Kindchen. Frau Holle hat die Betten ausgeschüttelt.' },

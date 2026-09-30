@@ -2546,6 +2546,30 @@ Faktoren ist die Wahl grob, und im 1080p-Browserfenster bewirkt »groß« nichts
 jeder Pixel scharf. Die großen Kacheln aus H1 bleiben in jeder Größe, denn sie waren der
 Wunsch.
 
+### 211. Wie zeigt man, was nie im Bild ist? (G6)
+**Entscheidung:** Der Sturmhuk ist eine **Randmarke**: ein kleiner Leuchtturm am Bildrand in
+Richtung Nordosten, dessen Lampe der Blinkfolge folgt (kurz, kurz, lang).
+
+- **Kein Licht in der Welt:** Die Lichtanzahl bleibt fest. Ein Glühpunkt am Kartenrand läge
+  außerhalb jedes Bildausschnitts, weil die Kamera nie weit genug nach Norden sieht.
+- **Wann er blinkt:**
+  - In der Frostnacht, die ganze Nacht (Edda zündet die Lampe an).
+  - Abends ab 19:45, dreimal, solange jemand dort wohnt: Clara, wenn sie dorthin gezogen ist,
+    oder Edda nach der Frostnacht bis zu ihrer Heimkehr.
+  - Danach ist der Leuchtturm wieder leer.
+- **Die Stümpfe** stehen am Waldrand, nicht im Wald. Sie werden nach der Natur gesetzt, damit
+  der Zufall der Bäume gleich bleibt. In der Bucht stehen sie am Südrand, denn im Norden
+  verdecken Haus und Bäume sie.
+- **Der See singt,** sobald die Frostnacht gehalten ist, nicht erst Sekunden nach dem Herz:
+  Fällt es, zerfällt die Horde, und die Nacht ist sofort vorbei. Erstarrt es im Morgengrauen,
+  singt der See dann.
+- **Hildes Seepost** ist der letzte Knoten in der Liste: Jeder frühere Knoten geht vor.
+
+**Warum:** Claras Brief und ihr Funkspruch versprachen das Blinken schon (»Zweimal kurz, einmal
+lang«), und der Volksmund erzählte von Stümpfen, die niemand sah. Wo die Welt zeigt, was die Texte
+sagen, wird die Geschichte glaubwürdig (Eisberg-Erzählen, Recherche 2.1). Die Randmarke ist die
+ehrliche Form für etwas, das weit weg ist, und sie kostet keine Lichtquelle.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

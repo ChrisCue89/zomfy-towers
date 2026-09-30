@@ -21,6 +21,9 @@ export const KNOTS = [
   // G4: Nach dem ersten Frost – Frau Holle hat die Betten ausgeschüttelt; das Pfeifen antwortet
   { who: 'hilde', flag: 'frauHolle', dialog: 'frauHolle', when: (st) => Boolean(st.autumn?.frost) },
   { who: 'juna', flag: 'pfeifen', dialog: 'junaPfeifen', when: (st) => Boolean(st.autumn?.frost) },
+  // G6: Hilde über Balduin – früher fuhr er die Seepost (und war immer schneller); zuletzt in der Liste,
+  // damit alle früheren Knoten vorgehen
+  { who: 'hilde', flag: 'seepost', dialog: 'hildeSeepost', day: 9, when: (st) => Boolean(st.flags.balduinGetroffen) },
 ];
 
 /**

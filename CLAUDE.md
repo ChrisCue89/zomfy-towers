@@ -239,7 +239,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       N6), fogIsle (die Insel im Nebel: Spur, Glocke,
                       Nebelfahrt, Marthe und die Kinder, Kahn, Reuse, N7), kite
                       (Pims Drachen: Wunsch, Steigen, Böen, Looping, Leine
-                      halten, N9), quests
+                      halten, N9), wonders (kleine Wunder: Gedanken an den
+                      Stümpfen, Blinken vom Sturmhuk, Eisgesang, G6), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -312,6 +313,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
+                      stumps (Stümpfe mit drei Kreuzen am Waldrand, nach der
+                      Natur auf freie Stellen gesetzt, G6),
                       voxelKit (Baukasten für feine Modelle: Farbstufen,
                       Bretter, Rundholz, Steine, Quader im 1/16-Maß,
                       Kantenlicht; FINE, FINE32)
@@ -385,7 +388,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
                       Reihenfolge der Schlurferkunde, Turmalbum, M25),
                       places (Ortskunde: die Orte der Holzmark, wann Mika
-                      sie kennt, Zeilen je Ort, G5),
+                      sie kennt, Zeilen je Ort, G5), wonders (Stümpfe,
+                      Sturmhuk, Blinkfolge, Abendgruß, Plane, G6),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
                       cards (Spielstile, Ticks, Einsätze, Rückseiten,
                       Pflichten, Regelstufen, M28),
@@ -809,6 +813,18 @@ Grundprinzipien:
     (E zupft, Esc oder Richtungstaste gibt zurück), die Uhr steht, danach
     `KITE.minutes`. Kamera `lookSpot('drachen')` (`world.kiteLook`) und immer weit
     (`applyView`).
+- **Kleine Wunder (G6, `core/wonders.js`, `data/wonders.js`, `world/stumps.js`):**
+  - Die Stümpfe (`createStumps`) entstehen nach der Natur und vor dem Bauraster, auf Stellen
+    knapp hinter dem Rand des Begehbaren (`STUMPS.band`), frei von Bäumen, Büschen und
+    Felsen. Einblendungen mit `stump` (Index) geben über `wonders.stumpThought` einen Gedanken.
+  - Der Sturmhuk ist keine Lichtquelle: `hud.drawEdgeMarkers` zeichnet eine Randmarke in
+    Richtung `STURMHUK`, solange `wonders.blinking()` gilt (Frostnacht: `nights.plan.finale`;
+    Abendgruß: `blinkT`). `lampOn()` folgt `BLINK`. Wer die Lampe hält, sagt
+    `sturmhukKeeper(state)`. Flags: `sturmhukGeblinkt`, `sturmhukTag`, `seeGesungen`.
+  - `autumn.beginNight` ruft `wonders.frostNight()`, `autumn.onFrost` ruft `wonders.sing()`
+    (Klang `eisgesang`).
+  - Balduins Plane ist ein eigenes Mesh am Boot (`buildBoat().tarp`), sichtbar ab
+    `TARP.fromDay` (`trader.enter`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1251,7 +1267,14 @@ Grundprinzipien:
    Einstellungen, alle Seiten des Herbstbuchs, Notiz- und Werkstattbuch ins Bild, Edda spricht
    über dem offenen Baumenü, bei 270 Zeilen passen auch Waffenschrank, Werkbank, Katalog,
    Morgenbericht und Karte (H4b), im Browserfenster 1920 × 955 bleibt es bei 319 Zeilen mit »(hier
-   wie mittel)«, bei 1280 × 720 bei 360 (Bilder: ui-klein, ui-gross).
+   wie mittel)«, bei 1280 × 720 bei 360 (Bilder: ui-klein, ui-gross); ab G6 (Abschnitt `wunder`):
+   mindestens fünf Stümpfe mit drei Kreuzen am Waldrand (nie begehbar, nie auf dem Weg), E am
+   Stumpf in der Bucht (echte Taste) gibt einen Gedanken, nach Hildes Geschichte über die
+   Moosleute; abends ohne jemanden am Sturmhuk kein Blinken, mit Clara dort ab 19:45 die
+   Randmarke mit kurz, kurz, lang und »Gute Nacht, Clara«, nur einmal am Abend; in der Frostnacht
+   blinkt es die ganze Nacht und Edda sagt es, fällt das Herz, singt der See (einmal), die
+   Ortskunde erzählt davon; an Tag 19 keine Plane, ab Tag 20 liegt sie im Boot; Hildes Seepost
+   einmal ab Tag 9 (Bilder: stumpf, sturmhuk-gruss, sturmhuk-frost, balduin-plane).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1421,7 +1444,8 @@ Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeil
 offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen); ab H3 zeigt `hudLayout()` die
 Tafeln des letzten Bilds samt freiem Rechteck, `visibleResources()` die Sorten im Vorrat; ab H4
 zeigt `uiInfo()` Zeilen, Breite, Faktor und die gewünschte und wirksame Verschiebung der
-Oberfläche.
+Oberfläche; ab G6 zeigt `wonders()` die Stümpfe, ob der Sturmhuk blinkt (Lampe, wer die Lampe
+hält, Randmarke), Abendgruß, Eisgesang, Plane und Mikas Gedanken.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

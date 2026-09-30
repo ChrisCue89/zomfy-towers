@@ -12,6 +12,7 @@ import { drawIcon, iconSize } from './icons.js';
 import { xpForLevel } from '../data/perks.js';
 import { SKILLS } from '../data/skills.js';
 import { calendarOf } from '../data/autumn.js';
+import { STURMHUK } from '../data/wonders.js';
 import { P, hexToCss } from '../render/palette.js';
 
 /** So breit wird eine Sprechblase höchstens, dann bricht sie um (M25). */
@@ -1150,6 +1151,27 @@ export class Hud {
         drawIcon(ui.ctx, 'tor', at.x - 6, at.y - 5);
         this.edgeMarks.push({ art: 'tor', richtung: where((gp.x - sx) / len, (gp.y - sy) / len), anzahl: 1 });
       }
+    }
+    // G6: Der Sturmhuk blinkt (Frostnacht, Abendgruß): ein kleiner Leuchtturm am Rand, in
+    // Richtung Nordosten über den See; die Lampe folgt der Blinkfolge kurz, kurz, lang
+    if (g.wonders?.blinking()) {
+      const sp = g.worldToUi(STURMHUK.x, 0, STURMHUK.z);
+      const len = Math.hypot(sp.x - sx, sp.y - sy) || 1;
+      const ux = (sp.x - sx) / len;
+      const uy = (sp.y - sy) / len;
+      const at = edge(ux, uy);
+      const on = g.wonders.lampOn();
+      const x = Math.round(at.x - ux * 4);
+      const y = Math.round(at.y - uy * 4);
+      ui.rect(x - 9, y - 10, 18, 20, COLORS.outline);
+      ui.rect(x - 8, y - 9, 16, 18, COLORS.fill);
+      drawIcon(ui.ctx, on ? 'sturmhuk' : 'sturmhukDunkel', x - 6, y - 8);
+      if (on) {
+        // Strahlen neben der Laterne
+        ui.rect(x - 13, y - 5, 3, 1, COLORS.gold);
+        ui.rect(x + 11, y - 5, 3, 1, COLORS.gold);
+      }
+      this.edgeMarks.push({ art: 'sturmhuk', richtung: where(ux, uy), an: on });
     }
     // Nachtplan (M16): Woher kommt die nächste Welle? Hohle Pfeile mit der Nummer der
     // Welle am Rand, im Bild ein kleines Wellenzeichen über dem Waldrand

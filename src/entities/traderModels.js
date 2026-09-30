@@ -114,6 +114,28 @@ function boatModel() {
 export const CLEAT = { x: -48, z: -16 };
 
 /**
+ * G6: Ab Tag 20 liegt vorn im Boot etwas Großes unter einer Plane (über den Kisten): olivgrünes
+ * Segeltuch mit Falten, zwei Leinen darüber, an einer Stelle drückt etwas Spitzes von innen
+ * dagegen. Was darunter ist? »Frag nicht.« – die Plane geht nie auf.
+ */
+function tarpModel() {
+  const m = new VoxelModel();
+  const d = BOAT.deck + 1;
+  const cx = -17;
+  const cz = -8;
+  // Groß genug für die Kisten darunter; nie in das Brett mit den Gläsern oder ins Fass
+  m.ellipsoid(cx, d, cz, 22, 21, 14, (x, y, z) => {
+    if (y < d || x > 2 || (x >= -8 && z >= 4)) return null;
+    if (x === -28 || x === -6) return (y + z) % 2 ? P.e3 : P.e2; // Leinen quer darüber
+    const fold = Math.floor((x - cx) / 3 + (z - cz) / 5) % 2 === 0;
+    return y > d + 14 ? (fold ? P.g5 : P.g4) : fold ? P.g4 : P.g3;
+  });
+  // Etwas Spitzes drückt von innen gegen die Plane (ein Horn? ein Rohr? – frag nicht)
+  m.ellipsoid(-12, d + 19, -9, 3, 6, 3, (x, y) => (y > d + 22 ? P.g5 : P.g4));
+  return m;
+}
+
+/**
  * Balduins Leine (M10): kleine Würfel entlang einer Kurve – beim Anlegen
  * geworfen, dann festgemacht (hängt durch), beim Ablegen gelöst.
  * @param {THREE.Material} material
@@ -170,7 +192,15 @@ export function buildBoat(materials) {
   mesh.receiveShadow = true;
   mesh.position.set(-U / 2, 0, -U / 2);
   root.add(mesh);
-  return { root };
+  // G6: die Plane (erst ab Tag 20 sichtbar, trader.js)
+  const tarp = new THREE.Mesh(tarpModel().toGeometry({ jitter: 0.04, seed: 67, size: U }), materials.world);
+  tarp.castShadow = true;
+  tarp.receiveShadow = true;
+  tarp.position.copy(mesh.position);
+  tarp.visible = false;
+  tarp.name = 'Balduins Plane';
+  root.add(tarp);
+  return { root, tarp };
 }
 
 // --- N5: Mikas Ruderboot ----------------------------------------------------------

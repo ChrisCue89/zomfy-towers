@@ -22,6 +22,7 @@ import { createInterior, INTERIOR_FLOOR, WOHN } from './interior.js';
 import { armsModel } from '../entities/characters.js';
 import { VoxelModel } from '../render/voxel.js';
 import { createProps } from './props.js';
+import { createStumps } from './stumps.js';
 import { BuildGrid } from './grid.js';
 import { ResourceNodes } from './resources.js';
 import { Buildings } from './buildings.js';
@@ -116,6 +117,9 @@ export class World {
     const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers, map: this.map, nodes: this.resources.nodes });
     scene.add(nature.group);
     this.stats = nature.stats;
+    // G6: Stümpfe mit drei Kreuzen am Waldrand – nach der Natur auf freie Stellen
+    this.stumps = createStumps({ seed, materials: this.materials, colliders: this.colliders, map: this.map, blockers: this.props.blockers });
+    scene.add(this.stumps.group);
 
     // Bauraster: alles, was jetzt schon im Weg steht, ist blockiert – dazu
     // die Grundfläche aller Ausbaustufen des Zuhauses (die Hütte wächst dorthin).
@@ -300,7 +304,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */
