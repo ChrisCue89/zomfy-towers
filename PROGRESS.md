@@ -5,6 +5,48 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N9 – Drachenwetter ✓
+
+Weiter mit dem Wunsch vom 29.09. (»arbeite an der Story, an den Texten, an kleinen
+Sidequests … sei kreativ«, OFFENE-FRAGEN 199): Pim und Lu bekommen einen Drachen – ein
+kleiner Nebenauftrag, ein Spielzeug für windige Herbsttage und ein Bild am Himmel über
+der Bucht.
+
+- **Der Wunsch**: Wohnen Marthe und die Kinder in der Bucht, sagt Pim an einem Windtag
+  (oder drei Tage nach der Ankunft), wenn Mika vorbeikommt: »So ein Wind! Damit könnte
+  man einen Drachen steigen lassen …« Im Gespräch erzählt er, dass Marthe Drachen bauen
+  kann (»ein Drachen ist ein Segel, das sein Boot verloren hat«) und was sie braucht:
+  2 Stoff, 4 Fasern (Schnur), 2 Holz (Stöcke). Das Ziel steht im Zielkasten.
+- **Das Bauen**: Mit allem gibt Mika es Pim; Marthe baut ihn über Nacht, Lu malt eine
+  Katze darauf (Mieze, wenn sie in der Bucht wohnt). Ohne alles erzählt Pim, was fehlt.
+- **Der Drachen**: eine Raute im Harlekinmuster (Rot-Orange und Gelb) mit roter
+  Einfassung, Querstab und Lus Katzengesicht, ein Schwanz mit sechs Schleifen, eine
+  helle Schnur zur Holzspule. Er wirft einen Schatten auf den Strand.
+- **Drachenwetter**: An Wind- und klaren Tagen (nicht bei Regen, Nebel, Schnee) lassen
+  die Kinder ihn von 09:30 bis 16:30 steigen: Pim geht an seinen Platz im Hof und hält die
+  Spule, Lu rennt unter dem Drachen herum. Er steht im Wind über dem Strand, bei Wind
+  höher und lebhafter. Böen lassen Laub fliegen und ziehen ihn hinauf; ab und zu
+  schaffen die Kinder allein einen Looping (»Juhuu!«). Kommt ein Schlurfer, holen sie
+  ihn ein.
+- **Die Leine halten**: E bei Pim (»Drachen halten«) – Mika nimmt die Spule, die Kamera
+  nimmt Mika und den Drachen ins Bild (immer weit, auch wenn »nah« eingestellt ist),
+  die Uhr steht wie beim Angeln. Kommt eine Böe, zieht sich ein Ring um den Drachen
+  zusammen; mittendrin zählt ein E: Der Drachen dreht einen Looping, Pim zählt mit. Ein
+  E ohne Böe lässt ihn wegsacken, die Reihe beginnt von vorn. Esc oder eine
+  Richtungstaste gibt Pim die Leine zurück (die Uhr springt 20 Minuten weiter).
+- **Herbstbuch**: neue Tat »Drachenwetter« – drei Loopings hintereinander.
+- Edda erklärt über Funk, wie es geht, sobald der Drachen fertig ist; Marthe hat einen
+  neuen Satz.
+- **Spielstand v32** mit Migration v31 → v32 (noch kein Drachen; wo Marthes Seite aus
+  Eddas Funkbuch fehlt, gibt sie sie beim nächsten Gespräch).
+- **Die Pilzmutter trägt wieder ihren Hut** (Nebenbefund der Sprite-Recherche): Im feinen
+  Maß fehlte ihr der große, leuchtende Pilzhut – jetzt sitzt er wieder auf dem Kopf, violett
+  mit hellen Tupfen.
+- **Die Kamera beim Halten** folgt dem Drachen weich mit, wenn Böe und Looping ihn heben – er
+  stieß sonst oben an den Bildrand.
+- Prüfabschnitt `drachen` (Bilder: drachen, drachen-looping): 11 Prüfpunkte bestanden; im
+  Herbstbuch stehen jetzt 13 Taten (der Abschnitt `buch` zählt mit).
+
 ## Recherche: Schlurfer als Sprites, HUD und Baumenü, Geschichte und Namen (30.09.2026) ✓
 
 Rückmeldung des Auftraggebers am Morgen des 30.09.: »Der Nebel flackert immer noch. Die 3D-Modelle

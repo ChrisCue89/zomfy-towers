@@ -128,6 +128,19 @@ const SFX = {
       s.tone('sine', f * 2, t + dt, 0.7, { peak: 0.04 * v, attack: 0.002, out: o });
     }
   },
+  // N9: Pims Drachen – eine Böe fährt hinein (Rauschen schwillt an und ab), der Looping (ein
+  // Pfeifen, das einmal hinauf- und wieder hinunterläuft, dazu das Knattern des Segels), das
+  // Zupfen daneben (ein kurzes Schnurren der Leine)
+  boee: (s, t, v, o) => s.noise(t, 1.3, { type: 'bandpass', freq: 300, freqEnd: 700, q: 0.6, attack: 0.45, peak: 0.13 * v, out: o }),
+  looping: (s, t, v, o) => {
+    s.tone('sine', 520, t, 0.45, { freqEnd: 1180, peak: 0.07 * v, attack: 0.02, out: o });
+    s.tone('sine', 1180, t + 0.45, 0.5, { freqEnd: 600, peak: 0.06 * v, attack: 0.01, out: o });
+    for (let k = 0; k < 5; k++) s.noise(t + 0.15 + k * 0.13, 0.05, { type: 'highpass', freq: 1800, peak: 0.05 * v, out: o });
+  },
+  zupf: (s, t, v, o) => {
+    s.tone('triangle', 196, t, 0.18, { freqEnd: 150, peak: 0.08 * v, out: o });
+    s.noise(t, 0.08, { type: 'bandpass', freq: 1400, q: 1.5, peak: 0.04 * v, out: o });
+  },
   // Balduins Wagenglöckchen und das Rumpeln der Räder (Meilenstein 8)
   bimmel: (s, t, v, o) => {
     for (const dt of [0, 0.15, 0.3]) {
@@ -312,7 +325,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { schuss: 0.05, schrot: 0.1, leer: 0.3, ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { boee: 1, looping: 0.5, zupf: 0.15, schuss: 0.05, schrot: 0.1, leer: 0.3, ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */

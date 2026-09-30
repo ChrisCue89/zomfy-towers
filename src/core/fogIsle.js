@@ -436,12 +436,18 @@ export class FogIsle {
   /** Einblendungen der drei an ihre Stelle, sichtbar nur, wer zu sehen ist. */
   updatePeople() {
     const npcs = this.game.survivors.npcs;
+    const kite = this.game.kite;
     for (const it of this.people) {
       const n = npcs.list.get(it.npc);
       it.enabled = Boolean(n?.model.root.visible) && !this.glide && !this.trip;
       if (n) {
         it.x = n.x;
         it.z = n.z;
+      }
+      if (it.npc === 'pim') {
+        // N9: Fliegt der Drachen, gibt Pim Mika die Leine
+        it.kite = Boolean(kite?.canTake());
+        it.prompt = it.kite ? 'drachenHalten' : 'ansprechen';
       }
     }
   }
@@ -477,6 +483,7 @@ export class FogIsle {
         });
         return;
       }
+      if (id === 'pim' && d.stage === 4 && g.kite?.talkPim()) return; // N9: Pims Drachen
       g.startDialog(`${id}Da`);
       return;
     }
@@ -645,7 +652,7 @@ export class FogIsle {
     const npcs = g.survivors.npcs;
     for (const id of ['pim', 'lu']) {
       const n = npcs.list.get(id);
-      if (!n?.model.root.visible) continue;
+      if (!n?.model.root.visible || g.kite?.controls(id)) continue; // N9: beim Drachen lenkt kite.js die Kinder
       const s = this.play[id];
       s.t -= dt;
       if (n.target) continue;

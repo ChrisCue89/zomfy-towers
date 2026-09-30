@@ -2308,6 +2308,27 @@ Dritteln zu. Die Kacheln sind groß genug, aber ihr Inhalt ist ein 12 × 12-Symb
 **Warum:** Ton und Figuren tragen schon. Es fehlten eine Frage über alle 30 Tage, eine
 Vorgeschichte der Gegend und Namen mit Herkunft. Fast alles ist Text – kein neuer Spielstand.
 
+### 199. Drachenwetter: Pims Drachen (N9)
+**Entscheidung:**
+- **Ein Spielzeug, keine Belohnung:** Der Drachen bringt nichts in den Vorrat. Er ist ein
+  Bild am Himmel (man sieht an windigen Tagen von überall, dass die Kinder spielen) und
+  ein kleines Geschicklichkeitsspiel: E im richtigen Augenblick einer Böe.
+- **Wer hält:** Die Kinder lassen ihn allein steigen; Mika darf übernehmen, solange man
+  mag. Die Uhr steht dabei wie beim Angeln (M33) – danach sind 20 Minuten vergangen, damit
+  es sich nicht als Zeitgewinn lohnt.
+- **Wann:** Wind- und klare Tage, 09:30 bis 16:30 – nie nachts, nie bei Regen, Nebel oder
+  Schnee. Der Wunsch kommt an einem Windtag oder drei Tage nach der Ankunft, damit er nicht
+  am Würfelglück des Wetters hängt.
+- **Lesbarkeit vor Physik:** Der Drachen steht als Raute in der Bildebene, die Kamera
+  dreht ja nie. Er fliegt mit dem Wind nach Osten (wie das Laub) über den Strand.
+- **Stoff, Fasern, Holz:** Dinge, die man um diese Zeit ohnehin hat – der Auftrag soll
+  nicht aufhalten, sondern einen Grund geben, mit den Kindern zu reden.
+
+**Warum:**
+- Der Auftraggeber wünscht sich Story, Texte und kleine Nebenaufträge; die Kinder kamen in
+  N7 in die Bucht und hatten außer Fangen-Spielen noch nichts zu tun. Drachen steigen
+  lassen gehört zum Herbst wie Laub und Kürbisse.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -14,6 +14,7 @@ import { newPost } from '../data/network.js';
 import { newFishing } from '../data/fishing.js';
 import { newIsles } from '../data/isles.js';
 import { newFog } from '../data/fogIsle.js';
+import { newKite } from '../data/kite.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -137,6 +138,12 @@ const MIGRATIONS = {
   // v30 -> v31: N7 (Die Insel im Nebel). Wer das Zelt schon durchsucht oder die dritte Flaschenpost hat,
   // hört ab dem nächsten Morgen die Glocke (sanitizeIsles); Nägel und Zucker kommen in den Vorrat.
   30: (data) => ({ ...data, version: 31, isles: { ...(data.isles || newIsles()), fog: newFog() }, inventory: { ...(data.inventory || {}), naegel: 0, zucker: 0 } }),
+  // v31 -> v32: N9 (Pims Drachen). Noch kein Wunsch; Marthes Seite aus Eddas Funkbuch (N8) gilt als
+  // noch nicht bekommen, wo sie fehlt – Marthe gibt sie beim nächsten Gespräch in der Bucht.
+  31: (data) => {
+    const fog = data.isles?.fog || newFog();
+    return { ...data, version: 32, isles: { ...(data.isles || newIsles()), fog: { ...fog, page: fog.page === true, kite: newKite() } } };
+  },
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

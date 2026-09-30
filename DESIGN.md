@@ -1857,6 +1857,13 @@ Reihenfolge – Fehler zuerst, jeder Schritt für sich spielbar:
    »Ortskunde«.
 8. **H3–H5:** feste Zonen, Oberflächengröße, Reiter nach Zweck.
 
+#### N9 – Drachenwetter ✓
+
+*Umgesetzt (30.09.2026):* Pim wünscht sich an einem Windtag einen Drachen; mit Stoff,
+Fasern und Holz baut Marthe ihn über Nacht, Lu malt eine Katze darauf (Nr. 199). An
+Wind- und klaren Tagen steht er über dem Strand; E bei Pim gibt Mika die Leine, mitten in
+einer Böe dreht E einen Looping – drei hintereinander sind die Tat »Drachenwetter«.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

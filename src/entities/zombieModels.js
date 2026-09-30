@@ -898,6 +898,15 @@ function sculptZombieGlow(s) {
       return dy > 0.6 ? 0x8ee0cc : 0x6cc0ae;
     });
   }
+  if (s.extra === 'mutterhut') {
+    // Pilzmutter (M22): der riesige, violett leuchtende Hut mit hellen Tupfen – er sitzt auf den
+    // Lamellen des Kopfes (bis 30.09. fehlte er im feinen Maß, nur das alte grobe Modell hatte ihn)
+    m.ellipsoid(-0.5, 45, -2.5, 19, 12, 17, (x, y, z, dx, dy) => {
+      if (y < 46) return null;
+      if ((x * 3 + z * 5 + y) % 11 === 0 && dy > 0.2) return 0xf7f3ea; // helle Tupfen
+      return dy > 0.7 ? 0xc4a8f0 : dy > 0.35 ? 0xa88fd0 : 0x8a6cc0;
+    });
+  }
   return m;
 }
 

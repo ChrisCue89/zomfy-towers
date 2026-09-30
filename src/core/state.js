@@ -30,7 +30,7 @@ import { newPost, sanitizePost } from '../data/network.js';
 import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
 
-export const SAVE_VERSION = 31;
+export const SAVE_VERSION = 32;
 
 /** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
 export function freshBook() {

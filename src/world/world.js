@@ -592,6 +592,7 @@ export class World {
     if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
     if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
     if (key === 'angeln' && this.fishLook) return this.fishLook; // M33: übers Wasser am Steg
+    if (key === 'drachen' && this.kiteLook) return this.kiteLook; // N9: Mika und Pims Drachen
     if (key === 'ankunft') return { x: ARRIVAL.route[0][0], z: ARRIVAL.route[0][1] }; // N5: dort kommt das Boot her
     // Haus, Hof und rechts der See
     const sh = LAYOUT.shelter;

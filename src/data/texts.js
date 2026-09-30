@@ -631,6 +631,7 @@ export const T = {
     reuseLeeren: 'Reuse leeren', // N7: Marthes Reuse am Steg
     anheben: 'Stein anheben', // N8: eine Seite aus Eddas Funkbuch
     dockGlocke: 'Glocke läuten', // N8: Marthes Glocke am Steg
+    drachenHalten: 'Drachen halten', // N9: Pims Drachen
     mitnehmen: 'Mitnehmen',
     oeffnen: 'Öffnen',
     ansehen: 'Ansehen',
@@ -1256,6 +1257,7 @@ export const T = {
       zuhause: ['Ein richtiges Zuhause', 'Baue das Zuhause bis zur letzten Stufe aus.'],
       sterne: ['Sternenhimmel', 'Sammle fünfzig Sterne.'],
       frost: ['Der erste Frost', 'Halte die Frostnacht.'],
+      drachen: ['Drachenwetter', 'Drei Loopings hintereinander mit Pims Drachen.'],
     },
     // Schlurferkunde mit Dr. Yusufs Notizen
     kundeZaehler: (n, von) => `${n} von ${von} Arten erledigt`,
@@ -1509,6 +1511,8 @@ export const T = {
     martheDa: 'Marthe? … Marthe! Ihr seid in der Bucht? Oh, Kinder … Ich hab jeden Morgen auf eure Glocke gehört.',
     // N8: alle vier Seiten aus dem Funkbuch gelesen
     funkbuch: 'Du hast alle vier Seiten? … Dann weißt du jetzt, warum ich gegangen bin. Ich hatte Angst. Und dann hat jemand das Feuer angemacht. Du. Danke.',
+    // N9: Pims Drachen ist fertig
+    drachen: 'Marthe sagt, der Drachen ist fertig! Wenn Pim dich halten lässt: Warte, bis eine Böe kommt, und zupf mittendrin mit E – dann dreht er eine Schleife.',
     laterne: 'Es wird dunkel. Nimm die Laterne – Taste F. Licht macht den Moder müde, und die Schlurfer werden langsam.',
     spaet: 'Geschafft für heute. Geh schlafen, Mika – das Bett steht in der Stube. Ich halte das Funkgerät warm.',
     ruhe: 'Alles erledigt? Setz dich in den Ohrensessel am Feuer und ruh dich bis zum Abend aus.',
@@ -2108,6 +2112,33 @@ export const T = {
       huette: 'Eine Hütte aus Treibholz. Durchs Bullauge sieht man drei Schlafsäcke und viele Zeichnungen.',
       kahn: 'Marthes Kahn. In der Seite klafft ein Loch, groß wie eine Hand.',
     },
+  },
+  // N9: Pims Drachen (OFFENE-FRAGEN 196)
+  drachen: {
+    wunschBlase: 'So ein Wind! Damit könnte man einen Drachen steigen lassen …',
+    wunschBlaseStill: 'Mama kann Drachen bauen. Richtige, mit Schwanz!',
+    auftrag: 'Neuer Wunsch: ein Drachen für Pim und Lu',
+    ziel: 'Stoff, Fasern und Holz für Pims Drachen',
+    zielPim: 'Bring Pim, was er für den Drachen braucht',
+    gebracht: 'Marthe baut den Drachen heute Nacht – morgen fliegt er.',
+    fertig: 'Marthe hat über Nacht den Drachen gebaut. Lu hat eine Katze draufgemalt.',
+    looping: 'Looping!',
+    kinderJubel: ['Juhuu!', 'Hast du das gesehen?', 'Noch mal, noch mal!', 'Er fliegt Kreise!'],
+    zaehlen: ['Eins!', 'Zwei!', 'Drei!', 'Vier!', 'Fünf!', 'Sechs!', 'Sieben!', 'So viele!'],
+    drei: 'Drei hintereinander! Lu, hast du das gesehen?!',
+    nochmal: 'NOCH MAL!',
+    daneben: ['Zu früh!', 'Warte auf den Wind!', 'Hui – der wackelt!'],
+    uebergeben: 'Halt gut fest! Wenn der Wind drückt, musst du zupfen!',
+    zurueck: 'Jetzt wieder ich!',
+    zurueckGut: 'Das war gut! Jetzt wieder ich.',
+    bilanz: (n, best) => (n === 1 ? `Ein Looping mit Pims Drachen – beste Reihe bisher: ${best}` : `${n} Loopings mit Pims Drachen – beste Reihe bisher: ${best}`),
+    nichtJetzt: 'Nicht jetzt – da kommt einer.',
+    hinweisWarten: 'Leine halten … warte auf eine Böe',
+    hinweisBoee: 'Da kommt eine Böe …',
+    hinweisJetzt: 'Jetzt zupfen – E!',
+    hinweisLooping: 'Looping!',
+    reihe: (n, von) => (n >= von ? `${n} in Reihe!` : `In Reihe: ${n} von ${von}`),
+    loslassen: 'Esc: zurückgeben',
   },
   debug: {
     titel: 'Entwickler',

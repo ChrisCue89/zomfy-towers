@@ -74,6 +74,7 @@ import { Fishing } from './fishing.js';
 import { FishingView } from '../ui/fishingView.js';
 import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
+import { Kite } from './kite.js';
 import { ISLE_VIEW } from '../data/isles.js';
 import { FOG_VIEW } from '../data/fogIsle.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
@@ -381,6 +382,7 @@ export class Game {
     this.fishingView = new FishingView(this);
     this.isles = new Isles(this); // N6: mit dem Ruderboot zu den Inseln
     this.fogIsle = new FogIsle(this); // N7: die Insel im Nebel – Marthe und die Kinder
+    this.kite = new Kite(this); // N9: Pims Drachen
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -729,7 +731,7 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.cardNight?.match || this.fishing?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See, N7: im Nebel
+    const view = this.kite?.session ? 'weit' : this.cardNight?.match || this.fishing?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See, N7: im Nebel; N9: beim Drachen weit
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
@@ -874,6 +876,13 @@ export class Game {
       else Object.assign(this.goal, fog);
       return;
     }
+    // N9: Pim wartet auf Stoff, Fasern und Holz für den Drachen
+    const kite = current ? null : this.kite?.goal();
+    if (kite) {
+      if (this.goal?.id !== kite.id) this.goal = kite;
+      else Object.assign(this.goal, kite);
+      return;
+    }
     if (current?.id !== this.goal?.id) {
       this.goal = current ? { id: current.id, text: T.ziele[current.id] } : null;
     }
@@ -975,6 +984,7 @@ export class Game {
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
+    else if (it.kite) this.kite.take(); // N9: Pim gibt Mika die Leine
     else if (it.npc) this.survivors.talk(it.npc);
     else if (it.questItem !== undefined) this.quests.pick(it.questItem); // M23: Fundstück eines Auftrags
     else if (this.gathering.interact(it)) return;
@@ -2357,7 +2367,7 @@ export class Game {
    */
   tourFocus(dt, key) {
     const tour = this.tour || (this.tour = { key: null, from: new THREE.Vector3(), to: new THREE.Vector3(), point: new THREE.Vector3(), t: 0, time: 1 });
-    const spot = key === 'mika' ? this.player.position : null;
+    const spot = key === 'mika' ? this.player.position : key === 'drachen' ? this.world.kiteLook : null; // N9: der Drachen steigt und fällt
     if (tour.key !== key) {
       const at = spot || this.world.lookSpot(key);
       tour.from.set(this.rig.focus.x, 0, this.rig.focus.z - (CONFIG.camera.focusOffsetZ || 0));
@@ -2619,6 +2629,10 @@ export class Game {
         this.fishing.update(realDt, input);
         this.player.idle(dt);
         break;
+      case 'drachen': // N9: Mika hält Pims Drachen – die Uhr steht, die Welt lebt weiter
+        this.kite.updateSession(realDt, input);
+        this.player.idle(dt);
+        break;
       case 'rudern': // N6: über den See – die Uhr steht, die Fahrt kostet danach eine Viertelstunde
         this.isles.update(realDt, input);
         break;
@@ -2682,9 +2696,10 @@ export class Game {
     this.trader.update(this.mode === 'play' ? dt : 0);
     this.posts.update(this.mode === 'play' ? dt : 0); // M23: vor den Überlebenden – wer steht auf dem Posten?
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
-    this.survivors.update(this.mode === 'play' ? dt : dt * 0.5);
+    this.survivors.update(this.mode === 'play' || this.mode === 'drachen' ? dt : dt * 0.5); // N9: beim Drachen rennen die Kinder richtig
     this.quests.update(dt);
     this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
+    this.kite.update(dt); // N9: Pims Drachen
     this.autumn.update(this.mode === 'play' ? dt : 0);
     if (this.mode === 'play') this.book.update(dt); // M25: gelungene Taten eintragen
     if (this.mode === 'play') this.bonds.update(); // M29: die Vertrauten grüßen morgens
@@ -2697,7 +2712,7 @@ export class Game {
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
     this.arrival.update(dt, input); // N5: die Ankunft (und danach schaukelt das Boot am Steg)
-    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.kite.session ? 'drachen' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
@@ -3220,6 +3235,7 @@ export class Game {
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
     if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
+    if (this.mode === 'drachen') this.kite.draw(ui); // N9: Ring in der Böe, Feld unten
     if (this.mode === 'rudern') this.isles.draw(ui); // N6
     this.fogIsle.draw(ui); // N7: Glocken-Marke am Rand, Nebelfahrt
     if (playing) this.buildbar.draw(ui);
@@ -4111,6 +4127,16 @@ export class Game {
       },
       /** N7: Die Glocke sofort schlagen lassen (sonst alle 3,6 s, solange sie läutet). */
       fogStrike: () => game.fogIsle.strike(),
+      /** N9: Pims Drachen – Stufe, ob er fliegt, wer hält, Stelle, Böe, Looping, Reihe, Kinder. */
+      kite: () => ({ ...game.kite.info(), mode: game.mode, player: { x: game.player.position.x, z: game.player.position.z, facing: game.player.facing, pose: Boolean(game.player.kitePose) }, minute: game.state.time.minute, interactions: game.world.fogInteractions.filter((q) => q.npc === 'pim' || q.npc === 'lu').map((q) => ({ id: q.id, enabled: q.enabled, prompt: q.prompt, kite: Boolean(q.kite), x: q.x, z: q.z })) }),
+      /** N9: Stufe des Drachens setzen (3: fertig – Marthe hat ihn gestern gebaut). */
+      setKite(stage) {
+        const k = game.state.isles.fog.kite;
+        k.stage = stage;
+        k.day = stage >= 2 ? game.state.time.day - (stage >= 3 ? 1 : 0) : 0;
+      },
+      /** N9: gleich eine Böe. */
+      kiteGust: () => game.kite.gustNow(),
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
       post: () => {
         const e = game.survivors.npcs.list.get('edda');

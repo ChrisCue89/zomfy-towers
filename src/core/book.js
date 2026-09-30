@@ -104,6 +104,8 @@ export class Book {
         return this.totalStars;
       case 'frost':
         return st.autumn?.frost ? 1 : 0;
+      case 'kite':
+        return st.isles?.fog?.kite?.best || 0; // N9: längste Reihe von Loopings
       default:
         return 0;
     }

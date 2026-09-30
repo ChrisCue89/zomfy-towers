@@ -203,7 +203,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       (Angeln am Steg: Wurf, Biss, Drill, Fang, M33), isles
                       (Ruderboot und Inseln: Abdichten, Fahrt, Landung, Funde,
                       N6), fogIsle (die Insel im Nebel: Spur, Glocke,
-                      Nebelfahrt, Marthe und die Kinder, Kahn, Reuse, N7), quests
+                      Nebelfahrt, Marthe und die Kinder, Kahn, Reuse, N7), kite
+                      (Pims Drachen: Wunsch, Steigen, Böen, Looping, Leine
+                      halten, N9), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -287,6 +289,7 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       survivorModels (auch Balduin, Marthe, Pim und Lu), dogModel, traderModels (Balduins Boot, Mikas
                       Ruderboot, N5),
                       crows (Krähen: sitzen, picken, fliegen auf, M12),
+                      kiteModels (Pims Drachen, Schleifen, Spule, Schnüre, N9),
                       fishingModels (Angel, Pose, Fänge, M33)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nacht-Leiste, Lebensbalken, Randmarken), dialog, menu
@@ -327,7 +330,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Hilfe der Freunde, Korb, M33), isles (Inseln: Fahrt,
                       Landeplätze, Funde, Abdichten, N6), fogIsle (Nebelinsel:
                       Form, Stellen, Glocke, Fahrt, Seenebel, Auftrag, Reuse,
-                      Stufen, N7),
+                      Stufen, N7), kite (Drachen: Bedarf, Zeiten, Wetter, Böen,
+                      Looping, N9),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -364,7 +368,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -733,6 +737,22 @@ Grundprinzipien:
     Bucht); mit allen vier `funk.once('funkbuch')`. Im Herbstbuch die Seite `funkbuch`.
     Marthes Glocke am Steg (`BAY_SPOTS.bell`, Einblendung `dockglocke`, `ringBay`) ruft
     die Kinder und läutet, wenn Balduin anlegt (trader.js).
+- **Pims Drachen (N9, `core/kite.js`, `data/kite.js`, `entities/kiteModels.js`):**
+  - `state.isles.fog.kite`: `stage` 0 nichts, 1 gewünscht, 2 gebracht (`day`), 3 fertig
+    (am Tag danach); `loops`, `best` (längste Reihe, Tat `drachen`), `flown`.
+    `fogIsle.talk` fragt bei Pim zuerst `kite.talkPim()` (Dialoge `pimDrachen`,
+    `pimDrachenStill`, `pimDrachenWarten`, `pimDrachenGeben`, `pimDrachenMorgen`).
+  - `kite.phase`: null, `hin` (Pim geht an `KITE.spot`), `oben`, `runter`. Solange eine
+    Phase läuft, lenkt kite.js Pim und Lu (`controls`, fogIsle.updateKids lässt sie in
+    Ruhe). Pim hält die Spule (`npcs.hold(n, 'spule')`, Pose `n.kite`, `spoolTip`), wer
+    den Drachen hält, dreht sich nicht zu Mika.
+  - Der Drachen steht in der Bildebene (Rolle um z, im Looping einmal herum); Schnur und
+    Schwanz sind `THREE.Line` ohne Tiefe (sonst zöge der Umriss aus dem Tiefenpuffer sie
+    dunkel nach), der Schwanz ist eine Kette mit Wind und Schwere.
+  - Modus `drachen`: `kite.take()` (Einblendung an Pim mit `kite`), `updateSession`
+    (E zupft, Esc oder Richtungstaste gibt zurück), die Uhr steht, danach
+    `KITE.minutes`. Kamera `lookSpot('drachen')` (`world.kiteLook`) und immer weit
+    (`applyView`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1113,7 +1133,14 @@ Grundprinzipien:
    bleibt –, in der Dose, im Zelt), das Herbstbuch mit Esc, S, E und D bis »Funkbuch«
    (drei Seiten nach Datum), Marthe gibt in der Bucht die letzte Seite, danach meldet
    sich Edda, E an der Glocke am Steg ruft Pim und Lu herbei, legt Balduin an, läutet
-   sie, Speichern behält alle vier Seiten (Bilder: funkbuch, glocke-steg).
+   sie, Speichern behält alle vier Seiten (Bilder: funkbuch, glocke-steg); ab N9
+   (Abschnitt `drachen`): bei Wind die Sprechblase und Pims Wunsch mit echter Taste,
+   ohne Stoff sagt er, was fehlt, mit allem gibt Mika es her, am Morgen ist der Drachen
+   fertig und steht über dem Strand (Pim hält die Spule), E bei Pim gibt Mika die Leine
+   (die Uhr steht), in der Böe dreht E einen Looping, ohne Böe sackt er weg, drei
+   hintereinander sind die Tat »Drachenwetter«, Esc gibt zurück (20 Minuten weiter), bei
+   Regen kommt er herunter, Speichern v32 und Migration v31 → v32 (Bilder: drachen,
+   drachen-looping).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1263,7 +1290,10 @@ Funde, Katze, wo Mika und das Boot sind, die laufende Fahrt, Landeplätze,
 Einblendungen, sichtbare Inselmodelle und die Gemütlichkeit; ab N7 zeigt
 `fogIsle()` Stufe, Glocke (läutet, Schläge, Marke), Fahrt (Phase, Kurs, Abstand),
 Boot, Menschen (Stelle, sichtbar, Kind), Seenebel, Ziel, Vorrat und Korb,
-`setFog(stufe)` setzt die Geschichte auf eine Stufe, `fogStrike()` schlägt die Glocke.
+`setFog(stufe)` setzt die Geschichte auf eine Stufe, `fogStrike()` schlägt die Glocke;
+ab N9 zeigt `kite()` Stufe, Phase, Höhe, wer hält, Stelle von Drachen und Spule, Böe,
+Fenster, Looping, Reihe, Kinder und Pims Einblendung, `setKite(stufe)` setzt die Stufe
+des Drachens (3: fertig), `kiteGust()` schickt gleich eine Böe.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
 `lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
 wieder Mika, M32).

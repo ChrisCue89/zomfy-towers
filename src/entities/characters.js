@@ -13,6 +13,7 @@ import { hash3 } from '../core/rng.js';
 import { shade, edgeLight, sculpt, roundBox, blob, capsule, roundTone } from '../world/voxelKit.js';
 import { HEAD, TORSO, headShape, torsoShape, facePlate, facLids, sculptArm, sculptLeg, sculptCollar } from './figureKit.js';
 import { buildRod32, ROD_TIP } from './fishingModels.js';
+import { buildSpool32, SPOOL_TIP } from './kiteModels.js';
 
 /** Aussehen der Hauptfigur Mika. */
 export const MIKA = {
@@ -619,6 +620,7 @@ export const ARMS_MODELS32 = {
   mistgabel: buildPitchfork32,
   schlaeger: buildBat32,
   angel: buildRod32, // M33: die Angel (kein Schrankstück – nur zum Halten)
+  spule: buildSpool32, // N9: die Spule von Pims Drachen (nur zum Halten)
 };
 
 /** Eine Waffe des Schranks als fertiges Modell (mit Kantenlicht). */
@@ -811,6 +813,14 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     tools.angel.add(rodTip);
   }
 
+  // N9: Wo die Drachenschnur die Spule verlässt
+  let spoolTip = null;
+  if (tools.spule) {
+    spoolTip = new THREE.Object3D();
+    spoolTip.position.set(SPOOL_TIP.x * U, SPOOL_TIP.y * U, SPOOL_TIP.z * U);
+    tools.spule.add(spoolTip);
+  }
+
   return {
     root,
     material,
@@ -819,6 +829,7 @@ export function buildCharacter(spec, { seed = 3, occluder = false, fine = true, 
     tools,
     backTools,
     rodTip,
+    spoolTip,
   };
 }
 

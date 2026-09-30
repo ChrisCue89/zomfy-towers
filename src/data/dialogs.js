@@ -179,6 +179,26 @@ function stimmenBereit(state) {
   return state.survivors?.juna?.stage === 3 && weitergezogen(state).length > 0;
 }
 
+/** N9: Pim wünscht sich einen Drachen (bei Wind begeistert, sonst träumend). */
+function kiteWish(state, wind) {
+  const name = state.player?.name || 'Mika';
+  return [
+    { s: 'pim', t: wind ? `${name}! Spürst du den Wind? Bei so einem Wind müsste man einen Drachen steigen lassen!` : `${name}, weißt du, was man im Herbst macht, wenn Wind kommt? Drachen steigen lassen!` },
+    { s: 'lu', t: 'Einen mit Gesicht! Mit einem Katzengesicht!' },
+    { s: 'pim', t: 'Mama kann Drachen bauen. Sie sagt, ein Drachen ist ein Segel, das sein Boot verloren hat.' },
+    { s: 'lu', t: 'Das versteh ich nicht.' },
+    { s: 'pim', t: 'Ich auch nicht. Aber sie braucht Stoff fürs Segel, Fasern für die Schnur und zwei gerade Stöcke.' },
+    {
+      s: 'pim',
+      t: 'Zwei Stück Stoff, vier Fasern und zwei Holz. Hast du so was? Bitte!',
+      antworten: [
+        { t: 'Ich bring euch, was ihr braucht.', standard: true },
+        { t: 'Mal sehen, was sich findet.' },
+      ],
+    },
+  ];
+}
+
 export const DIALOGE = {
   // --- Balduin, der Händler (Meilenstein 8) ---
   balduinTreffen: [
@@ -586,6 +606,7 @@ export const DIALOGE = {
         { s: 'marthe', t: 'Pim will Bootsbauer werden. Lu will Katze werden. Ich sag beiden: Übt fleißig.' },
         { s: 'marthe', t: 'Nachts schlafen wir im Kahn, unter der Plane. Da hat jeder seinen Platz. Mach dir keine Sorgen.' },
         { s: 'marthe', t: 'Auf der Insel war es still. Hier ist es laut. Das ist gut – laut heißt: Da sind Leute.' },
+        ...(state.isles?.fog?.kite?.stage >= 3 ? [{ s: 'marthe', t: 'Ein Drachen ist ein Segel, das sein Boot verloren hat. Die zwei halten ihn fest, als hinge die ganze Insel dran.' }] : []),
       ],
       state.time.day
     ),
@@ -619,6 +640,35 @@ export const DIALOGE = {
       state.time.day
     ),
   ],
+  // --- N9: Pims Drachen ---
+  // Der Wunsch: an einem Windtag (oder ein paar Tage nach der Ankunft in der Bucht)
+  pimDrachen: (state) => kiteWish(state, true),
+  pimDrachenStill: (state) => kiteWish(state, false),
+  // Es fehlt noch etwas
+  pimDrachenWarten: (state) => {
+    const inv = state.inventory || {};
+    const fehlt = [!(inv.stoff >= 2) && 'Stoff', !(inv.fasern >= 4) && 'Fasern', !(inv.holz >= 2) && 'Holz'].filter(Boolean);
+    const liste = fehlt.length > 1 ? `${fehlt.slice(0, -1).join(', ')} und ${fehlt[fehlt.length - 1]}` : fehlt[0] || 'nichts';
+    return [
+      pick(
+        [
+          { s: 'pim', t: `Mama sagt, es fehlen noch ${liste}. Stoff gibt es in alten Zelten, sagt sie. Und die Schnur dreht sie aus Fasern.` },
+          { s: 'lu', t: `Pim sagt, uns fehlen ${liste}. Ich hab einen Stock gefunden! Der ist aber krumm.` },
+          { s: 'pim', t: `Noch ${liste}. Der Wind wartet bestimmt auf uns. Oder? Wartet Wind?` },
+        ],
+        state.time.day
+      ),
+    ];
+  },
+  // Mika bringt alles – Marthe baut ihn über Nacht
+  pimDrachenGeben: (state) => [
+    { s: 'mika', t: 'Hier: zwei Stück Stoff, Fasern für die Schnur und zwei gerade Stöcke.' },
+    { s: 'pim', t: 'MAMA! MAMA! Wir kriegen einen Drachen!' },
+    { s: 'marthe', t: 'Ich hab’s gehört. Die halbe Bucht hat’s gehört.' },
+    { s: 'marthe', t: 'Heute Nacht, wenn die zwei schlafen. Morgen fliegt er – wenn der Wind mitspielt.' },
+    { s: 'lu', t: state.isles?.cat ? 'Ich mal das Gesicht! Ich mal Mieze!' : 'Ich mal das Gesicht! Eine Katze! Eine rote!' },
+  ],
+  pimDrachenMorgen: [{ s: 'pim', t: 'Mama baut heute Nacht! Ich darf die Stöcke halten. Und morgen die Schnur!' }],
   // M33: Fiete bringt Mika das Angeln bei
   fieteAngeln: [
     { s: 'fiete', t: 'Angeln? Na endlich fragt mal einer! Hier – meine zweite. Die erste geb ich nicht her.' },

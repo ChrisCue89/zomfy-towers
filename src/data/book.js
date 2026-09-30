@@ -29,6 +29,7 @@ export const DEEDS = [
   { id: 'zuhause', of: 'house', need: HOUSE_MAX },
   { id: 'sterne', of: 'stars', need: 50 },
   { id: 'frost', of: 'frost', need: 1 },
+  { id: 'drachen', of: 'kite', need: 3 }, // N9: drei Loopings hintereinander mit Pims Drachen
 ];
 
 /** Herbstschmuck als Belohnung: nach 3, 6, 9 und 12 Taten ein Stück mehr (Bauten mit `deco`). */

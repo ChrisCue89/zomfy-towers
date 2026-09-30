@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { survivorParts32, bedrollModel } from './survivorModels.js';
 import { armsModel } from './characters.js';
 import { ROD_TIP } from './fishingModels.js';
+import { SPOOL_TIP } from './kiteModels.js';
 import { buildDog, poseDog } from './dogModel.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
@@ -188,7 +189,7 @@ export class Npcs {
         // Wer sitzt (Kartentisch, M28), bleibt dem Tisch zugewandt – sonst drehte sich das
         // Gegenüber zu Mika über Eck und zeigte der Kamera nur noch das Profil. Wer am Feuer
         // im Gespräch ist (M29), schaut sein Gegenüber an.
-        const seated = (n.sitTarget > 0 || n.talking) && n.restFacing !== null;
+        const seated = (n.sitTarget > 0 || n.talking || n.kite) && n.restFacing !== null; // N9: wer den Drachen hält, schaut zum Drachen
         if (n.near && !seated) n.facing = dampAngle(n.facing, Math.atan2(px, pz), 4, dt);
         else if (n.restFacing !== null) n.facing = dampAngle(n.facing, n.restFacing, 3, dt);
       }
@@ -257,6 +258,15 @@ export class Npcs {
       p.armL.rotation.x = -1.3;
       p.armL.rotation.z = -0.38;
     }
+    if (n.kite) {
+      // N9: den Drachen halten – beide Hände an der Spule vor der Brust; in der Böe ziehen sie mit
+      const pull = n.kite.pull || 0;
+      p.armR.rotation.x = -1.65 - pull * 0.4 + Math.sin(this.time * 1.3 + n.x) * 0.04;
+      p.armR.rotation.z = 0.22;
+      p.armL.rotation.x = -1.5 - pull * 0.35;
+      p.armL.rotation.z = -0.32;
+    }
+    if (n.kite || n.skyward) p.head.rotation.x = -0.3; // der Blick geht hinauf zum Drachen
     this.poseGesture(n, dt);
     // Lächeln beim Winken, bei Gesten und wenn Mika dabeisteht (M12)
     const happy = n.wave > 0 || n.near || n.gestures.length > 0;
@@ -295,6 +305,12 @@ export class Npcs {
         p.rodTip = new THREE.Object3D();
         p.rodTip.position.set(1.5 * U, (-ROD_TIP + 0.5) * U, 1.5 * U);
         mesh.add(p.rodTip);
+      }
+      if (id === 'spule') {
+        // N9: hier verlässt die Drachenschnur die Spule
+        p.spoolTip = new THREE.Object3D();
+        p.spoolTip.position.set(SPOOL_TIP.x * U, SPOOL_TIP.y * U, SPOOL_TIP.z * U);
+        mesh.add(p.spoolTip);
       }
     }
     for (const [k, mesh] of Object.entries(p.held)) mesh.visible = k === id;

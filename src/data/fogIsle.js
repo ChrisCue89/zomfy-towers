@@ -5,6 +5,8 @@
 // die Bucht. Die Spur: Eddas Funkbuch im Zelt der Nordinsel (N6) oder die dritte Flaschenpost
 // (M33). Hier wird abgestimmt; die Texte stehen in T.nebel und dialogs.js.
 
+import { newKite, sanitizeKite } from './kite.js';
+
 /** Die Insel: weit draußen im Nordosten (östlich der Karte, dort ist nur noch See). */
 export const FOG_ISLE = {
   x: 57.5,
@@ -131,7 +133,7 @@ export const FOG_STAGES = 4;
 
 /** Leerer Eintrag (state.isles.fog). */
 export function newFog() {
-  return { stage: 0, from: 0, lost: 0, arrive: 0, hilde: false, trap: 0, trips: 0, page: false };
+  return { stage: 0, from: 0, lost: 0, arrive: 0, hilde: false, trap: 0, trips: 0, page: false, kite: newKite() }; // N9: Pims Drachen
 }
 
 /** Prüfen und reparieren (sanitizeIsles); `found`/`bottles` geben die Spur alter Stände. */
@@ -147,6 +149,7 @@ export function sanitizeFog(raw, { found = [], bottles = 0 } = {}) {
     out.trap = int(raw.trap, 0, 99999);
     out.trips = int(raw.trips, 0, 99999);
     out.page = raw.page === true; // N8: Marthes Seite aus Eddas Funkbuch gelesen
+    out.kite = sanitizeKite(raw.kite); // N9: Pims Drachen
   }
   // Wer die Spur schon kennt (Zelt oder dritte Flaschenpost), hört die Glocke
   if (out.stage === 0 && (found.includes('zelt') || bottles >= 3)) out.stage = 1;

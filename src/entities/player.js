@@ -49,6 +49,7 @@ export class Player {
     this.riding = null; // Neigung, solange Mika auf der Reifenschaukel steht (m12-r1)
     this.seated = null; // M28: am Kartentisch – { x, z, facing, seatY }
     this.fishingPose = null; // M33: beim Angeln { phase, power, t, pull, reel }
+    this.kitePose = null; // N9: den Drachen halten { pull }
     this.character = buildCharacter(MIKA, { occluder: false });
     this.object = this.character.root;
     this.object.name = 'Mika';
@@ -403,7 +404,7 @@ export class Player {
     if (a?.tool) this.drawnT = TOOL_CARRY.hold;
     else this.drawnT = Math.max(0, this.drawnT - dt);
     const carried = indoors ? null : this.heldTool;
-    const shownTool = this.fishingPose ? 'angel' : a ? a.tool : this.drawnT > 0 ? carried : null; // M33: beim Angeln die Angel
+    const shownTool = this.fishingPose ? 'angel' : this.kitePose ? 'spule' : a ? a.tool : this.drawnT > 0 ? carried : null; // M33: beim Angeln die Angel, N9: die Spule
     const sheathing = !a && shownTool && this.drawnT < TOOL_CARRY.sheath ? 1 - this.drawnT / TOOL_CARRY.sheath : 0;
     for (const [name, mesh] of Object.entries(this.character.tools)) mesh.visible = name === shownTool;
     const backTool = !shownTool && !this.seated ? carried : null;
@@ -573,6 +574,22 @@ export class Player {
       p.armL.rotation.x = -1.3;
       p.armL.rotation.z = -0.38;
       if (p.elbowL) p.elbowL.rotation.x = -0.85 + (fp.reel ? Math.sin(this.time * 15) * 0.35 : 0);
+      lantern.group.visible = false;
+    }
+
+    // N9: Pims Drachen – beide Hände an der Spule vor der Brust, der Blick geht hinauf; beim
+    // Zupfen ruckt die Spule zur Brust
+    const kp = this.kitePose;
+    if (kp) {
+      const pull = kp.pull || 0;
+      p.armR.rotation.x = -1.55 - pull * 0.45;
+      p.armR.rotation.z = 0.22;
+      if (p.elbowR) p.elbowR.rotation.x = -0.4 + pull * 0.25;
+      p.armL.rotation.x = -1.4 - pull * 0.4;
+      p.armL.rotation.z = -0.36;
+      if (p.elbowL) p.elbowL.rotation.x = -0.5 + pull * 0.25;
+      p.head.rotation.x = -0.28;
+      p.body.rotation.x = -0.04 - pull * 0.1;
       lantern.group.visible = false;
     }
   }
