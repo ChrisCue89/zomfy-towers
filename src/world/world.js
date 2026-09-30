@@ -14,6 +14,8 @@ import { GameMap } from './map.js';
 import { LAYOUT } from './layout.js';
 import { createNature } from './nature.js';
 import { createShelter, createShelterMaterials, shelterFootprint } from './shelter.js';
+import { createIsleProps } from './isleProps.js';
+import { CAT, HOME_PUMPKINS } from '../data/isles.js';
 import { createInterior, INTERIOR_FLOOR, WOHN } from './interior.js';
 import { armsModel } from '../entities/characters.js';
 import { VoxelModel } from '../render/voxel.js';
@@ -74,6 +76,7 @@ export class World {
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
     this.questInteractions = []; // Fundstücke der Nebenaufträge (core/quests.js, M23)
+    this.isleInteractions = []; // N6: Ruderboot und Fundstellen auf den Inseln (core/isles.js)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed, this.map);
@@ -98,6 +101,9 @@ export class World {
 
     this.props = createProps({ seed, materials: this.materials, colliders: this.colliders, map: this.map });
     scene.add(this.props.group);
+    // N6: was auf den Inseln steht (Fundstellen, die Katze zu Hause)
+    this.isleProps = createIsleProps({ seed, materials: this.materials, colliders: this.colliders });
+    scene.add(this.isleProps.group);
 
     this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed, map: this.map });
 
@@ -233,6 +239,12 @@ export class World {
     this.refreshInteractions();
   }
 
+  /** N6: Die Katze sitzt vor der Tür – auf der Höhe der Veranda (ab der Hütte liegt dort ein Holzboden). */
+  placeHomeCat() {
+    this.isleProps.homeCat.position.y = this.heightAt(CAT.x, CAT.z);
+    this.isleProps.homePumpkins.position.y = this.heightAt(HOME_PUMPKINS.x, HOME_PUMPKINS.z);
+  }
+
   /** M33: Fensterlicht auf dem Boden vor dem Haus – geht als erstes an (nachts, mit den Lampen). */
   refreshWindowPools() {
     for (const p of this.windowPools || []) this.lightPools.remove(p);
@@ -282,7 +294,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions];
   }
 
   /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */
@@ -311,6 +323,7 @@ export class World {
     this.refreshWindowPools(); // M33: Fensterlicht auf dem Boden
     this.props.setHouseLevel(outer);
     this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
+    this.placeHomeCat(); // N6: auf die Veranda
     this.pathing.setHome(homeRect(outer));
     this.refreshInteractions();
   }

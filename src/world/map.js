@@ -32,11 +32,15 @@ const FEEDER_WIDTH = 3;
 const FINAL_WIDTH = 4;
 export const FIELD_STEP = 0.25; // Auflösung der Abstandsfelder (m)
 
-/** Kleine Felsinseln im See (fest). */
+/**
+ * Kleine Felsinseln im See (fest). N6: Die kleine Südinsel ist etwas größer geworden, damit
+ * Mika dort an Land gehen kann – `trees` hält die Zahl ihrer Tannen wie vorher (sonst
+ * verschöbe sich der Zufall der ganzen Natur danach).
+ */
 export const ISLANDS = [
   { x: 22.5, z: -8.5, r: 2.4 },
   { x: 27, z: 5.5, r: 3.1 },
-  { x: 20.5, z: 12.5, r: 1.5 },
+  { x: 20.5, z: 12.5, r: 2.0, trees: 2 },
 ];
 
 /** x der Uferlinie auf Höhe z: östlich davon ist Wasser. */
@@ -150,6 +154,7 @@ export function generatePaths(seed) {
 export class GameMap {
   constructor(seed) {
     this.seed = seed >>> 0;
+    this.isle = null; // N6: auf welcher Insel Mika gerade an Land ist (core/isles.js)
     const net = generatePaths(this.seed);
     this.topology = net.topology;
     this.spawns = net.spawns;
@@ -232,6 +237,12 @@ export class GameMap {
 
   isWater(x, z) {
     return x > shoreX(z) && !this.onDock(x, z) && !this.onIsland(x, z);
+  }
+
+  /** N6: Abstand zum Rand der Insel `i` (gestreckt wie onIsland; negativ: an Land). */
+  isleEdge(i, x, z) {
+    const s = ISLANDS[i];
+    return Math.hypot(x - s.x, (z - s.z) * 1.25) - s.r - (this.noise(x, z, 0.9, 71) - 0.5) * 0.8;
   }
 
   /** Auf einer der Felsinseln (mit Rauschen am Rand). */
@@ -354,6 +365,25 @@ export class GameMap {
    * Schlurfer (horde) dürfen auf dem ganzen Weg gehen, auch im Wald am Spawn.
    */
   pushInside(pos, radius, horde = false) {
+    // N6: Wer auf einer Insel an Land ist, läuft nur auf ihr – am echten Rand entlang
+    // (Newton-Schritte auf das Abstandsmaß der Insel, so gleitet man am Ufer weiter)
+    if (this.isle !== null && this.isle !== undefined && !horde) {
+      const m = radius + 0.1;
+      const e = 0.05;
+      let moved = false;
+      for (let k = 0; k < 4; k++) {
+        const f = this.isleEdge(this.isle, pos.x, pos.z) + m;
+        if (f <= 0) break;
+        const gx = (this.isleEdge(this.isle, pos.x + e, pos.z) - this.isleEdge(this.isle, pos.x - e, pos.z)) / (2 * e);
+        const gz = (this.isleEdge(this.isle, pos.x, pos.z + e) - this.isleEdge(this.isle, pos.x, pos.z - e)) / (2 * e);
+        const g2 = gx * gx + gz * gz;
+        if (g2 < 1e-6) break;
+        pos.x -= (gx / g2) * (f + 0.002);
+        pos.z -= (gz / g2) * (f + 0.002);
+        moved = true;
+      }
+      return moved;
+    }
     const d = this.edgeDistance(pos.x, pos.z) + radius;
     if (d <= 0) return false;
     if (horde && this.pathDistance(pos.x, pos.z) <= 0.2) return false;

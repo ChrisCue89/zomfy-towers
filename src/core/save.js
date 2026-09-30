@@ -12,6 +12,7 @@ import { newArms } from '../data/arms.js';
 import { LOSSES_DEFAULT, newBell } from '../data/bell.js';
 import { newPost } from '../data/network.js';
 import { newFishing } from '../data/fishing.js';
+import { newIsles } from '../data/isles.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -130,6 +131,8 @@ const MIGRATIONS = {
   },
   // v28 -> v29: M33 (Angeln am Steg). Noch keine Angel – Fiete bringt es bei, oder Balduin hat eine.
   28: (data) => ({ ...data, version: 29, fishing: newFishing() }),
+  // v29 -> v30: N6 (Inseln). Noch keine Insel besucht – das Ruderboot liegt schon am Steg (N5).
+  29: (data) => ({ ...data, version: 30, isles: newIsles() }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

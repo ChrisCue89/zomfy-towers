@@ -7,6 +7,7 @@
 // Morgen mit dem Boot (`orders`, `deliver`).
 
 import { T } from '../data/texts.js';
+import { CAT } from '../data/isles.js';
 import { FURNITURE, COZY, coziness, MAX_COZY, ROOM_LEVEL, ORDER_MAX } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
@@ -33,7 +34,7 @@ export class Furnishing {
   }
 
   get cozy() {
-    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel); // Schlafzimmer (M11)
+    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel) + (this.game.state.isles?.cat ? CAT.cozy : 0); // Schlafzimmer (M11), N6: die Katze
   }
 
   /** Nach dem Laden: alles Gekaufte aufstellen. */

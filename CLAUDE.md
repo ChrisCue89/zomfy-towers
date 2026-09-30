@@ -200,7 +200,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Kampf der Bewohner, Aufhelfen, Wunden, Verluste,
                       Bericht, M31), post (Netzwerk: Briefkasten, Pakete,
                       Stimmen, Besuch, Rückkehr, Signalfeuer, M32), fishing
-                      (Angeln am Steg: Wurf, Biss, Drill, Fang, M33), quests
+                      (Angeln am Steg: Wurf, Biss, Drill, Fang, M33), isles
+                      (Ruderboot und Inseln: Abdichten, Fahrt, Landung, Funde,
+                      N6), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -260,6 +262,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       (Flussfelder auf Weg und Hof, Rückweg, Wegvorschau),
                       furnitureModels (Möbel im Wohnraum des Innenraums),
                       questModels (Fundstücke der Nebenaufträge, M23),
+                      isleModels + isleProps (Zelt, Netz, Steinbank, Kiste,
+                      Kürbisse und Katze auf den Inseln und vor der Tür, N6),
                       cardModels (Klapptisch, Hackklötze, Einsätze, M28),
                       keepsakeModels (die siebzehn Erinnerungsstücke, M29),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
@@ -317,7 +321,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       network (Netzwerk: Zeiten, Pakete, Stellen und Hilfe der
                       Signalfeuer, M32), motifs (Motive der Figuren für die
                       Spieluhr, M32), fishing (Angeln: Platz, Zeiten, Fische,
-                      Hilfe der Freunde, Korb, M33),
+                      Hilfe der Freunde, Korb, M33), isles (Inseln: Fahrt,
+                      Landeplätze, Funde, Abdichten, N6),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -354,7 +359,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -683,6 +688,18 @@ Grundprinzipien:
     `gives.rod`; der Korb geht über `gives.fish` an Balduin.
   - Der Angelplatz ist eine Einblendung mit `fishing: true`
     (`world.refreshFishingSpot`).
+- **Mit dem Boot zu den Inseln (N6, `core/isles.js`, `data/isles.js`, `world/isleProps.js`):**
+  - Das Boot ist das der Ankunft (`arrival.pose`, `placeBoat`, `oars`,
+    `seatMika`); `isles.row(ziel)` baut eine Bahn (`buildRoute` aus arrival.js)
+    über die Wegpunkte `via` um das Stegende, `landing(id)` sucht den echten
+    Inselrand entlang `side`. Im Modus `rudern` steht die Uhr, `land()` setzt
+    `map.isle` – dann schiebt `map.pushInside` die Figur auf der Insel am Ufer
+    entlang (`isleEdge`, gestreckt wie `onIsland`).
+  - Fundstellen (`isleFind`) sind nur auf der Insel frei, auf der Mika steht;
+    was mitkommt (Katze, Kürbisse), zeigt `isleProps.setFound` vor der Tür.
+  - Tannen der Inseln lassen `isleClearings()` frei, ohne den Zufall der Natur zu
+    verschieben. Nach dem Laden wacht, wer auf einer Insel war, am Steg auf
+    (`isles.apply`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1038,7 +1055,16 @@ Grundprinzipien:
    den Fisch, der echte Biss will ein E, der Drill mit echten Tasten bringt den
    Fang mit Fangkarte, Esc steht auf (50 Minuten später, gemeinsame Zeit, heute
    keine Karten mehr), Balduin nimmt den Fisch, Speichern v29 und Migration
-   v28 → v29 (Bilder: angeln, drill, fang).
+   v28 → v29 (Bilder: angeln, drill, fang); ab N6 (Abschnitt `inseln`): das
+   lecke Boot mit echten Tasten abdichten (vorgewählt »Später«), E am Boot fragt
+   wohin (vorgewählt »Doch lieber an Land«), S und E rudern zur Insel im Norden
+   (die Uhr steht, danach eine Viertelstunde), Mika geht an Land und bleibt mit A
+   gehalten am Ufer, das Zelt gibt Eddas Seite (Karte), das Netz Fasern (die
+   Stange bleibt), E am Boot rudert zurück an den Steg, die Katze der kleinen
+   Insel kommt mit (Gemütlichkeit +1, vor der Tür, E streichelt), um halb sieben
+   rudert Mika von der großen Insel heim, abends bleibt das Boot am Steg,
+   Speichern v30 auf der Insel wacht am Steg auf, Migration v29 → v30 (Bilder:
+   rudern, insel, katze-daheim).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1183,7 +1209,9 @@ Spieluhr); ab M32 zeigt `post()` Briefkasten, Gelesenes, Verschicktes,
 Einladung, Besuch, Fahne, Signalfeuer, Edda und die offene Karte
 (`nextMorning()` bringt auch die Post); ab M33 zeigt `fishing()` Angel, Abende,
 Fänge, Korb, die laufende Runde (Phase, Kescher, Fangkarte) und den Angelplatz,
-`giveRod()` gibt die Angel.
+`giveRod()` gibt die Angel; ab N6 zeigt `isles()` Boot (dicht?), besuchte Inseln,
+Funde, Katze, wo Mika und das Boot sind, die laufende Fahrt, Landeplätze,
+Einblendungen, sichtbare Inselmodelle und die Gemütlichkeit.
 `window.zomfy.game` gibt im Test-Modus das ganze Spiel (nur für Prüfungen);
 `lookAt(x, z)` richtet die Kamera fürs Bild auf einen festen Punkt (`null` folgt
 wieder Mika, M32).

@@ -5,6 +5,52 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N6 – Mit dem Ruderboot zu den Inseln ✓
+
+Wunsch des Auftraggebers (29.09.): »… vielleicht erweiterst du die Karte, man kann
+vielleicht mit einem Boot, wenn man es baut, zu anderen Inseln Abenteuer erleben?
+Sei kreativ.« (OFFENE-FRAGEN 193)
+
+- **Das Boot**: Mikas Ruderboot von der Ankunft (N5) liegt nördlich am Steg – und
+  leckt. E am Boot: »Abdichten (8 Holz, 4 Fasern)« (vorgewählt »Später«). Danach
+  spricht Edda über Funk von den Inseln.
+- **Hinausrudern**: E am Boot fragt, wohin – drei Inseln oder »Doch lieber an Land«
+  (vorgewählt). Es geht tagsüber von 7 bis 17:30 Uhr, nicht in der Nacht und nicht,
+  wenn ein Schlurfer näher als 10 m ist; die Einblendung sagt gleich, warum nicht.
+  - Die Fahrt: Riemen im Takt, das Boot dreht sich gemächlich in die Fahrtrichtung,
+    Kielwasser, die Kamera nah heran. Es geht um das Stegende herum, nie über
+    Balduins Anleger. Esc legt gleich an.
+  - Die Uhr steht beim Rudern; jede Fahrt kostet danach eine Viertelstunde.
+  - Das Boot legt mit dem Bug am echten Inselrand an (der ist je Karte ein wenig
+    anders), Mika steigt aus. Auf der Insel bleibt Mika am Ufer stehen, nie im
+    Wasser (Newton-Schritte auf das Abstandsmaß der Insel, man gleitet am Ufer
+    entlang). E am Boot rudert zurück; um halb sieben rudert Mika von selbst heim.
+- **Die Insel im Norden (»Netzinsel«)**: ein verlassenes Zelt mit einer Seite aus
+  Eddas Funkbuch (Karte wie ein Brief) – Marthe ist mit den Kindern vom Hof auf die
+  Nebelinsel gezogen, bei Morgennebel läuten sie die alte Schiffsglocke. Ein altes
+  Netz an einer Stange: +8 Fasern, +1 Stoff (die Stange bleibt stehen).
+- **Die große Insel (»Bankinsel«)**: eine Steinbank mit Moos und Blick über den See
+  (immer wieder ein Gedanke) und eine halb vergrabene Kiste – eine Fundkiste mit
+  Turmteil (M21).
+- **Die kleine Insel im Süden (»Kürbisinsel«)**: wilde Kürbisse (+3 Fasern, zwei
+  stehen danach links neben der Haustür) und eine rot getigerte Katze. Sie kommt
+  mit, sitzt rechts vor der Tür (Gemütlichkeit +1) und schnurrt, wenn Mika sie
+  streichelt. Die Insel ist dafür etwas größer geworden (Radius 2 statt 1,5 m;
+  ihre Tannen bleiben zwei, der Zufall der übrigen Natur ändert sich nicht).
+- Tannen auf den Inseln wachsen nie auf Fundstellen und Landeplätzen. Ein Skript
+  hat über 300 Kartenstartwerte geprüft: Fundstellen sicher an Land, Einblendungen
+  erreichbar, das Boot im Wasser.
+- Wer auf einer Insel speichert, wacht am Steg auf (das Boot liegt dort).
+- **Spielstand v30** mit Migration (Boot noch leck, keine Insel besucht).
+- Auf dem See und den Inseln ist die Durchsicht um Mika größer – sonst stand der
+  Leuchtmast am Stegende groß zwischen Kamera und Nordinsel.
+- Prüfabschnitt `inseln` (Bilder: rudern, insel, katze-daheim), bestanden. Beim
+  Ansehen der Bilder behoben: der Leuchtmast vor der Nordinsel (siehe oben), das Zelt
+  hat eine geschlossene Giebelwand mit dunklem Eingang (vorher sah man hinein).
+- Nebenbei: Die Flaschenpost (M33) und Eddas Funkbuch erzählen jetzt dasselbe –
+  Marthe läutet bei Morgennebel. Die Fahrt zur Insel im Nebel ist der nächste
+  Schritt (Plan: N7).
+
 ## Meilenstein 33 – Angeln am Steg, Licht und Schwellen ✓
 
 Die zweite Abendaktivität und der letzte Glanz (DESIGN 8, OFFENE-FRAGEN 171, 176,

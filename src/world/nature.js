@@ -11,6 +11,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { hash3, Rng, fbm, valueNoise } from '../core/rng.js';
 import { LAYOUT, snapV } from './layout.js';
 import { MAP, ISLANDS, BAY, shoreX } from './map.js';
+import { isleClearings } from '../data/isles.js';
 
 /** Laubfarben (dunkel → hell) für Kronen. */
 export const LEAVES = {
@@ -609,11 +610,13 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
       }
     }
   }
-  // Inseln im See: ein paar Tannen und Felsen. M32: Vor den Stellen der Signalfeuer wächst
-  // keine Tanne – der Zufall wird trotzdem gleich oft gezogen (sonst verschöbe sich alles danach)
+  // Inseln im See: ein paar Tannen und Felsen. Vor den Signalfeuern (M32) sowie auf
+  // Fundstellen und Landeplätzen (N6) wächst keine Tanne – der Zufall wird trotzdem gleich
+  // oft gezogen (sonst verschöbe sich alles danach)
+  const clearings = isleClearings();
   const fireSpots = Object.values(SIGNAL_SPOTS);
   for (const isl of ISLANDS) {
-    const n = Math.max(1, Math.round(isl.r * 1.3));
+    const n = isl.trees ?? Math.max(1, Math.round(isl.r * 1.3));
     for (let k = 0; k < n; k++) {
       const a = rng.range(0, Math.PI * 2);
       const r = rng.range(0, isl.r * 0.5);
@@ -621,11 +624,13 @@ export function createNature({ seed, materials, colliders, blockers, map, nodes 
       const fz = snapV(isl.z + Math.sin(a) * r * 0.8);
       const kind = rng.int(0, 2);
       const turns = rng.int(0, 3);
-      if (fireSpots.some((f) => hidesFire(fx, fz, f))) continue;
+      if (clearings.some((c) => Math.hypot(fx - c.x, fz - c.z) < c.r + 0.3) || fireSpots.some((f) => hidesFire(fx, fz, f))) continue;
       scatter.place(`fir${kind}`, fx, fz, turns);
+      colliders.addCircle(fx, fz, 0.3, 'inselbaum'); // N6: Mika kann mit dem Boot hinüber
       trees++;
     }
     scatter.place(`rock${rng.int(0, 3)}`, snapV(isl.x + isl.r * 0.6), snapV(isl.z + isl.r * 0.35), rng.int(0, 3));
+    colliders.addCircle(snapV(isl.x + isl.r * 0.6), snapV(isl.z + isl.r * 0.35), 0.45, 'fels');
   }
 
   for (const spot of BAY_MUSHROOMS) placeMushrooms(spot.x, spot.z, spot.kind);

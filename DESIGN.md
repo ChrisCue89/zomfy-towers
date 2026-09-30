@@ -347,6 +347,7 @@ steigt der **Stillwald** an – dicht, felsig, voller Hänge, der Boden voller
 Moder. Nur ein paar alte **Holzfäller- und Wildpfade** führen hindurch; sie
 verzweigen sich und laufen kurz vor der Bucht zusammen. Über sie kommt die
 Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
+Seit N6 rudert Mika tagsüber mit dem eigenen Boot hinüber.
 
 ### 4.3 Hauptfigur
 
@@ -1801,12 +1802,24 @@ zu Hause (Abschnitt `netzwerk`).
 
 *Prüfen:* Angeln mit echten Tasten, Bilder der Lichtinseln (Abschnitt `angeln`).
 
+#### N6 – Mit dem Ruderboot zu den Inseln ✓
+
+*Umgesetzt (30.09.2026), Wunsch des Auftraggebers vom 29.09.:* Mikas Ruderboot
+(N5) leckt; mit Holz und Fasern abgedichtet, rudert es tagsüber zu den drei
+Felsinseln (Nr. 193). Die Netzinsel hat ein verlassenes Zelt mit einer Seite aus
+Eddas Funkbuch und ein altes Netz, die Bankinsel eine Steinbank mit Aussicht und
+eine Fundkiste, die Kürbisinsel wilde Kürbisse und eine Katze, die mitkommt und
+vor der Tür sitzt. Um halb sieben geht es von selbst heim. Spielstand v30.
+
+*Als Nächstes (N7):* die Insel im Nebel – bei Morgennebel und Windstille der Glocke
+nach, Marthe und die Kinder in die Bucht holen.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen).
-- Mit Balduins Boot eine Insel besuchen.
+- Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (N7).
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte (eingeplant: Netzwerk, M32).
 - Fotomodus.

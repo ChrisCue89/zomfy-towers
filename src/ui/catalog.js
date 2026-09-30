@@ -515,10 +515,10 @@ export class DeliveryCard {
     const ctx = ui.ctx;
     const N = T.netz;
     const w = 256;
-    const text = (m.kind === 'brief2' ? N.zweite[m.letter] : T.wanderer.briefe[m.letter]) || N.stimmeAlle;
+    const text = m.text || (m.kind === 'brief2' ? N.zweite[m.letter] : T.wanderer.briefe[m.letter]) || N.stimmeAlle; // N6: eine Notiz bringt ihren Text mit
     const lines = wrap(text, w - 30);
     const h = 104 + (2 + lines.length) * LINE_HEIGHT + 22;
-    const { x, y } = this.cardFrame(ui, w, h, LETTER, AIRMAIL, N.brief);
+    const { x, y } = this.cardFrame(ui, w, h, LETTER, AIRMAIL, m.kind === 'notiz' ? T.inseln.notizTitel : N.brief);
     for (let i = 0; i < w; i += 8) {
       ctx.fillStyle = (i >> 3) % 2 ? RED : AIRMAIL_LIGHT; // Luftpost-Rand
       ctx.fillRect(x + i, y + 18, 5, 2);
@@ -549,7 +549,7 @@ export class DeliveryCard {
     ctx.fillRect(px + 4, py + 4, pw, pw);
     if (pic) ctx.drawImage(pic, 0, 0, pic.width, pic.height, px + 4 + Math.round((pw - pic.width) / 2), py + 4 + Math.round((pw - pic.height) / 2), pic.width, pic.height);
     let ty = py + pw + 14;
-    const from = N.von(m.name, T.wanderer.vomOrt[m.place] || '');
+    const from = m.kind === 'notiz' ? m.name : N.von(m.name, T.wanderer.vomOrt[m.place] || '');
     drawText(ctx, from, x + Math.round((w - measure(from)) / 2), ty, INK);
     ty += LINE_HEIGHT;
     const day = N.tag(m.day);

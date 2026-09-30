@@ -16,8 +16,8 @@ import { buildRowboat } from '../entities/traderModels.js';
 import { COLORS } from '../ui/ui.js';
 import { wrap, measure, drawText, LINE_HEIGHT } from '../ui/font.js';
 
-/** Weicher Weg durch die Stützpunkte (Catmull-Rom), gleichmäßig nach Länge. */
-function buildRoute(points) {
+/** Weicher Weg durch die Stützpunkte (Catmull-Rom), gleichmäßig nach Länge (N6: auch für die Inselfahrten). */
+export function buildRoute(points) {
   const pts = [];
   const at = (i) => points[Math.max(0, Math.min(points.length - 1, i))];
   for (let i = 0; i < points.length - 1; i++) {
@@ -36,7 +36,7 @@ function buildRoute(points) {
 }
 
 /** Stelle und Richtung auf dem Weg bei u (0..1). */
-function routeAt(route, u, out) {
+export function routeAt(route, u, out) {
   const target = Math.max(0, Math.min(1, u)) * route.total;
   let i = 1;
   while (i < route.len.length - 1 && route.len[i] < target) i++;

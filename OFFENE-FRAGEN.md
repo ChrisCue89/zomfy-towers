@@ -2180,6 +2180,34 @@ gespeichert).
 - Kampfboni würden das Angeln zur Pflicht machen – es soll eine Wahl für ruhige
   Abende bleiben.
 
+### 193. Mit dem Boot zu den Inseln (N6)
+**Entscheidung:**
+- **Welches Boot:** Mikas Ruderboot aus der Ankunft (N5), nicht ein neues. Es leckt
+  und wird mit Holz und Fasern abgedichtet – das ist das »Bauen« aus dem Wunsch,
+  ohne einen neuen Bau auf dem Raster.
+- **Wann:** nur tagsüber (7–17:30 Uhr), um halb sieben rudert Mika von selbst heim.
+  Nachts bleibt niemand draußen: Die Nacht gehört der Verteidigung, und vom Wasser
+  kommen nie Zombies (Grundregel).
+- **Wie gerudert wird:** eine geführte Fahrt auf einer Bahn (keine Steuerung), die
+  Uhr steht, danach eine Viertelstunde. Steuern mit W/A/D bleibt der Nebelfahrt
+  vorbehalten (N7), wo es darauf ankommt.
+- **Was es gibt:** je Insel eine Geschichte und etwas zum Mitnehmen – ein Zettel,
+  Material, eine Fundkiste, Herbstschmuck für die Haustür und eine Katze. Keine
+  Kampfkraft außer dem einen Turmteil: Die Inseln sind ein ruhiger Ausflug.
+- **Die Katze:** kommt mit und sitzt vor der Tür (Gemütlichkeit +1), sie folgt
+  Mika nicht und kämpft nicht.
+- **Die Karte:** Die kleine Südinsel wird etwas größer (Radius 2 m), damit man auf
+  ihr stehen kann; ihre Tannenzahl bleibt, damit der Zufall der übrigen Natur (und
+  damit jeder alte Spielstand) gleich aussieht.
+
+**Warum:**
+- Das Boot ist schon da und hat eine Geschichte – es wieder flottzumachen fühlt sich
+  nach Ankommen an.
+- Tagsüber ist Zeit; die Viertelstunde je Fahrt macht die Inseln zu einer Wahl
+  gegen Sammeln und Bauen, ohne zu bestrafen.
+- Die Insel im Nebel mit Marthe und den Kindern ist das Ziel der Geschichte
+  (Flaschenpost, Eddas Funkbuch); N6 legt die Spur.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

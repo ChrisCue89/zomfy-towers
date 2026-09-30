@@ -78,6 +78,10 @@ const SFX = {
     s.noise(t, 0.3, { type: 'lowpass', freq: 700, freqEnd: 220, attack: 0.04, peak: 0.22 * v, out: o });
     s.tone('sine', 95, t, 0.2, { freqEnd: 60, peak: 0.2 * v, out: o });
   },
+  // N6: die Katze schnurrt (tiefes, pulsierendes Rauschen)
+  schnurren: (s, t, v, o) => {
+    for (let k = 0; k < 6; k++) s.noise(t + k * 0.11, 0.08, { type: 'lowpass', freq: 220, attack: 0.03, peak: 0.12 * v, out: o });
+  },
   // M33: Angeln – Auswerfen (Sausen und Rollenknarren), Biss (Blubb), Kurbel, Fang
   auswerfen: (s, t, v, o) => {
     s.noise(t, 0.28, { type: 'bandpass', freq: 600, freqEnd: 2400, q: 1.6, attack: 0.04, peak: 0.16 * v, out: o });

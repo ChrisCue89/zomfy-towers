@@ -13,6 +13,7 @@ import { T } from './texts.js';
 import { cardsOffered } from './cards.js';
 import { fishingOffered } from './fishing.js';
 import { stepsLeft } from './arms.js';
+import { REPAIR } from './isles.js';
 
 // M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
 const UEBEN_ORDER = ['hilde', 'juna', 'bert', 'yusuf', ...Object.keys(WANDERERS)];
@@ -463,6 +464,28 @@ export const DIALOGE = {
       'Der See hat sich verändert. Die Enten nicht. Frech wie immer.',
       'Knoten halten, wenn man sie richtig macht. Freundschaften auch.',
     ]),
+  // N6: Das Ruderboot am Steg – wohin?
+  // N6: Das Boot leckt noch – abdichten (vorgewählt ist »Später«)
+  bootFlicken: [
+    {
+      s: 'mika',
+      t: T.inseln.leck,
+      antworten: [
+        { t: T.inseln.abdichten(REPAIR), aktion: 'abdichten' },
+        { t: T.inseln.spaeter, standard: true },
+      ],
+    },
+  ],
+  bootFahrt: (state) => [
+    {
+      s: 'mika',
+      t: T.inseln.frage,
+      antworten: [
+        ...['nord', 'mitte', 'sued'].map((id) => ({ t: (state.isles?.visited || []).includes(id) ? T.inseln.namenBekannt[id] : T.inseln.namen[id], aktion: `insel:${id}` })),
+        { t: T.inseln.bleiben, standard: true },
+      ],
+    },
+  ],
   // M33: Fiete bringt Mika das Angeln bei
   fieteAngeln: [
     { s: 'fiete', t: 'Angeln? Na endlich fragt mal einer! Hier – meine zweite. Die erste geb ich nicht her.' },

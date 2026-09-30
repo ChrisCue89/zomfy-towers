@@ -72,6 +72,8 @@ import { Defense } from './defense.js';
 import { Post } from './post.js';
 import { Fishing } from './fishing.js';
 import { FishingView } from '../ui/fishingView.js';
+import { Isles } from './isles.js';
+import { ISLE_VIEW } from '../data/isles.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
 import { GUNS } from '../data/arms.js';
 import { ReportPanel } from '../ui/report.js';
@@ -375,6 +377,7 @@ export class Game {
     this.post = new Post(this); // M32: Briefe, Pakete, Stimmen, Besuch, Rückkehr, Signalfeuer
     this.fishing = new Fishing(this); // M33: Angeln am Steg
     this.fishingView = new FishingView(this);
+    this.isles = new Isles(this); // N6: mit dem Ruderboot zu den Inseln
     this.posts = new Posts(this); // M23: Überlebende auf den Hochsitzen, Knopf im Hof, Fest am Feuer
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
@@ -556,6 +559,7 @@ export class Game {
     this.world.setMailFlag(this.post.waiting); // M32: Fahne oben, solange Post im Briefkasten liegt
     this.world.refreshFishingSpot(st.fishing.rod); // M33: der Angelplatz, sobald es eine Angel gibt
     this.world.setSignalFires(this.nights.active && this.autumn.planMode(st.night.n) === 'finale' ? this.post.places() : []);
+    this.isles.apply(); // N6: wer auf einer Insel gespeichert hat, wacht am Steg auf
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -721,11 +725,13 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.cardNight?.match || this.fishing?.session ? 'nah' : this.view; // M33: auch am Steg
+    const view = this.cardNight?.match || this.fishing?.session || this.isles?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
-    sharedUniforms.uCutRadius.value.set(26, 40).multiplyScalar(ppm / 40); // Durchsicht wächst mit dem Maßstab
+    // Durchsicht wächst mit dem Maßstab; N6: draußen auf dem See und den Inseln größer – sonst
+    // steht der Leuchtmast am Stegende groß zwischen Kamera und Nordinsel
+    sharedUniforms.uCutRadius.value.set(26, 40).multiplyScalar((ppm / 40) * (this.isles?.away && !inside ? 2.4 : 1));
     this.updateViewBounds();
     const p = this.player.position;
     this.rig.jumpTo(p.x, p.z);
@@ -735,7 +741,7 @@ export class Game {
   updateViewBounds() {
     const rig = this.rig;
     if (!this.viewInside) {
-      rig.bounds = LAYOUT.cameraBounds;
+      rig.bounds = this.isles?.away ? { ...LAYOUT.cameraBounds, maxX: ISLE_VIEW.maxX } : LAYOUT.cameraBounds; // N6: über den See bis zu den Inseln
       rig.limits = TERRAIN_AREA;
       return;
     }
@@ -940,6 +946,12 @@ export class Game {
       const why = this.fishing.blocked();
       if (why) this.hud.say(T.angeln.gruende[why], 2.6);
       else this.fishing.begin(null);
+    }
+    else if (it.boat) this.isles.use(); // N6: mit dem Ruderboot hinaus (oder zurück)
+    else if (it.isleFind) this.isles.find(it.isleFind);
+    else if (it.homeCat) {
+      this.hud.say(T.inseln.mieze[this.state.time.day % T.inseln.mieze.length], 3.5);
+      this.sound.play('schnurren');
     }
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
@@ -2588,6 +2600,9 @@ export class Game {
         this.fishing.update(realDt, input);
         this.player.idle(dt);
         break;
+      case 'rudern': // N6: über den See – die Uhr steht, die Fahrt kostet danach eine Viertelstunde
+        this.isles.update(realDt, input);
+        break;
       case 'report':
         if (this.report.update(realDt, input)) {
           // Erst jetzt gelesen: Neuladen bei offenem Bericht zeigt ihn wieder
@@ -2841,6 +2856,7 @@ export class Game {
     this.arms.update(dt); // M30: Nachladen, Hülsen, Leuchtkugeln, der Schlüssel zum Schrank
     this.training.update(dt); // M30: wer gerade übt
     this.defense.update(dt, this.input); // M31: Lagerglocke – läuten, kämpfen, aufhelfen
+    this.isles.tick(); // N6: um halb sieben rudert Mika von einer Insel heim
     this.skills.update(dt);
     this.updateCamp(dt);
     if (this.mode !== 'play') return;
@@ -3108,6 +3124,11 @@ export class Game {
       const why = this.fishing.blocked();
       if (why && why !== 'angel') return T.angeln.gruende[why];
     }
+    // N6: Das Ruderboot am Steg sagt gleich, warum gerade keine Fahrt geht
+    if (it.boat && this.isles.data.boat && !this.isles.at) {
+      const why = this.isles.blocked();
+      if (why) return T.inseln.kurz[why];
+    }
     // M31: Die Lagerglocke sagt gleich, warum sie gerade schweigt
     if (it.use === 'glocke') {
       const why = this.defense.active ? 'schonGelaeutet' : this.defense.blocked(); // während sie läutet, kein »Läuten« mehr
@@ -3176,6 +3197,7 @@ export class Game {
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
     if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
+    if (this.mode === 'rudern') this.isles.draw(ui); // N6
     if (playing) this.buildbar.draw(ui);
     if (playing && !cinematic && !atTable) this.funk.draw(ui); // N4: Edda unten rechts über der Bauleiste
     else this.funk.rect = null;
@@ -4031,6 +4053,22 @@ export class Game {
       giveRod() {
         game.state.fishing.rod = true;
         game.world.refreshFishingSpot(true);
+      },
+      /** N6: Inseln – besuchte, Gefundenes, Katze, wo Mika und das Boot sind, laufende Fahrt, Landeplätze. */
+      isles: () => {
+        const p = game.player.position;
+        const map = game.world.map;
+        const card = game.mode === 'lieferung' ? game.deliveryCard.items[game.deliveryCard.k] || null : null;
+        return {
+          ...game.isles.info(),
+          mode: game.mode,
+          player: { x: p.x, z: p.z, onIsland: map.onIsland(p.x, p.z), water: map.isWater(p.x, p.z), edge: map.isle !== null ? map.isleEdge(map.isle, p.x, p.z) : null },
+          seated: Boolean(game.player.seated),
+          card: card ? { kind: card.kind || null, text: card.text || null } : null,
+          props: Object.fromEntries(game.world.isleProps.group.children.map((o) => [o.name, o.visible])),
+          interactions: game.world.isleInteractions.map((q) => ({ id: q.id, enabled: q.enabled, prompt: q.prompt, x: q.x, z: q.z })),
+          cozy: game.furnishing.cozy,
+        };
       },
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */
       post: () => {

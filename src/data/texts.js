@@ -610,6 +610,7 @@ export const T = {
     danach: '…Ich bin erwachsen. Aber es guckt ja keiner.',
   },
   aktionen: {
+    bootFlicken: 'Boot abdichten', // N6
     schlafen: 'Schlafen',
     radio: 'Radio hören',
     kamin: 'Ans Feuer setzen',
@@ -620,6 +621,10 @@ export const T = {
     nachsehen: 'Nachsehen',
     postHolen: 'Post holen', // M32: die Fahne am Briefkasten ist oben
     angeln: 'Angeln', // M33: am Steg
+    rudern: 'Hinausrudern', // N6: das Ruderboot am Steg
+    zurueckRudern: 'Zurück zur Bucht',
+    mitnehmen: 'Mitnehmen',
+    oeffnen: 'Öffnen',
     ansehen: 'Ansehen',
     schaukeln: 'Schaukeln',
     hinsetzen: 'Hinsetzen',
@@ -1489,6 +1494,7 @@ export const T = {
       huette: 'Das Haus wächst mit dir. Im Reiter »Zuhause« baust du es aus – als Nächstes kommt eine Küche dazu.',
       kiesel: 'Stein liegt als Kiesel am Ufer und an den Wegen. Einfach aufsammeln.',
     },
+    boot: 'Das Boot schwimmt wieder? Dann ruder mal zu den Inseln rüber – tagsüber, und vor der Dämmerung zurück. Früher haben da draußen Leute gezeltet.',
     laterne: 'Es wird dunkel. Nimm die Laterne – Taste F. Licht macht den Moder müde, und die Schlurfer werden langsam.',
     spaet: 'Geschafft für heute. Geh schlafen, Mika – das Bett steht in der Stube. Ich halte das Funkgerät warm.',
     ruhe: 'Alles erledigt? Setz dich in den Ohrensessel am Feuer und ruh dich bis zum Abend aus.',
@@ -1758,6 +1764,59 @@ export const T = {
       '„Die Glocke läuten wir, wenn morgens Nebel ist. Hört ihr sie? – M. und die Kinder“',
       '„Wenn ihr ein Boot habt: Bringt Nägel mit. Und Zucker. Wir warten. – Marthe“',
     ],
+  },
+  // Mit dem Boot zu den Inseln (N6, OFFENE-FRAGEN 193)
+  inseln: {
+    frage: 'Das Ruderboot. Wohin?',
+    namen: { nord: 'Zur Insel im Norden', mitte: 'Zur großen Insel', sued: 'Zur kleinen Insel im Süden' },
+    namenBekannt: { nord: 'Zur Netzinsel', mitte: 'Zur Bankinsel', sued: 'Zur Kürbisinsel' },
+    bleiben: 'Doch lieber an Land.',
+    leck: 'Das Boot hat mich hergebracht – weiter trägt es nicht. Es leckt an zwei Stellen.',
+    abdichten: (cost) => `Abdichten (${Object.entries(cost).map(([k, n]) => `${n} ${T.ressourcen[k]}`).join(', ')})`,
+    spaeter: 'Später.',
+    dicht: 'Das Ruderboot ist dicht – tagsüber trägt es mich zu den Inseln.',
+    zuWenig: 'Dafür fehlt mir noch Holz oder Fasern.',
+    heim: 'Zurück zum Steg',
+    anlegen: 'Esc – gleich anlegen',
+    gruende: {
+      nacht: 'Nachts bleibe ich an Land. Da draußen sieht mich keiner – und ich sehe nichts.',
+      zeit: 'Zum Rudern ist es zu früh oder zu spät. Morgen, im Hellen.',
+      horde: 'Nicht jetzt – da ist ein Schlurfer in der Nähe.',
+    },
+    kurz: {
+      nacht: 'Nachts bleibt das Boot hier.',
+      zeit: 'Rudern: morgens ab sieben, bis halb sechs.',
+      horde: 'Nicht jetzt – ein Schlurfer!',
+    },
+    ankunft: {
+      nord: 'Die Insel im Norden. Hier hat jemand gewohnt. Nicht lange.',
+      mitte: 'Die große Insel. Von hier sieht man die ganze Bucht.',
+      sued: 'Die kleine Insel. Irgendwas raschelt zwischen den Kürbissen …',
+    },
+    wieder: {
+      nord: 'Die Netzinsel. Still wie immer.',
+      mitte: 'Die Bankinsel. Der Wind riecht nach Kiefern.',
+      sued: 'Die Kürbisinsel. Hier wächst, was keiner gesät hat.',
+    },
+    funde: {
+      netz: 'Ein altes Fischernetz – zerrissen, aber die Fasern sind gut. (+8 Fasern, +1 Stoff)',
+      zelt: 'Im Zelt liegt eine Seite aus einem Funkbuch. Eddas Handschrift!',
+      kiste: 'Eine Kiste, halb im Moos. Das Schloss gibt nach …',
+      kuerbisse: 'Wilde Kürbisse! Zwei nehme ich mit – für die Tür. (+3 Fasern)',
+      katze: 'Eine Katze! Sie reibt sich an meinem Bein … und springt ins Boot. Na gut. Du kommst mit.',
+    },
+    bank: [
+      'Von hier sieht die Bucht aus wie ein Zuhause.',
+      'Da drüben ist mein Feuer. Klein, von hier aus. Aber es brennt.',
+      'Der See atmet. Die Wellen kommen und gehen, und keiner will etwas von mir.',
+    ],
+    mieze: ['Mieze schnurrt.', 'Mieze blinzelt dich an. Das ist Katzisch für »Ich hab dich lieb«. Glaube ich.', 'Mieze hat eine Maus gebracht. Eine tote. Danke, Mieze.'],
+    spaet: 'Es wird dunkel – Mika rudert zurück zur Bucht.',
+    notizTitel: 'Eine Seite aus dem Funkbuch',
+    notizVon: 'aus Eddas altem Funkbuch',
+    notizen: {
+      zelt: '„14. Oktober. Marthe ist mit den Kindern vom Hof auf die Nebelinsel gezogen. Ihr Kahn leckt, aber sie haben die alte Schiffsglocke. Wenn morgens Nebel ist, läuten sie – dann weiß ich, dass es ihnen gut geht. – E.“',
+    },
   },
   // Das Erinnerungsbrett am Steg (M31, OFFENE-FRAGEN 170)
   erinnerung: {
