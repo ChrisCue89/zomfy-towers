@@ -72,6 +72,7 @@ Marthe und ihre Kinder auf der Insel im Nebel.
   - Der rosa Fleck neben der Glocke war ein fallendes Herbstblatt (keine Änderung).
   - Unter Last dauert das Neuladen im Prüflauf knapp 30 s (die alte Frist) – der
     Abschnitt wartet jetzt bis zu 180 s.
+- Volle Prüfung mit N7: 453 Prüfpunkte, bestanden.
 
 ## N6 – Mit dem Ruderboot zu den Inseln ✓
 
