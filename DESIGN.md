@@ -1825,6 +1825,14 @@ Kahn leckt. Mit Nägeln (Werkbank) und Zucker (Balduin oder Hilde) flickt Marthe
 am Morgen danach gleitet der Kahn an den Steg: Marthe stellt eine Reuse auf, die
 Kinder spielen im Hof. Spielstand v31.
 
+#### N8 – Eddas Funkbuch und die Glocke am Steg ✓
+
+*Umgesetzt (30.09.2026):* Vier Seiten aus Eddas Funkbuch – unter einem Stein auf der
+großen Insel, in einer Blechdose auf der kleinen, im Zelt der Nordinsel und die letzte
+bei Marthe – erzählen, wie der Moder kam, von Radio Stillwald und warum Edda die
+Holzlände verließ (Nr. 195); im Herbstbuch zum Nachlesen, mit allen vier meldet sich
+Edda. Marthes Glocke hängt am Steg: E ruft die Kinder, Balduin wird begrüßt.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

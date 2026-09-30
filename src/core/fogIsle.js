@@ -8,7 +8,7 @@
 // Hof. Sie sind keine Bewohner mit Platz (wie Edda): Sie schlafen in ihrem Kahn.
 
 import { FOG_ISLE, FOG_SPOTS, BELL, FOG_TRIP, SEA_FOG, MEND, BAY_SPOTS, TRAP, FOG_PEOPLE, bellRings, fogIsleEdge } from '../data/fogIsle.js';
-import { TRIP } from '../data/isles.js';
+import { TRIP, PAGE_ORDER, pagesRead } from '../data/isles.js';
 import { buildRoute, routeAt } from './arrival.js';
 import { ARRIVAL } from '../data/arrival.js';
 import { canAfford, pay, gain } from './inventory.js';
@@ -41,6 +41,8 @@ export class FogIsle {
     this.people = FOG_PEOPLE.map((id) => ({ id: `npc-${id}`, x: 0, z: 0, radius: 1.35, prompt: 'ansprechen', npc: id, enabled: false }));
     this.lastLost = null; // Prüfung: warum die letzte Fahrt verloren ging
     this.fadeIn = 0; // nach der Fahrt: das Nebelweiß weicht (s)
+    this.baySwing = 0; // N8: die Glocke am Steg schwingt (s)
+    this.bayRings = 0; // N8: wie oft sie geläutet hat (Prüfung)
   }
 
   get data() {
@@ -84,6 +86,8 @@ export class FogIsle {
     this.fadeIn = Math.max(0, this.fadeIn - dt);
     this.swing = Math.max(0, this.swing - dt);
     this.island.bellPivot.rotation.z = Math.sin(this.swing * 9) * 0.22 * Math.min(1, this.swing);
+    this.baySwing = Math.max(0, this.baySwing - dt);
+    this.island.bayBellPivot.rotation.z = Math.sin(this.baySwing * 9) * 0.22 * Math.min(1, this.baySwing);
     if (g.mode === 'play') {
       this.tick();
       if (d.stage === 3 && g.state.time.day >= d.arrive && g.state.time.minute >= BELL.from && !this.glide && !this.away) this.startGlide();
@@ -464,6 +468,15 @@ export class FogIsle {
     const d = this.data;
     const inv = g.state.inventory;
     if (!this.at) {
+      // N8: Beim ersten Gespräch in der Bucht gibt Marthe Mika die letzte Seite aus Eddas Funkbuch
+      if (id === 'marthe' && d.stage === 4 && !d.page) {
+        g.startDialog('martheSeite', () => {
+          d.page = true;
+          this.showPage(T.nebel.seite);
+          g.quietSave();
+        });
+        return;
+      }
       g.startDialog(`${id}Da`);
       return;
     }
@@ -494,6 +507,43 @@ export class FogIsle {
       return;
     }
     g.startDialog(d.stage === 2 ? 'martheWarten' : 'martheBald');
+  }
+
+  /** N8: Eine Seite aus Eddas Funkbuch als Karte zeigen (wie im Zelt, N6). */
+  showPage(text) {
+    const g = this.game;
+    g.deliveryCard.open([{ letter: 'edda', kind: 'notiz', name: T.inseln.notizVon, place: null, day: g.state.time.day, text }]);
+    g.mode = 'lieferung';
+    this.checkPages();
+  }
+
+  /** N8: Sind alle vier Seiten gelesen, meldet sich Edda (einmal). */
+  checkPages() {
+    if (pagesRead(this.game.state).length >= PAGE_ORDER.length) this.game.funk.once('funkbuch', T.funk.funkbuch);
+  }
+
+  /**
+   * N8: Marthes Glocke am Steg: zwei Schläge. Läutet Mika (E), kommen Pim und Lu angerannt und
+   * Knopf bellt; sie läutet auch, wenn Balduin anlegt.
+   */
+  ringBay(byMika) {
+    const g = this.game;
+    const b = BAY_SPOTS.bell;
+    g.sound.play('nebelglocke', { x: b.x, z: b.z, volume: 0.9 });
+    this.baySwing = 1.4;
+    this.bayRings++;
+    if (!byMika) return;
+    const npcs = g.survivors.npcs;
+    const p = g.player.position;
+    const kids = ['pim', 'lu'].map((id) => npcs.list.get(id)).filter((n) => n?.model.root.visible);
+    kids.forEach((n, k) => {
+      npcs.walkTo(n, p.x + (k ? 0.8 : -0.8), p.z + 0.6);
+      n.rush = 1.5;
+      this.play[n.id].t = 6; // eine Weile bleiben sie bei Mika
+    });
+    g.survivors.alarmBark?.();
+    const lines = T.nebel.glockeKinder;
+    g.hud.say(kids.length ? lines[this.bayRings % lines.length] : T.nebel.glockeAllein, 3);
   }
 
   /** Nach dem ersten Gespräch geht Marthe zurück an ihren Kahn. */
@@ -573,6 +623,7 @@ export class FogIsle {
     this.island.glideKahn.visible = false;
     this.island.setBay(true);
     this.data.stage = 4;
+    this.refresh();
     for (const id of FOG_PEOPLE) {
       const n = npcs.list.get(id);
       n.sit = 0;
@@ -648,8 +699,10 @@ export class FogIsle {
     this.boatInteraction.enabled = this.at;
     for (const it of isl.interactions) it.enabled = this.at;
     isl.trapInteraction.enabled = this.data.stage === 4;
+    isl.bellInteraction.enabled = this.data.stage === 4;
+    isl.placeBayBell(w.heightAt(BAY_SPOTS.bell.x, BAY_SPOTS.bell.z)); // auf den Planken des Stegs
     this.updatePeople();
-    w.fogInteractions = [this.boatInteraction, ...isl.interactions, isl.trapInteraction, ...this.people];
+    w.fogInteractions = [this.boatInteraction, ...isl.interactions, isl.trapInteraction, isl.bellInteraction, ...this.people];
     w.refreshInteractions();
   }
 

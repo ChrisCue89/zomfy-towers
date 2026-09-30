@@ -294,6 +294,7 @@ export class Trader {
         g.effects.dust(s.x + 0.6, s.z + 0.8, 0.8, 10);
         g.sound.play('bimmel', { x: s.x, z: s.z });
         g.deliverOrders?.(); // N4: Bestelltes aus dem Katalog trägt er gleich ins Haus
+        if (g.state.isles?.fog?.stage === 4) g.fogIsle?.ringBay(false); // N8: Marthe läutet, wenn Balduin anlegt
       }
     } else if (id === 'geht' && prev === 'steht') {
       g.effects.dust(TRADER.stand.x + 0.6, TRADER.stand.z + 0.8, 0.8, 10);

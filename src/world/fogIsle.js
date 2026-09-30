@@ -194,6 +194,16 @@ function buildShipBell() {
   return m;
 }
 
+/** N8: Marthes Glocke am Steg – ein Pfahl aus Treibholz mit Ausleger nach Osten (die Glocke hängt eigens daran). */
+function buildBellPost(seed) {
+  const m = new VoxelModel();
+  for (let y = 0; y <= 56; y++) m.box(-2, y, -2, 1, y, 1, (x) => (x === -2 ? P.s7 : hash3(0, y >> 2, 0, seed) < 0.15 ? P.s5 : P.s6));
+  for (let x = 2; x <= 14; x++) m.box(x, 53, -1, x, 55, 0, (xx, y) => (y === 55 ? P.s7 : P.s6));
+  for (let k = 0; k < 8; k++) m.set(2 + k, 44 + k, 0, P.s5); // Strebe
+  m.box(-3, 20, -3, 2, 22, 2, P.e7); // Tau um den Pfahl
+  return edgeLight(m);
+}
+
 /** Wäscheleine (1/32) mit zwei Pfählen – die Wäsche hängt einzeln daran (Wind). */
 function buildLine() {
   const m = new VoxelModel();
@@ -455,6 +465,16 @@ export function createFogIsle({ seed, materials, colliders }) {
   const bayKahn = add(bay, buildKahn(seed + 6, true), BAY_SPOTS.kahn.x, BAY_SPOTS.kahn.z, { name: 'Marthes Kahn' });
   const trap = add(bay, buildTrap(seed + 7), BAY_SPOTS.trap.x, BAY_SPOTS.trap.z, { name: 'Reuse' });
   trap.position.y = -FINE32; // liegt halb im Wasser
+  // N8: Marthes Glocke am Steg (Pfahl auf den Planken, die Glocke am Ausleger)
+  const bellPost = add(bay, buildBellPost(seed + 8), BAY_SPOTS.bell.x, BAY_SPOTS.bell.z, { name: 'Glocke am Steg' });
+  const bayBell = new THREE.Mesh(bellGeo, materials.world);
+  bayBell.castShadow = true;
+  bayBell.receiveShadow = true;
+  const bayBellPivot = new THREE.Group();
+  bayBellPivot.position.set(BAY_SPOTS.bell.x + 12 * FINE32, 53 * FINE32, BAY_SPOTS.bell.z);
+  bayBellPivot.add(bayBell);
+  bay.add(bayBellPivot);
+  const bellBlock = colliders.addCircle(BAY_SPOTS.bell.x, BAY_SPOTS.bell.z, 0.12, 'glocke-steg');
   bay.visible = false;
   // Der Kahn, der am Morgen der Ankunft über den See kommt (derselbe wie am Steg)
   const glideKahn = add(bay, buildKahn(seed + 6, true), 0, 0, { name: 'Marthes Kahn (unterwegs)' });
@@ -479,6 +499,14 @@ export function createFogIsle({ seed, materials, colliders }) {
       { id: 'nebel-kahn', x: S.kahn.x - 0.875, z: S.kahn.z - 0.625, radius: 1.0, prompt: 'ansehen', fogLook: 'kahn', flavor: true, enabled: false }, // von der Insel aus (südlich ist Wasser)
     ],
     trapInteraction: { id: 'reuse', x: BAY_SPOTS.trapUse.x, z: BAY_SPOTS.trapUse.z, radius: 0.9, prompt: 'reuseLeeren', fogTrap: true, enabled: false },
+    bellInteraction: { id: 'dockglocke', x: BAY_SPOTS.bellUse.x, z: BAY_SPOTS.bellUse.z, radius: 0.8, prompt: 'dockGlocke', fogBell: true, enabled: false },
+    bellPost,
+    bayBellPivot,
+    /** N8: Pfahl und Glocke stehen auf dem Steg – ihre Höhe kommt vom Steg (world.heightAt). */
+    placeBayBell(y) {
+      bellPost.position.y = y;
+      bayBellPivot.position.y = y + 53 * FINE32;
+    },
     /** Insel und Kollision an (Mika ist unterwegs oder dort) oder aus. */
     setShown(on) {
       group.visible = on;
@@ -489,7 +517,11 @@ export function createFogIsle({ seed, materials, colliders }) {
       bay.visible = on;
       bayKahn.visible = on;
       trap.visible = on;
+      bellPost.visible = on;
+      bayBellPivot.visible = on;
+      bellBlock.enabled = on;
       island.trapInteraction.enabled = on;
+      island.bellInteraction.enabled = on;
     },
   };
   island.setShown(false);

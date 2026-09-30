@@ -219,6 +219,7 @@ async function runBrowserChecks() {
     if (want('angeln')) await runFishingChecks(browser, url);
     if (want('inseln')) await runIsleChecks(browser, url);
     if (want('nebelinsel')) await runFogIsleChecks(browser, url);
+    if (want('funkbuch')) await runPageChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -8557,7 +8558,7 @@ async function runFogIsleChecks(browser, url) {
   await page.screenshot({ path: join(SHOTS, 'marthe-bucht.png') });
   note('  Screenshot: screenshots/marthe-bucht.png');
   await z(() => window.zomfy.lookAt(null));
-  if (vorAnkunft.data.stage === 3 && !vorAnkunft.glide && gleitet.glide && gleitet.people.marthe.sit > 0.5 && da.data.stage === 4 && da.bayShown && Math.hypot(da.people.marthe.x - 13.125, da.people.marthe.z - 0.625) < 0.6 && imHof(spielen.people.pim) && imHof(spielen.people.lu) && moved && da.toasts.some((t) => t.includes('Bucht')) && JSON.stringify(da.funk || '').includes('Marthe')) note(`✓ Nebelinsel: am Morgen gleitet der Kahn aus dem Nebel an den Steg (die drei sitzen darin) – Marthe steht am Steg, Pim und Lu spielen im Hof, Edda funkt`);
+  if (vorAnkunft.data.stage === 3 && !vorAnkunft.glide && gleitet.glide && gleitet.people.marthe.sit > 0.5 && da.data.stage === 4 && da.bayShown && Math.hypot(da.people.marthe.x - 12.5, da.people.marthe.z - 0.875) < 0.6 && imHof(spielen.people.pim) && imHof(spielen.people.lu) && moved && da.toasts.some((t) => t.includes('Bucht')) && JSON.stringify(da.funk || '').includes('Marthe')) note(`✓ Nebelinsel: am Morgen gleitet der Kahn aus dem Nebel an den Steg (die drei sitzen darin) – Marthe steht am Steg, Pim und Lu spielen im Hof, Edda funkt`);
   else fail(`Nebelinsel: Ankunft ${JSON.stringify({ vor: vorAnkunft.data, gleitet: { glide: gleitet.glide, people: gleitet.people }, da: { data: da.data, bay: da.bayShown, people: da.people, toasts: da.toasts, funk: da.funk }, spielen: spielen.people, moved })}`);
 
   // 11) Die Reuse (echte Taste): ein, zwei Fische für den Korb – einmal am Tag; Lu erzählt
@@ -8640,6 +8641,206 @@ async function runFogIsleChecks(browser, url) {
   else fail(`Nebelinsel: Migration ${JSON.stringify(mig)}`);
   checkMessages(alt);
   await alt.context.close();
+}
+
+/**
+ * N8 (Abschnitt `funkbuch`): Eddas Funkbuch und die Glocke am Steg. Auf der großen Insel liegt
+ * unter einem flachen Stein eine Seite (der Stein bleibt), auf der kleinen eine Blechdose
+ * (echte Tasten, jede Seite als Karte); mit dem Zelt (N6) sind es drei. Im Herbstbuch steht
+ * die Seite »Funkbuch« (Esc, S, E, D blättert) mit den Seiten nach Datum. In der Bucht gibt
+ * Marthe beim ersten Gespräch die letzte Seite, danach meldet sich Edda über Funk. E an
+ * Marthes Glocke am Steg ruft Pim und Lu herbei; legt Balduin an, läutet sie von selbst.
+ * Speichern (v31) behält die Seiten (Bilder: funkbuch, glocke-steg).
+ */
+async function runPageChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Funkbuch (N8)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-n8')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-n8', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  const quiet = () =>
+    z(() => {
+      const g = window.zomfy.game;
+      g.funk.clear();
+      g.hud.toasts.length = 0;
+      g.hud.speech = null;
+    });
+  const waitComplete = async () => {
+    for (let w = 0; w < 40 && !(await z(() => window.zomfy.game.dialog.complete)); w++) await step(200);
+  };
+  const readDialog = async () => {
+    for (let k = 0; k < 30; k++) {
+      const d = await z(() => window.zomfy.dialogInfo());
+      if (!d.open) break;
+      await waitComplete();
+      await tap('KeyE');
+    }
+    await step(300);
+  };
+  const untilPlay = async (limit = 120) => {
+    for (let k = 0; k < limit && (await z(() => window.zomfy.game.mode)) !== 'play'; k++) await step(250);
+    await step(200);
+  };
+  const standAt = async (id, list, facing = Math.PI) => {
+    await z(
+      ([q, l, f]) => {
+        const src = l === 'isles' ? window.zomfy.isles().interactions : window.zomfy.fogIsle().interactions;
+        const it = src.find((r) => r.id === q);
+        window.zomfy.teleport(it.x, it.z, f);
+      },
+      [id, list, facing],
+    );
+    await step(400);
+    return z(() => window.zomfy.game.currentInteraction?.id || null);
+  };
+  /** Rudern (wie E am Boot), an Land gehen, eine Fundstelle mit echter Taste öffnen, die Karte lesen. */
+  const readFind = async (isle, find) => {
+    await z((i) => window.zomfy.game.isles.row(i), isle);
+    await untilPlay();
+    const it = await standAt(`insel-${find}`, 'isles');
+    await quiet();
+    await tap('KeyE');
+    await step(300);
+    const card = await z(() => ({ mode: window.zomfy.game.mode, card: window.zomfy.isles().card, props: window.zomfy.isles().props }));
+    for (let k = 0; k < 8 && (await z(() => window.zomfy.game.mode)) === 'lieferung'; k++) await tap('KeyE');
+    await step(300);
+    return { it, ...card };
+  };
+  await z(() => {
+    window.__zomfyHold = true;
+    const Z = window.zomfy;
+    Z.quietChoices();
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'werkbankGebaut', 'blitzHinweis']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setDay(8);
+    Z.setTime(10, 0);
+    Z.game.state.isles.boat = true;
+  });
+  await step(300);
+
+  // 1) Drei Seiten auf den Inseln (echte Tasten): unter dem Stein, in der Dose, im Zelt – je eine Karte
+  const stein = await readFind('mitte', 'stein');
+  const dose = await readFind('sued', 'dose');
+  const zelt = await readFind('nord', 'zelt');
+  await z(() => window.zomfy.game.isles.row(null));
+  await untilPlay();
+  const drei = await z(() => ({ found: window.zomfy.isles().data.found, props: window.zomfy.isles().props, pages: window.zomfy.game.menu.bookPages() }));
+  if (stein.it === 'insel-stein' && stein.mode === 'lieferung' && String(stein.card?.text).includes('2. Oktober') && dose.it === 'insel-dose' && String(dose.card?.text).includes('8. Oktober') && zelt.it === 'insel-zelt' && String(zelt.card?.text).includes('14. Oktober') && ['stein', 'dose', 'zelt'].every((f) => drei.found.includes(f)) && drei.props['Insel: Stein'] === true && drei.props['Insel: stein'] === false && drei.props['Insel: dose'] === false && drei.pages.includes('funkbuch')) note('✓ Funkbuch (N8): drei Seiten auf den Inseln – unter dem flachen Stein (2. Oktober, der Stein bleibt liegen), in der Blechdose (8. Oktober), im Zelt (14. Oktober)');
+  else fail(`Funkbuch: Seiten auf den Inseln ${JSON.stringify({ stein, dose, zelt, drei })}`);
+
+  // 2) Herbstbuch mit echten Tasten: Esc, S bis »Herbstbuch«, E, dann D bis »Funkbuch«
+  await quiet();
+  for (let k = 0; k < 3 && (await z(() => window.zomfy.game.mode)) !== 'menu'; k++) await tap('Escape');
+  const zeilen = await z(() => window.zomfy.game.menu.buttons().map((b) => b.label));
+  for (let k = 0; k < zeilen.indexOf('Herbstbuch'); k++) await tap('KeyS');
+  await tap('KeyE');
+  await step(200);
+  for (let k = 0; k < 8 && (await z(() => window.zomfy.game.menu.page)) !== 'funkbuch'; k++) await tap('KeyD');
+  await step(300);
+  const buch = await z(() => {
+    const g = window.zomfy.game;
+    const L = g.menu.layout(g.ui);
+    return { page: g.menu.page, count: L.book?.count || '', rows: L.buttons.filter((b) => b.row).map((b) => `${b.row.label}|${b.row.right}`), detail: (L.book?.detail || []).map((l) => l.text) };
+  });
+  await page.screenshot({ path: join(SHOTS, 'funkbuch.png') });
+  note('  Screenshot: screenshots/funkbuch.png');
+  for (let k = 0; k < 4 && (await z(() => window.zomfy.game.mode)) !== 'play'; k++) await tap('Escape');
+  await step(200);
+  if (buch.page === 'funkbuch' && buch.count.includes('3 von 4') && buch.rows.join() === 'Seite 1|2. Oktober,Seite 2|8. Oktober,Seite 3|14. Oktober' && buch.detail.join(' ').includes('Moder')) note(`✓ Funkbuch: im Herbstbuch die Seite »Funkbuch« (${buch.count}) – nach Datum, mit dem Text und wo sie lag`);
+  else fail(`Funkbuch: Herbstbuch ${JSON.stringify(buch)}`);
+
+  // 3) In der Bucht gibt Marthe die letzte Seite (echte Taste), danach meldet sich Edda über Funk
+  await z(() => window.zomfy.setFog(4));
+  await step(600);
+  const martheIt = await standAt('npc-marthe', 'fog', Math.PI / 2);
+  await quiet();
+  await tap('KeyE');
+  await step(300);
+  const seiteDialog = await z(() => window.zomfy.dialogInfo());
+  await readDialog();
+  const karte = await z(() => ({ mode: window.zomfy.game.mode, card: window.zomfy.isles().card }));
+  for (let k = 0; k < 8 && (await z(() => window.zomfy.game.mode)) === 'lieferung'; k++) await tap('KeyE');
+  await step(400);
+  const nachSeite = await z(() => ({ fog: window.zomfy.fogIsle().data, funk: window.zomfy.funk() }));
+  const funkKeys = [nachSeite.funk?.current?.key, ...(nachSeite.funk?.queue || [])];
+  await readDialog();
+  const zweites = await (async () => {
+    await quiet();
+    await tap('KeyE');
+    await step(300);
+    const d = await z(() => window.zomfy.dialogInfo());
+    await readDialog();
+    return d;
+  })();
+  if (martheIt === 'npc-marthe' && seiteDialog.speaker === 'marthe' && karte.mode === 'lieferung' && String(karte.card?.text).includes('20. Oktober') && nachSeite.fog.page && funkKeys.includes('funkbuch') && zweites.speaker === 'marthe' && !String(zweites.text).includes('Funkbuch')) note('✓ Funkbuch: Marthe gibt in der Bucht die letzte Seite (20. Oktober – »Mach das Feuer an«); mit allen vier meldet sich Edda über Funk, danach erzählt Marthe wie sonst');
+  else fail(`Funkbuch: Marthes Seite ${JSON.stringify({ martheIt, seiteDialog, karte, nachSeite, zweites })}`);
+
+  // 4) Marthes Glocke am Steg (echte Taste): Pim und Lu kommen angerannt
+  await z(() => window.zomfy.setTime(10, 30));
+  await step(300);
+  const vorGlocke = await z(() => window.zomfy.fogIsle());
+  const glockeIt = await standAt('dockglocke', 'fog', Math.PI);
+  await quiet();
+  await tap('KeyE');
+  await step(300);
+  const gelaeutet = await z(() => ({ ...window.zomfy.fogIsle(), gedanke: window.zomfyView().gedanke, swing: window.zomfy.game.fogIsle.baySwing, rings: window.zomfy.game.fogIsle.bayRings }));
+  await step(4000);
+  const kinder = await z(() => window.zomfy.fogIsle());
+  const nah = (p) => p && Math.hypot(p.x - kinder.player.x, p.z - kinder.player.z) < 2.2;
+  // Fürs Bild tritt Mika auf den Steg (sonst hängt die Glocke vor der Figur in der Durchsicht)
+  await z(() => window.zomfy.teleport(14.0, -0.95, -1.2));
+  await z(() => window.zomfy.lookAt(13.5, -0.4));
+  await step(600);
+  await quiet();
+  await page.screenshot({ path: join(SHOTS, 'glocke-steg.png') });
+  note('  Screenshot: screenshots/glocke-steg.png');
+  await z(() => window.zomfy.lookAt(null));
+  if (glockeIt === 'dockglocke' && gelaeutet.rings >= 1 && gelaeutet.swing > 0.5 && String(gelaeutet.gedanke || '').length > 0 && nah(kinder.people.pim) && nah(kinder.people.lu) && !(nah(vorGlocke.people.pim) && nah(vorGlocke.people.lu))) note(`✓ Funkbuch: E an Marthes Glocke am Steg – »${gelaeutet.gedanke}«, Pim und Lu stehen gleich darauf bei Mika`);
+  else fail(`Funkbuch: Glocke am Steg ${JSON.stringify({ glockeIt, rings: gelaeutet.rings, swing: gelaeutet.swing, gedanke: gelaeutet.gedanke, kinder: kinder.people, player: kinder.player, vor: vorGlocke.people })}`);
+
+  // 5) Legt Balduin an, läutet Marthe die Glocke
+  const vorBalduin = await z(() => window.zomfy.game.fogIsle.bayRings);
+  await z(() => {
+    window.zomfy.setDay(9);
+    window.zomfy.setTime(6, 30);
+  });
+  await step(200); // erst ein Schritt: trader().phase ist der zuletzt gerechnete Stand (noch Tag 8)
+  const frueh = await z(() => window.zomfy.trader().phase);
+  for (let k = 0; k < 80 && (await z(() => window.zomfy.trader().phase)) !== 'steht'; k++) await step(500);
+  await step(300);
+  const balduin = await z(() => ({ phase: window.zomfy.trader().phase, rings: window.zomfy.game.fogIsle.bayRings }));
+  if (frueh === 'weg' && balduin.phase === 'steht' && balduin.rings === vorBalduin + 1) note('✓ Funkbuch: Balduin legt an – Marthe läutet die Glocke am Steg');
+  else fail(`Funkbuch: Balduin ${JSON.stringify({ frueh, vorBalduin, balduin })}`);
+
+  // 6) Speichern: alle vier Seiten bleiben (auch die von Marthe)
+  await z(() => window.zomfy.game.quietSave());
+  await page.reload({ timeout: 180000 });
+  await page.waitForFunction(() => window.zomfy && window.__zomfyStep, null, { timeout: 120000 });
+  await z(() => {
+    window.__zomfyHold = true;
+  });
+  await step(400);
+  const geladen = await z(() => {
+    const g = window.zomfy.game;
+    g.menu.page = 'funkbuch';
+    g.menu.bookCache = null;
+    return { v: window.zomfy.state().version, page: window.zomfy.fogIsle().data.page, count: g.menu.bookData().count, glocke: window.zomfy.fogIsle().interactions.find((q) => q.id === 'dockglocke')?.enabled };
+  });
+  if (geladen.v === 31 && geladen.page && geladen.count.includes('4 von 4') && geladen.glocke) note('✓ Funkbuch: Speichern v31 – alle vier Seiten bleiben, die Glocke hängt am Steg');
+  else fail(`Funkbuch: Speichern ${JSON.stringify(geladen)}`);
+  checkMessages(session);
+  await session.context.close();
 }
 
 /**

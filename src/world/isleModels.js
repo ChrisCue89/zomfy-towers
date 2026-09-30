@@ -6,7 +6,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
 import { hash3 } from '../core/rng.js';
 import { buildPumpkin } from './decoModels.js';
-import { sculpt, blob } from './voxelKit.js';
+import { sculpt, blob, capsule, stoneBlob } from './voxelKit.js';
 
 /** Ein verlassenes Zelt: verblichene Plane mit Flicken, schief, eine Leine zum Hering. */
 export function buildIsleTent(seed) {
@@ -139,5 +139,41 @@ export function buildCat32() {
     const z = Math.round(Math.sin(a) * 6) - 1;
     m.set(x, 0, z, k % 3 === 0 ? P.f3 : P.f4).set(x, 1, z, k === 10 ? P.s9 : P.f4);
   }
+  return m;
+}
+
+/** N8: Ein flacher Stein mit Moos – darunter lag eine Seite aus Eddas Funkbuch (der Stein bleibt). */
+export function buildFlatStone(seed) {
+  const m = new VoxelModel();
+  stoneBlob(m, 0, 0, 10, 4, 8, seed, [P.s3, P.s4, P.s5, P.s6, P.s7], { grain: 2 });
+  m.forEach((x, y, z) => {
+    if (!m.has(x, y + 1, z) && y >= 3 && hash3(x >> 1, y, z >> 1, seed + 1) < 0.5) m.set(x, y, z, hash3(x, 1, z, seed) < 0.5 ? P.g4 : P.g5);
+  });
+  return m;
+}
+
+/** N8: Die Ecke eines gefalteten Blatts, die unter dem Stein hervorschaut (verschwindet, wenn es gefunden ist). */
+export function buildPageUnderStone() {
+  const m = new VoxelModel();
+  for (let x = -4; x <= 5; x++) {
+    for (let z = 6; z <= 11; z++) {
+      if (z - 6 > 5 - Math.abs(x - 1) * 0.6) continue; // Ecke, schräg abgeknickt
+      m.set(x, 0, z, (x + z) % 4 === 0 ? P.s6 : z === 8 && x > -3 && x < 4 ? P.s5 : P.s9); // Papier mit Zeilen
+    }
+  }
+  m.set(0, 1, 8, P.s8).set(1, 1, 9, P.s8); // gewellt
+  return m;
+}
+
+/** N8: Eine alte Blechdose, blau mit verblichenem Etikett, der Deckel fest aufgedrückt. */
+export function buildTinCan(seed) {
+  const m = new VoxelModel();
+  sculpt(m, capsule(0, 1, 0, 0, 7, 0, 3.4), -4, 0, -4, 4, 8, 4, (x, y, z, n) => {
+    if (y >= 8) return n.x < 0 ? P.s7 : P.s6; // Deckel
+    if (y === 7) return P.s5;
+    if (y >= 3 && y <= 5) return y === 4 && (x + z) % 3 === 0 ? P.s9 : P.r3; // Etikett
+    if (hash3(x, y, z, seed) < 0.2) return P.r2; // Rost
+    return n.x < -0.3 ? P.b4 : P.b3;
+  });
   return m;
 }

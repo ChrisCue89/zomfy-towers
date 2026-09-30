@@ -5,6 +5,42 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N8 – Eddas Funkbuch und die Glocke am Steg ✓
+
+Weiter mit dem Wunsch vom 29.09. (»arbeite an der Story, an den Texten, an kleinen
+Sidequests … sei kreativ«, OFFENE-FRAGEN 195): Die Seiten aus Eddas Funkbuch erzählen
+jetzt ihre Geschichte zu Ende, und Marthes Glocke bekommt einen Platz in der Bucht.
+
+- **Vier Seiten aus Eddas Funkbuch** (je eine Karte wie im Zelt, N6):
+  - 2. Oktober – unter einem flachen, bemoosten Stein auf der großen Insel (der Stein
+    bleibt liegen): der Moder erreicht Brandts Hof; »Bleib auf den alten
+    Holzfällerwegen, die sind fest.«
+  - 8. Oktober – in einer alten Blechdose auf der kleinen Insel: Radio Stillwald und
+    seine drei Hörer (Balduin, Marthe und »die Försterin«).
+  - 14. Oktober – im Zelt auf der Nordinsel (N6): Marthe und die Kinder auf der
+    Nebelinsel.
+  - 20. Oktober – Marthe hat sie aufbewahrt und gibt sie Mika beim ersten Gespräch in
+    der Bucht (»Gib sie jemandem, der das Feuer anmacht.«): Edda verlässt die
+    Holzlände und lässt das Funkgerät zurück – »Mach das Feuer an.«
+  - Mit allen vier meldet sich Edda über Funk: »… Dann weißt du jetzt, warum ich
+    gegangen bin.«
+- **Herbstbuch, Seite »Funkbuch«** (mit der ersten Seite): die gefundenen Seiten nach
+  Datum, der Text und wo sie lag – zum Nachlesen.
+- **Marthes Glocke am Steg**: Sobald die drei in der Bucht wohnen, hängt die
+  Schiffsglocke an einem Pfahl vorn am Steg. E läutet sie – Pim und Lu kommen
+  angerannt, Knopf bellt. Legt Balduin an, läutet Marthe.
+- Edda am Funkgerät hat neue Sätze, sobald Marthe in der Bucht wohnt.
+- Kein neuer Spielstand: Marthes Seite liegt in `isles.fog.page` (v31, noch nicht
+  veröffentlicht); die beiden Inselfunde sind neue Einträge in `isles.found`.
+- Ein Skript hat die neuen Fundstellen über 300 Kartenstartwerte geprüft (an Land,
+  erreichbar, fern der Signalfeuer).
+- Marthe steht tagsüber etwas weiter westlich am Strand (vorher verdeckte sie von vorn
+  den Pfahl der Glocke – Lesbarkeit vor Stimmung).
+- Prüfabschnitt `funkbuch` (Bilder: funkbuch, glocke-steg): 7 von 7 grün, `nebelinsel`
+  weiter 17 von 17. Beim Prüfen gelernt: `trader().phase` ist der zuletzt gerechnete
+  Stand – nach `setDay`/`setTime` erst einen Schritt rechnen, sonst liest man noch den
+  alten Tag.
+
 ## N7 – Die Insel im Nebel ✓
 
 Fortsetzung des Wunschs vom 29.09. (»… mit einem Boot zu anderen Inseln Abenteuer

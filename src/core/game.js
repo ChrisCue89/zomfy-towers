@@ -966,6 +966,7 @@ export class Game {
     else if (it.fogBoat) this.fogIsle.leave(); // N7: von der Nebelinsel zurück
     else if (it.fogLook) this.fogIsle.look(it.fogLook);
     else if (it.fogTrap) this.fogIsle.emptyTrap(); // N7: Marthes Reuse am Steg
+    else if (it.fogBell) this.fogIsle.ringBay(true); // N8: Marthes Glocke am Steg – die Kinder kommen
     else if (it.isleFind) this.isles.find(it.isleFind);
     else if (it.homeCat) {
       this.hud.say(T.inseln.mieze[this.state.time.day % T.inseln.mieze.length], 3.5);

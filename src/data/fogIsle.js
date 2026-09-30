@@ -106,10 +106,12 @@ export const SUGAR = { teile: 3 }; // Balduin: 3 Zombieteile → Zucker
  */
 export const BAY_SPOTS = {
   kahn: { x: 14.875, z: 0.625 },
-  marthe: { x: 13.125, z: 0.625, facing: Math.PI / 2 }, // am Strand, den Blick auf ihren Kahn
+  marthe: { x: 12.5, z: 0.875, facing: Math.PI / 2 }, // am Strand, den Blick auf ihren Kahn
   trap: { x: 14.0, z: -2.375 }, // die Reuse im Wasser nördlich am Steg
   trapUse: { x: 14.0, z: -1.5 }, // hier leert Mika sie (Nordkante des Stegs)
   dockEnd: { x: 12.25, z: -1.0 }, // das Ufer am Anfang des Stegs (von hier laufen die Kinder in den Hof)
+  bell: { x: 13.25, z: -0.375 }, // N8: Marthes Glocke am Pfahl vorn am Steg (Südkante)
+  bellUse: { x: 13.25, z: -0.875 }, // hier läutet Mika sie
   play: [
     [5.5, 2.5],
     [8.0, 3.5],
@@ -129,7 +131,7 @@ export const FOG_STAGES = 4;
 
 /** Leerer Eintrag (state.isles.fog). */
 export function newFog() {
-  return { stage: 0, from: 0, lost: 0, arrive: 0, hilde: false, trap: 0, trips: 0 };
+  return { stage: 0, from: 0, lost: 0, arrive: 0, hilde: false, trap: 0, trips: 0, page: false };
 }
 
 /** Prüfen und reparieren (sanitizeIsles); `found`/`bottles` geben die Spur alter Stände. */
@@ -144,6 +146,7 @@ export function sanitizeFog(raw, { found = [], bottles = 0 } = {}) {
     out.hilde = raw.hilde === true;
     out.trap = int(raw.trap, 0, 99999);
     out.trips = int(raw.trips, 0, 99999);
+    out.page = raw.page === true; // N8: Marthes Seite aus Eddas Funkbuch gelesen
   }
   // Wer die Spur schon kennt (Zelt oder dritte Flaschenpost), hört die Glocke
   if (out.stage === 0 && (found.includes('zelt') || bottles >= 3)) out.stage = 1;

@@ -47,8 +47,22 @@ export const FINDS = {
   kiste: { isle: 'mitte', x: 28.5, z: 5.25, chest: true, clear: 0.8 },
   kuerbisse: { isle: 'sued', x: 21.25, z: 12.25, gives: { fasern: 3 }, home: true, clear: 0.8 },
   katze: { isle: 'sued', x: 19.875, z: 13.0, cat: true, clear: 0.6 },
+  // N8: zwei weitere Seiten aus Eddas Funkbuch – unter einem flachen Stein und in einer Blechdose
+  stein: { isle: 'mitte', x: 28.125, z: 4.25, note: 'stein', clear: 0.6 },
+  dose: { isle: 'sued', x: 21.5, z: 13.125, note: 'dose', clear: 0.5 },
 };
-export const FIND_ORDER = ['zelt', 'netz', 'bank', 'kiste', 'kuerbisse', 'katze'];
+export const FIND_ORDER = ['zelt', 'netz', 'bank', 'kiste', 'kuerbisse', 'katze', 'stein', 'dose'];
+
+/**
+ * N8: Eddas Funkbuch – vier Seiten, nach Datum: unter dem Stein (große Insel), in der Dose
+ * (kleine Insel), im Zelt (Nordinsel, N6) und die letzte, die Marthe aufbewahrt hat (N7).
+ */
+export const PAGE_ORDER = ['stein', 'dose', 'zelt', 'marthe'];
+
+/** Welche Seiten schon gelesen sind (Funde auf den Inseln, Marthes Seite in state.isles.fog.page). */
+export function pagesRead(state) {
+  return PAGE_ORDER.filter((id) => (id === 'marthe' ? Boolean(state.isles?.fog?.page) : Boolean(state.isles?.found?.includes(id))));
+}
 
 /** Das Boot hat Mika hergebracht (N5), aber es leckt: so viel kostet das Abdichten. */
 export const REPAIR = { holz: 8, fasern: 4 };

@@ -17,6 +17,7 @@ import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
 import { hexToCss } from '../render/palette.js';
 import { DEEDS, KIND_ORDER } from '../data/book.js';
+import { PAGE_ORDER, pagesRead } from '../data/isles.js';
 
 /** Notizbuch (M18): Breite der Seite, Höhe einer Zeile der Liste, Breite der Beschreibung. */
 const NOTES_W = 300;
@@ -28,7 +29,7 @@ const NOTE_TEXT_W = NOTES_W - 24;
  * Zeilen je Spalte (mehr gehen in eine zweite Spalte), Mindesthöhe der
  * Beschreibung – so bleibt das Buch beim Blättern gleich groß.
  */
-const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'post', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust, M32: »Post« mit dem ersten Brief
+const BOOK_PAGES = ['taten', 'kunde', 'album', 'menschen', 'post', 'funkbuch', 'erinnerung']; // M31: »Erinnerung« erst mit dem ersten Verlust, M32: »Post« mit dem ersten Brief, N8: »Funkbuch« mit der ersten Seite
 const BOOK_W = 420; // M32: Platz für sechs Reiter
 const BOOK_ROW = 13;
 const BOOK_ROWS = 8;
@@ -233,7 +234,7 @@ export class Menu {
   /** Die Seiten des Herbstbuchs – »Erinnerung« (M31) erst, wenn jemand gefallen ist, »Post« (M32) mit dem ersten Brief. */
   bookPages() {
     const st = this.game.state;
-    return BOOK_PAGES.filter((p) => (p !== 'erinnerung' || st.fallen?.length) && (p !== 'post' || st.post?.read?.length));
+    return BOOK_PAGES.filter((p) => (p !== 'erinnerung' || st.fallen?.length) && (p !== 'post' || st.post?.read?.length) && (p !== 'funkbuch' || pagesRead(st).length));
   }
 
   /** Zeilen, Beschreibungen und Zähler der aufgeschlagenen Seite (einmal je Seite berechnet). */
@@ -323,6 +324,19 @@ export class Menu {
       });
       count = N.buchTitel;
       empty = lines(N.buchLeer, COLORS.textDim);
+    } else if (this.page === 'funkbuch') {
+      // N8: Eddas Funkbuch – die gefundenen Seiten nach Datum, wo sie lagen
+      const F = T.funkbuch;
+      const read = pagesRead(this.game.state);
+      rows = PAGE_ORDER.filter((id) => read.includes(id)).map((id) => ({
+        id: `funkbuch-${id}`,
+        label: F.seite(PAGE_ORDER.indexOf(id) + 1),
+        right: F.tage[id],
+        color: COLORS.text,
+        rightColor: COLORS.textDim,
+        detail: [...lines(id === 'marthe' ? T.nebel.seite : T.inseln.notizen[id], COLORS.textWarm), ...lines(F.orte[id], COLORS.textDim, true)],
+      }));
+      count = F.titel(read.length, PAGE_ORDER.length);
     } else if (this.page === 'erinnerung') {
       // M31: Die mit uns waren – Name, Tage in der Bucht, die Zeile, die bleibt, das Erinnerungsstück
       const E = T.erinnerung;

@@ -590,6 +590,13 @@ export const DIALOGE = {
       state.time.day
     ),
   ],
+  // N8: Marthe gibt Mika die letzte Seite aus Eddas Funkbuch (beim ersten Gespräch in der Bucht)
+  martheSeite: [
+    { s: 'marthe', t: 'Warte, bevor ich es vergesse.' },
+    { s: 'marthe', t: 'Das hat Edda mir gegeben, an dem Tag, als ihr Funk verstummte. Eine Seite aus ihrem Funkbuch. Sie hat gesagt: »Gib sie jemandem, der das Feuer anmacht.«' },
+    { s: 'mika', t: 'Jemandem, der das Feuer anmacht?' },
+    { s: 'marthe', t: 'Na, dir. Lies.' },
+  ],
   pimDa: (state) => [
     pick(
       [
@@ -872,6 +879,14 @@ export const DIALOGE = {
         { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
         { s: 'edda', t: 'Krrz … schlechter Empfang heute. Das liegt am Wetter. Oder am Moder. Oder an mir.' },
         { s: 'edda', t: 'Radio Stillwald? … So. Dann hat also doch jemand zugehört.' },
+        // N8: Wenn Marthe mit den Kindern in der Bucht wohnt
+        ...(state.isles?.fog?.stage === 4
+          ? [
+              { s: 'edda', t: 'Marthe hat mir heute Morgen die Glocke vorgeläutet. Über Funk. Zweimal. Ich hab so getan, als wär das nichts.' },
+              { s: 'edda', t: 'Pass auf Pim auf. Wenn der einen Hammer findet, baut er dir ein Boot. Aus deinem Zaun.' },
+              { s: 'edda', t: 'Lu hat mir erzählt, dass bei euch Riesen wohnen. Ich hab gesagt: Die sind freundlich und kochen gut.' },
+            ]
+          : []),
       ],
       state.time.day
     ),

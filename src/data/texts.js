@@ -629,6 +629,8 @@ export const T = {
     rudern: 'Hinausrudern', // N6: das Ruderboot am Steg
     zurueckRudern: 'Zurück zur Bucht',
     reuseLeeren: 'Reuse leeren', // N7: Marthes Reuse am Steg
+    anheben: 'Stein anheben', // N8: eine Seite aus Eddas Funkbuch
+    dockGlocke: 'Glocke läuten', // N8: Marthes Glocke am Steg
     mitnehmen: 'Mitnehmen',
     oeffnen: 'Öffnen',
     ansehen: 'Ansehen',
@@ -1226,7 +1228,7 @@ export const T = {
   buch: {
     menue: 'Herbstbuch',
     titel: 'Herbstbuch',
-    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', post: 'Post', erinnerung: 'Erinnerung' },
+    seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', post: 'Post', funkbuch: 'Funkbuch', erinnerung: 'Erinnerung' },
     fuss: 'A/D blättern · W/S wählen · Esc zurück',
     // Sterne im Morgenbericht
     sterne: { gehalten: 'Gehalten', makellos: 'Makellos', mutig: 'Mutig' },
@@ -1505,6 +1507,8 @@ export const T = {
     nebelglocke: 'Hörst du das? Eine Glocke, draußen im Nebel … das ist Marthes Schiffsglocke! Sie leben! Nimm das Boot und rudere dem Klang nach – nur morgens, solange sie läutet.',
     nebelglockeLeck: 'Hörst du das? Die Glocke da draußen – das ist Marthe! Sie lebt! Dein Boot leckt noch, oder? Dichte es ab, dann kannst du dem Klang nachrudern.',
     martheDa: 'Marthe? … Marthe! Ihr seid in der Bucht? Oh, Kinder … Ich hab jeden Morgen auf eure Glocke gehört.',
+    // N8: alle vier Seiten aus dem Funkbuch gelesen
+    funkbuch: 'Du hast alle vier Seiten? … Dann weißt du jetzt, warum ich gegangen bin. Ich hatte Angst. Und dann hat jemand das Feuer angemacht. Du. Danke.',
     laterne: 'Es wird dunkel. Nimm die Laterne – Taste F. Licht macht den Moder müde, und die Schlurfer werden langsam.',
     spaet: 'Geschafft für heute. Geh schlafen, Mika – das Bett steht in der Stube. Ich halte das Funkgerät warm.',
     ruhe: 'Alles erledigt? Setz dich in den Ohrensessel am Feuer und ruh dich bis zum Abend aus.',
@@ -1814,6 +1818,8 @@ export const T = {
       kiste: 'Eine Kiste, halb im Moos. Das Schloss gibt nach …',
       kuerbisse: 'Wilde Kürbisse! Zwei nehme ich mit – für die Tür. (+3 Fasern)',
       katze: 'Eine Katze! Sie reibt sich an meinem Bein … und springt ins Boot. Na gut. Du kommst mit.',
+      stein: 'Unter dem flachen Stein klemmt ein gefaltetes Blatt. Wieder Eddas Handschrift!',
+      dose: 'Eine alte Blechdose, fest zugedrückt. Darin: eine Seite, sorgfältig gefaltet.',
     },
     bank: [
       'Von hier sieht die Bucht aus wie ein Zuhause.',
@@ -1826,6 +1832,9 @@ export const T = {
     notizVon: 'aus Eddas altem Funkbuch',
     notizen: {
       zelt: '„14. Oktober. Marthe ist mit den Kindern vom Hof auf die Nebelinsel gezogen. Ihr Kahn leckt, aber sie haben die alte Schiffsglocke. Wenn morgens Nebel ist, läuten sie – dann weiß ich, dass es ihnen gut geht. – E.“',
+      // N8: zwei weitere Seiten
+      stein: '„2. Oktober. Heute kam der Moder bis an Brandts Hof. Die Schafe sind fort. Brandt sagt, das Unterholz ist weich wie Moos und zäh wie Leim. Ich hab ihm gesagt: Bleib auf den alten Holzfällerwegen, die sind fest. Er hat gelacht. Morgen frag ich wieder. – E.“',
+      dose: '„8. Oktober. Radio Stillwald sendet weiter. Drei Hörer: Balduin, Marthe und eine, die sich nur »die Försterin« nennt. Ich lese jeden Abend das Wetter vor und wie hoch der See steht. Man braucht etwas, das jeden Tag gleich ist. – E.“',
     },
   },
   // Das Erinnerungsbrett am Steg (M31, OFFENE-FRAGEN 170)
@@ -2055,6 +2064,18 @@ export const T = {
       paula: ['Morgen, {name}. Halt mal still.', 'Guten Morgen, {name}. Dein Kragen sitzt schief.', 'Morgen, {name}. Alles geflickt.'],
     },
   },
+  // N8: Eddas Funkbuch im Herbstbuch – die Seiten nach Datum, wo sie lagen
+  funkbuch: {
+    titel: (n, von) => `Eddas Funkbuch · ${n} von ${von} Seiten`,
+    seite: (k) => `Seite ${k}`,
+    tage: { stein: '2. Oktober', dose: '8. Oktober', zelt: '14. Oktober', marthe: '20. Oktober' },
+    orte: {
+      stein: 'Unter einem flachen Stein auf der großen Insel.',
+      dose: 'In einer Blechdose auf der kleinen Insel.',
+      zelt: 'Im Zelt auf der Nordinsel.',
+      marthe: 'Marthe hat sie aufbewahrt – für jemanden, der das Feuer anmacht.',
+    },
+  },
   // N7: Die Insel im Nebel (OFFENE-FRAGEN 194)
   nebel: {
     frage: 'Draußen im Nebel läutet eine Glocke. Wohin?',
@@ -2077,6 +2098,10 @@ export const T = {
     zuckerInfo: 'Für Marthes Kahn – und für die Kinder.',
     reuse: (n) => (n === 1 ? 'Ein Fisch in der Reuse – ab in den Korb.' : `${n} Fische in der Reuse – ab in den Korb.`),
     reuseLeer: 'Die Reuse ist leer. Morgen früh wieder.',
+    // N8: Marthes letzte Seite aus Eddas Funkbuch, die Glocke am Steg
+    seite: '„20. Oktober. Ich gehe fort von der Holzlände – allein halte ich das Tor nicht. Das Funkgerät lasse ich da, gut geölt, die Batterien voll. Wer es findet: Mach das Feuer an. Die Horde mag kein Licht, und die Leute sehen es von Weitem. – E.“',
+    glockeKinder: ['Pim und Lu kommen angerannt!', 'Ding-ding! Pim und Lu stehen sofort da.', 'Die Kinder rennen herbei – Knopf hinterher.'],
+    glockeAllein: 'Ding-ding. Über dem Wasser klingt es noch lange nach.',
     ansehen: {
       glocke: 'Eine alte Schiffsglocke, blank gerieben. Eingraviert: »Holzlände«. Die ist von uns drüben.',
       baum: 'Die unteren Äpfel sind alle gepflückt. Da war jemand fleißig. Und klein.',

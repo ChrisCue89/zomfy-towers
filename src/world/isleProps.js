@@ -7,13 +7,13 @@ import * as THREE from 'three';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { FINE32 } from './voxelKit.js';
 import { FINDS, FIND_ORDER, CAT, HOME_PUMPKINS } from '../data/isles.js';
-import { buildIsleTent, buildNetPole, buildNet, buildStoneBench, buildIsleChest, buildWildPumpkins, buildCat32, buildHomePumpkins } from './isleModels.js';
+import { buildIsleTent, buildNetPole, buildNet, buildStoneBench, buildIsleChest, buildWildPumpkins, buildCat32, buildHomePumpkins, buildFlatStone, buildPageUnderStone, buildTinCan } from './isleModels.js';
 
-const MODELS = { netz: buildNet, zelt: buildIsleTent, bank: buildStoneBench, kiste: buildIsleChest, kuerbisse: buildWildPumpkins, katze: () => buildCat32() };
-const PROMPTS = { netz: 'mitnehmen', zelt: 'durchsuchen', bank: 'hinsetzen', kiste: 'oeffnen', kuerbisse: 'ernten', katze: 'streicheln' };
+const MODELS = { netz: buildNet, zelt: buildIsleTent, bank: buildStoneBench, kiste: buildIsleChest, kuerbisse: buildWildPumpkins, katze: () => buildCat32(), stein: () => buildPageUnderStone(), dose: buildTinCan };
+const PROMPTS = { netz: 'mitnehmen', zelt: 'durchsuchen', bank: 'hinsetzen', kiste: 'oeffnen', kuerbisse: 'ernten', katze: 'streicheln', stein: 'anheben', dose: 'oeffnen' };
 const STAYS = { zelt: true, bank: true }; // bleiben stehen, wenn gefunden (nur die Einblendung geht)
-const BLOCK = { zelt: 0.62, bank: 0.55, kiste: 0.32, netz: 0.16, kuerbisse: 0.3 }; // Kollision (die Katze hat keine)
-const POLE = { netz: true }; // die Stange bleibt stehen, auch wenn das Netz mitgenommen ist
+const BLOCK = { zelt: 0.62, bank: 0.55, kiste: 0.32, netz: 0.16, kuerbisse: 0.3, stein: 0.3 }; // Kollision (die Katze und die Dose haben keine)
+const POLE = { netz: true, stein: true }; // die Stange und der Stein bleiben stehen, auch wenn Netz und Seite mitgenommen sind
 
 export function createIsleProps({ seed, materials, colliders }) {
   const group = new THREE.Group();
@@ -35,6 +35,7 @@ export function createIsleProps({ seed, materials, colliders }) {
     if (BLOCK[id]) blockers.set(id, colliders.addCircle(f.x, f.z, BLOCK[id], 'insel'));
   });
   add(buildNetPole(), FINDS.netz.x, FINDS.netz.z, 'Insel: Netzstange'); // bleibt stehen
+  add(buildFlatStone(seed + 330), FINDS.stein.x, FINDS.stein.z, 'Insel: Stein'); // N8: bleibt liegen
   // Was mit nach Hause kommt: die Katze rechts der Tür, die Kürbisse links davon
   const homeCat = add(buildCat32(), CAT.x, CAT.z, 'Mieze');
   homeCat.visible = false;

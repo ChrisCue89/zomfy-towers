@@ -2233,6 +2233,22 @@ gespeichert).
   See. Kinder im Hof machen die Bucht zu einem Zuhause, ohne das Gleichgewicht der
   Nächte zu ändern.
 
+### 195. Eddas Funkbuch und die Glocke am Steg (N8)
+**Entscheidung:**
+- **Geschichte statt Belohnung:** Die Seiten bringen nichts in den Vorrat – sie
+  erzählen, wie der Moder kam, was Radio Stillwald war und warum Edda ging. Zusammen
+  mit dem Funkgerät am Anfang (N5) schließt sich der Kreis: »Mach das Feuer an.«
+- **Wo:** je eine Seite auf den drei Felsinseln (Zelt, Stein, Dose) und die letzte bei
+  Marthe – so führen die Inseln (N6) und die Nebelinsel (N7) zu einer Geschichte.
+- **Nachlesen:** im Herbstbuch, nach Datum (nicht nach Fundreihenfolge).
+- **Die Glocke am Steg** ist ein kleines Spielzeug: Sie ruft die Kinder und begrüßt
+  Balduin; sie hat keinen Nutzen in der Nacht (dafür gibt es die Lagerglocke, M31).
+
+**Warum:**
+- Der Auftraggeber wünscht sich Story, Texte und kleine Nebenaufträge; die Inseln hatten
+  schon eine Spur (Eddas Funkbuch) – sie zu Ende zu erzählen kostet wenig und gibt den
+  Ausflügen ein Ziel.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

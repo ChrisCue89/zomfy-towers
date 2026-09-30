@@ -262,10 +262,7 @@ export class Isles {
       g.sound.play('schnurren');
     }
     g.hud.say(T.inseln.funde[id], 5);
-    if (f.note) {
-      g.deliveryCard.open([{ letter: 'edda', kind: 'notiz', name: T.inseln.notizVon, place: null, day: g.state.time.day, text: T.inseln.notizen[f.note] }]);
-      g.mode = 'lieferung';
-    }
+    if (f.note) g.fogIsle.showPage(T.inseln.notizen[f.note]); // N8: als Karte; nach allen vier Seiten meldet sich Edda
     this.refresh();
     g.quietSave();
   }

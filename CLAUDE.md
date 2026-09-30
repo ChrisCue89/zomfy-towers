@@ -727,6 +727,12 @@ Grundprinzipien:
     (`hildeSugar`); beides liegt als `QUEST_ITEMS` im Vorrat.
   - `map.pushInside` hält nur, wer in der Nähe der Insel ist, auf ihr – wer in der Bucht
     läuft, bleibt dort (vorher zog es Überlebende an den Inselrand).
+  - N8: Eddas Funkbuch hat vier Seiten (`PAGE_ORDER`, `pagesRead(state)` in data/isles.js):
+    die Inselfunde `stein`, `dose`, `zelt` (Notiz-Karten über `fogIsle.showPage`) und
+    Marthes Seite (`isles.fog.page`, Dialog `martheSeite` beim ersten Gespräch in der
+    Bucht); mit allen vier `funk.once('funkbuch')`. Im Herbstbuch die Seite `funkbuch`.
+    Marthes Glocke am Steg (`BAY_SPOTS.bell`, Einblendung `dockglocke`, `ringBay`) ruft
+    die Kinder und läutet, wenn Balduin anlegt (trader.js).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1102,7 +1108,12 @@ Grundprinzipien:
    den Steg, Marthe am Steg, die Kinder spielen im Hof, die Reuse gibt Fisch (einmal
    am Tag), Lu erzählt, abends schlafen sie im Kahn, Hilde bleibt in der Bucht,
    während Mika auf der Nordinsel ist, Speichern v31 und Migration v30 → v31
-   (Bilder: nebelfahrt, marthe-treffen, nebelinsel, marthe-bucht).
+   (Bilder: nebelfahrt, marthe-treffen, nebelinsel, marthe-bucht); ab N8 (Abschnitt
+   `funkbuch`): drei Seiten auf den Inseln mit echten Tasten (unter dem Stein – der
+   bleibt –, in der Dose, im Zelt), das Herbstbuch mit Esc, S, E und D bis »Funkbuch«
+   (drei Seiten nach Datum), Marthe gibt in der Bucht die letzte Seite, danach meldet
+   sich Edda, E an der Glocke am Steg ruft Pim und Lu herbei, legt Balduin an, läutet
+   sie, Speichern behält alle vier Seiten (Bilder: funkbuch, glocke-steg).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
