@@ -9,6 +9,29 @@
 export const AUTUMN = { days: 30, snowDays: 3, countdownFrom: 25 };
 
 /**
+ * G4: Die Uhr bis zum Frost (recherche/storytelling-namen.md 4.5) – Tag n ist der n. Oktober, danach
+ * geht der Kalender weiter. Länge der Monate ab Oktober (Namen in T.kalender.monate).
+ */
+export const MONTH_DAYS = [31, 30, 31, 31, 28, 31, 30, 31, 30, 31, 31, 30];
+
+/** Tag des Spiels → [Tag im Monat, Monat ab Oktober (0 = Oktober)]. */
+export function calendarOf(day) {
+  let d = Math.max(1, Math.round(day));
+  let m = 0;
+  while (d > MONTH_DAYS[m % MONTH_DAYS.length]) {
+    d -= MONTH_DAYS[m % MONTH_DAYS.length];
+    m++;
+  }
+  return [d, m % MONTH_DAYS.length];
+}
+
+/** G4: Die Natur im Morgenbericht – an diesen Tagen eine Zeile über See, Kraniche und Frost. */
+export const NATURE_DAYS = [3, 6, 9, 12, 16, 21, 22, 24, 26, 29];
+
+/** G4: Eddas Jahrestage über Funk (morgens um neun, einmal): Tag → Bedingung. */
+export const STORY_DAYS = { 12: () => true, 14: (st) => (st.isles?.fog?.stage || 0) >= 1, 20: () => true };
+
+/**
  * Frostnacht: jede Welle über alle Wege, das Budget etwas höher; das Herz
  * führt die Welle Nummer `heartWave` an (ab 0 gezählt, `heartHp` mal so viel
  * Leben wie ein Boss dieser Nacht). Der Balance-Durchlauf zeigte: Aus der

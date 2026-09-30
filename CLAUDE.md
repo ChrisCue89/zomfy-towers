@@ -362,7 +362,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       knots (Knoten der Geschichte: wer, wann, welcher Dialog,
                       G2; Stufen der Waldrand-Gedanken, G3),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
-                      autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
+                      autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
+                      Jahrestage (G4), Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
                       Reihenfolge der Schlurferkunde, Turmalbum, M25),
                       skills (Fähigkeiten, Ränge, Stufen der Wahl, M16),
@@ -1204,7 +1205,10 @@ Grundprinzipien:
    Faden, Edda erkennt Juna; ab G3 (Abschnitt `wald`): die Waldrand-Gedanken erzählen mit den
    Tagen mehr, an Tag 8 mit echter Taste W ein Gedanke aus dem Volksmund, Hilde erzählt von den
    Moosleuten und Yusuf sagt »Pilz«, nach dem Holzfäller funkt Edda vom Hemd, nach dem zweiten
-   von den vielen Männern.
+   von den vielen Männern; ab G4 (Abschnitt `uhr`): Tag 12 ist der 12. Oktober, Tag 32 der
+   1. November, am 21. Morgen »Reif auf dem Steg«, an Tag 20 um neun funkt Edda ihren Jahrestag,
+   nach dem Frost Frau Holle und Junas Pfeifen, der Abspann nennt »Mikas Bucht« (Bilder:
+   uhr-jahrestag, karte-frost).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1369,7 +1373,8 @@ viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` b
 alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
 Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
-`forestThought(tag)` Stufe und Satz des Waldrand-Gedankens.
+`forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
+Naturzeile und Jahrestag.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

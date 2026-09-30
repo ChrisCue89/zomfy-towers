@@ -229,6 +229,7 @@ async function runBrowserChecks() {
     if (want('aufraeumen')) await runTidyChecks(browser, url);
     if (want('knoten')) await runKnotChecks(browser, url);
     if (want('wald')) await runForestChecks(browser, url);
+    if (want('uhr')) await runClockChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10991,4 +10992,82 @@ async function runForestChecks(browser, url) {
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();
+}
+
+/**
+ * G4 – Die Uhr bis zum Frost (recherche/storytelling-namen.md 4.5): Tag n ist der n. Oktober (die
+ * Uhr zeigt das Datum), an einigen Morgen steht eine Naturzeile im Bericht (Kraniche, Reif), um
+ * neun funkt Edda ihre Jahrestage; nach dem Frost: Hilde und Frau Holle, Junas Pfeifen, »Mikas
+ * Bucht« im Abspann und auf der Karte.
+ */
+async function runClockChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Uhr (G4)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+  });
+  await step(300);
+
+  // 1) Kalender und Natur
+  const kal = await z(() => ({ d12: window.zomfy.calendar(12), d21: window.zomfy.calendar(21), d32: window.zomfy.calendar(32), d4: window.zomfy.calendar(4) }));
+  if (kal.d12.date === '12. Oktober' && kal.d32.date === '1. November' && kal.d21.nature === 'Reif auf dem Steg.' && !kal.d4.nature && kal.d12.story) note(`✓ Uhr (G4): Tag 12 ist der ${kal.d12.date}, Tag 32 der ${kal.d32.date}; am 21. Morgen steht »${kal.d21.nature}« im Bericht`);
+  else fail(`Uhr: Kalender ${JSON.stringify(kal)}`);
+
+  // 2) Tag 20 um neun: Edda funkt ihren Jahrestag
+  await z(() => {
+    window.zomfy.setDay(20);
+    window.zomfy.setTime(8, 58);
+  });
+  await step(2000);
+  const jahrestag = await z(() => window.zomfy.funk().current?.text || null);
+  if (jahrestag?.includes('Heute vor drei Jahren bin ich gegangen')) note('✓ Uhr (G4): an Tag 20 um neun funkt Edda – »Heute vor drei Jahren bin ich gegangen.«');
+  else fail(`Uhr: Jahrestag ${JSON.stringify(jahrestag)}`);
+  await still(page, 'uhr-jahrestag');
+
+  // 3) Nach dem Frost: Frau Holle, das Pfeifen, »Mikas Bucht«
+  const frost = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.state.autumn.frost = true;
+    for (const f of ['hildeKenntEdda', 'moosleute']) g.state.flags[f] = true; // die früheren Knoten sind erzählt
+    Z.setDay(31);
+    for (const id of ['hilde', 'juna']) Z.setSurvivor(id, 3);
+    const talk = (id) => {
+      Z.talkTo(id);
+      const lines = [];
+      let guard = 30;
+      while (g.dialog.active && guard-- > 0) {
+        lines.push(g.dialog.line?.t || '');
+        g.dialog.advance();
+      }
+      return lines;
+    };
+    const credits = g.autumn.creditLines().map((l) => l.text || '');
+    return { hilde: talk('hilde'), juna: talk('juna'), credits, name: g.state.player.name || 'Mika' };
+  });
+  const bucht = `${frost.name}${/[sxzß]$/.test(frost.name) ? '’' : 's'} Bucht`;
+  if (frost.hilde.some((t) => t.includes('Frau Holle')) && frost.juna.some((t) => t.includes('Papas Lied')) && frost.credits.some((t) => t.includes(bucht))) note(`✓ Uhr (G4): nach dem Frost schüttelt Frau Holle die Betten aus, jemand pfeift Papas Lied, und der Abspann nennt die alte Holzlände »${bucht}«`);
+  else fail(`Uhr: nach dem Frost ${JSON.stringify(frost)}`);
+  await page.keyboard.press('KeyM');
+  await step(100);
+  await still(page, 'karte-frost');
+  await page.keyboard.press('KeyM');
+  await step(100);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+}
+
+/** Ein Bild ohne Simulationsschritt (für Abschnitte, die mit `__zomfyHold` laufen). */
+async function still(page, name) {
+  await page.evaluate(() => window.zomfy.game.render());
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
+  note(`  Screenshot: screenshots/${name}.png`);
 }

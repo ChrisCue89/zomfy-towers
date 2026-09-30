@@ -18,6 +18,9 @@ export const KNOTS = [
   { who: 'edda', flag: 'eddaJuna', dialog: 'eddaJuna', when: (st) => living(st, 'juna') },
   // G3: Sage gegen Aufklärung – Hilde erzählt von Irrlichtern und Moosleuten, Yusuf widerspricht
   { who: 'hilde', flag: 'moosleute', dialog: 'moosleute', day: 6, when: (st) => living(st, 'yusuf') },
+  // G4: Nach dem ersten Frost – Frau Holle hat die Betten ausgeschüttelt; das Pfeifen antwortet
+  { who: 'hilde', flag: 'frauHolle', dialog: 'frauHolle', when: (st) => Boolean(st.autumn?.frost) },
+  { who: 'juna', flag: 'pfeifen', dialog: 'junaPfeifen', when: (st) => Boolean(st.autumn?.frost) },
 ];
 
 /**

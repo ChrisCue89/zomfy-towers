@@ -198,6 +198,7 @@ export class Autumn {
     lines.push({ text: C.naechte(s.nightsWon || 0) }, { text: C.besiegt(s.kills || 0) }, { text: C.bosse(s.bosses || 0) });
     const book = this.game.book; // M25, Teil 2: Sterne und Taten aus dem Herbstbuch
     if (book) lines.push({ text: C.sterne(book.totalStars) }, { text: C.taten(book.doneCount, DEEDS.length) });
+    lines.push({ gap: true }, { text: C.seitdem(st.player.name || 'Mika') }); // G4: die Bucht trägt jetzt Mikas Namen
     lines.push({ gap: true }, { text: C.von, head: true }, { text: C.studio }, { gap: true }, { text: C.danke, big: true }, { gap: true }, { text: C.weiter, dim: true });
     return lines;
   }

@@ -26,6 +26,7 @@ import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
 import { KNOTS, knotFor, forestKey } from '../data/knots.js';
+import { AUTUMN, NATURE_DAYS, STORY_DAYS, calendarOf } from '../data/autumn.js';
 import { spriteUniforms } from '../render/spriteMaterial.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
@@ -909,6 +910,18 @@ export class Game {
     if (controls) this.tutorial.begin(); // N5: der erste Schritt – laufen
   }
 
+  /** G4: Eine Zeile über See, Kraniche und Frost – an wenigen Tagen des Herbsts (NATURE_DAYS). */
+  natureLine(day) {
+    return day <= AUTUMN.days && NATURE_DAYS.includes(day) ? [{ text: T.natur[day] }] : [];
+  }
+
+  /** G4: Eddas Jahrestage – morgens um neun erzählt sie über Funk, wenn ihr Tag gekommen ist (einmal). */
+  dayStory(day) {
+    const when = STORY_DAYS[day];
+    if (!when || this.state.autumn?.frost || !when(this.state)) return;
+    this.funk.once(`tag_${day}`, T.funk.tage[day]);
+  }
+
   /** Der Satz zum Wetter eines Tages (M12). */
   weatherLine(day) {
     const lines = T.wetter.bericht[this.world.weather.forecast(day)];
@@ -1498,7 +1511,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.natureLine(st.time.day), ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
     this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
@@ -2979,6 +2992,7 @@ export class Game {
     const flags = this.state.flags;
     const before = hoursOf(time.minute - dt / CONFIG.time.secondsPerGameMinute);
     if (before < 20 && h >= 20 && h < 20.5 && !this.nights.active) this.hud.toast(T.horde.bald, 'warnung', 4, 'alarm'); // m16-r1: nicht, wenn sie schon gerufen ist
+    if (before < 9 && h >= 9 && h < 9.5 && !this.nights.active) this.dayStory(time.day); // G4: Eddas Jahrestage
     // N4 (Probespiel): Am hellen Morgen löscht Mika die Laterne und steckt sie weg – tagsüber
     // lief sie sonst immer mit Licht in der Hand herum
     if (before < 7.5 && h >= 7.5 && h < 9 && this.player.holdingLantern && !this.nights.active) {
@@ -3947,6 +3961,11 @@ export class Game {
         game.survivors.onAbilitiesChanged(); // dauerhafte Fähigkeiten (Lottes Licht) gleich setzen
       },
       talkTo: (id) => game.survivors.talk(id),
+      /** G4: Datum, Naturzeile und Jahrestag eines Tages. */
+      calendar: (day) => {
+        const [d, m] = calendarOf(day);
+        return { date: T.kalender.datum(d, T.kalender.monate[m]), nature: game.natureLine(day)[0]?.text || null, story: T.funk.tage[day] || null };
+      },
       /** G3: der Gedanke am Waldrand an Tag `day` (die Stufe und der Satz). */
       forestThought: (day) => ({ stage: forestKey(day), text: game.forestThought(day) }),
       /** G2: die Knoten der Geschichte – erzählt oder wartend. */

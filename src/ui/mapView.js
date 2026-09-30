@@ -202,7 +202,7 @@ export class MapView {
         const w = measure(text);
         ui.text(text, Math.max(ox + 2, Math.min(ox + W - 2 - w, p.x - Math.round(w / 2))), p.y, COLORS.textDim, { outline: COLORS.outline });
       };
-      name(T.karte.bucht, BAY_LABEL.x, BAY_LABEL.z);
+      name(g.state.autumn?.frost ? T.karte.buchtNachFrost(g.state.player.name || 'Mika') : T.karte.bucht, BAY_LABEL.x, BAY_LABEL.z); // G4
       const visited = g.state.isles?.visited || [];
       for (const id of ISLE_ORDER) if (visited.includes(id)) name(T.karte.inseln[id], ISLES[id].label.x, ISLES[id].label.z);
     }

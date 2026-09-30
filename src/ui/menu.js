@@ -268,7 +268,12 @@ export class Menu {
               right: String(k.n),
               color: COLORS.text,
               rightColor: COLORS.textDim,
-              detail: [...lines(k.info, COLORS.text), ...(book.yusufWrites ? lines(T.buch.notiz(k.note), COLORS.textWarm, true) : lines(T.buch.ohneYusuf, COLORS.textDim, true)), ...lines(T.buch.erledigt(k.n), COLORS.textDim, true)],
+              detail: [
+                ...lines(k.info, COLORS.text),
+                ...(book.yusufWrites ? lines(T.buch.notiz(k.note), COLORS.textWarm, true) : lines(T.buch.ohneYusuf, COLORS.textDim, true)),
+                ...(book.yusufWrites && k.id === 'schlurfer' && this.game.state.autumn?.frost ? lines(T.buch.notiz(T.buch.nachFrost), COLORS.textWarm, true) : []), // G4
+                ...lines(T.buch.erledigt(k.n), COLORS.textDim, true),
+              ],
             }
           : { id: k.id, label: T.buch.unbekannt, right: '', color: COLORS.textDim, detail: lines(T.buch.nieErledigt, COLORS.textDim) }
       );

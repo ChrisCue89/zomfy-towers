@@ -1271,6 +1271,17 @@ export const DIALOGE = {
     { s: 'hilde', t: 'Hab ich was anderes gesagt?' },
     { s: 'yusuf', t: '… Nein. Eigentlich nicht.' },
   ],
+  // G4: nach dem ersten Frost
+  frauHolle: [
+    { s: 'hilde', t: 'Guck mal raus, Kindchen. Frau Holle hat die Betten ausgeschüttelt.' },
+    { s: 'hilde', t: 'Die Köhler haben früher ihren Meiler zwanzig Nächte bewacht. Du hast dreißig gehalten.' },
+  ],
+  junaPfeifen: [
+    { s: 'juna', t: 'Käpt’n! Hör mal. (dreht am Knopf) Da – jemand pfeift die zweite Hälfte.' },
+    { s: 'juna', t: '… Das ist Papas Lied. Er hört mich.' },
+    { s: 'mika', t: 'Dann sendest du weiter.' },
+    { s: 'juna', t: 'Jeden Abend um acht. Jetzt erst recht.' },
+  ],
   eddaJuna: [
     { s: 'eddaHier', t: 'Die Kleine mit den Kopfhörern. Die sendet jeden Abend um acht, oder?' },
     { s: 'mika', t: 'Juna. Ihr Vater hat die Seewelle gebaut.' },

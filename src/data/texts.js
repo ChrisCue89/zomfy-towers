@@ -1255,6 +1255,7 @@ export const T = {
       studio: 'Tales of Cue',
       danke: 'Danke fürs Spielen!',
       weiter: 'Der Moder schläft. Für diesen Winter.',
+      seitdem: (name) => `Seitdem nennen sie die alte Holzlände ${T.genitiv(name)} Bucht.`, // G4
       taste: 'E: schneller · Esc: weiter',
     },
   },
@@ -1300,6 +1301,7 @@ export const T = {
     nieErledigt: 'Noch nie erledigt. Was das wohl ist?',
     ohneYusuf: 'Ein Arzt wüsste mehr darüber …',
     notiz: (text) => `Dr. Yusuf: „${text}“`,
+    nachFrost: 'Im Schnee zerfallen sie ganz. Übrig bleibt Laub. Vielleicht wollte der Wald nur sein Laub zurück.', // G4
     art: {
       schlurfer: ['Schlurfer', 'Langsam und stur, immer auf dem Weg. Einzeln harmlos, in Scharen nicht.', 'Das Geflecht sitzt unter der Haut wie Wurzeln im Topf. Sie wollen alle zur Bucht – ob sie sich ans Wasser erinnern?'],
       flitzer: ['Flitzer', 'Klein und schnell – rennt an Barrikaden vorbei, bevor man sie geflickt hat.', 'Junges Geflecht, kaum Befall. Deshalb sind sie so flink – und so schnell wieder umgefallen.'],
@@ -1489,12 +1491,33 @@ export const T = {
     truemmer: 'Trümmer',
   },
   // Übersichtskarte (Taste M)
+  // G4: Kalender – Tag n ist der n. Oktober
+  kalender: {
+    monate: ['Oktober', 'November', 'Dezember', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September'],
+    datum: (d, monat) => `${d}. ${monat}`,
+  },
+  // G4: Die Natur im Morgenbericht (NATURE_DAYS in data/autumn.js)
+  natur: {
+    3: 'Über dem See rufen Kraniche. Hunderte.',
+    6: 'Die Kraniche schlafen nachts im flachen Wasser – da kommt kein Fuchs hin.',
+    9: 'Der See steht eine Handbreit über dem Steinpfahl.',
+    12: 'Die Buchen am Waldrand werden gelb.',
+    16: 'Nebel über dem Wasser, und die Kraniche rufen darin.',
+    21: 'Reif auf dem Steg.',
+    22: 'Am Ufer eine dünne Eishaut.',
+    24: 'Weniger Kraniche heute.',
+    26: 'Der Atem dampft schon beim Frühstück.',
+    29: 'Die letzten Kraniche sind fort.',
+  },
+  // G1/G4: der Name der Bucht mit dem Namen der Hauptfigur (»Kiras Bucht«, »Hans’ Bucht«)
+  genitiv: (name) => (/[sxzß]$/.test(name) ? `${name}’` : `${name}s`),
   karte: {
     titel: 'Karte der Wege',
     zuhause: 'Zuhause',
     // G1: die alten Namen der Holzfällerwege, die Bucht und die Inseln, die Mika kennt
     alteWege: { nord: 'Köhlerstieg', mitte: 'Holzweg', sued: 'Schaftrift' },
     bucht: 'Ellerbucht',
+    buchtNachFrost: (name) => `${T.genitiv(name)} Bucht`, // G4: nach dem ersten Frost
     inseln: { nord: 'Wartholm', mitte: 'Kiekwerder', sued: 'Kürbisholm' },
     spawn: 'Hier kommt die Horde aus dem Wald',
     legende: 'Weg · Turm · Barrikade · Mika',
@@ -1559,7 +1582,13 @@ export const T = {
     haus: 'Die Stube. Der Kamin zieht ein bisschen nach links – hat er schon immer. Mach es dir gemütlich.',
     ersteNacht: 'Die erste Nacht – gehalten. Weißt du, wie lange keiner mehr so etwas über die Holzlände sagen konnte?',
     balduin: 'Das ist Balduins Horn. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
-    frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst.',
+    frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst – und ich bleib die ganze Nacht dran.',
+    // G4: Eddas Jahrestage (STORY_DAYS in data/autumn.js)
+    tage: {
+      12: 'Drei Jahre hab ich jeden Abend auf dieser Frequenz gehört. Nur Rauschen. Dann hat es geknistert – und da warst du.',
+      14: 'Heute vor drei Jahren ist Marthe mit den Kindern auf den Apfelwerder gezogen. Ich hab jeden Morgen auf ihre Glocke gewartet.',
+      20: 'Heute vor drei Jahren bin ich gegangen. … Mach das Feuer heute Abend ein bisschen größer, ja? Ich will es sehen.',
+    },
     // G3: Nach den Bossen erzählt Edda ein Stück der Geschichte (je Art einmal)
     bosse: {
       holzfaeller: 'Das Hemd … solche hat mein Vater an die Männer verteilt. Einer von unseren. Der Wald hat ihn lange genug gehabt. Jetzt ist er Laub.',

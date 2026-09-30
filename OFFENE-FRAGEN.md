@@ -2464,6 +2464,24 @@ Edda sagt nach jedem Boss ein Stück dazu. Was in den Schlurfern schläft, bleib
 Wald soll mit dem Herbst mehr erzählen, ohne neue Systeme: Gedanken, ein Knoten und fünf
 Funksprüche.
 
+### 207. Wie wird aus 30 Tagen ein Bogen? (G4)
+**Entscheidung:** Ein Kalender und kleine Rituale, keine neuen Systeme:
+
+- Tag n ist der n. Oktober. Die Uhr zeigt das Datum statt des Tageszeit-Worts – das Zeichen
+  daneben zeigt Sonne, Dämmerung und Mond.
+- Eine Naturzeile im Morgenbericht an festen Tagen (`NATURE_DAYS`): Kraniche, Pegel, Reif,
+  Eis. Sind die letzten Kraniche fort, kommt der Frost.
+- Eddas Jahrestage (`STORY_DAYS`) morgens um neun über Funk, jeder einmal.
+- Nach dem Frost Knoten für Hilde und Juna, Yusufs letzte Notiz und die Bucht, die Mikas Namen
+  trägt – im Abspann und auf der Karte.
+
+Die Frostnacht selbst bleibt mechanisch unverändert. Was über Lu und Balduins Sammlung noch
+kommt, bleibt für später.
+**Warum:** Die Tage hatten keinen Bogen, nur den Countdown; was an Tag 13 erzählt wurde, hätte
+auch an Tag 23 stehen können (recherche 1.2). Die Natur ist die Uhr, die man spürt (Kraniche,
+Reif), die Jahrestage geben den Daten im Funkbuch Gewicht, und »Mikas Bucht« beantwortet die
+Frage, mit der das Spiel beginnt: »Ich suche ein Zuhause.«
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

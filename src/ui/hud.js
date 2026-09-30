@@ -11,6 +11,7 @@ import { measure, LINE_HEIGHT, drawTiny, wrap } from './font.js';
 import { drawIcon, iconSize } from './icons.js';
 import { xpForLevel } from '../data/perks.js';
 import { SKILLS } from '../data/skills.js';
+import { calendarOf } from '../data/autumn.js';
 import { P, hexToCss } from '../render/palette.js';
 
 /** So breit wird eine Sprechblase höchstens, dann bricht sie um (M25). */
@@ -390,7 +391,8 @@ export class Hud {
     if (weather === 'regen' || (day && weather !== 'klar')) icon = weather;
     const tag = this.game.autumn ? this.game.autumn.dayLabel(state.time.day) : `${T.tag} ${state.time.day}`; // M25: »Tag 12 von 30«
     const line1 = weather === 'klar' ? tag : `${tag} · ${T.wetter.name[weather]}`;
-    const line2 = `${clockText(state.time.minute)} · ${dayPartLabel(hours)}`;
+    const [d, m] = calendarOf(state.time.day); // G4: Tag n ist der n. Oktober
+    const line2 = `${clockText(state.time.minute)} · ${T.kalender.datum(d, T.kalender.monate[m])}`;
     const w = Math.max(measure(line1), measure(line2)) + 32;
     const x = 4;
     const y = 4;

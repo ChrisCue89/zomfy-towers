@@ -1934,6 +1934,14 @@ Tag 7, Alte Ablage ab Tag 13, Frost ab Tag 20, Schnee danach. Hilde und Yusuf st
 Moosleute und Pilz. Edda erzählt nach jedem Boss ein Stück. Die Stümpfe mit drei Kreuzen als
 Modell bleiben offen (Nr. 206).
 
+#### G4 – Die Uhr bis zum Frost ✓
+
+*Umgesetzt (30.09.2026):* Tag n ist der n. Oktober (Datum an der Uhr). Die Natur steht im
+Morgenbericht (Kraniche, Pegel, Reif, Eis; die letzten Kraniche am Tag 29). Edda funkt ihre
+Jahrestage an den Tagen 12, 14 und 20, und in der Frostnacht bleibt sie dran. Danach kommen
+Frau Holle, Junas Pfeifen, Yusufs letzte Notiz und »Mikas Bucht« im Abspann und auf der Karte
+(Nr. 207).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

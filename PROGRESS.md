@@ -5,6 +5,36 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G4: Die Uhr bis zum Frost ✓
+
+**Auftrag (30.09.):** »Die Story ist noch dünn.« Vierter Schritt aus
+`recherche/storytelling-namen.md` (4.3 und 4.5, Nr. 207): Die 30 Tage bekommen einen Kalender
+und einen Bogen.
+
+- **Tag n ist der n. Oktober:** Die Uhr zeigt das Datum (»19:52 · 12. Oktober«), der Countdown
+  »Tag 12 von 30« bleibt. Nach dem Herbst läuft der Kalender weiter (Tag 32 = 1. November).
+  Die Daten im Funkbuch (2., 8., 14., 20. Oktober) werden so zu Jahrestagen.
+- **Die Natur im Morgenbericht** an zehn Tagen:
+  - Kraniche rufen über dem See (Tag 3) und schlafen im flachen Wasser.
+  - Der Pegel: eine Handbreit über dem Steinpfahl.
+  - Die Buchen werden gelb.
+  - Reif auf dem Steg (Tag 21), eine Eishaut am Ufer, weniger Kraniche.
+  - »Die letzten Kraniche sind fort« (Tag 29).
+- **Eddas Jahrestage** um neun über Funk:
+  - Tag 12: drei Jahre Rauschen, dann Mika.
+  - Tag 14: Marthes Umzug auf den Apfelwerder – nur wenn Mika die Spur kennt.
+  - Tag 20: »Heute vor drei Jahren bin ich gegangen. … Mach das Feuer heute Abend ein bisschen
+    größer, ja? Ich will es sehen.«
+- **In der Frostnacht** bleibt Edda »die ganze Nacht dran«.
+- **Nach dem Frost:**
+  - Hilde: »Frau Holle hat die Betten ausgeschüttelt.«
+  - Juna hört jemanden die zweite Hälfte pfeifen – Papas Lied.
+  - Yusuf notiert in der Schlurferkunde: »Vielleicht wollte der Wald nur sein Laub zurück.«
+  - Der Abspann endet mit »Seitdem nennen sie die alte Holzlände Mikas Bucht« (mit dem
+    gewählten Namen), und die Karte sagt es auch.
+
+**Prüfung:** Abschnitt `uhr`, 4 Prüfpunkte bestanden.
+
 ## G3: Der Wald erzählt ✓
 
 **Auftrag (30.09.):** »Die Story ist noch dünn.« Dritter Schritt aus
