@@ -140,6 +140,10 @@ gilt bis auf Weiteres:
   (Bayer-Dithering mit `discard`), damit Tiefenpuffer und Umrisse stimmen.
 - Kühle Nacht-Tönung wirkt im Post-Pass nur auf dunkle und mittlere Töne,
   Lichtquellen bleiben warm.
+- **Was am Bildschirm hängt, kommt nach dem Raster (30.09., Nr. 200):** Dunst und Vignette
+  legt der Post-Pass erst nach der Palette weich über das Bild. Das Raster der Palette hängt an
+  der Welt – ein Verlauf am Bildschirm davor ließe beim Gehen Tausende Pixel je Bild kippen
+  (»der Nebel flackert«; der Abschnitt `nebel` misst es).
 - **Lesbarkeit vor Stimmung:** Jede Art (Quelle, Bau, Schlurfer, Turm, Loot)
   braucht eine eindeutige Silhouette und Farbe. Neue Modelle in Metern denken
   und im Maß 1/32 bauen (Natur 1/16).
@@ -1140,7 +1144,8 @@ Grundprinzipien:
    (die Uhr steht), in der Böe dreht E einen Looping, ohne Böe sackt er weg, drei
    hintereinander sind die Tat »Drachenwetter«, Esc gibt zurück (20 Minuten weiter), bei
    Regen kommt er herunter, Speichern v32 und Migration v31 → v32 (Bilder: drachen,
-   drachen-looping).
+   drachen-looping); ab 30.09. (Abschnitt `nebel`): Mika geht am Nebelmorgen nach Norden,
+   oben im Bild tut der Dunst kaum wechselnde Pixel dazu (Bild: nebel-dunst).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

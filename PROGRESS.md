@@ -5,6 +5,29 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Nebel: Der Dunst flackert nicht mehr ✓
+
+Rückmeldung vom 30.09.: »Der Nebel flackert immer noch.« Diesmal gemessen statt vermutet: je
+Szene 16 Bilder in 1/30-s-Schritten an einem Nebelmorgen (Bucht still, Kamera nach Osten, Mika
+geht nach Osten, Kamera nach Norden, Mika geht nach Norden), jeweils mit und ohne Nebelbänke
+bzw. Dunst, und gezählt, wie viele Pixel von Bild zu Bild wechseln (um den Versatz der Kamera
+ausgerichtet).
+
+- **Die Nebelbänke waren es kaum** (+0,03 bis +0,15 % der Pixel je Bild): Ihr Muster hängt seit
+  N4 fest an der Welt.
+- **Es waren der Dunst nach Norden (M33) und die Vignette:** Beide hängen am Bildschirm, das
+  Raster der Palette aber an der Welt. Ging Mika nach Norden, glitt die Welt unter dem Verlauf
+  hindurch, und in der oberen Bildhälfte – über dem See, wo der Morgennebel liegt – kippten je Bild
+  Tausende Pixel zwischen zwei Palettenfarben hin und her (+1,9 % des ganzen Bildes, oben
+  +2,8 Prozentpunkte). Das sah aus wie flackernder Nebel.
+- **Jetzt kommen Dunst und Vignette erst nach dem Raster** dazu, als weiche Tönung. Mika geht
+  nach Norden: 5,0 → 3,2 % wechselnde Pixel je Bild (der Rest sind Mikas Schritte, Gras, Wasser und
+  Feuer), der Dunst tut nur noch +0,1 dazu; nach Osten 3,1 → 2,8 %. Nebenbei liegt über der Wiese
+  kein Raster aus Dunstpunkten mehr – der Dunst sieht ruhiger aus.
+- **Prüfabschnitt `nebel`** misst das bei jedem Lauf: Mika geht am Nebelmorgen nach Norden, oben
+  im Bild darf der Dunst höchstens 0,8 Prozentpunkte dazutun (Gegenprobe mit dem alten Shader:
+  2,8 – der Prüfpunkt schlägt an). Bild: nebel-dunst.
+
 ## N9 – Drachenwetter ✓
 
 Weiter mit dem Wunsch vom 29.09. (»arbeite an der Story, an den Texten, an kleinen

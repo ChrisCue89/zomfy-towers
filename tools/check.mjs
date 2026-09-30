@@ -18,6 +18,8 @@
 
 import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, statSync, mkdirSync, existsSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
+import { inflateSync } from 'node:zlib';
 import { createRequire } from 'node:module';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -221,6 +223,7 @@ async function runBrowserChecks() {
     if (want('nebelinsel')) await runFogIsleChecks(browser, url);
     if (want('funkbuch')) await runPageChecks(browser, url);
     if (want('drachen')) await runKiteChecks(browser, url);
+    if (want('nebel')) await runFogFlickerChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10108,3 +10111,156 @@ async function runBellChecks(browser, url) {
   await alt.context.close();
 }
 
+/** PNG (8 Bit, RGB oder RGBA) → { w, h, rgb } – für den Flacker-Vergleich (Nebel, 30.09.). */
+function decodePng(buf) {
+  let p = 8;
+  let w = 0;
+  let h = 0;
+  let type = 2;
+  const idat = [];
+  while (p < buf.length) {
+    const len = buf.readUInt32BE(p);
+    const kind = buf.toString('latin1', p + 4, p + 8);
+    const data = buf.subarray(p + 8, p + 8 + len);
+    if (kind === 'IHDR') {
+      w = data.readUInt32BE(0);
+      h = data.readUInt32BE(4);
+      type = data[9];
+    } else if (kind === 'IDAT') idat.push(data);
+    p += 12 + len;
+  }
+  const bpp = type === 6 ? 4 : 3;
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = w * bpp;
+  const rgb = new Uint8Array(w * h * 3);
+  let prev = new Uint8Array(stride);
+  let cur = new Uint8Array(stride);
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (stride + 1)];
+    const o = y * (stride + 1) + 1;
+    for (let i = 0; i < stride; i++) {
+      const a = i >= bpp ? cur[i - bpp] : 0;
+      const b = prev[i];
+      const c = i >= bpp ? prev[i - bpp] : 0;
+      let v = raw[o + i];
+      if (f === 1) v += a;
+      else if (f === 2) v += b;
+      else if (f === 3) v += (a + b) >> 1;
+      else if (f === 4) {
+        const q = a + b - c;
+        const pa = Math.abs(q - a);
+        const pb = Math.abs(q - b);
+        const pc = Math.abs(q - c);
+        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      }
+      cur[i] = v & 255;
+    }
+    for (let x = 0; x < w; x++) for (let k = 0; k < 3; k++) rgb[(y * w + x) * 3 + k] = cur[x * bpp + k];
+    [prev, cur] = [cur, prev];
+  }
+  return { w, h, rgb };
+}
+
+/**
+ * Anteil der Pixel, die zwischen zwei Bildern wechseln – das zweite um den Kameraversatz
+ * zurückgeschoben (beide Vorzeichen, das kleinere zählt), nur in der oberen Bildhälfte.
+ */
+function changedShare(a, b, dx, dy) {
+  let best = Infinity;
+  for (const sx of dx ? [dx, -dx] : [0]) {
+    for (const sy of dy ? [dy, -dy] : [0]) {
+      let n = 0;
+      let all = 0;
+      for (let y = 8; y < Math.floor(a.h * 0.55); y++) {
+        const yb = y - sy;
+        if (yb < 0 || yb >= a.h) continue;
+        for (let x = 8; x < a.w - 8; x++) {
+          const xb = x - sx;
+          if (xb < 0 || xb >= a.w) continue;
+          const i = (y * a.w + x) * 3;
+          const j = (yb * a.w + xb) * 3;
+          all++;
+          if (Math.abs(a.rgb[i] - b.rgb[j]) + Math.abs(a.rgb[i + 1] - b.rgb[j + 1]) + Math.abs(a.rgb[i + 2] - b.rgb[j + 2]) > 24) n++;
+        }
+      }
+      best = Math.min(best, (n / Math.max(1, all)) * 100);
+    }
+  }
+  return best;
+}
+
+/**
+ * Nebel (Rückmeldung 30.09.: »der Nebel flackert immer noch«): Mika geht an einem
+ * Nebelmorgen nach Norden. Gemessen wird, wie viele Pixel in der oberen Bildhälfte je Bild
+ * wechseln – mit und ohne den Dunst nach Norden. Dunst und Vignette hängen am Bild und
+ * liegen darum hinter dem Raster der Palette: Sie dürfen fast nichts dazutun (vorher etwa
+ * 3,5 Prozentpunkte).
+ */
+async function runFogFlickerChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Nebel (30.09.)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-nebel')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-nebel', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  await z(() => {
+    const g = window.zomfy.game;
+    const render = g.pixel.render.bind(g.pixel);
+    g.pixel.render = (scene, rig, look) => {
+      if (look?.haze && window.__ohneDunst) look.haze.w = 0;
+      return render(scene, rig, look);
+    };
+    g.hud.draw = () => {}; // nur die Szene zählt
+    g.buildbar.draw = () => {};
+  });
+  const series = async (haze) => {
+    await z((h) => {
+      const Z = window.zomfy;
+      window.__zomfyHold = true; // nur die Schritte der Prüfung bewegen die Welt
+      window.__ohneDunst = !h;
+      Z.setHorde(false);
+      Z.setFlag('introGesehen');
+      Z.game.funk.clear();
+      Z.setWeather('nebel', true);
+      Z.setDay(6);
+      Z.setTime(7, 20);
+      Z.teleport(6, 4, Math.PI);
+      Z.lookAt(null);
+    }, haze);
+    await z(() => window.__zomfyStep(1500));
+    await page.keyboard.down('KeyW');
+    const frames = [];
+    for (let k = 0; k < 8; k++) {
+      await z(() => window.__zomfyStep(33));
+      const off = await z(() => {
+        const o = window.zomfy.game.rig.ditherOffset;
+        return [o.x, o.y];
+      });
+      frames.push({ off, img: decodePng(await page.screenshot()) });
+    }
+    await page.keyboard.up('KeyW');
+    const rates = [];
+    for (let k = 1; k < frames.length; k++) rates.push(changedShare(frames[k - 1].img, frames[k].img, frames[k].off[0] - frames[k - 1].off[0], frames[k].off[1] - frames[k - 1].off[1]));
+    const moved = frames[frames.length - 1].off[1] - frames[0].off[1];
+    return { rate: rates.reduce((s, r) => s + r, 0) / rates.length, moved };
+  };
+  const mit = await series(true);
+  const ohne = await series(false);
+  const anteil = mit.rate - ohne.rate;
+  if (Math.abs(mit.moved) >= 8 && anteil < 0.8) note(`✓ Nebel: Mika geht am Nebelmorgen nach Norden (${Math.abs(mit.moved)} px) – oben im Bild wechseln je Bild ${mit.rate.toFixed(2)} % der Pixel, ohne Dunst ${ohne.rate.toFixed(2)} %: Der Dunst flackert nicht (+${anteil.toFixed(2)} Prozentpunkte)`);
+  else fail(`Nebel: Dunst flackert beim Gehen ${JSON.stringify({ mit, ohne, anteil })}`);
+  await z(() => {
+    window.__ohneDunst = false;
+    window.__zomfyHold = false; // das Bild wartet auf echte Bilder
+  });
+  await shot(page, 'nebel-dunst', () => {
+    window.zomfy.teleport(9, 1.5, 0);
+    window.zomfy.lookAt(12, -2);
+  });
+  checkMessages(session);
+  await session.context.close();
+}

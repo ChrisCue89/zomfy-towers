@@ -1864,6 +1864,13 @@ Fasern und Holz baut Marthe ihn über Nacht, Lu malt eine Katze darauf (Nr. 199)
 Wind- und klaren Tagen steht er über dem Strand; E bei Pim gibt Mika die Leine, mitten in
 einer Böe dreht E einen Looping – drei hintereinander sind die Tat »Drachenwetter«.
 
+#### Nebel – der Dunst flackert nicht mehr ✓
+
+*Umgesetzt (30.09.2026):* gemessen statt vermutet – die Nebelbänke flackerten kaum noch, aber
+Dunst und Vignette hingen am Bildschirm vor dem Raster der Palette und ließen beim Gehen nach
+Norden Tausende Pixel kippen. Jetzt liegen sie weich dahinter (Nr. 200), der Abschnitt `nebel`
+misst es bei jedem Lauf.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

@@ -2329,6 +2329,20 @@ Vorgeschichte der Gegend und Namen mit Herkunft. Fast alles ist Text – kein ne
   N7 in die Bucht und hatten außer Fangen-Spielen noch nichts zu tun. Drachen steigen
   lassen gehört zum Herbst wie Laub und Kürbisse.
 
+### 200. Dunst und Vignette nach dem Raster der Palette (30.09.)
+**Entscheidung:** Was am Bildschirm hängt (Dunst nach Norden, Vignette), wird im Post-Pass erst
+nach dem Raster der Palette weich über das Bild gelegt. Die Farben dort weichen um ein paar
+Prozent von der Palette ab (höchstens 8 % Richtung Dunstfarbe, in den Ecken dunkler).
+
+**Warum:**
+- Das Raster der Palette hängt an der Welt (sonst schwämme es beim Gehen). Ein Verlauf, der am
+  Bildschirm hängt, verschiebt sich gegen die Welt, sobald die Kamera folgt – davor gerastert,
+  ließ er beim Gehen Tausende Pixel je Bild kippen (gemessen: +2,8 Prozentpunkte oben im Bild).
+- Weich darübergelegt, ändert er an jedem Weltpunkt nur unmerklich die Helligkeit. Der Dunst
+  bleibt als Stimmung (M33), ohne zu flackern und ohne Punktraster über der Wiese.
+- Erwogen: den Dunst an die Welt hängen (nach Norden im Gelände) – dann wäre er nur am Nordrand
+  der Karte zu sehen; ganz weglassen – dann fehlte die Tiefe über dem See.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

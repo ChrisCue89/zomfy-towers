@@ -127,20 +127,23 @@ void main() {
   col *= mix(uTint, vec3(1.0), keep);
   col = max(mix(vec3(lum), col, mix(uSaturation, 1.0, keep)), 0.0);
 
-  // M33: Luftperspektive – nach Norden (oben im Bild) ein leichter Dunst; das Raster der
-  // Palette macht daraus gerasterten Dunst statt eines weichen Verlaufs
-  float haze = smoothstep(0.42, 1.0, gl_FragCoord.y / uRes.y) * uHaze.a * (1.0 - keep * 0.7);
-  col = mix(col, uHaze.rgb, haze);
-
-  // Vignette: Ränder weich in die Nachtfarbe ziehen
-  vec2 v = (gl_FragCoord.xy / uRes - 0.5) * vec2(uRes.x / uRes.y, 1.0);
-  float vig = smoothstep(0.42, 1.0, length(v) * 1.08);
-  col = mix(col, col * uVignetteColor, vig * uVignette);
-
   vec3 s = linearToSrgb(softClip(col));
   s += (bayer4(p + uDitherOffset) - 0.5) * uDither;
   vec3 pal = paletteLookup(s);
-  gl_FragColor = vec4(mix(clamp(s, 0.0, 1.0), pal, uPaletteMix), 1.0);
+  vec3 outColor = mix(clamp(s, 0.0, 1.0), pal, uPaletteMix);
+
+  // Dunst und Vignette hängen am Bild, nicht an der Welt – darum erst nach dem Raster der
+  // Palette und weich (Rückmeldung 30.09.: »der Nebel flackert immer noch«). Vorher lagen
+  // sie davor: Beim Gehen nach Norden glitt die Welt unter dem Verlauf hindurch, und je Bild
+  // kippten Tausende Pixel über dem See zwischen zwei Palettenfarben hin und her.
+  // M33: Luftperspektive – nach Norden (oben im Bild) ein leichter Dunst
+  float haze = smoothstep(0.42, 1.0, gl_FragCoord.y / uRes.y) * uHaze.a * (1.0 - keep * 0.7);
+  outColor = mix(outColor, linearToSrgb(uHaze.rgb), haze);
+  // Vignette: Ränder weich in die Nachtfarbe ziehen
+  vec2 v = (gl_FragCoord.xy / uRes - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+  float vig = smoothstep(0.42, 1.0, length(v) * 1.08);
+  outColor = mix(outColor, outColor * linearToSrgb(uVignetteColor), vig * uVignette);
+  gl_FragColor = vec4(outColor, 1.0);
 }
 `;
 
