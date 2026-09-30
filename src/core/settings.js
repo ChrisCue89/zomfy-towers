@@ -10,6 +10,12 @@ const KEY = 'zomfy-towers.einstellungen';
  * (ein Schritt feiner), groß = näher dran (ein Schritt gröber).
  */
 export const PIXEL_SIZES = { klein: -1, mittel: 0, gross: 1 };
+/**
+ * H4: Größe der Oberfläche als Verschiebung ihres ganzzahligen Faktors – klein = mehr Zeilen
+ * (ein Schritt feiner), groß = weniger Zeilen (ein Schritt gröber); nur, solange 270 bis 540
+ * Zeilen bleiben (sonst gilt das Fenster wie »mittel«).
+ */
+export const UI_SIZES = { klein: -1, mittel: 0, gross: 1 };
 /** Ansicht draußen (M13): weit = 80 px/m (Standard, Größe wie immer), nah = 160 px/m wie drinnen. */
 export const VIEWS = ['nah', 'weit'];
 /** Kamerawackeln (M26): aus, halb, voll – Faktoren in `data/feel.js`. */
@@ -26,6 +32,7 @@ export const DEFAULT_SETTINGS = {
   music: 6,
   sfx: 8,
   pixel: 'mittel',
+  ui: 'mittel',
   text: 'normal',
   view: 'weit',
   shake: 'voll',
@@ -41,6 +48,7 @@ export function loadSettings() {
     if (data && typeof data === 'object') {
       for (const k of ['master', 'music', 'sfx']) if (Number.isFinite(data[k])) out[k] = Math.max(0, Math.min(10, Math.round(data[k])));
       if (data.pixel in PIXEL_SIZES) out.pixel = data.pixel;
+      if (data.ui in UI_SIZES) out.ui = data.ui;
       if (data.text in TEXT_SPEEDS) out.text = data.text;
       if (VIEWS.includes(data.view)) out.view = data.view;
       if (SHAKES.includes(data.shake)) out.shake = data.shake;

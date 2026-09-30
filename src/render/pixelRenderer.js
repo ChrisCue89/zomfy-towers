@@ -23,6 +23,8 @@ function makePass(material) {
 
 /** So breit (Oberflächenpixel) soll die Oberfläche mindestens sein, wenn das Fenster es erlaubt. */
 const MIN_UI_WIDTH = 480;
+/** H4: So viele Zeilen darf die Oberfläche mit der Einstellung »Oberfläche« haben. */
+const UI_LINES = { min: 270, max: 540 };
 export class PixelRenderer {
   /**
    * @param {HTMLCanvasElement} canvas
@@ -136,7 +138,12 @@ export class PixelRenderer {
     // Oberfläche: eigene ganzzahlige Skalierung für ca. uiLines Zeilen
     // – bei sehr schmalen Fenstern auch nach der Breite, damit Leisten und Tafeln
     // nicht aus dem Bild rutschen (m5-r1: 320 × 900)
-    const uiScale = Math.max(1, Math.min(Math.round(devH / (this.config.uiLines || this.config.targetLines)), Math.floor(devW / MIN_UI_WIDTH)));
+    const base = Math.max(1, Math.min(Math.round(devH / (this.config.uiLines || this.config.targetLines)), Math.floor(devW / MIN_UI_WIDTH)));
+    // H4: Einstellung »Oberfläche« – ein Schritt feiner oder gröber, solange 270 bis 540 Zeilen bleiben
+    const want = base + (this.uiShift || 0);
+    const fits = want >= 1 && devH / want >= UI_LINES.min && devH / want <= UI_LINES.max && devW / want >= MIN_UI_WIDTH;
+    const uiScale = fits ? want : base;
+    this.uiShiftApplied = uiScale - base;
     this.uiScale = uiScale;
     this.uiWidth = Math.ceil(devW / uiScale);
     this.uiHeight = Math.ceil(devH / uiScale);

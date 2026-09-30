@@ -2528,6 +2528,24 @@ nicht braucht (acht leere Plätze, eine Kachel »kommt auf Stufe 3«, Moderkerne
 ein zweizeiliges Ziel mitten in der Welle), kostet Aufmerksamkeit. Nichts davon geht verloren:
 Es erscheint, sobald es zählt.
 
+### 210. Wie groß darf die Oberfläche werden? (H4)
+**Entscheidung:** Eine Einstellung »Oberfläche: klein · mittel · groß« verschiebt den ganzzahligen
+Faktor um einen Schritt, solange 270 bis 540 Zeilen bleiben; sonst gilt der nächste erlaubte Wert,
+und die Zeile sagt »(hier wie mittel)«.
+
+- **Halbe Schritte** (ungleich breite Pixel) gibt es nicht: Die Look-Regel »ganzzahlig« bleibt.
+- **Eine zweite, größere Schrift** auch nicht. Beides bleibt ein möglicher späterer Meilenstein,
+  falls »groß« auf Laptops fehlt.
+- **Fenster, die bei 270 Zeilen zu hoch wären,** passen sich an, statt kleinere Kacheln
+  einzuführen: Das Pausenmenü wird enger, das Herbstbuch zeigt weniger Zeilen je Spalte und
+  blättert.
+- **Edda** spricht über dem Baumenü, wenn sie sonst darauf läge.
+
+**Warum:** Die Recherche empfahl genau diese Einstellung (4.7), ehrlich mit ihren Grenzen: Mit ganzen
+Faktoren ist die Wahl grob, und im 1080p-Browserfenster bewirkt »groß« nichts. Dafür bleibt
+jeder Pixel scharf. Die großen Kacheln aus H1 bleiben in jeder Größe, denn sie waren der
+Wunsch.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -5,6 +5,32 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## H4: Oberflächengröße ✓
+
+**Auftrag (30.09.):** »Mit den minimalen Pixel … erkennt man nicht, was man bauen will.« Vierter
+Schritt aus `recherche/hud-baumenue.md` (4.7, Nr. 210): Wer die Oberfläche größer (oder feiner)
+will, stellt sie ein.
+
+- **Neue Einstellung »Oberfläche: klein · mittel · groß«** neben »Pixelgröße«. Sie verschiebt den
+  ganzzahligen Faktor der Oberfläche um einen Schritt. Bei 1920 × 1080 ergibt das 540, 360 oder
+  270 Zeilen. Sie steht im eigenen Einstellungsspeicher, nicht im Spielstand.
+- **Grenzen:** 270 bis 540 Zeilen. Lässt das Fenster die Wahl nicht zu, bleibt es beim nächsten
+  erlaubten Wert, und die Zeile sagt es: »Oberfläche: groß (hier wie mittel)«. Das betrifft das
+  1080p-Browserfenster mit 319 Zeilen und 1280 × 720.
+- **Alles passt ins Bild:**
+  - Das Pausenmenü rückt seine Zeilen enger, wenn die Höhe knapp wird.
+  - Das Herbstbuch nimmt so viele Zeilen je Spalte, wie in die Höhe passen, und blättert den
+    Rest (G5).
+  - Notiz- und Werkstattbuch stellen ihre Einträge in zwei Spalten, wenn es eng wird.
+  - Das behebt nebenbei ein echtes Problem: Im 1080p-Browserfenster (319 Zeilen) war das
+    Herbstbuch mit allen Seiten schon höher als das Bild.
+- **Edda weicht dem Baumenü aus:** Liegt ihr Funkfeld auf dem offenen Menü oder dem Bauzettel,
+  spricht sie darüber.
+- **Die Kacheln bleiben groß** (48 × 58). Ein kompaktes Baumenü mit kleineren Bildern gibt es
+  bewusst nicht, denn die großen Bilder waren der Kern der Beschwerde.
+
+**Prüfung:** Abschnitt `groesse`, 5 Prüfpunkte bestanden.
+
 ## H3: Zonen ✓
 
 **Auftrag (30.09.):** »Aktuell ist alles super unübersichtlich.« Dritter Schritt aus

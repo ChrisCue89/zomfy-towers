@@ -1958,6 +1958,13 @@ das Baumenü), die Mitte gehört der Welt. Der Vorrat zeigt die Grundsorten und 
 wenn es zählt; das Ziel ist eine Zeile und in der Welle aus; die Schnellleiste reicht bis zum
 letzten belegten Platz; Fähigkeiten zeigen nur belegte Kacheln (Nr. 209).
 
+#### H4 – Oberflächengröße ✓
+
+*Umgesetzt (30.09.2026):* Die Einstellung »Oberfläche: klein · mittel · groß« verschiebt den
+Faktor der Oberfläche um einen Schritt (bei 1920 × 1080: 540, 360, 270 Zeilen), in den Grenzen
+270 bis 540 Zeilen, sonst mit dem Hinweis »(hier wie mittel)«. Pausenmenü und Herbstbuch passen
+sich der Höhe an, Edda weicht dem offenen Baumenü aus; die Kacheln bleiben groß (Nr. 210).
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

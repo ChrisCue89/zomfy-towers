@@ -11,7 +11,7 @@ import { SPRECHER } from '../data/dialogs.js';
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
-import { PIXEL_SIZES, TEXT_SPEEDS, VIEWS, SHAKES, FLASHES, HORDE_LOOKS } from '../core/settings.js';
+import { PIXEL_SIZES, UI_SIZES, TEXT_SPEEDS, VIEWS, SHAKES, FLASHES, HORDE_LOOKS } from '../core/settings.js';
 import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
@@ -40,8 +40,8 @@ const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
 const BOOK_TAB_ROW = 15;
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
-const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'text', 'shake', 'flashes', 'horde'];
-const CHOICES = { pixel: Object.keys(PIXEL_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES, horde: HORDE_LOOKS };
+const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'ui', 'text', 'shake', 'flashes', 'horde'];
+const CHOICES = { pixel: Object.keys(PIXEL_SIZES), ui: Object.keys(UI_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES, horde: HORDE_LOOKS };
 
 /**
  * G5: Reiter auf Reihen verteilen – eine, wenn alle nebeneinander passen, sonst zwei, so
@@ -95,7 +95,7 @@ export class Menu {
     if (this.screen === 'settings') {
       const st = this.game.settings;
       const rows = SETTING_KEYS.map((key) => ({
-        label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}`,
+        label: `${T.menue.einstellung[key]}: ${CHOICES[key] ? T.menue.wert[st[key]] : st[key]}${key === 'ui' ? this.uiNote() : ''}`,
         setting: key,
         action: () => this.change(key, 1, true),
       }));
@@ -132,6 +132,15 @@ export class Menu {
       ];
     }
     return [{ label: T.menue.zurueck, action: () => this.go('main') }];
+  }
+
+  /** H4: Lässt das Fenster die gewählte Oberflächengröße nicht zu, sagt die Zeile, was gilt. */
+  uiNote() {
+    const want = UI_SIZES[this.game.settings.ui] ?? 0;
+    const applied = this.game.pixel.uiShiftApplied || 0;
+    if (want === applied) return '';
+    const name = Object.keys(UI_SIZES).find((k) => UI_SIZES[k] === applied) || 'mittel';
+    return ` ${T.menue.hierWie(T.menue.wert[name])}`;
   }
 
   /**
@@ -431,16 +440,19 @@ export class Menu {
     const data = this.bookData();
     const buttons = this.buttons();
     const rows = buttons.filter((b) => b.row);
-    const cols = rows.length > BOOK_ROWS ? 2 : 1;
-    const paged = rows.length > BOOK_ROWS * 2;
-    const perCol = paged ? BOOK_ROWS : Math.max(1, Math.ceil(rows.length / cols));
     const lineH = (list) => list.reduce((h, l) => h + LINE_HEIGHT + (l.gap ? 3 : 0), 0);
     const detailH = Math.max(BOOK_DETAIL_H, ...rows.map((b) => lineH(b.row.detail)));
     const w = BOOK_W;
     const pages = this.bookPages();
     const tabW = pages.map((p) => measure(T.buch.seiten[p]) + 12);
     const tabLines = splitTabs(tabW, w - 20);
-    const h = 28 + tabLines.length * BOOK_TAB_ROW + 1 + LINE_HEIGHT + 4 + BOOK_ROWS * BOOK_ROW + 6 + detailH + 8 + 22 + 20;
+    // H4: so viele Zeilen je Spalte, wie in die Höhe der Oberfläche passen (höchstens acht)
+    const fixedH = 28 + tabLines.length * BOOK_TAB_ROW + 1 + LINE_HEIGHT + 4 + 6 + detailH + 8 + 22 + 20;
+    const colRows = Math.max(3, Math.min(BOOK_ROWS, Math.floor((ui.height - 8 - fixedH) / BOOK_ROW)));
+    const cols = rows.length > colRows ? 2 : 1;
+    const paged = rows.length > colRows * 2;
+    const perCol = paged ? colRows : Math.max(1, Math.ceil(rows.length / cols));
+    const h = fixedH + colRows * BOOK_ROW;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
     // Reiter der Seiten, mittig unter dem Titel – je Reihe für sich zentriert
@@ -460,9 +472,9 @@ export class Menu {
     if (focused?.row) this.bookFocus = focused.row.id;
     const shownAt = Math.max(0, rows.findIndex((b) => b.row.id === this.bookFocus));
     // Lange Seiten: zwei Spalten sichtbar, die gewählte Zeile möglichst in der rechten
-    const lastStart = Math.ceil(rows.length / BOOK_ROWS) * BOOK_ROWS - BOOK_ROWS * 2;
-    const start = paged ? Math.max(0, Math.min(lastStart, (Math.floor(shownAt / BOOK_ROWS) - 1) * BOOK_ROWS)) : 0;
-    const end = paged ? start + BOOK_ROWS * 2 : rows.length;
+    const lastStart = Math.ceil(rows.length / colRows) * colRows - colRows * 2;
+    const start = paged ? Math.max(0, Math.min(lastStart, (Math.floor(shownAt / colRows) - 1) * colRows)) : 0;
+    const end = paged ? start + colRows * 2 : rows.length;
     let k = 0;
     const rects = buttons.map((b) => {
       if (b.row) {
@@ -477,11 +489,11 @@ export class Menu {
     });
     const shown = rows[shownAt]?.row || null;
     // Pfeile an den Rändern der Liste, wenn davor oder danach noch Zeilen liegen (anklickbar)
-    const arrowH = BOOK_ROWS * BOOK_ROW;
+    const arrowH = colRows * BOOK_ROW;
     const arrows = [];
     if (start > 0) arrows.push({ dir: -1, rect: { x: x + 1, y: rowsY, w: 8, h: arrowH } });
     if (end < rows.length) arrows.push({ dir: 1, rect: { x: x + w - 9, y: rowsY, w: 8, h: arrowH } });
-    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + BOOK_ROWS * BOOK_ROW + 6, shown: shown?.id ?? null, arrows, start } };
+    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + colRows * BOOK_ROW + 6, shown: shown?.id ?? null, arrows, start, colRows } };
   }
 
   /** Herbstbuch zeichnen: Reiter, Zähler, Zeilen mit Wert rechts, Beschreibung, »Zurück«. */
@@ -529,10 +541,13 @@ export class Menu {
     const controls = this.screen === 'controls' ? T.steuerung : [];
     const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : this.screen === 'settings' ? [T.menue.einstellungenHinweis] : [];
     // m16-r1: Die Steuerung wird so breit, dass Taste und Text nie aneinanderstoßen
-    const w = this.screen === 'controls' ? Math.max(250, ...controls.map(([key, what]) => measure(key) + measure(what) + 36)) : 220;
+    // H4: Die Einstellungen werden so breit wie ihre längste Zeile (»Oberfläche: groß (hier wie mittel)«)
+    const w = this.screen === 'controls' ? Math.max(250, ...controls.map(([key, what]) => measure(key) + measure(what) + 36)) : this.screen === 'settings' ? Math.max(220, ...buttons.map((b) => measure(b.label) + 50)) : 220;
     const bodyH = controls.length ? controls.length * LINE_HEIGHT + 8 : confirmText.length ? confirmText.length * LINE_HEIGHT + 8 : 0;
-    // M26: Mit Wackeln und Blitzen hat die Einstellungsseite zehn Zeilen – etwas enger
-    const step = buttons.length > 9 ? 20 : 22;
+    // M26: Mit Wackeln und Blitzen hat die Einstellungsseite zehn Zeilen – etwas enger;
+    // H4: bei großer Oberfläche (wenige Zeilen) so eng, dass alles ins Bild passt
+    const room = Math.floor((ui.height - 16 - 30 - bodyH - 20) / Math.max(1, buttons.length));
+    const step = Math.max(15, Math.min(buttons.length > 9 ? 20 : 22, room));
     const h = 30 + bodyH + buttons.length * step + 20;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
@@ -555,19 +570,27 @@ export class Menu {
     const rows = buttons.filter((b) => b.note);
     const lineH = (list) => list.reduce((h, l) => h + LINE_HEIGHT + (l.gap ? 3 : 0), 0);
     const detailH = Math.max(...rows.map((b) => lineH(this.noteDetail(b.note))));
-    const w = NOTES_W;
-    const h = 28 + LINE_HEIGHT + 4 + rows.length * NOTE_ROW + 6 + detailH + 8 + 22 + 20;
+    // H4: Bei wenigen Zeilen der Oberfläche stehen die Einträge in zwei Spalten (breiter)
+    const fixedH = 28 + LINE_HEIGHT + 4 + 6 + detailH + 8 + 22 + 20;
+    const cols = fixedH + rows.length * NOTE_ROW > ui.height - 8 && rows.length > 4 ? 2 : 1;
+    const perCol = Math.ceil(rows.length / cols);
+    const w = cols > 1 ? NOTES_W + 60 : NOTES_W;
+    const h = fixedH + perCol * NOTE_ROW;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
-    let cy = y + 28 + LINE_HEIGHT + 4;
+    const top = y + 28 + LINE_HEIGHT + 4;
+    const colW = Math.floor((w - 20) / cols);
+    let k = 0;
     const rects = buttons.map((b) => {
       if (b.note) {
-        const rect = { x: x + 10, y: cy, w: w - 20, h: NOTE_ROW - 1 };
-        cy += NOTE_ROW;
-        return { ...b, rect };
+        const c = Math.floor(k / perCol);
+        const r = k % perCol;
+        k += 1;
+        return { ...b, rect: { x: x + 10 + c * colW, y: top + r * NOTE_ROW, w: colW - (cols > 1 ? 4 : 0), h: NOTE_ROW - 1 } };
       }
       return { ...b, rect: { x: x + 20, y: y + h - 20 - 22, w: w - 40, h: 19 } };
     });
+    const cy = top + perCol * NOTE_ROW;
     // Beschreibung der gewählten Zeile – steht »Zurück« im Fokus, die zuletzt gewählte
     const focused = buttons[Math.min(this.focus, buttons.length - 1)];
     if (focused?.note) this.noteFocus = focused.note;
@@ -600,7 +623,7 @@ export class Menu {
         input.consumeClick();
         const rows = buttons.filter((b) => b.row);
         const at = Math.max(0, rows.findIndex((b) => b.row.id === L.book.shown));
-        const next = rows[Math.max(0, Math.min(rows.length - 1, at + arrow.dir * BOOK_ROWS))];
+        const next = rows[Math.max(0, Math.min(rows.length - 1, at + arrow.dir * L.book.colRows))];
         this.focus = buttons.indexOf(next);
         this.game.sound.play('klick');
         return;

@@ -311,6 +311,17 @@ export class BuildBar {
     return Math.min(L.y - MENU.tabH + 2, ...L.tabRects.map((r) => r.y));
   }
 
+  /** H4: alles, was das Menü gerade belegt – Menü, Reiter und Bauzettel (dem weicht Edda aus). */
+  occupiedRect(ui) {
+    const m = this.menuRect(ui);
+    const L = this.lastLayout || this.layout(ui);
+    const note = L.closed ? null : this.noteLayout(ui, L);
+    if (!note) return m;
+    const x = Math.min(m.x, note.x);
+    const y = Math.min(m.y, note.y);
+    return { x, y, w: Math.max(m.x + m.w, note.x + note.w) - x, h: Math.max(m.y + m.h, note.y + note.h) - y };
+  }
+
   /** Das Menü samt Reitern als ein Rechteck (zu: der Knopf) – dem weicht das Schild am Geist aus. */
   menuRect(ui) {
     const L = this.lastLayout || this.layout(ui);

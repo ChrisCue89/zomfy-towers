@@ -117,7 +117,9 @@ gilt bis auf Weiteres:
   ganzzahlige Skalierung (Full HD 1×, 1440p 2×), `NearestFilter`,
   `antialias: false`, CSS `image-rendering: pixelated`.
 - Oberfläche: eigene Leinwand mit ca. 360 Zeilen (`uiLines`), eigene
-  ganzzahlige Skalierung. Welt → Oberfläche über `game.worldToUi`, Zeiger →
+  ganzzahlige Skalierung; die Einstellung »Oberfläche« (H4, `UI_SIZES`) verschiebt den Faktor
+  um einen Schritt, solange 270 bis 540 Zeilen bleiben. Fenster, die hoch werden können
+  (Pausenmenü, Herbstbuch), passen sich der Höhe an – neue Fenster auch bei 270 Zeilen prüfen. Welt → Oberfläche über `game.worldToUi`, Zeiger →
   Welt über `game.pointerGround` (beide rechnen den Faktor
   `pixel.uiToScene` um). Pixelgrößen in der Szene (Partikel, Durchsicht-Loch)
   mit `pxPerMeter / 40` skalieren.
@@ -1237,7 +1239,11 @@ Grundprinzipien:
    Änderung und beim Bauen im Vorrat, mit offenem Baumenü ≤ 24 %, abends ist das Ziel eine Zeile
    vor der Nachtleiste, in der Welle ohne Ziel und ≤ 15 %, der Bossbalken und die zweite
    Fähigkeit passen dazu, in Full HD überlappt nichts (Bilder: zonen-tag, zonen-bauen,
-   zonen-nacht).
+   zonen-nacht); ab H4 (Abschnitt `groesse`): bei 1920 × 1080 ergibt »Oberfläche« klein, mittel,
+   groß 540, 360, 270 Zeilen und wird gespeichert, bei 270 Zeilen passen Pausenmenü,
+   Einstellungen, alle Seiten des Herbstbuchs, Notiz- und Werkstattbuch ins Bild, Edda spricht
+   über dem offenen Baumenü, im Browserfenster 1920 × 955 bleibt es bei 319 Zeilen mit »(hier wie
+   mittel)«, bei 1280 × 720 bei 360 (Bilder: ui-klein, ui-gross).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1405,7 +1411,9 @@ ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; 
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
 Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeilen) und die
 offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen); ab H3 zeigt `hudLayout()` die
-Tafeln des letzten Bilds samt freiem Rechteck, `visibleResources()` die Sorten im Vorrat.
+Tafeln des letzten Bilds samt freiem Rechteck, `visibleResources()` die Sorten im Vorrat; ab H4
+zeigt `uiInfo()` Zeilen, Breite, Faktor und die gewünschte und wirksame Verschiebung der
+Oberfläche.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

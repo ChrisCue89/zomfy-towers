@@ -232,6 +232,7 @@ async function runBrowserChecks() {
     if (want('uhr')) await runClockChecks(browser, url);
     if (want('orte')) await runPlaceChecks(browser, url);
     if (want('zonen')) await runZoneChecks(browser, url);
+    if (want('groesse')) await runSizeChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -11327,6 +11328,110 @@ async function runZoneChecks(browser, url) {
   await zh(() => (window.__zomfyHold = false));
   checkMessages(hd);
   await hd.context.close();
+}
+
+/**
+ * H4 – Oberflächengröße (recherche/hud-baumenue.md 4.7): »Oberfläche: klein · mittel · groß«
+ * verschiebt den Faktor der Oberfläche. Bei 1920 × 1080 sind es 540, 360 und 270 Zeilen; bei
+ * 1920 × 955 (Browserfenster) 319, dort gilt »groß« wie mittel und die Zeile sagt es; bei
+ * 1280 × 720 bleibt es bei 360. Die Wahl ist gespeichert. Bei 270 Zeilen passen Pausenmenü,
+ * Einstellungen und Herbstbuch ins Bild, und Edda liegt nie auf dem offenen Baumenü.
+ */
+async function runSizeChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Größe (H4)', { viewport: { width: 1920, height: 1080 } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(80);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    Z.setDay(3);
+    Z.setTime(10, 0);
+  });
+  await step(300);
+  const setUi = async (size) => {
+    await z((s) => window.zomfy.game.applySettings({ ui: s }), size);
+    await step(100);
+    return z(() => window.zomfy.uiInfo());
+  };
+
+  // 1) Full HD: klein, mittel, groß – 540, 360, 270 Zeilen; gespeichert
+  const klein = await setUi('klein');
+  await still(page, 'ui-klein');
+  const mittel = await setUi('mittel');
+  const gross = await setUi('gross');
+  const saved = await z(() => JSON.parse(localStorage.getItem('zomfy-towers.einstellungen') || '{}').ui);
+  if (klein.lines === 540 && mittel.lines === 360 && gross.lines === 270 && saved === 'gross') note(`✓ Größe (H4): »Oberfläche« bei 1920 × 1080 – klein ${klein.lines}, mittel ${mittel.lines}, groß ${gross.lines} Zeilen; die Wahl ist gespeichert`);
+  else fail(`Größe: Full HD ${JSON.stringify({ klein, mittel, gross, saved })}`);
+
+  // 2) Bei 270 Zeilen passt alles: Pausenmenü, Einstellungen, jede Seite des Herbstbuchs
+  const passt = await z(() => {
+    const g = window.zomfy.game;
+    const ui = g.ui;
+    const out = [];
+    const fits = (name) => {
+      const L = g.menu.layout(ui);
+      if (L.y < 0 || L.y + L.h > ui.height || L.x < 0 || L.x + L.w > ui.width) out.push(`${name}: ${L.x},${L.y} ${L.w}×${L.h}`);
+    };
+    g.openMenu();
+    fits('main');
+    g.menu.go('settings');
+    fits('settings');
+    g.menu.go('buch');
+    for (const page of g.menu.bookPages()) {
+      g.menu.page = page;
+      g.menu.bookCache = null;
+      fits(`buch:${page}`);
+    }
+    g.menu.go('notes');
+    fits('notes');
+    g.menu.go('recipes');
+    fits('recipes');
+    g.menu.go('main');
+    return out;
+  });
+  await tap('Escape');
+  const menuZu = await z(() => window.zomfy.game.mode);
+  if (!passt.length && menuZu === 'play') note('✓ Größe (H4): bei 270 Zeilen passen Pausenmenü, Einstellungen, alle Seiten des Herbstbuchs, Notiz- und Werkstattbuch ins Bild');
+  else fail(`Größe: 270 Zeilen ${JSON.stringify({ passt, menuZu })}`);
+
+  // 3) Baumenü offen und Edda spricht: sie weicht nach oben aus, nichts überlappt
+  await tap('Tab');
+  await z(() => window.zomfy.game.funk.say('Das hier ist ein Probespruch über Funk, der ein wenig länger ist als eine Zeile.'));
+  for (let k = 0; k < 10; k++) await step(100);
+  const lage = await z(() => window.zomfy.hudLayout());
+  const fehler = zoneProblems(lage);
+  const funk = lage.panels.find((p) => p.name === 'funk');
+  await still(page, 'ui-gross');
+  await tap('Escape');
+  if (funk && lage.panels.some((p) => p.name === 'baumenue') && !fehler.length) note(`✓ Größe (H4): bei 270 Zeilen spricht Edda über dem offenen Baumenü (y ${funk.y}), keine Tafel überlappt`);
+  else fail(`Größe: Baumenü und Funk ${JSON.stringify({ fehler, panels: lage.panels })}`);
+
+  // 4) Browserfenster 1920 × 955: 319 Zeilen (aufgerundet), »groß« gilt wie mittel – die Zeile sagt es
+  await page.setViewportSize({ width: 1920, height: 955 });
+  await step(200);
+  const browser955 = await z(() => {
+    const g = window.zomfy.game;
+    g.menu.go('settings');
+    const row = g.menu.buttons().find((b) => b.setting === 'ui')?.label || '';
+    return { ...window.zomfy.uiInfo(), row };
+  });
+  // 5) 1280 × 720: klein ginge über 540 Zeilen hinaus – es bleibt bei 360
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const laptop = await setUi('klein');
+  await setUi('mittel');
+  if (browser955.lines === Math.ceil(955 / 3) && browser955.applied === 0 && browser955.row.includes('hier wie mittel') && laptop.lines === 360 && laptop.applied === 0) note(`✓ Größe (H4): im Browserfenster 1920 × 955 bleibt es bei ${browser955.lines} Zeilen – »${browser955.row}«; bei 1280 × 720 bleibt »klein« bei ${laptop.lines}`);
+  else fail(`Größe: kleine Fenster ${JSON.stringify({ browser955, laptop })}`);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
 }
 
 /** H3: Paare von Tafeln, die sich überlappen (Namen). */

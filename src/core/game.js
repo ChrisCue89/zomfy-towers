@@ -93,7 +93,7 @@ import { iconCanvas } from '../ui/icons.js';
 import { T } from '../data/texts.js';
 import { Sound } from '../audio/sound.js';
 import { renderMusic } from '../audio/music.js';
-import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, TEXT_SPEEDS } from './settings.js';
+import { loadSettings, saveSettings, volumesOf, PIXEL_SIZES, UI_SIZES, TEXT_SPEEDS } from './settings.js';
 import { DIALOGE, REST_TARGET, canRest } from '../data/dialogs.js';
 import { HOTBAR_SIZE, ITEMS } from '../data/items.js';
 import { WEAPONS } from '../data/weapons.js';
@@ -205,6 +205,7 @@ export class Game {
     this.settings = loadSettings();
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
     this.pixel.scaleShift = PIXEL_SIZES[this.settings.pixel];
+    this.pixel.uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4
     // Ansicht draußen (M13): weit (80 px/m, Standard) oder nah (160 px/m, Taste Z); ?zoom erzwingt sie
     this.view = CONFIG.view || this.settings.view;
     this.sound = new Sound(volumesOf(this.settings));
@@ -3134,8 +3135,10 @@ export class Game {
     this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll;
     this.horde.spriteLook = this.settings.horde === '2d'; // F1
     const shift = PIXEL_SIZES[this.settings.pixel];
-    if (this.pixel.scaleShift !== shift) {
+    const uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4: Oberfläche klein · mittel · groß
+    if (this.pixel.scaleShift !== shift || this.pixel.uiShift !== uiShift) {
       this.pixel.scaleShift = shift;
+      this.pixel.uiShift = uiShift;
       this.pixel.width = 0; // neues Maß erzwingen
       this.resize();
     }
@@ -3710,6 +3713,8 @@ export class Game {
       bookCheck: () => game.book.check(),
       // H3: Zonen – die Tafeln des letzten Bilds, das freie Rechteck, der Vorrat
       hudLayout: () => game.hud.layoutInfo(game.ui),
+      // H4: Größe der Oberfläche – Zeilen, Breite, Faktor, gewünschte und wirksame Verschiebung
+      uiInfo: () => ({ lines: game.ui.height, width: game.ui.width, scale: game.pixel.uiScale, shift: game.pixel.uiShift || 0, applied: game.pixel.uiShiftApplied || 0, setting: game.settings.ui }),
       visibleResources: () => game.hud.visibleResources(),
       // G5: Ortskunde – bekannte Orte mit Namen, Zeilen und die offene Seite des Buchs samt Reitern
       places: () => {

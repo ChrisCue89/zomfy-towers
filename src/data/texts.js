@@ -2041,7 +2041,9 @@ export const T = {
       shake: 'Wackeln',
       flashes: 'Blitze',
       horde: 'Schlurfer',
+      ui: 'Oberfläche', // H4
     },
+    hierWie: (wert) => `(hier wie ${wert})`, // H4: das Fenster lässt die Wahl nicht zu
     wert: { klein: 'klein', mittel: 'mittel', gross: 'groß', langsam: 'langsam', normal: 'normal', schnell: 'schnell', sofort: 'sofort', nah: 'nah', weit: 'weit', aus: 'aus', halb: 'halb', voll: 'voll', sanft: 'sanft', '3d': '3D', '2d': '2D (Probe)' },
     einstellungenHinweis: 'A/D oder Klick ändert den Wert.',
     sicherFrage: 'Wirklich neu beginnen? Der Spielstand wird gelöscht.',

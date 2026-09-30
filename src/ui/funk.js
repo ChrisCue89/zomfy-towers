@@ -110,7 +110,13 @@ export class Funk {
     const k = Math.min(1, c.t / FUNK.slide, (c.total - c.t) / FUNK.slide);
     const slide = Math.round((1 - Math.max(0, k)) * (w + 10));
     const x = 6 - slide; // gleitet von links herein
-    const y = Math.round(top - 6 - h);
+    let y = Math.round(top - 6 - h);
+    // H4: Bei großer Oberfläche reicht das offene Baumenü bis unter Edda – dann spricht sie darüber
+    const bar = this.game.buildbar;
+    if (bar?.open && bar.lastLayout) {
+      const m = bar.occupiedRect(ui);
+      if (x < m.x + m.w && x + w > m.x && y < m.y + m.h && y + h > m.y) y = Math.max(4, m.y - h - 4);
+    }
     return { x, y, w, h, px: x, py: y, bx: x + pw + 8, by: y + 4, bw, bh };
   }
 
