@@ -48,7 +48,8 @@ Skripte ergeben dieselben Bilder.
 
 ## Ergebnis
 
-`out/zomfy-towers-trailer.mp4` – 1920 × 1080, 30 Bilder/s, H.264 + AAC, 60,00 s, ≈ −16 LUFS. Prüfen mit
+`out/zomfy-towers-trailer.mp4` (48 MB, im Repo) – 1920 × 1080, 30 Bilder/s, H.264 + AAC, 60,00 s, −16,6 LUFS.
+Die 87-MB-Masterfassung (`crf 21`, `out/*-master.mp4`) liegt nur lokal; sie entsteht mit dem Befehl oben. Prüfen mit
 `node trailer/verify-video.mjs <video.mp4>` (Länge, Format, Lautheit, True Peak, schwarze Stellen, Stille).
 Der AAC-Encoder von ffmpeg hebt Spitzen um ≈ 3 dB an; `render.mjs` begrenzt deshalb vor der Kodierung
 (`alimiter=limit=0.70`), damit der True Peak des Videos unter −1 dBFS bleibt.
