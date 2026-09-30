@@ -5,6 +5,37 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## Recherche: Schlurfer als Sprites, HUD und Baumenü, Geschichte und Namen (30.09.2026) ✓
+
+Rückmeldung des Auftraggebers am Morgen des 30.09.: »Der Nebel flackert immer noch. Die 3D-Modelle
+der Schlurfer sind schrecklich – wollen wir die nicht in 2D machen, in 8 Richtungen wie in Zelda:
+A Link to the Past? … Die Story ist noch dünn. Die Namen der ganzen Orte sind nicht gut. … Das HUD
+ist super unübersichtlich, mit den minimalen Pixeln im Baueditor erkennt man nicht, was man bauen
+will.« Drei Recherchen (Berichte in `recherche/`), daraus Entscheidungen (OFFENE-FRAGEN 196–198)
+und ein Plan (DESIGN 8, »Der Plan ab 30.09.2026«):
+
+- **Schlurfer als 2D-Sprites** (`recherche/schlurfer-sprites.md`): ja, aber zuerst ein Prototyp
+  mit Umschalter und Vergleichsbildern. 8 Richtungen, 5 davon gezeichnet (der Westen gespiegelt),
+  ein Sprite-Pixel = 2 × 2 Bildpunkte; im Code aus Körperformen gerastert, mit Pixelregeln und
+  handgezeichneten Stempeln; ein InstancedMesh aufrechter Quads mit Atlas, Normalen und
+  Glühmaske. Statt 11 600–29 500 Dreiecken je Schlurfer nur noch 6. Plan F1–F4.
+- **HUD und Baumenü** (`recherche/hud-baumenue.md`): Die Bauleiste ist nicht zu klein, sondern
+  zu leer – 12 × 12-Symbole, Preise in 3 × 5-Ziffern, Rasterung über allem, was zu teuer ist.
+  Neu: sechs feste Zonen, ein Baumenü auf Abruf (Tab) mit großen Bildern aus den 3D-Modellen,
+  Bauzettel und Preis am Baugeist; höchstens zwei Meldungen; der Nachtplan in der Nachtleiste;
+  Edda kompakt unten links; Einstellung »Oberfläche«. Plan H1–H5. Gefunden: Die Bauleiste zeigt
+  nur sechs Kacheln – mit der Lagerglocke fehlt der Funkturm (kommt mit H1 in Ordnung).
+- **Geschichte und Namen** (`recherche/storytelling-namen.md`): eine zentrale Frage (Lus »Ist
+  das hier zu Hause?«), der Moder in Schichten, offene Fäden verknoten (Hildes Brief ist an Edda,
+  Knopf war Yusufs Pflegehund, die Seewelle war Eddas Stimme), eine natürliche Uhr (Tag n =
+  n. Oktober, Kraniche, der singende See in der Frostnacht) und Namen mit Herkunft (Holzmark,
+  Kranichsee, Dämmerwohld, Wartholm, Kiekwerder, Kürbisholm, Apfelwerder, Eulenbruch …).
+  Plan G1–G5, fast nur Text.
+- Sofort umgesetzt: Die erste Seite aus Eddas Funkbuch (N8) liest sich nicht mehr so, als liefe
+  jemand aus Marthes Familie in der Horde (»Schuld nein«) – der alte Brandt nickt, statt zu lachen.
+- Nebenbefund der Sprite-Recherche: Der Pilzmutter fehlt im feinen Maß der große leuchtende Hut
+  (behoben mit dem nächsten Meilenstein).
+
 ## N8 – Eddas Funkbuch und die Glocke am Steg ✓
 
 Weiter mit dem Wunsch vom 29.09. (»arbeite an der Story, an den Texten, an kleinen

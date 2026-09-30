@@ -1833,6 +1833,30 @@ bei Marthe – erzählen, wie der Moder kam, von Radio Stillwald und warum Edda 
 Holzlände verließ (Nr. 195); im Herbstbuch zum Nachlesen, mit allen vier meldet sich
 Edda. Marthes Glocke hängt am Steg: E ruft die Kinder, Balduin wird begrüßt.
 
+### Der Plan ab 30.09.2026 – Rückmeldung: Nebel, Schlurfer, HUD, Geschichte
+
+Der Auftraggeber am Morgen des 30.09.: Der Nebel flackert noch, die Schlurfer sollen 2D-Sprites
+in 8 Richtungen werden, die Geschichte ist dünn, die Ortsnamen sind schwach, das HUD ist
+unübersichtlich und die Bauleiste unlesbar. Drei Recherchen (`recherche/schlurfer-sprites.md`,
+`recherche/hud-baumenue.md`, `recherche/storytelling-namen.md`), Entscheidungen Nr. 196–198.
+Reihenfolge – Fehler zuerst, jeder Schritt für sich spielbar:
+
+1. **Nebel:** die Ursache messen (Bildfolgen mit und ohne Nebel), beheben. Dazu kommt das
+   fertige N9 (Drachenwetter) in dieselbe Prüfung.
+2. **H1 – Das neue Baumenü:** zu und offen mit Tab, Bilder aus den Modellen, Preise in der
+   Hauptschrift, Bauzettel, Preis am Geist, Rückfrage auf der Kachel, keine gekürzte Leiste mehr,
+   Edda kompakt unten links.
+3. **G1 – Namen:** alle Umbenennungen, Widersprüche beheben (die Seewelle, Norderholm, Eddas
+   Wohnort am Sturmhuk, Brandt als Marthes Vater).
+4. **F1 – Ein Schlurfer auf Papier:** der Sprite-Prototyp mit Umschalter und Vergleichsbildern –
+   danach entscheidet der Auftraggeber über F2–F4.
+5. **H2 – Aufräumen:** Meldungen nach Art (höchstens zwei), Nachtplan und Alarme in der
+   Nachtleiste, die gefundenen Überlappungen beheben.
+6. **F2–F4** (nach Zustimmung): alle Arten, die Bosse in 8 Richtungen, Aufräumen.
+7. **G2–G5:** die Fäden verknoten, der Wald erzählt, die Uhr bis zum Frost, die Herbstbuch-Seite
+   »Ortskunde«.
+8. **H3–H5:** feste Zonen, Oberflächengröße, Reiter nach Zweck.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

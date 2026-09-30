@@ -2249,6 +2249,65 @@ gespeichert).
   schon eine Spur (Eddas Funkbuch) – sie zu Ende zu erzählen kostet wenig und gibt den
   Ausflügen ein Ziel.
 
+### 196. Schlurfer als 2D-Sprites (Rückmeldung vom 30.09.)
+**Entscheidung:**
+- **Erst ein Prototyp (F1), dann entscheidet der Auftraggeber:** Der Schlurfer als Sprite neben
+  der Voxel-Horde, Umschalter `?horde=voxel|sprite`, Vergleichsbilder (weit und nah, Tag und
+  Nacht, Getümmel am Tor).
+- **8 Richtungen, 5 gezeichnet** (S, SO, O, NO, N), W, NW und SW gespiegelt. Gewählt wird aus der
+  Laufrichtung mit Hysterese (10° über die Grenze, mindestens 0,15 s), beim Schlag bleibt sie
+  stehen. Bosse bekommen alle 8.
+- **Maß:** ein Sprite-Pixel = 2 × 2 Bildpunkte (1/40 m breit, 1/32 m hoch), nah 4 × 4. Nie
+  skalieren oder drehen: Champions und andere Größen werden neu gerastert.
+- **Erzeugung im Code:** Körperformen an einem Gelenkgerüst werden je Bild auf der CPU
+  gerastert, danach Pixelregeln (Palettenrampen, farbige Kontur, Aufräumen) und handgezeichnete
+  Stempel für Gesichter und Merkmale.
+- **Darstellung:** ein InstancedMesh aufrechter Quads (1,25-fach gestreckt), Atlas als
+  DataTexture, Alpha-Test mit `discard`, Normalen-Atlas für Licht, Glühmaske, zur Sonne gedrehte
+  Schattenkarten. Mika und die Bewohner bleiben vorerst Voxel.
+
+**Warum:** Kein Ineinanderstecken mehr im Pulk, 6 statt bis zu 29 500 Dreiecke je Schlurfer,
+klarere Silhouetten. Das größte Risiko ist der Stilbruch neben der Voxel-Mika – deshalb zuerst
+der Prototyp.
+
+### 197. HUD und Baumenü (Rückmeldung vom 30.09.)
+**Entscheidung** (Empfehlungen der Recherche; der Auftraggeber kann jede überstimmen):
+- **Sechs Zonen mit je einer Aufgabe:** oben links Uhr und Ziel, oben in der Mitte die Nacht,
+  oben rechts Vorrat und höchstens zwei Meldungen, unten links Mika mit Edda, unten rechts
+  Bauen; die Mitte gehört der Welt.
+- **Das Baumenü ist zu, bis man es braucht** (Knopf »Bauen [Tab]«): Tab öffnet und wechselt die
+  Reiter, Q R T G C V öffnen die Türme und beginnen gleich zu setzen. Offen hat es Kacheln von
+  48 × 58 mit einem Bild aus dem 3D-Modell (wie die Katalogfotos), Preise in der Hauptschrift und
+  einen Bauzettel mit Name, Wirkung und Werten. Beim Setzen stehen Preis und Grund am Baugeist,
+  Rückfragen auf der Kachel.
+- **Edda kompakt unten links** (240 × 46); der Nachtplan in der Nachtleiste; Meldungen nach Art,
+  höchstens zwei; der Vorrat zeigt die Grundsorten, Seltenes nur bei Bedarf.
+- **Oberflächengröße** »klein · mittel · groß« in ganzen Stufen – die Pixel bleiben scharf.
+- **Reiter nach Zweck** (»Figur« an die Werkbank) erst als letzter Schritt (H5).
+
+**Warum:** Heute bedecken Tafeln 20–38 % des Bildes, abends ist das rechte Drittel zu zwei
+Dritteln zu. Die Kacheln sind groß genug, aber ihr Inhalt ist ein 12 × 12-Symbol.
+
+### 198. Geschichte und Ortsnamen (Rückmeldung vom 30.09.)
+**Entscheidung:**
+- **Zentrale Frage:** »Ist das hier zu Hause?« (Lu) – von Mikas erstem Gedanken bis zu Lus eigener
+  Antwort nach dem Frost. Eddas Geschichte wird aufgelöst, der Moder nur halb (er folgt dem Weg des
+  Holzes zum Wasser und sucht vor dem Winter Wärme), Balduins Grund nie.
+- **Leitplanke »Schuld nein«:** Nie läuft ein Angehöriger einer lebenden Figur erkennbar in der
+  Horde. Wer fällt, den gibt der Wald als Laub frei.
+- **Fäden verknoten:** Hildes Brief ist an Edda, Knopf war Yusufs Pflegehund, die Seewelle war
+  Eddas Stimme und die Technik von Junas Vater, das Pfeifen antwortet nach dem Frost.
+- **Natürliche Uhr:** Tag n ist der n. Oktober; Kraniche rasten auf dem See und ziehen vor dem
+  Frost ab; in der Frostnacht singt der See.
+- **Namen** (die IDs bleiben): Holzmark, Kranichsee, Dämmerwohld, alte Holzlände (nach dem Frost
+  »Mikas Bucht«), Die Seewelle, Wartholm, Kiekwerder mit Almas Ruh, Kürbisholm, Apfelwerder,
+  Forsthaus Eulenbruch, Sonnenkamp, Leuchtturm Sturmhuk, Ferienlager Glühwürmchen, Hafen von
+  Aalbek, Hammermühle, Kloster Sankt Luzia, Norderholm, Birkhagen, Wollgrashof; die alten
+  Wegnamen Köhlerstieg, Holzweg und Schaftrift (der Nachtplan behält die Himmelsrichtung).
+
+**Warum:** Ton und Figuren tragen schon. Es fehlten eine Frage über alle 30 Tage, eine
+Vorgeschichte der Gegend und Namen mit Herkunft. Fast alles ist Text – kein neuer Spielstand.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -8,7 +8,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
-| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198) |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
