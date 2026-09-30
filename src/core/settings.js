@@ -1,5 +1,6 @@
 // Einstellungen (Meilenstein 7): Lautstärke, Pixelgröße, Textgeschwindigkeit;
-// seit M26 auch Wackeln und Blitze (Zugänglichkeit), seit F1 der Look der Schlurfer.
+// seit M26 auch Wackeln und Blitze (Zugänglichkeit), seit F1 der Look der Schlurfer (seit F2
+// standardmäßig 2D).
 // Sie gehören nicht zum Spielstand – eigener Schlüssel im Browser, damit ein
 // neues Spiel sie nicht zurücksetzt.
 
@@ -22,8 +23,13 @@ export const VIEWS = ['nah', 'weit'];
 export const SHAKES = ['aus', 'halb', 'voll'];
 /** Blitze (M26): voll oder sanft (der Laternenblitz flammt schwächer auf). */
 export const FLASHES = ['voll', 'sanft'];
-/** F1: Schlurfer als Voxel (3D) oder als Sprites (2D, Probe – bisher nur der Schlurfer selbst). */
+/** F1/F2: Schlurfer als Voxel (3D) oder als Sprites (2D, seit F2 alle Arten und der Standard). */
 export const HORDE_LOOKS = ['3d', '2d'];
+/**
+ * Stand der gespeicherten Einstellungen: Mit 2 wurde 2D der Standard der Schlurfer (F2) – ein
+ * älterer Stand hatte »3D« nur als alten Standard gespeichert, dort gilt einmal der neue.
+ */
+const SETTINGS_VERSION = 2;
 /** Zeichen pro Sekunde beim Tippen der Dialoge (0 = sofort). */
 export const TEXT_SPEEDS = { langsam: 36, normal: 72, schnell: 140, sofort: 0 };
 
@@ -37,7 +43,7 @@ export const DEFAULT_SETTINGS = {
   view: 'weit',
   shake: 'voll',
   flashes: 'voll',
-  horde: '3d',
+  horde: '2d',
 };
 
 export function loadSettings() {
@@ -53,7 +59,7 @@ export function loadSettings() {
       if (VIEWS.includes(data.view)) out.view = data.view;
       if (SHAKES.includes(data.shake)) out.shake = data.shake;
       if (FLASHES.includes(data.flashes)) out.flashes = data.flashes;
-      if (HORDE_LOOKS.includes(data.horde)) out.horde = data.horde;
+      if (HORDE_LOOKS.includes(data.horde) && data.v >= 2) out.horde = data.horde;
     }
   } catch {
     // kaputt oder gesperrt: Standardwerte
@@ -63,7 +69,7 @@ export function loadSettings() {
 
 export function saveSettings(settings) {
   try {
-    globalThis.localStorage?.setItem(KEY, JSON.stringify(settings));
+    globalThis.localStorage?.setItem(KEY, JSON.stringify({ ...settings, v: SETTINGS_VERSION }));
   } catch {
     // Speicher gesperrt (privates Fenster): Einstellungen gelten nur für diese Sitzung
   }

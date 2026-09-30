@@ -67,6 +67,9 @@ export const CONFIG = {
   },
   // Ansicht draußen (M13): ?zoom=nah|weit erzwingt sie; Standard (und die Prüfung) weit
   view: ['nah', 'weit'].includes(params.get('zoom')) ? params.get('zoom') : params.has('test') ? 'weit' : null,
+  // Look der Schlurfer (F2): ?horde=2d|3d erzwingt ihn; die Prüfung und die Playtest-Brücke
+  // bleiben bei 3D, solange sie nicht umstellen (ihre übrigen Abschnitte messen Voxel)
+  horde: ['2d', '3d'].includes(params.get('horde')) ? params.get('horde') : params.has('test') || params.has('playtest') ? '3d' : null,
   debug: params.has('debug'),
   test: params.has('test'),
   playtest: params.has('playtest'),

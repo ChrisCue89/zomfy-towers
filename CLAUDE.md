@@ -193,12 +193,20 @@ gilt bis auf Weiteres:
   braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
   Schlurfer (1.8) liegen über dem Umriss: Er scheint nur durch Bauten und
   Türme, nicht durch die Horde (m16-r1: im Getümmel ein gelbes Knäuel).
-- **Sprites (F1, Probe):** Der Schlurfer kann statt Voxeln als Sprite erscheinen
-  (Einstellung »Schlurfer: 2D«, `horde.spriteLook`). Sprites werden im Spiel aus Formen gebacken
-  (`zombieSprites.bakeFrame`), nie gemalt oder geladen: 1/40 m je Texel (2 × 2 Bildpunkte bei
-  80 px/m), 5 Richtungen gezeichnet und 3 gespiegelt, Palette und Kontur aus den Pixelregeln des
-  Bäckers. Im Bild ein aufrechter Quad je Figur, der Fußpunkt rastet auf `spriteUniforms.uPx`
-  (das Spiel setzt `rig.px`); Schatten und Ausblenden nur gerastert, nie geblendet.
+- **Sprites (F1, seit F2 Standard):** Die Horde erscheint als Sprites (Einstellung »Schlurfer:
+  3D/2D«, `horde.spriteLook`; Standard 2D, die Prüfung bleibt bei 3D). Sprites werden im Spiel aus
+  Formen gebacken (`zombieSprites.bakeFrame`), nie gemalt oder geladen: 1/40 m je Texel (2 × 2
+  Bildpunkte bei 80 px/m), 5 Richtungen gezeichnet und 3 gespiegelt, Palette und Kontur aus den
+  Pixelregeln des Bäckers. Im Bild ein Quad je Figur, der Fußpunkt rastet auf
+  `spriteUniforms.uPx` (das Spiel setzt `rig.px`); über der Fußlinie aufrecht, darunter auf dem
+  Boden (Fußknick, F2). Schatten und Ausblenden nur gerastert, nie geblendet.
+  - **Backen (F2):** Worker (`spriteWorker.js`) backen im Hintergrund, was im Bild steht, dann die
+    Arten der kommenden Nacht (`game.planSprites`), dann die übrigen (`BACKGROUND`); Bosse nur,
+    wenn sie kommen. Eine Fassung (Art × Größe: Champions ×1,15, Teile des Moosriesen ×0,55) ist
+    fertig, wenn alle 85 Bilder da sind – bis dahin bleibt sie Voxel. Ohne Worker backt
+    `hordeSprites.pump` ein Bild je Bild im Spiel. Neue Größen nie skalieren, sondern backen.
+  - **Atlas (F2):** Array-Textur aus Seiten von 1024², je Texel Palettenindex, Art und Normale in
+    der Bildebene (`spriteCode.js`, ohne three.js). Nur Palettenfarben; höchstens 16 Seiten.
   - **Gestaltungsbogen (F-Design, `recherche/schlurfer-gestaltung.md`):**
     - Alle 17 Formen der Horde (16 Arten und der Schildträger ohne Tür) haben einen Bauplan in
       `zombieSpriteKinds.js`, gebaut auf dem Gerüst `spriteFigure.js` (`humanoid(ctx, B)` mit Maßen
@@ -284,8 +292,10 @@ src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       staticMesh (sichtbare Flächen + Schatten-Stellvertreter),
                       portrait (Porträts ohne GPU-Auslesen), shaders,
                       spriteBaker (Formen → Texel: Strahlen, Pixelregeln,
-                      Stempel, F1), spriteAtlas (Bilder als Datentextur),
-                      spriteMaterial (aufrechter Quad, Einrasten, Licht aus
+                      Stempel, F1), spriteCode (Kodierung für den Atlas:
+                      Palettenindex, Art, Normale; ohne three.js, F2),
+                      spriteAtlas (Seiten als Array-Textur, Packen nach Höhe),
+                      spriteMaterial (Quad mit Fußknick, Einrasten, Licht aus
                       der gebackenen Normale)
 src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Wegenetz prozedural aus `mapSeed`, Abstandsfelder,
@@ -335,12 +345,14 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       für Menschen: Kopf, Rumpf, Glieder mit Knie/Ellbogen,
                       Vorderkarten, N1), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels,
-                      zombieSprites (Richtungen, Zustände, ein Bild backen,
-                      F1), zombieSpriteKinds (die 17 Formen der Horde:
-                      Stoffe, Körper, Zubehör, Stempel, F-Design),
+                      zombieSprites (Richtungen, Zustände, ein Bild backen
+                      in jeder Größe, F1), zombieSpriteKinds (die 17 Formen
+                      der Horde: Stoffe, Körper, Zubehör, Stempel, F-Design),
                       spriteFigure (Gerüst: Körper, Gangarten, Posen),
-                      hordeSprites (Richtung mit Hysterese, Bild
-                      je Zustand, Instanzen, Backen nach und nach), towers
+                      hordeSprites (Fassungen und Reihenfolge des Backens,
+                      Worker, Richtung mit Hysterese, Bild je Zustand,
+                      Instanzen, F2), spriteWorker (backt im Hintergrund,
+                      F2), towers
                       (Zielen, Geschosse, Auren, Feuer, Glocke, Windstoß,
                       Bienenschwärme, Vogelscheuche), traps (Fallen auf den
                       Wegen, M19), loot (Brocken,
@@ -1266,12 +1278,19 @@ Grundprinzipien:
    ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; »Leute« mit mehr
    als sechs Möglichkeiten zeigt »weiter« und dort den Langen Jakob; Edda spricht unten links, nie
    auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen); ab F1 (Abschnitt
-   `sprites`): Standard 3D, »Schlurfer: 2D« backt nach und nach 65 Bilder (bis dahin Voxel),
-   acht Schlurfer zeigen acht Richtungen (NW, W, SW gespiegelt), die Richtung wechselt mit
-   Hysterese und ohne Flackern, in der Nebelwelle nur die Augen, Treffer und Zusammensacken in
-   vier Bildern ohne Umriss, ein Pulk von 24 als Sprites, Dreiecke und Haltung von 120
-   Schlurfern im Vergleich (Bilder: sprites-reihe-3d, sprites-reihe-2d, sprites-reihe-nah,
-   sprites-pulk-3d, sprites-pulk-2d, sprites-nacht-3d, sprites-nacht-2d, sprites-bogen); ab H2
+   `sprites`, seit F2 alle Formen): für Spieler 2D, in der Prüfung 3D; »Schlurfer: 2D« backt mit
+   Workern, der Schlurfer im Bild zuerst (bis dahin Voxel), der Plan von Nacht 5 zieht den
+   Holzfäller vor, alle 17 Formen backen ohne leeres Bild und mit Eigenlicht (Atlas mit Seiten),
+   alle nebeneinander am Zusammenfluss, Ausholen, Schlag in drei Bildern, Treffer, der Boss holt
+   aus (zittert) und schlägt, Schildträger ohne Tür, Champion und kleiner Moosriese in eigener
+   Größe (bis dahin die Grundform vergrößert), der Falter fliegt im Bild, der Gräber sinkt
+   gerastert ein, ohne Worker backt das Spiel selbst; acht Schlurfer zeigen acht Richtungen (NW,
+   W, SW gespiegelt), die Richtung wechselt mit Hysterese und ohne Flackern, in der Nebelwelle nur
+   die Augen, Treffer und Zusammensacken in vier Bildern ohne Umriss, ein Pulk von 24 als
+   Sprites, Dreiecke und Haltung von 120 Schlurfern im Vergleich (Bilder: sprites-arten-3d,
+   sprites-arten-tag, sprites-arten-nacht, sprites-zustaende, sprites-reihe-3d,
+   sprites-reihe-2d, sprites-reihe-nah, sprites-pulk-3d, sprites-pulk-2d, sprites-nacht-3d,
+   sprites-nacht-2d, sprites-bogen); ab H2
    (Abschnitt `aufraeumen`): abends steht der Plan in der Nachtleiste (rechts keine Tafel mehr,
    die lange Zielzeile bricht davor um), von vier Meldungen stehen rechts die zwei neuesten, Neues
    im Buch hängt als Lesezeichen an der Uhr und Esc räumt es ab, ein Schlurfer im Lager steht als
@@ -1475,9 +1494,11 @@ wieder Mika, M32). Ab H1 klappt `buildbarLayout()` das Baumenü für echte Klick
 (`{ open: false }` nicht), `buildMenu()` zeigt offen/zu, Reiter, Kacheln (mit Bildschlüssel und
 gezeichneten Punkten), Knopf, Bauzettel, wartende Rückfrage und die Warteschlange der Bilder,
 `buildPicture(schlüssel)` rechnet ein Bild sofort (Punkte, Brustbild, Maßstab).
-Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backen)` zeigt, wie
-viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` backt es sofort
-alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
+Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backen)` zeigt fertige
+und wartende Fassungen (mit Stufe), Worker, Atlas, was gezeichnet wird und die Richtungen (F2: mit
+`true` backt es die Arten des Hintergrunds sofort hier, mit einer Liste von Arten oder
+`{ type, f }` genau diese; `game.horde.sprites.keyOf(i)`/`indexOf(z)` nennen das Bild einer
+Instanz); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
 Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
@@ -1495,6 +1516,7 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 | `?seed=123` | Anderer Welt-Seed (Modelle, Zufall) |
 | `?map=123` | Startwert des Wegenetzes erzwingen (sonst je neuem Spiel zufällig; `?test`/`?playtest` nehmen 3) |
 | `?zoom=nah` / `?zoom=weit` | Ansicht draußen erzwingen (M13; Standard weit) |
+| `?horde=2d` / `?horde=3d` | Look der Schlurfer erzwingen (F2; Standard 2D, mit `?test`/`?playtest` 3D) |
 
 ## Arbeitsweise
 

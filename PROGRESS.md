@@ -5,6 +5,46 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F2: Die Horde als Sprites im Spiel ✓
+
+**Auftrag (30.09.):** »Mache ruhig weiter, die neuen Optiken gefallen mir.« Alle 17 Formen aus dem
+Gestaltungsbogen laufen jetzt im Spiel, und 2D ist der Standard. Zurück zu den Voxeln geht es in
+den Einstellungen unter »Schlurfer: 3D/2D« (Nr. 213).
+
+- **Backen im Hintergrund:**
+  - Ein oder zwei Worker rechnen die Bilder (`spriteWorker.js`), das Spiel ruckelt dabei nicht.
+  - Zuerst kommt, was im Bild steht, dann die Arten der kommenden Nacht, dann der Rest.
+  - In der Prüfung: der Schlurfer nach 4 s; alle 17 Formen (1530 Bilder mit den Fassungen) in
+    rund 40 s mit zwei Workern.
+  - Bosse backen nur, wenn der Plan oder das Bild sie verlangt.
+  - Solange eine Art nicht fertig ist, bleibt sie Voxel.
+  - Ohne Worker backt das Spiel selbst, ein Bild je Bild im Spiel.
+- **Atlas mit Seiten:**
+  - Seiten von 1024², je Texel vier Bytes: Palettenindex, Art, Normale in der Bildebene
+    (`spriteCode.js`). Das ist halb so viel Speicher wie vorher.
+  - Die Bilder einer Art kommen zusammen und werden nach Höhe gepackt. Alle Arten zusammen
+    brauchen zehn Seiten (40 MB).
+- **Jede Form richtig:**
+  - Der Schildträger ohne Tür hat seine eigene Form.
+  - Champions (×1,15) und die Teile des Moosriesen (×0,55) werden in ihrer Größe gebacken. Bis
+    dahin zeigen sie die Grundform vergrößert.
+  - Der Moderfalter fliegt im Bild; sein Schatten liegt am Boden.
+  - Der Gräber verschwindet gerastert in der Erde.
+- **Zustände:**
+  - Ausholen (auch der Boss, der dabei vor Kraft zittert) und Schlag in drei Bildern.
+  - Nach dem Ausholen schlägt der Boss jetzt sichtbar zu – auch als Voxel, der die Arme aus der
+    Höhe herabführt.
+- **Fußknick:** Unter der Fußlinie liegt das Bild auf dem Boden statt aufrecht. Laub, der
+  vordere Fuß und hingesunkene Figuren versinken nicht mehr in der Erde, und kein Umriss schimmert
+  dort mehr durch.
+- **Prüfung** (Abschnitt `sprites`, neu):
+  - Worker und Reihenfolge, Nachtplan, alle Formen ohne leeres Bild.
+  - Die Aufstellung aller Formen (Bilder `sprites-arten-3d`, `-tag`, `-nacht`).
+  - Zustände, Tür, Champion, der kleine Moosriese, Falter und Gräber (Bild `sprites-zustaende`).
+  - Backen ohne Worker; der Bogen wird aus dem Atlas zurückgelesen.
+
+---
+
 ## F-Design: Die Horde, liebevoll gestaltet ✓
 
 **Auftrag (30.09.):** »Das mit den 2d Schlurfern testen wir bitte. Aber die Designs dürfen nur

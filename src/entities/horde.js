@@ -215,14 +215,24 @@ export class Horde {
     this.podMesh.count = 0;
     this.podMesh.visible = false;
     this.group.add(this.podMesh);
-    // F1: Schlurfer als Sprites (Probe, Einstellung »Schlurfer: 2D«). Gebacken wird erst, wenn
-    // die Einstellung an ist – ein paar Bilder je Bild, bis dahin zeichnet die Horde Voxel.
+    // F1/F2: Schlurfer als Sprites (Einstellung »Schlurfer: 2D«). Gebacken wird erst, wenn die
+    // Einstellung an ist – im Hintergrund, Art für Art; bis dahin zeichnet die Horde Voxel.
     this.sprites = new HordeSprites(this.group);
-    this.spriteLook = false;
+    this._spriteLook = false;
     this._podDummy = new THREE.Object3D();
     this._dir = { x: 0, z: 0 };
     this._pt = { x: 0, z: 0 };
     this._pos = new THREE.Vector3();
+  }
+
+  /** F1/F2: Look der Schlurfer – mit 2D backen die Sprites im Hintergrund. */
+  get spriteLook() {
+    return this._spriteLook;
+  }
+
+  set spriteLook(on) {
+    this._spriteLook = Boolean(on);
+    this.sprites.setActive(this._spriteLook);
   }
 
   get alive() {
@@ -644,6 +654,7 @@ export class Horde {
       b.windup -= dt;
       if (b.windup > 0) return;
       const a = BOSS_ATTACKS[b.kind];
+      z.attackAnim = 0.45; // F2: nach dem Ausholen der Schlag (auch die Voxel schlagen herab)
       this.cb.onBossAttack?.(z, b.kind);
       if (a.charge) b.charge = a.charge;
       b.next = a.every;
@@ -1353,9 +1364,10 @@ export class Horde {
    */
   render(camera = null) {
     this._tick = (this._tick || 0) + 1; // M26: Zittern der Getroffenen (je Bild)
-    // F1: Sprites erst, wenn alle Bilder gebacken sind (bis dahin backt jedes Bild ein paar)
-    if (this.spriteLook && !this.sprites.ready) this.sprites.bake(6);
-    const sprites = this.spriteLook && this.sprites.ready ? this.sprites : null;
+    // F1/F2: Sprites je Fassung, sobald sie gebacken ist (bis dahin Voxel); ohne Worker backt
+    // das Spiel hier selbst ein paar Bilder
+    const sprites = this.spriteLook ? this.sprites : null;
+    if (sprites) sprites.pump();
     const spriteDt = Math.max(0, Math.min(0.1, this.time - (this._spriteTime ?? this.time)));
     this._spriteTime = this.time;
     if (sprites) sprites.begin();
@@ -1373,7 +1385,7 @@ export class Horde {
     for (const z of order) {
       const kind = this.kinds[z.type];
       const k = counts[z.type];
-      const flat = sprites !== null && sprites.has(z.type);
+      const flat = sprites !== null && sprites.pick(z);
       if (k >= MAX_PER_TYPE && !flat) continue;
       if (frustum) {
         const s = z.def.scale * (z.size || 1);
@@ -1446,16 +1458,18 @@ export class Horde {
   putSprite(z, dt) {
     if (z.y < -0.5) return; // Gräber unter der Erde: gar nichts
     const dying = z.state === 'dying';
-    this.sprites.put(z, {
-      tint: this.tintOf(z),
-      glowOnly: this.isHidden(z) && !dying, // Nebelwelle (M22): nur die Augen
-      sink: dying ? Math.max(0, z.deathT - 0.55) * 0.6 : 0,
-      shiver: z.flash > 0 && !dying ? (this._tick & 1 ? HIT_JITTER : -HIT_JITTER) : 0,
-      moving: this.isMoving(z),
-      time: this.time,
-      dt,
-      scale: z.def.scale * (z.size || 1),
-    });
+    const sink = dying ? Math.max(0, z.deathT - 0.55) * 0.6 : 0;
+    // F2: Der Moderfalter fliegt im Bild selbst (seine Höhe ist gebacken, der Schatten liegt am
+    // Boden) – sein Fußpunkt bleibt unten. Der Gräber verschwindet gerastert in der Erde.
+    const y = (z.def.flying ? 0 : z.y) - sink;
+    let fade = dying ? Math.max(0, Math.min(1, (z.deathT - 0.55) * 1.5)) : 0;
+    if (z.y < 0 && !z.def.flying) fade = Math.max(fade, Math.min(1, -z.y / 0.5));
+    // Getroffene zittern einen Pixel (M26), ein Boss vor dem Angriff zittert vor Kraft (wie die Voxel)
+    let shiver = 0;
+    if (z.flash > 0 && !dying) shiver = this._tick & 1 ? HIT_JITTER : -HIT_JITTER;
+    else if (z.boss?.windup > 0) shiver = Math.sin(this.time * 20) > 0 ? HIT_JITTER : -HIT_JITTER;
+    const glowOnly = this.isHidden(z) && !dying; // Nebelwelle (M22): nur die Augen
+    this.sprites.put(z, this.tintOf(z), glowOnly, y, shiver, this.isMoving(z), this.time, dt, fade);
   }
 
   /** Läuft er gerade (Schrittbild), oder steht er (holt aus, schlägt, wirft um)? */
@@ -1517,7 +1531,8 @@ export class Horde {
     let arm = run ? -0.4 - walk * 0.7 * amt : -1.35 + Math.sin(z.phase * 1.3) * 0.12 * amt;
     if (z.attackAnim > 0) {
       const q = 1 - z.attackAnim / 0.45;
-      arm = q < 0.45 ? -1.4 - q * 2.4 : -2.5 + (q - 0.45) * 3.4;
+      // Ein Boss schlägt aus dem Ausholen herab (F2), alle anderen holen kurz aus und schlagen
+      arm = z.boss ? -2.9 + q * 2.3 : q < 0.45 ? -1.4 - q * 2.4 : -2.5 + (q - 0.45) * 3.4;
     } else if (z.boss?.windup > 0) {
       arm = -2.9 + Math.sin(t * 20) * 0.05; // M22: der Boss holt weit aus (zittert vor Kraft)
     } else if (z.windup > 0) {

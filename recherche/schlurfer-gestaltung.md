@@ -86,19 +86,34 @@ node tools/schlurfer-bogen.mjs recherche/schlurfer-gestaltung/bogen-schlurfer.pn
 | **Moosriese** (2,1) | Leib aus Moos mit runden Findlingen, Steine auf Schultern und Kopf, Fäuste mit steinernen Knöcheln, Farnwedel mit Fiedern, grün glimmende Augen, Flechten | Stampfer: Fäuste hoch, Staub |
 | **Moderherz** (2,3) | ein Herz aus Geflecht mit Adern, zwei Kammern mit Moos, Kerbe und Furche, eine Krone aus Pilzhüten, glimmende Knoten, Wurzelbeine, die sich auffächern, Ranken, die sich einrollen; pocht im Stehen | Wurzeln: Ranken hoch, mehr Knoten glimmen, Dornen brechen aus dem Boden |
 
-## 5. Was F2 daraus macht (offen)
+## 5. Was F2 daraus gemacht hat
 
-- **Alle Arten in `hordeSprites`**: `SPRITE_KINDS` aus `SPRITE_TYPES`. Zuordnung:
-  - Schildträger mit gebrochener Tür → `schildtraegerOhne`.
-  - Die Teile des Moosriesen (×0,55) bekommen eine eigene Größe.
-  - Champions nach ihrer Größe neu backen, nicht skalieren (Plan F1).
-- **Ausholen und Schlag**:
-  - `z.windup` und `z.boss.windup` → `ausholen`.
-  - `z.attackAnim` → `schlag` mit drei Bildern über 0,45 s.
-- **Backen im Hintergrund**. Ein Bild kostet in Node 30–60 ms (Bosse bis 150 ms), alle Arten
-  zusammen rund 100 s Rechenzeit. Deshalb:
-  - backen in einem Worker (der Bäcker ist reines JavaScript);
-  - zuerst die Arten der nächsten Nacht (der Plan kennt sie), Bosse erst in ihrer Nacht.
-- **Atlas**: mehrere Seiten oder eine größere Seite (alle Arten zusammen etwa 5 Mio. Texel).
-- **Prüfung**: jede Art bäckt ohne leere Bilder; Zustände liefern die passenden Bilder;
-  Vergleichsbilder am Tag und in der Nacht.
+Umgesetzt am 30.09.2026 (PROGRESS »F2«, OFFENE-FRAGEN Nr. 213). Im Spiel ist 2D jetzt der
+Standard, »Schlurfer: 3D/2D« schaltet um.
+
+- **Alle Formen in `hordeSprites`:** Eine Fassung ist eine Form in einer Größe.
+  - Der Schildträger mit gebrochener Tür zeigt `schildtraegerOhne`.
+  - Die Teile des Moosriesen (×0,55) und Champions (×1,15) werden in ihrer Größe gebacken
+    (`bakeFrame(…, type, f)`). Bis dahin zeigen sie die Grundform vergrößert.
+- **Ausholen und Schlag:**
+  - `z.windup` und `z.boss.windup` zeigen `ausholen`; der Boss zittert dabei.
+  - `z.attackAnim` zeigt `schlag` in drei Bildern über 0,45 s.
+  - Nach dem Ausholen eines Bosses setzt `bossStep` jetzt selbst `attackAnim`.
+- **Backen im Hintergrund:**
+  - Ein oder zwei Worker (`spriteWorker.js`) backen und kodieren je Nachricht ein Bild.
+  - Reihenfolge: was im Bild steht, die Arten der kommenden Nacht (`game.planSprites`), dann die
+    übrigen Arten in der Reihenfolge ihres Auftauchens. Bosse nur, wenn sie kommen.
+  - Gemessen in der Prüfung: alle 17 Formen in rund 40 s mit zwei Workern, 52 ms je Bild.
+- **Atlas:**
+  - Seiten von 1024² als Array-Textur, vier Bytes je Texel: Palettenindex, Art, Normale in der
+    Bildebene (`spriteCode.js`).
+  - Die Bilder einer Fassung werden zusammen nach Höhe gepackt. Alle Formen brauchen zehn Seiten
+    (40 MB).
+- **Fußknick:** Unter der Fußlinie liegt der Quad auf dem Boden. Was im Bild vor den Füßen liegt,
+  versinkt so nicht mehr in der Erde.
+- **Prüfung:** Abschnitt `sprites`:
+  - jede Form ohne leeres Bild, dazu Zustände, Fassungen, Falter, Gräber und Backen ohne Worker;
+  - Bilder `sprites-arten-3d`, `sprites-arten-tag`, `sprites-arten-nacht` und
+    `sprites-zustaende`.
+- **Offen:** Ob die Wirkung trägt, entscheidet der Auftraggeber beim Spielen (F3/F4:
+  Feinschliff nach seiner Rückmeldung).

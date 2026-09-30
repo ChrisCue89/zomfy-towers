@@ -216,6 +216,13 @@ Wort gibt.
   gestapelt**: runde Köpfe, gewölbte Rümpfe mit Schultern, Glieder mit Knie
   und Ellbogen, Mützen als Polster – im selben Voxelmaß, mit Licht auf den
   Kuppen und Schatten darunter.
+- **Die Horde als Sprites (seit F2 Standard):** Schlurfer und Bosse sind
+  Pixelfiguren, im Spiel aus runden Formen gebacken (1/40 m je Texel, also
+  2 × 2 Bildpunkte, 5 Richtungen gezeichnet und 3 gespiegelt, 17 Bilder je
+  Richtung). Müde statt gierig, jede Art mit einem Merkmal oben und eigenem
+  Licht für die Nacht (`recherche/schlurfer-gestaltung.md`). Die Voxel-Horde
+  bleibt als Wahl in den Einstellungen und als Rückfall, solange eine Art
+  noch backt.
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
   **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
@@ -264,7 +271,8 @@ Wort gibt.
 ### 3.3 Modelle und Umgebung
 
 - Kompakte, liebevoll detaillierte Voxel-Modelle, keine Anlehnung an bekannte
-  Spiele, Figuren oder Marken.
+  Spiele, Figuren oder Marken. Die Horde erscheint seit F2 als gebackene
+  Sprites (3.1); ihre Voxel-Modelle bleiben die Vorlage und der Rückfall.
 - **Umgebung:** orange und rote Laubbäume, dunkle Tannen, Felsen und Hänge,
   Pilze, Kürbisse, Holzstapel, Schilf am Ufer, Treibholz, ein Bootssteg,
   Inseln im Nebel, Krähen auf Zaunpfählen.
@@ -1986,6 +1994,21 @@ von der Seepost (Nr. 211).
 *Umgesetzt (30.09.2026):* In einem neuen Spiel sind Feuerstelle und Kamin kalt. Die ersten Ziele:
 Streichhölzer vom Kaminsims holen, den Kamin anzünden, draußen das Lagerfeuer anzünden (zwei
 Scheite, sonst Äste). Edda sieht den Rauch (Nr. 212).
+
+#### F2 – Die Horde als Sprites ✓
+
+*Umgesetzt (30.09.2026):* Alle 17 Formen aus dem Gestaltungsbogen stehen im Spiel, und 2D ist
+der Standard (Nr. 213, Einstellung »Schlurfer: 3D/2D«).
+
+- **Gebacken im Hintergrund:** Worker rechnen die Bilder, zuerst was im Bild steht, dann die
+  Arten der kommenden Nacht, dann der Rest. Bosse nur, wenn sie kommen. Bis eine Art fertig ist,
+  bleibt sie Voxel.
+- **Jede Form in ihrer Größe:** Champions ×1,15 und die Teile des Moosriesen ×0,55 werden eigens
+  gebacken, ein Texel bleibt 1/40 m. Der Schildträger ohne Tür hat seine eigene Form.
+- **Zustände:** Ausholen und Schlag (drei Bilder), auch beim Boss. Der Falter fliegt im Bild, der
+  Gräber sinkt gerastert in die Erde.
+- **Unter den Füßen liegt das Bild auf dem Boden:** Laub, der vordere Fuß und eine hingesunkene
+  Figur versinken nicht mehr in der Erde.
 
 ## 9. Ideen-Parkplatz
 

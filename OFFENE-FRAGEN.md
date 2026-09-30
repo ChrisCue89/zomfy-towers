@@ -2596,6 +2596,45 @@ Ein Feuer ist das Zeichen, dass hier wieder jemand wohnt. Das passt zu »Zufluch
 Die ersten Minuten werden zu einer kleinen Geschichte statt einer Liste: ankommen, Licht machen,
 dann die Nacht vorbereiten.
 
+### 213. Wie kommen die 2D-Schlurfer ins Spiel? (F2)
+**Entscheidung:** Als Standard, mit dem Umschalter in den Einstellungen (»Schlurfer: 3D/2D«).
+Gebacken wird im Hintergrund, Art für Art. Was noch nicht fertig ist, bleibt so lange Voxel.
+
+- **Standard 2D:**
+  - Die Einstellungen haben jetzt einen Stand (`v: 2`). Wer bisher »3D« gespeichert hatte, hatte
+    nur den alten Standard gespeichert und bekommt einmal den neuen.
+  - Die Prüfung und die Playtest-Brücke bleiben bei 3D, bis sie umstellen: Ihre übrigen
+    Abschnitte messen Voxel. `?horde=2d|3d` erzwingt einen Look.
+- **Reihenfolge beim Backen:**
+  1. Was im Bild steht.
+  2. Die Arten der kommenden Nacht; der Plan kennt auch Champions, Bosse, den Schildträger ohne
+     Tür und die Teile des Moosriesen.
+  3. Die übrigen Arten in der Reihenfolge, in der sie in den Nächten auftauchen.
+
+  Bosse backen nie auf Vorrat, nur wenn der Plan oder das Bild sie verlangt.
+- **Worker:** Einer oder zwei, je nach Kernen. Der Bäcker ist reines JavaScript und braucht im
+  Worker kein three.js. Geht kein Worker (gesperrt oder ausgefallen), backt das Spiel selbst,
+  höchstens ein Bild je Bild im Spiel. Für Schlurfer im Bild geschieht das sofort, sonst nur
+  jedes achte Bild.
+- **Champions und kleine Moosriesen in eigener Größe:** Skaliert wäre ein Texel 2,3 bzw. 1,1
+  Pixel groß, das Raster würde krumm. Bis ihre Fassung gebacken ist (einige Sekunden), zeigen sie
+  die Grundform vergrößert – lieber kurz ungenau als kurz ein Voxel zwischen Sprites.
+- **Speicher:** Ein Atlas aus Seiten von 1024², vier Bytes je Texel:
+  - Palettenindex, Art (leer, Schatten, Figur, Glühen) und die Normale in der Bildebene.
+  - Alle Arten zusammen brauchen zehn Seiten (40 MB); Farbe und Normale getrennt wären 80 MB.
+  - Höchstens 16 Seiten. Ist der Atlas voll, bleibt eine neue Fassung Voxel.
+- **Fußknick:** Unter der Fußlinie liegt das Bild auf dem Boden statt aufrecht. Sonst versank
+  alles, was im Bild unter den Füßen liegt (Laub, der vordere Fuß, eine hingesunkene Figur), im
+  Boden und schimmerte als Umriss durch.
+- **Boss-Schlag:** Nach dem Ausholen folgt jetzt ein Schlag (`attackAnim`). Das zeigt auch der
+  Voxel-Boss: Er schlägt aus der Höhe herab, statt die Arme fallen zu lassen.
+
+**Warum:** Der Auftraggeber: »Mache ruhig weiter, die neuen Optiken gefallen mir« und vorher
+»bauen wir die 2d Gegner ein und gucken wie das wirkt«. Wirken kann es nur, wenn man es beim
+Spielen sieht, ohne erst eine Einstellung zu suchen. Der Umschalter bleibt für alle, die den
+Voxel-Look lieber mögen. Worker, Reihenfolge und das Warten in Voxeln sorgen dafür, dass nie ein
+Bild ruckelt und nie ein Schlurfer fehlt.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

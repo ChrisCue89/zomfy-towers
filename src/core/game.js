@@ -206,6 +206,7 @@ export class Game {
     const sceneCanvas = document.getElementById('scene');
     const uiCanvas = document.getElementById('ui');
     this.settings = loadSettings();
+    if (CONFIG.horde) this.settings.horde = CONFIG.horde; // F2: ?horde=2d|3d, die Prüfung 3D
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
     this.pixel.scaleShift = PIXEL_SIZES[this.settings.pixel];
     this.pixel.uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4
@@ -2596,6 +2597,28 @@ export class Game {
 
   // --- Aktualisieren -----------------------------------------------------------
 
+  /**
+   * F2: Mit dem 2D-Look backen zuerst die Arten der kommenden Nacht (der Plan kennt sie, auch
+   * Champions, Bosse, den Schildträger ohne Tür und die Teile des Moosriesen) – einmal je Tag und
+   * wenn der Look angeht.
+   */
+  planSprites() {
+    if (!this.horde.spriteLook || !this.nights || this.mode === 'splash' || this.mode === 'title') return;
+    const day = this.state.time.day;
+    if (this._spritePlanDay === day) return;
+    this._spritePlanDay = day;
+    const list = [];
+    for (const wave of this.nights.planFor(day).waves) {
+      for (const sp of wave.spawns) {
+        const f = sp.champion ? CHAMPION.scale : 1;
+        list.push({ type: sp.type, f });
+        if (sp.type === 'schildtraeger') list.push({ type: 'schildtraegerOhne', f });
+        if (sp.type === 'moosriese') list.push({ type: 'moosriese', f: SPLIT.size });
+      }
+    }
+    this.horde.sprites.plan(list);
+  }
+
   update(dt) {
     const input = this.input;
     this.clock += dt;
@@ -2617,6 +2640,7 @@ export class Game {
       dt *= SLOWMO.scale;
     }
     if (this.intro.t < this.intro.duration) this.intro.t += dt;
+    this.planSprites(); // F2: die Arten der kommenden Nacht vorbacken (einmal je Tag)
     // N5: Ein neues Spiel beginnt mit der Ankunft – sie hat ihre eigene Titelkarte (statt
     // »Zomfy Towers, Tag 1«, die sonst kurz aufblendet und wieder schwarz würde); danach
     // meldet sich Edda (afterArrival)
@@ -3153,6 +3177,7 @@ export class Game {
     this.rig.shakeScale = SHAKE_LEVELS[this.settings.shake] ?? 1; // M26
     this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll;
     this.horde.spriteLook = this.settings.horde === '2d'; // F1
+    if (!this.horde.spriteLook) this._spritePlanDay = null; // F2: beim nächsten Einschalten neu planen
     const shift = PIXEL_SIZES[this.settings.pixel];
     const uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4: Oberfläche klein · mittel · groß
     if (this.pixel.scaleShift !== shift || this.pixel.uiShift !== uiShift) {
@@ -4392,10 +4417,14 @@ export class Game {
         game.applySettings({ horde: look });
         return game.settings.horde;
       },
-      /** F1: Stand der Sprites (gebacken, Bilder im Atlas, gezeichnet); `bake` backt alles sofort. */
-      sprites(bake = false) {
+      /**
+       * F1/F2: Stand der Sprites (fertige und wartende Fassungen, Worker, Atlas, gezeichnet);
+       * `bake` backt sofort hier: `true` alle Arten des Hintergrunds, sonst eine Liste (Arten
+       * oder {type, f}).
+       */
+      sprites(bake = null) {
         const s = game.horde.sprites;
-        if (bake) s.bakeAll();
+        if (bake) s.bakeNow(bake === true ? undefined : bake);
         const shown = [];
         if (s.mesh.count) for (const z of game.horde.list) if (z.spriteDir !== undefined) shown.push({ id: z.id, dir: z.spriteDir });
         return { look: game.settings.horde, on: game.horde.spriteLook, ...s.info(), dirs: shown };

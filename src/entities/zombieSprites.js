@@ -26,18 +26,25 @@ export const SPRITE_TYPES = Object.keys(KINDS);
 /** Schatten unter den Füßen: Halbachsen auf dem Boden (m), quer und in der Tiefe, bei Größe 1. */
 const SHADOW = { x: 0.3, z: 0.18 };
 
-/** Die Zelle einer Art: groß genug für ihre Größe und ihr Zubehör. */
-export function cellOf(type) {
+/**
+ * Die Zelle einer Art: groß genug für ihre Größe und ihr Zubehör. `f` ist ein Faktor auf die
+ * Größe der Art (F2: Champions ×1,15, die Teile des Moosriesen ×0,55) – gebacken wird dann in
+ * dieser Größe, ein Texel bleibt 1/40 m.
+ */
+export function cellOf(type, f = 1) {
   const kind = KINDS[type];
-  if (kind.cell) return kind.cell;
-  const s = Math.max(1, kind.size);
-  const w = 2 * Math.ceil((CELL.w * s) / 2);
-  const h = Math.ceil(CELL.h * s);
-  return { w, h, px: w / 2, py: Math.round(CELL.py * s) };
+  const base = kind.cell || (() => {
+    const s = Math.max(1, kind.size);
+    const w = 2 * Math.ceil((CELL.w * s) / 2);
+    return { w, h: Math.ceil(CELL.h * s), px: w / 2, py: Math.round(CELL.py * s) };
+  })();
+  if (f === 1) return base;
+  const w = 2 * Math.ceil((base.w * f) / 2);
+  return { w, h: Math.ceil(base.h * f), px: w / 2, py: Math.round(base.py * f) };
 }
 
-/** Formen und Stempel eines Bildes (Welt-Meter, Fußpunkt im Ursprung). */
-export function frameShapes(type, dir, anim, k) {
+/** Formen und Stempel eines Bildes (Welt-Meter, Fußpunkt im Ursprung), `f` wie bei cellOf. */
+export function frameShapes(type, dir, anim, k, f = 1) {
   const kind = KINDS[type];
   const pose = poseOf(kind.gait, anim, k, ANIMS[anim]);
   const ctx = frameContext(dir, pose);
@@ -45,23 +52,24 @@ export function frameShapes(type, dir, anim, k) {
   ctx.k = k;
   ctx.stamps = [];
   kind.build(ctx);
-  scaleFrame(ctx, kind.size);
-  if (kind.size !== 1) for (const s of ctx.stamps) s.at = s.at.map((v) => v * kind.size);
+  const size = kind.size * f;
+  scaleFrame(ctx, size);
+  if (size !== 1) for (const s of ctx.stamps) s.at = s.at.map((v) => v * size);
   return ctx;
 }
 
 /**
- * Ein Bild backen: Formen rastern, malen, Stempel setzen. `type` ist die Art (F1: nur der
- * Schlurfer, daher der Standard).
+ * Ein Bild backen: Formen rastern, malen, Stempel setzen. `type` ist die Art, `f` ein Faktor auf
+ * ihre Größe (F2).
  * @returns {{w, h, px, py, color: Int32Array, glow: Uint8Array, normal: Float32Array, shadow: Uint8Array}}
  */
-export function bakeFrame(dir, anim, k, type = 'schlurfer') {
+export function bakeFrame(dir, anim, k, type = 'schlurfer', f = 1) {
   const kind = KINDS[type];
-  const ctx = frameShapes(type, dir, anim, k);
-  const raster = trace(ctx.shapes, cellOf(type));
+  const ctx = frameShapes(type, dir, anim, k, f);
+  const raster = trace(ctx.shapes, cellOf(type, f));
   const out = paint(raster, kind.materials);
   for (const s of ctx.stamps) stampAt(out, raster, s.stamp, s.at, s.opts);
-  const shadow = kind.shadow === false ? new Uint8Array(raster.w * raster.h) : shadowOf(raster, out.color, kind.shadowSize || SHADOW, kind.size);
+  const shadow = kind.shadow === false ? new Uint8Array(raster.w * raster.h) : shadowOf(raster, out.color, kind.shadowSize || SHADOW, kind.size * f);
   return { w: raster.w, h: raster.h, px: raster.px, py: raster.py, color: out.color, glow: out.glow, normal: raster.normal, shadow };
 }
 
