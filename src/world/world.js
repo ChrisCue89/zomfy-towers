@@ -4,7 +4,7 @@
 // dem Startwert der Karte (`mapSeed`, liegt im Spielstand).
 
 import * as THREE from 'three';
-import { ARRIVAL } from '../data/arrival.js';
+import { ARRIVAL, FIRST_FIRE } from '../data/arrival.js';
 import { createWorldMaterial, createGlowMaterial, sharedUniforms } from '../render/materials.js';
 import { damp } from '../core/math.js';
 import { Colliders } from './colliders.js';
@@ -192,6 +192,10 @@ export class World {
 
     this.flameTimer = 0;
     this.flameIndex = 0;
+    // N10: Was brennt? Kalt sind Feuerstelle und Kamin nur in einem neuen Spiel, bis Mika sie
+    // anzündet (core/firstFire.js); frisch angezündet wachsen die Flammen (0 → 1)
+    this.fires = { camp: true, kamin: true, matches: false };
+    this.fireGrow = { camp: 1, kamin: 1 };
     this.time = 0;
     this.playerInside = false;
     this._smoke0 = new THREE.Color();
@@ -307,6 +311,46 @@ export class World {
     this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions];
   }
 
+  /**
+   * N10: Welche Feuer brennen? Kalt heißt: keine Flammen, kein Licht (nur über `on`, die
+   * Lichtzahl bleibt), kein Rauch und keine Funken, die Feuerstelle grau und bemoost, im Kamin
+   * keine Glut. `matches`: Die Dose mit den Streichhölzern steht noch auf dem Kaminsims.
+   * Was gerade angezündet wurde, wächst aus der Glut.
+   */
+  setFires({ camp = true, kamin = true, matches = false } = {}) {
+    if (camp && !this.fires.camp) this.fireGrow.camp = 0;
+    if (kamin && !this.fires.kamin) this.fireGrow.kamin = 0;
+    this.fires = { camp, kamin, matches };
+    this.applyFires();
+  }
+
+  applyFires() {
+    const f = this.fires;
+    const fire = this.props.fire;
+    fire.warm.visible = f.camp;
+    fire.cold.visible = !f.camp;
+    if (!f.camp) for (const o of fire.frames) o.visible = false;
+    this.fireLight.on = f.camp;
+    this.kaminLight.on = f.kamin;
+    this.interior.embers.visible = f.kamin;
+    if (!f.kamin) for (const o of this.interior.flames) o.visible = false;
+    this.interior.matches.object.visible = f.matches;
+  }
+
+  /** N10: frisch angezündet – die Flammen wachsen aus der Glut, das Licht mit ihnen. */
+  growFires(dt) {
+    for (const key of ['camp', 'kamin']) {
+      if (this.fireGrow[key] >= 1) continue;
+      const u = Math.min(1, this.fireGrow[key] + dt / FIRST_FIRE.grow);
+      this.fireGrow[key] = u;
+      const s = u >= 1 ? 1 : 0.25 + 0.75 * (1 - (1 - u) * (1 - u));
+      if (key === 'camp') {
+        this.props.fire.group.scale.y = s;
+        this.fireLight.boost = s;
+      } else this.kaminLight.boost = s;
+    }
+  }
+
   /** Das Zuhause auf eine Ausbaustufe bringen (außen und innen neu aufbauen). */
   setHouseLevel(level) {
     this.grid.houseLevel = level; // für »Kein Platz«: steht das Zuhause hier schon?
@@ -317,6 +361,7 @@ export class World {
       for (const c of old.colliders) this.colliders.remove(c);
       this.interior = createInterior({ seed: this.seed, colliders: this.colliders, level, materials: this.interiorMaterials });
       this.scene.add(this.interior.group);
+      this.applyFires(); // N10: Glut und Dose im neuen Innenraum
       this.addInteriorPools();
       this.refreshInteractions();
     }
@@ -747,11 +792,12 @@ export class World {
       let next = Math.floor(Math.random() * frames.length);
       if (next === this.flameIndex) next = (next + 1) % frames.length;
       this.flameIndex = next;
-      frames[next].visible = true;
+      frames[next].visible = this.fires.camp; // N10: nur, was brennt
       const kamin = this.interior.flames;
-      for (let k = 0; k < kamin.length; k++) kamin[k].visible = k === next % kamin.length;
+      for (let k = 0; k < kamin.length; k++) kamin[k].visible = this.fires.kamin && k === next % kamin.length;
       this.flameTimer = 0.08 + Math.random() * 0.07;
     }
+    this.growFires(dt);
 
     // Rauch, Funken, Glühwürmchen
     const night = dn.night;
@@ -764,9 +810,12 @@ export class World {
     sharedUniforms.uTime.value = this.time;
     this._smoke0.copy(SMOKE_DAY[0]).lerp(SMOKE_NIGHT[0], night);
     this._smoke1.copy(SMOKE_DAY[1]).lerp(SMOKE_NIGHT[1], night);
-    this.chimneySmoke.update(dt, this._smoke0, this._smoke1);
-    this.fireSmoke.update(dt, this._smoke0, this._smoke1);
-    this.embers.update(dt, 0.6 + night * 0.6);
+    // N10: Rauch und Funken nur, wo es brennt – der kalte Schornstein raucht nicht
+    if (this.fires.kamin) this.chimneySmoke.update(dt, this._smoke0, this._smoke1);
+    if (this.fires.camp) {
+      this.fireSmoke.update(dt, this._smoke0, this._smoke1);
+      this.embers.update(dt, 0.6 + night * 0.6);
+    }
     this.particles.update(dt);
     this.fireflies.update(dt, Math.max(0, (night - 0.55) / 0.45));
 

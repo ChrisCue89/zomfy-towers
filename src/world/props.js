@@ -26,8 +26,11 @@ import { SPOT as FISH_SPOT } from '../data/fishing.js';
  * Feuerstelle (M13g, 1/32 m): zwölf runde Feldsteine im Kreis, innen verrußt,
  * Asche mit Glutnestern, zwei gekreuzte Scheite – zur Mitte verkohlt, mit
  * glühenden Rissen.
+ *
+ * N10: `cold` ist dieselbe Feuerstelle nach drei Herbsten ohne Feuer – keine Glut,
+ * die Risse der Scheite dunkel, Moos auf den Steinen, nasses Laub in der Asche.
  */
-function buildCampfire(seed) {
+function buildCampfire(seed, { cold = false } = {}) {
   const m = new VoxelModel();
   const rng = new Rng(seed);
   for (let i = 0; i < 12; i++) {
@@ -37,10 +40,22 @@ function buildCampfire(seed) {
   m.forEach((x, y, z, c) => {
     if (x * x + z * z < 390 && y > 0 && hash3(x >> 1, y >> 1, z >> 1, seed + 1) < 0.75) m.set(x, y, z, shade(c, -2));
   });
-  // Asche mit Glutnestern, in der Mitte leicht gewölbt
+  // Kalt: Moos auf den Kuppen der Steine, außen dichter (Paare von Voxeln, nicht Gries)
+  if (cold) {
+    m.forEach((x, y, z) => {
+      if (m.get(x, y + 1, z) || y < 3) return;
+      const out = x * x + z * z > 470;
+      if (hash3(x >> 1, y >> 1, z >> 1, seed + 7) < (out ? 0.34 : 0.14)) m.set(x, y, z, hash3(x >> 1, 0, z >> 1, seed + 8) < 0.4 ? P.g4 : P.g5);
+    });
+  }
+  // Asche mit Glutnestern, in der Mitte leicht gewölbt (kalt: graue Asche mit Laub)
   m.ellipsoid(0, 0, 0, 17, 3, 15, (x, y, z, dx, dy, dz) => {
     if (y < 0 || y > 1 || (y === 1 && dx * dx + dz * dz > 0.45)) return null;
     const h = hash3(x >> 1, 0, z >> 1, seed + 2);
+    if (cold) {
+      if (y === 1 && hash3(x >> 1, 1, z >> 1, seed + 13) < 0.12) return hash3(x, 1, z, seed + 14) < 0.5 ? P.e5 : P.e4;
+      return h < 0.45 ? P.s4 : P.s3;
+    }
     if (hash3(x, y, z, seed + 12) < 0.05) return P.f4;
     return h < 0.1 ? P.f3 : h < 0.45 ? P.s3 : P.s2;
   });
@@ -52,8 +67,10 @@ function buildCampfire(seed) {
     let out = c;
     if (d < 7.5) {
       const crack = (x + y * 2 + z * 3) % 9 === 0 || hash3(x, y, z, seed + 5) < 0.06;
-      out = crack ? (d < 4.5 ? P.f5 : P.f3) : hash3(x >> 1, y >> 1, z >> 1, seed) < 0.3 ? P.s2 : P.s1;
+      if (cold) out = crack ? P.s1 : hash3(x >> 1, y >> 1, z >> 1, seed) < 0.3 ? P.s3 : P.s2;
+      else out = crack ? (d < 4.5 ? P.f5 : P.f3) : hash3(x >> 1, y >> 1, z >> 1, seed) < 0.3 ? P.s2 : P.s1;
     } else if (d < 10.5) out = hash3(x >> 1, y, z >> 1, seed + 6) < 0.5 ? P.e1 : P.s1;
+    else if (cold && hash3(x >> 1, y >> 1, z >> 1, seed + 9) < 0.3) out = P.s4; // verwittert grau
     m.set(x, y, z, out);
   });
   return m;
@@ -997,7 +1014,10 @@ export function createProps({ seed, materials, colliders, map }) {
 
   // Lagerfeuer
   const fire = LAYOUT.campfire;
-  add(buildCampfire(seed + 1), fire.x, fire.z, { name: 'Lagerfeuer' });
+  const campWarm = add(buildCampfire(seed + 1), fire.x, fire.z, { name: 'Lagerfeuer' });
+  // N10: dieselbe Feuerstelle kalt – so steht sie bei der Ankunft da, bis Mika sie anzündet
+  const campCold = add(buildCampfire(seed + 1, { cold: true }), fire.x, fire.z, { name: 'Lagerfeuer (kalt)' });
+  campCold.visible = false;
   colliders.addCircle(fire.x, fire.z, 0.92);
   interactions.push({ id: 'feuer', x: fire.x, z: fire.z, radius: 1.7, prompt: 'feuer', dialog: 'lagerfeuer' });
   const flameFrames = [];
@@ -1346,6 +1366,9 @@ export function createProps({ seed, materials, colliders, map }) {
     axe: { object: stuckAxe, interaction: axeInteraction },
     fire: {
       frames: flameFrames,
+      group: flameGroup, // N10: frisch angezündet wachsen die Flammen
+      warm: campWarm,
+      cold: campCold,
       light: new THREE.Vector3(fire.x, 0.55, fire.z),
       smoke: new THREE.Vector3(fire.x - 0.06, 1.2, fire.z - 0.06),
       embers: new THREE.Vector3(fire.x - 0.06, 0.6, fire.z - 0.06),

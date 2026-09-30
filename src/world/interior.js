@@ -209,6 +209,19 @@ function fireplaceEmbers(x0) {
   return m;
 }
 
+/**
+ * N10: Blechdose mit Streichhölzern vorn auf dem Kaminsims (links; die Kaminschürze reicht bis
+ * z = 11, frei ist nur die Kante davor) – rot mit heller Banderole, der Deckel ein wenig heller
+ * (3 × 2 × 3 Voxel, gut 19 cm hoch; rot hebt sie von den grauen Steinen ab).
+ */
+function matchTin(x0) {
+  const m = new VoxelModel();
+  const x = x0 + 8;
+  m.box(x, FLOOR + 23, 12, x + 2, FLOOR + 25, 13, (xx, y, z) => (y === FLOOR + 25 ? (z === 13 ? P.r3 : P.r4) : y === FLOOR + 24 ? P.f7 : xx === x + 2 ? P.r2 : P.r3));
+  m.set(x + 1, FLOOR + 24, 13, P.r1); // ein Streichholz auf der Banderole
+  return m;
+}
+
 /** Bett mit Kopfteil, Patchworkdecke und Kissen (Kopfteil an der Rückwand). */
 function bed(m, x0, z0, seed) {
   const x1 = x0 + 23;
@@ -409,8 +422,12 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   };
   group.add(mesh(m, materials.room));
   group.add(mesh(glass, materials.sky, { shadow: false, jitter: 0 }));
-  // Glut im Kamin und drei Flammenbilder
-  group.add(mesh(fireplaceEmbers(kamin.x0), materials.flame, { shadow: false, jitter: 0 }));
+  // Glut im Kamin und drei Flammenbilder (N10: bei kaltem Kamin blendet die Welt beides aus)
+  const embers = mesh(fireplaceEmbers(kamin.x0), materials.flame, { shadow: false, jitter: 0 });
+  group.add(embers);
+  const matches = mesh(matchTin(kamin.x0), materials.room, { jitter: 0 });
+  matches.visible = false;
+  group.add(matches);
   const flames = [0, 1, 2].map((f) => {
     const o = mesh(fireplaceFlames(kamin.x0, f), materials.flame, { shadow: false, jitter: 0 });
     o.visible = f === 0;
@@ -501,6 +518,9 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
     colliders: own,
     interactions,
     flames,
+    embers,
+    // N10: die Dose mit den Streichhölzern und wo sie steht (für den Zielpfeil)
+    matches: { object: matches, x: wx(kamin.x0 + 9.5), y: 23 * U, z: wz(13) }, // Fuß der Dose: der Pfeil steht darüber
     wakeSpot,
     entry,
     // In diesem Streifen hinter der Tür geht es hinaus

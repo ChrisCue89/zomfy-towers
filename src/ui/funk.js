@@ -32,20 +32,24 @@ export class Funk {
     this.said = 0; // wie viele Zeilen schon gesprochen wurden (Prüfung)
   }
 
-  /** Eine Zeile über Funk; `key` verhindert, dass dieselbe Zeile doppelt wartet. */
-  say(text, key = text) {
+  /**
+   * Eine Zeile über Funk; `key` verhindert, dass dieselbe Zeile doppelt wartet. `stale`
+   * (N10): Ist die Zeile überholt, wenn sie an der Reihe wäre (das Ziel schon erreicht),
+   * fällt sie weg.
+   */
+  say(text, key = text, stale = null) {
     if (!text) return;
     if (this.current?.key === key || this.queue.some((q) => q.key === key)) return;
-    this.queue.push({ text, key });
+    this.queue.push({ text, key, stale });
     if (this.queue.length > FUNK.queue) this.queue.shift();
   }
 
   /** Einmal im ganzen Spiel (gemerkt in state.flags): Erklärungen beim ersten Mal. */
-  once(flag, text) {
+  once(flag, text, stale = null) {
     const flags = this.game.state.flags;
     if (flags[`funk_${flag}`]) return false;
     flags[`funk_${flag}`] = true;
-    this.say(text, flag);
+    this.say(text, flag, stale);
     return true;
   }
 
@@ -77,6 +81,7 @@ export class Funk {
 
   /** @param {number} dt echte Sekunden (auch in der Zeitlupe gleich schnell) */
   update(dt) {
+    while (this.queue.length && this.queue[0].stale?.()) this.queue.shift(); // N10: überholt
     if (!this.current && this.queue.length) {
       const next = this.queue.shift();
       const lines = wrap(next.text, FUNK.bubble - 14);

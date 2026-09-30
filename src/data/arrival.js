@@ -34,3 +34,15 @@ export const ARRIVAL_LINES = {
   lake: [0.8, 5.8],
   walk: [0.5],
 };
+
+/**
+ * Das erste Feuer (N10): Drei Herbste stand die Holzlände leer – bei der Ankunft sind
+ * Feuerstelle und Kamin kalt. Die Streichhölzer stehen in einer Blechdose auf dem Kaminsims,
+ * das Holz im Kamin hat Edda noch selbst aufgeschichtet; draußen braucht das Feuer zwei
+ * Scheite (`campCost`, sonst Äste sammeln). Frisch angezündet wachsen die Flammen `grow`
+ * Sekunden lang aus der Glut.
+ */
+export const FIRST_FIRE = {
+  campCost: { holz: 2 },
+  grow: 2.5,
+};

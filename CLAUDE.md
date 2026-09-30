@@ -213,6 +213,8 @@ src/config.js         Alle Stellschrauben + URL-Parameter
 src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       arrival (die Ankunft: Titelkarte, Ruderboot, Steg,
                       Funkgerät, N5), tutorial (Einführung mit Edda, N5),
+                      firstFire (das erste Feuer: Feuerstelle und Kamin kalt,
+                      Streichhölzer vom Kaminsims, anzünden, N10),
                       state.js (Spielzustand), save.js (Speichern, Migration),
                       inventory (Kosten/Vorrat), builder (Baumenü, Platzieren,
                       Auswahl, Turm-Ausbau, Reparieren, Abreißen, Hausausbau,
@@ -458,7 +460,23 @@ Grundprinzipien:
   (`state.tutorial.on`, Titelbild) steuert `core/tutorial.js`: Laufen, dann jedes
   Ziel über `funk.once`; Erklärungen beim ersten Mal nur über `tutorial.teach`
   (ohne Einführung schweigt Edda dazu, ihre Geschichte spricht sie über
-  `funk.say`).
+  `funk.say`). Zeilen über ein Ziel bekommen `stale` mit (`funk.once(flag,
+  text, stale)`): Ist das Ziel erreicht, bevor Edda dazu kommt, fällt die Zeile
+  weg (N10).
+- **Das erste Feuer (N10, `core/firstFire.js`, `FIRST_FIRE` in `data/arrival.js`):**
+  - `arrival.start` ruft `firstFire.coldStart()`: Feuerstelle und Kamin sind kalt
+    (Flags `feuerKalt`, `kaminKalt`, nie im Startzustand – alte Stände und `?test`
+    brennen weiter, ihre drei Ziele sind beim Laden still erreicht).
+  - Die ersten Ziele sind `streichhoelzer` (Dose vorn auf dem Kaminsims, Flag
+    `streichhoelzer`), `kamin` und `feuer` (zwei Scheite, sonst zeigt das Ziel zu den
+    Ästen). `firstFire.use` fängt E an Kamin und Feuerstelle ab, solange sie kalt sind;
+    `prompt` und `target` liefern Einblendung und Zielpfeil (drinnen zur Dose, zum Kamin,
+    zum Ausgang).
+  - `world.setFires({ camp, kamin, matches })` schaltet die Lichter nur über `on`, dazu
+    Flammen, Glut, Rauch, Funken und das kalte Modell der Feuerstelle (`props.fire.cold`);
+    frisch angezündet wachsen Flammen und Licht (`fireGrow`, `FIRST_FIRE.grow`).
+  - Brennt das Lagerfeuer, sieht Edda den Rauch (`funk.once('feuerBrennt')`, auch ohne
+    Einführung). Der goldene Zielpfeil zeigt drinnen nur auf Ziele im Haus.
 - **Einleitung (M15):** Dialogzeilen mit `blick` lenken die Kamera
   (`world.lookSpot`, `game.tourFocus`: weich geführt, vor dem Einblenden
   springt sie), `karte` zeigt die Karte der Wege über dem Dialog
@@ -1274,7 +1292,14 @@ Grundprinzipien:
    Randmarke mit kurz, kurz, lang und »Gute Nacht, Clara«, nur einmal am Abend; in der Frostnacht
    blinkt es die ganze Nacht und Edda sagt es, fällt das Herz, singt der See (einmal), die
    Ortskunde erzählt davon; an Tag 19 keine Plane, ab Tag 20 liegt sie im Boot; Hildes Seepost
-   einmal ab Tag 9 (Bilder: stumpf, sturmhuk-gruss, sturmhuk-frost, balduin-plane).
+   einmal ab Tag 9 (Bilder: stumpf, sturmhuk-gruss, sturmhuk-frost, balduin-plane); ab N10
+   (Abschnitt `feuer`, dazu `ankunft`: das erste Ziel sind die Streichhölzer): ein alter Stand
+   brennt weiter, nach der Ankunft sind Feuerstelle und Kamin kalt (kein Licht, keine Flammen,
+   keine Glut, die Dose auf dem Sims), mit echten Tasten gibt E an der kalten Feuerstelle einen
+   Gedanken, der Pfeil zeigt zur Haustür, E geht hinein, E nimmt die Dose, E zündet den Kamin
+   an; mit einem Scheit zeigt das Ziel zu den Ästen, E sammelt sie, E zündet das Lagerfeuer an
+   (zwei Scheite), die Flammen wachsen, Edda sieht den Rauch, dann die Axt; nach dem Neuladen
+   bleibt der halbe Weg (Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1445,7 +1470,9 @@ offene Buchseite (Reiter, Zeilen, Blättern, Pfeile, Rahmen); ab H3 zeigt `hudLa
 Tafeln des letzten Bilds samt freiem Rechteck, `visibleResources()` die Sorten im Vorrat; ab H4
 zeigt `uiInfo()` Zeilen, Breite, Faktor und die gewünschte und wirksame Verschiebung der
 Oberfläche; ab G6 zeigt `wonders()` die Stümpfe, ob der Sturmhuk blinkt (Lampe, wer die Lampe
-hält, Randmarke), Abendgruß, Eisgesang, Plane und Mikas Gedanken.
+hält, Randmarke), Abendgruß, Eisgesang, Plane und Mikas Gedanken; ab N10 zeigt `firstFire()`,
+was kalt ist, die Streichhölzer, Licht, Flammen, Modelle, das Wachsen, Zähler, Ziel, Zielpfeil
+und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

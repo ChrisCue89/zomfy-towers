@@ -640,6 +640,15 @@ export const T = {
     ],
     warnpfahl: 'Ein rotes Kreuz und eine alte Laterne. Jemand vor mir hat markiert, wo sie aus dem Wald kommen.',
   },
+  // N10: Das erste Feuer – Mikas Gedanken an der Dose, am Kamin und an der kalten Feuerstelle
+  feuer: {
+    genommen: 'Streichhölzer',
+    dose: 'Eine Blechdose voller Streichhölzer. Die meisten sind noch trocken.',
+    kaminAn: 'Es knistert. Gleich wird es warm hier drin.',
+    ohne: 'Kalte Asche, nasses Laub. Ich brauche etwas zum Anzünden – im Haus finde ich bestimmt was.',
+    zuWenigHolz: 'Zu wenig Holz. Ein paar Äste würden schon reichen.',
+    an: 'Na also. Jetzt sieht es hier nach Zuhause aus.',
+  },
   // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
   schaukel: {
     los: 'Wiiiiieee!',
@@ -689,6 +698,9 @@ export const T = {
     glocke: 'Läuten (E halten)', // M31: Lagerglocke
     retten: 'Aufhelfen (E halten)', // M31: nach der Lagerglocke am Boden
     erinnerung: 'Laterne anzünden', // M31: Erinnerungsbrett am Steg
+    streichhoelzer: 'Streichhölzer nehmen', // N10: die Dose auf dem Kaminsims
+    kaminAnzuenden: 'Kamin anzünden',
+    feuerAnzuenden: 'Feuer anzünden',
     erinnerungAnsehen: 'Ansehen', // M31: tagsüber
     brauchtWerkzeug: (werkzeug) => `${werkzeug} nötig`,
     heuteLeer: 'Heute leer – morgen wieder',
@@ -1530,6 +1542,11 @@ export const T = {
     werkeln: 'Hämmern, sägen, schrauben …',
   },
   ziele: {
+    // N10: das erste Feuer (nur in einem neuen Spiel mit Ankunft)
+    streichhoelzer: 'Hol die Streichhölzer vom Kaminsims in der Stube.',
+    kamin: 'Zünde den Kamin in der Stube an.',
+    feuer: 'Zünde draußen das Lagerfeuer an (2 Holz).',
+    feuerHolz: 'Sammle Äste für das Lagerfeuer – das ist Holz.',
     axt: 'Nimm die Axt vom Hackklotz.',
     turm: 'Durchsuche Schrott, baue einen Bolzenwerfer neben den Weg.',
     nacht: 'Überstehe eine Nacht, ohne dass das Zuhause fällt.',
@@ -1552,6 +1569,11 @@ export const T = {
     ],
     // Zum Ziel, sobald es an der Reihe ist (goals.js)
     ziele: {
+      // N10: das erste Feuer
+      streichhoelzer: 'Kalt bei dir, oder? Drei Herbste hat an der Holzlände keiner mehr Feuer gemacht. In der Stube, auf dem Kaminsims, steht eine Blechdose mit Streichhölzern – falls die Mäuse sie nicht gefressen haben.',
+      kamin: 'Das Holz im Kamin hab ich noch selbst aufgeschichtet, bevor ich gegangen bin. Es müsste trocken sein. Zünd es an – mit E.',
+      feuer: 'Und jetzt das Feuer im Hof. Zwei Scheite drauf, ein Streichholz drunter. Ein Feuer im Hof heißt: Hier wohnt wieder jemand.',
+      feuerHolz: 'Kein Holz mehr? Äste liegen am Waldrand und hinter dem Hof. Die kannst du einfach aufsammeln.',
       axt: 'Die Axt steckt im Hackklotz beim Feuer. Mein Vater hat sie noch geschliffen – nimm sie mit E.',
       turm: 'Die Schlurfer kommen nur über die alten Holzfällerwege. Durchsuch den Schrott, dann setz mit Q einen Bolzenwerfer neben den Weg – nie darauf.',
       nacht: 'Heute Nacht kommen sie. Die Türme schießen von allein, du hältst den Hof. Das Haus darf nicht fallen.',
@@ -1583,6 +1605,8 @@ export const T = {
     ersteNacht: 'Die erste Nacht – gehalten. Weißt du, wie lange keiner mehr so etwas über die Holzlände sagen konnte?',
     balduin: 'Das ist Balduins Horn. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
     frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst – und ich bleib die ganze Nacht dran.',
+    // N10: Das erste Feuer brennt – Edda sieht den Rauch (wo sie ist, sagt sie nicht)
+    feuerBrennt: (name) => `Ich seh Rauch über der Holzlände. … Wirklich, ich seh ihn. Drei Herbste war da keiner. Willkommen zu Hause, ${name}.`,
     // G6: Der Sturmhuk blinkt in der Frostnacht; der See singt beim ersten Eis
     sturmhuk: 'Schau nach Nordosten, Mika. Kurz, kurz, lang – das ist der Sturmhuk. Ich hab die Lampe angezündet. Zum ersten Mal seit drei Jahren. Für euch.',
     sturmhukClara: 'Schau nach Nordosten, Mika. Kurz, kurz, lang – Clara und ich halten die Lampe am Sturmhuk an. Die ganze Nacht. Für euch.',
@@ -1607,7 +1631,7 @@ export const T = {
   // Die Ankunft (N5): Mikas Gedanken im Dunkel, auf dem See und auf dem Steg
   ankunft: {
     karte: ['Drei Herbste ist es her, dass der Moder kam. Seitdem bin ich unterwegs.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
-    see: ['Der Kranichsee. Auf dem Wasser sind sie nicht – Wasser meiden sie.', 'Da vorn … ein Steg. Und ein Haus mit Schornstein.'],
+    see: ['Der Kranichsee. Auf dem Wasser sind sie nicht – Wasser meiden sie.', 'Da vorn … ein Steg. Ein Haus mit Schornstein – aber kein Rauch.'], // N10: noch ist alles kalt
     steg: ['Leer. Aber jemand hat die Lichterkette hängen lassen.'],
     funk: 'Da knistert was … ein altes Funkgerät, hier auf der Bank.',
     ueberspringen: 'Esc halten: überspringen',

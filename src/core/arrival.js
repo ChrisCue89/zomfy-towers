@@ -95,6 +95,7 @@ export class Arrival {
     g.mode = 'ankunft';
     g.introRunning = true;
     g.builder.cancel?.();
+    g.firstFire.coldStart(); // N10: drei Herbste ohne Feuer – Feuerstelle und Kamin sind kalt
     routeAt(this.route, 0, this.pose);
     this.placeBoat(0);
     this.seatMika();

@@ -2570,6 +2570,32 @@ lang«), und der Volksmund erzählte von Stümpfen, die niemand sah. Wo die Welt
 sagen, wird die Geschichte glaubwürdig (Eisberg-Erzählen, Recherche 2.1). Die Randmarke ist die
 ehrliche Form für etwas, das weit weg ist, und sie kostet keine Lichtquelle.
 
+### 212. Womit beginnt ein neues Spiel? (N10)
+**Entscheidung:** Mit dem ersten Feuer. Nach der Ankunft sind Feuerstelle und Kamin kalt. Die
+ersten drei Ziele zünden sie an: Streichhölzer vom Kaminsims, der Kamin, das Lagerfeuer. Erst
+danach kommt die Axt.
+
+- **Warum zuerst der Kamin:** Die Dose steht auf dem Kaminsims. Mit den Streichhölzern in der
+  Hand und dem Kamin davor ist Anzünden der natürliche nächste Griff. Nebenbei lernt man
+  Haustür und Stube kennen.
+- **Kosten:**
+  - Der Kamin kostet nichts, Edda hat das Holz noch selbst aufgeschichtet.
+  - Das Lagerfeuer kostet zwei der vier Scheite aus dem Startvorrat. Fehlen sie, zeigt das Ziel
+    zu den Ästen, die man ohne Werkzeug sammelt. So bleibt der Einstieg ohne Axt spielbar.
+- **Nur neue Spiele:**
+  - Kalt wird es in `arrival.start` (Flags `feuerKalt`, `kaminKalt`), nicht im Startzustand.
+  - Alte Stände und `?test` brennen weiter. Die drei Ziele sind dort beim Laden still
+    erreicht, ein neuer Spielstand ist nicht nötig.
+- **Kein Zwang:** Wer die Ziele überspringt, spielt weiter. Die Feuerstelle bleibt dann kalt und
+  nachts dunkler, bis Mika sie anzündet. Ausruhen geht auch im Ohrensessel.
+- **Edda sieht den Rauch:** Das deutet ihren Ort an, ohne ihn zu nennen (Sturmhuk, G1), und
+  bereitet den Satz im Funkbuch vor: »Und dann hat jemand das Feuer angemacht. Du.«
+
+**Warum:** Der Auftraggeber (30.09.): »Das könnte eine erste Quest sein das Feuer zu machen.«
+Ein Feuer ist das Zeichen, dass hier wieder jemand wohnt. Das passt zu »Zuflucht sein« (0.13).
+Die ersten Minuten werden zu einer kleinen Geschichte statt einer Liste: ankommen, Licht machen,
+dann die Nacht vorbereiten.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -1972,6 +1972,24 @@ const ICONS = {
       '............',
     ],
   },
+  // N10: ein Streichholz mit kleiner Flamme (die Dose vom Kaminsims)
+  streichholz: {
+    legend: { k: P.e1, w: P.e8, R: P.r3, o: P.f4, y: P.f6, Y: P.f8 },
+    rows: [
+      '........o...',
+      '.......oyo..',
+      '.......yYo..',
+      '......oyYyo.',
+      '.......RRo..',
+      '......kRRk..',
+      '.....kwk....',
+      '....kwk.....',
+      '...kwk......',
+      '..kwk.......',
+      '.kwk........',
+      '.kk.........',
+    ],
+  },
   kuerbislaterne: {
     legend: { k: P.f1, O: P.f4, o: P.f3, y: P.f6, s: P.e3 },
     rows: [

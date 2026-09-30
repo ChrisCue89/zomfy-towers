@@ -1853,7 +1853,10 @@ Reihenfolge – Fehler zuerst, jeder Schritt für sich spielbar:
    danach entscheidet der Auftraggeber über F2–F4.
 5. **H2 – Aufräumen:** Meldungen nach Art (höchstens zwei), Nachtplan und Alarme in der
    Nachtleiste, die gefundenen Überlappungen beheben.
-6. **F2–F4** (nach Zustimmung): alle Arten, die Bosse in 8 Richtungen, Aufräumen.
+6. **F2–F4** (Auftraggeber 30.09.: »testen wir bitte. Aber die Designs dürfen nur Grundlage
+   sein«): Wenn alles andere erledigt ist, werden die Figuren erst in Ruhe liebevoll und
+   detailliert neu gestaltet (F-Design). Danach kommen alle Arten und die Bosse in 8 Richtungen
+   ins Spiel, und es wird angesehen, wie es wirkt.
 7. **G2–G5:** die Fäden verknoten, der Wald erzählt, die Uhr bis zum Frost, die Herbstbuch-Seite
    »Ortskunde«.
 8. **H3–H5:** feste Zonen, Oberflächengröße, Reiter nach Zweck.
@@ -1977,6 +1980,12 @@ nach Hildes Geschichte über die Moosleute). Der Sturmhuk blinkt kurz, kurz, lan
 ohne neue Lichtquelle: die ganze Frostnacht und abends, solange jemand dort ist. Der See singt,
 sobald die Frostnacht gehalten ist. Balduins Plane liegt ab Tag 20 im Boot, und Hilde erzählt
 von der Seepost (Nr. 211).
+
+#### N10 – Das erste Feuer ✓
+
+*Umgesetzt (30.09.2026):* In einem neuen Spiel sind Feuerstelle und Kamin kalt. Die ersten Ziele:
+Streichhölzer vom Kaminsims holen, den Kamin anzünden, draußen das Lagerfeuer anzünden (zwei
+Scheite, sonst Äste). Edda sieht den Rauch (Nr. 212).
 
 ## 9. Ideen-Parkplatz
 

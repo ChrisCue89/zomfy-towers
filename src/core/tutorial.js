@@ -48,10 +48,14 @@ export class Tutorial {
       this.walkFrom = null;
       g.funk.once('laufenGut', T.tutorial.gut);
     }
-    // Jedes Ziel sagt Edda einmal an, sobald es an der Reihe ist
+    // Jedes Ziel sagt Edda einmal an, sobald es an der Reihe ist – ist es schon erreicht, bevor
+    // sie dazu kommt, fällt die Zeile weg (N10: Dose, Kamin und Feuer liegen dicht beieinander)
     const id = g.goal?.id;
-    if (id && T.funk.ziele[id]) g.funk.once(`ziel_${id}`, T.funk.ziele[id]);
-    if (g.goal?.text === T.ziele.kiesel) g.funk.once('ziel_kiesel', T.funk.ziele.kiesel);
+    if (id && T.funk.ziele[id]) g.funk.once(`ziel_${id}`, T.funk.ziele[id], () => g.goal?.id !== id);
+    for (const key of ['kiesel', 'feuerHolz']) {
+      const text = T.ziele[key];
+      if (g.goal?.text === text) g.funk.once(`ziel_${key}`, T.funk.ziele[key], () => g.goal?.text !== text);
+    }
     // Karte und Ansicht, sobald der erste Turm steht
     if (g.world.buildings.towers.length > 0) g.funk.once('karte', T.tutorial.karte);
   }

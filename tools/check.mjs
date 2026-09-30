@@ -236,6 +236,7 @@ async function runBrowserChecks() {
     if (want('wunder')) await runWonderChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
+    if (want('feuer')) await runFirstFireChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -7399,8 +7400,8 @@ async function runArrivalChecks(browser, url) {
   await step(600);
   const tut1 = await z(() => ({ t: window.zomfy.tutorial(), flags: Object.keys(window.zomfy.state().flags).filter((k) => k.startsWith('funk_')) }));
   const firstStep = tut0.f.current?.key === 'laufen' || tut0.f.queue.includes('laufen');
-  if (tut0.mode === 'play' && looks.includes('wald') && looks.includes('zusammen') && firstStep && tut1.t.gut && tut1.flags.includes('funk_ziel_axt')) {
-    note(`✓ Einführung (N5): Edda zeigt die Wege (${looks.join(' → ')}), dann »Lauf ein Stück« – nach ein paar Schritten lobt sie und nennt das erste Ziel (Axt)`);
+  if (tut0.mode === 'play' && looks.includes('wald') && looks.includes('zusammen') && firstStep && tut1.t.gut && tut1.flags.includes('funk_ziel_streichhoelzer')) {
+    note(`✓ Einführung (N5): Edda zeigt die Wege (${looks.join(' → ')}), dann »Lauf ein Stück« – nach ein paar Schritten lobt sie und nennt das erste Ziel (N10: die Streichhölzer für das erste Feuer)`);
   } else fail(`Einführung: ${JSON.stringify({ looks, tut0, tut1 })}`);
 
   // 3) Esc gehalten überspringt die Ankunft
@@ -7432,7 +7433,7 @@ async function runArrivalChecks(browser, url) {
   await page.keyboard.up('KeyD');
   await step(1500);
   const ohne = await z(() => ({ flags: Object.keys(window.zomfy.state().flags).filter((k) => k.startsWith('funk_')), f: window.zomfy.funk() }));
-  if (kurz === 5 && !ohne.flags.includes('funk_laufen') && !ohne.flags.includes('funk_ziel_axt') && !ohne.f.queue.length) note(`✓ Ohne Einführung (N5): Edda stellt sich vor (${kurz} Zeilen), danach keine Erklärungen und kein Ziel über Funk`);
+  if (kurz === 5 && !ohne.flags.includes('funk_laufen') && !ohne.flags.some((f) => f.startsWith('funk_ziel_')) && !ohne.f.queue.length) note(`✓ Ohne Einführung (N5): Edda stellt sich vor (${kurz} Zeilen), danach keine Erklärungen und kein Ziel über Funk`);
   else fail(`Ohne Einführung: ${JSON.stringify({ kurz, ohne })}`);
 
   // 5) Speichern v32: Figur und Einführung bleiben
@@ -11792,4 +11793,174 @@ async function still(page, name) {
   await page.waitForTimeout(150);
   await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
   note(`  Screenshot: screenshots/${name}.png`);
+}
+
+/**
+ * N10 – Das erste Feuer (Rückmeldung 30.09.: »Bei der Ankunft ist das Feuer am laufen. Das könnte
+ * eine erste Quest sein …«): Nach der Ankunft sind Feuerstelle und Kamin kalt (kein Licht, keine
+ * Flammen, kein Rauch); alte Stände brennen weiter. Mit echten Tasten: E an der kalten Feuerstelle
+ * gibt einen Gedanken, E an der Haustür, E nimmt am Kamin die Streichhölzer (die Dose verschwindet
+ * vom Sims), E zündet den Kamin an; draußen fehlt Holz – das Ziel zeigt zu den Ästen, E sammelt sie,
+ * E zündet das Feuer an (zwei Scheite), die Flammen wachsen, Edda sieht den Rauch, als Nächstes die
+ * Axt. Speichern behält den halben Weg. Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer.
+ */
+async function runFirstFireChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest`, 'Das erste Feuer (N10)', {
+    init: () => {
+      if (!sessionStorage.getItem('zomfy-n10')) {
+        localStorage.clear();
+        sessionStorage.setItem('zomfy-n10', '1');
+      }
+    },
+  });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key, ms = 300) => {
+    await page.keyboard.press(key);
+    await step(ms);
+  };
+  const ff = () => z(() => window.zomfy.firstFire());
+  const hinweis = async () => (await z(() => window.zomfyView())).hinweis;
+  const speech = () => z(() => window.zomfy.game.hud.speech?.text || '');
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis']) Z.setFlag(f);
+    Z.setTutorial(true);
+    Z.game.funk.clear();
+    Z.setTime(6, 10);
+  });
+  await step(300);
+
+  // 1) Ein alter Stand (wie ?test ohne Ankunft): alles brennt, das erste Ziel ist die Axt
+  const alt = await ff();
+  // 2) Die Ankunft (Esc gehalten überspringt sie), Edda meldet sich – danach ist alles kalt
+  await z(() => window.zomfy.startArrival());
+  await step(1500);
+  await page.keyboard.down('Escape');
+  await step(900);
+  await page.keyboard.up('Escape');
+  await z(() => window.zomfy.finishDialog());
+  await step(500);
+  const kalt = await ff();
+  await z(() => {
+    window.zomfy.game.funk.clear();
+    window.zomfy.teleport(2.0, -0.5, 0.6);
+  });
+  await tap('KeyZ', 600); // nah heran: die kalte Feuerstelle mit Moos und Laub
+  await still(page, 'erstes-feuer-kalt');
+  await tap('KeyZ', 300);
+  const altOk = !alt.campCold && !alt.kaminCold && alt.light.camp && alt.flames.camp && alt.goal?.id === 'axt';
+  const kaltOk = kalt.campCold && kalt.kaminCold && !kalt.light.camp && !kalt.light.kamin && !kalt.flames.camp && !kalt.flames.kamin && kalt.models.cold && !kalt.models.warm && !kalt.models.embers && kalt.models.tin && kalt.goal?.id === 'streichhoelzer';
+  if (altOk && kaltOk) note(`✓ Erstes Feuer (N10): ein alter Stand brennt weiter (erstes Ziel: Axt); nach der Ankunft sind Feuerstelle und Kamin kalt – kein Licht, keine Flammen, keine Glut, die Dose steht auf dem Sims, Ziel »${kalt.goal.text}«`);
+  else fail(`Erstes Feuer, kalt: ${JSON.stringify({ alt, kalt })}`);
+
+  // 3) E an der kalten Feuerstelle ohne Streichhölzer: ein Gedanke, kein Dialog
+  await z(() => window.zomfy.teleport(0.5, 0.3, Math.PI));
+  await step(300);
+  const vorFeuer = await hinweis();
+  await tap('KeyE');
+  const ohne = { hinweis: vorFeuer, speech: await speech(), mode: await z(() => window.zomfy.mode), ff: await ff() };
+  const ohneOk = /Ansehen/.test(ohne.hinweis || '') && /Anzünden/.test(ohne.speech) && ohne.mode === 'play' && ohne.ff.campCold && ohne.ff.stats.refused === 1;
+  // Zur Haustür: Der Zielpfeil zeigt dorthin, E (echte Taste) geht hinein
+  const tuer = await z(() => {
+    const it = window.zomfy.game.world.interactions.find((i) => i.action === 'enterHouse');
+    return { x: it.x, z: it.z, pfeil: window.zomfy.firstFire().target };
+  });
+  await z((t) => {
+    window.zomfy.game.hud.speech = null;
+    window.zomfy.teleport(t.x, t.z + 0.3, Math.PI);
+  }, tuer);
+  await step(300);
+  await tap('KeyE', 1200);
+  const drinnen = await z(() => ({ inside: window.zomfy.game.viewInside, ff: window.zomfy.firstFire() }));
+  // Vor dem Kamin, ein Stück weg: die Dose auf dem Sims ist zu sehen
+  const k = await z(() => {
+    const it = window.zomfy.game.world.interactions.find((i) => i.id === 'kamin');
+    return { x: it.x, z: it.z };
+  });
+  await z((p) => window.zomfy.teleport(p.x + 1.2, p.z + 1.9, Math.PI), k);
+  await step(500);
+  await still(page, 'streichhoelzer');
+  await z((p) => window.zomfy.teleport(p.x + 0.5, p.z + 0.4, Math.PI), k);
+  await step(300);
+  const vorKamin = await hinweis();
+  await tap('KeyE', 400);
+  const dose = { hinweis: await hinweis(), speech: await speech(), ff: await ff() };
+  await tap('KeyE', 600);
+  const kamin = { hinweis: await hinweis(), ff: await ff() };
+  const hineinOk = tuer.pfeil && Math.hypot(tuer.pfeil.x - tuer.x, tuer.pfeil.z - tuer.z) < 1.5 && drinnen.inside && drinnen.ff.target && Math.abs(drinnen.ff.target.x - k.x) < 1;
+  const doseOk = /Streichhölzer nehmen/.test(vorKamin || '') && dose.ff.matches && !dose.ff.models.tin && /Kamin anzünden/.test(dose.hinweis || '') && /Streichhölzer/.test(dose.speech) && dose.ff.goal?.id === 'kamin';
+  const kaminOk = !kamin.ff.kaminCold && kamin.ff.light.kamin && kamin.ff.models.embers && kamin.ff.grow.kamin < 1 && kamin.ff.goal?.id === 'feuer' && kamin.ff.campCold && /Ans Feuer setzen/.test(kamin.hinweis || '');
+  if (ohneOk && hineinOk && doseOk && kaminOk) note(`✓ Erstes Feuer (N10): E an der kalten Feuerstelle – »${ohne.speech}«; der Pfeil zeigt zur Haustür, E geht hinein, E nimmt die Dose vom Kaminsims (»${dose.speech}«), E zündet den Kamin an (Licht und Glut, die Flammen wachsen)`);
+  else fail(`Erstes Feuer, drinnen: ${JSON.stringify({ ohne, tuer, drinnen, vorKamin, dose, kamin })}`);
+
+  // 4) Draußen fehlt Holz: Das Ziel zeigt zu den Ästen, E sammelt sie, E zündet das Feuer an
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(0.5, 0.3, Math.PI);
+    Z.game.state.inventory.holz = 1;
+    Z.game.hud.speech = null;
+  });
+  await step(500);
+  const wenig = await ff();
+  await tap('KeyE');
+  const zuWenig = await speech();
+  const ast = wenig.target;
+  await z((a) => {
+    // von der Feuerstelle her an die Äste heran (eine gute Armlänge davor)
+    const Z = window.zomfy;
+    const p = Z.game.player.position;
+    const d = Math.hypot(p.x - a.x, p.z - a.z) || 1;
+    Z.game.hud.speech = null;
+    Z.teleport(a.x + ((p.x - a.x) / d) * 0.7, a.z + ((p.z - a.z) / d) * 0.7, Math.atan2(a.x - p.x, a.z - p.z));
+  }, ast);
+  await step(300);
+  await page.keyboard.down('KeyE');
+  await step(1500);
+  await page.keyboard.up('KeyE');
+  await step(300);
+  const gesammelt = await ff();
+  await z(() => window.zomfy.teleport(0.5, 0.3, Math.PI));
+  await step(400);
+  const vorAn = await hinweis();
+  await tap('KeyE', 500);
+  const an = await ff();
+  await step(3000);
+  const voll = await z(() => ({ ...window.zomfy.firstFire(), funk: Boolean(window.zomfy.state().flags.funk_feuerBrennt) }));
+  const holzOk = wenig.goal?.text?.includes('Äste') && wenig.goal.progress === '(1/2)' && ast && /Holz/.test(zuWenig) && gesammelt.holz >= 3 && gesammelt.goal?.text?.includes('Lagerfeuer an');
+  const anOk = /Feuer anzünden/.test(vorAn || '') && !an.campCold && an.light.camp && an.flames.camp !== undefined && an.models.warm && !an.models.cold && an.grow.camp < 1 && an.grow.scale < 1 && an.holz === gesammelt.holz - 2;
+  const vollOk = voll.grow.camp === 1 && voll.grow.scale === 1 && voll.flames.camp && voll.funk && voll.goal?.id === 'axt' && voll.stats.camp === 1;
+  if (holzOk && anOk && vollOk) note(`✓ Erstes Feuer (N10): mit einem Scheit zeigt das Ziel zu den Ästen (»${wenig.goal.text} ${wenig.goal.progress}«), E sammelt sie, E zündet das Lagerfeuer an (Holz ${gesammelt.holz} → ${an.holz}) – die Flammen wachsen aus der Glut, Edda sieht den Rauch, als Nächstes die Axt`);
+  else fail(`Erstes Feuer, draußen: ${JSON.stringify({ wenig, zuWenig, gesammelt, vorAn, an, voll })}`);
+  await z(() => {
+    window.zomfy.setTime(19, 5);
+    window.zomfy.teleport(2.0, -0.5, 0.6);
+    window.zomfy.game.hud.speech = null;
+  });
+  await step(600);
+  await still(page, 'erstes-feuer');
+
+  // 5) Speichern: der halbe Weg bleibt (Dose genommen, Kamin und Feuer noch kalt)
+  await z(() => {
+    const Z = window.zomfy;
+    Z.coldFires();
+    Z.game.firstFire.takeMatches();
+    Z.game.quietSave();
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 90000 });
+  await z(() => {
+    window.__zomfyHold = true;
+    window.zomfy.setHorde(false);
+  });
+  await step(300);
+  const geladen = await ff();
+  if (geladen.kaminCold && geladen.campCold && geladen.matches && !geladen.models.tin && !geladen.light.kamin && !geladen.light.camp && geladen.goal?.id === 'kamin') note('✓ Erstes Feuer (N10): nach dem Neuladen sind Kamin und Feuerstelle noch kalt, die Streichhölzer bleiben genommen – das Ziel ist der Kamin');
+  else fail(`Erstes Feuer, Speichern: ${JSON.stringify(geladen)}`);
+  checkMessages(session);
+  await session.context.close();
 }

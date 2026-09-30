@@ -403,7 +403,7 @@ export class Hud {
     this.drawBossBar(ui);
     // Randpfeile über den Tafeln: in den Ecken lägen sie sonst darunter
     if (show.prompt) this.drawEdgeMarkers(ui);
-    if (show.prompt && !this.game.viewInside) this.drawGoalMarker(ui);
+    if (show.prompt) this.drawGoalMarker(ui); // drinnen nur zu Zielen im Haus (N10)
     if (show.prompt) this.drawTargetMark(ui);
     this.drawFloaters(ui);
     if (show.hotbar) this.drawPlayerHp(ui);
@@ -976,6 +976,7 @@ export class Hud {
     this.goalMark = null;
     const t = g.goalTarget();
     if (!t) return;
+    if (g.viewInside && !g.world.isInside(t.x, t.z)) return; // N10: drinnen nur Dose, Kamin, Ausgang
     const p = g.worldToUi(t.x, t.y, t.z);
     // Für die Textansicht der Playtest-Brücke: wo der Pfeil steht (m6-r1)
     const ux = p.x - ui.width / 2;

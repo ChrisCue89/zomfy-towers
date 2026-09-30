@@ -6,6 +6,11 @@ import { towerStatsOf } from './towers.js';
 
 
 export const GOALS = [
+  // N10: Das erste Feuer – nur in einem neuen Spiel mit Ankunft ist etwas kalt (core/firstFire.js);
+  // in alten Ständen sind diese drei Ziele beim Laden still erreicht
+  { id: 'streichhoelzer', done: (g) => Boolean(g.state.flags.streichhoelzer) || !g.state.flags.kaminKalt },
+  { id: 'kamin', done: (g) => !g.state.flags.kaminKalt },
+  { id: 'feuer', done: (g) => !g.state.flags.feuerKalt },
   { id: 'axt', done: (g) => g.state.tools.axt },
   // Der Turm zählt erst, wenn sein Kreis den Weg der Horde erreicht (m12-r1: einer mitten in der Bucht zählte)
   { id: 'turm', done: (g) => g.world.buildings.towers.some((t) => g.world.pathing.covers(t.i + 0.5, t.j + 0.5, towerStatsOf(t).range)) },

@@ -80,6 +80,7 @@ import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
 import { Wonders } from './wonders.js';
+import { FirstFire } from './firstFire.js';
 import { ISLE_VIEW } from '../data/isles.js';
 import { FOG_VIEW } from '../data/fogIsle.js';
 import { LOSSES_DEFAULT } from '../data/bell.js';
@@ -106,6 +107,7 @@ import { FEEL, SHAKE, SHAKE_LEVELS, FLASH_LEVELS, SLOWMO } from '../data/feel.js
 import { BOSS_ATTACKS, SPLIT } from '../data/bosses.js';
 import { BAG_RARITY } from '../data/trader.js';
 import { GOALS } from '../data/goals.js';
+import { FIRST_FIRE } from '../data/arrival.js';
 import { RECIPES } from '../data/recipes.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
@@ -395,6 +397,7 @@ export class Game {
     this.quests = new Quests(this); // M23: Nebenaufträge
     this.autumn = new Autumn(this); // M25: ein Herbst mit Ende (Frostnacht, Abspann, danach)
     this.wonders = new Wonders(this); // G6: Stümpfe mit drei Kreuzen, der Sturmhuk blinkt, der See singt
+    this.firstFire = new FirstFire(this); // N10: kalte Feuer bei der Ankunft, Streichhölzer, anzünden
     this.book = new Book(this); // M25, Teil 2: Herbstbuch (Sterne, Taten, Schlurferkunde, Turmalbum)
     this.cardNight = new CardNight(this); // M28: Kartenabend »Letzte Runde«
     this.bonds = new Bonds(this); // M29: Bindung – gemeinsame Zeit, stille Stufen, Momente
@@ -565,6 +568,7 @@ export class Game {
     this.survivors.apply();
     this.posts.apply();
     this.trader.apply();
+    this.firstFire.apply(); // N10: was kalt war, bleibt kalt – alte Stände brennen weiter
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
     this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
@@ -686,6 +690,8 @@ export class Game {
     const st = this.state;
     const id = this.goal?.id;
     if (id === 'haendler') return this.trader.target();
+    const fire = this.firstFire.target(id); // N10: Dose, Kamin, Feuerstelle (und die Tür dazwischen)
+    if (fire) return fire;
     if (id === 'axt' && !st.tools.axt) {
       const cb = LAYOUT.choppingBlock;
       return { x: cb.x, y: 1.0, z: cb.z };
@@ -903,6 +909,11 @@ export class Game {
       const stone = this.state.inventory.stein || 0;
       this.goal.text = need > stone ? T.ziele.kiesel : T.ziele[current.id];
       if (need > stone) this.goal.progress = `(${stone}/${need})`;
+      // N10: Für das erste Feuer fehlen Scheite – dann zeigt das Ziel zu den Ästen
+      if (current.id === 'feuer' && this.firstFire.needWood()) {
+        this.goal.text = T.ziele.feuerHolz;
+        this.goal.progress = `(${this.state.inventory.holz || 0}/${FIRST_FIRE.campCost.holz})`;
+      }
     }
   }
 
@@ -1011,6 +1022,7 @@ export class Game {
     else if (it.stump !== undefined) this.hud.say(this.wonders.stumpThought(it.stump), 5); // G6: Gedanke statt Dialog
     else if (this.gathering.interact(it)) return;
     else if (it.thought) this.hud.say(T.geschichte[it.thought], 5); // M15: Gedanke statt Dialog
+    else if (this.firstFire.use(it)) return; // N10: kalter Kamin, kalte Feuerstelle – anzünden statt ausruhen
     else if (it.dialog) this.startDialog(it.dialog);
   }
 
@@ -3104,7 +3116,7 @@ export class Game {
     info.z = p.z;
     info.hours = hoursOf(this.state.time.minute);
     info.inside = this.world.playerInside;
-    info.fireDist = Math.hypot(fire.x - me.x, fire.z - me.z);
+    info.fireDist = (inside ? this.firstFire.kaminCold : this.firstFire.campCold) ? 99 : Math.hypot(fire.x - me.x, fire.z - me.z); // N10: kalt knistert nichts
     info.fight = this.nights.active && (this.horde.alive > 0 || this.nights.queue.length > 0);
     info.zombiesNear = near;
     info.quiet = this.mode === 'sleep';
@@ -3216,6 +3228,8 @@ export class Game {
 
   /** Text der Einblendung. Sessel und Bank sagen tagsüber gleich, dass man dort ausruhen kann (m3-r2). */
   promptText(it) {
+    const fire = this.firstFire.prompt(it); // N10: solange es kalt ist
+    if (fire) return fire;
     if (it.mailbox && this.post.waiting) return T.aktionen.postHolen; // M32
     if (it.memorial) return this.memorialEvening() && !this.state.fallen.every((f) => f.lit === this.state.time.day) ? T.aktionen.erinnerung : T.aktionen.erinnerungAnsehen; // M31
     if ((it.id === 'sessel' || it.use === 'bank') && !this.nights.active && canRest(this.state)) return T.aktionen.ausruhen;
@@ -4215,6 +4229,10 @@ export class Game {
       },
       /** N9: gleich eine Böe. */
       kiteGust: () => game.kite.gustNow(),
+      /** N10: das erste Feuer – kalt?, Streichhölzer, Licht, Flammen, Modelle, Wachsen, Zähler, Ziel und Zielpfeil. */
+      firstFire: () => ({ ...game.firstFire.info(), goal: game.goal ? { id: game.goal.id, text: game.goal.text, progress: game.goal.progress || null } : null, target: game.goalTarget(), holz: game.state.inventory.holz || 0 }),
+      /** N10: Feuerstelle und Kamin kalt machen wie bei der Ankunft. */
+      coldFires: () => game.firstFire.coldStart(),
       /** G6: Stümpfe, Sturmhuk (blinkt? Lampe an? wer?), Abendgruß, Eisgesang, Plane – dazu die Randmarke. */
       wonders: () => ({ ...game.wonders.info(), mark: (game.hud.edgeMarks || []).find((m) => m.art === 'sturmhuk') || null, speech: game.hud.speech?.text || null, mode: game.mode, minute: game.state.time.minute }),
       /** M32: Briefkasten, Gelesenes, Verschicktes, Einladung, Besuch, Fahne, Signalfeuer, Edda, offene Karte. */

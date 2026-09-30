@@ -5,6 +5,55 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## N10: Das erste Feuer ✓
+
+**Auftrag (30.09.):** »Bei der Ankunft ist das Feuer am laufen. Das könnte eine erste Quest sein
+das Feuer zu machen. Dafür brauchen wir vielleicht etwas aus dem Haus.« Dabei fiel noch etwas
+auf: Auch der Kamin brannte, und aus dem Schornstein stieg Rauch – in einem Haus, das seit drei
+Herbsten leer steht.
+
+- **Alles kalt bei der Ankunft:**
+  - In einem neuen Spiel mit Ankunft sind Feuerstelle und Kamin kalt. Es gibt kein Licht (die
+    Lichter bleiben und werden nur über `on` gedimmt), keine Flammen, keinen Rauch und keine
+    Funken.
+  - Die Feuerstelle ist grau und bemoost, in der Asche liegt nasses Laub, im Kamin glüht nichts.
+  - Schon vom Boot aus denkt Mika: »Ein Haus mit Schornstein – aber kein Rauch.«
+  - Alte Spielstände brennen weiter (nur Flags, kein neuer Spielstand).
+- **Drei neue erste Ziele** (danach kommt wie bisher die Axt):
+  1. **Die Streichhölzer:** Eine rote Blechdose steht vorn auf dem Kaminsims, E am Kamin nimmt
+     sie. Der goldene Pfeil zeigt draußen zur Haustür und drinnen auf die Dose.
+  2. **Der Kamin:** E zündet ihn an. Das Holz darin hat Edda noch selbst aufgeschichtet.
+  3. **Das Lagerfeuer:** E zündet es an, das kostet zwei Scheite. Fehlt Holz, zeigt das Ziel zu
+     den nächsten Ästen (»Sammle Äste für das Lagerfeuer – das ist Holz. (1/2)«).
+- **Anzünden:**
+  - Ein Streichholz ratscht (neues Klangrezept), Funken stieben. Die Flammen wachsen in
+    zweieinhalb Sekunden aus der Glut, das Licht wächst mit.
+  - Mika freut sich: »Na also. Jetzt sieht es hier nach Zuhause aus.«
+  - Ohne Streichhölzer gibt die kalte Feuerstelle einen Gedanken, nie einen Dialog.
+- **Edda:**
+  - Mit Einführung erklärt sie jedes der drei Ziele.
+  - Brennt das Feuer, sagt sie immer, auch ohne Einführung: »Ich seh Rauch über der Holzlände.
+    … Wirklich, ich seh ihn. Drei Herbste war da keiner. Willkommen zu Hause.«
+  - Wo sie ist, sagt sie nicht. Aber vom Sturmhuk sieht man die Bucht, und im Funkbuch steht
+    später: »Und dann hat jemand das Feuer angemacht. Du.«
+- **Nebenbei:**
+  - Zeilen über ein Ziel fallen weg, wenn es schon erreicht ist, bevor Edda dazu kommt
+    (`funk.once(flag, text, stale)`). Dose, Kamin und Feuer liegen dicht beieinander.
+  - Der goldene Zielpfeil zeigt jetzt auch drinnen, aber nur auf Ziele im Haus.
+  - Kerzen, Uhr und Kräuterglas auf dem Kaminsims stecken seit M11 in der Kaminschürze und
+    waren nie zu sehen. Frei ist nur die Kante davor, wo die gewonnenen Einsätze stehen. Offen:
+    sie dorthin setzen, ohne den Einsätzen die Plätze zu nehmen.
+
+**Prüfung:** Neuer Abschnitt `feuer` mit fünf Prüfpunkten, alle mit echten Tasten: kalt nach der
+Ankunft, Gedanke, Haustür, Dose, Kamin, zu wenig Holz, Äste, Anzünden, Wachsen, Eddas Zeile,
+Speichern. Grün sind außerdem `ankunft` (das erste Ziel sind jetzt die Streichhölzer),
+`probespiel`, `karten` und `bindung`: 52 Prüfpunkte.
+
+**Entscheidung des Auftraggebers zu F2–F4 (30.09.):** »Das mit den 2d schlurfern testen wir
+bitte. Aber die Designs dürfen nur Grundlage sein.« Wenn alles andere erledigt ist, werden die
+Figuren in Ruhe liebevoll und detailliert neu gestaltet. Erst danach werden sie eingebaut, dann
+wird angesehen, wie es wirkt (DESIGN 8, Plan ab 30.09., Punkt 6).
+
 ## G6: Kleine Wunder ✓
 
 **Auftrag (30.09.):** »Die Story ist noch dünn.« Nach G1–G5 kommen die optionalen Stücke aus

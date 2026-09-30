@@ -327,6 +327,12 @@ const SFX = {
     s.noise(t, 0.04, { type: 'bandpass', freq: 1800, q: 2, peak: 0.16 * v, out: o });
     s.noise(t + 0.2, 0.05, { type: 'bandpass', freq: 1100, q: 2, peak: 0.2 * v, out: o });
   },
+  // N10: Streichholz anreißen – ratsch, ein Zischen, dann fängt das Holz mit einem weichen Fauchen
+  zuenden: (s, t, v, o) => {
+    s.noise(t, 0.07, { type: 'highpass', freq: 2600, freqEnd: 4800, attack: 0.005, peak: 0.16 * v, out: o });
+    s.noise(t + 0.08, 0.35, { type: 'bandpass', freq: 3200, freqEnd: 1200, q: 1.2, attack: 0.02, peak: 0.07 * v, out: o });
+    s.noise(t + 0.45, 1.2, { type: 'lowpass', freq: 500, freqEnd: 1400, attack: 0.35, peak: 0.14 * v, out: o });
+  },
   // Ölspur fängt Feuer: Wummern und Fauchen
   flammen: (s, t, v, o) => {
     s.tone('sine', 80, t, 0.4, { freqEnd: 40, peak: 0.22 * v, out: o });
