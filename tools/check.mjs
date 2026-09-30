@@ -11479,7 +11479,43 @@ async function runSizeChecks(browser, url) {
   if (funk && lage.panels.some((p) => p.name === 'baumenue') && !fehler.length) note(`✓ Größe (H4): bei 270 Zeilen spricht Edda über dem offenen Baumenü (y ${funk.y}), keine Tafel überlappt`);
   else fail(`Größe: Baumenü und Funk ${JSON.stringify({ fehler, panels: lage.panels })}`);
 
-  // 4) Browserfenster 1920 × 955: 319 Zeilen (aufgerundet), »groß« gilt wie mittel – die Zeile sagt es
+  // 4) H4b: auch Waffenschrank, Werkbank, Morgenbericht, Katalog und Karte passen bei 270 Zeilen
+  const fenster = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const ui = g.ui;
+    const out = [];
+    const seen = [];
+    const fits = (name, L, w, h) => {
+      seen.push(name);
+      const r = { x: L.x, y: L.y, w: L.w ?? w, h: L.h ?? h };
+      if (r.y < 0 || r.y + r.h > ui.height || r.x < 0 || r.x + r.w > ui.width) out.push(`${name}: ${r.x},${r.y} ${r.w}×${r.h}`);
+    };
+    g.state.arms.unlocked = true;
+    g.openArmory();
+    fits('schrank', g.armory.layout(ui));
+    g.closeArmory();
+    for (const id of ['axt', 'spitzhacke']) g.state.tools[id] = false; // eine lange Liste der Werkbank (Werkzeug noch zu bauen)
+    g.openCrafting('werkbank');
+    fits('werkbank', g.crafting.layout(ui));
+    g.closeCrafting();
+    g.openCatalog();
+    fits('katalog', g.catalog.layout(ui));
+    g.closeCatalog();
+    Z.endNight(true);
+    g.showReport();
+    fits('bericht', g.report.layout(ui));
+    g.report.report = null;
+    g.mode = 'play';
+    g.mapView.open();
+    fits('karte', g.mapView.layout(ui), 384, 240);
+    g.mapView.close();
+    return { out, seen };
+  });
+  if (!fenster.out.length && fenster.seen.length === 5) note(`✓ Größe (H4b): bei 270 Zeilen passen auch ${fenster.seen.join(', ')} ins Bild`);
+  else fail(`Größe: Fenster bei 270 Zeilen ${JSON.stringify(fenster)}`);
+
+  // 5) Browserfenster 1920 × 955: 319 Zeilen (aufgerundet), »groß« gilt wie mittel – die Zeile sagt es
   await page.setViewportSize({ width: 1920, height: 955 });
   await step(200);
   const browser955 = await z(() => {
@@ -11488,7 +11524,7 @@ async function runSizeChecks(browser, url) {
     const row = g.menu.buttons().find((b) => b.setting === 'ui')?.label || '';
     return { ...window.zomfy.uiInfo(), row };
   });
-  // 5) 1280 × 720: klein ginge über 540 Zeilen hinaus – es bleibt bei 360
+  // 6) 1280 × 720: klein ginge über 540 Zeilen hinaus – es bleibt bei 360
   await page.setViewportSize({ width: 1280, height: 720 });
   const laptop = await setUi('klein');
   await setUi('mittel');

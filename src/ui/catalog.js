@@ -195,7 +195,7 @@ export class Catalog {
     const w = 470;
     const h = 262;
     const x = Math.round((ui.width - w) / 2);
-    const y = Math.round((ui.height - h) / 2) - 8;
+    const y = Math.max(2, Math.round((ui.height - h) / 2) - 8); // H4b: bei 270 Zeilen nicht über den Rand
     const tabs = [];
     let tx = x + 10;
     for (const room of CATALOG_ROOMS) {

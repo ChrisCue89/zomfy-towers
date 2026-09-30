@@ -1965,6 +1965,11 @@ Faktor der Oberfläche um einen Schritt (bei 1920 × 1080: 540, 360, 270 Zeilen)
 270 bis 540 Zeilen, sonst mit dem Hinweis »(hier wie mittel)«. Pausenmenü und Herbstbuch passen
 sich der Höhe an, Edda weicht dem offenen Baumenü aus; die Kacheln bleiben groß (Nr. 210).
 
+#### H4b – Jedes Fenster passt ✓
+
+*Umgesetzt (30.09.2026):* Waffenschrank, Morgenbericht, Werkbank/Handel und Katalog passen auch
+bei 270 Zeilen (»Oberfläche: groß«) ins Bild; der Abschnitt `groesse` misst sie.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

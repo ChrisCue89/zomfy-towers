@@ -5,6 +5,21 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## H4b: Jedes Fenster passt ✓
+
+Nachgemessen nach H4: Bei »Oberfläche: groß« (270 Zeilen, 1080p im Vollbild) ragten mehrere
+Fenster über den Bildrand. Jetzt passen sie:
+
+- **Waffenschrank:** Er war fest 282 Zeilen hoch. Unter 290 Zeilen ist das Foto 26 Zeilen
+  flacher und zeigt die Mitte der Waffe; die liegt ohnehin quer.
+- **Morgenbericht:** Die Zeilen rücken zusammen, wenn der Bericht sonst zu hoch wäre.
+- **Werkbank und Handel:** Lange Listen bekommen niedrigere Zeilen, mindestens 17 Pixel.
+- **Balduins Katalog:** Er rutschte bei 270 Zeilen 4 Pixel über den oberen Rand.
+- Die Karte passte schon.
+
+**Prüfung:** Abschnitt `groesse` (neuer Schritt »H4b«), dazu `waffen`, `haendler`, `probespiel` und
+`naechte`: 65 Prüfpunkte bestanden.
+
 ## Flackern beim Laufen: Die Schattenränder kochen nicht mehr ✓
 
 **Rückmeldung (30.09., zum Stand N8):** »Das Flackern war weiterhin während der Bewegung des

@@ -16,6 +16,8 @@ import { PEOPLE, personOf } from '../core/survivors.js';
 
 const OPEN_LOCK = 0.25; // das E am Schrank zählt nicht gleich als »nehmen«
 const PIC = { w: 196, h: 92 };
+/** H4b: So viel flacher wird das Foto bei großer Oberfläche. */
+const PIC_CUT = 26;
 const ROW_H = 16;
 
 const WOOD = hexToCss(P.e2);
@@ -89,11 +91,13 @@ export class Armory {
 
   layout(ui) {
     const w = 460;
-    const h = 282; // Platz für umbrochene Angaben und die Notfall-Zeile über der Tastenzeile
+    // H4b: Bei großer Oberfläche (unter 290 Zeilen) ist das Foto flacher – so passt der Schrank ins Bild
+    const cut = ui.height < 290 ? PIC_CUT : 0;
+    const h = 282 - cut; // Platz für umbrochene Angaben und die Notfall-Zeile über der Tastenzeile
     const x = Math.round((ui.width - w) / 2);
-    const y = Math.round((ui.height - h) / 2) - 8;
+    const y = Math.max(2, Math.round((ui.height - h) / 2) - 8);
     const rows = ARMS_ORDER.map((id, k) => ({ id, rect: { x: x + 12, y: y + 44 + k * ROW_H, w: 196, h: ROW_H - 2 } }));
-    return { x, y, w, h, rows, photo: { x: x + w - PIC.w - 20, y: y + 40 } };
+    return { x, y, w, h, rows, photo: { x: x + w - PIC.w - 20, y: y + 40, h: PIC.h - cut } };
   }
 
   /** Unterkante des Fensters (Meldungen erscheinen darunter). */
@@ -192,20 +196,22 @@ export class Armory {
     const id = ARMS_ORDER[this.focus];
     const ph = L.photo;
     ctx.fillStyle = LINE;
-    ctx.fillRect(ph.x - 1, ph.y - 1, PIC.w + 10, PIC.h + 10);
+    ctx.fillRect(ph.x - 1, ph.y - 1, PIC.w + 10, ph.h + 10);
     ctx.fillStyle = TEXT;
-    ctx.fillRect(ph.x, ph.y, PIC.w + 8, PIC.h + 8);
+    ctx.fillRect(ph.x, ph.y, PIC.w + 8, ph.h + 8);
     ctx.fillStyle = PHOTO_BG;
-    ctx.fillRect(ph.x + 4, ph.y + 4, PIC.w, PIC.h);
+    ctx.fillRect(ph.x + 4, ph.y + 4, PIC.w, ph.h);
     ctx.fillStyle = PHOTO_BG_DARK;
-    ctx.fillRect(ph.x + 4, ph.y + 4 + PIC.h - 16, PIC.w, 16);
+    ctx.fillRect(ph.x + 4, ph.y + 4 + ph.h - 16, PIC.w, 16);
     const pic = armsPicture(id);
     if (pic) {
-      const used = Math.min(PIC.h, pic.used);
-      const dy = Math.max(0, Math.round((PIC.h - used) / 2));
-      ctx.drawImage(pic.canvas, 0, 0, PIC.w, used, ph.x + 4, ph.y + 4 + dy, PIC.w, used);
+      // Ist das Foto flacher als das Bild, zeigt es die Mitte (die Waffe liegt quer)
+      const used = Math.min(ph.h, pic.used);
+      const sy = Math.max(0, Math.round((pic.used - used) / 2));
+      const dy = Math.max(0, Math.round((ph.h - used) / 2));
+      ctx.drawImage(pic.canvas, 0, sy, PIC.w, used, ph.x + 4, ph.y + 4 + dy, PIC.w, used);
     }
-    let ty = ph.y + PIC.h + 14;
+    let ty = ph.y + ph.h + 14;
     drawText(ctx, T.gegenstaende[id], ph.x, ty, BRASS);
     ty += LINE_HEIGHT;
     for (const line of wrap(W.info[id], PIC.w + 8)) {

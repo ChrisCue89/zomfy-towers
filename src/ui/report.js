@@ -108,8 +108,10 @@ export class ReportPanel {
   layout(ui, lines = this.lines(ui)) {
     const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
     const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => (l.stars ? this.starsWidth() : measure(l.text)) + (l.res ? resW(l.res) + 8 : 0) + 24)));
-    const h = 34 + lines.length * (LINE_HEIGHT + 3) + 16;
-    return { x: Math.round((ui.width - w) / 2), y: Math.round((ui.height - h) / 2) - 16, w, h };
+    // H4b: Passt der Bericht nicht in die Höhe (große Oberfläche), rücken die Zeilen zusammen
+    const step = Math.max(LINE_HEIGHT, Math.min(LINE_HEIGHT + 3, Math.floor((ui.height - 8 - 50) / Math.max(1, lines.length))));
+    const h = 34 + lines.length * step + 16;
+    return { x: Math.round((ui.width - w) / 2), y: Math.max(2, Math.round((ui.height - h) / 2) - 16), w, h, step };
   }
 
   /** Breite der Sternenzeile: je Stern Symbol, Name und Abstand. */
@@ -138,7 +140,7 @@ export class ReportPanel {
     const r = this.report;
     if (!r) return;
     const lines = this.lines(ui);
-    const { x, y, w, h } = this.layout(ui, lines);
+    const { x, y, w, h, step } = this.layout(ui, lines);
     ui.ditherFill(0.4);
     ui.panel(x, y, w, h);
     const title = r.won ? T.bericht.gewonnen(r.n) : T.bericht.verloren(r.n);
@@ -148,7 +150,7 @@ export class ReportPanel {
     for (const l of lines) {
       if (l.stars) {
         this.drawStars(ui, l.stars, x, w, cy);
-        cy += LINE_HEIGHT + 3;
+        cy += step;
         continue;
       }
       ui.text(l.text, x + 12, cy, l.dim ? COLORS.textDim : l.bad && !l.res ? COLORS.buildBad : l.warm ? COLORS.gold : COLORS.text);
@@ -162,7 +164,7 @@ export class ReportPanel {
           cx += 14 + measure(String(n)) + 6;
         }
       }
-      cy += LINE_HEIGHT + 3;
+      cy += step;
     }
     if (this.time > 0.4 && Math.floor(this.time * 2.5) % 2 === 0) ui.textCentered(T.bericht.weiter, x + w / 2, y + h - 15, COLORS.textDim);
   }

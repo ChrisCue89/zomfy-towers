@@ -103,10 +103,12 @@ export class CraftingMenu {
     // beim Händler: Spruch unter dem Titel – lange Sprüche brechen um (m16-r1: sie ragten über den Rahmen)
     this.quoteLines = this.shop ? wrap(this.game.trader.quote(), w - 20) : [];
     const head = 28 + this.quoteLines.length * LINE_HEIGHT;
-    const h = head + 6 + list.length * ROW_H + 18;
+    // H4b: Bei großer Oberfläche rücken lange Listen zusammen (mindestens 17 Pixel je Zeile)
+    const rowH = Math.max(17, Math.min(ROW_H, Math.floor((ui.height - 8 - head - 24) / Math.max(1, list.length))));
+    const h = head + 6 + list.length * rowH + 18;
     const x = Math.round((ui.width - w) / 2);
-    const y = Math.round((ui.height - h) / 2) - 20;
-    const rows = list.map((r, k) => ({ recipe: r, rect: { x: x + 8, y: y + head + k * ROW_H, w: w - 16, h: ROW_H - 2 } }));
+    const y = Math.max(2, Math.round((ui.height - h) / 2) - 20);
+    const rows = list.map((r, k) => ({ recipe: r, rect: { x: x + 8, y: y + head + k * rowH, w: w - 16, h: rowH - 2 } }));
     return { x, y, w, h, rows };
   }
 

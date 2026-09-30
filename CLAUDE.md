@@ -1249,8 +1249,9 @@ Grundprinzipien:
    zonen-nacht); ab H4 (Abschnitt `groesse`): bei 1920 × 1080 ergibt »Oberfläche« klein, mittel,
    groß 540, 360, 270 Zeilen und wird gespeichert, bei 270 Zeilen passen Pausenmenü,
    Einstellungen, alle Seiten des Herbstbuchs, Notiz- und Werkstattbuch ins Bild, Edda spricht
-   über dem offenen Baumenü, im Browserfenster 1920 × 955 bleibt es bei 319 Zeilen mit »(hier wie
-   mittel)«, bei 1280 × 720 bei 360 (Bilder: ui-klein, ui-gross).
+   über dem offenen Baumenü, bei 270 Zeilen passen auch Waffenschrank, Werkbank, Katalog,
+   Morgenbericht und Karte (H4b), im Browserfenster 1920 × 955 bleibt es bei 319 Zeilen mit »(hier
+   wie mittel)«, bei 1280 × 720 bei 360 (Bilder: ui-klein, ui-gross).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
