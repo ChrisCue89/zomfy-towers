@@ -25,6 +25,7 @@ import { NIGHT_START } from '../data/waves.js';
 import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
+import { KNOTS, knotFor } from '../data/knots.js';
 import { spriteUniforms } from '../render/spriteMaterial.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
@@ -3938,6 +3939,8 @@ export class Game {
         game.survivors.onAbilitiesChanged(); // dauerhafte Fähigkeiten (Lottes Licht) gleich setzen
       },
       talkTo: (id) => game.survivors.talk(id),
+      /** G2: die Knoten der Geschichte – erzählt oder wartend. */
+      knots: () => KNOTS.map((k) => ({ who: k.who, flag: k.flag, done: Boolean(game.state.flags[k.flag]), ready: knotFor(game.state, k.who)?.flag === k.flag })),
       /** Wie die Antwort »Das Zelt dort ist für dich« (mit Auftrag). */
       moveIn: (id) => game.survivors.onAnswer(id, 'einziehen'),
       maxHp: () => game.combat.maxHp,

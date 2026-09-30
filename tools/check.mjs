@@ -227,6 +227,7 @@ async function runBrowserChecks() {
     if (want('oberflaeche')) await runMenuChecks(browser, url);
     if (want('sprites')) await runSpriteChecks(browser, url);
     if (want('aufraeumen')) await runTidyChecks(browser, url);
+    if (want('knoten')) await runKnotChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10811,6 +10812,88 @@ async function runTidyChecks(browser, url) {
   await tap('KeyM');
   if (karte.open && karte.plan && karte.rows >= 1) note(`✓ Aufräumen (H2): die Karte (M) zeigt den ganzen Plan (${karte.rows} ${karte.rows === 1 ? 'Welle' : 'Wellen'})`);
   else fail(`Aufräumen: Plan auf der Karte ${JSON.stringify(karte)}`);
+  await z(() => (window.__zomfyHold = false));
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * G2 – Fäden verknoten (recherche/storytelling-namen.md 4.4): Hilde erkennt Eddas Stimme erst ab
+ * Tag 13 und nur einmal (davor und danach das gewohnte Gespräch); nach Eddas Heimkehr stellt Hilde
+ * den Brief zu, wenn Mika sie mit echter Taste anspricht – Edda liest ihn; Yusuf erkennt Knopfs
+ * roten Faden (ab Tag 16), Edda erkennt Juna.
+ */
+async function runKnotChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Knoten (G2)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    Z.setHorde(false);
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.game.funk.clear();
+    for (const id of ['hilde', 'yusuf', 'juna', 'knopf']) Z.setSurvivor(id, 3);
+    Z.setDay(12);
+    Z.setTime(10, 0);
+  });
+  await step(300);
+  // Ein Gespräch ohne Taste: Sprecher und Zeilen, dann zu Ende
+  const talk = (id) =>
+    z((who) => {
+      const g = window.zomfy.game;
+      window.zomfy.talkTo(who);
+      const lines = [];
+      let guard = 40;
+      while (g.dialog.active && guard-- > 0) {
+        lines.push({ s: g.dialog.line?.s, t: g.dialog.line?.t });
+        g.dialog.advance();
+      }
+      return lines;
+    }, id);
+  const t12 = await talk('hilde');
+  await z(() => window.zomfy.setDay(13));
+  const t13 = await talk('hilde');
+  const t13b = await talk('hilde');
+  const erkennt = (lines) => lines.some((l) => l.t?.includes('Stimme aus deinem Funkgerät'));
+  if (!erkennt(t12) && erkennt(t13) && !erkennt(t13b)) note('✓ Knoten (G2): an Tag 12 spricht Hilde wie immer, an Tag 13 erkennt sie Eddas Stimme im Funk – nur einmal');
+  else fail(`Knoten: Hilde erkennt Edda ${JSON.stringify({ t12, t13, t13b })}`);
+
+  // Nach Eddas Heimkehr: E bei Hilde (echte Taste) – sie stellt den Brief zu, Edda liest ihn
+  await z(() => {
+    const Z = window.zomfy;
+    const st = Z.game.state;
+    st.edda.home = 13;
+    st.edda.met = true;
+    Z.game.survivors.placeAll(true);
+    const h = Z.npcPos('hilde');
+    Z.teleport(h.x, h.z + 0.9, Math.PI);
+  });
+  await step(300);
+  await page.keyboard.press('KeyE');
+  await step(200);
+  const brief = await z(() => {
+    const g = window.zomfy.game;
+    const lines = [];
+    let guard = 40;
+    while (g.dialog.active && guard-- > 0) {
+      lines.push({ s: g.dialog.line?.s, t: g.dialog.line?.t });
+      g.dialog.advance();
+    }
+    return { lines, flag: Boolean(g.state.flags.briefZugestellt) };
+  });
+  const zugestellt = brief.flag && brief.lines.some((l) => l.s === 'eddaHier') && brief.lines.some((l) => l.t?.includes('Frau Lindqvist'));
+  if (zugestellt) note('✓ Knoten (G2): nach Eddas Heimkehr stellt Hilde mit echter Taste den Brief zu – »Drei Jahre unterwegs«, Edda liest ihn');
+  else fail(`Knoten: Brief ${JSON.stringify(brief)}`);
+
+  // Yusuf und Knopfs roter Faden (ab Tag 16), Edda und Juna
+  await z(() => window.zomfy.setDay(16));
+  const yusuf = await talk('yusuf');
+  const edda = await talk('edda');
+  const knots = (await z(() => window.zomfy.knots())).filter((k) => ['hildeKenntEdda', 'briefZugestellt', 'yusufKnopf', 'eddaJuna'].includes(k.flag));
+  if (yusuf.some((l) => l.t?.includes('roten') || l.t?.includes('rotem Garn')) && edda.some((l) => l.t?.includes('um acht')) && knots.length === 4 && knots.every((k) => k.done)) note('✓ Knoten (G2): Yusuf erkennt Knopfs roten Faden, Edda erkennt Juna – alle vier Knoten erzählt');
+  else fail(`Knoten: Yusuf und Edda ${JSON.stringify({ yusuf, edda, knots })}`);
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();

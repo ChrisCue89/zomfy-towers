@@ -989,6 +989,7 @@ export const T = {
       '„Psst. Wenn jemand fragt: Ich war nie hier.“',
       '„Meine Sammlung ist fast komplett. Fast!“',
       '„Auf den Inseln wächst kein Moder. Zu viel Wind, zu viel Fels, zu viel Balduin!“', // M15
+      '„Der Name am Bug? Da stand mal »Wissenschaft«. Dann »Kunst«. Dann »Suppe«. Jetzt steht da »Frag nicht«. Also: frag nicht.“', // G2
     ],
   },
   auftraege: {
@@ -1671,7 +1672,7 @@ export const T = {
     tag: (n) => `Tag ${n}`,
     zweite: {
       hannes: '„Die Brummigen im Forsthaus haben mir einen Stuhl gebaut. Er wackelt. Ich hab ihn nicht repariert – er soll wissen, dass er dazugehört.“',
-      clara: '„Das Licht im Leuchtturm reicht jetzt bis zu euch. Zweimal kurz, einmal lang: Das heißt »Gute Nacht, Bucht«. Hab ich mir ausgedacht.“',
+      clara: '„Das Licht im Leuchtturm reicht jetzt bis zu euch. Zweimal kurz, einmal lang: Das heißt »Gute Nacht, Bucht«. Und hier wohnt eine alte Dame, die jeden Abend ins Funkgerät spricht und dann so tut, als hätte sie nichts gesagt.“', // G2
       lotte: '„Die neue Laterne ist fertig. Sie ist auch schief. Ich glaube, schief ist mein Stil. Sie kommt mit dem nächsten Boot.“',
       greta: '„Bruder baut Boot. Ich stelle Reusen. Winter kommt. Wir auch klar. Ihr?“',
       fiete: '„Der Hecht war doch nur so lang wie ein halbes Ruder. Aber der nächste! Grüß mir den Steg.“',

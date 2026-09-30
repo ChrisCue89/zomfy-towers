@@ -699,6 +699,7 @@ export const DIALOGE = {
       'Im Wald war es früher nie still. Hier bei euch hör ich es wieder – das Knacken, das Rascheln.',
       'Der Moder mag keine Wurzeln. Wurzeln halten fest. Wie wir.',
       'Gustav lässt grüßen.',
+      'Die Seewelle? Hab ich jeden Abend gehört. Und manchmal angerufen. »Die Försterin« – das war ich.', // G2
     ]),
   // --- Rosa, die Köchin ---
   rosaTreffen: [
@@ -720,6 +721,7 @@ export const DIALOGE = {
       'Bert isst alles. Das ist schön und gleichzeitig beleidigend.',
       'Kürbis geht für alles: Suppe, Kuchen, Brot. Nur nicht für Kaffee. Hab ich probiert.',
       'Im Fährhaus stand auf jedem Tisch eine Kerze. Hier ist das Feuer die Kerze.',
+      'Balduin hat bei mir jeden Freitag Fischsuppe gegessen. Ohne Fisch. Frag nicht.', // G2
     ]),
   // --- Anton, der Musiker ---
   antonTreffen: [
@@ -1239,6 +1241,33 @@ export const DIALOGE = {
     { s: 'yusuf', t: 'Pferde kriegen so etwas am Widerrist. Ich empfehle Ringelblumensalbe und weniger Holzhacken.' },
     { s: 'mika', t: 'Und was empfehlen Sie, wenn man das Holz braucht?' },
     { s: 'yusuf', t: 'Dann Ringelblumensalbe. Das mit dem Holzhacken war ohnehin nur als Scherz gemeint.' },
+  ],
+  // --- G2: Fäden verknoten (data/knots.js) ---------------------------------------------
+  hildeErkennt: [
+    { s: 'hilde', t: 'Kindchen, die Stimme aus deinem Funkgerät. Die kenn ich doch!' },
+    { s: 'hilde', t: 'Das ist Frau Lindqvist. Die hat mir jeden Winter Kekse an den Briefkasten gehängt – mit Zimt, in Butterbrotpapier.' },
+    { s: 'mika', t: 'Edda? Der das Haus hier gehört hat?' },
+    { s: 'hilde', t: 'Holzlände 1. Dann hat mein letzter Brief ja doch eine Empfängerin. Ich trag ihn, bis sie heimkommt.' },
+  ],
+  briefZustellen: [
+    { s: 'hilde', t: '(rückt die Mütze gerade und zieht einen Umschlag aus der Tasche) So. Jetzt aber ordentlich.' },
+    { s: 'hilde', t: 'Frau Lindqvist? Ein Brief für Sie. Drei Jahre unterwegs. Hier unterschreiben, bitte.' },
+    { s: 'eddaHier', t: '(liest und wird rot) … Der alte Seebär.' },
+    { s: 'mika', t: 'Von Balduin?' },
+    { s: 'eddaHier', t: 'Das geht dich gar nichts an. … Ja.' },
+    { s: 'hilde', t: 'Vierzig Jahre Post, Kindchen. Und der letzte ist angekommen.' },
+  ],
+  yusufKnopf: [
+    { s: 'yusuf', t: 'Sag mal – der Knopf an Knopfs Halsband. Mit rotem Garn angenäht, ganz ordentlich.' },
+    { s: 'yusuf', t: 'So haben wir in der Praxis die Pflegehunde gekennzeichnet. Roter Faden, ein Knopf daran – damit jeder weiß: Der gehört zu jemandem.' },
+    { s: 'mika', t: 'Dann war er einer von deinen?' },
+    { s: 'yusuf', t: '(Knopf wedelt) Einer von meinen. Und er hat allein ein Zuhause gefunden.' },
+  ],
+  eddaJuna: [
+    { s: 'eddaHier', t: 'Die Kleine mit den Kopfhörern. Die sendet jeden Abend um acht, oder?' },
+    { s: 'mika', t: 'Juna. Ihr Vater hat die Seewelle gebaut.' },
+    { s: 'eddaHier', t: 'Dann hab ich ihr drei Jahre lang zugehört. Und früher hat sie mir zugehört, ohne es zu wissen – ich hab das Wetter gelesen.' },
+    { s: 'eddaHier', t: 'Sag ihr nichts. Heute um acht steh ich neben ihr am Funk. Dann lesen wir zusammen.' },
   ],
   yusufMoment2: [
     { s: 'yusuf', t: 'Ich hatte eine Praxis in Birkhagen, hinter dem Wald. Hunde, Katzen, einmal ein Esel mit Liebeskummer.' },

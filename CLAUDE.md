@@ -359,6 +359,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Form, Stellen, Glocke, Fahrt, Seenebel, Auftrag, Reuse,
                       Stufen, N7), kite (Drachen: Bedarf, Zeiten, Wetter, Böen,
                       Looping, N9),
+                      knots (Knoten der Geschichte: wer, wann, welcher Dialog,
+                      G2),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Frostnacht, Moderherz,
                       Schnee, danach, M25), book (Taten, Herbstschmuck,
@@ -1196,7 +1198,10 @@ Grundprinzipien:
    die lange Zielzeile bricht davor um), von vier Meldungen stehen rechts die zwei neuesten, Neues
    im Buch hängt als Lesezeichen an der Uhr und Esc räumt es ab, ein Schlurfer im Lager steht als
    Alarm in der roten Zeile der Nachtleiste, B schaltet den Zeitraffer ohne Meldung, die Karte
-   zeigt den ganzen Plan (Bilder: hud-abend, hud-nacht, karte-plan).
+   zeigt den ganzen Plan (Bilder: hud-abend, hud-nacht, karte-plan); ab G2 (Abschnitt `knoten`):
+   an Tag 12 spricht Hilde wie immer, an Tag 13 erkennt sie Eddas Stimme – nur einmal; nach Eddas
+   Heimkehr stellt sie mit echter Taste den Brief zu, Edda liest ihn; Yusuf erkennt Knopfs roten
+   Faden, Edda erkennt Juna.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1359,7 +1364,8 @@ gezeichneten Punkten), Knopf, Bauzettel, wartende Rückfrage und die Warteschlan
 Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backen)` zeigt, wie
 viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` backt es sofort
 alles); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
-Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan.
+Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
+ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

@@ -5,6 +5,33 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G2: Fäden verknoten ✓
+
+**Auftrag (30.09.):** »Die Story ist noch dünn.« Nach den Namen (G1) der zweite Schritt aus
+`recherche/storytelling-namen.md` (4.4, 5.3): Fäden, die bisher nie endeten, werden verknotet
+(Nr. 205).
+
+- **Hildes letzter Brief:**
+  - Ab Tag 13 erkennt Hilde Eddas Stimme im Funk: »Das ist Frau Lindqvist. Die hat mir jeden
+    Winter Kekse an den Briefkasten gehängt.«
+  - Nach Eddas Heimkehr stellt sie den Brief zu, drei Jahre unterwegs. Edda liest und wird rot:
+    »… Der alte Seebär.« Hilde: »Vierzig Jahre Post, Kindchen. Und der letzte ist angekommen.«
+- **Yusuf und Knopf** (ab Tag 16): Der Knopf mit rotem Garn am Halsband war das Zeichen seiner
+  Pflegehunde – Knopf hat allein ein Zuhause gefunden.
+- **Edda und Juna:** Zu Hause erkennt Edda die Kleine, die um acht sendet. Drei Jahre hat sie ihr
+  zugehört, heute um acht lesen sie zusammen.
+- **Kleine Knoten:**
+  - Ida war »die Försterin«, die die Seewelle jeden Abend hörte.
+  - Rosa kochte Balduin freitags Fischsuppe ohne Fisch.
+  - Balduin erklärt den Namen am Bug: »Wissenschaft«, »Kunst«, »Suppe«, jetzt »Frag nicht«.
+  - Claras zweiter Brief vom Sturmhuk erzählt von einer alten Dame, die jeden Abend ins
+    Funkgerät spricht.
+- **So funktioniert es:** Jeder Knoten wird einmal erzählt, beim nächsten Gespräch mit der
+  Person statt des gewohnten Gesprächs. Ein angekündigter Bindungsmoment (»möchte reden«) geht
+  vor (`data/knots.js`, ein Flag je Knoten, kein neuer Spielstand).
+
+**Prüfung:** Abschnitt `knoten`, 4 Prüfpunkte bestanden.
+
 ## H2: Die Oberfläche aufgeräumt ✓
 
 **Auftrag (30.09.):** »Aktuell ist alles super unübersichtlich.« Nach dem Baumenü (H1) folgt der

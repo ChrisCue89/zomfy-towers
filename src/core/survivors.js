@@ -25,6 +25,7 @@
 // erschöpft (bis mittags) gar nicht.
 
 import { T } from '../data/texts.js';
+import { knotFor } from '../data/knots.js';
 import { SURVIVORS, SURVIVOR_ORDER, TOWER_STAGES, BEACON, TRADES, MORNING_GIFTS, BERT_REPAIR, YUSUF_TEA, ERRANDS } from '../data/survivors.js';
 import { Npcs } from '../entities/npcs.js';
 import { hoursOf } from './state.js';
@@ -245,7 +246,18 @@ export class Survivors {
       g.startDialog('eddaHeimkehr', () => g.quietSave());
       return;
     }
+    if (this.knot('edda')) return; // G2
     g.startDialog('eddaDa');
+  }
+
+  /** G2: Einen wartenden Knoten der Geschichte erzählen (data/knots.js) – einmal, dann ist er erledigt. */
+  knot(id) {
+    const g = this.game;
+    const k = knotFor(g.state, id);
+    if (!k) return false;
+    g.state.flags[k.flag] = true;
+    g.startDialog(k.dialog, () => g.quietSave());
+    return true;
   }
 
   /** Kartenabend (M28): `id` sitzt am Tisch (spot mit seatY) – oder steht wieder auf (null). */
@@ -520,6 +532,8 @@ export class Survivors {
     // M29: Wartet ein Bindungsmoment, erzählt die Figur ihn statt des gewohnten Gesprächs
     if (this.resident(id) && g.bonds.talk(id)) return;
     g.bonds.onTalk(id);
+    // G2: Wartet ein Knoten der Geschichte, erzählt die Figur ihn statt des gewohnten Gesprächs (einmal)
+    if (this.resident(id) && this.knot(id)) return;
     g.startDialog(id, (aktion) => this.onAnswer(id, aktion));
   }
 

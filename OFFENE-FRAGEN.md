@@ -2434,6 +2434,21 @@ Stellen und dreifache Hinweise auf »bezahlbar« machten das Bild unruhig (reche
 ist, was die Nacht betrifft – das steht jetzt an einer Stelle oben in der Mitte. Was wartet
 (Buch), braucht keine Eile. Was nur bestätigt, darf verschwinden.
 
+### 205. Wie enden die offenen Fäden? (G2)
+**Entscheidung:** Als »Knoten« – kleine Momente, die einmal erzählt werden, wenn ihre Zeit
+gekommen ist: beim nächsten Gespräch mit der Person, statt des gewohnten Gesprächs. Ein
+angekündigter Bindungsmoment geht vor, er steht ja schon über dem Kopf.
+
+- Jeder Knoten hat eine Bedingung (Tag, wer wohnt da, Eddas Heimkehr) und ein Flag.
+- Hilde erkennt Edda ab Tag 13 und stellt nach der Heimkehr den Brief zu.
+- Yusuf erkennt Knopf ab Tag 16, Edda erkennt Juna.
+- Kleinere Knoten sind einfach neue Zeilen im gewohnten Gespräch (Ida, Rosa, Balduin, Clara).
+
+Was im Brief steht, sagt Edda nicht; Balduins Grund bleibt zu.
+**Warum:** Viele gute Fäden endeten nie (recherche 1.2): Hildes Brief, Knopfs Faden, Yusufs
+Zweifel, die Seewelle. Ein Knoten braucht keinen neuen Spielstand und kein neues System – nur
+eine Bedingung und ein paar Zeilen, und er belohnt, wer mit den Leuten redet.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

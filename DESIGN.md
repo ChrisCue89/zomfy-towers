@@ -1915,6 +1915,18 @@ Der Nachtplan steht in der Nachtleiste (die nächste Welle, »N«, »M: der ganz
 Plan auf der Karte. Der Zeitraffer ist ein Zeichen, die Zahlen stehen in der Hauptschrift. Die
 Überlappungen aus der Recherche (Ziel, Meldungen, Boss, Champion) sind behoben.
 
+#### G2 – Fäden verknoten ✓
+
+*Umgesetzt (30.09.2026):* Knoten der Geschichte (Nr. 205, `data/knots.js`), jeder einmal beim
+nächsten Gespräch:
+
+- Hilde erkennt Edda (ab Tag 13) und stellt nach der Heimkehr den Brief zu.
+- Yusuf erkennt Knopfs roten Faden (ab Tag 16).
+- Edda erkennt Juna.
+
+Dazu kleine Zeilen für Ida, Rosa, Balduin (der Name am Bug) und Claras zweiten Brief vom
+Sturmhuk.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
