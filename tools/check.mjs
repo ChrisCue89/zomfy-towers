@@ -17,7 +17,7 @@
 // Mit ?test spielt jede Prüfung auf derselben Karte (Startwert 3).
 
 import { execFileSync, execSync } from 'node:child_process';
-import { readdirSync, statSync, mkdirSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { inflateSync } from 'node:zlib';
 import { createRequire } from 'node:module';
@@ -225,6 +225,7 @@ async function runBrowserChecks() {
     if (want('drachen')) await runKiteChecks(browser, url);
     if (want('nebel')) await runFogFlickerChecks(browser, url);
     if (want('oberflaeche')) await runMenuChecks(browser, url);
+    if (want('sprites')) await runSpriteChecks(browser, url);
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
 
@@ -10419,6 +10420,298 @@ async function runMenuChecks(browser, url) {
   if (funk && r && r.x < 40 && r.w * r.h <= 15000 && !overlap(r, lage.hot) && !overlap(r, lage.m)) note(`✓ Funk (H1): Edda spricht unten links über Mikas Leiste (${r.w} × ${r.h} = ${r.w * r.h} px²), weder auf der Schnellleiste noch auf dem Baumenü`);
   else fail(`Funk unten links: ${JSON.stringify(lage)}`);
 
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * F1 – Schlurfer als Sprites (recherche/schlurfer-sprites.md, Probe): Die Einstellung
+ * »Schlurfer: 2D« backt nach und nach 65 Bilder (5 Richtungen × gehen 6, stehen 2, Treffer 1,
+ * Fallen 4; W, NW und SW gespiegelt) – bis dahin bleiben es Voxel. Geprüft: Richtung mit
+ * Hysterese (kein Flackern an der Grenze, eine Wendung gilt sofort), Spiegeln, die Nebelwelle
+ * zeigt nur die Augen, Sterben mit Fallen, Umriss nur für die Lebenden. Bilder: dieselbe Szene
+ * in 3D und 2D (Reihe in acht Richtungen, Pulk am Weg, Nacht) und der Bogen aller Bilder.
+ */
+async function runSpriteChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Sprites (F1)', { viewport: { width: 1920, height: 1080 } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  // Ein Bild ohne Simulationsschritt (die Uhr steht, niemand bewegt sich) – für gleiche Szenen
+  const still = async (name) => {
+    await z(() => window.zomfy.game.render());
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
+    note(`  Screenshot: screenshots/${name}.png`);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar');
+    Z.setTime(11, 0);
+    Z.game.funk.clear();
+  });
+  await step(300);
+
+  // 1. Standard ist 3D, gebacken wird erst mit der Einstellung – nach und nach, bis dahin Voxel
+  const vorher = await z(() => window.zomfy.sprites());
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setHordeLook('2d');
+    Z.spawnZombie('schlurfer', 2, 3);
+    Z.lookAt(2, 3);
+  });
+  await step(34);
+  await step(34);
+  const backen = await z(() => {
+    const g = window.zomfy.game;
+    return { ...window.zomfy.sprites(), voxel: g.horde.kinds.schlurfer.meshes.torso.count };
+  });
+  const fertig = await z(() => window.zomfy.sprites(true));
+  if (vorher.look === '3d' && !vorher.on && vorher.baked === 0 && backen.baked > 0 && !backen.ready && backen.voxel === 1 && fertig.ready && fertig.frames === 65) {
+    note(`✓ Sprites (F1): Standard bleibt 3D (nichts gebacken); »Schlurfer: 2D« backt nach und nach (nach zwei Bildern ${backen.baked} von ${backen.total}, solange steht der Voxel-Schlurfer), dann ${fertig.frames} Bilder im Atlas (${(fertig.bakeMs / fertig.total).toFixed(1)} ms je Bild)`);
+  } else fail(`Sprites: Backen ${JSON.stringify({ vorher, backen, fertig })}`);
+
+  // 2. Acht Richtungen aus acht Blickwinkeln; W, NW und SW sind gespiegelt
+  const reihe = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    const ids = [];
+    for (let k = 0; k < 8; k++) {
+      const id = Z.spawnZombie('schlurfer', -5.25 + k * 1.5, 4);
+      const q = g.horde.list.find((o) => o.id === id);
+      q.state = 'idle';
+      q.facing = (k * Math.PI) / 4;
+      ids.push(id);
+    }
+    Z.teleport(0.5, 7.2, 0);
+    Z.lookAt(0, 4.6);
+    g.render();
+    const s = g.horde.sprites;
+    return ids.map((id, i) => ({ dir: g.horde.list.find((o) => o.id === id).spriteDir, flip: s.aPivot.array[i * 4 + 2] }));
+  });
+  const dirsOk = reihe.every((r, k) => r.dir === k && r.flip === (k >= 5 ? -1 : 1));
+  if (dirsOk) note('✓ Sprites (F1): acht Schlurfer, acht Richtungen (S, SO, O, NO, N gezeichnet; NW, W, SW gespiegelt)');
+  else fail(`Sprites: Richtungen ${JSON.stringify(reihe)}`);
+  await z(() => (document.querySelector('#ui').style.visibility = 'hidden'));
+  await z(() => window.zomfy.setHordeLook('3d'));
+  await still('sprites-reihe-3d');
+  await z(() => window.zomfy.setHordeLook('2d'));
+  await still('sprites-reihe-2d');
+  await z(() => window.zomfy.game.applySettings({ view: 'nah' }));
+  await step(34);
+  await still('sprites-reihe-nah');
+  await z(() => window.zomfy.game.applySettings({ view: 'weit' }));
+
+  // 3. Hysterese: knapp über der Grenze bleibt die Richtung, erst 10° darüber und nach 0,15 s
+  // wechselt sie; zurück ins Grenzgebiet flackert nichts; eine Wendung gilt sofort
+  const hyst = await z(() => {
+    // direkt an der Richtungswahl der Sprites – die Horde selbst dreht einen Stehenden sonst weiter
+    const s = window.zomfy.game.horde.sprites;
+    const q = { facing: 0, attackAnim: 0, windup: 0 };
+    const out = [];
+    const at = (deg, ms) => {
+      q.facing = (deg * Math.PI) / 180;
+      out.push(s.direction(q, ms / 1000));
+    };
+    at(0, 34);
+    at(27, 500); // über 22,5°, aber unter 32,5°: bleibt S
+    at(37, 200); // 10° über der Grenze und die alte Richtung stand 0,15 s: wechselt
+    at(17, 500); // zurück ins Grenzgebiet: bleibt SO
+    at(180, 34); // Wendung: sofort N
+    return out;
+  });
+  if (hyst.join() === '0,0,1,1,4') note(`✓ Sprites (F1): Richtung mit Hysterese – 27° bleibt S, 37° wird SO, zurück auf 17° bleibt SO (kein Flackern), eine Wendung gilt sofort (${hyst.join(' → ')})`);
+  else fail(`Sprites: Hysterese ${JSON.stringify(hyst)}`);
+
+  // 4. Nebelwelle: im Dunkeln nur die Augen (Tönung −1), der Umriss fehlt; ins Licht geholt ganz
+  const nebel = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    Z.setTime(23, 30);
+    window.__zomfyStep(34);
+    // eine dunkle Stelle ohne Lichtinsel (Fackeln am Weg, Laternen)
+    let spot = { x: -20, z: 2 };
+    for (let x = -20; x > -48; x -= 3) {
+      if (!Z.litAt(x, 2)) {
+        spot = { x, z: 2 };
+        break;
+      }
+    }
+    const id = Z.spawnZombie('schlurfer', spot.x, spot.z, null, 'nebel');
+    const q = g.horde.list.find((o) => o.id === id);
+    q.state = 'idle';
+    Z.lookAt(spot.x, spot.z);
+    g.rig.jumpTo(spot.x, spot.z); // die Kamera steht sofort dort (sonst liegt er außerhalb des Bilds)
+    window.__zomfyStep(34);
+    const s = g.horde.sprites;
+    const hidden = g.horde.isHidden(q);
+    const w = s.aTint.array[3];
+    return { hidden, w, drawn: s.mesh.count, sil: s.silhouette.count };
+  });
+  if (nebel.hidden && nebel.w === -1 && nebel.drawn === 1) note('✓ Sprites (F1): Nebelwelle – ein verborgener Schlurfer zeigt nur die glühenden Augen (wie die Voxel)');
+  else fail(`Sprites: Nebelwelle ${JSON.stringify(nebel)}`);
+  await z(() => window.zomfy.setTime(11, 0));
+  await step(34);
+
+  // 5. Sterben: getroffen taumelt er, fällt in vier Bildern, versinkt und ist nach 1,1 s fort
+  const tod = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    const id = Z.spawnZombie('schlurfer', 0, 4);
+    const q = g.horde.list.find((o) => o.id === id);
+    q.state = 'idle';
+    Z.lookAt(0, 4);
+    g.rig.jumpTo(0, 4); // zurück von der Nebelstelle – sofort, sonst liegt er im ersten Bild außerhalb
+    const s = g.horde.sprites;
+    const frameKey = () => {
+      const f = [...s.atlas.frames.entries()].find(([, v]) => v.x === s.aRect.array[0] && v.y === s.aRect.array[1]);
+      return f ? f[0] : null;
+    };
+    q.recoil = 0.2;
+    window.__zomfyStep(34);
+    const hit = frameKey();
+    Z.killZombie(id);
+    window.__zomfyStep(34);
+    const f1 = frameKey();
+    window.__zomfyStep(400);
+    const f2 = frameKey();
+    const sil = s.silhouette.count;
+    window.__zomfyStep(900);
+    return { hit, f1, f2, sil, left: g.horde.list.length, drawn: s.mesh.count };
+  });
+  if (/treffer/.test(tod.hit) && /fallen:[01]$/.test(tod.f1) && /fallen:3$/.test(tod.f2) && tod.sil === 0 && tod.left === 0 && tod.drawn === 0) note(`✓ Sprites (F1): Treffer taumelt, Sterben fällt in vier Bildern (${tod.f1} → ${tod.f2}), ohne Umriss, nach 1,1 s ist er fort`);
+  else fail(`Sprites: Sterben ${JSON.stringify(tod)}`);
+
+  // 6. Pulk am Weg: dieselbe Szene in 3D und 2D, dazu die Nacht mit Laterne
+  const pulk = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    const m = Z.mapInfo().merge;
+    for (let k = 0; k < 24; k++) {
+      const q = g.horde.spawn('schlurfer', { x: m.x - 1.5 + (k % 6) * 0.7, z: m.z - 1.2 + Math.floor(k / 6) * 0.8 });
+      q.state = 'walk';
+    }
+    for (let k = 0; k < 90; k++) g.step(1 / 30);
+    let x = 0;
+    let zz = 0;
+    for (const q of g.horde.list) {
+      x += q.x / g.horde.list.length;
+      zz += q.z / g.horde.list.length;
+    }
+    Z.teleport(x + 4.5, zz + 2.5, -Math.PI / 2);
+    Z.lookAt(x + 1.5, zz);
+    return { n: g.horde.list.length, x: +x.toFixed(1), z: +zz.toFixed(1) };
+  });
+  await z(() => window.zomfy.setHordeLook('3d'));
+  await still('sprites-pulk-3d');
+  await z(() => window.zomfy.setHordeLook('2d'));
+  await still('sprites-pulk-2d');
+  const gezeichnet = await z(() => window.zomfy.sprites().drawn);
+  if (pulk.n === 24 && gezeichnet === 24) note(`✓ Sprites (F1): ein Pulk von 24 Schlurfern am Weg, alle als Sprite gezeichnet (Bilder sprites-pulk-3d, -2d)`);
+  else fail(`Sprites: Pulk ${JSON.stringify({ pulk, gezeichnet })}`);
+  await z(() => {
+    window.zomfy.setTime(22, 30);
+    window.zomfy.game.player.lanternLit = true;
+  });
+  await step(34);
+  await z(() => window.zomfy.setHordeLook('3d'));
+  await still('sprites-nacht-3d');
+  await z(() => window.zomfy.setHordeLook('2d'));
+  await still('sprites-nacht-2d');
+
+  // 7. Leistung: 120 Schlurfer im Bild, gezeichnet als Voxel und als Sprites (Software-Renderer: grob)
+  const perf = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    g.horde.clear();
+    const m = Z.mapInfo().merge;
+    for (let k = 0; k < 120; k++) {
+      const q = g.horde.spawn('schlurfer', { x: m.x - 5 + (k % 12) * 0.8, z: m.z - 4 + Math.floor(k / 12) * 0.8 });
+      q.state = 'idle';
+    }
+    Z.lookAt(m.x, m.z);
+    const time = (look) => {
+      Z.setHordeLook(look);
+      g.render();
+      const t0 = performance.now();
+      for (let k = 0; k < 6; k++) g.horde.render(g.rig.camera);
+      const cpu = (performance.now() - t0) / 6;
+      const r = g.pixel.renderer;
+      g.render();
+      return { cpu: +cpu.toFixed(2), tris: r.info.render.triangles };
+    };
+    const v = time('3d');
+    const s = time('2d');
+    return { voxel: v, sprite: s };
+  });
+  if (perf.sprite.tris < perf.voxel.tris) note(`✓ Sprites (F1): 120 Schlurfer – Voxel ${Math.round(perf.voxel.tris / 1000)} Tsd. Dreiecke und ${perf.voxel.cpu} ms Haltung je Bild, Sprites ${Math.round(perf.sprite.tris / 1000)} Tsd. Dreiecke und ${perf.sprite.cpu} ms`);
+  else fail(`Sprites: Leistung ${JSON.stringify(perf)}`);
+
+  // 8. Der Bogen: alle Bilder in acht Richtungen (Zeilen) und allen Zuständen (Spalten)
+  const bogen = await z(() => {
+    const s = window.zomfy.game.horde.sprites;
+    const A = s.atlas;
+    const rows = ['S', 'SO', 'O', 'NO', 'N', 'NW', 'W', 'SW'];
+    const cols = [...Array(6).keys()].map((k) => ['gehen', k]).concat([['stehen', 0], ['stehen', 1], ['treffer', 0]], [...Array(4).keys()].map((k) => ['fallen', k]));
+    const cw = 64;
+    const ch = 72;
+    const sc = 2;
+    const pad = 14;
+    const cv = document.createElement('canvas');
+    cv.width = (cols.length * cw + 2) * sc + pad;
+    cv.height = (rows.length * ch + 2) * sc + pad;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#5b6b3a';
+    c.fillRect(0, 0, cv.width, cv.height);
+    const img = c.getImageData(0, 0, cv.width, cv.height);
+    rows.forEach((label, r) => {
+      const d = r <= 4 ? r : 8 - r;
+      const flip = r > 4;
+      cols.forEach(([anim, k], col) => {
+        const f = A.frames.get(`schlurfer:${d}:${anim}:${k}`);
+        const ox = pad + col * cw * sc + (cw / 2 - f.px) * sc * (flip ? -1 : 1);
+        const oy = pad + r * ch * sc + (66 - (f.h - f.py)) * sc;
+        for (let y = 0; y < f.h; y++) {
+          for (let x = 0; x < f.w; x++) {
+            const o = ((f.y + f.h - 1 - y) * A.size + f.x + x) * 4;
+            const a = A.color[o + 3];
+            if (!a) continue;
+            if (a < 90 && (x + y) % 2 === 0) continue;
+            const px = flip ? pad + col * cw * sc + (cw / 2) * sc + (f.px - x - 1) * sc : ox + x * sc;
+            for (let v = 0; v < sc; v++) {
+              for (let u = 0; u < sc; u++) {
+                const q = ((oy + y * sc + v) * cv.width + px + u) * 4;
+                if (q < 0 || q >= img.data.length) continue;
+                img.data[q] = a < 90 ? 20 : A.color[o];
+                img.data[q + 1] = a < 90 ? 16 : A.color[o + 1];
+                img.data[q + 2] = a < 90 ? 28 : A.color[o + 2];
+                img.data[q + 3] = 255;
+              }
+            }
+          }
+        }
+      });
+      c.putImageData(img, 0, 0);
+    });
+    c.putImageData(img, 0, 0);
+    c.fillStyle = '#f3e3c3';
+    c.font = '11px monospace';
+    rows.forEach((label, r) => c.fillText(label, 1, pad + r * ch * sc + 12));
+    return cv.toDataURL('image/png');
+  });
+  writeFileSync(join(SHOTS, 'sprites-bogen.png'), Buffer.from(bogen.split(',')[1], 'base64'));
+  note('  Screenshot: screenshots/sprites-bogen.png');
+  await z(() => {
+    document.querySelector('#ui').style.visibility = 'visible';
+    window.__zomfyHold = false;
+  });
   checkMessages(session);
   await session.context.close();
 }

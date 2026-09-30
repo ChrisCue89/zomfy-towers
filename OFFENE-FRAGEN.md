@@ -2395,6 +2395,30 @@ die Namen vier Widersprüche:
 - Edda wohnte auf Marthes Insel.
 - »Brandt« las sich wie der Vater von Pim und Lu in der Horde.
 
+### 203. Wie wird ein Schlurfer zum Sprite? (F1)
+**Entscheidung:** Die Sprites entstehen im Spiel, beim ersten Einschalten:
+
+- Die Figur ist ein Bauplan aus runden Formen (Abstandsfelder, wie N1).
+- Ein Strahlenwerfer rastert sie im festen Blickwinkel der Kamera mit 1/40 m je Texel.
+- Pixelregeln malen sie mit der Palette, Kontur und Stempeln.
+- 5 Richtungen werden gezeichnet, 3 gespiegelt, je 13 Bilder.
+- Ein Atlas als Datentextur, ohne Canvas und ohne Auslesen der GPU.
+- Im Bild steht jeder Schlurfer als aufrechter Quad mit eingerastetem Fußpunkt, beleuchtet über
+  die gebackene Normale.
+
+Die Probe gilt nur für den Schlurfer und ist eine Einstellung (Standard 3D), bis der
+Auftraggeber entschieden hat.
+**Warum:**
+- Handgemalte Bilder in acht Richtungen gäbe es nur von außen, und fremde Assets sind verboten.
+  Gebacken aus Code bleibt jede Figur änderbar: Ein neuer Hut ist eine Form mehr, kein neuer
+  Bogen.
+- 1/40 m hält die Texel bei 80 px/m auf 2 × 2 Bildpunkten – so liegen die Kanten auf dem
+  Raster.
+- Aufrecht statt zur Kamera gekippt, damit die Tiefe stimmt und die Füße nicht im Boden
+  versinken.
+- Die Einstellung zeigt 3D und 2D in derselben Szene. Das Prüfskript legt dieselben Bilder
+  nebeneinander.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

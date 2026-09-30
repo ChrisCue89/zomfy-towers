@@ -30,6 +30,7 @@ import { CHAMPION, TRAITS, cleanChampion } from '../data/champions.js';
 import { WAVE_TRAITS, FOG_SEEN } from '../data/waves.js';
 import { BOSS_ATTACKS } from '../data/bosses.js';
 import { zombieParts, ZOMBIE_TYPES, podModel } from './zombieModels.js';
+import { HordeSprites } from './hordeSprites.js';
 import { damp, dampAngle } from '../core/math.js';
 
 /** M30: So lange sucht ein Schlurfer nach Mika, nachdem er einen Schuss gehört hat (s). */
@@ -214,6 +215,10 @@ export class Horde {
     this.podMesh.count = 0;
     this.podMesh.visible = false;
     this.group.add(this.podMesh);
+    // F1: Schlurfer als Sprites (Probe, Einstellung »Schlurfer: 2D«). Gebacken wird erst, wenn
+    // die Einstellung an ist – ein paar Bilder je Bild, bis dahin zeichnet die Horde Voxel.
+    this.sprites = new HordeSprites(this.group);
+    this.spriteLook = false;
     this._podDummy = new THREE.Object3D();
     this._dir = { x: 0, z: 0 };
     this._pt = { x: 0, z: 0 };
@@ -1348,6 +1353,12 @@ export class Horde {
    */
   render(camera = null) {
     this._tick = (this._tick || 0) + 1; // M26: Zittern der Getroffenen (je Bild)
+    // F1: Sprites erst, wenn alle Bilder gebacken sind (bis dahin backt jedes Bild ein paar)
+    if (this.spriteLook && !this.sprites.ready) this.sprites.bake(6);
+    const sprites = this.spriteLook && this.sprites.ready ? this.sprites : null;
+    const spriteDt = Math.max(0, Math.min(0.1, this.time - (this._spriteTime ?? this.time)));
+    this._spriteTime = this.time;
+    if (sprites) sprites.begin();
     const counts = {};
     const living = {};
     for (const type of ZOMBIE_TYPES) counts[type] = 0;
@@ -1362,19 +1373,23 @@ export class Horde {
     for (const z of order) {
       const kind = this.kinds[z.type];
       const k = counts[z.type];
-      if (k >= MAX_PER_TYPE) continue;
+      const flat = sprites !== null && sprites.has(z.type);
+      if (k >= MAX_PER_TYPE && !flat) continue;
       if (frustum) {
         const s = z.def.scale * (z.size || 1);
         _sphere.center.set(z.x, z.y + s, z.z);
         _sphere.radius = 1.2 * s + VIEW_MARGIN;
         if (!frustum.intersectsSphere(_sphere)) continue;
       }
+      if (flat) {
+        this.putSprite(z, spriteDt);
+        continue;
+      }
       counts[z.type]++;
       if (z.state !== 'dying') living[z.type]++; // die Lebenden kommen zuerst: nur sie bekommen einen Umriss
       this.pose(kind.rig, z);
       kind.rig.root.updateMatrixWorld(true);
-      let tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
-      if (z.champion && tint === TINT.normal) tint = championTint.copy(TINT.championDim).lerp(TINT.champion, 0.5 + 0.5 * Math.sin(this.time * 3 + z.id)); // M21
+      const tint = this.tintOf(z);
       const hidden = this.isHidden(z) && z.state !== 'dying'; // Nebelwelle (M22): nur die Augen
       const buried = z.y < -0.5; // Gräber unter der Erde: gar nichts
       for (const name of kind.parts) {
@@ -1402,6 +1417,8 @@ export class Horde {
       s.mesh.count = counts[s.type];
       s.mesh.visible = counts[s.type] > 0;
     }
+    if (sprites) sprites.end();
+    else this.sprites.hide();
     // Sporenkapseln (M22): pulsieren schneller, je näher das Schlüpfen
     const d = this._podDummy;
     let n = 0;
@@ -1418,12 +1435,40 @@ export class Horde {
     this.podMesh.instanceMatrix.needsUpdate = true;
   }
 
+  /** Die Farbe eines Schlurfers in diesem Bild: Blitz, Zustand, Champion (M21). */
+  tintOf(z) {
+    const tint = z.flash > 0 ? TINT.flash : z.stunT > 0 ? TINT.stunned : z.freezeT > 0 ? TINT.frozen : z.burnT > 0 ? TINT.burning : z.slowT > 0 ? TINT.slowed : TINT.normal;
+    if (z.champion && tint === TINT.normal) return championTint.copy(TINT.championDim).lerp(TINT.champion, 0.5 + 0.5 * Math.sin(this.time * 3 + z.id));
+    return tint;
+  }
+
+  /** F1: einen Schlurfer als Sprite eintragen – dieselben Größen wie die Voxel-Haltung. */
+  putSprite(z, dt) {
+    if (z.y < -0.5) return; // Gräber unter der Erde: gar nichts
+    const dying = z.state === 'dying';
+    this.sprites.put(z, {
+      tint: this.tintOf(z),
+      glowOnly: this.isHidden(z) && !dying, // Nebelwelle (M22): nur die Augen
+      sink: dying ? Math.max(0, z.deathT - 0.55) * 0.6 : 0,
+      shiver: z.flash > 0 && !dying ? (this._tick & 1 ? HIT_JITTER : -HIT_JITTER) : 0,
+      moving: this.isMoving(z),
+      time: this.time,
+      dt,
+      scale: z.def.scale * (z.size || 1),
+    });
+  }
+
+  /** Läuft er gerade (Schrittbild), oder steht er (holt aus, schlägt, wirft um)? */
+  isMoving(z) {
+    return z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving) || (z.state === 'brawl' && z.brawlMoving);
+  }
+
   pose(rig, z) {
     const s = z.def.scale * (z.size || 1); // Champions (M21) sind etwas größer
     const t = this.time;
     const p = rig.pivots;
     const walk = Math.sin(z.phase);
-    const moving = z.state === 'walk' || z.state === 'enter' || z.state === 'approach' || z.state === 'rejoin' || (z.state === 'chase' && z.windup <= 0) || (z.state === 'raid' && z.raidMoving) || (z.state === 'brawl' && z.brawlMoving);
+    const moving = this.isMoving(z);
     const amt = z.freezeT > 0 || z.stunT > 0 ? 0 : moving ? 1 : 0.15;
     const run = z.type === 'flitzer';
     const heavy = z.def.heavy;

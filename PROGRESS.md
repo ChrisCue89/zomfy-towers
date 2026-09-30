@@ -5,6 +5,50 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F1: Ein Schlurfer auf Papier (Sprite-Probe) ✓
+
+**Auftrag (30.09.):** »Die 3D-Modelle der Schlurfer sind schrecklich. Wollen wir die nicht
+einfach in 2D machen? Nur dass sie in 8 Richtungen rennen können?« Recherche
+`recherche/schlurfer-sprites.md`, Entscheidung Nr. 196: erst eine Probe, dann entscheidet der
+Auftraggeber. Umgesetzt ist die Probe (Nr. 203).
+
+- **Einstellung »Schlurfer: 3D / 2D (Probe)«** im Pausenmenü unter Einstellungen (eigener
+  Speicherplatz, Standard 3D). Mit 2D zeichnet das Spiel den Schlurfer, die häufigste Art, als
+  Sprite. Die übrigen Arten bleiben vorerst Voxel.
+- **Im Spiel gebacken, nicht von Hand gemalt** (keine fremden Assets):
+  - Die Figur entsteht aus runden Formen: Kapseln und Ellipsoide, weich verschmolzen.
+  - Ein kleiner Strahlenwerfer rastert sie im Blickwinkel der Kamera, mit 1/40 m je Texel
+    (2 × 2 Bildpunkte bei 80 px/m).
+  - Pixelregeln malen sie: drei Töne je Material aus der Palette, dunkle Linien an
+    Tiefensprüngen, eine farbige Kontur und Stempel für Glühaugen, genähten Mund und das
+    Gänseblümchen.
+  - 65 Bilder in 5 Richtungen: S, SO, O, NO und N; W, NW und SW sind gespiegelt.
+  - Je Richtung: gehen 6, stehen 2, Treffer 1, Zusammensacken 4.
+  - Gebacken wird nach und nach, rund 15 ms je Bild; bis dahin bleibt es bei Voxeln.
+- **Im Bild:**
+  - Jeder Schlurfer ist ein aufrechter Quad; alle zusammen sind ein InstancedMesh, also ein
+    Draw-Call.
+  - Der Fußpunkt rastet auf ganze Bildpunkte.
+  - Licht und Schatten der Welt wirken über die gebackene Normale, die Augen glühen selbst.
+  - Unter den Füßen liegt ein gerasterter Schatten, der mit der Figur wandert.
+  - Hinter Bauten bleibt ein Umriss in der Form des Sprites.
+  - In der Nebelwelle sieht man nur die Augen; Champions sind größer.
+- **Richtung mit Hysterese:** Das Bild wechselt erst 10° über der Sektorgrenze und frühestens
+  nach 0,15 s – kein Flackern. Eine Wendung um 90° gilt sofort; beim Ausholen bleibt die
+  Richtung stehen.
+- **Zusammensacken statt Umfallen:** Die Knie geben nach, der Rumpf kippt vornüber, die Füße
+  bleiben am Boden. Danach versinkt er wie bisher.
+- **Leistung:** Bei 120 Schlurfern zeichnen die Voxel 6047 Tsd. Dreiecke, die Sprites 1224 Tsd. (ein Fünftel). Die Zeit je Bild für Haltung bzw. Bildwahl liegt im Prüflauf bei beiden um 1–2 ms (diesmal 1,2 gegen 0,33 ms) – sie schwankt zu stark für einen Vergleich.
+
+**Prüfung:** Abschnitt `sprites`, 8 Prüfpunkte bestanden. Bilder:
+- `sprites-reihe-3d`, `sprites-reihe-2d`, `sprites-reihe-nah`;
+- `sprites-pulk-3d`, `sprites-pulk-2d`;
+- `sprites-nacht-3d`, `sprites-nacht-2d`;
+- `sprites-bogen` (alle Bilder in acht Richtungen).
+
+**Offen – die Entscheidung des Auftraggebers:** Gefällt der Look, folgen F2–F4 (alle Arten, die
+Bosse, Aufräumen), und 2D wird Standard.
+
 ## G1: Namen mit Herkunft ✓
 
 **Auftrag (30.09.):** »Die Namen der ganzen Orte sind nicht gut, das geht besser.« Umgesetzt

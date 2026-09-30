@@ -173,6 +173,12 @@ gilt bis auf Weiteres:
   braucht `renderOrder = 2` – Mikas Umriss (1.75) schimmert sonst darüber.
   Schlurfer (1.8) liegen über dem Umriss: Er scheint nur durch Bauten und
   Türme, nicht durch die Horde (m16-r1: im Getümmel ein gelbes Knäuel).
+- **Sprites (F1, Probe):** Der Schlurfer kann statt Voxeln als Sprite erscheinen
+  (Einstellung »Schlurfer: 2D«, `horde.spriteLook`). Sprites werden im Spiel aus Formen gebacken
+  (`zombieSprites.bakeFrame`), nie gemalt oder geladen: 1/40 m je Texel (2 × 2 Bildpunkte bei
+  80 px/m), 5 Richtungen gezeichnet und 3 gespiegelt, Palette und Kontur aus den Pixelregeln des
+  Bäckers. Im Bild ein aufrechter Quad je Figur, der Fußpunkt rastet auf `spriteUniforms.uPx`
+  (das Spiel setzt `rig.px`); Schatten und Ausblenden nur gerastert, nie geblendet.
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -231,8 +237,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Einladung, Tisch, KI mit Bedenkzeit und Tick, Einsatz,
                       Wettschuld, Menschenkunde, M28),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
-                      Wackeln, Blitze – eigener Speicherplatz, nicht im
-                      Spielstand)
+                      Wackeln, Blitze, Schlurfer 3D/2D – eigener Speicherplatz,
+                      nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
                       Umgebung; erst nach der ersten Eingabe), music
                       (Soundtrack: Stücke als Noten-Daten, Instrumente,
@@ -242,7 +248,11 @@ src/render/           pixelRenderer (Low-Res + Post-Pass + Hochskalieren),
                       palette (+ LUT), cameraRig (Einrasten), materials
                       (Durchsicht/Ausblenden), voxel (Voxel-Baukasten),
                       staticMesh (sichtbare Flächen + Schatten-Stellvertreter),
-                      portrait (Porträts ohne GPU-Auslesen), shaders
+                      portrait (Porträts ohne GPU-Auslesen), shaders,
+                      spriteBaker (Formen → Texel: Strahlen, Pixelregeln,
+                      Stempel, F1), spriteAtlas (Bilder als Datentextur),
+                      spriteMaterial (aufrechter Quad, Einrasten, Licht aus
+                      der gebackenen Normale)
 src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Wegenetz prozedural aus `mapSeed`, Abstandsfelder,
                       Begrenzung), layout (Grundriss der Bucht + feste
@@ -288,7 +298,10 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
 src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       für Menschen: Kopf, Rumpf, Glieder mit Knie/Ellbogen,
                       Vorderkarten, N1), horde (Schlurfer:
-                      Instancing, Zustände, Angriffe), zombieModels, towers
+                      Instancing, Zustände, Angriffe), zombieModels,
+                      zombieSprites (Schlurfer als Bauplan, Häute, Posen,
+                      Stempel, F1), hordeSprites (Richtung mit Hysterese, Bild
+                      je Zustand, Instanzen, Backen nach und nach), towers
                       (Zielen, Geschosse, Auren, Feuer, Glocke, Windstoß,
                       Bienenschwärme, Vogelscheuche), traps (Fallen auf den
                       Wegen, M19), loot (Brocken,
@@ -1168,7 +1181,13 @@ Grundprinzipien:
    das Pausenmenü, Q setzt zugeklappt den Bolzenwerfer (Preis am Geist, kein Bauzettel) und E baut
    ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; »Leute« mit mehr
    als sechs Möglichkeiten zeigt »weiter« und dort den Langen Jakob; Edda spricht unten links, nie
-   auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen).
+   auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen); ab F1 (Abschnitt
+   `sprites`): Standard 3D, »Schlurfer: 2D« backt nach und nach 65 Bilder (bis dahin Voxel),
+   acht Schlurfer zeigen acht Richtungen (NW, W, SW gespiegelt), die Richtung wechselt mit
+   Hysterese und ohne Flackern, in der Nebelwelle nur die Augen, Treffer und Zusammensacken in
+   vier Bildern ohne Umriss, ein Pulk von 24 als Sprites, Dreiecke und Haltung von 120
+   Schlurfern im Vergleich (Bilder: sprites-reihe-3d, sprites-reihe-2d, sprites-reihe-nah,
+   sprites-pulk-3d, sprites-pulk-2d, sprites-nacht-3d, sprites-nacht-2d, sprites-bogen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1328,6 +1347,9 @@ wieder Mika, M32). Ab H1 klappt `buildbarLayout()` das Baumenü für echte Klick
 (`{ open: false }` nicht), `buildMenu()` zeigt offen/zu, Reiter, Kacheln (mit Bildschlüssel und
 gezeichneten Punkten), Knopf, Bauzettel, wartende Rückfrage und die Warteschlange der Bilder,
 `buildPicture(schlüssel)` rechnet ein Bild sofort (Punkte, Brustbild, Maßstab).
+Ab F1 stellt `setHordeLook('3d'|'2d')` den Look der Schlurfer um, `sprites(backen)` zeigt, wie
+viele Bilder gebacken sind, was gezeichnet wird und die Richtungen (mit `true` backt es sofort
+alles).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

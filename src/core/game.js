@@ -25,6 +25,7 @@ import { NIGHT_START } from '../data/waves.js';
 import { BLUEPRINTS, blueprintOptions, blueprintSeed } from '../data/blueprints.js';
 import { CameraRig } from '../render/cameraRig.js';
 import { sharedUniforms } from '../render/materials.js';
+import { spriteUniforms } from '../render/spriteMaterial.js';
 import { renderPortraits, mikaPortrait } from '../render/portrait.js';
 import { TitleScreen } from '../ui/title.js';
 import { SplashScreen } from '../ui/splash.js';
@@ -326,6 +327,7 @@ export class Game {
         this.hud.popWord(z.x, 1.9 * z.def.scale, z.z, T.champions.schildBricht, hexToCss(P.f5));
       },
     });
+    this.horde.spriteLook = this.settings.horde === '2d'; // F1: Einstellung »Schlurfer«
     this.bellStats = { rings: 0, healed: 0 }; // Glockenschläge und geflickte Bauten (M19, Prüfung)
     this.bossStats = { telegraphs: 0, attacks: 0, smashed: 0, healed: 0, stolen: 0, snuffed: 0, pods: 0, digs: 0 }; // Bosse und neue Arten (M22, Prüfung)
     this.towers = new TowerSystem(
@@ -3106,6 +3108,7 @@ export class Game {
     this.dialog.speed = TEXT_SPEEDS[this.settings.text];
     this.rig.shakeScale = SHAKE_LEVELS[this.settings.shake] ?? 1; // M26
     this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll;
+    this.horde.spriteLook = this.settings.horde === '2d'; // F1
     const shift = PIXEL_SIZES[this.settings.pixel];
     if (this.pixel.scaleShift !== shift) {
       this.pixel.scaleShift = shift;
@@ -3190,6 +3193,7 @@ export class Game {
     // Startbild (N2): Es deckt alles zu – die Szene ruht, bis es ausblendet
     // (die ersten Bilder zeichnet sie noch, damit alle Shader schon übersetzt sind)
     if (!(this.mode === 'splash' && this.splash.hidesScene)) {
+      spriteUniforms.uPx.value = this.rig.px; // F1: Sprites rasten auf ganze Bildpunkte
       this.horde.render(this.rig.camera); // M25c: nur, wer im Bild steht
       this.towers.render();
       this.loot.render();
@@ -4290,6 +4294,19 @@ export class Game {
           pictures: bb.pictures.rendered,
           queue: bb.pictures.queue.length,
         };
+      },
+      /** F1: Look der Schlurfer umstellen ('3d' | '2d'), wie in den Einstellungen. */
+      setHordeLook(look) {
+        game.applySettings({ horde: look });
+        return game.settings.horde;
+      },
+      /** F1: Stand der Sprites (gebacken, Bilder im Atlas, gezeichnet); `bake` backt alles sofort. */
+      sprites(bake = false) {
+        const s = game.horde.sprites;
+        if (bake) s.bakeAll();
+        const shown = [];
+        if (s.mesh.count) for (const z of game.horde.list) if (z.spriteDir !== undefined) shown.push({ id: z.id, dir: z.spriteDir });
+        return { look: game.settings.horde, on: game.horde.spriteLook, ...s.info(), dirs: shown };
       },
       /** H1: ein Bild des Baumenüs sofort rechnen (Schlüssel wie »bau:bolzen«). */
       buildPicture(key) {

@@ -1892,6 +1892,17 @@ Die Seewelle ist jetzt eine Geschichte (Junas Vater baut, Edda liest, Juna sende
 Mast heißt der Lange Jakob, Brandt ist Marthes Vater, Edda wohnt am Sturmhuk. Die Karte zeigt
 die alten Wegnamen, die Bucht und die besuchten Inseln. Nur Text und Karte, die IDs bleiben.
 
+#### F1 – Ein Schlurfer auf Papier ✓
+
+*Umgesetzt (30.09.2026):* die Sprite-Probe für den Schlurfer (Nr. 203), zu finden unter
+Einstellungen: »Schlurfer: 2D (Probe)«.
+
+- Aus runden Formen gebacken, gemalt nach Pixelregeln.
+- 5 gezeichnete und 3 gespiegelte Richtungen; gehen, stehen, Treffer, Zusammensacken.
+- Ein aufrechter Quad je Schlurfer, auf ganze Bildpunkte eingerastet; Richtung mit Hysterese.
+
+Die übrigen Arten bleiben Voxel, bis der Auftraggeber über F2–F4 entscheidet.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
