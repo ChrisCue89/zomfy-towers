@@ -138,7 +138,7 @@ export function particles(kind, t0, t1, opts = {}) {
 /** Studiokarte: »Tales of Cue präsentiert« mit Laterne, Laub und Glitzern (Spieluhr-Töne bei 0,06/0,21/0,36/0,51 s). */
 export function studio(t0, t1) {
   return {
-    t0, t1, z: 50, space: 'scene',
+    t0, t1, z: -1, space: 'scene', // unter der ersten Einstellung: deren Raster-Blende deckt sie auf
     draw(ctx, t) {
       const lt = t - t0;
       ctx.fillStyle = '#0d0b18';

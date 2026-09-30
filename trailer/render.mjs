@@ -41,7 +41,9 @@ if (video) {
   const ffArgs = ['-y', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-'];
   if (a) ffArgs.push('-i', a);
   ffArgs.push('-c:v', 'libx264', '-preset', arg('preset', 'slow'), '-crf', arg('crf', '17'), '-pix_fmt', 'yuv420p', '-tune', 'animation', '-movflags', '+faststart');
-  if (a) ffArgs.push('-c:a', 'aac', '-b:a', '256k', '-shortest');
+  // Der AAC-Encoder von ffmpeg hebt Spitzen um ≈ 3 dB an (WAV −1,3 → AAC +2,0 dBFS): vorher begrenzen, dann bleibt der
+  // True Peak des fertigen Videos unter −1 dBFS.
+  if (a) ffArgs.push('-af', 'alimiter=limit=0.70:attack=1:release=40:level=0', '-c:a', 'aac', '-b:a', '256k', '-shortest');
   ffArgs.push(video);
   ff = spawn(FFMPEG, ffArgs, { stdio: ['pipe', 'inherit', 'inherit'] });
 }

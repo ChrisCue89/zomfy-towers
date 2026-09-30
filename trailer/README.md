@@ -46,6 +46,13 @@ node trailer/render.mjs --video trailer/out/zomfy-towers-trailer.mp4 --audio $ZT
 Das Aufnahmeverfahren ist deterministisch (Karte 3, virtuelle Uhr, feste Schritte von 1/30 s): dieselben
 Skripte ergeben dieselben Bilder.
 
+## Ergebnis
+
+`out/zomfy-towers-trailer.mp4` – 1920 × 1080, 30 Bilder/s, H.264 + AAC, 60,00 s, ≈ −16 LUFS. Prüfen mit
+`node trailer/verify-video.mjs <video.mp4>` (Länge, Format, Lautheit, True Peak, schwarze Stellen, Stille).
+Der AAC-Encoder von ffmpeg hebt Spitzen um ≈ 3 dB an; `render.mjs` begrenzt deshalb vor der Kodierung
+(`alimiter=limit=0.70`), damit der True Peak des Videos unter −1 dBFS bleibt.
+
 ## Anpassen
 
 - **Texte, Zeiten, Reihenfolge der Einstellungen:** `engine/edit.js`. Alle Zeiten in Sekunden; Taktschläge

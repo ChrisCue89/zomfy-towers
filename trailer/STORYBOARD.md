@@ -86,3 +86,35 @@ Jeder Clip liegt unter `frames/<name>/` (`0000.png` = Welt, `0000.ui.png` = Ober
 Kamera: fest, langsame Fahrt oder Schnitt. Kein Blut – der Look des Spiels bleibt gemütlich.
 
 Siehe die Tabelle der Clips in `capture/CLIPS.md`.
+
+## Endfassung: was im Video wirklich zu sehen ist
+
+Der Schnitt (`engine/edit.js`) folgt dem Plan oben mit diesen Abweichungen, die sich aus dem tatsächlich aufgenommenen
+Material ergeben haben:
+
+| Zeit | Einstellung | Anmerkung |
+|---|---|---|
+| 0,0–2,6 | Studiokarte, Laterne | löst sich per Rasterblende in den Steg auf (die Laterne ist das Leitmotiv) |
+| 2,0–5,8 | `see-morgen` | Steg im Morgenlicht, Krähe |
+| 5,8–9,2 | `haus-morgen` | Mika tritt aus dem warmen Haus |
+| 9,2–12,5 | `sammeln`, `bauen`, `einrichten` | im Takt der Spieluhr, dazwischen zwei 4-Bilder-Blitze aus dem Wald |
+| 12,5–16,0 | `daemmerung`, `wald-moder` | Fenster und Laternen gehen an, der Schildträger tritt aus dem Wald |
+| 16,0–31,2 | `turm-feuer`, `barrikade`, `nahkampf`, `reaktionen`, `boss-holzfaeller`, `lager-tor`, `morgenbericht` | Wucht-Titel auf den Taktschlägen; die Schläge der Boss-Sequenz liegen auf den Bildern des Spiels |
+| 31,2–40,3 | `leute-feuer`, `nah-*`, `karten-kamin`, `haendler-boot` | Namensschilder mit Beruf; Kartenclip mit Tafeln des Spiels als Sticker |
+| 40,3–41,2 | Uhrentafel „Tag 30 von 30 · Schnee“ | Luft holen, zwei Herzschläge |
+| 41,2–51,7 | `frost-nacht`, `moderherz`, `leuchtfeuer`, `herz-zerfall` | der Fall des Herzens (Bild 8 des Clips) liegt auf dem Schlussschlag bei 51,67 s |
+| 52,2–56,0 | `frost-morgen`, `balduin-frag` | Stille, Spieluhr, Balduins Pointe aus der Dialogtafel des Spiels |
+| 56,0–60,0 | Titelkarte | vier Spieluhr-Töne setzen „ZOM · FY · TOW · ERS“ |
+
+Nicht aufgenommen (gestrichen zugunsten der Zeit): `wege-weit`, `champion-beute`, `turm-bauen-nacht`, `feuer-abend`,
+`hilde-kommt`, Klebekürbis-Reaktion.
+
+## Bekannte Grenzen
+
+- **Kein Mensch hat den Ton gehört.** Pegel, Einsätze und Stillen sind gemessen (`audio/verify.mjs`), die Klangwirkung
+  (Grollen, Riser, Wellen am See) ist nur nach Messwerten abgestimmt.
+- **Schnee sieht bei voller Decke wie Tarnmuster aus.** Bei den Frostclips ist die Decke im Spiel-Renderer begrenzt
+  (`snowCover` in `capture/clips/b-common.mjs`); ein rein weißer Schneemorgen ließ sich nicht schön aufnehmen.
+- **Beispiel-Bericht:** Die Zahlen im Morgenbericht (44 Schlurfer …) sind gesetzt, es wurde keine Nacht gespielt.
+- Die Ankunftsfanfare von Balduins Boot ist nicht im Ton (sie stört die Dramaturgie der Musik).
+- **Adresse im Abspann** fehlt noch (`title(T.title, DURATION, { url })` in `engine/edit.js`).
