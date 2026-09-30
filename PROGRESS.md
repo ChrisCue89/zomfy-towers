@@ -5,6 +5,52 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F-Design: Die Horde, liebevoll gestaltet ✓
+
+**Auftrag (30.09.):** »Das mit den 2d Schlurfern testen wir bitte. Aber die Designs dürfen nur
+Grundlage sein. … du nimmst dir Zeit die Figuren liebevoll detailliert und gut zu gestalten. Erst
+wenn du das erledigt hast, bauen wir die 2d Gegner ein.«
+
+Alle 16 Arten und 5 Bosse haben jetzt einen Entwurf als Sprite, dazu der Schildträger ohne Tür.
+Beschrieben ist das im Gestaltungsbogen `recherche/schlurfer-gestaltung.md`, mit Bildern je Art
+und einer Aufstellung aller Formen bei Tag und bei Nacht. Eingebaut sind sie noch nicht (das ist
+F2); im Spiel zeigt »Schlurfer: 2D« schon den neuen Schlurfer.
+
+- **Der Schlurfer neu:**
+  - Die Proportionen folgen jetzt den Voxel-Figuren: großer runder Kopf, kurze Beine. F1 wirkte
+    neben Mika wie ein Stelzenläufer.
+  - Kleidung: blaues Arbeitshemd mit Knopfleiste und Brusttasche mit Bleistift, gekrempelte
+    Ärmel, das Hemd hängt links aus der Hose. Im Rücken ist ein Riss, darunter wächst Moos.
+  - Flicken an Bauch und Knie, ein Zeh schaut aus dem Schuh.
+  - Wirres Haar mit Stirnlocke, eingerissenes Ohr, Gänseblümchen. Am Hinterkopf glimmen nachts
+    Moderpilzchen.
+  - Schwere Lider; beim Schlag gähnt er, getroffen kneift er die Augen zu. Wenn er fällt,
+    schläft er ein und zerfällt zu Laub.
+- **Die anderen Arten** (Einzelheiten im Bogen):
+  - der Flitzer mit Startnummer 13 und flatternden Kordeln;
+  - der Schwärmer als Moosball mit drei Fliegenpilzen;
+  - der Brummer mit Warnweste, Warnkegel und Schnurrbart;
+  - der Leuchtpilz mit glimmendem Tupfenhut;
+  - der Anführer als alter Förster mit Geweih aus Zweigen;
+  - der Moderfalter mit Augenflecken, die nachts glimmen;
+  - der Gräber mit Latzhose, Möhre und Spaten;
+  - der Schildträger mit Gartenhaustür (Herz, Hufeisen) und Kochtopf;
+  - der Lichtfresser mit Kerzenstummeln im Gürtel und Rauchfaden am Löscher;
+  - der Brüter mit Pausbacken und pulsierenden Sporensäcken.
+- **Die Bosse:** Holzfäller (Karo, Pudelmütze, Axt), Pilzmutter (Tupfenhut, Korb voller Pilze),
+  Laternenhexe (Spitzhut mit Schnalle, Laternenstab), Moosriese (Findlinge im Moos, Farne),
+  Moderherz (zwei Kammern, Pilzkrone, Wurzelbeine, Ranken, glimmende Knoten).
+- **Bäcker und Gerüst:**
+  - Neu im Bäcker: Muster auf der Form (`matAt`), Erde unter dem Boden, Tiefentest für Stempel.
+  - Neues Gerüst `spriteFigure.js`: Körper nach Maßen, sechs Gangarten, Ellbogen je Arm.
+  - Neue Bilder je Richtung: Ausholen (1) und Schlag (3), zusammen 17 Bilder, 85 je Art.
+- **Werkzeuge (ohne Browser):** `tools/schlurfer-bogen.mjs` (Musterbogen einer Art),
+  `tools/schlurfer-reihe.mjs` (Aufstellung aller Arten).
+- **Prüfung** (Abschnitt `sprites`): 85 Bilder für den Schlurfer; alle 17 Formen backen in jedem
+  Zustand von vorn und von der Seite ein Bild mit Inhalt und haben etwas, das nachts glimmt.
+
+---
+
 ## Kaminsims: Kerzen, die man sieht ✓
 
 Beim Setzen der Streichholzdose (N10) fiel auf: Kerzen, Uhr und Kräuterglas auf dem Kaminsims

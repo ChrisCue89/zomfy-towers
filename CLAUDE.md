@@ -8,7 +8,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
-| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198) |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern) |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
@@ -199,6 +199,17 @@ gilt bis auf Weiteres:
   80 px/m), 5 Richtungen gezeichnet und 3 gespiegelt, Palette und Kontur aus den Pixelregeln des
   Bäckers. Im Bild ein aufrechter Quad je Figur, der Fußpunkt rastet auf `spriteUniforms.uPx`
   (das Spiel setzt `rig.px`); Schatten und Ausblenden nur gerastert, nie geblendet.
+  - **Gestaltungsbogen (F-Design, `recherche/schlurfer-gestaltung.md`):**
+    - Alle 17 Formen der Horde (16 Arten und der Schildträger ohne Tür) haben einen Bauplan in
+      `zombieSpriteKinds.js`, gebaut auf dem Gerüst `spriteFigure.js` (`humanoid(ctx, B)` mit Maßen
+      aus `BODY`, Gangarten, Posen).
+    - Große Arten werden wie Größe 1 gebaut und als Ganzes skaliert; ein Texel bleibt 1/40 m.
+    - Muster auf einer Form über `matAt(l, p)` im eigenen Rahmen der Form (Haar, Kapuze, Karo,
+      Flicken, Tupfen). Unter y = 0 ist Erde.
+    - Je Richtung 17 Bilder: gehen 6, stehen 2, ausholen 1, schlag 3, treffer 1, fallen 4.
+    - Müde statt gierig, kein Blut, jede Art mit Merkmal oben und Eigenlicht für die Nacht.
+    - Neue Arten dort bauen und ansehen mit `node tools/schlurfer-bogen.mjs datei.png --art=…` und
+      `node tools/schlurfer-reihe.mjs datei.png` (ohne Browser).
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -324,8 +335,11 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       für Menschen: Kopf, Rumpf, Glieder mit Knie/Ellbogen,
                       Vorderkarten, N1), horde (Schlurfer:
                       Instancing, Zustände, Angriffe), zombieModels,
-                      zombieSprites (Schlurfer als Bauplan, Häute, Posen,
-                      Stempel, F1), hordeSprites (Richtung mit Hysterese, Bild
+                      zombieSprites (Richtungen, Zustände, ein Bild backen,
+                      F1), zombieSpriteKinds (die 17 Formen der Horde:
+                      Stoffe, Körper, Zubehör, Stempel, F-Design),
+                      spriteFigure (Gerüst: Körper, Gangarten, Posen),
+                      hordeSprites (Richtung mit Hysterese, Bild
                       je Zustand, Instanzen, Backen nach und nach), towers
                       (Zielen, Geschosse, Auren, Feuer, Glocke, Windstoß,
                       Bienenschwärme, Vogelscheuche), traps (Fallen auf den
@@ -414,6 +428,8 @@ tools/karten.mjs      Simulator für »Letzte Runde«: Fairness, Stile, Ticks (M
 tools/balance.mjs     Balance-Durchlauf: spielt Nächte mit einer Bau-Strategie
                       (M24, statt Testspielern)
 tools/playtest.mjs    Playtest-Brücke (früher für Testspieler-Agenten)
+tools/schlurfer-bogen.mjs  Musterbogen einer Art als PNG (ohne Browser, F-Design)
+tools/schlurfer-reihe.mjs  Aufstellung aller Arten am Tag und in der Nacht (F-Design)
 screenshots/          Ergebnisse der letzten Prüfung
 playtests/            Personas, Berichte, Zusammenfassungen
 ```

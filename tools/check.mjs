@@ -10500,8 +10500,9 @@ async function runMenuChecks(browser, url) {
 
 /**
  * F1 – Schlurfer als Sprites (recherche/schlurfer-sprites.md, Probe): Die Einstellung
- * »Schlurfer: 2D« backt nach und nach 65 Bilder (5 Richtungen × gehen 6, stehen 2, Treffer 1,
- * Fallen 4; W, NW und SW gespiegelt) – bis dahin bleiben es Voxel. Geprüft: Richtung mit
+ * »Schlurfer: 2D« backt nach und nach 85 Bilder (5 Richtungen × gehen 6, stehen 2, Ausholen 1,
+ * Schlag 3, Treffer 1, Fallen 4; W, NW und SW gespiegelt) – bis dahin bleiben es Voxel. Seit dem
+ * Gestaltungsbogen (F-Design) backen alle 17 Formen der Horde in jedem Zustand ein Bild. Geprüft: Richtung mit
  * Hysterese (kein Flackern an der Grenze, eine Wendung gilt sofort), Spiegeln, die Nebelwelle
  * zeigt nur die Augen, Sterben mit Fallen, Umriss nur für die Lebenden. Bilder: dieselbe Szene
  * in 3D und 2D (Reihe in acht Richtungen, Pulk am Weg, Nacht) und der Bogen aller Bilder.
@@ -10544,9 +10545,42 @@ async function runSpriteChecks(browser, url) {
     return { ...window.zomfy.sprites(), voxel: g.horde.kinds.schlurfer.meshes.torso.count };
   });
   const fertig = await z(() => window.zomfy.sprites(true));
-  if (vorher.look === '3d' && !vorher.on && vorher.baked === 0 && backen.baked > 0 && !backen.ready && backen.voxel === 1 && fertig.ready && fertig.frames === 65) {
+  if (vorher.look === '3d' && !vorher.on && vorher.baked === 0 && backen.baked > 0 && !backen.ready && backen.voxel === 1 && fertig.ready && fertig.frames === 85) {
     note(`✓ Sprites (F1): Standard bleibt 3D (nichts gebacken); »Schlurfer: 2D« backt nach und nach (nach zwei Bildern ${backen.baked} von ${backen.total}, solange steht der Voxel-Schlurfer), dann ${fertig.frames} Bilder im Atlas (${(fertig.bakeMs / fertig.total).toFixed(1)} ms je Bild)`);
   } else fail(`Sprites: Backen ${JSON.stringify({ vorher, backen, fertig })}`);
+
+  // 1b. Gestaltungsbogen (F-Design): Jede Form der Horde bäckt in jedem Zustand von vorn und von
+  // der Seite ein Bild mit Inhalt, und jede hat etwas, das nachts glimmt (Augen, Hut, Streifen …)
+  const arten = await z(async () => {
+    const m = await import('./src/entities/zombieSprites.js');
+    const out = {};
+    const t0 = performance.now();
+    let n = 0;
+    for (const t of m.SPRITE_TYPES) {
+      let leer = 0;
+      let glow = 0;
+      let px = 0;
+      for (const [anim, count] of Object.entries(m.ANIMS)) {
+        for (const d of [0, 2]) {
+          const f = m.bakeFrame(d, anim, count - 1, t);
+          n++;
+          let solid = 0;
+          for (let i = 0; i < f.color.length; i++) {
+            if (f.color[i] < 0) continue;
+            solid++;
+            if (f.glow[i]) glow++;
+          }
+          if (solid < 40) leer++;
+          px = Math.max(px, solid);
+        }
+      }
+      out[t] = { leer, glow, px };
+    }
+    return { out, n, ms: (performance.now() - t0) / n };
+  });
+  const artenOk = Object.keys(arten.out).length === 17 && Object.values(arten.out).every((a) => a.leer === 0 && a.glow > 0);
+  if (artenOk) note(`✓ Gestaltung (F-Design): alle 17 Formen der Horde backen in allen Zuständen (${arten.n} Bilder, ${arten.ms.toFixed(0)} ms je Bild), keins leer, jede mit Eigenlicht`);
+  else fail(`Gestaltung: ${JSON.stringify(arten)}`);
 
   // 2. Acht Richtungen aus acht Blickwinkeln; W, NW und SW sind gespiegelt
   const reihe = await z(() => {
