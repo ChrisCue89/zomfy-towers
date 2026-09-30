@@ -9122,15 +9122,15 @@ async function runPlaytestFixChecks(browser, url) {
     window.zomfy.setWeather('klar', true);
   });
 
-  // 1) Edda meldet sich über Funk – unten rechts, über der Bauleiste; ein Klick tippt fertig, der zweite schließt
+  // 1) Edda meldet sich über Funk – seit H1 unten links über Mikas Leiste; ein Klick tippt fertig, der zweite schließt
   await step(700);
   const f1 = await z(() => window.zomfy.funk());
   await page.screenshot({ path: join(SHOTS, 'funk.png') });
   note('  Screenshot: screenshots/funk.png');
   const r = f1.rect;
-  const rechtsUnten = r && r.x > f1.ui.w * 0.45 && r.y > f1.ui.h * 0.35 && r.x + r.w <= f1.ui.w;
+  const untenLinks = r && r.x >= 0 && r.x + r.w <= f1.ui.w * 0.55 && r.y > f1.ui.h * 0.5 && r.y + r.h <= f1.ui.h;
   const hint = await z(() => window.zomfy.game.hud.hint?.time || 0);
-  if (f1.current?.key === 'start' && f1.current.text.includes('Edda') && rechtsUnten && f1.queue.includes('laufen') && !hint) note(`✓ Funk (N4): Edda meldet sich unten rechts (x ${r.x}, y ${r.y}, ${r.w}×${r.h}), der erste Schritt der Einführung (laufen, N5) wartet dahinter – nichts mehr mitten im Bild`);
+  if (f1.current?.key === 'start' && f1.current.text.includes('Edda') && untenLinks && f1.queue.includes('laufen') && !hint) note(`✓ Funk (N4, seit H1 unten links): Edda meldet sich über Mikas Leiste (x ${r.x}, y ${r.y}, ${r.w}×${r.h}), der erste Schritt der Einführung (laufen, N5) wartet dahinter – nichts mehr mitten im Bild`);
   else fail(`Funk: ${JSON.stringify({ f1, hint })}`);
   const box = await page.evaluate(() => {
     const c = document.querySelectorAll('canvas');
