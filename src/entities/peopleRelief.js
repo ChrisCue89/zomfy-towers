@@ -92,6 +92,46 @@ export function strands(axis, { period = 0.03, amp = 0.45, across = [1, 0, 0], p
   };
 }
 
+/**
+ * Sägezahn einer Strähne: über die Strähne von −1 nach +1 (sie wölbt sich, eine Seite im Licht, die
+ * andere im Schatten), dann in der Kerbe (`soft` der Breite) scharf zurück – so zeichnet man Haar.
+ */
+function lockTooth(u, soft) {
+  const f = u - Math.floor(u);
+  return f < 1 - soft ? -1 + (2 * f) / (1 - soft) : 1 - (2 * (f - (1 - soft))) / soft;
+}
+
+/**
+ * F6c: Büschel statt Rillen rund um die y-Achse des eigenen Rahmens (Haar am Kopf, Dutt, Locken):
+ * `n` Strähnen je Umlauf in ungleicher Breite (`jitter`, fest je `seed` – in allen Richtungen und
+ * Bildern dieselben), zwischen zwei Strähnen eine scharfe Kerbe. Gleich breite Rillen lasen sich am
+ * Hinterkopf wie Bretter. Zum Scheitel hin (`fade`: von y0 bis y1) werden sie flacher, sonst liefen
+ * oben alle Kerben zu einem Stern zusammen.
+ */
+export function locks(n, { amp = 0.5, seed = 1, jitter = 0.3, soft = 0.3, fade = null } = {}) {
+  const TAU = 2 * Math.PI;
+  return (l) => {
+    const th = Math.atan2(l[0], l[2]);
+    const u = (th / TAU) * n + jitter * Math.sin(th * 3 + seed) + jitter * 0.6 * Math.sin(th * 5 + seed * 2.3);
+    let a = amp * lockTooth(u, soft);
+    if (fade) a *= 1 - 0.75 * Math.min(1, Math.max(0, (l[1] - fade[0]) / (fade[1] - fade[0])));
+    return [Math.cos(th) * a, 0, -Math.sin(th) * a];
+  };
+}
+
+/**
+ * F6c: Bart in Büscheln – senkrechte Strähnen ungleicher Breite quer zur x-Achse des eigenen Rahmens,
+ * leicht gewellt, mit Kerben dazwischen (statt gleichmäßiger Rillen, die sich wie ein Strichcode
+ * lasen).
+ */
+export function beardLocks({ period = 0.07, amp = 0.45, seed = 1, jitter = 0.25, soft = 0.3 } = {}) {
+  return (l) => {
+    const x = l[0] + 0.01 * Math.sin(l[1] * 38 + seed);
+    const u = x / period + jitter * Math.sin(x * 23 + seed * 1.9);
+    return [amp * lockTooth(u, soft), 0, 0];
+  };
+}
+
 /** Mehrere Reliefs zusammen (die Neigungen addieren sich). */
 export function combine(...list) {
   const fs = list.filter(Boolean);

@@ -27,6 +27,20 @@ const OWN_RAMPS = [
 const ALL_RAMPS = [...OWN_RAMPS, ...Object.values(RAMPS)];
 
 /**
+ * F6f: die nächst dunklere Farbe in der Rampe einer Palettenfarbe (die dunkelste bleibt) – nachts
+ * dunkeln die Menschen im Spiel so ab, statt dass ein blasser Ton (die hellste Haut) zu Grau wird.
+ * Die Akzente (`RAMPS.a`) sind keine Rampe; ihre Farben stehen in den eigenen Rampen.
+ */
+export function darkerColor(color) {
+  for (const ramp of ALL_RAMPS) {
+    if (ramp === RAMPS.a) continue;
+    const i = ramp.indexOf(color);
+    if (i >= 0) return ramp[Math.max(0, i - 1)];
+  }
+  return color;
+}
+
+/**
  * Eine Rampe um eine Palettenfarbe: `below` Stufen dunkler, `above` heller, soweit ihre Rampe
  * reicht. Gibt { ramp, base } – base ist die Stelle der Farbe selbst (für das Aussehen aus
  * data/looks.js, dessen Farben einzelne Palettenwerte sind).

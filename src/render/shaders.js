@@ -43,6 +43,7 @@ uniform float uVignette;
 uniform vec3 uVignetteColor;
 uniform vec4 uHaze;
 uniform ivec2 uDitherOffset;
+uniform float uPeopleKeep;
 
 ${BAYER_GLSL}
 
@@ -84,7 +85,11 @@ vec3 softClip(vec3 c) {
 
 void main() {
   ivec2 p = ivec2(gl_FragCoord.xy);
-  vec3 col = texelFetch(tColor, p, 0).rgb;
+  vec4 colA = texelFetch(tColor, p, 0);
+  vec3 col = colA.rgb;
+  // F6f: Die Menschen-Sprites tragen im Alpha die Kennung 0,5 – ihre Tonflächen sind schon gemalt,
+  // das Bayer-Muster legte nur ein Körnchen-Rauschen darüber. Sie gehen ohne Raster in die Palette.
+  float ditherK = colA.a > 0.25 && colA.a < 0.75 ? 0.0 : 1.0;
   float raw = texelFetch(tDepth, p, 0).r;
   float dC = uNear + raw * (uFar - uNear);
 
@@ -108,7 +113,9 @@ void main() {
     float upward = step(0.02, dot(nd, vec3(0.15, 1.0, 0.35)));
     crease = max(crease, step(uNormalEdge, length(nd)) * convex * upward);
   }
-  if (raw >= 0.99999) {
+  // F6f: Auch keine Kanten aus der Tiefe auf den Menschen – sie tragen ihren gemalten Umriss; der
+  // Tiefenversatz der Gesichtsflicken zog sonst Linien quer durch die Texel
+  if (raw >= 0.99999 || ditherK < 0.5) {
     silhouette = 0.0;
     crease = 0.0;
   }
@@ -124,11 +131,14 @@ void main() {
   col *= uExposure;
   float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
   float keep = smoothstep(0.22, 0.75, lum);
+  // F6f: Die Menschen behalten nachts ihre Wärme – die kühle Tönung machte Gesichter im
+  // Laternenlicht grau wie Stein (grau sind die Schlurfer)
+  if (ditherK < 0.5) keep = max(keep, uPeopleKeep);
   col *= mix(uTint, vec3(1.0), keep);
   col = max(mix(vec3(lum), col, mix(uSaturation, 1.0, keep)), 0.0);
 
   vec3 s = linearToSrgb(softClip(col));
-  s += (bayer4(p + uDitherOffset) - 0.5) * uDither;
+  s += (bayer4(p + uDitherOffset) - 0.5) * uDither * ditherK;
   vec3 pal = paletteLookup(s);
   vec3 outColor = mix(clamp(s, 0.0, 1.0), pal, uPaletteMix);
 

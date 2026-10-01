@@ -10,6 +10,7 @@ import { SpriteAtlas } from '../render/spriteAtlas.js';
 import { createSpriteMaterial, createSpriteSilhouetteMaterial } from '../render/spriteMaterial.js';
 import { bakePerson, bakeTool, encodeBake, partFrames, toolFrames, animsOf, PEOPLE_DIRS } from './peopleSprites.js';
 import { PEOPLE, MIKA_BASE, TOOLS } from './peopleKinds.js';
+import { darkerColor } from './peopleFigure.js';
 import { lookSpec } from '../data/looks.js';
 
 const MAX_MIKA = 6;
@@ -29,6 +30,13 @@ function wrapAngle(a) {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
+/** F6f: Wie stark die Lampen der Welt der gebackenen Normale der Menschen folgen (die Horde: 0,75). */
+const PEOPLE_NORMAL = 0.4;
+/**
+ * F6f: nachts – Eigenlicht (vorher 0,3), wie viel Farbe Mond und Himmel auf den Menschen verlieren und
+ * wie weit sie in ihrer Rampe abdunkeln (1 = eine Stufe in tiefer Nacht).
+ */
+const PEOPLE_NIGHT = { self: 0.5, neutral: 0.8, ramp: 1 };
 /** G7: In welcher Reihenfolge Mikas Teile gebacken werden, solange sie nicht im Bild sind (0 ist jetzt). */
 const MIKA_PRIO = { laterne: 0.5, base: 0.55 };
 /** Ersatz, solange ein Teil noch fehlt: mit Laterne → ohne. */
@@ -38,7 +46,13 @@ export class PeopleSprites {
   /** @param {THREE.Scene} scene */
   constructor(scene) {
     this.atlas = new SpriteAtlas(1024, 12);
-    this.material = createSpriteMaterial(this.atlas, { selfLight: 0.3 }); // wie die Voxel-Figuren: nachts nie ein dunkler Klumpen
+    // Wie die Voxel-Figuren: nachts nie ein dunkler Klumpen. F6f: Licht je Texel, ohne Raster im
+    // Post-Pass, und die Lampen der Welt folgen der gebackenen Normale nur halb – das Licht ist schon
+    // gemalt (sonst lag es doppelt: gemalt von links oben, dazu die Sonne von rechts). Nachts verlieren
+    // Mond und Himmel auf der Haut den größten Teil ihres Blaus, und ein wenig mehr Eigenlicht hält die
+    // Gesichter warm – vorher waren sie im Laternenlicht grau wie die Schlurfer.
+    this.atlas.setDarker(darkerColor);
+    this.material = createSpriteMaterial(this.atlas, { selfLight: PEOPLE_NIGHT.self, clean: true, normalAmount: PEOPLE_NORMAL, lightNeutral: PEOPLE_NIGHT.neutral, rampShift: PEOPLE_NIGHT.ramp });
     const geometry = () => {
       const g = new THREE.PlaneGeometry(1, 1, 1, 2);
       return g;

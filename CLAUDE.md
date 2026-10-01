@@ -280,6 +280,18 @@ gilt bis auf Weiteres:
       (Bild nach `seated.phase`), die Füße auf dem Bootsboden. Alle Teile Mikas werden angefordert,
       sobald die Ansicht läuft – auch solange Mika noch Voxel ist (sonst stand im Intro die 3D-Figur).
     - Nachschwingen (`swayOf(ctx)` in `peopleKinds.js`): Haar und Bommel folgen dem Schritt.
+    - Haar in Büscheln (`locks`, `beardLocks` in `peopleRelief.js`): ungleich breite Strähnen mit
+      einer Kerbe dazwischen, je Figur fest verteilt (`ctx.id`) – gleich breite Rillen lasen sich am
+      Hinterkopf wie Bretter. Grau im Bart nur in Bereichen der Form (`matAt`), nie je Spalte.
+    - **Sauber im Spiel (F6f):** Das Material der Menschen (`createSpriteMaterial(…, { clean: true })`)
+      rechnet das Licht je Texel (Lage und Schattenkoordinate aus der Texelmitte, über die Ableitungen
+      von `vTexel`) und schreibt im Alpha die Kennung 0,5. Der Post-Pass rastert diese Bildpunkte
+      nicht (kein Bayer – vorher Körnchen-Rauschen auf den gemalten Tonflächen), zieht keine Kanten
+      aus der Tiefe und lässt ihnen nachts `peopleKeep` ihres Tagestons. Die Lampen folgen der
+      gebackenen Normale nur zu `PEOPLE_NORMAL` (0,4); nachts verlieren Mond und Himmel auf ihnen 80 %
+      ihrer Farbe (`uLightNeutral`), die Farben dunkeln eine Stufe in ihrer Rampe ab (zweite Zeile der
+      Farbtafel: `atlas.setDarker(darkerColor)`, `uRampShift`) und das Eigenlicht ist 0,5 – vorher
+      waren Gesichter im Laternenlicht grau wie die Schlurfer. Die Horde behält das alte Material.
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -1476,8 +1488,9 @@ Grundprinzipien:
    Teil, am Tisch sitzt Mika aus Voxeln, im Ruderboot rudert Mika als Sprite im Takt der Riemen
    (N12), Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
    Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
-   wie die Mütze und die Augen sitzen weit oben (Bilder: menschen-tag, menschen-3d, menschen-nacht,
-   menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
+   wie die Mütze und die Augen sitzen weit oben, seit F6f liegen nah und weit alle Farbwechsel in
+   Mika auf Texelgrenzen (vorher knapp die Hälfte – das Raster des Post-Pass) (Bilder: menschen-tag,
+   menschen-3d, menschen-nacht, menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
    echten Tasten eine Datei herunter (Version, Kennung, Name, Tag, Vorrat), eine fremde Datei und
    eine aus einer neueren Fassung werden abgelehnt, »Aus Datei laden« öffnet die Dateiwahl, fragt
    mit Name und Tag nach (vorgewählt »Lieber nicht«) und lädt nach »Ja, laden« mit dem Stand aus

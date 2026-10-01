@@ -24,12 +24,16 @@ export class SpriteAtlas {
     this.fresh = true;
     // Die Materialien lesen die Textur über diese Uniform – wächst der Atlas, zeigt sie auf die neue
     this.uniform = { value: null };
-    // Farbtafel: die Palette, fest (die Bilder kennen nur Palettenfarben)
-    this.palette = new Uint8Array(256 * 4);
+    // Farbtafel: die Palette, fest (die Bilder kennen nur Palettenfarben). F6f: Die zweite Zeile trägt
+    // je Farbe die nächst dunklere ihrer Rampe (`setDarker`; sonst dieselbe) – die Menschen dunkeln
+    // nachts in ihrer Rampe ab, statt dass ein blasser Ton zu Grau verblasst.
+    this.palette = new Uint8Array(256 * 2 * 4);
     PALETTE.forEach((c, i) => {
-      this.palette.set([(c >> 16) & 255, (c >> 8) & 255, c & 255, 255], i * 4);
+      const rgba = [(c >> 16) & 255, (c >> 8) & 255, c & 255, 255];
+      this.palette.set(rgba, i * 4);
+      this.palette.set(rgba, (256 + i) * 4);
     });
-    this.paletteTexture = new THREE.DataTexture(this.palette, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
+    this.paletteTexture = new THREE.DataTexture(this.palette, 256, 2, THREE.RGBAFormat, THREE.UnsignedByteType);
     this.paletteTexture.magFilter = THREE.NearestFilter;
     this.paletteTexture.minFilter = THREE.NearestFilter;
     this.paletteTexture.generateMipmaps = false;
@@ -127,6 +131,15 @@ export class SpriteAtlas {
     if (!this.fresh) for (const p of this.dirtyPages) this.texture.addLayerUpdate(p);
     this.texture.needsUpdate = true;
     this.dirtyPages.clear();
+  }
+
+  /** F6f: die zweite Zeile der Farbtafel – je Palettenfarbe `darker(farbe)`, die nächst dunklere ihrer Rampe. */
+  setDarker(darker) {
+    PALETTE.forEach((c, i) => {
+      const d = darker(c);
+      this.palette.set([(d >> 16) & 255, (d >> 8) & 255, d & 255, 255], (256 + i) * 4);
+    });
+    this.paletteTexture.needsUpdate = true;
   }
 
   /** Prüfung und Bögen: ein Texel eines Bildes als [r, g, b, Art] (x ab links, y ab unten). */

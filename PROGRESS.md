@@ -93,6 +93,19 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
   (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
   der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
+- **F6f – Sauber im Spiel:** Auf den Bögen waren die Menschen sauber, im Spiel nicht: Über den gemalten
+  Tonflächen lag das Bayer-Raster der Nachbearbeitung (ein Körnchen-Rauschen), das Licht der Welt lag
+  ein zweites Mal über dem gemalten (fleckige Gesichter), und nachts wurden Gesichter im
+  Laternenlicht grau wie Stein. Gemessen an Mika: Nur 48 % (nah) bzw. 71 % (weit) der Farbwechsel
+  lagen auf Texelgrenzen, nachts 40 %. Jetzt rechnen die Menschen ihr Licht je Texel, tragen im
+  Alpha eine Kennung, und der Post-Pass rastert sie nicht – 100 % auf Texelgrenzen, nah, weit und
+  nachts. Die Lampen folgen der gebackenen Normale nur noch zu 0,4; nachts verlieren Mond und Himmel
+  auf ihnen den größten Teil ihres Blaus, die Farben dunkeln eine Stufe in ihrer eigenen Rampe ab (die
+  hellste Haut wurde sonst zu Grau), und das Eigenlicht ist etwas höher. Die Horde bleibt, wie sie war.
+  Prüfung `menschen` (Raster nah und weit).
+- **F6c – Büschel statt Rillen:** Haar am Hinterkopf, Dutts und Bärte haben ungleich breite Strähnen
+  mit Kerben (vorher gleich breite Rillen – am Hinterkopf wie Bretter). Bert ist nur noch am Kinn und
+  unter den Mundwinkeln grau (vorher graue Einzelspalten wie ein Strichcode).
 - **G7:** die Geschichte der Ankunft – eigener Eintrag oben.
 
 ## F5: Die Menschen schöner gezeichnet ✓

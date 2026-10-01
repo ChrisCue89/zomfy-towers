@@ -75,6 +75,7 @@ uniform float uNormalAmount;
 uniform ivec2 uDitherOffset;
 uniform float uNight;
 uniform float uSelfLight;
+uniform float uRampShift;
 uniform vec3 uRimColor;
 varying vec2 vTexel;
 varying vec4 vTint;
@@ -127,6 +128,8 @@ if (spriteHidden && !spriteGlow && spriteHalo == 0.0) discard;
 if (vTint.w > 0.0 && bayer4(ivec2(gl_FragCoord.xy) + uDitherOffset) < vTint.w) discard;
 if (spriteShadow && ((spriteT.x + spriteT.y) & 1) == 0) discard;
 vec3 spriteC = spriteShadow ? vec3(0.0) : spriteRim ? uRimColor : texelFetch(uPalette, ivec2(int(spriteB.r), 0), 0).rgb;
+// F6f (nur die Menschen): nachts eine Stufe dunkler in der eigenen Rampe statt blass und grau
+if (uRampShift > 0.0 && !spriteShadow && !spriteRim && !spriteGlow) spriteC = mix(spriteC, texelFetch(uPalette, ivec2(int(spriteB.r), 1), 0).rgb, uRampShift * uNight);
 // Der Rand nimmt nachts kaum Mondlicht an (sonst mischte die kühle Tönung ihn grau), er leuchtet selbst
 diffuseColor.rgb = spriteShadow || spriteGlow || spriteHidden ? vec3(0.0) : spriteLinear(spriteC) * (spriteRim ? vec3(1.0 - 0.7 * uNight) : vTint.rgb);
 `;
@@ -152,14 +155,68 @@ if (spriteRim) totalEmissiveRadiance += spriteLinear(uRimColor) * (0.2 + 0.8 * u
 totalEmissiveRadiance += diffuseColor.rgb * uSelfLight * uNight;
 `;
 
-/** Beleuchtetes Sprite-Material über dem Atlas. */
-export function createSpriteMaterial(atlas, { selfLight = 0.2 } = {}) {
+// F6f: Licht je Texel statt je Bildpunkt (nur die Menschen, `clean`). Am Anfang von main – vor jedem
+// discard, sonst sind die Ableitungen undefiniert – rechnet der Shader den Weg vom Bildpunkt zur
+// Mitte seines Texels in Bildpunkten (die Abbildung Bildpunkt → Texel ist je Dreieck affin) und
+// rückt Lage und Schattenkoordinate dorthin. So hat jeder Texel genau ein Licht und eine
+// Schattenstufe: Lichtkanten von Laterne und Hausschatten laufen auf dem Raster der Texel, statt
+// mitten durch sie.
+const FRAGMENT_TEXEL_LIGHT = /* glsl */ `
+vec2 spriteDT = floor(vTexel) + 0.5 - vTexel;
+vec2 spriteTx = dFdx(vTexel);
+vec2 spriteTy = dFdy(vTexel);
+float spriteDet = spriteTx.x * spriteTy.y - spriteTy.x * spriteTx.y;
+vec2 spriteDP = abs(spriteDet) > 1e-6 ? vec2(spriteTy.y * spriteDT.x - spriteTy.x * spriteDT.y, spriteTx.x * spriteDT.y - spriteTx.y * spriteDT.x) / spriteDet : vec2(0.0);
+vec3 spriteViewPos = vViewPosition + dFdx(vViewPosition) * spriteDP.x + dFdy(vViewPosition) * spriteDP.y;
+#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+vec4 spriteDirShadow[ NUM_DIR_LIGHT_SHADOWS ];
+#pragma unroll_loop_start
+for ( int i = 0; i < NUM_DIR_LIGHT_SHADOWS; i ++ ) {
+  spriteDirShadow[ i ] = vDirectionalShadowCoord[ i ] + dFdx( vDirectionalShadowCoord[ i ] ) * spriteDP.x + dFdy( vDirectionalShadowCoord[ i ] ) * spriteDP.y;
+}
+#pragma unroll_loop_end
+#endif
+`;
+
+// F6f: Nachts färbten Mond und blauer Himmel die Haut grau wie Stein (grau sind die Schlurfer).
+// Für die Menschen verlieren Mond- und Himmelslicht nachts einen Teil ihrer Farbe – die Laternen
+// (Punktlichter) behalten ihre Wärme.
+const FRAGMENT_LIGHT_TONE = /* glsl */ `
+uniform float uLightNeutral;
+vec3 spriteLightTone(vec3 c) {
+  return mix(c, vec3(dot(c, vec3(0.299, 0.587, 0.114))), uLightNeutral * uNight);
+}
+`;
+
+/** three.js-Lichtschleife mit der Lage und den Schattenkoordinaten aus der Mitte des Texels (F6f). */
+function texelLights() {
+  const chunk = THREE.ShaderChunk.lights_fragment_begin;
+  const out = chunk
+    .replace('vec3 geometryPosition = - vViewPosition;', 'vec3 geometryPosition = - spriteViewPos;')
+    .replaceAll('vDirectionalShadowCoord[ i ]', 'spriteDirShadow[ i ]')
+    .replace('getDirectionalLightInfo( directionalLight, directLight );', 'getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color = spriteLightTone( directLight.color );')
+    .replace('irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometryNormal );', 'irradiance += spriteLightTone( getHemisphereLightIrradiance( hemisphereLights[ i ], geometryNormal ) );');
+  if ((out.match(/spriteLightTone|spriteViewPos|spriteDirShadow/g) || []).length < 4) throw new Error('lights_fragment_begin: Licht je Texel passt nicht zu dieser three.js-Fassung');
+  return out;
+}
+
+/**
+ * Beleuchtetes Sprite-Material über dem Atlas. F6f, nur für die Menschen: `clean` rechnet das Licht
+ * je Texel und kennzeichnet die Bildpunkte im Alpha (0,5), damit der Post-Pass sie nicht rastert –
+ * das Bayer-Muster legte ein Körnchen-Rauschen über die gemalten Tonflächen. `normalAmount` sagt,
+ * wie stark die Lampen der Welt der gebackenen Normale folgen (das Licht ist schon gemalt; die
+ * Horde behält den gemeinsamen Wert).
+ */
+export function createSpriteMaterial(atlas, { selfLight = 0.2, clean = false, normalAmount = null, lightNeutral = 0.6, rampShift = 0 } = {}) {
   const material = new THREE.MeshLambertMaterial();
   const extra = {
     uAtlas: atlas.uniform, // wächst der Atlas, zeigt die Uniform auf die neue Textur
     uPalette: { value: atlas.paletteTexture },
     uSelfLight: { value: selfLight },
+    uRampShift: { value: rampShift },
     uRimColor: { value: new THREE.Vector3(((RIM >> 16) & 255) / 255, ((RIM >> 8) & 255) / 255, (RIM & 255) / 255) }, // sRGB wie die Palette
+    ...(normalAmount === null ? {} : { uNormalAmount: { value: normalAmount } }),
+    ...(clean ? { uLightNeutral: { value: lightNeutral } } : {}),
   };
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, sharedUniforms, spriteUniforms, extra);
@@ -167,12 +224,19 @@ export function createSpriteMaterial(atlas, { selfLight = 0.2 } = {}) {
       .replace('#include <common>', `#include <common>\n${VERTEX_DECL}`)
       .replace('#include <begin_vertex>', VERTEX_BODY);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${FRAGMENT_DECL}`)
+      .replace('#include <common>', `#include <common>\n${FRAGMENT_DECL}${clean ? FRAGMENT_LIGHT_TONE : ''}`)
       .replace('#include <map_fragment>', FRAGMENT_MAP)
       .replace('#include <normal_fragment_maps>', FRAGMENT_NORMAL)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${FRAGMENT_EMISSIVE}`);
+    if (clean) {
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\n${FRAGMENT_TEXEL_LIGHT}`)
+        .replace('#include <lights_fragment_begin>', texelLights())
+        .replace('#include <opaque_fragment>', '#include <opaque_fragment>\ngl_FragColor.a = 0.5; // F6f: Kennung für den Post-Pass – nicht rastern');
+    }
   };
-  material.customProgramCacheKey = () => 'zt-sprite';
+  material.customProgramCacheKey = () => (clean ? 'zt-sprite-clean' : 'zt-sprite');
+  material.userData.uniforms = extra; // für die Prüfung (Normale der Menschen)
   return material;
 }
 

@@ -102,6 +102,7 @@ export class PixelRenderer {
           uVignetteColor: { value: new THREE.Vector3(0.3, 0.3, 0.5) },
           uHaze: { value: new THREE.Vector4(0, 0, 0, 0) }, // M33: Dunst nach Norden (Farbe, Stärke)
           uDitherOffset: { value: new THREE.Vector2(0, 0) },
+          uPeopleKeep: { value: config.peopleKeep ?? 0.6 }, // F6f: so viel Tageston behalten die Menschen nachts
         },
       })
     );

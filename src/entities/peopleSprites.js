@@ -10,7 +10,7 @@ import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './sprite
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
 import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
-import { rings, ribs, strands, folds } from './peopleRelief.js';
+import { rings, ribs, strands, folds, locks, beardLocks } from './peopleRelief.js';
 
 /** Gezeichnete Richtungen: 0 S, 1 SO, 2 O, 3 NO, 4 N, 5 NW, 6 W, 7 SW. */
 export const PEOPLE_DIRS = 8;
@@ -131,11 +131,16 @@ function clothRelief(ctx) {
   // Haar in Strähnen: am Kopf nur, wo Haar ist (das Gesicht behält seine Wölbung); Locken, Zöpfe und
   // Wuschel aus Haar bekommen Rillen – Kapseln längs, Ellipsoide rund um die eigene Hochachse; Bärte
   // fallen in senkrechten Strähnen. Rund 0,07 m je Strähne (knapp drei Texel), sonst wird es Gries.
+  // F6c: Büschel ungleicher Breite statt gleicher Rillen (die lasen sich am Hinterkopf wie Bretter),
+  // je Figur fest verteilt (`seed` aus der ID – in allen Richtungen und Bildern dieselben)
+  const seed = [...(ctx.id || 'x')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 997, 7) / 97;
   const head = ctx.part('head');
   if (head && head.matAt && !head.hairRelief) {
     const face = head.bump;
     const hairy = head.matAt;
-    const crown = ribs(26, { amp: 0.42 });
+    const hh = head.h || [0.29, 0.235, 0.26];
+    const n = Math.max(12, Math.round((Math.PI * (hh[0] + hh[2])) / 0.1));
+    const crown = locks(n, { amp: 0.5, seed, fade: [hh[1] * 0.3, hh[1] * 0.95] });
     head.bump = (l, p) => (hairy(l, p) === 'haar' ? crown(l) : face ? face(l, p) : null);
     head.hairRelief = true;
   }
@@ -152,9 +157,9 @@ function clothRelief(ctx) {
       const [axis] = along(s);
       s.bump = strands(axis, { period: 0.065, amp: 0.38, across: ctx.right });
     } else if (s.kind === 'ellipsoid' && s.mat === 'bart') {
-      s.bump = (l) => [0.4 * Math.sin((l[0] + 0.012 * Math.sin(l[1] * 40)) * 90), 0, 0];
+      s.bump = beardLocks({ seed });
     } else if (s.kind === 'ellipsoid') {
-      s.bump = ribs(Math.max(5, Math.round((2 * Math.PI * Math.max(s.rr[0], s.rr[2])) / 0.07)), { amp: 0.4 });
+      s.bump = locks(Math.max(5, Math.round((2 * Math.PI * Math.max(s.rr[0], s.rr[2])) / 0.08)), { amp: 0.45, seed, jitter: 0.2 });
     }
   }
 }
@@ -168,6 +173,7 @@ export function personShapes(id, spec, part, d, anim, k) {
   const ctx = frameContext(d, pose);
   ctx.anim = anim;
   ctx.k = k;
+  ctx.id = id;
   ctx.stamps = [];
   ctx.face = null;
   kind.build(ctx, spec);

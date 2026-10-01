@@ -2845,6 +2845,25 @@ Eddas Satz von Tag 12 (»ein Knacken im Funk – und da warst du«) wird wörtli
 bleibt (Mika rudert dicht am Sturmhuk vorbei, während Edda auf der Galerie steht); Eddas Morgenrunde
 nach Marthes Glocke macht sie zur Gewohnheit statt zum Glück.
 
+### 225. Wie sauber stehen die Menschen im Spielbild? (F6f)
+**Entscheidung:** Die Menschen-Sprites werden im Spiel nicht mehr gerastert und nicht mehr doppelt
+beleuchtet:
+- Licht und Schatten je Texel (aus der Texelmitte), nie je Bildpunkt.
+- Der Post-Pass erkennt sie an einer Kennung im Alpha: kein Bayer-Raster, keine Kanten aus der
+  Tiefe, nachts behalten sie 60 % ihres Tagestons.
+- Die Lampen der Welt folgen der gebackenen Normale nur zu 0,4 – das Licht ist schon gemalt.
+- Nachts verlieren Mond und Himmel auf ihnen 80 % ihrer Farbe, die Farben dunkeln eine Stufe in
+  ihrer eigenen Rampe ab, das Eigenlicht ist 0,5.
+
+Die Horde bleibt beim alten Material.
+
+**Warum:** Auf den Bögen sahen die Figuren wie gezeichnet aus, im Spiel wie verrauscht: Das
+Bayer-Raster der Palette legte sich über jede Tonfläche, und nur knapp die Hälfte der Farbwechsel in
+Mika lag auf Texelgrenzen. Nachts wurde die hellste Hautfarbe unter dem blauen Mond zu einem Grau
+der Palette – Gesichter wie Stein, und grau sind die Schlurfer. Die Welt behält ihr Raster (es trägt
+den Pixel-Look von Gras, Boden und Wasser); die Menschen sind gemalte Figuren und brauchen es nicht.
+Die Horde gefiel dem Auftraggeber, wie sie ist.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

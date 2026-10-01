@@ -39,6 +39,7 @@ export const CONFIG = {
     normalEdge: 0.45,
     dither: 0.03,
     paletteMix: 1.0,
+    peopleKeep: 0.6, // F6f: wie viel Tageston die Menschen nachts behalten (0 = wie die Welt)
   },
   world: {
     voxel: 1 / 8,

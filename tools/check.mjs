@@ -276,6 +276,31 @@ async function runPeopleChecks(browser, url) {
   await page.keyboard.press('KeyZ');
   await step(200);
   await still('menschen-tag');
+  // 7b. F6f: Die Menschen bleiben im Raster ihrer Texel – kein Körnchen-Rauschen aus dem Post-Pass,
+  // Licht und Schatten je Texel. Mika allein abseits der Leute, nah (ein Texel = 4 × 4 Punkte) und
+  // weit (2 × 2): Die Farbwechsel innerhalb der Figur liegen auf Texelgrenzen.
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(-3.5, 3.4, 0);
+    Z.lookAt(-3.5, 2.9);
+    Z.game.rig.jumpTo(-3.5, 2.9);
+  });
+  await step(100);
+  const rasterNah = await peopleOnGrid(page, z, 4, { x: 480, y: 270, width: 960, height: 540 });
+  await page.keyboard.press('KeyZ');
+  await step(200);
+  const rasterWeit = await peopleOnGrid(page, z, 2, { x: 720, y: 405, width: 480, height: 270 });
+  await page.keyboard.press('KeyZ');
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(2.9, 4.1, -0.6);
+    Z.lookAt(2.4, 3.3);
+    Z.game.rig.jumpTo(2.4, 3.3);
+  });
+  await step(200);
+  const amRaster = (r) => r.pixels > 400 && r.x >= 0.97 && r.y >= 0.97;
+  if (amRaster(rasterNah) && amRaster(rasterWeit)) note(`✓ Menschen (F6f): Mika bleibt im Raster der Texel – ${pct(rasterNah.x)} bzw. ${pct(rasterNah.y)} der Farbwechsel nah und ${pct(rasterWeit.x)} bzw. ${pct(rasterWeit.y)} weit liegen auf Texelgrenzen (kein Körnchen-Rauschen, Licht je Texel)`);
+  else fail(`Menschen (F6f): Raster ${JSON.stringify({ rasterNah, rasterWeit })}`);
   await z(() => window.zomfy.setFigureLook('3d'));
   await step(34);
   await still('menschen-3d');
@@ -10813,6 +10838,70 @@ async function runBellChecks(browser, url) {
   else fail(`Lagerglocke: Migration ${JSON.stringify({ v: mig.v, losses: mig.st.losses, b: { fallen: mig.b.fallen, night: mig.b.night, wounds: mig.b.wounds, lost: mig.b.lost } })}`);
   checkMessages(alt);
   await alt.context.close();
+}
+
+/** Anteil als Prozent mit Komma (F6f). */
+function pct(v) {
+  return `${(v * 100).toFixed(1).replace('.', ',')} %`;
+}
+
+/**
+ * F6f: Liegen die Farbwechsel innerhalb der Menschen-Sprites auf ihrem Texelraster? Zwei Bilder des
+ * Ausschnitts `clip`, einmal ohne die Menschen (Material unsichtbar) – was sich unterscheidet, ist Figur
+ * (nur eine darf darin stehen: jede rastet ihren Fußpunkt für sich ein). Der
+ * Rand der Figur bleibt außen vor (die Umrisslinie des Post-Pass ist einen Punkt breit). Gezählt
+ * werden die Farbwechsel zwischen Nachbarpunkten nach ihrer Lage im Raster (Rest modulo `T`
+ * Punkte je Texel); `x` und `y` sind die Anteile in der häufigsten Lage – 1 heißt: alle auf
+ * Texelgrenzen.
+ */
+async function peopleOnGrid(page, z, T, clip) {
+  const shot = async (show) => {
+    await z((on) => {
+      window.zomfy.game.people.material.visible = on;
+      window.zomfy.game.render();
+    }, show);
+    await page.waitForTimeout(100);
+    return decodePng(await page.screenshot({ clip, timeout: 180000 }));
+  };
+  const a = await shot(true);
+  const b = await shot(false);
+  await z(() => {
+    window.zomfy.game.people.material.visible = true;
+    window.zomfy.game.render();
+  });
+  const { w, h } = a;
+  // Vignette und Dunst liegen nach der Palette weich über dem Bild – Unterschiede bis 4 Stufen zählen nicht
+  const same = (p, q) => Math.abs(a.rgb[p * 3] - a.rgb[q * 3]) + Math.abs(a.rgb[p * 3 + 1] - a.rgb[q * 3 + 1]) + Math.abs(a.rgb[p * 3 + 2] - a.rgb[q * 3 + 2]) <= 4;
+  const raw = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) raw[i] = a.rgb[i * 3] !== b.rgb[i * 3] || a.rgb[i * 3 + 1] !== b.rgb[i * 3 + 1] || a.rgb[i * 3 + 2] !== b.rgb[i * 3 + 2] ? 1 : 0;
+  // Zwei Punkte nach innen: nur, wer ringsum Figur ist
+  const mask = new Uint8Array(w * h);
+  let pixels = 0;
+  for (let y = 2; y < h - 2; y++) {
+    for (let x = 2; x < w - 2; x++) {
+      let all = 1;
+      for (let dy = -2; dy <= 2 && all; dy++) for (let dx = -2; dx <= 2 && all; dx++) all = raw[(y + dy) * w + x + dx];
+      if (all) {
+        mask[y * w + x] = 1;
+        pixels++;
+      }
+    }
+  }
+  const hx = new Array(T).fill(0);
+  const hy = new Array(T).fill(0);
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const i = y * w + x;
+      if (!mask[i]) continue;
+      if (mask[i + 1] && !same(i, i + 1)) hx[x % T]++;
+      if (mask[i + w] && !same(i, i + w)) hy[y % T]++;
+    }
+  }
+  const share = (hist) => {
+    const t = hist.reduce((s, v) => s + v, 0);
+    return t ? Math.max(...hist) / t : 1;
+  };
+  return { pixels, x: share(hx), y: share(hy), hx, hy };
 }
 
 /** PNG (8 Bit, RGB oder RGBA) → { w, h, rgb } – für den Flacker-Vergleich (Nebel, 30.09.). */

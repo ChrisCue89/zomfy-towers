@@ -431,12 +431,10 @@ const bert = {
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
     haar: cloth(P.e3, 2, 2),
-    // F6c: graue Strähnen unregelmäßig (vorher jede dritte Spalte – das las sich wie ein Gitter),
-    // nach unten länger: je Spalte ein Zufall, ob und ab welcher Höhe sie grau ist
-    bart: rampOf([R.e[1], R.e[2], R.e[3], R.e[4], R.s[6]], 2, { pattern: (p) => {
-      const c = Math.floor(p[0] * 40 + 40);
-      return hash(c, 3, 11) < 0.42 && hash(c, 5, 13) * 0.1 + 1.0 > p[1] ? 1 : 0;
-    } }),
+    // F6c: Grau ist er nur am Kinn und in zwei Strähnen unter den Mundwinkeln (`bartGrau` im Rahmen der
+    // Bartformen) – graue Einzelspalten lasen sich wie ein Gitter, dann wie ein Strichcode
+    bart: rampOf([R.e[1], R.e[2], R.e[3], R.e[4], R.e[5]], 2),
+    bartGrau: rampOf([R.s[3], R.s[4], R.s[5], R.s[6], R.s[7]], 2),
     muetze: cloth(P.r3, 2, 1),
     band: cloth(P.r2, 1, 2),
     schirm: cloth(P.r2, 2, 1, { shine: true }),
@@ -470,9 +468,12 @@ const bert = {
       ctx.capsule(add(top, [0, 0, -0.16]), top, 0.02, null, 'traeger');
       ctx.capsule(top, add(spine(0.28), [side * 0.12, 0, 0.17]), 0.02, null, 'traeger');
     }
-    // Der Bart: buschig unter dem Mund bis aufs Kinn, die Wangen hinauf
-    headEllipsoid(ctx, body, [0, -0.17, 0.17], [0.25, 0.13, 0.12], 'bart', { blend: 0.03, face: true });
-    headEllipsoid(ctx, body, [0, -0.26, 0.12], [0.18, 0.08, 0.1], 'bart', { blend: 0.03, face: true });
+    // Der Bart: buschig unter dem Mund bis aufs Kinn, die Wangen hinauf; grau unter den Mundwinkeln
+    // und mitten am Kinn
+    const corners = (l) => (Math.abs(Math.abs(l[0]) - 0.085) < 0.022 && l[1] < -0.01 ? 'bartGrau' : null);
+    const chin = (l) => (Math.abs(l[0] + 0.01) < 0.045 + (l[1] < -0.02 ? 0.025 : 0) ? 'bartGrau' : null);
+    headEllipsoid(ctx, body, [0, -0.17, 0.17], [0.25, 0.13, 0.12], 'bart', { blend: 0.03, face: true, matAt: corners });
+    headEllipsoid(ctx, body, [0, -0.26, 0.12], [0.18, 0.08, 0.1], 'bart', { blend: 0.03, face: true, matAt: chin });
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.22, -0.08, 0.14], [0.07, 0.1, 0.09], 'bart', { blend: 0.02 });
     earsNose(ctx, body, { noseR: [0.045, 0.04, 0.04] });
     visorCap(ctx, body, { h: 0.1, lift: 0.17, visorLen: 0.17 });

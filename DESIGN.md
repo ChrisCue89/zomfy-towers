@@ -2152,6 +2152,8 @@ Zeit der Welt dafür.«
 - **Formen:** Relief (Strähnen, Falten, Rippen, Sohlenkanten) für alle Menschen, Hände mit Daumen,
   Einzelheiten je Figur; Haar und Bommel schwingen nach.
 - **N12 – die Ankunft in 2D:** Mika rudert, sitzt und geht schon im Intro als Sprite.
+- **F6f – sauber im Spiel:** kein Körnchen-Rauschen mehr auf den Menschen (Licht je Texel, kein
+  Raster der Nachbearbeitung), nachts warme Gesichter statt grauer (Nr. 225).
 
 #### G7 – Die Ankunft, glaubhaft ✓
 
