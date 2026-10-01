@@ -6,6 +6,10 @@
 const eddaHome = (st) => Boolean(st.edda?.home) && st.time.day >= st.edda.home;
 /** Wohnt jemand in der Bucht? */
 const living = (st, id) => st.survivors?.[id]?.stage === 3;
+/** G7: Ist Mika übers Wasser aus Aalbek gekommen (die Ankunft)? Alte Stände und ?test nicht. */
+const fromAalbek = (st) => Boolean(st.flags?.ausAalbek);
+/** Steht schon eine Barrikade? (Bert sieht sich die Verschraubung an) */
+const barricades = (st) => (st.world?.buildings || []).some((b) => b.type === 'barrikade');
 
 export const KNOTS = [
   // Hilde hört Edda im Funk und erkennt Frau Lindqvist – ihr letzter Brief hat eine Empfängerin
@@ -24,6 +28,12 @@ export const KNOTS = [
   // G6: Hilde über Balduin – früher fuhr er die Seepost (und war immer schneller); zuletzt in der Liste,
   // damit alle früheren Knoten vorgehen
   { who: 'hilde', flag: 'seepost', dialog: 'hildeSeepost', day: 9, when: (st) => Boolean(st.flags.balduinGetroffen) },
+  // G7 (recherche/ankunft-geschichte.md): Was die Ankunft gesetzt hat, kommt zurück – nur nach einer
+  // Ankunft. Bert erkennt die Hausmeisterei an den Barrikaden; Edda und das Kalenderblatt; die
+  // Nachbarn vom Mühlenhang schreiben zurück
+  { who: 'bert', flag: 'bertFach', dialog: 'bertFach', day: 8, when: (st) => fromAalbek(st) && living(st, 'bert') && barricades(st) },
+  { who: 'edda', flag: 'eddaKalender', dialog: 'eddaKalender', when: (st) => fromAalbek(st) && eddaHome(st) },
+  { who: 'hilde', flag: 'muehlenhangBrief', dialog: 'muehlenhangBrief', day: 27, when: fromAalbek },
 ];
 
 /**

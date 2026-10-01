@@ -89,12 +89,12 @@ export const T = {
     laternenpfahl: 'Laternenpfahl',
     beet: 'Flachsbeet',
     bank: 'Sitzbank',
-    huette: 'Zur Hütte ausbauen',
-    huetteFertig: 'Hütte',
-    notunterkunft: 'Notunterkunft',
+    huette: 'Küche anbauen', // G7: die alte Hütte bekommt einen Anbau
+    huetteFertig: 'Hütte mit Küche',
+    notunterkunft: 'Alte Hütte',
     // Ausbau des Zuhauses (M11): Name der Kachel für die nächste Stufe und Name des Hauses je Stufe
-    ausbau: [null, null, 'Zur Hütte ausbauen', 'Schlafzimmer unterm Dach', 'Werkstatt anbauen', 'Lager anbauen'],
-    hausStufe: [null, 'Notunterkunft', 'Hütte', 'Hütte mit Schlafzimmer', 'Haus mit Werkstatt', 'Fischerhaus'],
+    ausbau: [null, null, 'Küche anbauen', 'Schlafzimmer unterm Dach', 'Werkstatt anbauen', 'Lager anbauen'],
+    hausStufe: [null, 'Alte Hütte', 'Hütte mit Küche', 'Hütte mit Schlafzimmer', 'Haus mit Werkstatt', 'Fischerhaus'],
     zelt: 'Schlafzelt',
     schlafhuette: 'Schlafhütte', // M27: zwei Schlafplätze
     hochsitz: 'Hochsitz', // M23
@@ -648,12 +648,13 @@ export const T = {
   // N10: Das erste Feuer – Mikas Gedanken an der Dose, am Kamin und an der kalten Feuerstelle
   feuer: {
     genommen: 'Streichhölzer',
-    dose: 'Eine Blechdose voller Streichhölzer. Die meisten sind noch trocken.',
-    kaminAn: 'Es knistert. Gleich wird es warm hier drin.',
-    ohne: 'Kalte Asche, nasses Laub. Ich brauche etwas zum Anzünden – im Haus finde ich bestimmt was.',
+    dose: 'Eine Blechdose voller Streichhölzer. Trockener als meine.',
+    kaminAn: 'Es knistert. Gleich raucht der Schornstein – wie auf meinem Kalenderblatt.',
+    ohne: 'Kalte Asche. Meine Streichhölzer sind im Boot nass geworden – was zum Anzünden find ich bestimmt im Haus.',
     zuWenigHolz: 'Zu wenig Holz. Ein paar Äste würden schon reichen.',
-    an: 'Na also. Jetzt sieht es hier nach Zuhause aus.',
-    lichter: 'Lichterkette eingesteckt, Kerzen angezündet. Sie leuchtet noch – wie auf meinem Kalenderblatt.', // G7: am ersten Abend
+    an: 'Holz aus Aalbek, Streichhölzer von Edda. Na also – jetzt sieht es hier nach Zuhause aus.',
+    lichter: 'Lichterkette eingesteckt. Drei Jahre hing sie im Regen – und sie leuchtet noch.', // G7: am ersten Abend
+    kuerbisse: 'Zwei Gesichter in die Kürbisse an der Tür geschnitzt. Jetzt sieht sie bewohnt aus.',
   },
   // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
   schaukel: {
@@ -1562,7 +1563,7 @@ export const T = {
     waffe: 'Baue an der Werkbank eine Waffe für den Nahkampf.',
     barrikaden: 'Stelle drei Barrikaden quer über den Weg.',
     ausbau: 'Baue einen Turm auf Stufe 3 aus.',
-    huette: 'Baue die Notunterkunft zur Hütte aus.',
+    huette: 'Bau an die alte Hütte eine Küche an.',
     kiesel: 'Sammle Kiesel am Ufer und an den Wegen – das ist Stein.', // m12-r1: Stein fand keiner
   },
   // N4 (Probespiel 29.09.): Edda über Funk – Hinweise unten rechts statt mitten im Bild.
@@ -1577,10 +1578,10 @@ export const T = {
     ziele: {
       // N10: das erste Feuer
       streichhoelzer: 'Kalt bei dir, oder? Drei Herbste hat an der Holzlände keiner mehr Feuer gemacht. In der Stube, auf dem Kaminsims, steht eine Blechdose mit Streichhölzern – falls die Mäuse sie nicht gefressen haben.',
-      kamin: 'Das Holz im Kamin hab ich noch selbst aufgeschichtet, bevor ich gegangen bin. Es müsste trocken sein. Zünd es an – mit E.',
-      feuer: 'Und jetzt das Feuer im Hof. Zwei Scheite drauf, ein Streichholz drunter. Ein Feuer im Hof heißt: Hier wohnt wieder jemand.',
+      kamin: 'Das Holz im Kamin hab ich hingelegt, bevor ich gegangen bin. Für irgendwen, der friert. Zünd es an, mit E.',
+      feuer: 'Jetzt das Feuer im Hof: zwei Scheite, ein Streichholz. Ein Feuer im Hof heißt: Hier wohnt wieder jemand.',
       feuerHolz: 'Kein Holz mehr? Äste liegen am Waldrand und hinter dem Hof. Die kannst du einfach aufsammeln.',
-      axt: 'Die Axt steckt im Hackklotz beim Feuer. Mein Vater hat sie noch geschliffen – nimm sie mit E.',
+      axt: 'Die Axt steckt im Hackklotz beim Feuer. Mein Vater hat sie geschliffen, das ist lange her. Nimm sie mit E.',
       turm: 'Die Schlurfer kommen nur über die alten Holzfällerwege. Durchsuch den Schrott, dann setz mit Q einen Bolzenwerfer neben den Weg – nie darauf.',
       nacht: 'Heute Nacht kommen sie. Die Türme schießen von allein, du hältst den Hof. Das Haus darf nicht fallen.',
       haendler: 'Morgens legt Balduin am Steg an. Er nimmt Zombieteile – frag ihn lieber nicht, wofür. Tausch sie gegen das, was dir fehlt.',
@@ -1605,12 +1606,14 @@ export const T = {
     spaet: 'Geschafft für heute. Geh schlafen, Mika – das Bett steht in der Stube. Ich halte das Funkgerät warm.',
     ruhe: 'Alles erledigt? Setz dich in den Ohrensessel am Feuer und ruh dich bis zum Abend aus.',
     ausweichen: 'Eine Waffe. Gut. Merk dir: Mit der Leertaste weichst du aus. Wer ausholt, trifft nicht, wenn du nicht mehr da bist.',
-    teile: 'Zombieteile. Eklig, ich weiß. Balduin nimmt sie gern. Frag ihn nicht, wofür – er würde es dir sagen.',
+    teile: 'Zombieteile. Eklig, ich weiß. Balduin nimmt sie gern. Frag ihn ruhig, wofür – er sagt es eh nicht.',
     // Andeutungen: Sie kennt das Haus, sie kennt Balduin, und sie ist näher, als man denkt
-    haus: 'Die Stube. Der Kamin zieht ein bisschen nach links – hat er schon immer. Mach es dir gemütlich.',
+    haus: 'Bist du in der Stube? Die dritte Diele vor dem Kamin knarrt, und der Kamin zieht nach links. Beides schon immer.',
     ersteNacht: 'Die erste Nacht – gehalten. Weißt du, wie lange keiner mehr so etwas über die Holzlände sagen konnte?',
-    balduin: 'Das ist Balduins Horn. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
-    frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Ich bin näher, als du denkst – und ich bleib die ganze Nacht dran.',
+    achtzehn: 'Achtzehn Nächte. So viele hab ich damals gehalten – allein, im Sessel am Feuer. Ab heute bist du weiter als ich.', // G7
+    kahn: '»Holzlände« am Bug? Unser alter Floßkahn! Mein Vater hat ihn dem letzten Floß nach Aalbek mitgegeben. Jetzt ist er heimgekommen.', // G7
+    balduin: 'Balduins Horn! Ich hab ihm gestern gesagt, dass an der Holzlände wieder Feuer brennt. Grüß ihn von mir. … Nein, lieber nicht. Sonst wird er sentimental.',
+    frost: 'Heute Nacht kommt das Herz des Moders. Halt durch, Mika. Heute Nacht zeig ich dir, wo ich bin – und ich bleib die ganze Nacht dran.',
     // N10: Das erste Feuer brennt – Edda sieht den Rauch (wo sie ist, sagt sie nicht)
     feuerBrennt: (name) => `Ich seh Rauch über der Holzlände. … Wirklich, ich seh ihn. Drei Herbste war da keiner. Willkommen zu Hause, ${name}.`,
     // G6: Der Sturmhuk blinkt in der Frostnacht; der See singt beim ersten Eis
@@ -1619,7 +1622,7 @@ export const T = {
     seeSingt: 'Hörst du? Der See singt. Das tut er nur beim ersten Eis.',
     // G4: Eddas Jahrestage (STORY_DAYS in data/autumn.js)
     tage: {
-      12: 'Drei Jahre hab ich jeden Abend auf dieser Frequenz gehört. Nur Rauschen. Dann hat es geknistert – und da warst du.',
+      12: 'Drei Jahre hab ich jeden Abend die Holzlände gerufen. Nur Rauschen. Dann ein Licht im Nebel, ein Knacken im Funk – und da warst du.',
       14: 'Heute vor drei Jahren ist Marthe mit den Kindern auf den Apfelwerder gezogen. Ich hab jeden Morgen auf ihre Glocke gewartet.',
       20: 'Heute vor drei Jahren bin ich gegangen. … Mach das Feuer heute Abend ein bisschen größer, ja? Ich will es sehen.',
     },
@@ -1637,25 +1640,24 @@ export const T = {
     abendruf: [
       'Holzlände und alle, die zuhören: Hier ist Edda. … Ach. Das sag ich seit drei Jahren jeden Abend. Heute hört zum ersten Mal jemand zu.',
       'Ein Licht ins Fenster hätte sie gelockt. Also hab ich eine Stimme an die Tür gehängt – für irgendwen, der bleibt.',
-      'Wetter für die Nacht: klar und kalt. Heute kommen sie – wo Feuer brennt, kommen sie immer. Bleib im Hellen, da werden sie müde. Ich bleib dran.',
     ],
   },
   // Die Ankunft (N5): Mikas Gedanken im Dunkel, auf dem See und auf dem Steg
   ankunft: {
     // G7: Mika kommt aus Aalbek (Hausmeisterei am Mühlenhang), mit dem alten Floßkahn der Sägemühle
-    karte: ['Drei Herbste hab ich in Aalbek gewartet, dass die Nachbarn heimkommen. Jetzt ist das Holz alle.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
-    see: ['Eine Nacht im Schilf, bei den Kranichen. Wasser mag der Moder nicht.', 'Vorhin im Nebel ein dunkler Leuchtturm. Ob da noch jemand wohnt?', 'Da – der hohe Mast und der Steg. Genau wie auf meinem Kalenderblatt.'],
+    karte: ['Seit der Moder kam, hab ich in Aalbek auf die Nachbarn gewartet. Drei Winter lang.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
+    see: ['Eine Nacht im Schilf, bei den Kranichen. Wasser mag der Moder nicht.', 'Vorhin im Nebel ein dunkler Leuchtturm. Ob da noch jemand wohnt?', 'Da – Mast und Steg. Wie auf dem Kalenderblatt in meiner Hausmeisterei.'],
     steg: ['Kein Rauch, die Lichterkette dunkel. Hier war lange keiner.', '„Hallo? … Ist hier jemand?“'],
-    funk: ['„…krrz… Holzlände … bitte kommen … krrz…“', 'Neben der Tür, in einem Blechkasten: ein Funkgerät. Es ist an.', 'Darauf ein Klebestreifen: »Drücken: sprechen. Loslassen: hören.«'],
+    funk: ['„…krrz… Holzlände … bitte kommen … krrz…“', 'Neben der Tür, im Blechkasten: ein Funkgerät in der Ladeschale. Es ist an.', 'Darauf ein Klebestreifen: »Drücken: sprechen. Loslassen: hören. – E.«'],
     taste: 'E: Sprechtaste drücken',
     // Die Station in der Stube beim ersten Mal (Strom, Foto)
-    station: ['Die große Funkstation. Ein grünes Lämpchen brennt, darunter eine Autobatterie. Das Kabel läuft zum Sonnenpaneel aufs Dach – sauber verlegt.', 'Daneben klebt ein altes Foto: eine junge Frau mit Kopfhörern. Hinten drauf: »E., achtzehn. Wetter und Pegel, um acht.«'],
+    station: ['Die große Funkstation. Ein grünes Lämpchen brennt, darunter eine Autobatterie. Das Kabel läuft zum Sonnenpaneel aufs Dach – sauber verlegt.', 'Daneben klebt ein altes Foto: eine junge Frau mit Kopfhörern. Am Rand, mit Bleistift: »E., achtzehn. Wetter und Pegel, um acht.«'],
     ueberspringen: 'Esc halten: überspringen',
   },
   // Das Tutorial (N5): Edda, Schritt für Schritt – nur mit Einführung
   tutorial: {
-    laufen: 'Lauf ein Stück: W, A, S, D. Mit Umschalt rennst du. Keine Sorge, tagsüber bist du hier sicher.',
-    gut: 'Gut so. Du bewegst dich, als wärst du hier schon zu Hause.',
+    laufen: 'Lauf ein Stück: W, A, S, D. Mit Umschalt rennst du. Tagsüber dösen sie im Wald – du hast Zeit.',
+    gut: 'Gut so. Erzähl mir ruhig, was du siehst – ich kenn da jedes Brett.',
     karte: 'M zeigt dir alle Wege auf einer Karte. Z holt dich näher heran, noch einmal Z wieder weg.',
   },
   // M30: Waffenschrank, Schusswaffen und Übungsplatz
@@ -1907,7 +1909,8 @@ export const T = {
     namen: { nord: 'Zur Insel im Norden', mitte: 'Zur großen Insel', sued: 'Zur kleinen Insel im Süden' },
     namenBekannt: { nord: 'Zum Wartholm', mitte: 'Zum Kiekwerder', sued: 'Zum Kürbisholm' },
     bleiben: 'Doch lieber an Land.',
-    leck: 'Das Boot hat mich hergebracht – weiter trägt es nicht. Es leckt an zwei Stellen.',
+    leck: 'Bis hierher hat das Klebeband gehalten. Weiter nicht – es leckt an zwei Stellen.', // G7: der alte Floßkahn aus Aalbek
+    bug: 'Unter der alten Farbe am Bug: Buchstaben. »…lände«. Holzlände?',
     abdichten: (cost) => `Abdichten (${Object.entries(cost).map(([k, n]) => `${n} ${T.ressourcen[k]}`).join(', ')})`,
     spaeter: 'Später.',
     dicht: 'Das Ruderboot ist dicht – tagsüber trägt es mich zu den Inseln.',
@@ -2015,7 +2018,7 @@ export const T = {
     raffer: '×2',
     planAbend: (n) => `Heute Nacht: ${n} Wellen`,
     planPause: 'Als Nächstes',
-    planOhneJuna: 'Mit einem Funkgerät wüsste man mehr …',
+    planOhneJuna: 'Mit einer hohen Antenne wüsste man mehr …',
     planKarte: 'M: der ganze Plan', // H2: die Nachtleiste zeigt nur die nächste Welle
     mit: (arten) => `mit ${arten}`,
     weitere: (n) => (n === 1 ? '… und noch eine Welle' : `… und noch ${n} Wellen`),
@@ -2262,7 +2265,7 @@ export const T = {
       seewelle: {
         name: 'Die Seewelle',
         herkunft: '„Welle“ im Radio und auf dem See: Ein kleiner Sender gab jeden Abend um acht das Wetter und den Pegel durch.',
-        radio: 'Aus dem Radio in der Stube, ganz leise: „Hier ist die Seewelle …“ Da draußen ist noch jemand.',
+        radio: (name) => `Aus dem Radio in der Stube: „Hier ist die Seewelle …“ Dieselbe Stimme, die ${name} drei Herbste lang in Aalbek gehört hat.`,
         juna: 'Heute sendet Juna, jeden Abend um acht.',
         sender: 'Junas Vater hat den Sender gebaut, im Keller in Birkhagen.',
         hoerer: 'Drei Hörer hatte sie: Balduin, Marthe und eine, die sich nur „die Försterin“ nannte.',
@@ -2357,6 +2360,7 @@ export const T = {
       aalbek: {
         name: 'Hafen von Aalbek',
         herkunft: 'Eine Bek ist ein Bach. In Aalbek standen die Sägemühlen – dorthin zogen die Flöße von der Holzlände.',
+        mika: (name) => `Wo die Säge stand, steht heute der Block am Mühlenhang. Drei Herbste hat ${name} dort auf die Nachbarn gewartet – dann ging es im alten Kahn den Weg des Holzes zurück.`,
       },
       hammermuehle: {
         name: 'Hammermühle',
@@ -2395,7 +2399,7 @@ export const T = {
     reuse: (n) => (n === 1 ? 'Ein Fisch in der Reuse – ab in den Korb.' : `${n} Fische in der Reuse – ab in den Korb.`),
     reuseLeer: 'Die Reuse ist leer. Morgen früh wieder.',
     // N8: Marthes letzte Seite aus Eddas Funkbuch, die Glocke am Steg
-    seite: '„20. Oktober. Ich gehe fort von der Holzlände – allein halte ich das Tor nicht. Das Funkgerät lasse ich da, gut geölt, die Batterien voll. Wer es findet: Mach das Feuer an. Die Horde mag kein Licht, und die Leute sehen es von Weitem. – E.“',
+    seite: '„20. Oktober. Ich gehe fort – allein halte ich das Tor nicht. Das Funkgerät bleibt an, im Kasten an der Tür; die Sonne lädt die Batterie. Ich rufe jeden Abend. Wer es hört: Mach das Feuer an. Es lockt sie, aber im Schein werden sie müde – und die Leute sehen es von Weitem. – E.“',
     glockeKinder: ['Pim und Lu kommen angerannt!', 'Ding-ding! Pim und Lu stehen sofort da.', 'Die Kinder rennen herbei – Knopf hinterher.'],
     glockeAllein: 'Ding-ding. Über dem Wasser klingt es noch lange nach.',
     ansehen: {
@@ -2434,6 +2438,7 @@ export const T = {
   },
   // G6: Kleine Wunder – Stümpfe mit drei Kreuzen, der Sturmhuk, Balduins Plane
   wunder: {
+    leuchtturm: 'Der dunkle Leuchtturm vom ersten Morgen. Ich hab’s mir gedacht.', // G7: nach Eddas Ruf in der Frostnacht
     stumpf: {
       // bevor Hilde von den Moosleuten erzählt hat
       erst: [

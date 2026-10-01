@@ -119,6 +119,7 @@ import { PeopleSprites } from '../entities/peopleView.js';
 const FLAG_AFTER_DIALOG = {
   radioHoeren: 'radioGehoert', // N4: das Radio hinter dem Funkgerät-Menü
   radio: 'stationGesehen', // G7: die Station beim ersten Mal (nach einer Ankunft)
+  eddaFunk: 'eddaLeuchtturm', // G7: die Frage nach dem Leuchtturm nur einmal
   briefkasten: 'briefkastenGesehen',
   sessel: 'sesselProbiert',
   schild: 'schildGelesen', // G5: Birkhagen steht jetzt in der Ortskunde
@@ -577,6 +578,7 @@ export class Game {
     this.trader.apply();
     this.firstFire.apply(); // N10: was kalt war, bleibt kalt – alte Stände brennen weiter
     this.world.setRadioBox(Boolean(this.state.flags.funkImKasten)); // G7: das Funkgerät liegt noch im Kasten an der Tür
+    this.world.setPumpkinsCarved(!this.state.flags.kuerbisseRoh); // G7: die Kürbisse an der Tür bis zum ersten Abend roh
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
     this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
@@ -2814,6 +2816,8 @@ export class Game {
           this.state.report = null;
           this.mode = 'play';
           if (rep?.won) this.funk.once('ersteNacht', T.funk.ersteNacht); // N4: die erste gehaltene Nacht
+          // G7: Achtzehn Nächte hat Edda damals allein gehalten – nach der achtzehnten ist Mika weiter als sie
+          if (rep?.won && this.state.flags.ausAalbek && (this.state.stats.nightsWon || 0) >= 18) this.funk.once('achtzehn', T.funk.achtzehn);
           this.scenes.morning(this.scenes.eventsOf(rep)); // M29: zwei Bewohner reden über die Nacht
           this.autumn.afterReport(); // M25: nach der Frostnacht läuft der Abspann
         }
@@ -3152,11 +3156,19 @@ export class Game {
     if (this.viewInside && this.state.flags.balduinGetroffen && !this.nights.active) this.funk.once('katalog', T.funk.katalog);
     // G7: Am ersten Abend nach der Ankunft gehen die Hauslichter an (der Kamin brennt) – einmal ein
     // Gedanke, sobald Mika draußen am Haus ist; um halb acht ruft Edda wie jeden Abend die Holzlände
-    if (flags.lichterNeu && !flags.kaminKalt && h >= 18.6 && h < 23 && !this.viewInside && this.mode === 'play') {
+    if ((flags.lichterNeu || flags.kuerbisseRoh) && !flags.kaminKalt && h >= 18.6 && h < 23 && !this.viewInside && this.mode === 'play' && !this.hud.speech) {
       const door = this.world.shelter.door.center;
       if (Math.hypot(this.player.position.x - door.x, this.player.position.z - door.z) < 9) {
-        delete flags.lichterNeu;
-        this.hud.say(T.feuer.lichter, 5);
+        if (flags.lichterNeu) {
+          delete flags.lichterNeu;
+          this.hud.say(T.feuer.lichter, 5);
+        } else {
+          // danach die Kürbisse: zwei Gesichter, und die Tür sieht bewohnt aus
+          delete flags.kuerbisseRoh;
+          this.world.setPumpkinsCarved(true);
+          this.sound.play('aufheben');
+          this.hud.say(T.feuer.kuerbisse, 5);
+        }
       }
     }
     if (flags.abendrufOffen && h >= 19.5 && h < 21) {

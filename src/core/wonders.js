@@ -12,6 +12,7 @@ export class Wonders {
     this.game = game;
     this.clock = 0; // Takt der Blinkfolge in der Frostnacht
     this.blinkT = -1; // »Gute Nacht, Bucht«: Sekunden seit dem Start (-1: blinkt nicht)
+    this.towerThoughtT = -1; // G7: Mikas Gedanke zum dunklen Leuchtturm, wartet bis Edda ausgeredet hat
     this.stats = { goodnights: 0, songs: 0, stumps: 0 }; // für die Prüfung
   }
 
@@ -21,6 +22,15 @@ export class Wonders {
 
   update(dt) {
     this.clock += dt;
+    // G7: Wer an der Holzlände angekommen ist, hat den dunklen Leuchtturm am ersten Morgen gesehen
+    if (this.towerThoughtT >= 0 && dt > 0) {
+      this.towerThoughtT += dt;
+      const g = this.game;
+      if (this.towerThoughtT > 2 && !g.funk?.busy && !g.hud.speech && g.mode === 'play') {
+        this.towerThoughtT = -1;
+        g.hud.say(T.wunder.leuchtturm, 5);
+      }
+    }
     if (this.blinkT >= 0) {
       this.blinkT += dt;
       if (this.blinkT >= BLINK_PERIOD * GOODNIGHT.rounds) this.blinkT = -1;
@@ -34,7 +44,8 @@ export class Wonders {
     const st = this.st;
     st.flags.sturmhukGeblinkt = true;
     this.clock = 0;
-    this.game.funk?.once('sturmhuk', keeperAtSturmhuk(st) ? T.funk.sturmhukClara : T.funk.sturmhuk);
+    const said = this.game.funk?.once('sturmhuk', keeperAtSturmhuk(st) ? T.funk.sturmhukClara : T.funk.sturmhuk);
+    if (said && st.flags.ausAalbek) this.towerThoughtT = 0;
   }
 
   /**

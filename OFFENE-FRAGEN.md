@@ -1996,6 +1996,14 @@ Nebel gehört seit N7 Marthe (Nr. 202). Die Sendung heißt **Die Seewelle**: Jun
 Sender gebaut, Edda hat jeden Abend am Langen Jakob vorgelesen; »Der alte Mast am Steg …« im
 Radio ist heute Juna.
 
+*Nachtrag G7 (01.10.2026):* Edda war an der Holzlände die Funkerin – Station in der Stube,
+Handgerät im Kasten an der Tür (Nr. 224). Sie ging am 20. Oktober nach achtzehn Nächten allein und
+ließ das Haus kalt zurück (Licht-Regel, DESIGN 4.1); seitdem ruft sie jeden Abend um halb acht. Sie
+weiß nur, was sie sieht (Mikas Laterne, den Rauch durchs Fernglas) und hört. Wo sie ist, fragt Mika
+beim ersten Ruf (»Bist du im Leuchtturm?«); sie weicht aus (»Wenn ich dir sag, wo ich bin, fragst
+du, warum ich nicht komme.«) und zeigt es in der Frostnacht – die Spielerin ist nie schlauer als
+Mika.
+
 ### 181. Wie kommen Möbel ins Haus? (N4)
 **Entscheidung:** Über **Balduins Katalog**: Das Funkgerät in der Stube erreicht
 sein Boot. Jede Seite ist ein Raum und öffnet sich mit dessen Ausbaustufe; jedes
@@ -2041,6 +2049,13 @@ Die alte Einleitung erklärte die Lage, bevor man einen Grund hatte, sich für
 sie zu interessieren. Jetzt kommt zuerst das Gefühl (»ein Zuhause«), dann der
 Mensch (Edda), dann die Erklärung. Das Boot erklärt ohne Worte, warum vom
 Wasser keine Gefahr kommt, und kann später wieder gebraucht werden.
+
+*Nachtrag G7 (01.10.2026):* Die Ankunft erzählt jetzt auch das Woher und Warum
+(`recherche/ankunft-geschichte.md`): auf der Titelkarte der Moder und drei Winter in Aalbek, auf dem
+See das Schilf, der dunkle Leuchtturm und das Kalenderblatt; am Bug brennt die Laterne (dadurch sieht
+Edda Mika), am Steg ist das Haus dunkel, Mika ruft »Hallo? … Ist hier jemand?«, der Blechkasten an
+der Tür knistert, und die Spielerin drückt selbst die Sprechtaste (E; nach 6 s drückt Mika). Im
+Erstkontakt sagt Edda die Licht-Regel, und Mika wählt das Feuer.
 
 ### 185. Wie lernt man das Spiel? (N5)
 **Entscheidung:** **Edda ist die Einführung.** Sie zeigt bei der Ankunft die
@@ -2805,6 +2820,30 @@ oben sah man bei Mika fast nur Mütze und Scheitel, die Augen lagen dicht über 
 müden, gebeugten Schlurfer dürfen dagegen auf ihre Füße schauen – sie gefielen dem Auftraggeber,
 also bleiben sie unverändert (Fingerabdruck aller 510 Bilder vorher und nachher gleich). Die
 Menschen sind im Bild dadurch gut 10 % größer; die Voxel-Figuren (3D) ändern sich nicht.
+
+### 224. Woher kommt das Funkgerät? (G7, recherche/ankunft-geschichte.md)
+**Entscheidung:** Zwei Geräte, beide von Edda, beide von Junas Vater für die Seewelle eingebaut:
+- die **Station** in der Stube (aus dem alten Floßschlepper): grünes Lämpchen, Autobatterie, Kabel
+  zum Sonnenpaneel auf dem Dach, Eddas Foto »E., achtzehn«. Hier liegen Katalog, Edda und Radio (N4).
+- das **Handgerät** im Blechkasten mit Ladeschale neben der Haustür, eingeschaltet, mit
+  Klebestreifen »Drücken: sprechen. Loslassen: hören. – E.«. Mika nimmt es bei der Ankunft heraus
+  und trägt es danach am Gürtel.
+
+Auf Empfang braucht das Handgerät kaum Strom, die Sonne lädt nach, der Kasten hält den Regen ab.
+Edda ruft seit dem Morgengrauen in den Kasten, weil sie vom Sturmhuk Mikas Laterne im Nebel auf die
+Holzlände zuhalten sah. Woher Mika kommt (Aalbek, die Hausmeisterei, das Kalenderblatt, der
+Floßkahn) und die Licht-Regel stehen in DESIGN 4.1–4.3. Alles hängt an Flags (`ausAalbek`,
+`stationNeu`, `lichterNeu`, `abendrufOffen`, `kuerbisseRoh`), kein neuer Spielstand; alte Stände und
+`?test` kennen Aalbek nicht.
+
+**Warum:** Der Gegenstand, um den sich das Intro dreht, lag »auf der Bank«, wo keine Bank stand, und
+wanderte im Text (»in deiner Hand«, »an deinem Gürtel«); die Batterien wären nach drei Jahren leer
+gewesen, und Edda funkte zufällig genau, als Mika vor der Tür stand. Jetzt ist jedes Glied zu sehen
+(Kasten, Lämpchen, Batterie, Paneel), und nichts ist Zufall: Die Laterne ist das Leitmotiv
+(Laterne, erstes Feuer, Leuchtfeuer, Sturmhuk), und die Spielerin drückt die Sprechtaste selbst –
+Eddas Satz von Tag 12 (»ein Knacken im Funk – und da warst du«) wird wörtlich wahr. Eine Fügung
+bleibt (Mika rudert dicht am Sturmhuk vorbei, während Edda auf der Galerie steht); Eddas Morgenrunde
+nach Marthes Glocke macht sie zur Gewohnheit statt zum Glück.
 
 ## Technik mit Auswirkung aufs Design
 

@@ -339,7 +339,17 @@ export class World {
     if (this.porchLight) this.porchLight.on = lit;
     if (this.lampLight) this.lampLight.on = lit;
     for (const g of this.houseGlows || []) g.on = lit;
-    if (this.lightPools) this.lightPools.setDark([...(this.windowPools || []), ...(this.lanternPools || []), ...(this.interiorPools || [])], !lit);
+    if (this.lightPools) {
+      this.lightPools.setDark([...(this.windowPools || []), ...(this.interiorPools || [])], !lit);
+      this.lightPools.setDark(this.lanternPools || [], !lit || this.pumpkinsRaw); // ungeschnitzt leuchtet nichts
+    }
+  }
+
+  /** G7: Die Kürbisse an der Tür – nach einer Ankunft roh, am ersten Abend schnitzt Mika Gesichter. */
+  setPumpkinsCarved(carved) {
+    this.pumpkinsRaw = !carved;
+    this.props.setPumpkinsCarved(carved);
+    this.applyHouseLights();
   }
 
   /** G7: Steckt das Handgerät noch im Kasten an der Tür? (Nach der Ankunft trägt Mika es.) */

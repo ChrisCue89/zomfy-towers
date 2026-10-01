@@ -107,8 +107,11 @@ export class Arrival {
     g.builder.cancel?.();
     g.firstFire.coldStart(); // N10: drei Herbste ohne Feuer – Feuerstelle und Kamin sind kalt
     g.state.flags.funkImKasten = true; // G7: das Handgerät steckt noch im Kasten an der Tür
-    // G7: einmal nach der Ankunft – die Station zum ersten Mal, die Hauslichter am ersten Abend, Eddas Abendruf
-    Object.assign(g.state.flags, { stationNeu: true, lichterNeu: true, abendrufOffen: true });
+    // G7: einmal nach der Ankunft – die Station zum ersten Mal, die Hauslichter am ersten Abend, Eddas
+    // Abendruf; `ausAalbek` merkt sich für immer, dass Mika übers Wasser aus Aalbek kam (Ortskunde,
+    // Knoten, der Leuchtturm in der Frostnacht) – alte Stände und ?test kennen es nicht
+    Object.assign(g.state.flags, { stationNeu: true, lichterNeu: true, abendrufOffen: true, ausAalbek: true, kuerbisseRoh: true });
+    g.world.setPumpkinsCarved(false); // drei Herbste ungeschnitzt
     g.world.setRadioBox(true);
     this.boat.lantern.visible = true; // G7: die Laterne am Bug – Eddas Licht im Nebel
     this.talk = 0;
@@ -231,12 +234,13 @@ export class Arrival {
       this.placeBoat(dt);
       player.idle(dt);
       this.focus.set(player.position.x, 0, player.position.z);
-      // G7: erst Stille, dann knistert der Kasten an der Tür; mit der letzten Zeile die Sprechtaste
+      // G7: erst Stille, dann knistert der Kasten an der Tür; mit der letzten Zeile die Sprechtaste.
+      // Ein E zählt schon, sobald das Gerät zu sehen ist (zweite Zeile) – nie ein verschluckter Druck
       const lines = ARRIVAL_LINES.funk;
       if (this.t - dt < lines[0] && this.t >= lines[0]) g.sound.play('funk');
       if (this.talk) {
         if (this.t >= this.talk + 0.35) this.finish(false); // das Knacken, dann antwortet Edda
-      } else if ((this.prompt && input.pressed('use')) || this.t >= this.talkAt + ARRIVAL.answer) {
+      } else if ((this.t >= lines[1] && input.pressed('use')) || this.t >= this.talkAt + ARRIVAL.answer) {
         this.talk = this.t;
         g.sound.play('funk', { rate: 1.6 });
       }

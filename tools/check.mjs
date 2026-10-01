@@ -8064,7 +8064,7 @@ async function runArrivalChecks(browser, url) {
   } else fail(`Ankunft Steg: ${JSON.stringify({ steg, unterwegs, kontakt })}`);
   // Eddas Dialog mit E durch (mit Einführung zeigt sie dabei die Wege)
   const looks = [];
-  for (let k = 0; k < 24 && (await z(() => window.zomfy.mode)) === 'dialog'; k++) {
+  for (let k = 0; k < 30 && (await z(() => window.zomfy.mode)) === 'dialog'; k++) {
     await page.keyboard.press('KeyE');
     await step(400);
     const c = await z(() => window.zomfy.camera());
@@ -8112,7 +8112,7 @@ async function runArrivalChecks(browser, url) {
   await page.keyboard.up('KeyD');
   await step(1500);
   const ohne = await z(() => ({ flags: Object.keys(window.zomfy.state().flags).filter((k) => k.startsWith('funk_')), f: window.zomfy.funk() }));
-  if (kurz === 5 && !ohne.flags.includes('funk_laufen') && !ohne.flags.some((f) => f.startsWith('funk_ziel_')) && !ohne.f.queue.length) note(`✓ Ohne Einführung (N5): Edda stellt sich vor (${kurz} Zeilen), danach keine Erklärungen und kein Ziel über Funk`);
+  if (kurz === 6 && !ohne.flags.includes('funk_laufen') && !ohne.flags.some((f) => f.startsWith('funk_ziel_')) && !ohne.f.queue.length) note(`✓ Ohne Einführung (N5): Edda stellt sich vor (${kurz} Zeilen), danach keine Erklärungen und kein Ziel über Funk`);
   else fail(`Ohne Einführung: ${JSON.stringify({ kurz, ohne })}`);
 
   // 5) Speichern v33: Figur und Einführung bleiben
@@ -11980,6 +11980,25 @@ async function runKnotChecks(browser, url) {
   const knots = (await z(() => window.zomfy.knots())).filter((k) => ['hildeKenntEdda', 'briefZugestellt', 'yusufKnopf', 'eddaJuna'].includes(k.flag));
   if (yusuf.some((l) => l.t?.includes('roten') || l.t?.includes('rotem Garn')) && edda.some((l) => l.t?.includes('um acht')) && knots.length === 4 && knots.every((k) => k.done)) note('✓ Knoten (G2): Yusuf erkennt Knopfs roten Faden, Edda erkennt Juna – alle vier Knoten erzählt');
   else fail(`Knoten: Yusuf und Edda ${JSON.stringify({ yusuf, edda, knots })}`);
+
+  // G7: Was die Ankunft gesetzt hat, kommt zurück – nur, wenn Mika übers Wasser aus Aalbek kam
+  const gebaut = await z(() => {
+    const Z = window.zomfy;
+    Z.setSurvivor('bert', 3);
+    Z.game.state.inventory.holz = (Z.game.state.inventory.holz || 0) + 2;
+    const col = Z.pathColumn(-9);
+    return Z.build('barrikade', -9, col[Math.floor(col.length / 2)], 1); // Bert sieht sich die Verschraubung an
+  });
+  const bertOhne = await talk('bert');
+  await z(() => window.zomfy.setFlag('ausAalbek'));
+  const bertMit = await talk('bert');
+  const kalender = await talk('edda');
+  await z(() => window.zomfy.setDay(27));
+  let brief27 = [];
+  for (let k = 0; k < 4 && !brief27.some((l) => l.t?.includes('Mühlenhang')); k++) brief27 = await talk('hilde');
+  const fach = (lines) => lines.some((l) => l.t?.includes('Vom Fach'));
+  if (!fach(bertOhne) && fach(bertMit) && bertMit.some((l) => l.t?.includes('Keller, links')) && kalender.some((l) => l.t?.includes('Heimatkalender')) && brief27.some((l) => l.t?.includes('Thiessen'))) note('✓ Knoten (G7): nach einer Ankunft erkennt Bert die Hausmeisterei an den Barrikaden (»Vom Fach?«), Edda findet sich auf dem Kalenderblatt, an Tag 27 bringt Hilde den Brief vom Mühlenhang – ohne Ankunft schweigen sie davon');
+  else fail(`Knoten G7: ${JSON.stringify({ gebaut, bertOhne, bertMit, kalender, brief27 })}`);
   await z(() => (window.__zomfyHold = false));
   checkMessages(session);
   await session.context.close();

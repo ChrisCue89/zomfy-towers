@@ -67,7 +67,8 @@ export const PLACES = {
   eulenbruch: { art: 'sicher', place: 'forsthaus', known: safe('forsthaus'), lines: () => [] },
   sonnenkamp: { art: 'sicher', place: 'farm', known: safe('farm'), lines: () => [] },
   gluehwuermchen: { art: 'sicher', place: 'ferienlager', known: safe('ferienlager'), lines: () => [] },
-  aalbek: { art: 'sicher', place: 'hafen', known: safe('hafen'), lines: () => [] },
+  // G7: Mikas Heimat – bekannt, sobald jemand dorthin will, und nach einer Ankunft von Anfang an
+  aalbek: { art: 'sicher', place: 'hafen', known: (st) => Boolean(st.flags?.ausAalbek) || safe('hafen')(st), lines: (st) => [st.flags?.ausAalbek && 'mika'] },
   hammermuehle: { art: 'sicher', place: 'muehle', known: safe('muehle'), lines: () => [] },
   luzia: { art: 'sicher', place: 'kloster', known: safe('kloster'), lines: () => [] },
   norderholm: { art: 'sicher', place: 'nordinsel', known: safe('nordinsel'), lines: () => [] },

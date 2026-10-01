@@ -342,6 +342,15 @@ warmes Licht macht den Moder müde und die Schlurfer langsam (Laternen, das
 Leuchtfeuer). Die Städte sind leer, das Netz ist still; wer übrig ist, lebt
 verstreut an Seen und auf Inseln.
 
+**Die Licht-Regel (G7):** Feuer zieht die Schlurfer an – Licht und Wärme zusammen, von Weitem.
+Wer im hellen Schein steht, wird müde und langsam. Ein kaltes, dunkles Haus lassen sie in Ruhe;
+eine Stimme an der Tür lockt keinen. Edda hat das in achtzehn Nächten allein gelernt und sagt es
+Mika beim ersten Ruf: »Wer an der Holzlände Feuer macht, wird gefunden. Von allen, die noch
+unterwegs sind – und nachts von denen aus dem Wald.« Mika macht das Feuer trotzdem, bewusst:
+»Drei Winter hat mich keiner gefunden. Dann mach ich Feuer.« Das erste Feuer macht die Holzlände
+zum Zuhause und zur Zuflucht – und die Nächte zur Aufgabe. Die Fackeln an den Wegen und die
+Warnpfähle bleiben unerklärt; sie tragen die Lesbarkeit der Nacht.
+
 **Warum sie nur über die Wege kommen (M15):** Im Dämmerwohld ist der Boden
 unter dem Laub ein einziges Modergeflecht – weich wie Moos, zäh wie Leim.
 Wer abseits hineintritt, sinkt bis zu den Knien ein, Schlurfer genauso wie
@@ -365,12 +374,38 @@ verzweigen sich und laufen kurz vor der Bucht zusammen. Über sie kommt die
 Horde. Auf dem See liegen Inseln im Nebel; von dort kommt nur Balduins Boot.
 Seit N6 rudert Mika tagsüber mit dem eigenen Boot hinüber.
 
+**Holzlände 1 (G7, `recherche/ankunft-geschichte.md`):** die alte Hütte des Flößers Jakob
+Lindqvist; seine Enkelin Edda war hier die Funkerin. In der Stube steht die **Station** aus dem
+alten Floßschlepper (grünes Lämpchen, Autobatterie, Kabel zum **Sonnenpaneel** auf dem Dach,
+Eddas Foto »E., achtzehn«), neben der Haustür hängt ein **Blechkasten mit Ladeschale** und dem
+Handgerät – beides hat Junas Vater für die Seewelle eingebaut. Auf Empfang braucht das Gerät
+kaum Strom, die Sonne lädt nach, der Kasten hält den Regen ab. Als Edda am 20. Oktober ging,
+ließ sie das Haus kalt zurück: Holz im Kamin, Streichhölzer auf dem Sims, das Handgerät
+eingeschaltet im Kasten. Seitdem ruft sie jeden Abend um halb acht die Holzlände. Bei Mikas
+Ankunft ist alles dunkel – Fenster, Wandlaterne, Lichterkette, Kerzen, Pendelleuchte und
+Kürbislaternen gehen erst mit dem Kamin an, die Kürbisse an der Tür sind bis zum ersten Abend
+ungeschnitzt, Eddas Wäsche ist steif und ausgeblichen. Danach trägt Mika das Handgerät am
+Gürtel.
+
 ### 4.3 Hauptfigur
 
 **Mika**, früher Hausmeister\*in in einem Wohnblock, kann fast alles
 reparieren und redet gern mit sich selbst. Name, Figur (Frau oder Mann, N5) und
 Aussehen sind auf dem Titelbild wählbar. Mika kommt mit einem kleinen
 Ruderboot über den See in die Bucht, auf der Suche nach einem Zuhause (N5).
+
+**Woher (G7):** Mika hatte die Hausmeisterei im Block Am Mühlenhang 3 in **Aalbek**, wo früher
+die Sägemühlen das Holz der Holzlände schnitten (im Spieltext immer »Hausmeisterei«, nie
+»Hausmeister/in« – die Figurwahl bleibt offen). Als die Nachbarn vor dem Moder fortzogen, blieb
+Mika mit allen Schlüsseln: drei Winter an einem sicheren Ort ohne einen Menschen. In der
+Hausmeisterei hing drei Jahre dasselbe Kalenderblatt, »Oktober – Die alte Holzlände am
+Kranichsee«; jeden Abend um acht lief auf dem Kurbelradio die Seewelle, antworten konnte Mika
+nie. Im Herbst nahm Mika einen alten **Floßkahn** aus dem Bootsschuppen der Sägemühle (unter der
+Farbe am Bug steht »Holzlände«) und die letzten Scheite, schlief eine Nacht im Schilf bei den
+Kranichen und ruderte im Morgengrauen mit brennender Laterne am dunklen Leuchtturm vorbei. Edda,
+die jeden Morgen auf der Galerie nach Marthes Glocke horcht, sah das Licht und rief von da an.
+»Ich suche keinen sicheren Ort« ist wörtlich wahr: Mika verlässt einen. Alte Stände und `?test`
+kennen Aalbek nicht (Flag `ausAalbek`).
 
 ### 4.4 Roter Faden
 
@@ -394,7 +429,7 @@ als endlose Verteidigung mit immer stärkeren Nächten weiter.
 | **Baumarkt-Bert** | Brummiger Ex-Verkäufer | Reparaturen, Barrikaden, nachts flickt er |
 | **Dr. Yusuf** | Ehemaliger Tierarzt | Heilung, Kräutertee |
 | **Balduin** | Händler mit Boot (zieht nie ein) | Kommt übers Wasser, legt am Steg an, tauscht Zombieteile gegen Material – und sagt nicht, wofür |
-| **Edda** | Frühere Besitzerin der Holzlände, nur über Funk (N4) | Erklärt das Spiel unten rechts im Funk-Feld, deutet ihre Geschichte an; wo sie ist, bleibt offen bis zum Wiedersehen (M32, OFFENE-FRAGEN 180) |
+| **Edda** | Enkelin des Flößers, Funkerin der Holzlände, nur über Funk (N4) | Erklärt das Spiel unten links im Funk-Feld, deutet ihre Geschichte an. Weiß nur, was sie sieht (Mikas Laterne, später den Rauch durchs Fernglas) und hört; sitzt im dunklen Leuchtturm am Sturmhuk, sagt es aber erst in der Frostnacht (G7, OFFENE-FRAGEN 180, 224) |
 
 Überlebende kommen tagsüber an – über die Wege, am Ufer entlang oder mit
 Balduins Boot.
@@ -948,9 +983,14 @@ der Klang startet mit der ersten Eingabe.
   Figurseite: Name, Figur (Frau oder Mann), Aussehen, Schwierigkeit und
   Einführung (mit Edda oder ohne). Was die gewählte Zeile bedeutet, steht in
   einem Kasten mit Zipfel direkt daneben; die Tasten stehen im Fenster (N5).
-- **Die Ankunft (N5):** Ein neues Spiel beginnt mit einer kurzen Szene –
-  Titelkarte mit Mikas Gedanken, Ruderboot im Morgennebel, Steg, Eddas
-  Funkgerät – danach meldet sich Edda. Esc halten überspringt die Szene.
+- **Die Ankunft (N5, G7):** Ein neues Spiel beginnt mit einer kurzen Szene –
+  Titelkarte mit Mikas Gedanken (der Moder, drei Winter in Aalbek, »ein
+  Zuhause«), Ruderboot im Morgennebel mit der Laterne am Bug (Schilf, dunkler
+  Leuchtturm, das Kalenderblatt), Steg mit dem dunklen Haus (Mika nimmt die
+  Laterne mit, »Hallo? … Ist hier jemand?«), dann knistert der Blechkasten an
+  der Tür, und die Spielerin drückt selbst die Sprechtaste (E; nach 6 s drückt
+  Mika). Edda fragt, Mika antwortet, Edda sagt die Licht-Regel, Mika wählt das
+  Feuer. Esc halten überspringt die Szene.
 - **Einstellungen:** Lautstärke, Musik, Geräusche, Ansicht (nah/weit, M13),
   Pixelgröße, Textgeschwindigkeit – neben dem Spielstand gespeichert.
 
@@ -2099,6 +2139,39 @@ Lektorat und die Reiter des Baumenüs.
   zwischen Armen und Rumpf, keine Gries-Pixel, weniger Kleinkram auf der Brust.
 - **Form:** ein zum Kinn schmalerer Kopf, etwas schmalere Schultern, eigene Rampen für Violett,
   Rosa, Weiß, Türkis und Blond.
+
+#### F6 – Die Menschen auf dem Weg zu »Triple A« (in Arbeit)
+
+*Auftrag (01.10.2026):* »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
+Zeit der Welt dafür.«
+
+- **Gesichter je Merkmal** an der Kopfform, kein Schielen (von vorn gespiegelt, schräg schauen beide
+  Augen in dieselbe Richtung).
+- **Licht wie gezeichnet:** seitlich von oben links, weiche Schlagschatten, Verdeckung, Glanz,
+  Gegenlicht.
+- **Formen:** Relief (Strähnen, Falten, Rippen, Sohlenkanten) für alle Menschen, Hände mit Daumen,
+  Einzelheiten je Figur; Haar und Bommel schwingen nach.
+- **N12 – die Ankunft in 2D:** Mika rudert, sitzt und geht schon im Intro als Sprite.
+
+#### G7 – Die Ankunft, glaubhaft ✓
+
+*Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.
+das ist nicht glaubhaft. komm schon. schick agenten ins rennen die gemeinsam die intro story
+ausbauen«
+
+*Umgesetzt (01.10.2026), Arbeit der fünf Agenten in `recherche/ankunft-geschichte.md`:*
+
+- **Woher, warum, wodurch:** Mika kommt aus der Hausmeisterei in Aalbek mit dem alten Floßkahn,
+  Edda sah die Laterne am Bug und ruft seitdem; das Handgerät liegt im Blechkasten an der Tür, die
+  Station in der Stube hat Batterie und Sonnenpaneel (4.2, 4.3, Nr. 224).
+- **Die Licht-Regel und Mikas Wahl** (4.1): Feuer zieht die Horde an; Mika macht es trotzdem.
+- **Das Bild sagt »leer«:** dunkles Haus bis zum Kamin, ungeschnitzte Kürbisse bis zum ersten
+  Abend, ausgeblichene Wäsche; am ersten Abend Lichterkette, Kürbisgesichter und Eddas Abendruf.
+- **Nachklang über den Herbst:** Hilde, Juna, das Radio, Marthe, Tag 12, Balduin an Tag 2, die
+  Ortskunde (Aalbek), Eddas Ort in der Frostnacht; Knoten nur nach einer Ankunft: Bert erkennt die
+  Hausmeisterei, Edda das Kalenderblatt, der Brief vom Mühlenhang, die achtzehnte Nacht, der
+  Floßkahn.
+- **Namen:** Stufe 1 des Zuhauses heißt »Alte Hütte«, Stufe 2 »Hütte mit Küche«.
 
 ## 9. Ideen-Parkplatz
 

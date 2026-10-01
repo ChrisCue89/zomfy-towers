@@ -115,6 +115,11 @@ export class Isles {
     g.sound.play('klopfen');
     g.effects.chips(TRIP.mooring.x, 0.3, TRIP.mooring.z, 'holz', 8);
     g.hud.toast(T.inseln.dicht, null, 4);
+    // G7: Der alte Floßkahn aus Aalbek – unter der Farbe am Bug steht, woher er kam
+    if (g.state.flags.ausAalbek) {
+      g.hud.say(T.inseln.bug, 4.5);
+      g.funk.once('kahn', T.funk.kahn);
+    }
     g.funk.once('boot', T.funk.boot);
     this.refresh();
     g.quietSave();

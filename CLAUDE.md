@@ -580,7 +580,12 @@ Grundprinzipien:
     Hauslichter aus (`world.applyHouseLights`: Licht über `on`, Glühen über `glow.on`, Lichtinseln
     über `lightPools.setDark`). `arrival.start` setzt einmalige Flags: `stationNeu` (die Station
     beim ersten Mal, `T.ankunft.station`), `lichterNeu` (am ersten Abend ein Gedanke, sobald Mika
-    draußen am Haus ist), `abendrufOffen` (um halb acht Eddas Abendruf, `T.funk.abendruf`).
+    draußen am Haus ist), `abendrufOffen` (um halb acht Eddas Abendruf, `T.funk.abendruf`),
+    `kuerbisseRoh` (die Kürbisse an der Tür sind ungeschnitzt, `world.setPumpkinsCarved`; am ersten
+    Abend schnitzt Mika sie) und `ausAalbek` (Mika kam aus Aalbek: Ortskunde, die Knoten
+    `bertFach`, `eddaKalender`, `muehlenhangBrief`, die achtzehnte Nacht, der Floßkahn beim
+    Abdichten). Alte Stände und `?test` kennen Aalbek nicht; ein neuer Spielstand ist dafür nicht
+    nötig. Die Sprechtaste gilt ab der zweiten Funkzeile.
 - **Das erste Feuer (N10, `core/firstFire.js`, `FIRST_FIRE` in `data/arrival.js`):**
   - `arrival.start` ruft `firstFire.coldStart()`: Feuerstelle und Kamin sind kalt
     (Flags `feuerKalt`, `kaminKalt`, nie im Startzustand – alte Stände und `?test`
@@ -1417,7 +1422,9 @@ Grundprinzipien:
    zeigt den ganzen Plan (Bilder: hud-abend, hud-nacht, karte-plan); ab G2 (Abschnitt `knoten`):
    an Tag 12 spricht Hilde wie immer, an Tag 13 erkennt sie Eddas Stimme – nur einmal; nach Eddas
    Heimkehr stellt sie mit echter Taste den Brief zu, Edda liest ihn; Yusuf erkennt Knopfs roten
-   Faden, Edda erkennt Juna; ab G3 (Abschnitt `wald`): die Waldrand-Gedanken erzählen mit den
+   Faden, Edda erkennt Juna; seit G7 erkennt Bert nach einer Ankunft die Hausmeisterei an einer
+   echten Barrikade, Edda findet sich auf dem Kalenderblatt, an Tag 27 bringt Hilde den Brief vom
+   Mühlenhang – ohne Ankunft schweigen sie davon; ab G3 (Abschnitt `wald`): die Waldrand-Gedanken erzählen mit den
    Tagen mehr, an Tag 8 mit echter Taste W ein Gedanke aus dem Volksmund, Hilde erzählt von den
    Moosleuten und Yusuf sagt »Pilz«, nach dem Holzfäller funkt Edda vom Hemd, nach dem zweiten
    von den vielen Männern; ab G4 (Abschnitt `uhr`): Tag 12 ist der 12. Oktober, Tag 32 der

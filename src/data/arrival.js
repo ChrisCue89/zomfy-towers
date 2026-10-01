@@ -7,7 +7,7 @@ export const ARRIVAL = {
   lake: 13, // das Boot gleitet heran (G7: drei Gedanken auf dem See)
   walk: 9, // höchstens so lange über den Steg zum Haus (sonst steht Mika gleich dort)
   stroll: 0.55, // G7: langsam über den Steg (Anteil am Gehtempo) – Mika schaut sich um
-  talkAfter: 1.6, // G7: die Sprechtaste erscheint, wenn die letzte Zeile am Funk zu lesen ist
+  talkAfter: 0, // G7: die Sprechtaste erscheint mit der letzten Zeile am Funk (gedrückt werden darf schon ab der zweiten)
   answer: 6, // G7: so lange wartet der Funkkasten auf die Sprechtaste (E), dann drückt Mika selbst
   bar: 0.12, // Höhe der schwarzen Balken oben und unten (Anteil am Bild)
   skipHold: 0.6, // so lange Esc halten, dann ist die Ankunft vorbei
@@ -35,7 +35,7 @@ export const ARRIVAL_LINES = {
   card: [0.6, 3.8],
   lake: [0.8, 5.0, 9.2],
   walk: [0.4, 3.6],
-  funk: [1.0, 3.4, 5.6], // G7: Stille, dann knistert der Kasten an der Tür; mit der letzten Zeile die Sprechtaste
+  funk: [1.0, 4.0, 7.0], // G7: Stille, dann knistert der Kasten an der Tür; je Zeile 3 s, mit der letzten die Sprechtaste
 };
 
 /**

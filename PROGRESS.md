@@ -5,6 +5,51 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## G7: Die Ankunft, glaubhaft ✓
+
+**Auftrag (01.10.):** »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn. das
+ist nicht glaubhaft. komm schon. schick agenten ins rennen die gemeinsam die intro story ausbauen«
+
+- **Fünf Agenten nacheinander** (`recherche/ankunft-geschichte.md`): Kanon, Mika, Haus und
+  Funkgerät, Redaktion, Kritik. Befund: Das Funkgerät lag »auf der Bank«, wo keine stand, und
+  wanderte im Text; die Batterien waren nach drei Jahren voll; Edda funkte zufällig genau dann;
+  Mika hatte kein Woher; Edda wusste, was sie über Funk nicht wissen kann; das Haus war »leer«,
+  während alle Lichter brannten; die Licht-Regel widersprach sich.
+- **Die Geschichte** (DESIGN 4.1–4.3, OFFENE-FRAGEN 224): Holzlände 1 ist die Hütte des Flößers
+  Jakob Lindqvist, Edda war hier die Funkerin. Die Station in der Stube hat ein grünes Lämpchen,
+  eine Autobatterie mit Kabeln und Eddas Foto, das Paneel liegt auf dem Dach; das Handgerät wartet
+  im Blechkasten mit Ladeschale an der Haustür. Edda ließ das Haus kalt zurück (Feuer lockt, eine
+  Stimme nicht). Mika kommt aus der Hausmeisterei in Aalbek, drei Winter allein, mit einem alten
+  Floßkahn; Edda sah die Laterne am Bug im Morgengrauen vom Sturmhuk und ruft seitdem.
+- **Die Ankunft neu:** Titelkarte mit Moder und Mikas Grund, auf dem See drei Gedanken (Schilf,
+  dunkler Leuchtturm, Kalenderblatt), am Bug die Laterne; Mika nimmt sie mit, das Haus ist dunkel,
+  »Hallo? … Ist hier jemand?«, der Kasten knistert, und erst ein echtes E drückt die Sprechtaste
+  (nach 6 s drückt Mika selbst). Im Erstkontakt fragt Edda, Mika antwortet, Edda sagt die
+  Licht-Regel, Mika wählt das Feuer (»Drei Winter hat mich keiner gefunden. Dann mach ich Feuer.«).
+- **Das Bild sagt »leer«:** Fenster, Wandlaterne, Lichterkette, Kerzen, Pendelleuchte und
+  Kürbislaternen gehen erst mit dem Kamin an (`world.applyHouseLights`, nur über `on` und
+  `lightPools.setDark`); die Kürbisse an der Tür sind bis zum ersten Abend ungeschnitzt; Eddas
+  Wäsche ist steif und ausgeblichen.
+- **Der erste Abend:** Lichterkette eingesteckt, zwei Gesichter in die Kürbisse geschnitzt, um halb
+  acht Eddas Abendruf (zwei Zeilen, nur einmal).
+- **Nachklang:** Hilde, Juna (das Kurbelradio in Aalbek), das Radio, Marthe (ihre Batterie war im
+  ersten Winter leer), Tag 12, Balduin an Tag 2 (Edda hat ihm Bescheid gesagt), die Ortskunde
+  (Aalbek mit Mikas Zeile), Eddas Ort (Mika fragt beim ersten Ruf, in der Frostnacht denkt Mika »Der
+  dunkle Leuchtturm vom ersten Morgen. Ich hab’s mir gedacht.«).
+- **Knoten nur nach einer Ankunft** (Flag `ausAalbek`): Bert erkennt die Hausmeisterei an den
+  verschraubten Barrikaden, Edda findet sich auf dem Kalenderblatt, an Tag 27 bringt Hilde den Brief
+  vom Mühlenhang, nach der achtzehnten gehaltenen Nacht ist Mika weiter als Edda damals, und beim
+  Abdichten liest Mika »…lände« am Bug – Edda erkennt den Floßkahn.
+- **Namen:** Stufe 1 des Zuhauses heißt »Alte Hütte« statt »Notunterkunft«, Stufe 2 »Hütte mit
+  Küche«.
+- **Kein neuer Spielstand:** alles über Flags (`ausAalbek`, `stationNeu`, `lichterNeu`,
+  `abendrufOffen`, `kuerbisseRoh`); alte Stände und `?test` kennen Aalbek nicht.
+- **Prüfung:** `ankunft` (Laterne am Bug, dunkles Haus, echte Sprechtaste, Bild `ankunft-funk`),
+  `feuer` (Hauslichter erst mit dem Kamin, Lichterkette und Abendruf einmal am ersten Abend),
+  `knoten` (Bert, Kalenderblatt, Brief – ohne Ankunft schweigen sie). Werkzeug-Umweg: Eine nur in
+  den Spielstand geschriebene Barrikade verschwand beim nächsten Speichern (der Stand wird aus der
+  Welt neu geschrieben) – die Prüfung baut jetzt eine echte.
+
 ## F6: Die Menschen auf dem Weg zu »Triple A« (in Arbeit)
 
 **Auftrag (01.10.):** »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
@@ -48,9 +93,7 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
   (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
   der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
-- **G7 (in Arbeit):** Die Geschichte der Ankunft – drei Agenten haben Kanon und Lücken (woher das
-  Funkgerät, Strom, warum Edda gerade dann funkt, warum Mika bleibt), Mikas Herkunft und das Haus
-  mit dem Funkgerät ausgearbeitet; eine Redaktion führt sie zusammen.
+- **G7:** die Geschichte der Ankunft – eigener Eintrag oben.
 
 ## F5: Die Menschen schöner gezeichnet ✓
 

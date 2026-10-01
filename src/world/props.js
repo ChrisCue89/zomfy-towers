@@ -1234,12 +1234,17 @@ export function createProps({ seed, materials, colliders, map }) {
     group.add(object);
     return object;
   };
-  // Kürbislaternen links und rechts vor der Tür (nachts mit Lichtinsel, siehe world.js)
+  // Kürbislaternen links und rechts vor der Tür (nachts mit Lichtinsel, siehe world.js). G7: Nach drei
+  // leeren Herbsten stehen dort ungeschnitzte Kürbisse – die Gesichter schnitzt Mika am ersten Abend
   const lanterns = [];
+  const doorPumpkins = [];
   for (const [x, z, k] of [[4.75, -3.75, 0], [7.5, -3.75, 1]]) {
     const jack = buildJackOLantern(seed + 40 + k);
     const object = fine(jack.model, x, z, 'Kürbislaterne');
     if (materials.pumpkinGlow) object.add(createStaticVoxelObject(jack.glow, materials.pumpkinGlow, { size: FINE32, shadow: 'none', jitter: 0 }));
+    const plain = fine(buildPumpkin(seed + 40 + k, 1.25), x, z, 'Kürbis an der Tür');
+    plain.visible = false;
+    doorPumpkins.push({ carved: object, plain });
     colliders.addCircle(x, z, 0.26, 'kuerbis');
     lanterns.push({ x, z });
   }
@@ -1276,6 +1281,13 @@ export function createProps({ seed, materials, colliders, map }) {
   return {
     swing,
     lanterns,
+    /** G7: Kürbisse an der Tür geschnitzt (Laternen) oder noch roh. */
+    setPumpkinsCarved(carved) {
+      for (const p of doorPumpkins) {
+        p.carved.visible = carved;
+        p.plain.visible = !carved;
+      }
+    },
     leafPiles,
     reserved,
     perches,

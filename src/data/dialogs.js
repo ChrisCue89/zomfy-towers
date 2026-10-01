@@ -199,6 +199,33 @@ function kiteWish(state, wind) {
   ];
 }
 
+/** Was Edda sagt, wenn Mika sie über die Station ruft (gewürfelt nach dem Tag). */
+function eddaFunkLines(state) {
+  return [
+    { s: 'mika', t: 'Edda? Bist du da?' },
+    pick(
+      [
+        { s: 'edda', t: 'Ich bin immer da, Mika. Nur nicht immer am Funkgerät. Ist das Feuer an?' },
+        { s: 'edda', t: 'Die Holzlände hat mein Großvater gebaut. Den Steg, die Hütte, das Tor. Ich hab dort laufen gelernt.' },
+        { s: 'edda', t: 'Wo ich bin? Irgendwo, wo man den See sehen kann. Mehr sag ich noch nicht.' },
+        { s: 'edda', t: 'Der Moder hört auf Licht und Wärme. Merk dir das. Es wird wichtig.' },
+        { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
+        { s: 'edda', t: 'Krrz … schlechter Empfang heute. Das liegt am Wetter. Oder am Moder. Oder an mir.' },
+        { s: 'edda', t: 'Die Seewelle? … So. Dann hat also doch jemand zugehört.' },
+        // N8: Wenn Marthe mit den Kindern in der Bucht wohnt
+        ...(state.isles?.fog?.stage === 4
+          ? [
+              { s: 'edda', t: 'Marthe hat mir heute Morgen die Glocke vorgeläutet. Über Funk. Zweimal. Ich hab so getan, als wär das nichts.' },
+              { s: 'edda', t: 'Pass auf Pim auf. Wenn der einen Hammer findet, baut er dir ein Boot. Aus deinem Zaun.' },
+              { s: 'edda', t: 'Lu hat mir erzählt, dass bei euch Riesen wohnen. Ich hab gesagt: Die sind freundlich und kochen gut.' },
+            ]
+          : []),
+      ],
+      state.time.day
+    ),
+  ];
+}
+
 export const DIALOGE = {
   // --- Balduin, der Händler (Meilenstein 8) ---
   balduinTreffen: [
@@ -268,7 +295,7 @@ export const DIALOGE = {
   hildeTreffen: [
     { s: 'hilde', t: 'Guten Morgen, Kindchen! Post hab ich keine mehr – aber ein Lastenrad voller Kram.' },
     { s: 'hilde', t: 'Ich fahr die alten Runden ab – nur auf festen Wegen, versteht sich. Wer noch da ist, bekommt, was er braucht, gegen das, was er übrig hat.' },
-    { s: 'mika', t: 'Noch jemand hier draußen. Das ist die beste Nachricht seit Wochen.' },
+    { s: 'mika', t: 'Noch jemand hier draußen! Drei Jahre hab ich keinen Menschen gesehen – und jetzt jeden Tag einen.' },
     { s: 'hilde', t: 'Gib mir einen trockenen Schlafplatz, dann bleib ich eine Weile. Ein Zelt tät’s.' },
   ],
   hilde: (state) => {
@@ -282,6 +309,8 @@ export const DIALOGE = {
   },
   junaTreffen: [
     { s: 'juna', t: 'Du hast mein Signal gehört? Die Seewelle – das bin ich! Na ja, ich und dieses Funkgerät.' },
+    { s: 'mika', t: 'Jeden Abend um acht. Drei Jahre lang, auf einem Kurbelradio in Aalbek.' },
+    { s: 'juna', t: 'Echt jetzt? Ich dachte, ich rede nur mit dem Rauschen!' },
     { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Der Lange Jakob, so sagen sie hier. Wenn wir ihn wieder hochkriegen …' },
     { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen See. Alle, die noch unterwegs sind, finden her.' },
     { s: 'mika', t: 'Ein Leuchtfeuer. Ich bin dabei. Was brauchen wir?' },
@@ -519,7 +548,7 @@ export const DIALOGE = {
     return [
       { s: 'marthe', t: 'Halt! Wer … ach. Du bist von der Bucht, oder? Die mit dem Feuer jede Nacht.' },
       { s: 'mika', t: `Ich bin ${state.player?.name || 'Mika'}. Ich hab eure Glocke gehört. Und Edda hat von euch geschrieben – in ihrem Funkbuch.` },
-      { s: 'marthe', t: 'Edda! Die Frau vom Funk. Jeden Morgen hat sie uns gesagt, dass wir durchhalten sollen. Dann kam nichts mehr.' },
+      { s: 'marthe', t: 'Edda! Die Frau vom Funk. Jeden Morgen hat sie uns Mut gemacht. Dann war unsere Batterie leer. Uns blieb nur die Glocke.' },
       { s: 'mika', t: 'Sie funkt noch. Mit mir.' },
       { s: 'marthe', t: 'Dann lebt sie. Gut. … Gut.' },
       { s: 'marthe', t: 'Ich bin Marthe. Ich hab früher Boote gebaut, drüben auf dem Wollgrashof, bei meinem Vater. Jetzt wohnen wir hier, auf dem Apfelwerder. Das sind Pim und Lu. Pim, sag Hallo. Lu – nicht mit Äpfeln werfen.' },
@@ -616,8 +645,8 @@ export const DIALOGE = {
   // N8: Marthe gibt Mika die letzte Seite aus Eddas Funkbuch (beim ersten Gespräch in der Bucht)
   martheSeite: [
     { s: 'marthe', t: 'Warte, bevor ich es vergesse.' },
-    { s: 'marthe', t: 'Das hat Edda mir gegeben, an dem Tag, als ihr Funk verstummte. Eine Seite aus ihrem Funkbuch. Sie hat gesagt: »Gib sie jemandem, der das Feuer anmacht.«' },
-    { s: 'mika', t: 'Jemandem, der das Feuer anmacht?' },
+    { s: 'marthe', t: 'Die hat Balduin mir gebracht, an dem Tag, als Edda fortging. Eine Seite aus ihrem Funkbuch. Von Edda, hat er gesagt: »Für den, der drüben wieder Feuer macht.«' },
+    { s: 'mika', t: 'Für den, der wieder Feuer macht?' },
     { s: 'marthe', t: 'Na, dir. Lies.' },
   ],
   pimDa: (state) => [
@@ -836,7 +865,7 @@ export const DIALOGE = {
   ],
   funkturm3: [
     { s: 'juna', t: 'Es brennt! Schau nur, wie weit das Licht reicht.' },
-    { s: 'mika', t: 'Die Schlurfer werden im Schein ganz langsam. Wie Motten – nur andersrum.' },
+    { s: 'mika', t: 'Die Schlurfer werden im Schein ganz langsam. Wie Motten – nur müder.' },
     { s: 'juna', t: 'Jetzt leuchten wir über den See. Wer noch unterwegs ist, findet her.' },
     { s: 'mika', t: 'Und wir halten die Nächte durch. Gemeinsam.' },
   ],
@@ -846,19 +875,23 @@ export const DIALOGE = {
   // N5: Der erste Kontakt nach der Ankunft. Mit Einführung zeigt Edda dabei die Wege (die
   // Kamera fährt mit, `blick`), ohne Einführung bleibt es beim Kennenlernen.
   eddaErstkontakt: (state) => [
-    { s: 'edda', t: 'Krrz … Hallo? … Ist da jemand an der Holzlände?' },
-    { s: 'mika', t: 'Ja. Ich bin gerade angekommen, mit dem Boot. Wer spricht da?' },
-    { s: 'edda', t: 'Edda. Das Funkgerät in deiner Hand war mal meins. Das Haus auch.' },
-    { s: 'edda', t: 'Du suchst ein Zuhause? Dann bleib. Es ist ein gutes Haus. Aber nachts wird es hier laut.' },
+    // G7 (recherche/ankunft-geschichte.md): Edda hat Mikas Laterne im Nebel gesehen und ruft seitdem;
+    // Mika hat die Sprechtaste gedrückt (das Knacken). Die Licht-Regel sagt sie einmal – und Mika wählt
+    // das Feuer selbst. Edda weiß nur, was sie hört: Name, Aalbek, »ein Zuhause«.
+    { s: 'edda', t: 'Krrz … Da hat’s geknackt! … Hallo? Ist da jemand an der Holzlände?' },
+    { s: 'mika', t: `Ja! … Ja. Hier ist jemand. Ich bin ${state.player?.name || 'Mika'}, aus Aalbek. Ich such ein Zuhause – aber hier wohnt keiner mehr.` },
+    { s: 'edda', t: 'Jetzt schon. Ich bin Edda. Ich hab dein Licht im Nebel gesehen und ruf seitdem. Das Funkgerät war mal meins. Das Haus auch.' },
+    { s: 'edda', t: 'Dann bleib. Es ist ein gutes Haus. Nur: Wer an der Holzlände Feuer macht, wird gefunden. Von allen, die noch unterwegs sind – und nachts von denen aus dem Wald.' },
+    { s: 'mika', t: 'Gefunden werden … Drei Winter hat mich keiner gefunden. Dann mach ich Feuer.' },
     ...(state.tutorial?.on
       ? [
-          { s: 'edda', blick: 'wald', t: 'Schau nach Westen, in den Wald. Dort ist vor drei Herbsten der Moder aufgeblüht. Wen er einspinnt, der wird zum Schlurfer – und nachts zieht es sie zu Licht und Wärme.' },
+          { s: 'edda', blick: 'wald', t: 'Gut. Du kennst den Moder, oder? Schau nach Westen: Im Dämmerwohld hat er angefangen. Wen er einspinnt, der wird ein Schlurfer – und nachts zieht es sie zu Licht und Wärme, wie Motten.' },
           { s: 'edda', blick: 'unterholz', t: 'Durchs Unterholz kommen sie nicht. Der Boden dort ist ein einziges Geflecht, weich wie Moos und zäh wie Leim. Fest sind nur die alten Holzfällerwege.' },
-          { s: 'edda', blick: 'zusammen', karte: true, t: 'Und alle Wege laufen hier zusammen, an der alten Holzlände. Genau bei dir. Deshalb kommen sie hierher.' },
+          { s: 'edda', blick: 'zusammen', karte: true, t: 'Köhlerstieg, Holzweg, Schaftrift – alle laufen hier zusammen, an der alten Holzlände. So kam früher das Holz ans Wasser. Heute kommen so die Schlurfer.' },
           { s: 'edda', blick: 'haus', t: 'Hinter dir nur Wasser, und Wasser meiden sie. Du musst also nur die Wege halten: Türme daneben, Barrikaden darauf.' },
-          { s: 'edda', blick: 'mika', t: 'Tagsüber machst du es dir gemütlich, nachts hältst du durch. Ich bleib am Funkgerät und helfe dir, Schritt für Schritt.' },
+          { s: 'edda', blick: 'mika', t: 'Tagsüber machst du es dir gemütlich, nachts hältst du durch – und wer noch unterwegs ist, findet bei dir ein Feuer. Erzähl mir, was du tust. Ich helf dir, Schritt für Schritt.' },
         ]
-      : [{ s: 'edda', t: 'Du siehst aus, als wüsstest du, was du tust. Ich melde mich, wenn es brenzlig wird.' }]),
+      : [{ s: 'edda', t: 'Wer von Aalbek bis zur Holzlände rudert, kommt auch ohne mich zurecht. Wenn es brenzlig wird, meld ich mich.' }]),
   ],
 
   bettFrueh: [
@@ -926,29 +959,14 @@ export const DIALOGE = {
       state.time.day,
     ),
   ],
-  eddaFunk: (state) => [
-    { s: 'mika', t: 'Edda? Bist du da?' },
-    pick(
-      [
-        { s: 'edda', t: 'Ich bin immer da, Mika. Nur nicht immer am Funkgerät. Ist das Feuer an?' },
-        { s: 'edda', t: 'Die Holzlände hat mein Großvater gebaut. Den Steg, die Hütte, das Tor. Ich hab dort laufen gelernt.' },
-        { s: 'edda', t: 'Wo ich bin? Irgendwo, wo man den See sehen kann. Mehr sag ich noch nicht.' },
-        { s: 'edda', t: 'Der Moder hört auf Licht und Wärme. Merk dir das. Es wird wichtig.' },
-        { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
-        { s: 'edda', t: 'Krrz … schlechter Empfang heute. Das liegt am Wetter. Oder am Moder. Oder an mir.' },
-        { s: 'edda', t: 'Die Seewelle? … So. Dann hat also doch jemand zugehört.' },
-        // N8: Wenn Marthe mit den Kindern in der Bucht wohnt
-        ...(state.isles?.fog?.stage === 4
-          ? [
-              { s: 'edda', t: 'Marthe hat mir heute Morgen die Glocke vorgeläutet. Über Funk. Zweimal. Ich hab so getan, als wär das nichts.' },
-              { s: 'edda', t: 'Pass auf Pim auf. Wenn der einen Hammer findet, baut er dir ein Boot. Aus deinem Zaun.' },
-              { s: 'edda', t: 'Lu hat mir erzählt, dass bei euch Riesen wohnen. Ich hab gesagt: Die sind freundlich und kochen gut.' },
-            ]
-          : []),
-      ],
-      state.time.day
-    ),
-  ],
+  // G7: Beim ersten Ruf nach einer Ankunft fragt Mika nach dem dunklen Leuchtturm vom ersten Morgen
+  eddaFunk: (state) =>
+    state.flags?.ausAalbek && !state.flags?.eddaLeuchtturm
+      ? [
+          { s: 'mika', t: 'Edda? … Bist du im Leuchtturm?' },
+          { s: 'edda', t: 'Wenn ich dir sag, wo ich bin, fragst du, warum ich nicht komme. Darauf hab ich noch keine gute Antwort.' },
+        ]
+      : eddaFunkLines(state),
   // M32: Juna hat das Funkgerät auf die sicheren Orte gestellt – je Tag meldet sich jemand
   stimmen: (state) => {
     const ids = weitergezogen(state);
@@ -978,9 +996,9 @@ export const DIALOGE = {
         ]
       : [
           { s: 'radio', t: '…krrzz… hier ist … die Seewelle … falls uns jemand hört …' },
-          { s: 'radio', t: '…bleibt auf festem Boden … nachts Licht an, Türen zu … krrzz…' },
+          { s: 'radio', t: '…bleibt auf festem Boden … Feuer klein, Türen zu … krrzz…' },
           { s: 'radio', t: '…der Lange Jakob, der alte Mast am Steg … wenn ihn jemand wieder … krrrzzz…' },
-          { s: 'mika', t: 'Da war eine Stimme! Da draußen ist noch jemand.' },
+          { s: 'mika', t: 'Die Seewelle! Dieselbe Stimme wie in Aalbek – hier klingt sie viel näher.' },
         ],
 
   // Der Kamin im Wohnraum (Meilenstein 11): drinnen ausruhen wie am Lagerfeuer
@@ -1049,7 +1067,13 @@ export const DIALOGE = {
       ? [{ s: 'mika', t: 'Immer noch leer. Aber nachsehen macht trotzdem Spaß.' }]
       : [{ s: 'mika', t: 'Der Briefkasten ist leer. Noch.' }],
 
-  waesche: [{ s: 'mika', t: 'Die Wäsche ist trocken. Und die Socken passen sogar zusammen. Beinahe.' }],
+  // G7: Nach der Ankunft hängt dort noch Eddas Wäsche – drei Herbste alt
+  waesche: (state) => [
+    {
+      s: 'mika',
+      t: state.flags?.ausAalbek && state.time.day <= 3 ? 'Steif und ausgeblichen. Drei Herbste auf der Leine – trockener wird die nicht mehr.' : 'Die Wäsche ist trocken. Und die Socken passen sogar zusammen. Beinahe.',
+    },
+  ],
 
   regentonne: [{ s: 'mika', t: 'Die Regentonne ist halb voll. Reicht zum Gießen – und für eine Katzenwäsche, wenn es sein muss.' }],
 
@@ -1069,7 +1093,7 @@ export const DIALOGE = {
       t: [
         null,
         null,
-        'Die Notunterkunft zur Hütte ausbauen? Ein Anbau mit Küche, ein richtiges Vordach, dickere Wände.',
+        'Die alte Hütte ausbauen? Ein Anbau mit Küche, ein richtiges Vordach, dickere Wände.',
         'Den Dachboden zum Schlafzimmer ausbauen? Ein eigenes Bett unterm Dach, weg vom Kamin.',
         'Eine Werkstatt anbauen? Mit Werkbank, Werkzeugwand und Platz für Bretter.',
         'Ein Lager anbauen? Trocken, mit Regalen – was dort liegt, geht nicht so schnell verloren.',
@@ -1084,7 +1108,7 @@ export const DIALOGE = {
       t: [
         null,
         null,
-        'Geschafft. Das ist keine Notunterkunft mehr. Das ist eine Hütte. Meine Hütte. Mit Küche!',
+        'Geschafft. Ein Anbau mit Küche – die alte Hütte wächst. Meine Hütte. Mit Herd!',
         'Ein Schlafzimmer unterm Dach. Heute Nacht schlafe ich wie ein Stein.',
         'Eine eigene Werkstatt! Hier kann ich basteln, auch wenn draußen die Horde klopft.',
         'Das Lager ist fertig. Was hier liegt, bleibt hier – egal, was die Nacht bringt.',
@@ -1143,8 +1167,8 @@ export const DIALOGE = {
           'Guten Morgen, See.',
           'Ausgeschlafen. Der Tag kann kommen.',
           'Die Vögel sind schon wach. Dann wohl ich auch.',
-          // m3-r2: vor dem Ausbau ist es noch die Notunterkunft
-          `Ein neuer Tag. ${(state.world?.houseLevel || 1) >= 2 ? 'Die Hütte' : 'Mein Unterschlupf'} steht noch. Das ist ein guter Anfang.`,
+          // m3-r2: vor dem Ausbau ist es noch die alte Hütte (G7: nicht mehr »Notunterkunft«)
+          `Ein neuer Tag. ${(state.world?.houseLevel || 1) >= 2 ? 'Die Hütte' : 'Die alte Hütte'} steht noch. Das ist ein guter Anfang.`,
         ],
         state.time.day
       ),
@@ -1262,6 +1286,30 @@ export const DIALOGE = {
     { s: 'mika', t: 'Von Balduin?' },
     { s: 'eddaHier', t: 'Das geht dich gar nichts an. … Ja.' },
     { s: 'hilde', t: 'Vierzig Jahre Post, Kindchen. Und der letzte ist angekommen.' },
+  ],
+  // G7: Bert erkennt die Hausmeisterei an den Barrikaden
+  bertFach: [
+    { s: 'bert', t: 'Hmpf. Die Barrikaden hat einer ordentlich verschraubt. Mit Unterlegscheiben. Vom Fach?' },
+    { s: 'mika', t: 'Hausmeisterei. Zwölf Jahre, achtundvierzig Türen.' },
+    { s: 'bert', t: 'Dann weißt du ja, wo Gang sieben ist.' },
+    { s: 'mika', t: 'Bei uns hieß das »Keller, links«.' },
+    { s: 'bert', t: 'Keller, links. Hmpf. … Gefällt mir.' },
+  ],
+  // G7: Das Kalenderblatt aus der Hausmeisterei – Edda ist der kleine Punkt am Ende vom Steg
+  eddaKalender: [
+    { s: 'mika', t: 'Schau mal. Das hing drei Jahre in meiner Hausmeisterei.' },
+    { s: 'eddaHier', t: 'Der Heimatkalender aus Aalbek! … Ganz am Ende vom Steg, der kleine Punkt – das bin ich. Ich hab dem Fotografen gewunken.' },
+    { s: 'mika', t: 'Drei Jahre hab ich jeden Morgen auf dein Haus geschaut.' },
+    { s: 'eddaHier', t: 'Und ich jeden Abend. Von der anderen Seite.' },
+    { s: 'eddaHier', t: 'Häng es auf. Jetzt stimmt das Bild wieder – mit Rauch.' },
+  ],
+  // G7: Post vom Mühlenhang – die Nachbarn sind heimgekommen
+  muehlenhangBrief: (state) => [
+    { s: 'hilde', t: 'Kindchen! Post für Holzlände 1 – diesmal an dich. Balduin hat ihn aus Aalbek mitgebracht. Zugestellt wird aber ordentlich.' },
+    { s: 'mika', t: `(liest) „Hallo ${state.player?.name || 'Mika'}! Wir sind wieder am Mühlenhang, die Thiessens und die Akgüls. Dein Zettel hing noch am Brett, die Schlüssel im Kasten. Danke fürs Warten.“` },
+    { s: 'mika', t: '„Die Heizung macht jetzt Herr Akgül – er flucht dabei. PS: Trägst du die Mütze noch? – Ilse Thiessen, vierter Stock“' },
+    { s: 'mika', t: 'Sie sind heimgekommen.' },
+    { s: 'hilde', t: 'Du auch, Kindchen. Nur woanders.' },
   ],
   yusufKnopf: [
     { s: 'yusuf', t: 'Sag mal – der Knopf an Knopfs Halsband. Mit rotem Garn angenäht, ganz ordentlich.' },
