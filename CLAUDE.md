@@ -1498,7 +1498,7 @@ Grundprinzipien:
    wie die Mütze und die Augen sitzen weit oben, seit F6f liegen nah und weit alle Farbwechsel in
    Mika auf Texelgrenzen (vorher knapp die Hälfte – das Raster des Post-Pass) (Bilder: menschen-tag,
    menschen-3d, menschen-nacht, menschen-bogen; seit F6g blicken die Augen in fünf Richtungen gerade,
-   beide gleich); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
+   beide gleich, seit F6h im Profil genau eins und sonst beide); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
    echten Tasten eine Datei herunter (Version, Kennung, Name, Tag, Vorrat), eine fremde Datei und
    eine aus einer neueren Fassung werden abgelehnt, »Aus Datei laden« öffnet die Dateiwahl, fragt
    mit Name und Tag nach (vorgewählt »Lieber nicht«) und lädt nach »Ja, laden« mit dem Stand aus
