@@ -222,7 +222,8 @@ Wort gibt.
   Richtung). Müde statt gierig, jede Art mit einem Merkmal oben und eigenem
   Licht für die Nacht (`recherche/schlurfer-gestaltung.md`). Die Voxel-Horde
   bleibt als Wahl in den Einstellungen und als Rückfall, solange eine Art
-  noch backt.
+  noch backt. Nachts glimmt um das Eigenlicht ein Hof aus einem Texel,
+  Champions tragen einen goldenen Rand (F3).
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
   **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
@@ -2016,6 +2017,17 @@ der Standard (Nr. 213, Einstellung »Schlurfer: 3D/2D«).
 lang, beim zweiten Mal kürzer. Jede Taste überspringt es. Die Titelmusik beginnt mit der ersten
 Taste im Titelbild (der Browser erlaubt Klang erst dann), bis dahin zeigt ein stummer Lautsprecher
 den Hinweis (Nr. 214, `recherche/praesentation.md`).
+
+#### F3 – Nachts in 2D, der vierte Stern, die Schlurferkunde mit Bildern ✓
+
+*Umgesetzt (30.09.2026):*
+
+- **Nachts lesbar:** Eine echte Nacht in 2D angesehen. Um das Eigenlicht glimmt jetzt nachts ein
+  Hof aus einem Texel, auch in der Nebelwelle. Champions tragen einen goldenen Rand (Nr. 217).
+- **Der vierte Stern:** Auf »Wild« bringt eine Nacht, die ganz auf »Wild« lief, einen vierten
+  Stern (Nr. 215, zu Nr. 118).
+- **Die Schlurferkunde mit Bildern:** Jede Art steht von vorn neben ihrer Beschreibung,
+  unbekannte als Schattenriss mit glimmendem Eigenlicht (Nr. 216).
 
 ## 9. Ideen-Parkplatz
 

@@ -1162,7 +1162,8 @@ und Beute; jetzt läuft der erste Champion auf »Wild« schon in Nacht 2 mit (di
 Anzahl je Nacht bleibt wie auf »Ausgewogen« – rückte auch sie vor, wurde Nacht 9
 mit drei Champions bei voller Zähigkeit zur Spitze: Durchbruch, Mika bei 4
 Leben). »Mehr Sterne« bleibt offen: Die Sterne (Nr. 155) kamen erst später und
-zählen in allen Stufen gleich.
+zählen in allen Stufen gleich. **Nachtrag (F3c):** Jetzt entschieden – ein vierter Stern je Nacht
+ganz auf »Wild« (Nr. 215).
 
 ### 119. Nachts Tempo machen? (Spaß-Plan)
 **Annahme:** Ja. In der Pause ruft eine Taste die nächste Welle sofort (mit
@@ -2655,6 +2656,57 @@ Es läuft von selbst, ist kurz und lässt sich mit jeder Taste sofort übersprin
 **Warum:** Ein Logo, das man wegdrücken muss, fühlt sich wie ein Hindernis an. Überall sonst läuft
 es von selbst, und wer es schon kennt, überspringt es. Der Ton darf im Browser nicht ohne Eingabe
 beginnen. Also beginnt er dort, wo der Spieler ohnehin drückt: im Titelbild.
+
+### 215. Wie bringt »Wild« mehr Sterne? (F3c, zu Nr. 118)
+**Entscheidung:** Mit einem vierten Stern je gehaltener Nacht, »Wild« – nur für eine Nacht, die
+ganz auf »Wild« lief.
+
+- **Ganz heißt ganz:** Die Nacht merkt beim Beginn, ob sie auf »Wild« läuft. Wer mittendrin
+  leichter stellt, verliert den Stern (eine Meldung sagt es), zurückstellen bringt ihn nicht
+  wieder. Wer erst mittendrin auf »Wild« stellt, bekommt ihn nicht – der Plan der Nacht war
+  leichter gewürfelt.
+- **Nur dort sichtbar:** Der Bericht zeigt auf »Wild« vier Sterne, der vierte glüht rot wie
+  Glut. Auf »Gemütlich« und »Ausgewogen« bleibt es bei drei, ohne grauen vierten. Die leichteren
+  Stufen sollen sich nicht wie weniger anfühlen.
+- **Er zählt mit:** Im Herbstbuch zählt er zu allen Sternen (»Sternenhimmel« mit fünfzig kommt
+  früher). Zur Tat »Drei Sterne« zählt er nicht, die bleibt »gehalten, makellos, mutig«.
+- **Spielstand v33:** `book.wild` (Nächte mit dem vierten Stern) und `night.wild`. Eine Nacht, die
+  vor dem Wechsel auf v33 begann, bringt ihn nicht.
+
+**Warum:** »Mehr Sterne« stand seit M16 im Versprechen von »Wild«, aber die Sterne kamen erst mit
+M25 und zählten überall gleich. Ein eigener Stern ist sichtbar und ehrlich, weil er genau diese
+Wahl misst, und er nimmt den anderen Stufen nichts. Doppelt zählende Sterne hätte niemand
+bemerkt. Ein Stern ohne Bedingung hätte dazu eingeladen, kurz vor dem Morgen umzuschalten.
+
+### 216. Wie sieht die Schlurferkunde die Horde? (F3d)
+**Entscheidung:** Mit Bildern. Neben der Beschreibung steht die gewählte Art von vorn, gebacken wie
+die Sprites der Horde – auch, wenn man mit 3D-Schlurfern spielt.
+
+- **Gebacken, nie skaliert:** Kleine und mittlere Arten stehen in ihrer echten Größe da, ein
+  Texel ist ein Pixel der Oberfläche. Große Arten und Bosse werden kleiner gebacken, bis sie in
+  60 Pixel Höhe passen.
+- **Schattenriss:** Arten, die Mika noch nicht erledigt hat, stehen als dunkler Riss da. Nur ihr
+  Eigenlicht glimmt: Augen, Pilzkappen, die Laterne der Hexe. Das ist eine Ahnung, kein Verrat.
+- **Leise:** Gebacken wird erst beim Aufschlagen, höchstens ein Bild je Bild im Spiel (20 bis
+  150 ms), gemerkt bis zum Neuladen.
+
+**Warum:** Die Schlurferkunde war eine Liste von Namen. Mit Bildern wird sie ein Sammelbuch: Man
+erkennt die Art wieder, die letzte Nacht am Tor stand, und der Schattenriss macht neugierig auf
+die nächste.
+
+### 217. Wie bleibt die Horde nachts lesbar? (F3b)
+**Entscheidung:**
+
+- **Hof um das Eigenlicht:** Nachts glimmt um jedes Eigenlicht (Augen, Pilzkappen, Laternen)
+  ein Hof aus genau einem Texel in seiner Farbe. Er ist gerastert, nicht weichgezeichnet
+  (CLAUDE.md: keine Unschärfe, kein Bloom). Auch in der Nebelwelle sieht man so Augen mit Hof.
+- **Goldener Rand für Champions:** Sie tragen einen goldenen Rand an der Kontur, der langsam
+  pulsiert und nachts heller wird. Die goldene Tönung der ganzen Figur entfällt bei den Sprites,
+  denn sie verfälschte die Farben der Art.
+
+**Warum:** Nachts waren die Sprites dunkle Flecken mit zwei Pixeln Augen. In einem Pulk war kaum
+zu sehen, wo ein Schlurfer endet und wer der Champion ist. Der Hof macht die Augen größer, ohne
+die Pixelregeln zu brechen. Der Rand hebt den Champion hervor, ohne ihn umzufärben.
 
 ## Technik mit Auswirkung aufs Design
 

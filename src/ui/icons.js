@@ -1907,6 +1907,21 @@ const ICONS = {
       '.kk...kk.',
     ],
   },
+  // F3c: der vierte Stern auf »Wild« – Glut statt Gold
+  sternWild: {
+    legend: { k: P.f0, y: P.f3, Y: P.f5 },
+    rows: [
+      '....k....',
+      '...kYk...',
+      'kkkkYykkk',
+      'kYYyyyyyk',
+      '.kYyyyyk.',
+      '..kyyyk..',
+      '.kyykyyk.',
+      '.kyk.kyk.',
+      '.kk...kk.',
+    ],
+  },
   sternLeer: {
     legend: { k: P.s3, y: P.s2 },
     rows: [

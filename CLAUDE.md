@@ -209,6 +209,10 @@ gilt bis auf Weiteres:
     `hordeSprites.pump` ein Bild je Bild im Spiel. Neue Größen nie skalieren, sondern backen.
   - **Atlas (F2):** Array-Textur aus Seiten von 1024², je Texel Palettenindex, Art und Normale in
     der Bildebene (`spriteCode.js`, ohne three.js). Nur Palettenfarben; höchstens 16 Seiten.
+  - **Nachts lesbar (F3b):** Um jedes Eigenlicht glimmt nachts ein Hof aus genau einem Texel in
+    seiner Farbe (auch in der Nebelwelle); Champions tragen einen goldenen Rand an der Kontur
+    (`aInfo.y`, pulsiert, nachts heller) statt der goldenen Tönung. Der Shader liest Nachbarn nur
+    im eigenen Rechteck (`spriteAt`) – daneben liegt im Atlas ein anderes Bild.
   - **Gestaltungsbogen (F-Design, `recherche/schlurfer-gestaltung.md`):**
     - Alle 17 Formen der Horde (16 Arten und der Schildträger ohne Tür) haben einen Bauplan in
       `zombieSpriteKinds.js`, gebaut auf dem Gerüst `spriteFigure.js` (`humanoid(ctx, B)` mit Maßen
@@ -383,7 +387,9 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       armory (Fenster des Waffenschranks, M30),
                       funk (Edda über Funk: Comic-Feld unten rechts, N4),
                       catalog (Balduins Katalog und Lieferkarte, N4),
-                      fishingView (Angeln: Schnur, Leisten, Fangkarte, M33)
+                      fishingView (Angeln: Schnur, Leisten, Fangkarte, M33),
+                      kindPictures (Bilder der Schlurferkunde aus dem
+                      Sprite-Bäcker, F3d)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
                       towers (Werte je Stufe/Spezialisierung, Turmteile,
                       `towerStatsOf`), zombies,
@@ -700,6 +706,16 @@ Grundprinzipien:
   Speicher, nach dem Laden still). Passen die Reiter nicht in eine Reihe, brechen sie in zwei
   um (`splitTabs`); eine Seite mit mehr als 16 Zeilen blättert spaltenweise mit der Auswahl
   (Pfeile am Rand, anklickbar).
+  - **Vierter Stern (F3c):** Eine Nacht, die auf »Wild« beginnt, trägt `night.wild` (true, bis
+    jemand mittendrin leichter stellt – `game.setDifficulty` setzt es dann auf false). Dann hat
+    `starsFor` vier Einträge; `state.book.wild` merkt die Nächte mit dem vierten Stern.
+    `totalStars` zählt ihn mit, `bestStars` (Tat »Drei Sterne«) nur die ersten drei
+    (`BASE_STARS`).
+  - **Bilder der Schlurferkunde (F3d, `ui/kindPictures.js`):** Die Seite `kunde` zeigt die
+    gewählte Art von vorn, gebacken mit `bakeFrame` (Größen über `KIND_PICTURE`: höchstens 60 px
+    hoch, große Arten kleiner gebacken, nie skaliert), unbekannte als Schattenriss mit glimmendem
+    Eigenlicht. `menu.kindPictures.pump()` backt höchstens eines je Bild; `menu.kindShown` sagt,
+    was gezeichnet ist.
 - **Gäste und Plätze (M27, `data/wanderers.js`, `core/survivors.js`):** Zu den
   fünf Stammfiguren kommen Wanderer nach `state.guests.plan` (beim Spielstart
   aus dem Startwert gewürfelt, gespeichert). `state.survivors[id].stage`: 0
@@ -1341,7 +1357,11 @@ Grundprinzipien:
    Gedanken, der Pfeil zeigt zur Haustür, E geht hinein, E nimmt die Dose, E zündet den Kamin
    an; mit einem Scheit zeigt das Ziel zu den Ästen, E sammelt sie, E zündet das Lagerfeuer an
    (zwei Scheite), die Flammen wachsen, Edda sieht den Rauch, dann die Axt; nach dem Neuladen
-   bleibt der halbe Weg (Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer).
+   bleibt der halbe Weg (Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer); ab F3
+   (Abschnitt `buch`): eine Nacht ganz auf »Wild« bringt den vierten Stern (N ruft mit echter
+   Taste, der Bericht zeigt vier), mittendrin auf »Ausgewogen« gestellt ist er fort (Meldung), auf
+   »Ausgewogen« drei, Speichern v33 und Migration v32 → v33; die Schlurferkunde zeigt den
+   Schlurfer als Bild und den Flitzer als Schattenriss (Bilder: sterne-wild, schlurferkunde-riss).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

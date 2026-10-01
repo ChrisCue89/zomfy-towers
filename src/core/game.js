@@ -2499,8 +2499,13 @@ export class Game {
     if (!DIFFICULTIES[id] || this.state.difficulty === id) return;
     this.state.difficulty = id;
     if (id === 'gemuetlich') this.state.losses = false; // M31: auf »Gemütlich« nie – und danach nicht wieder an
+    // F3c: Wer mitten in einer Nacht auf »Wild« leichter stellt, verliert ihren vierten Stern
+    const night = this.state.night;
+    const lostStar = night.wild === true && id !== 'wild' && this.nights.active;
+    if (lostStar) night.wild = false;
     this.survivors.upcoming = null; // Knopfs Bellen vor Welle 1 rechnet den Plan neu
     this.hud.toast(T.schwierigkeit.gewechselt(T.schwierigkeit[id]), null, 2.4);
+    if (lostStar) this.hud.toast(T.schwierigkeit.sternWeg, 'sternLeer', 3);
     this.quietSave();
   }
 

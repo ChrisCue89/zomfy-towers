@@ -144,6 +144,9 @@ const MIGRATIONS = {
     const fog = data.isles?.fog || newFog();
     return { ...data, version: 32, isles: { ...(data.isles || newIsles()), fog: { ...fog, page: fog.page === true, kite: newKite() } } };
   },
+  // v32 -> v33: F3c (der vierte Stern auf »Wild«). Noch keine Nacht mit ihm; eine laufende Nacht
+  // begann vor dem Stern und bringt ihn nicht.
+  32: (data) => ({ ...data, version: 33, book: { ...(data.book || {}), wild: [] } }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

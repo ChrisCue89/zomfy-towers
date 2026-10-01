@@ -30,11 +30,14 @@ import { newPost, sanitizePost } from '../data/network.js';
 import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
 
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 33;
 
-/** Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene Wellen. */
+/**
+ * Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene
+ * Wellen; seit F3c die Nächte mit dem vierten Stern auf »Wild«.
+ */
 export function freshBook() {
-  return { stars: {}, deeds: {}, kinds: {}, called: 0 };
+  return { stars: {}, deeds: {}, kinds: {}, called: 0, wild: [] };
 }
 
 /** Minuten pro Spieltag. Ein Spieltag beginnt um 06:00. */
@@ -244,6 +247,8 @@ export function sanitizeState(data, config) {
     for (const k of KIND_ORDER) if (Number.isFinite(bk.kinds[k]) && bk.kinds[k] > 0) out.book.kinds[k] = Math.floor(num(bk.kinds[k], 0, 0, 1e7));
   }
   out.book.called = Math.floor(num(bk.called, 0, 0, 1e6));
+  // F3c: Nächte mit dem vierten Stern (ganz auf »Wild« gehalten)
+  out.book.wild = Array.isArray(bk.wild) ? [...new Set(bk.wild.filter((n) => Number.isInteger(n) && n >= 1))].slice(-400) : [];
   out.cards = sanitizeCards(data.cards); // M28
   out.bonds = sanitizeBonds(data.bonds, [...SURVIVOR_ORDER, ...WANDERER_ORDER]); // M29
   out.scenes = { seen: Array.isArray(data.scenes?.seen) ? data.scenes.seen.filter((id) => typeof id === 'string').slice(-40) : [] };
@@ -301,6 +306,8 @@ export function sanitizeState(data, config) {
     raided: Array.isArray(n.raided) ? n.raided.filter((t) => typeof t === 'string' && BUILDINGS[t]).slice(0, 60) : [],
     homeHit: Boolean(n.homeHit), // M24: Das Zuhause wurde getroffen (keine makellose Nacht)
   };
+  // F3c: auf »Wild« begonnen – true, solange sie ganz auf »Wild« läuft; fehlt sonst
+  if (typeof n.wild === 'boolean') out.night.wild = n.wild;
   // M23: Was die Leute auf den Posten in dieser Nacht getan haben (Morgenbericht)
   if (n.posts && typeof n.posts === 'object') {
     const p = {};

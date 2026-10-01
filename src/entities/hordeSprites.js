@@ -62,11 +62,11 @@ export class HordeSprites {
     this.aRect = attr(4);
     this.aPivot = attr(4);
     this.aTint = attr(4);
-    this.aPage = attr(1);
+    this.aInfo = attr(2); // Seite im Atlas, Champion-Rand (F3)
     geometry.setAttribute('aRect', this.aRect);
     geometry.setAttribute('aPivot', this.aPivot);
     geometry.setAttribute('aTint', this.aTint);
-    geometry.setAttribute('aPage', this.aPage);
+    geometry.setAttribute('aInfo', this.aInfo);
     this.mesh = new THREE.InstancedMesh(geometry, this.material, MAX);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.frustumCulled = false;
@@ -361,9 +361,10 @@ export class HordeSprites {
   /**
    * Einen Schlurfer eintragen (vorher pick). `tint` wie bei den Voxeln, `glowOnly` in der
    * Nebelwelle (nur die Augen), `y` die Höhe des Fußpunkts, `shiver` 1-px-Zittern, `fade` Anteil
-   * gerastert ausgeblendet (Sterben, Graben).
+   * gerastert ausgeblendet (Sterben, Graben), `rim` der goldene Rand eines Champions (0: keiner,
+   * 1–2: sein Glanz, F3).
    */
-  put(z, tint, glowOnly, y, shiver, moving, time, dt, fade) {
+  put(z, tint, glowOnly, y, shiver, moving, time, dt, fade, rim = 0) {
     if (this.n >= MAX) return;
     const i = this.n++;
     if (z.state !== 'dying') this.living = i + 1; // die Lebenden kommen zuerst (horde.render sortiert)
@@ -379,7 +380,7 @@ export class HordeSprites {
     // Je Schlurfer ein paar Millimeter mehr Tiefenversatz: nie Flimmern bei gleicher Stelle
     this.aPivot.setXYZW(i, f.px, f.py, dir <= 4 ? 1 : -1, DEPTH_BIAS + (z.id % 16) * 0.002);
     this.aTint.setXYZW(i, tint.r, tint.g, tint.b, glowOnly ? -1 : fade);
-    this.aPage.setX(i, f.page);
+    this.aInfo.setXY(i, f.page, rim);
   }
 
   end() {
@@ -392,7 +393,7 @@ export class HordeSprites {
     this.aRect.needsUpdate = true;
     this.aPivot.needsUpdate = true;
     this.aTint.needsUpdate = true;
-    this.aPage.needsUpdate = true;
+    this.aInfo.needsUpdate = true;
   }
 
   hide() {

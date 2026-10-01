@@ -88,7 +88,7 @@ export class ReportPanel {
       const heil = !r.homeLost && !r.broken && (r.homeNow === undefined || r.homeNow >= r.homeMax);
       out.push({ text: heil ? T.bericht.schlussHeil : T.bericht.schlussKratzer, dim: true });
     }
-    // M25, Teil 2: die Sterne der Nacht ganz oben (gehalten, makellos, mutig)
+    // M25, Teil 2: die Sterne der Nacht ganz oben (gehalten, makellos, mutig; F3c: wild)
     if (r.stars) out.unshift({ text: '', stars: r.stars });
     return ui ? this.wrapLines(ui, out) : out;
   }
@@ -107,24 +107,28 @@ export class ReportPanel {
   /** Lage des Kastens (auch für die Meldungen darunter, m12-r1). */
   layout(ui, lines = this.lines(ui)) {
     const resW = (res) => Object.entries(res || {}).filter(([, n]) => n > 0).reduce((w, [, n]) => w + 14 + measure(String(n)) + 6, 0);
-    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => (l.stars ? this.starsWidth() : measure(l.text)) + (l.res ? resW(l.res) + 8 : 0) + 24)));
+    const w = Math.min(ui.width - 16, Math.max(240, ...lines.map((l) => (l.stars ? this.starsWidth(l.stars.length) : measure(l.text)) + (l.res ? resW(l.res) + 8 : 0) + 24)));
     // H4b: Passt der Bericht nicht in die Höhe (große Oberfläche), rücken die Zeilen zusammen
     const step = Math.max(LINE_HEIGHT, Math.min(LINE_HEIGHT + 3, Math.floor((ui.height - 8 - 50) / Math.max(1, lines.length))));
     const h = 34 + lines.length * step + 16;
     return { x: Math.round((ui.width - w) / 2), y: Math.max(2, Math.round((ui.height - h) / 2) - 16), w, h, step };
   }
 
-  /** Breite der Sternenzeile: je Stern Symbol, Name und Abstand. */
-  starsWidth() {
-    return STAR_KEYS.reduce((w, k) => w + STAR_ICON + measure(T.buch.sterne[k]) + STAR_GAP, -STAR_GAP);
+  /** Breite der Sternenzeile: je Stern Symbol, Name und Abstand (drei, auf »Wild« vier – F3c). */
+  starsWidth(count = STAR_KEYS.length) {
+    return STAR_KEYS.slice(0, count).reduce((w, k) => w + STAR_ICON + measure(T.buch.sterne[k]) + STAR_GAP, -STAR_GAP);
   }
 
-  /** Sternenzeile (M25): drei Sterne mit Namen, verdiente golden, fehlende grau – mittig. */
+  /**
+   * Sternenzeile (M25): die Sterne mit Namen, verdiente golden, fehlende grau – mittig. Der vierte
+   * (F3c, nur in Nächten auf »Wild«) glüht rot wie Glut.
+   */
   drawStars(ui, stars, x, w, cy) {
-    let cx = Math.round(x + (w - this.starsWidth()) / 2);
-    STAR_KEYS.forEach((k, i) => {
-      drawIcon(ui.ctx, stars[i] ? 'stern' : 'sternLeer', cx, cy + 1);
-      ui.text(T.buch.sterne[k], cx + STAR_ICON, cy, stars[i] ? COLORS.gold : COLORS.textDim);
+    let cx = Math.round(x + (w - this.starsWidth(stars.length)) / 2);
+    STAR_KEYS.slice(0, stars.length).forEach((k, i) => {
+      const wild = k === 'wild';
+      drawIcon(ui.ctx, stars[i] ? (wild ? 'sternWild' : 'stern') : 'sternLeer', cx, cy + 1);
+      ui.text(T.buch.sterne[k], cx + STAR_ICON, cy, stars[i] ? (wild ? COLORS.goldDark : COLORS.gold) : COLORS.textDim);
       cx += STAR_ICON + measure(T.buch.sterne[k]) + STAR_GAP;
     });
   }

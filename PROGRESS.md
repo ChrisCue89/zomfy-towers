@@ -5,6 +5,43 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F3: Nachts in 2D, der vierte Stern und die Schlurferkunde mit Bildern ✓
+
+**Auftrag (30.09., abends):** »Woran könnten wir heute Nacht noch schleifen?« – vier Punkte, vom
+Auftraggeber mit »Ja, mach so« bestätigt (Nr. 215–217).
+
+- **Echte Nächte in 2D angesehen (F3a):**
+  - Nacht 5 aus einem Stand des Balance-Durchlaufs, mit achtfachem Leben je Schlurfer, damit die
+    Horde bis ans Tor kommt. Alle Schlurfer im Bild sind Sprites (keiner bleibt Voxel), der
+    Holzfäller schlägt als Sprite zu, die Konsole bleibt sauber.
+  - Ein Fehlalarm unterwegs: Die Messung zeigte Schlurfer mit NaN-Position. Schuld war das
+    Messskript (es setzte Mika auf das Tor, das Zellen statt x/z hat). Das Spiel selbst war
+    heil.
+- **Nachts lesbarer (F3b):**
+  - Um jedes Eigenlicht glimmt nachts ein Hof aus genau einem Texel in seiner Farbe. Das ist
+    gerastert, ohne Weichzeichnen. In der Nebelwelle sieht man so Augen mit Hof.
+  - Champions tragen einen goldenen Rand an der Kontur, der langsam pulsiert. Die goldene
+    Tönung der ganzen Figur entfällt bei den Sprites.
+  - Prüfung (Abschnitt `sprites`): Bildpunkte mit und ohne Hof bzw. Rand werden gezählt.
+- **Der vierte Stern auf »Wild« (F3c, Nr. 118):**
+  - Eine Nacht, die ganz auf »Wild« läuft, bringt einen vierten Stern. Im Bericht glüht er rot
+    wie Glut.
+  - Wer mittendrin leichter stellt, verliert ihn (Meldung). Auf »Gemütlich« und »Ausgewogen«
+    bleibt es bei drei Sternen, ohne grauen vierten.
+  - Er zählt zu allen Sternen im Buch, nicht zur Tat »Drei Sterne«. Spielstand v33 mit Migration.
+- **Die Schlurferkunde mit Bildern (F3d):**
+  - Neben der Beschreibung steht die Art von vorn, gebacken wie die Sprites der Horde. Große
+    Arten werden kleiner gebacken, bis sie in 60 Pixel passen, nie skaliert.
+  - Unbekannte Arten stehen als Schattenriss da; nur ihr Eigenlicht glimmt.
+  - Gebacken wird beim Aufschlagen, höchstens ein Bild je Bild im Spiel.
+- **Prüfung** (Abschnitt `buch`): Der vierte Stern mit echter Taste, verloren beim Umstellen,
+  drei auf »Ausgewogen«, Speichern v33 und Migration v32 → v33; die Schlurferkunde zeigt Bild
+  und Schattenriss (Bilder: sterne-wild, schlurferkunde, schlurferkunde-riss).
+- **Volle Prüfung:** 555 ✓ in allen 52 Abschnitten. Sie lief diesmal Abschnitt für Abschnitt
+  (`--nur=…` je Abschnitt), weil ein Neustart des Containers den ersten Durchlauf abbrach.
+
+---
+
 ## N11: Das Startbild läuft von selbst ✓
 
 **Rückmeldung (30.09.):** »am Anfang muss man das Tales of Cue weg drücken. Voll doof. Schau mal

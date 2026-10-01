@@ -11,6 +11,10 @@ import * as THREE from 'three';
 import { sharedUniforms } from './materials.js';
 import { BAYER_GLSL } from './shaders.js';
 import { TEXEL } from './spriteBaker.js';
+import { P } from './palette.js';
+
+/** Farbe des Champion-Rands (F3): Gold aus der Palette. */
+const RIM = P.f6;
 
 /** Gemeinsame Uniforms der Sprite-Materialien (px vom Spiel: Meter je Bildpunkt). */
 export const spriteUniforms = {
@@ -22,11 +26,13 @@ const VERTEX_DECL = /* glsl */ `
 attribute vec4 aRect;   // Bild im Atlas: x, y, w, h (Texel, y von unten)
 attribute vec4 aPivot;  // Fußpunkt im Bild (Texel), Spiegeln (1 oder -1), Tiefenversatz (m)
 attribute vec4 aTint;   // Tönung (rgb) und gerastertes Ausblenden (w)
-attribute float aPage;  // Seite im Atlas (F2)
+attribute vec2 aInfo;   // Seite im Atlas (F2), Champion-Rand (0: keiner, 1–2: Glanz, F3)
 varying vec2 vTexel;
 varying vec4 vTint;
 varying float vFlip;
 flat varying int vPage;
+flat varying vec4 vRect;
+flat varying float vRim;
 uniform float uPx;
 `;
 
@@ -44,7 +50,9 @@ float pivotX = flip > 0.0 ? aPivot.x : aRect.z - aPivot.x;
 vTexel = aRect.xy + vec2(flip > 0.0 ? texel.x : aRect.z - texel.x, texel.y);
 vTint = aTint;
 vFlip = flip;
-vPage = int(aPage + 0.5);
+vPage = int(aInfo.x + 0.5);
+vRect = aRect;
+vRim = aInfo.y;
 // Texel ab dem Fußpunkt in der Bildebene; aufrecht ist 1 m Höhe im Bild 0,8 m hoch, auf dem
 // Boden 1 m Tiefe 0,6 m
 vec2 off = vec2(texel.x - pivotX, texel.y - aPivot.y) * ${TEXEL.toFixed(6)};
@@ -65,13 +73,23 @@ uniform float uNormalAmount;
 uniform ivec2 uDitherOffset;
 uniform float uNight;
 uniform float uSelfLight;
+uniform vec3 uRimColor;
 varying vec2 vTexel;
 varying vec4 vTint;
 varying float vFlip;
 flat varying int vPage;
+flat varying vec4 vRect;
+flat varying float vRim;
 ${BAYER_GLSL}
 vec3 spriteLinear(vec3 c) {
   return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
+// Ein Texel desselben Bildes als Bytes (außerhalb des Bildes: leer – dort liegt ein anderes Bild)
+uvec4 spriteAt(ivec2 t) {
+  ivec2 lo = ivec2(vRect.xy);
+  ivec2 hi = lo + ivec2(vRect.zw);
+  if (t.x < lo.x || t.y < lo.y || t.x >= hi.x || t.y >= hi.y) return uvec4(0u);
+  return uvec4(texelFetch(uAtlas, ivec3(t, vPage), 0) * 255.0 + 0.5);
 }
 `;
 
@@ -81,15 +99,34 @@ vec3 spriteLinear(vec3 c) {
 // glühenden Augen.
 const FRAGMENT_MAP = /* glsl */ `
 ivec2 spriteT = ivec2(vTexel);
-uvec4 spriteB = uvec4(texelFetch(uAtlas, ivec3(spriteT, vPage), 0) * 255.0 + 0.5);
+uvec4 spriteB = spriteAt(spriteT);
 if (spriteB.g == 0u) discard;
 bool spriteShadow = spriteB.g == 1u;
 bool spriteGlow = spriteB.g == 3u;
-if (vTint.w < -0.5 && !spriteGlow) discard;
+// F3: Nachts glimmt ein Hof um das Eigenlicht – ein Figur-Texel neben einem glühenden glimmt mit
+// (genau ein Texel, gerastert, kein Weichzeichnen): Augen bleiben im Dunkeln und in der
+// Nebelwelle lesbar. Champions tragen einen goldenen Rand an der Kontur.
+float spriteHalo = 0.0;
+vec3 spriteHaloC = vec3(0.0);
+bool spriteRim = false;
+if (spriteB.g == 2u && (uNight > 0.05 || vRim > 0.5)) {
+  ivec2 spriteOffs[4] = ivec2[4](ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1));
+  for (int k = 0; k < 4; k++) {
+    uvec4 n = spriteAt(spriteT + spriteOffs[k]);
+    if (n.g == 3u && spriteHalo == 0.0) {
+      spriteHalo = 1.0;
+      spriteHaloC = texelFetch(uPalette, ivec2(int(n.r), 0), 0).rgb;
+    }
+    if (n.g < 2u && vRim > 0.5) spriteRim = true;
+  }
+}
+bool spriteHidden = vTint.w < -0.5;
+if (spriteHidden && !spriteGlow && spriteHalo == 0.0) discard;
 if (vTint.w > 0.0 && bayer4(ivec2(gl_FragCoord.xy) + uDitherOffset) < vTint.w) discard;
 if (spriteShadow && ((spriteT.x + spriteT.y) & 1) == 0) discard;
-vec3 spriteC = spriteShadow ? vec3(0.0) : texelFetch(uPalette, ivec2(int(spriteB.r), 0), 0).rgb;
-diffuseColor.rgb = spriteShadow || spriteGlow ? vec3(0.0) : spriteLinear(spriteC) * vTint.rgb;
+vec3 spriteC = spriteShadow ? vec3(0.0) : spriteRim ? uRimColor : texelFetch(uPalette, ivec2(int(spriteB.r), 0), 0).rgb;
+// Der Rand nimmt nachts kaum Mondlicht an (sonst mischte die kühle Tönung ihn grau), er leuchtet selbst
+diffuseColor.rgb = spriteShadow || spriteGlow || spriteHidden ? vec3(0.0) : spriteLinear(spriteC) * (spriteRim ? vec3(1.0 - 0.7 * uNight) : vTint.rgb);
 `;
 
 // Statt <normal_fragment_maps>: die Normale aus der Bildebene zurück in die Welt (beim Spiegeln
@@ -106,6 +143,10 @@ const FRAGMENT_NORMAL = /* glsl */ `
 // Nach <emissivemap_fragment>: Glühen und nachts ein Hauch Eigenlicht (wie die Voxel-Horde)
 const FRAGMENT_EMISSIVE = /* glsl */ `
 if (spriteGlow) totalEmissiveRadiance += spriteLinear(spriteC);
+if (spriteHalo > 0.0) totalEmissiveRadiance += spriteLinear(spriteHaloC) * 0.5 * uNight;
+// Der Rand leuchtet selbst (nachts kräftig, sonst ginge er in der kühlen Tönung grau unter) und
+// pulsiert leise: vRim läuft zwischen 1 und 2
+if (spriteRim) totalEmissiveRadiance += spriteLinear(uRimColor) * (0.2 + 0.8 * uNight) * (0.7 + 0.3 * (vRim - 1.0));
 totalEmissiveRadiance += diffuseColor.rgb * uSelfLight * uNight;
 `;
 
@@ -116,6 +157,7 @@ export function createSpriteMaterial(atlas, { selfLight = 0.2 } = {}) {
     uAtlas: atlas.uniform, // wächst der Atlas, zeigt die Uniform auf die neue Textur
     uPalette: { value: atlas.paletteTexture },
     uSelfLight: { value: selfLight },
+    uRimColor: { value: new THREE.Vector3(((RIM >> 16) & 255) / 255, ((RIM >> 8) & 255) / 255, (RIM & 255) / 255) }, // sRGB wie die Palette
   };
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, sharedUniforms, spriteUniforms, extra);

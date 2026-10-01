@@ -16,7 +16,8 @@ import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
 import { hexToCss } from '../render/palette.js';
-import { DEEDS, KIND_ORDER } from '../data/book.js';
+import { DEEDS, KIND_ORDER, KIND_PICTURE } from '../data/book.js';
+import { KindPictures } from './kindPictures.js';
 import { PAGE_ORDER, pagesRead } from '../data/isles.js';
 import { PLACES, placesKnown, placeLines, movedTo } from '../data/places.js';
 
@@ -61,6 +62,7 @@ const SPRECHER_NAMES = Object.fromEntries(Object.entries(SPRECHER).map(([k, v]) 
 export class Menu {
   /** @param {import('../core/game.js').Game} game */
   constructor(game) {
+    this.kindPictures = new KindPictures(); // F3d: Bilder der Schlurferkunde
     this.game = game;
     this.isOpen = false;
     this.screen = 'main';
@@ -284,7 +286,9 @@ export class Menu {
       }));
       count = T.buch.tatenZaehler(book.doneCount, DEEDS.length, book.totalStars);
     } else if (this.page === 'kunde') {
-      // Schlurferkunde: Dr. Yusufs Notizen erst, wenn er in der Bucht ist
+      // Schlurferkunde: Dr. Yusufs Notizen erst, wenn er in der Bucht ist. F3d: rechts daneben das
+      // Bild der Art (unbekannt als Schattenriss) – der Text läuft schmaler
+      const narrow = (text, color, gap = false) => wrap(text, W - KIND_PICTURE.col).map((t, i) => ({ text: t, color, gap: gap && i === 0 }));
       rows = book.kindRows().map((k) =>
         k.n
           ? {
@@ -293,14 +297,15 @@ export class Menu {
               right: String(k.n),
               color: COLORS.text,
               rightColor: COLORS.textDim,
+              picture: { type: k.id, known: true },
               detail: [
-                ...lines(k.info, COLORS.text),
-                ...(book.yusufWrites ? lines(T.buch.notiz(k.note), COLORS.textWarm, true) : lines(T.buch.ohneYusuf, COLORS.textDim, true)),
-                ...(book.yusufWrites && k.id === 'schlurfer' && this.game.state.autumn?.frost ? lines(T.buch.notiz(T.buch.nachFrost), COLORS.textWarm, true) : []), // G4
-                ...lines(T.buch.erledigt(k.n), COLORS.textDim, true),
+                ...narrow(k.info, COLORS.text),
+                ...(book.yusufWrites ? narrow(T.buch.notiz(k.note), COLORS.textWarm, true) : narrow(T.buch.ohneYusuf, COLORS.textDim, true)),
+                ...(book.yusufWrites && k.id === 'schlurfer' && this.game.state.autumn?.frost ? narrow(T.buch.notiz(T.buch.nachFrost), COLORS.textWarm, true) : []), // G4
+                ...narrow(T.buch.erledigt(k.n), COLORS.textDim, true),
               ],
             }
-          : { id: k.id, label: T.buch.unbekannt, right: '', color: COLORS.textDim, detail: lines(T.buch.nieErledigt, COLORS.textDim) }
+          : { id: k.id, label: T.buch.unbekannt, right: '', color: COLORS.textDim, picture: { type: k.id, known: false }, detail: narrow(T.buch.nieErledigt, COLORS.textDim) }
       );
       count = T.buch.kundeZaehler(book.kindsKnown, KIND_ORDER.length);
     } else if (this.page === 'menschen') {
@@ -493,7 +498,7 @@ export class Menu {
     const arrows = [];
     if (start > 0) arrows.push({ dir: -1, rect: { x: x + 1, y: rowsY, w: 8, h: arrowH } });
     if (end < rows.length) arrows.push({ dir: 1, rect: { x: x + w - 9, y: rowsY, w: 8, h: arrowH } });
-    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + colRows * BOOK_ROW + 6, shown: shown?.id ?? null, arrows, start, colRows } };
+    return { x, y, w, h, controls: [], confirmText: [], buttons: rects, book: { tabs, count: data.count, countY, detail: shown ? shown.detail : data.empty, detailY: rowsY + colRows * BOOK_ROW + 6, detailH, picture: shown?.picture || null, shown: shown?.id ?? null, arrows, start, colRows } };
   }
 
   /** Herbstbuch zeichnen: Reiter, Zähler, Zeilen mit Wert rechts, Beschreibung, »Zurück«. */
@@ -530,6 +535,19 @@ export class Menu {
       ui.text(l.text, L.x + 12, cy, l.color);
       cy += LINE_HEIGHT;
     }
+    // F3d: das Bild der Art rechts neben der Beschreibung, auf der Unterkante stehend
+    const p = L.book.picture;
+    if (p) {
+      this.kindPictures.pump();
+      const pic = this.kindPictures.get(p.type, p.known);
+      this.kindShown = pic ? { type: p.type, known: p.known, w: pic.w, h: pic.h, f: pic.f, silhouette: pic.silhouette } : { type: p.type, known: p.known, pending: true };
+      if (pic) {
+        const px = L.x + L.w - 12 - KIND_PICTURE.col + Math.floor((KIND_PICTURE.col - pic.w) / 2);
+        const py = L.book.detailY - 2 + Math.max(pic.h, L.book.detailH) - pic.h;
+        ui.ctx.drawImage(pic.canvas, px, py);
+        this.kindShown.at = { x: px, y: py };
+      }
+    } else this.kindShown = null;
     ui.textCentered(T.buch.fuss, L.x + L.w / 2, L.y + L.h - 15, COLORS.textDim);
   }
 

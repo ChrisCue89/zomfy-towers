@@ -1278,7 +1278,7 @@ export const T = {
     seiten: { taten: 'Taten', kunde: 'Schlurferkunde', album: 'Turmalbum', menschen: 'Menschenkunde', orte: 'Orte', post: 'Post', funkbuch: 'Funkbuch', erinnerung: 'Erinnerung' }, // G5: Orte
     fuss: 'A/D blättern · W/S wählen · Esc zurück',
     // Sterne im Morgenbericht
-    sterne: { gehalten: 'Gehalten', makellos: 'Makellos', mutig: 'Mutig' },
+    sterne: { gehalten: 'Gehalten', makellos: 'Makellos', mutig: 'Mutig', wild: 'Wild' }, // F3c: der vierte nur auf »Wild«
     sterneZeile: 'Sterne:',
     // Taten
     tatenZaehler: (n, von, sterne) => `${n} von ${von} Taten · ${sterne === 1 ? 'ein Stern' : `${sterne} Sterne`}`,
@@ -2013,9 +2013,10 @@ export const T = {
     info: {
       gemuetlich: 'Weniger Horde, mehr Beute – zum Erkunden und Einrichten.',
       ausgewogen: 'So ist das Spiel gedacht.',
-      wild: 'Mehr und zähere Horde, Champions früher – für alle, die es knallen hören wollen.',
+      wild: 'Mehr und zähere Horde, Champions früher, ein vierter Stern je Nacht – für alle, die es knallen hören wollen.',
     },
     gewechselt: (name) => `Schwierigkeit: ${name}`,
+    sternWeg: 'Der vierte Stern dieser Nacht ist fort – er gilt nur ganz auf »Wild«.', // F3c
   },
   titel: {
     untertitel: 'Ein gemütliches Zuhause am See',

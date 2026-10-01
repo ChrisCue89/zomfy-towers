@@ -322,6 +322,7 @@ export class Nights {
     // Was Streuner schon vor der Nacht abgenagt haben, nennt der Morgenbericht extra
     const preLoss = st.world.dayEvents?.day === n ? Math.round(st.world.dayEvents.lost || 0) : 0;
     st.night = { n, wave: 0, done: false, won: false, kills: 0, loot: {}, homeStart: st.world.homeHp, preLoss, lost: false, shift: 0, called: 0, towers: {} };
+    if (st.difficulty === 'wild') st.night.wild = true; // F3c: der vierte Stern, solange sie ganz auf »Wild« läuft
     this.game.hud.toast(T.horde.nachtBeginnt(n), 'mond', 4);
     // M25: Die Frostnacht sagt sich selbst an (das Moderherz statt des Bosses)
     this.game.autumn?.beginNight(n);
@@ -357,7 +358,7 @@ export class Nights {
     g.posts?.onNightEnd(won); // M23: nach einer gehaltenen Bossnacht wird gefeiert
     const risk = this.settleRisk(won); // M24: Moderlocke, makellose Nacht, Vorratskammer
     const finale = won && this.plan?.finale ? g.autumn?.onFrost(night) || null : null; // M25: der erste Frost
-    const stars = won && g.book ? g.book.starsFor(night, risk) : null; // M25, Teil 2: gehalten, makellos, mutig
+    const stars = won && g.book ? g.book.starsFor(night, risk) : null; // M25, Teil 2: gehalten, makellos, mutig (F3c: und wild)
     st.report = {
       n: night.n,
       won,

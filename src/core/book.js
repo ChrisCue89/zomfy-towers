@@ -5,7 +5,7 @@
 // die Sterne (ui/report.js). Werte in data/book.js.
 
 import { T } from '../data/texts.js';
-import { DEEDS, DECO_ORDER, DEEDS_PER_DECO, BOOK_BOSSES, KIND_ORDER, ALBUM_SIZE } from '../data/book.js';
+import { DEEDS, DECO_ORDER, DEEDS_PER_DECO, BOOK_BOSSES, KIND_ORDER, ALBUM_SIZE, BASE_STARS } from '../data/book.js';
 import { PEOPLE } from './survivors.js';
 import { REACTION_ORDER } from '../data/reactions.js';
 import { MIX_ORDER } from '../data/mixes.js';
@@ -30,22 +30,30 @@ export class Book {
 
   // --- Sterne ------------------------------------------------------------------------
 
-  /** Sterne einer gehaltenen Nacht in der Reihenfolge von STAR_KEYS: gehalten, makellos, mutig. */
+  /**
+   * Sterne einer gehaltenen Nacht in der Reihenfolge von STAR_KEYS: gehalten, makellos, mutig –
+   * und wild, wenn die Nacht auf »Wild« begann (F3c; verloren, wenn mittendrin leichter gestellt).
+   */
   starsFor(night, risk) {
-    return [true, Boolean(risk?.flawless), (night.called || 0) > 0];
+    const out = [true, Boolean(risk?.flawless), (night.called || 0) > 0];
+    if (typeof night.wild === 'boolean') out.push(night.wild);
+    return out;
   }
 
   /** Nach einer gehaltenen Nacht: Sterne eintragen (eine wiederholte Nacht zählt mit ihrem besten Ergebnis). */
   onNightWon(n, stars) {
-    const count = stars.filter(Boolean).length;
+    const count = stars.slice(0, BASE_STARS).filter(Boolean).length;
     this.st.stars[n] = Math.max(this.st.stars[n] || 0, count);
+    if (stars[BASE_STARS] && !this.st.wild.includes(n)) this.st.wild.push(n); // F3c: der vierte Stern
     this.check();
   }
 
+  /** Alle Sterne des Herbsts – die vierten auf »Wild« mitgezählt (F3c). */
   get totalStars() {
-    return Object.values(this.st.stars).reduce((sum, k) => sum + k, 0);
+    return Object.values(this.st.stars).reduce((sum, k) => sum + k, 0) + this.st.wild.length;
   }
 
+  /** Die meisten der drei Grundsterne in einer Nacht (Tat »Drei Sterne«). */
   get bestStars() {
     return Object.values(this.st.stars).reduce((best, k) => Math.max(best, k), 0);
   }
@@ -213,6 +221,7 @@ export class Book {
   view() {
     return {
       stars: { ...this.st.stars },
+      wild: [...this.st.wild], // F3c
       total: this.totalStars,
       deeds: { ...this.st.deeds },
       done: this.doneCount,

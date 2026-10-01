@@ -3,13 +3,18 @@
 // Hier wird abgestimmt; die Texte stehen in T.buch.
 
 import { HOUSE_MAX } from './buildings.js';
+import { P } from '../render/palette.js';
 
 /**
  * Sterne je gehaltener Nacht: gehalten (jede gewonnene Nacht), makellos
  * (niemand im Lager, das Zuhause heil – wie die makellose Nacht aus M24) und
  * mutig (mindestens eine Welle früh gerufen). Eine verlorene Nacht hat keine.
+ * Auf »Wild« gibt es einen vierten (F3c, OFFENE-FRAGEN 118): für eine Nacht, die
+ * ganz auf »Wild« lief – wer mittendrin leichter stellt, verliert ihn. Die Tat
+ * »Drei Sterne« zählt nur die ersten drei.
  */
-export const STAR_KEYS = ['gehalten', 'makellos', 'mutig'];
+export const STAR_KEYS = ['gehalten', 'makellos', 'mutig', 'wild'];
+export const BASE_STARS = 3;
 
 /**
  * Taten in der Reihenfolge des Buchs. `need` ist das Ziel, `of` sagt, was
@@ -44,6 +49,13 @@ export const KIND_ORDER = [
   'schlurfer', 'flitzer', 'schwaermer', 'brummer', 'leuchtpilz', 'anfuehrer', 'moderfalter', 'graeber',
   'schildtraeger', 'lichtfresser', 'brueter', 'holzfaeller', 'pilzmutter', 'laternenhexe', 'moosriese', 'moderherz',
 ];
+
+/**
+ * Schlurferkunde (F3d): Bild der Art neben der Beschreibung – höchstens `h` Pixel hoch (so backt
+ * kindPictures.js den Faktor aus), geschätzt über `perSize` Texel Höhe je Größe 1, in einer Spalte
+ * von `col` Pixeln; Schatten unter den Füßen und der Schattenriss unbekannter Arten.
+ */
+export const KIND_PICTURE = { h: 60, perSize: 52, col: 74, shadow: P.n1, silhouette: P.n3 };
 
 /** Turmalbum: so viele Türme zeigt es (die mit den meisten Abschüssen). */
 export const ALBUM_SIZE = 8;

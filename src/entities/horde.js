@@ -1469,7 +1469,11 @@ export class Horde {
     if (z.flash > 0 && !dying) shiver = this._tick & 1 ? HIT_JITTER : -HIT_JITTER;
     else if (z.boss?.windup > 0) shiver = Math.sin(this.time * 20) > 0 ? HIT_JITTER : -HIT_JITTER;
     const glowOnly = this.isHidden(z) && !dying; // Nebelwelle (M22): nur die Augen
-    this.sprites.put(z, this.tintOf(z), glowOnly, y, shiver, this.isMoving(z), this.time, dt, fade);
+    // F3: Champions tragen als Sprite einen goldenen Rand, der pulsiert – die Figur selbst bleibt
+    // in ihren Farben (die Tönung der Voxel würde die Zeichnung verwischen)
+    const tint = this.tintOf(z);
+    const rim = z.champion && !dying ? 1.5 + 0.5 * Math.sin(this.time * 3 + z.id) : 0;
+    this.sprites.put(z, tint === championTint ? TINT.normal : tint, glowOnly, y, shiver, this.isMoving(z), this.time, dt, fade, rim);
   }
 
   /** Läuft er gerade (Schrittbild), oder steht er (holt aus, schlägt, wirft um)? */
