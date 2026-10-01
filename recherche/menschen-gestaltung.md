@@ -152,3 +152,43 @@ Quellen: [Sandro Maglione: Pixel-Art-Augen](https://www.sandromaglione.com/artic
 
 Je Figur oben der Stand von F5, darunter F6 (Mika, Hilde, Bert, Juna; von vorn, schräg, von der
 Seite und von hinten, anderthalbfache Spielgröße).
+
+### 5.4 Sauber im Spielbild (F6f)
+
+Auf den Bögen waren die Menschen sauber, im Spiel nicht. Drei Ursachen, alle im Weg vom Atlas
+zum Bildschirm:
+
+- **Körnchen-Rauschen:** Der Post-Pass legt über alle Mitteltöne ein Bayer-Raster (das hält die
+  Welt in der Palette). Auf den gemalten Tonflächen der Menschen sah das wie Sand aus. Jetzt trägt
+  jeder Bildpunkt eines Menschen im Alpha eine Kennung (0,5); dort rastert der Post-Pass nicht, zieht
+  keine Tiefenkanten und dämpft die kühle Nachttönung (`uPeopleKeep`).
+- **Doppeltes Licht:** Die Lampen der Welt rechneten je Bildpunkt über die gebackene Normale – das
+  gemalte Licht lag ein zweites Mal darüber, Gesichter wurden fleckig. Jetzt rechnen die Menschen
+  ihr Licht je Texel (Mitte des Texels über `dFdx`/`dFdy`, auch die Stelle in der Schattenkarte),
+  und die Normale wirkt nur noch zu 0,4.
+- **Graue Gesichter in der Nacht:** Blauer Mond und Himmel zogen die hellste Haut ins Grau der
+  Palette. Jetzt verlieren sie auf den Menschen den größten Teil ihres Blaus, die Farben dunkeln eine
+  Stufe in ihrer eigenen Rampe ab (zweite Zeile der Palettentextur), das Eigenlicht ist etwas höher.
+
+Gemessen wird, ob Farbwechsel auf den Grenzen der Texel liegen (Prüfung `menschen`, Schritt 7b):
+Mika vorher 48 % (nah), 71 % (weit), 40 % (nachts) – jetzt 100 %. Die Horde bleibt, wie sie war.
+
+### 5.5 Gerade Augen (F6g)
+
+Rückmeldung: »Die Augen schielen immer noch. Du machst sie schräg. Mach sie gerade und es sieht
+besser raus.« Die Halbprofil-Regel aus 5.1 (Weiß bei beiden Augen auf derselben Seite) machte aus
+dem Schielen einen Seitenblick – zusammen mit einem drei Texel breiten nahen und einem zwei Texel
+breiten fernen Auge und einer Wimper an der Außenecke las sich das als schräg. Pixel-Gesichter
+dieser Größe blicken in fast allen Spielen geradeaus, auch wenn der Kopf sich dreht: Die Richtung
+zeigt die Kopfform, nicht das Auge.
+
+- Jedes Auge ist in sich spiegelgleich (Muster in `EYES` je Ausdruck und Breite).
+- Beide Augen sind gleich breit – das schmalere bestimmt die Breite.
+- Glanz nur mittig in der Pupille, nie am Rand; Wimpern nur von vorn.
+- Die Prüfung liest das fertige Bild dort, wo der Bäcker die Augen hinsetzt (`f.eyes`): 60 Blicke
+  von zwölf Figuren in fünf Richtungen, jedes Auge gerade, beide gleich, der Glanz in der Mitte.
+
+![Augen vor und nach F6g](menschen-gestaltung/augen-vorher-nachher.png)
+
+Je Figur oben der Stand vor F6g, darunter gerade Augen (Mika, Hilde, Bert, Juna; von vorn, schräg
+nach rechts und links, von der Seite).
