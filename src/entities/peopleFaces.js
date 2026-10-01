@@ -86,23 +86,23 @@ export function mapFace(face, point, dir = (v) => v) {
  * Augen je Form und Breite (Zeilen von oben; `.` frei). Legende: k Auge, i Iris, w Glanz bzw.
  * Augenweiß, l Lid, K unteres Lid.
  *
- * Gegen das Schielen (recherche/menschen-gestaltung.md, F6a): Ein weißer Punkt am Rand eines Auges
- * liest sich als Augenweiß – die Pupille blickt dann von ihm weg. Steht er bei beiden Augen oben
- * links, blickt das linke zur Nase und das rechte von ihr fort. Darum:
- * - `vorn` (der Kopf blickt zur Kamera): beide Augen spiegelgleich, der Glanz liegt *in* der Pupille;
- * - `seite` (für einen Kopf, der nach rechts blickt; nach links gespiegelt): das Weiß liegt bei beiden
- *   Augen auf der abgewandten Seite – beide blicken in dieselbe Richtung.
+ * Gegen das Schielen (recherche/menschen-gestaltung.md, F6a, F6g): Ein weißer Punkt am Rand eines
+ * Auges liest sich als Augenweiß – die Pupille blickt dann von ihm weg. Auch Seitenblicke (das Weiß
+ * bei beiden Augen auf derselben Seite) lasen sich in der Schrägansicht als schiefe, schielende
+ * Augen (Rückmeldung 01.10.: »Du machst sie schräg. Mach sie gerade«). Darum blicken die Augen in
+ * jeder Richtung gerade: jedes Auge in sich symmetrisch, der Glanz *in* der Pupille (nur bei drei
+ * Texeln, sonst keiner), beide gleich breit.
  */
 const EYES = {
-  offen: { vorn: { 3: ['kkk', 'kwk', 'kik'], 2: ['kk', 'kk', 'ik'], 1: ['k', 'k', 'k'] }, seite: { 3: ['wkk', 'wkk', 'kkk'], 2: ['wk', 'kk', 'kk'], 1: ['k', 'k', 'k'] } },
-  weit: { vorn: { 3: ['kwk', 'kkk', 'kik'], 2: ['kk', 'kk', 'ik'], 1: ['k', 'k', 'k'] }, seite: { 3: ['wkk', 'wkk', 'wkk'], 2: ['wk', 'wk', 'kk'], 1: ['k', 'k', 'k'] } },
-  halb: { vorn: { 3: ['lll', 'kkk', 'kik'], 2: ['ll', 'kk', 'ik'], 1: ['.', 'l', 'k'] }, seite: { 3: ['lll', 'wkk', 'kkk'], 2: ['ll', 'kk', 'kk'], 1: ['.', 'l', 'k'] } },
-  zu: { vorn: { 3: ['...', 'lll', 'kkk'], 2: ['..', 'll', 'kk'], 1: ['.', '.', 'k'] } },
+  offen: { 3: ['kkk', 'kwk', 'kik'], 2: ['kk', 'kk', 'ii'], 1: ['k', 'k', 'k'] },
+  weit: { 3: ['kwk', 'kkk', 'kik'], 2: ['kk', 'kk', 'ii'], 1: ['k', 'k', 'k'] },
+  halb: { 3: ['lll', 'kkk', 'kik'], 2: ['ll', 'kk', 'ii'], 1: ['.', 'l', 'k'] },
+  zu: { 3: ['...', 'lll', 'kkk'], 2: ['..', 'll', 'kk'], 1: ['.', '.', 'k'] },
   // lachende Bögen: ein Texel breiter als das Auge, die Enden eine Reihe tiefer
-  froh: { vorn: { 3: ['.kkk.', 'k...k'], 2: ['.kk.', 'k..k'], 1: ['k.', '.k'] } },
+  froh: { 3: ['.kkk.', 'k...k'], 2: ['.kk.', 'k..k'], 1: ['k.', '.k'] },
   // zusammengekniffen: die Spitze zeigt zur Nase (für das rechte Auge gespiegelt)
-  aua: { vorn: { 3: ['k..', '.kk', 'k..'], 2: ['k.', '.k', 'k.'], 1: ['k', 'k', 'k'] } },
-  grinsen: { vorn: { 3: ['kkk', 'kwk', 'KKK'], 2: ['kk', 'kk', 'KK'], 1: ['.', 'k', 'k'] }, seite: { 3: ['wkk', 'kkk', 'KKK'], 2: ['wk', 'kk', 'KK'], 1: ['.', 'k', 'k'] } },
+  aua: { 3: ['k..', '.kk', 'k..'], 2: ['k.', '.k', 'k.'], 1: ['k', 'k', 'k'] },
+  grinsen: { 3: ['kkk', 'kwk', 'KKK'], 2: ['kk', 'kk', 'KK'], 1: ['.', 'k', 'k'] },
 };
 /** Versatz der lachenden Bögen (sie sind breiter als das Auge). */
 const EYE_SHIFT = { froh: -1 };
@@ -164,12 +164,16 @@ export function placeFace(face, raster, faceParts, skin) {
     return e;
   });
   // Von vorn sitzen beide Augen auf einer Reihe und spiegelgleich um die Mitte (die Mitte rundet
-  // einmal, nicht jedes Auge für sich – sonst stünde ein Auge einen Texel höher)
+  // einmal, nicht jedes Auge für sich – sonst stünde ein Auge einen Texel höher). F6g: Beide sind
+  // gleich breit – ein breites und ein schmales Auge lasen sich in der Schrägansicht als schief.
   const center = at(face.center, false);
   if (eyes[0] && eyes[1]) {
     const row = Math.floor((eyes[0].y + eyes[1].y) / 2);
     eyes[0].j = row;
     eyes[1].j = row;
+    const width = Math.min(eyes[0].width, eyes[1].width);
+    eyes[0].width = width;
+    eyes[1].width = width;
     if (look === 0 && center && eyes[0].width === eyes[1].width) {
       const half = Math.round((eyes[1].x - eyes[0].x) / 2);
       eyes[0].i = center.i - half;
@@ -219,19 +223,18 @@ export function faceStamps(place, expr, o = {}) {
     if (!e) return;
     const glasses = o.glasses && (e.width > 1 || open);
     const kind = glasses && (eyeKind === 'froh' || eyeKind === 'aua') ? 'offen' : eyeKind; // hinter der Brille bleiben die Augen offen
-    // Von vorn spiegelgleich, schräg und im Profil mit dem Weiß auf der abgewandten Seite (für einen
-    // Kopf, der nach links blickt, gespiegelt); > < zeigt zur Nase (gezeichnet für ein Auge links davon)
-    const set = EYES[kind];
-    const side = place.look !== 0 && set.seite;
-    let rows = (side ? set.seite : set.vorn)[e.width];
-    if (kind === 'aua' ? e.inward < 0 : side && place.look < 0) rows = mirror(rows);
+    // F6g: in jeder Richtung gerade (in sich symmetrisch); nur > < zeigt zur Nase (gezeichnet für ein
+    // Auge links davon)
+    let rows = EYES[kind][e.width];
+    if (kind === 'aua' && e.inward < 0) rows = mirror(rows);
     const shift = EYE_SHIFT[kind] || 0;
     const x0 = e.i - Math.floor(e.width / 2) + (kind === 'froh' && e.width === 1 ? (e.inward > 0 ? 0 : -1) : shift);
     const y0 = e.j - 1;
     put(rows, x0, y0);
     tops.push({ e, x0: e.i - Math.floor(e.width / 2), y0 });
-    // Wimpern am äußeren oberen Winkel offener Augen
-    if (o.lashes && open && e.width > 1) put(['L'], e.inward > 0 ? x0 - 1 : x0 + e.width, y0);
+    // Wimpern am äußeren oberen Winkel offener Augen – nur von vorn (schräg zog der eine Strich das
+    // Auge schief, F6g)
+    if (o.lashes && open && e.width > 1 && place.look === 0) put(['L'], e.inward > 0 ? x0 - 1 : x0 + e.width, y0);
   });
   // Brauen über den Augen (so breit wie das Auge; das schmale Auge bekommt eine längere). F6c:
   // `o.bushy` – buschig, innen zwei Reihen hoch

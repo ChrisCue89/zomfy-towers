@@ -270,6 +270,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
   const patches = {};
   let color = out.color;
   let glow = out.glow;
+  let eyes = null; // für die Prüfung: wo die Augen liegen (Texel der Mitte, Breite)
   if (ctx.face?.eyes && kind.expressions?.length) {
     const { look, legend } = facesOf(id, spec);
     const mask = new Uint8Array(raster.w * raster.h);
@@ -278,6 +279,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
     const parts = new Set();
     ctx.shapes.forEach((sh, i) => (sh.part === 'head' || sh.face) && parts.add(i));
     const place = placeFace(ctx.face, raster, parts, new Set([kind.skin || 'haut']));
+    eyes = place.eyes.map((e) => (e ? [e.i, e.j, e.width] : null));
     const results = {};
     for (const expr of kind.expressions) {
       const res = { color: out.color.slice(), glow: out.glow.slice() };
@@ -320,7 +322,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
     const l = m.laterne;
     anchors.lantern = [+l[0].toFixed(3), +l[1].toFixed(3), +l[2].toFixed(3)];
   }
-  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py, color, glow, normal: uprightNormals(raster, ctx.shapes), shadow, patches, anchors };
+  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py, color, glow, normal: uprightNormals(raster, ctx.shapes), shadow, patches, anchors, eyes };
 }
 
 /**

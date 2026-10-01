@@ -260,9 +260,12 @@ gilt bis auf Weiteres:
   - **Auf dem Weg zu »Triple A« (F6):**
     - Gesichter je Merkmal (`peopleFaces.js`): `ctx.face = faceOf(ctx, body, FACE)` setzt Augen,
       Brauen, Mund, Nase und Wangen an Punkte der gerundeten Kopfform; `placeFace`/`stampFace` setzen
-      sie einzeln ins Bild, die Breite der Augen folgt der Zuwendung. **Nie schielen:** von vorn
-      beide Augen gespiegelt mit dem Glanz in der Pupille, schräg das Weiß bei beiden Augen auf
-      derselben Seite (ein weißer Pixel am Rand liest sich als Augapfel). Merkmale je Figur in
+      sie einzeln ins Bild, die Breite der Augen folgt der Zuwendung. **Nie schielen (F6g):** Die
+      Augen blicken in jeder Richtung gerade – jedes Auge in sich spiegelgleich, beide gleich breit
+      (das schmalere bestimmt), ein Glanz nur mittig in der Pupille (bei drei Texeln), nie Weiß am Rand
+      (ein weißer Pixel am Rand liest sich als Augapfel), Wimpern nur von vorn. Seitenblicke lasen sich
+      in der Schrägansicht als schief und schielend (»Mach sie gerade«). Der Bäcker gibt die Lage der
+      Augen mit (`f.eyes`: Mitte, Breite) – die Prüfung liest das Bild dort. Merkmale je Figur in
       `FOLK_FACES[id].look`: `glasses`, `lashes`, `bushy` (buschige Brauen), `lines` (Lachfältchen) –
       nichts direkt neben die Augen setzen (Sommersprossen lasen sich wie ein Schielen).
     - Licht (`lightField`, `PEOPLE_LIGHT`): seitlich von oben links, weiche Schlagschatten,
@@ -1492,7 +1495,8 @@ Grundprinzipien:
    Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
    wie die Mütze und die Augen sitzen weit oben, seit F6f liegen nah und weit alle Farbwechsel in
    Mika auf Texelgrenzen (vorher knapp die Hälfte – das Raster des Post-Pass) (Bilder: menschen-tag,
-   menschen-3d, menschen-nacht, menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
+   menschen-3d, menschen-nacht, menschen-bogen; seit F6g blicken die Augen in fünf Richtungen gerade,
+   beide gleich); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
    echten Tasten eine Datei herunter (Version, Kennung, Name, Tag, Vorrat), eine fremde Datei und
    eine aus einer neueren Fassung werden abgelehnt, »Aus Datei laden« öffnet die Dateiwahl, fragt
    mit Name und Tag nach (vorgewählt »Lieber nicht«) und lädt nach »Ja, laden« mit dem Stand aus

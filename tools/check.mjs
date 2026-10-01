@@ -362,62 +362,41 @@ async function runPeopleChecks(browser, url) {
   if (gesicht >= 0.6 * muetze && augen >= 32) note(`✓ Menschen schöner (F5): Mika von vorn mit ${gesicht} Texeln Gesicht zu ${muetze} Texeln Mütze, die Augen ${augen} Texel über dem Fuß`);
   else fail(`Menschen F5: Gesicht ${gesicht}, Mütze ${muetze}, Augen ${augen} Texel über dem Fuß`);
 
-  // 10. F6: Niemand schielt – von vorn liegen die Augen gespiegelt (das Weiß in der Pupille), schräg
-  // liegt das Weiß bei beiden Augen auf derselben Seite (ein weißer Pixel am Rand liest sich als
-  // Augapfel; lag er bei beiden oben links, sah das eine Auge zur Nase und das andere weg)
+  // 10. F6: Niemand schielt. F6g (Rückmeldung »Du machst sie schräg. Mach sie gerade«): In jeder
+  // Richtung blicken die Augen gerade – jedes Auge in sich spiegelgleich (ein Glanz liegt mittig in der
+  // Pupille, nie am Rand: ein weißer Pixel am Rand liest sich als Augapfel), beide gleich (ein breites
+  // und ein schmales Auge lasen sich schräg als schief), von vorn mit Glanz. Gelesen wird das fertige
+  // Bild an den Stellen, an die der Bäcker die Augen setzt (`f.eyes`: Mitte und Breite).
   const { P } = await import('../src/render/palette.js');
-  const augenVon = (f, eye) => {
-    let top = f.h;
-    for (let k = 0; k < f.color.length; k++) if (f.color[k] >= 0) { top = Math.floor(k / f.w); break; }
-    const seen = new Uint8Array(f.w * f.h);
-    const out = [];
-    for (let j = top; j < Math.min(f.h, top + 26); j++) {
-      for (let i = 0; i < f.w; i++) {
-        const k0 = j * f.w + i;
-        if (seen[k0] || f.color[k0] !== eye) continue;
-        const stack = [k0];
-        seen[k0] = 1;
-        const pts = [];
-        while (stack.length) {
-          const k = stack.pop();
-          pts.push(k);
-          const x = k % f.w;
-          const y = (k / f.w) | 0;
-          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-            const nx = x + dx;
-            const ny = y + dy;
-            const q = ny * f.w + nx;
-            if (nx < 0 || nx >= f.w || ny < 0 || ny >= f.h || seen[q] || f.color[q] !== eye) continue;
-            seen[q] = 1;
-            stack.push(q);
-          }
-        }
-        if (pts.length < 2 || pts.length > 14) continue;
-        const xs = pts.map((k) => k % f.w);
-        const ys = pts.map((k) => (k / f.w) | 0);
-        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-        const weiss = [];
-        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (f.color[y * f.w + x] === P.s9) weiss.push(x);
-        if (weiss.length) out.push(weiss.reduce((a, b) => a + b, 0) / weiss.length - (x0 + x1) / 2);
-      }
+  const augeIm = (f, [i, j, w]) => {
+    const x0 = i - Math.floor(w / 2);
+    const rows = [];
+    for (let y = j - 1; y <= j + 1; y++) {
+      const row = [];
+      for (let x = x0; x < x0 + w; x++) row.push(x >= 0 && y >= 0 && x < f.w && y < f.h ? f.color[y * f.w + x] : -1);
+      rows.push(row);
     }
-    return out;
+    return rows;
   };
   const schielen = [];
   let blicke = 0;
   for (const id of ['mika', 'hilde', 'bert', 'juna', 'yusuf', 'balduin', 'lotte', 'greta', 'edda', 'marthe', 'pim', 'lu']) {
     const spec = id === 'mika' ? looks.lookSpec(kinds.MIKA_BASE, looks.DEFAULT_LOOK) : kinds.PEOPLE[id].spec || {};
-    const eye = kinds.facesOf(id, spec).legend.k;
-    for (const d of [0, 1, 7]) {
-      const w = augenVon(bogen.bakePerson(id, spec, 'base', d, 'stehen', 0), eye);
-      // schräg kann das ferne Auge hinter Bart oder Mütze verschwinden – dann gibt es nichts zu schielen
-      const gut = d === 0 ? w.length === 2 && Math.abs(w[0] + w[1]) <= 0.5 : w.every((r) => Math.sign(r) === Math.sign(w[0]));
+    for (const d of [0, 1, 2, 6, 7]) {
+      const f = bogen.bakePerson(id, spec, 'base', d, 'stehen', 0);
+      const augen = (f.eyes || []).filter(Boolean).map((e) => augeIm(f, e));
+      const gerade = augen.every((rows) => rows.every((r) => r.every((c, x) => c === r[r.length - 1 - x])));
+      const gleich = augen.length < 2 || JSON.stringify(augen[0]) === JSON.stringify(augen[1]);
+      const glanz = d !== 0 || (augen.length === 2 && augen.every((rows) => rows[1][1] === P.s9));
+      // Im Profil höchstens ein Auge (es darf unter Mütze oder Bart verschwinden), ohne Weiß am Rand
+      const profil = d === 2 || d === 6;
+      const gut = profil ? augen.length <= 1 && augen.every((rows) => rows.every((r) => r.every((c, x) => c !== P.s9 || x === (r.length - 1) / 2))) : augen.length > 0 && gerade && gleich && glanz;
       if (gut) blicke++;
-      else schielen.push(`${id}:${d}:${JSON.stringify(w)}`);
+      else schielen.push(`${id}:${d}:${JSON.stringify(augen)}`);
     }
   }
-  if (!schielen.length) note(`✓ Menschen (F6): niemand schielt – ${blicke} Blicke von zwölf Figuren geprüft (von vorn gespiegelt, schräg schauen beide Augen in dieselbe Richtung)`);
-  else fail(`Menschen F6: Schielen ${schielen.join(' | ')}`);
+  if (!schielen.length) note(`✓ Menschen (F6g): niemand schielt – ${blicke} Blicke von zwölf Figuren in fünf Richtungen geprüft (jedes Auge gerade und gespiegelt, beide gleich, von vorn mit Glanz in der Mitte, im Profil kein Weiß am Rand)`);
+  else fail(`Menschen F6g: Schielen ${schielen.join(' | ')}`);
   checkMessages(session);
   await session.context.close();
 }

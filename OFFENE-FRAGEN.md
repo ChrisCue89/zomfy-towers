@@ -2864,6 +2864,17 @@ der Palette – Gesichter wie Stein, und grau sind die Schlurfer. Die Welt behä
 den Pixel-Look von Gras, Boden und Wasser); die Menschen sind gemalte Figuren und brauchen es nicht.
 Die Horde gefiel dem Auftraggeber, wie sie ist.
 
+### 226. Wohin blicken die Augen der Menschen? (F6g, zu Nr. 223)
+**Entscheidung:** In jeder Richtung geradeaus. Jedes Auge ist in sich spiegelgleich, beide sind gleich
+breit (das schmalere bestimmt), ein Glanz liegt nur mittig in der Pupille (bei drei Texeln), Weiß am
+Rand gibt es nicht, Wimpern nur von vorn.
+
+**Warum:** Rückmeldung des Auftraggebers (01.10.): »Die Augen schielen immer noch. Du machst sie
+schräg. Mach sie gerade und es sieht besser raus.« Der Seitenblick der Schrägansicht (Weiß bei beiden
+Augen auf derselben Seite, das ferne Auge schmaler, außen eine Wimper) war gezeichnet richtig, las sich
+bei drei Texeln Augenbreite aber als schief und schielend. Gerade Augen sind in kleinen Figuren üblich
+und lesen sich in jeder Richtung freundlich.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

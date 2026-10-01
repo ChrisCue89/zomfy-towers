@@ -93,6 +93,13 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
   (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
   der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
+- **F6g – Gerade Augen** (Rückmeldung: »Bruder. Die Augen schielen immer noch. Du machst sie schräg.
+  Mach sie gerade und es sieht besser raus«): In der Schrägansicht lag das Weiß bei beiden Augen auf
+  einer Seite (Seitenblick), das nahe Auge war drei Texel breit und das ferne zwei, und eine Wimper zog
+  das Auge schief – zusammen las sich das als schräg und schielend. Jetzt blicken die Augen in jeder
+  Richtung gerade: jedes Auge in sich spiegelgleich, beide gleich breit, ein Glanz nur mittig in der
+  Pupille, Wimpern nur von vorn. Die Prüfung liest das fertige Bild dort, wo der Bäcker die Augen
+  hinsetzt (`f.eyes`) – 60 Blicke von zwölf Figuren in fünf Richtungen.
 - **F6f – Sauber im Spiel:** Auf den Bögen waren die Menschen sauber, im Spiel nicht: Über den gemalten
   Tonflächen lag das Bayer-Raster der Nachbearbeitung (ein Körnchen-Rauschen), das Licht der Welt lag
   ein zweites Mal über dem gemalten (fleckige Gesichter), und nachts wurden Gesichter im

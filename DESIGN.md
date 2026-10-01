@@ -2145,8 +2145,8 @@ Lektorat und die Reiter des Baumenüs.
 *Auftrag (01.10.2026):* »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
 Zeit der Welt dafür.«
 
-- **Gesichter je Merkmal** an der Kopfform, kein Schielen (von vorn gespiegelt, schräg schauen beide
-  Augen in dieselbe Richtung).
+- **Gesichter je Merkmal** an der Kopfform, kein Schielen: Die Augen blicken in jeder Richtung gerade,
+  beide gleich groß, der Glanz mittig (F6g, Nr. 226).
 - **Licht wie gezeichnet:** seitlich von oben links, weiche Schlagschatten, Verdeckung, Glanz,
   Gegenlicht.
 - **Formen:** Relief (Strähnen, Falten, Rippen, Sohlenkanten) für alle Menschen, Hände mit Daumen,
