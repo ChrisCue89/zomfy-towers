@@ -276,6 +276,9 @@ export const ZOMBIES = {
     immuneSlow: true,
     steadfast: true, // M25: sonst hielten viele Türme es mit Betäubung und Rückstoß am Waldrand fest
     heart: true,
+    // Es zieht das Feuer der Scharfschützen auf sich: Sie zielen auf den Stärksten, und die zähen
+    // Brummer der späten Nächte hatten fast so viel Leben – das Herz erstarrte fast unberührt
+    drawsFire: true,
     attacks: ['wurzeln'],
     loot: { teile: [40, 50], zahnraeder: [4, 6], moderkerne: 3 },
     partsAlways: true,

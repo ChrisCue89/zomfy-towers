@@ -2875,6 +2875,21 @@ Augen auf derselben Seite, das ferne Auge schmaler, außen eine Wimper) war geze
 bei drei Texeln Augenbreite aber als schief und schielend. Gerade Augen sind in kleinen Figuren üblich
 und lesen sich in jeder Richtung freundlich.
 
+### 227. Zieht das Moderherz das Feuer auf sich? (B2, zu Nr. 222)
+**Entscheidung:** Ja. Wer auf den Stärksten zielt (die Scharfschützen), nimmt das Herz vor jedem
+anderen Ziel in Reichweite (`drawsFire` in `zombies.js`, `towers.targets`); dafür hat es mehr Leben
+(`FINALE.heartHp` 0,8 → 1,1).
+
+**Warum:** Nachgemessen auf dem Stand vor der Frostnacht (Balance-Durchlauf, je ein Lauf): Vorher
+erstarrte das Herz mit 97 % (»Ausgewogen«) bzw. 99 % Leben (»Wild«) – die zähen Brummer der späten
+Nächte hatten fast so viel Leben, und die Scharfschützen schossen auf sie. Das Finale endete ohne
+Kampf gegen den Boss. Nur mit dem Feuer fiel es schon am Waldrand (x −26,7), mit dem Feuer und
+doppeltem Leben erstarrte es mit 46 %. Mit 1,1 fällt es auf »Ausgewogen« an den Barrikaden (x −14,3,
+nach dem Frost), auf »Wild« kommt es bis ans Tor und erstarrt dort mit 35 % – knapp, wie ein Finale
+sein soll. Die Frage ging am 01.10. an den Auftraggeber; ohne Antwort nach der Arbeitsregel
+entschieden (die spaßigste Annahme) – ein Wert in `src/data/` und eine Zeile in `zombies.js`, leicht
+zurückzunehmen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

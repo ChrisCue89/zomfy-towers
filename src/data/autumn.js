@@ -41,8 +41,11 @@ export const STORY_DAYS = { 12: () => true, 14: (st) => (st.isles?.fog?.stage ||
  * seinem Leben: unter `phases[0]` ruft es die Horde über alle Wege (je Weg ein
  * Pulk mit `pulk` Schwärmern), unter `phases[1]` kommt der Frost – das Herz wird
  * langsamer (`frostSlow`), ruft noch einmal, und seine Sporen kommen öfter.
+ * Seit 02.10. zieht es das Feuer der Scharfschützen auf sich (`drawsFire` in zombies.js) und hat
+ * dafür mehr Leben (0,8 → 1,1): Vorher erstarrte es mit fast vollem Leben, nur mit dem Feuer fiel
+ * es schon am Waldrand – so fällt es nah an der Verteidigung oder erstarrt dort knapp.
  */
-export const FINALE = { budget: 1.15, heartHp: 0.8, heartWave: 1, phases: [0.66, 0.33], pulk: 5, frostSlow: 0.75 };
+export const FINALE = { budget: 1.15, heartHp: 1.1, heartWave: 1, phases: [0.66, 0.33], pulk: 5, frostSlow: 0.75 };
 
 /**
  * Nach dem Herbst (»weiterspielen«): Jede Nacht würfelt sich neu – Wege je

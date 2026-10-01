@@ -5,6 +5,22 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## B2: Das Moderherz zieht das Feuer auf sich ✓
+
+**Offen seit B1:** Das Herz erstarrte in der Frostnacht fast unberührt (97 % bzw. 99 % Leben), weil die
+zähen Brummer der späten Nächte die Scharfschützen banden. Die Frage ging an den Auftraggeber; ohne
+Antwort nach der Arbeitsregel entschieden (OFFENE-FRAGEN 227).
+
+- **Das Herz zieht das Feuer auf sich:** Wer auf den Stärksten zielt, nimmt das Herz vor jedem anderen
+  Ziel in Reichweite (`drawsFire` am Moderherz, `towers.targets`).
+- **Mehr Leben dafür:** `FINALE.heartHp` 0,8 → 1,1 (nur das Feuer: es fiel schon am Waldrand).
+- **Nachgemessen** (Balance-Durchlauf, Stand vor Nacht 30, je ein Lauf): »Ausgewogen« – das Tor hält,
+  das Herz fällt nach dem Frost an den Barrikaden (x −14,3); »Wild« – Durchbruch, das Herz kommt bis
+  ans Tor und erstarrt dort mit 35 % Leben (vorher 99 %).
+- **Prüfung:** Abschnitte `finale`, `wucht` und `wunder`.
+
+---
+
 ## G7: Die Ankunft, glaubhaft ✓
 
 **Auftrag (01.10.):** »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn. das

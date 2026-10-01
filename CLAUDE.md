@@ -799,7 +799,9 @@ Grundprinzipien:
   Herz ist `steadfast` (keine Betäubung, kein Rückstoß, kein Locken, es schiebt
   sich durch die eigene Horde – nur Licht macht es müde) und führt die zweite
   Welle an (`FINALE.heartWave`); die Frostnacht rechnet ohne den Rabatt der
-  Bossnächte (`toughness(n, boss)`).
+  Bossnächte (`toughness(n, boss)`). Seit B2 zieht es das Feuer der Scharfschützen auf
+  sich (`drawsFire`: `towers.targets` nimmt es bei »Stärkster« zuerst) und hat dafür
+  `FINALE.heartHp` 1,1 (OFFENE-FRAGEN 227).
 - **Herbstbuch (M25, Teil 2, `core/book.js`):** `state.book` hält Sterne je Nacht
   (`nights.finishNight` → `book.starsFor`/`onNightWon`: gehalten, makellos aus
   `settleRisk`, mutig aus `night.called`), die Tage gelungener Taten, erledigte

@@ -280,7 +280,8 @@ export class TowerSystem {
       if (d2 > range * range || d2 < minRange * minRange) continue;
       list.push(z);
     }
-    if (strongest) list.sort((a, b) => b.hp - a.hp);
+    // Wer auf den Stärksten zielt, nimmt zuerst, was das Feuer auf sich zieht (das Moderherz)
+    if (strongest) list.sort((a, b) => (b.def.drawsFire ? 1 : 0) - (a.def.drawsFire ? 1 : 0) || b.hp - a.hp);
     else list.sort((a, b) => pathing.remaining(a.x, a.z) - pathing.remaining(b.x, b.z));
     return list.slice(0, n);
   }
