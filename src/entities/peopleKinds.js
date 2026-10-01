@@ -1401,6 +1401,7 @@ const frieda = {
   build(ctx) {
     const { W, stamps, dir } = ctx;
     const apron = (l) => (l[2] > 0.04 && Math.abs(l[0]) < 0.17 ? 'schuerze' : null);
+    const stubble = hairOf({ top: 0.08, fringe: 0.14, back: -0.1, sides: 0.0 });
     const B = {
       ...HUMAN,
       torso: [
@@ -1410,11 +1411,13 @@ const frieda = {
       ],
       shoulderW: 0.29,
       armR: [0.08, 0.072, 0.07, 0.064],
-      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.08, fringe: 0.14, back: -0.1, sides: 0.0 }) },
+      // F6h: Das Stirnband liegt auf der Kopfform selbst – als eigener Quader lag es vorn hinter der
+      // Stirn, und an den Schläfen standen nur zwei blaue Ecken wie Brauen
+      head: { ...HUMAN.head, r: 0.2, matAt: (l) => (Math.abs(l[1] - 0.1) < 0.032 ? 'band' : stubble(l)) },
       mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'hemd', fore: 'haut', hand: 'haut', neck: 'haut', head: 'haut' },
     };
     const body = humanoid(ctx, B);
-    const { spine, H, arms } = body;
+    const { spine, arms } = body;
     // Hochgekrempelte Ärmel: ein dicker Wulst über dem Ellbogen
     for (const a of arms) ctx.capsule(along(a.shoulder, a.elbow, 0.75), add(a.elbow, mul(norm(sub(a.wrist, a.elbow)), 0.02)), 0.085, 0.08, 'hemd');
     // Lederschürze bis übers Knie, Träger um den Nacken
@@ -1425,8 +1428,6 @@ const frieda = {
     const hip = add(body.hip, [-0.26, 0.03, 0.03]);
     ctx.capsule(add(hip, [0, 0.06, 0]), add(hip, [0, -0.15, 0.02]), 0.017, null, 'stiel');
     ctx.box(add(hip, [0, 0.075, 0.0]), [0.025, 0.028, 0.06], 0.008, 'hammer');
-    // Stirnband über den Stoppeln
-    ctx.box(H([0, 0.1, -0.01]), [0.305, 0.036, 0.28], 0.12, 'band', { ax: body.headAx });
     earsNose(ctx, body);
     ctx.mark('chest', spine(0.25));
     ctx.face = faceOf(ctx, body, FACE);
@@ -1588,12 +1589,11 @@ const edda = {
     for (const side of [-1, 1]) ctx.ellipsoid(add(spine(0.42), [side * 0.15, 0.0, 0.05]), [0.045, 0.06, 0.05], 'kopfhoerer');
     ctx.capsule(add(spine(0.42), [-0.15, 0, 0.0]), add(spine(0.44), [0, 0.0, -0.13]), 0.016, null, 'kopfhoerer');
     ctx.capsule(add(spine(0.44), [0, 0.0, -0.13]), add(spine(0.42), [0.15, 0, 0.0]), 0.016, null, 'kopfhoerer');
-    // Silberner Zopfkranz rund um den Kopf
-    for (let k = 0; k < 8; k++) {
-      const a = (k / 8) * Math.PI * 2;
-      const b = ((k + 1) / 8) * Math.PI * 2;
-      headCapsule(ctx, body, [Math.sin(a) * 0.27, 0.18, Math.cos(a) * 0.245 - 0.02], [Math.sin(b) * 0.27, 0.18, Math.cos(b) * 0.245 - 0.02], 0.065, null, 'zopf');
-    }
+    // Silberner Zopfkranz rund um den Kopf. F6h: tiefer und schmaler, auf der Kopfform – oben am
+    // Scheitel stand er weiter vor als der Kopf, mit dem flachen Deckel darin sah das aus wie eine
+    // Kochmütze; jetzt wölbt sich der Kopf über dem Kranz
+    const crown = (a) => [Math.sin(a) * 0.27, 0.11 + 0.05 * Math.cos(a), Math.cos(a) * 0.245 - 0.01]; // vorn höher, hinten tiefer
+    for (let k = 0; k < 12; k++) headCapsule(ctx, body, crown((k / 12) * Math.PI * 2), crown(((k + 1) / 12) * Math.PI * 2), 0.05, null, 'zopf');
     earsNose(ctx, body);
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.29, -0.11, 0.0], [0.016, 0.02, 0.016], 'gold');
     ctx.mark('chest', spine(0.25));
