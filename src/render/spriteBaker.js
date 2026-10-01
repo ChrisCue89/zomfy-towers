@@ -355,10 +355,12 @@ export function paint(raster, materials, { outline = true, rim = true } = {}) {
 /**
  * Stempel: kleine Pixelbilder als Zeichenketten, deren Mitte auf einen Weltpunkt gesetzt wird
  * (nur, wo die Figur dort sichtbar ist und der Punkt nicht verdeckt: Liegt dort eine Fläche
- * mehr als `depth` Meter vor dem Punkt, bleibt das Texel, wie es ist).
+ * mehr als `depth` Meter vor dem Punkt, bleibt das Texel, wie es ist). `mark` (F4) merkt sich je
+ * Texel, ob der Stempel es gesetzt hat; `parts` (F4, Menge von Formen) setzt nur, wo eine dieser
+ * Formen vorn liegt – statt der Tiefe (ein Gesicht auf einem halb gedrehten Kopf).
  * @param {{rows:string[], legend:Record<string, number|{glow:number}>}} stamp
  */
-export function stampAt(out, raster, stamp, point, { flip = false, need = true, depth = 0.06 } = {}) {
+export function stampAt(out, raster, stamp, point, { flip = false, need = true, depth = 0.06, mark = null, parts = null } = {}) {
   const { w, h, px, py } = raster;
   const t = toTexel(point, px, py);
   const tq = dot(point, F);
@@ -378,8 +380,11 @@ export function stampAt(out, raster, stamp, point, { flip = false, need = true, 
       if (x < 0 || y < 0 || x >= w || y >= h) continue;
       const idx = y * w + x;
       if (need && out.color[idx] < 0) continue;
-      if (raster.depth[idx] < tq - depth) continue; // verdeckt
+      if (parts) {
+        if (!parts.has(raster.hit[idx])) continue; // F4: nur auf diesen Formen (ein Gesicht nur auf dem Kopf)
+      } else if (raster.depth[idx] < tq - depth) continue; // verdeckt
       const v = stamp.legend[ch];
+      if (mark) mark[idx] = 1; // F4: welche Texel ein Gesicht berührt (für die Flicken je Ausdruck)
       if (typeof v === 'object') {
         out.color[idx] = v.glow;
         out.glow[idx] = 1;

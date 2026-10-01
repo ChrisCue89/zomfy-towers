@@ -11,7 +11,7 @@ import { SPRECHER } from '../data/dialogs.js';
 import { T } from '../data/texts.js';
 import { COLORS } from './ui.js';
 import { measure, LINE_HEIGHT, wrap } from './font.js';
-import { PIXEL_SIZES, UI_SIZES, TEXT_SPEEDS, VIEWS, SHAKES, FLASHES, HORDE_LOOKS } from '../core/settings.js';
+import { PIXEL_SIZES, UI_SIZES, TEXT_SPEEDS, VIEWS, SHAKES, FLASHES, HORDE_LOOKS, FIGURE_LOOKS } from '../core/settings.js';
 import { DIFFICULTY_ORDER } from '../data/difficulty.js';
 import { REACTION_ORDER, REACTION_COLORS } from '../data/reactions.js';
 import { MIXES, MIX_ORDER, MIX_COLORS, MIX_HINTS } from '../data/mixes.js';
@@ -41,8 +41,8 @@ const BOOK_DETAIL_H = 6 * LINE_HEIGHT + 6;
 const BOOK_TAB_ROW = 15;
 
 /** Einstellungen der Reihe nach; Zahlen gehen von 0 bis 10. */
-const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'ui', 'text', 'shake', 'flashes', 'horde'];
-const CHOICES = { pixel: Object.keys(PIXEL_SIZES), ui: Object.keys(UI_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES, horde: HORDE_LOOKS };
+const SETTING_KEYS = ['master', 'music', 'sfx', 'view', 'pixel', 'ui', 'text', 'shake', 'flashes', 'horde', 'figuren'];
+const CHOICES = { pixel: Object.keys(PIXEL_SIZES), ui: Object.keys(UI_SIZES), text: Object.keys(TEXT_SPEEDS), view: VIEWS, shake: SHAKES, flashes: FLASHES, horde: HORDE_LOOKS, figuren: FIGURE_LOOKS };
 
 /**
  * G5: Reiter auf Reihen verteilen – eine, wenn alle nebeneinander passen, sonst zwei, so

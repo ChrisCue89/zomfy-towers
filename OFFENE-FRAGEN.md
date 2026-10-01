@@ -2708,6 +2708,30 @@ die nächste.
 zu sehen, wo ein Schlurfer endet und wer der Champion ist. Der Hof macht die Augen größer, ohne
 die Pixelregeln zu brechen. Der Rand hebt den Champion hervor, ohne ihn umzufärben.
 
+### 218. Wie werden die Menschen zu Sprites? (F4)
+**Entscheidung:**
+
+- **Gleicher Bäcker, eigener Körper:** Die Menschen entstehen wie die Horde aus runden Formen
+  (1/40 m je Texel), aber aufrecht und mit großem Kopf wie die Voxel-Figuren. Sie stehen in einem
+  eigenen Atlas und backen in einem eigenen Worker, Mika zuerst.
+- **Acht gezeichnete Richtungen:** Mika trägt links die Laterne und rechts das Werkzeug, Hilde
+  die Tasche links – gespiegelt wechselten sie die Seite. Bei der Horde bleibt es bei fünf.
+- **Gesichter als Flicken:** Das Bild trägt das gewöhnliche Gesicht, jeder andere Ausdruck ist
+  ein Flicken aus den Texeln, die sich ändern. Gesichter liegen nur auf dem Kopf (nie auf Mütze
+  oder Hand); im Profil sitzt das Auge auf der Seite zur Kamera.
+- **Werkzeuge als eigenes Bild** in 16 Winkelstufen und auf dem Rücken, um 45° um den Stiel
+  gedreht (sonst sähe man eine Axt von vorn nur als Strich). Vorn liegt es, wenn seine Mitte
+  näher zur Kamera steht als die Brust.
+- **Rückfall auf Voxel:** seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen, Pfiff,
+  Wirbel, die Lagerglocke, Übungsplatz, Drachen) und alle Figuren ohne Sprite (Wanderer, Edda,
+  Marthe, die Kinder). Die Voxel laufen unsichtbar mit und liefern Laternenlicht und Anker.
+- **Standard 2D** für Spieler (wie die Horde), die Prüfung bleibt bei 3D; die Einstellung
+  »Figuren« stellt um.
+
+**Warum:** Neben der gebackenen Horde wirkten die Voxel-Figuren wie aus einem anderen Spiel. Mit
+eigenen Sprites passen Menschen und Schlurfer zusammen, und die Figuren bekommen die kleinen
+Dinge, die sie erzählen (Posthorn, Bleistift, Goldzahn), ohne dass das Bild zu Gries wird.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

@@ -41,10 +41,12 @@ uniform float uPx;
 // Drei Zeilen Ecken: unten, auf der Fußlinie, oben (F2). Über der Fußlinie steht das Bild
 // aufrecht, darunter liegt es auf dem Boden – was im Bild unter den Füßen liegt (der vordere
 // Fuß, Laub, eine hingesunkene Figur), liegt dort wirklich vor ihnen und versinkt nicht im Boden.
+// F4: Gesichter und Werkzeuge haben den Fußpunkt ihrer Figur, oft außerhalb des eigenen Bildes –
+// die Fußlinie rückt dann an den Rand.
 const VERTEX_BODY = /* glsl */ `
 float spriteScale = length(instanceMatrix[0].xyz);
 vec2 corner = position.xy + 0.5;
-vec2 texel = vec2(corner.x * aRect.z, corner.y < 0.25 ? 0.0 : corner.y < 0.75 ? aPivot.y : aRect.w);
+vec2 texel = vec2(corner.x * aRect.z, corner.y < 0.25 ? 0.0 : corner.y < 0.75 ? clamp(aPivot.y, 0.0, aRect.w) : aRect.w);
 float flip = aPivot.z;
 float pivotX = flip > 0.0 ? aPivot.x : aRect.z - aPivot.x;
 vTexel = aRect.xy + vec2(flip > 0.0 ? texel.x : aRect.z - texel.x, texel.y);

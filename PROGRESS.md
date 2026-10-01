@@ -5,6 +5,38 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F4: Die Menschen als Sprites (erste Stufe) ✓
+
+**Auftrag (01.10.):** »Ja alles machen. Die Sprites als erstes. Dann gucke ich ob mir das
+gefällt.« – fünf Punkte, die Menschen als Sprites zuerst (Nr. 218).
+
+- **Das Gerüst:**
+  - Menschen entstehen wie die Horde aus runden Formen, aber aufrecht und mit großem Kopf
+    (`peopleFigure.js`: Maße, Posen, die Laterne, ein Vierbeiner für Knopf).
+  - Acht gezeichnete Richtungen statt fünf (Laterne links, Werkzeug rechts – gespiegelt wechselten
+    sie die Hand), ein eigener Atlas und ein eigener Worker, Mika zuerst.
+  - Gesichter als Flicken: Das Bild trägt das gewöhnliche Gesicht, jeder andere Ausdruck nur die
+    Texel, die sich ändern (Blinzeln, Lächeln, »Aua«, entschlossen, müde, besorgt, staunen).
+  - Werkzeuge als eigenes Bild in 16 Winkelstufen um die Hand und schräg auf dem Rücken, vor oder
+    hinter der Figur.
+- **Mika** in beiden Figuren und jedem Aussehen: Mütze mit Rippenbund, Streifen, Abnähern und
+  Bommel, Jacke mit Reißverschluss und Taschenklappen, Rucksack mit Isomatte, Flicken am Knie,
+  Stiefel. Dazu die Laterne, Schwung, Treffer, Hechtsprung, Suchen, Wurf, Jubel und Laternenblitz.
+- **Die Leute:** Oma Hilde, Bert, Juna, Dr. Yusuf, Balduin (mit seinen Gesten) und Knopf, jede
+  Figur mit ihrem Merkmal und kleinen Dingen (Posthorn, Bleistift, Antenne, Stethoskop, Goldzahn,
+  der goldene Knopf am Halsband).
+- **Im Spiel:** Einstellung »Figuren: 3D/2D« (Standard 2D, `?figuren=`). Die Voxel laufen
+  unsichtbar mit; seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen, Lagerglocke …)
+  und die übrigen Figuren (Wanderer, Edda, Marthe, die Kinder) bleiben vorerst Voxel.
+- **Werkzeug zum Ansehen:** `node tools/menschen-bogen.mjs bogen.png --figur=mika`.
+- **Prüfung** (Abschnitt `menschen`): Standard und Backen, alle Fassungen ohne leeres Bild,
+  Laufen mit echten Tasten, Axt auf dem Rücken und im Schwung, »Aua«, Laterne, Rückfall auf Voxel,
+  die Leute im Hof mit Lächeln (Bilder: menschen-tag, menschen-3d, menschen-nacht, menschen-bogen).
+- **Offen (zweite Stufe):** die Wanderer, Edda, Marthe, Pim und Lu; Sitzen am Tisch, Rudern und
+  Angeln als Bilder; Feinschliff nach dem Urteil des Auftraggebers.
+
+---
+
 ## F3: Nachts in 2D, der vierte Stern und die Schlurferkunde mit Bildern ✓
 
 **Auftrag (30.09., abends):** »Woran könnten wir heute Nacht noch schleifen?« – vier Punkte, vom

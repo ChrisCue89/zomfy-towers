@@ -2071,6 +2071,7 @@ export const T = {
       shake: 'Wackeln',
       flashes: 'Blitze',
       horde: 'Schlurfer',
+      figuren: 'Figuren', // F4: Mika, die Leute und Knopf als Sprites
       ui: 'Oberfläche', // H4
     },
     hierWie: (wert) => `(hier wie ${wert})`, // H4: das Fenster lässt die Wahl nicht zu

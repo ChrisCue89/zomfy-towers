@@ -113,6 +113,7 @@ import { upgradeValue } from '../data/upgrades.js';
 import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 import { MAX_COZY } from '../data/furniture.js';
 import { HOUSE_DAMAGE, PARTS_FROM_TOWERS } from '../data/zombies.js';
+import { PeopleSprites } from '../entities/peopleView.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -207,6 +208,7 @@ export class Game {
     const uiCanvas = document.getElementById('ui');
     this.settings = loadSettings();
     if (CONFIG.horde) this.settings.horde = CONFIG.horde; // F2: ?horde=2d|3d, die Prüfung 3D
+    if (CONFIG.figuren) this.settings.figuren = CONFIG.figuren; // F4: ?figuren=2d|3d, die Prüfung 3D
     this.pixel = new PixelRenderer(sceneCanvas, CONFIG.render);
     this.pixel.scaleShift = PIXEL_SIZES[this.settings.pixel];
     this.pixel.uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4
@@ -381,6 +383,8 @@ export class Game {
     this.skills = new Skills(this); // Mikas Fähigkeiten (M16)
     this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
+    this.people = new PeopleSprites(this.scene); // F4: Mika, die Leute und Knopf als Sprites
+    this.people.setActive(this.settings.figuren === '2d');
     this.trader = new Trader(this);
     this.arrival = new Arrival(this); // N5: Mikas Ankunft mit dem Ruderboot (das Boot bleibt am Steg)
     this.tutorial = new Tutorial(this); // N5: Edda erklärt – nur mit Einführung
@@ -3183,6 +3187,7 @@ export class Game {
     this.world.flashLevel = FLASH_LEVELS[this.settings.flashes] ?? FLASH_LEVELS.voll;
     this.horde.spriteLook = this.settings.horde === '2d'; // F1
     if (!this.horde.spriteLook) this._spritePlanDay = null; // F2: beim nächsten Einschalten neu planen
+    this.people?.setActive(this.settings.figuren === '2d'); // F4
     const shift = PIXEL_SIZES[this.settings.pixel];
     const uiShift = UI_SIZES[this.settings.ui] ?? 0; // H4: Oberfläche klein · mittel · groß
     if (this.pixel.scaleShift !== shift || this.pixel.uiShift !== uiShift) {
@@ -3273,6 +3278,12 @@ export class Game {
     if (!(this.mode === 'splash' && this.splash.hidesScene)) {
       spriteUniforms.uPx.value = this.rig.px; // F1: Sprites rasten auf ganze Bildpunkte
       this.horde.render(this.rig.camera); // M25c: nur, wer im Bild steht
+      // F4: Mika und die Leute als Sprites (im Startbild und Titelbild bleiben sie Voxel)
+      const titled = this.mode === 'splash' || this.mode === 'title' || (this.mode === 'menu' && this.menu.fromTitle);
+      // Spielzeit der Figur (läuft auch in den Schritten der Prüfung) für die Hysterese der Richtung
+      const now = this.player.time;
+      this.people.render({ player: this.player, npcs: this.survivors.npcs, look: this.state?.player?.look, enabled: !titled, dt: Math.max(0, Math.min(0.25, now - (this._peopleT ?? now))), time: now });
+      this._peopleT = now;
       this.towers.render();
       this.loot.render();
       sharedUniforms.uDitherOffset.value.copy(this.rig.ditherOffset);
@@ -4421,6 +4432,31 @@ export class Game {
       setHordeLook(look) {
         game.applySettings({ horde: look });
         return game.settings.horde;
+      },
+      /** F4: Mika und die Leute als Voxel (3D) oder Sprites (2D). */
+      setFigureLook(look) {
+        game.applySettings({ figuren: look });
+        return game.settings.figuren;
+      },
+      /**
+       * F4: Stand der Menschen-Sprites (Fassungen, Atlas, was Mika und die Leute zeigen); `bake`
+       * backt sofort hier alles, was schon angefordert ist (oder `{ mika: true }`: alle Teile Mikas
+       * im aktuellen Aussehen, `{ tools: [...] }` Werkzeuge, `{ people: [...] }` Figuren).
+       */
+      people(bake = null) {
+        const pv = game.people;
+        if (bake) {
+          const list = [];
+          if (bake.mika) {
+            const { spec, specKey } = pv.mikaSpec(game.state.player.look);
+            for (const part of Object.keys(pv.constructor.parts('mika'))) list.push(pv.person('mika', spec, specKey, part, -1));
+          }
+          for (const id of bake.tools || []) list.push(pv.tool(id, -1));
+          for (const id of bake.people || []) for (const part of Object.keys(pv.constructor.parts(id))) list.push(pv.person(id, pv.constructor.specOf(id), 'fest', part, -1));
+          if (bake === true) list.push(...[...pv.variants.values()].filter((v) => !v.ready));
+          pv.bakeNow(list);
+        }
+        return { look: game.settings.figuren, ...pv.info() };
       },
       /**
        * F1/F2: Stand der Sprites (fertige und wartende Fassungen, Worker, Atlas, gezeichnet);

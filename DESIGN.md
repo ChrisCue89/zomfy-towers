@@ -224,6 +224,13 @@ Wort gibt.
   bleibt als Wahl in den Einstellungen und als Rückfall, solange eine Art
   noch backt. Nachts glimmt um das Eigenlicht ein Hof aus einem Texel,
   Champions tragen einen goldenen Rand (F3).
+- **Die Menschen als Sprites (F4, Standard 2D):** Mika, Hilde, Bert, Juna, Dr. Yusuf, Balduin
+  und Knopf sind ebenso Pixelfiguren aus runden Formen – aufrecht, mit großem Kopf, in acht
+  gezeichneten Richtungen (Mika trägt links die Laterne, rechts das Werkzeug). Das Gesicht liegt
+  als kleiner Flicken je Ausdruck darüber (Blinzeln, Lächeln, »Aua«), das Werkzeug als eigenes
+  Bild vor oder hinter der Figur. Seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen,
+  die Lagerglocke) und die übrigen Figuren bleiben vorerst Voxel; »Figuren: 3D« bringt alle
+  zurück.
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
   **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
@@ -2028,6 +2035,31 @@ den Hinweis (Nr. 214, `recherche/praesentation.md`).
   Stern (Nr. 215, zu Nr. 118).
 - **Die Schlurferkunde mit Bildern:** Jede Art steht von vorn neben ihrer Beschreibung,
   unbekannte als Schattenriss mit glimmendem Eigenlicht (Nr. 216).
+
+#### F4 – Die Menschen als Sprites ✓ (erste Stufe)
+
+*Auftrag (01.10.2026):* »Ja alles machen. Die Sprites als erstes. Dann gucke ich ob mir das
+gefällt.« – zuerst die Menschen als Sprites, danach Spannung der Nächte, Spielstand als Datei,
+Lektorat und die Reiter des Baumenüs.
+
+*Umgesetzt (01.10.2026):*
+
+- **Mika** in beiden Figuren und jedem Aussehen: Strickmütze mit Rippenbund, Streifen, Abnähern
+  und Bommel, Jacke mit Reißverschluss und Taschenklappen, Rucksackriemen mit Schnallen, Rucksack
+  mit Isomatte, Flicken am Knie, Stiefel mit Schnürung; dazu die Laterne, die glüht. Stehen,
+  gehen, rennen, Schwung, Treffer, Hechtsprung, Suchen, Wurf, Jubel, Laternenblitz – und dasselbe
+  mit der Laterne in der Hand.
+- **Die Leute:** Oma Hilde (Postmütze mit Posthorn, Brille, Dutt, Strickjacke, Posttasche), Bert
+  (Kappe, Bart, Karohemd, Schürze mit Bleistift), Juna (Kopfhörer, Spange, gelbe Regenjacke,
+  Antenne am Rucksack), Dr. Yusuf (Kittel, Stethoskop, Brille, graue Schläfen), Balduin
+  (Schiebermütze, Bart mit Goldzahn, Schal, Mantel, riesiger Rucksack, seine Gesten) und Knopf
+  (Trab, Sitzen, Bellen, Schwanzwedeln, Halsband mit dem goldenen Knopf).
+- **Gesichter als Flicken:** Ein Bild trägt das gewöhnliche Gesicht; jeder andere Ausdruck ist
+  ein kleines Bild nur aus den Texeln, die sich ändern – so blinzeln, lächeln und zucken alle,
+  ohne dass jede Pose sieben Mal gebacken wird.
+- **Werkzeuge als eigenes Bild:** in 16 Winkelstufen um die Hand und schräg auf dem Rücken, vor
+  oder hinter der Figur – je nachdem, ob es zur Kamera hin liegt.
+- **Rückfall:** Was keine Fassung hat oder eine seltene Pose zeigt, bleibt Voxel (Nr. 218).
 
 ## 9. Ideen-Parkplatz
 

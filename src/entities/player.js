@@ -409,6 +409,8 @@ export class Player {
     for (const [name, mesh] of Object.entries(this.character.tools)) mesh.visible = name === shownTool;
     const backTool = !shownTool && !this.seated ? carried : null;
     for (const [name, mesh] of Object.entries(this.character.backTools || {})) mesh.visible = name === backTool;
+    this.shownTool = shownTool; // F4: die Sprites zeigen dasselbe Werkzeug
+    this.backTool = backTool;
 
     // Rechter Arm
     if (a && a.kind === 'swing') {

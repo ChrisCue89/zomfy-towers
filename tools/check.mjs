@@ -81,6 +81,222 @@ async function launchBrowser(chromium) {
 const problems = [];
 const report = [];
 
+/**
+ * F4: Menschen als Sprites – Mika, die Bewohner, Balduin und Knopf. Standard für Spieler 2D, die
+ * Prüfung bleibt bei 3D; mit »Figuren: 2D« backt ein Worker, Mika zuerst. Zustände (gehen, rennen,
+ * Schwung mit der Axt als eigenem Bild, Treffer mit »Aua«, Laterne), seltene Posen als Voxel, die
+ * Leute mit Lächeln, Bilder bei Tag und Nacht, 3D zum Vergleich, ein Musterbogen ohne Browser.
+ */
+async function runPeopleChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Menschen als Sprites (F4)', { viewport: { width: 1920, height: 1080 } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const still = async (name) => {
+    await z(() => window.zomfy.game.render());
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), timeout: 180000 });
+    note(`  Screenshot: screenshots/${name}.png`);
+  };
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setTime(11, 0);
+    Z.game.funk.clear();
+  });
+  await step(200);
+  const voxelOn = () => z(() => window.zomfy.game.player.character.root.children.every((c) => c.visible));
+
+  // 1. Standard für Spieler 2D, die Prüfung 3D: nichts gebacken, Mika aus Voxeln. Mit 2D backt ein
+  // Worker im Hintergrund, Mika im Stehen zuerst – solange bleibt sie Voxel
+  const vorher = await z(async () => {
+    const m = await import('./src/core/settings.js');
+    return { ...window.zomfy.people(), standard: m.DEFAULT_SETTINGS.figuren };
+  });
+  const voxelVorher = await voxelOn();
+  const t0 = Date.now();
+  await z(() => window.zomfy.setFigureLook('2d'));
+  await step(34);
+  const backen = await z(() => window.zomfy.people());
+  await page.waitForFunction(() => window.zomfy.people().mika !== null || (window.__zomfyStep(34), false), null, { timeout: 180000, polling: 250 });
+  const sekunden = (Date.now() - t0) / 1000;
+  await step(34);
+  const fertig = await z(() => window.zomfy.people());
+  const voxelNachher = await voxelOn();
+  if (vorher.standard === '2d' && vorher.look === '3d' && vorher.baked === 0 && voxelVorher && backen.workers === 1 && fertig.mika?.anim === 'stehen' && fertig.drawn.mika >= 1 && !voxelNachher) {
+    note(`✓ Menschen (F4): Standard für Spieler 2D, in der Prüfung 3D (nichts gebacken); »Figuren: 2D« backt mit einem Worker, Mika steht nach ${sekunden.toFixed(1).replace('.', ',')} s als Sprite da, die Voxel sind versteckt`);
+  } else fail(`Menschen: Start ${JSON.stringify({ vorher: { look: vorher.look, baked: vorher.baked, standard: vorher.standard }, voxelVorher, workers: backen.workers, mika: fertig.mika, drawn: fertig.drawn, voxelNachher })}`);
+
+  // 2. Alles backen (Mika in allen Teilen, die Axt, die Leute): jedes Bild hat Inhalt, nichts scheitert
+  const PEOPLE_IDS = ['hilde', 'bert', 'juna', 'yusuf', 'balduin', 'knopf'];
+  const t1 = Date.now();
+  const alles = await z((ids) => {
+    const r = window.zomfy.people({ mika: true, tools: ['axt'], people: ids });
+    const pv = window.zomfy.game.people;
+    let leer = 0;
+    let bilder = 0;
+    let flicken = 0;
+    for (const v of pv.variants.values()) {
+      if (!v.ready) continue;
+      for (const e of v.table.values()) {
+        bilder++;
+        if (!e.body.w || !e.body.solid) leer++;
+        flicken += Object.keys(e.patches).length;
+      }
+    }
+    return { ready: r.ready, failed: r.failed, waiting: r.waiting, leer, bilder, flicken, atlas: r.atlas };
+  }, PEOPLE_IDS);
+  const backzeit = (Date.now() - t1) / 1000;
+  const erwartet = ['mika|frau-orange-gruen-braun-mittel|base', 'mika|frau-orange-gruen-braun-mittel|aktion', 'mika|frau-orange-gruen-braun-mittel|laterne', 'mika|frau-orange-gruen-braun-mittel|laterneAktion', 'werkzeug|axt', ...PEOPLE_IDS.map((id) => `${id}|fest|base`), 'balduin|fest|gesten'];
+  const fehlt = erwartet.filter((k) => !alles.ready.includes(k));
+  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in vier Teilen, Axt, fünf Leute, Knopf) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
+  else fail(`Menschen: Backen ${JSON.stringify({ fehlt, failed: alles.failed, leer: alles.leer, flicken: alles.flicken, waiting: alles.waiting })}`);
+
+  // 3. Mit echten Tasten: D geht nach Osten, Umschalt rennt, S dreht nach Süden
+  await z(() => window.zomfy.teleport(3.5, 5.5, 0));
+  await step(100);
+  await page.keyboard.down('KeyD');
+  await step(400);
+  const ost = await z(() => window.zomfy.people().mika);
+  await page.keyboard.down('ShiftLeft');
+  await step(400);
+  const renn = await z(() => window.zomfy.people().mika);
+  await page.keyboard.up('ShiftLeft');
+  await page.keyboard.up('KeyD');
+  await page.keyboard.down('KeyS');
+  await step(500);
+  const sued = await z(() => window.zomfy.people().mika);
+  await page.keyboard.up('KeyS');
+  await step(400);
+  if (ost?.anim === 'gehen' && ost.dir === 2 && renn?.anim === 'rennen' && sued?.dir === 0) note('✓ Menschen (F4): mit echten Tasten geht Mika nach Osten (Richtung O), rennt mit Umschalt und dreht nach Süden');
+  else fail(`Menschen: Laufen ${JSON.stringify({ ost, renn, sued })}`);
+
+  // 4. Schwung mit der Axt (eigenes Bild in der Hand), Treffer mit »Aua«-Gesicht, Laterne
+  const taten = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const p = g.player;
+    p.heldTool = 'axt';
+    window.__zomfyStep(100);
+    const ruecken = Z.people().mika;
+    p.startAction('swing', { tool: 'axt', duration: 0.5, hitAt: 0.3 });
+    window.__zomfyStep(60);
+    const aus = Z.people().mika;
+    window.__zomfyStep(220);
+    const hieb = Z.people().mika;
+    window.__zomfyStep(500);
+    p.flinch = 0.25;
+    window.__zomfyStep(34);
+    const aua = Z.people().mika;
+    window.__zomfyStep(400);
+    Z.toggleLantern();
+    window.__zomfyStep(100);
+    const laterne = Z.people().mika;
+    Z.toggleLantern();
+    window.__zomfyStep(60);
+    return { ruecken, aus, hieb, aua, laterne };
+  });
+  const t = taten;
+  if (t.ruecken?.tool?.startsWith('axt:ruecken') && t.aus?.anim === 'schwung' && t.aus.k === 0 && t.aus.tool?.startsWith('axt:hand') && t.hieb?.anim === 'schwung' && t.hieb.k >= 1 && t.aua?.anim === 'treffer' && t.aua.expr === 'aua' && t.laterne?.part === 'laterne') {
+    note(`✓ Menschen (F4): die Axt hängt auf dem Rücken (${t.ruecken.tool}), beim Schwung liegt sie als eigenes Bild in der Hand (ausholen ${t.aus.tool}, Hieb Bild ${t.hieb.k}), ein Treffer zeigt »Aua« als Gesichtsflicken, mit der Laterne der Teil »laterne«`);
+  } else fail(`Menschen: Taten ${JSON.stringify(t)}`);
+
+  // 5. Seltene Posen bleiben Voxel: am Kartentisch sitzt Mika aus Voxeln, danach wieder Sprite
+  const sitzen = await z(() => {
+    const Z = window.zomfy;
+    const p = Z.game.player;
+    p.seat({ x: p.position.x, z: p.position.z, facing: 0, seatY: 0.4 });
+    window.__zomfyStep(34);
+    const im = { mika: Z.people().mika, voxel: p.character.root.children.every((c) => c.visible) };
+    p.seat(null);
+    window.__zomfyStep(60);
+    const nach = { mika: Z.people().mika, voxel: p.character.root.children.some((c) => c.visible) };
+    return { im, nach };
+  });
+  if (sitzen.im.mika === null && sitzen.im.voxel && sitzen.nach.mika && !sitzen.nach.voxel) note('✓ Menschen (F4): eine seltene Pose (am Tisch sitzen) zeigt die Voxel-Figur, danach wieder das Sprite');
+  else fail(`Menschen: seltene Pose ${JSON.stringify(sitzen)}`);
+
+  // 6. Die Leute: alle eingezogen stehen als Sprites im Hof, wer Mika nah ist, lächelt
+  const leute = await z((ids) => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    for (const id of ['knopf', 'hilde', 'juna', 'bert', 'yusuf']) Z.setSurvivor(id, 3);
+    window.__zomfyStep(200);
+    const h = g.survivors.npcs.list.get('hilde');
+    Z.teleport(h.x + 1.2, h.z + 0.6, -2.0);
+    for (let i = 0; i < 12; i++) window.__zomfyStep(34);
+    const r = Z.people();
+    return { leute: r.leute, drawn: r.drawn, hilde: r.leute.hilde, near: h.near, voxel: ids.filter((id) => id !== 'balduin' && g.survivors.npcs.list.get(id)?.model.root.children.some((c) => c.visible)) };
+  }, PEOPLE_IDS);
+  const da = ['hilde', 'bert', 'juna', 'yusuf', 'knopf'].filter((id) => leute.leute[id]);
+  if (da.length === 5 && leute.near && leute.hilde?.expr === 'froh' && !leute.voxel.length) note(`✓ Menschen (F4): Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im Hof (keine Voxel), Hilde lächelt, wenn Mika dabeisteht`);
+  else fail(`Menschen: Leute ${JSON.stringify({ da, hilde: leute.hilde, near: leute.near, voxel: leute.voxel, drawn: leute.drawn })}`);
+
+  // 7. Bilder: am Tag nah im Hof (2D und 3D zum Vergleich), nachts mit Laterne
+  await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const list = ['hilde', 'bert', 'juna', 'yusuf', 'knopf'].map((id) => g.survivors.npcs.list.get(id));
+    const spots = [[-1.6, 0.2], [-0.4, -0.6], [0.8, -0.3], [1.9, 0.3], [0.2, 1.0]];
+    list.forEach((n, i) => {
+      g.survivors.npcs.place(n, 2 + spots[i][0], 3 + spots[i][1], 0.2 * (i - 2));
+      n.target = null;
+    });
+    Z.teleport(2.9, 4.1, -0.6);
+    Z.lookAt(2.4, 3.3);
+    g.rig.jumpTo(2.4, 3.3);
+    document.querySelector('#ui').style.visibility = 'hidden';
+  });
+  await page.keyboard.press('KeyZ');
+  await step(200);
+  await still('menschen-tag');
+  await z(() => window.zomfy.setFigureLook('3d'));
+  await step(34);
+  await still('menschen-3d');
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setFigureLook('2d');
+    Z.setTime(21, 40);
+    Z.toggleLantern();
+  });
+  await step(600);
+  await still('menschen-nacht');
+  await page.keyboard.press('KeyZ');
+  await z(() => {
+    window.zomfy.toggleLantern();
+    document.querySelector('#ui').style.visibility = 'visible';
+    window.__zomfyHold = false;
+  });
+
+  // 8. Der Musterbogen (ohne Browser gebacken): Mika in acht Richtungen, die Leute daneben
+  const bogen = await import('../src/entities/peopleSprites.js');
+  const kinds = await import('../src/entities/peopleKinds.js');
+  const looks = await import('../src/data/looks.js');
+  const png = await import('./bogen-png.mjs');
+  const ids = ['mika', 'hilde', 'bert', 'juna', 'yusuf', 'balduin', 'knopf'];
+  const Zm = 2;
+  const cw = 46 * Zm;
+  const ch = 64 * Zm;
+  const cv = new png.Canvas(9 * cw, ids.length * ch, 0xe8e0cc);
+  ids.forEach((id, r) => {
+    const kind = kinds.PEOPLE[id];
+    const spec = id === 'mika' ? looks.lookSpec(kinds.MIKA_BASE, looks.DEFAULT_LOOK) : {};
+    const walk = kind.dog ? 'traben' : 'gehen';
+    [[0, 'stehen'], [1, 'stehen'], [2, 'stehen'], [3, 'stehen'], [4, 'stehen'], [6, 'stehen'], [0, walk, 1], [2, walk, 3], [7, walk, 4]].forEach(([d, anim, k = 0], c) => {
+      const f = bogen.bakePerson(id, spec, 'base', d, anim, k);
+      cv.fill(c * cw, r * ch, cw, ch, (c + r) % 2 ? 0x3b6a31 : 0x2b552b);
+      cv.frame(f, c * cw + cw / 2, r * ch + ch - 7 * Zm, Zm, { shadowColor: 0x1f4226 });
+    });
+  });
+  writeFileSync(join(SHOTS, 'menschen-bogen.png'), png.encodePng(cv.w, cv.h, cv.px));
+  note('  Screenshot: screenshots/menschen-bogen.png');
+  checkMessages(session);
+  await session.context.close();
+}
+
 function note(line) {
   report.push(line);
   console.log(line);
@@ -229,6 +445,7 @@ async function runBrowserChecks() {
     if (want('nebel')) await runFogFlickerChecks(browser, url);
     if (want('oberflaeche')) await runMenuChecks(browser, url);
     if (want('sprites')) await runSpriteChecks(browser, url);
+    if (want('menschen')) await runPeopleChecks(browser, url);
     if (want('aufraeumen')) await runTidyChecks(browser, url);
     if (want('knoten')) await runKnotChecks(browser, url);
     if (want('wald')) await runForestChecks(browser, url);

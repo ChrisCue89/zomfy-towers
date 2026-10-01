@@ -1,6 +1,6 @@
 // Einstellungen (Meilenstein 7): Lautstärke, Pixelgröße, Textgeschwindigkeit;
 // seit M26 auch Wackeln und Blitze (Zugänglichkeit), seit F1 der Look der Schlurfer (seit F2
-// standardmäßig 2D).
+// standardmäßig 2D), seit F4 der Look der Menschen (Figuren 2D/3D).
 // Sie gehören nicht zum Spielstand – eigener Schlüssel im Browser, damit ein
 // neues Spiel sie nicht zurücksetzt.
 
@@ -25,6 +25,8 @@ export const SHAKES = ['aus', 'halb', 'voll'];
 export const FLASHES = ['voll', 'sanft'];
 /** F1/F2: Schlurfer als Voxel (3D) oder als Sprites (2D, seit F2 alle Arten und der Standard). */
 export const HORDE_LOOKS = ['3d', '2d'];
+/** F4: Mika, die Bewohner, Balduin und Knopf als Voxel (3D) oder als Sprites (2D, Standard). */
+export const FIGURE_LOOKS = ['3d', '2d'];
 /**
  * Stand der gespeicherten Einstellungen: Mit 2 wurde 2D der Standard der Schlurfer (F2) – ein
  * älterer Stand hatte »3D« nur als alten Standard gespeichert, dort gilt einmal der neue.
@@ -44,6 +46,7 @@ export const DEFAULT_SETTINGS = {
   shake: 'voll',
   flashes: 'voll',
   horde: '2d',
+  figuren: '2d',
 };
 
 export function loadSettings() {
@@ -60,6 +63,7 @@ export function loadSettings() {
       if (SHAKES.includes(data.shake)) out.shake = data.shake;
       if (FLASHES.includes(data.flashes)) out.flashes = data.flashes;
       if (HORDE_LOOKS.includes(data.horde) && data.v >= 2) out.horde = data.horde;
+      if (FIGURE_LOOKS.includes(data.figuren)) out.figuren = data.figuren;
     }
   } catch {
     // kaputt oder gesperrt: Standardwerte

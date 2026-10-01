@@ -224,6 +224,24 @@ gilt bis auf Weiteres:
     - Müde statt gierig, kein Blut, jede Art mit Merkmal oben und Eigenlicht für die Nacht.
     - Neue Arten dort bauen und ansehen mit `node tools/schlurfer-bogen.mjs datei.png --art=…` und
       `node tools/schlurfer-reihe.mjs datei.png` (ohne Browser).
+- **Menschen als Sprites (F4, Standard 2D):** Mika, Hilde, Bert, Juna, Yusuf, Balduin und Knopf
+  backen wie die Horde aus Formen (`peopleKinds.js`, Gerüst `peopleFigure.js`: `HUMAN`, `posePerson`,
+  Laterne, Vierbeiner), aber in **acht gezeichneten Richtungen** (nichts gespiegelt) und in einem
+  eigenen Atlas mit eigenem Worker (`peopleView.js`, Einstellung »Figuren: 3D/2D«, `game.people`).
+  - Eine Fassung ist ein Teil einer Figur in einem Stand (Mika: `base`, `aktion`, `laterne`,
+    `laterneAktion` je Aussehen; die Leute `base`, Balduin dazu `gesten`); fertig, wenn alle Bilder
+    da sind, bis dahin Voxel.
+  - **Gesichter als Flicken:** Das Bild trägt den ersten Ausdruck, jeder weitere ist ein Flicken aus
+    den Texeln, die irgendein Ausdruck berührt (`encodePatch`, Fußpunkt außerhalb des Flickens –
+    der Shader klemmt die Fußlinie). Gesichter liegen nur auf Formen mit `part: 'head'` oder `face:
+    true` (`stampAt` mit `parts`), im Profil auf der Seite zur Kamera (`faceAt`).
+  - **Werkzeuge** (`TOOLS`) sind eigene Bilder in 16 Winkelstufen um die rechte Hand und auf dem
+    Rücken (Stufe 16), um 45° um den Stiel gedreht; das Bild der Figur trägt Anker (`hand`, `back`:
+    Lage, Stufe, vorn/hinten). Gebacken über dem Boden (`TOOL_LIFT`), sonst schnitte die Erde sie ab.
+  - Die Voxel-Figuren laufen unsichtbar mit (Laternenlicht, Anker, Zustand); versteckt werden nur
+    die Kinder ihres Wurzelknotens (`root.visible` sagt bei den Leuten, ob sie da sind). Seltene
+    Posen und Figuren ohne Sprite bleiben Voxel.
+  - Ansehen ohne Browser: `node tools/menschen-bogen.mjs datei.png --figur=mika --aussehen=…`.
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -285,8 +303,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Einladung, Tisch, KI mit Bedenkzeit und Tick, Einsatz,
                       Wettschuld, Menschenkunde, M28),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
-                      Wackeln, Blitze, Schlurfer 3D/2D – eigener Speicherplatz,
-                      nicht im Spielstand)
+                      Wackeln, Blitze, Schlurfer 3D/2D, Figuren 3D/2D – eigener
+                      Speicherplatz, nicht im Spielstand)
 src/audio/            sound (Web Audio: Effekte aus Rauschen und Oszillatoren,
                       Umgebung; erst nach der ersten Eingabe), music
                       (Soundtrack: Stücke als Noten-Daten, Instrumente,
@@ -368,7 +386,13 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       Ruderboot, N5),
                       crows (Krähen: sitzen, picken, fliegen auf, M12),
                       kiteModels (Pims Drachen, Schleifen, Spule, Schnüre, N9),
-                      fishingModels (Angel, Pose, Fänge, M33)
+                      fishingModels (Angel, Pose, Fänge, M33),
+                      peopleFigure (Menschen als Sprites: Maße, Posen, Laterne,
+                      Gesichtsblick, Vierbeiner, F4), peopleKinds (Mika, die
+                      Leute, Knopf, Werkzeuge, Gesichter), peopleSprites (ein
+                      Bild backen: Flicken je Ausdruck, Anker fürs Werkzeug),
+                      peopleView (Atlas, Worker, welches Bild Mika und die
+                      Leute zeigen, Rückfall auf Voxel)
 src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       Nachtleiste mit Plan und Alarmzeile, Lesezeichen an der
                       Uhr, Lebensbalken, Randmarken, feste Zonen und
@@ -453,6 +477,7 @@ tools/balance.mjs     Balance-Durchlauf: spielt Nächte mit einer Bau-Strategie
 tools/playtest.mjs    Playtest-Brücke (früher für Testspieler-Agenten)
 tools/schlurfer-bogen.mjs  Musterbogen einer Art als PNG (ohne Browser, F-Design)
 tools/schlurfer-reihe.mjs  Aufstellung aller Arten am Tag und in der Nacht (F-Design)
+tools/menschen-bogen.mjs   Musterbogen der Menschen-Sprites (F4), tools/bogen-png.mjs PNG und Leinwand
 screenshots/          Ergebnisse der letzten Prüfung
 playtests/            Personas, Berichte, Zusammenfassungen
 ```
@@ -1361,7 +1386,15 @@ Grundprinzipien:
    (Abschnitt `buch`): eine Nacht ganz auf »Wild« bringt den vierten Stern (N ruft mit echter
    Taste, der Bericht zeigt vier), mittendrin auf »Ausgewogen« gestellt ist er fort (Meldung), auf
    »Ausgewogen« drei, Speichern v33 und Migration v32 → v33; die Schlurferkunde zeigt den
-   Schlurfer als Bild und den Flitzer als Schattenriss (Bilder: sterne-wild, schlurferkunde-riss).
+   Schlurfer als Bild und den Flitzer als Schattenriss (Bilder: sterne-wild, schlurferkunde-riss);
+   ab F4 (Abschnitt `menschen`): für Spieler 2D, in der Prüfung 3D (nichts gebacken), »Figuren: 2D«
+   backt mit einem Worker und Mika steht als Sprite da (Voxel versteckt), alle Fassungen (Mika in
+   vier Teilen, die Axt, fünf Leute, Balduins Gesten, Knopf) ohne leeres Bild mit Gesichtsflicken,
+   mit echten Tasten geht Mika nach Osten, rennt mit Umschalt, dreht nach Süden, die Axt auf dem
+   Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
+   Teil, am Tisch sitzt Mika aus Voxeln, Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
+   Hof und Hilde lächelt, wenn Mika dabeisteht (Bilder: menschen-tag, menschen-3d, menschen-nacht,
+   menschen-bogen).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1528,7 +1561,10 @@ und wartende Fassungen (mit Stufe), Worker, Atlas, was gezeichnet wird und die R
 `true` backt es die Arten des Hintergrunds sofort hier, mit einer Liste von Arten oder
 `{ type, f }` genau diese; `game.horde.sprites.keyOf(i)`/`indexOf(z)` nennen das Bild einer
 Instanz); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hud.alarm` die
-Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan;
+Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan; ab F4 stellt `setFigureLook('3d'|'2d')` die Menschen um,
+`people(backen)` zeigt fertige und wartende Fassungen, Atlas, was Mika (`mika`: Teil, Zustand, Bild,
+Ausdruck, Werkzeug, Richtung) und die Leute (`leute`) zeigen; `backen` = `{ mika: true, tools: [...],
+people: [...] }` backt sofort hier;
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
 Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeilen) und die
@@ -1546,6 +1582,7 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 | `?map=123` | Startwert des Wegenetzes erzwingen (sonst je neuem Spiel zufällig; `?test`/`?playtest` nehmen 3) |
 | `?zoom=nah` / `?zoom=weit` | Ansicht draußen erzwingen (M13; Standard weit) |
 | `?horde=2d` / `?horde=3d` | Look der Schlurfer erzwingen (F2; Standard 2D, mit `?test`/`?playtest` 3D) |
+| `?figuren=2d` / `?figuren=3d` | Look der Menschen erzwingen (F4; Standard 2D, mit `?test`/`?playtest` 3D) |
 
 ## Arbeitsweise
 
