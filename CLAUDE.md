@@ -262,7 +262,9 @@ gilt bis auf Weiteres:
       Brauen, Mund, Nase und Wangen an Punkte der gerundeten Kopfform; `placeFace`/`stampFace` setzen
       sie einzeln ins Bild, die Breite der Augen folgt der Zuwendung. **Nie schielen:** von vorn
       beide Augen gespiegelt mit dem Glanz in der Pupille, schräg das Weiß bei beiden Augen auf
-      derselben Seite (ein weißer Pixel am Rand liest sich als Augapfel).
+      derselben Seite (ein weißer Pixel am Rand liest sich als Augapfel). Merkmale je Figur in
+      `FOLK_FACES[id].look`: `glasses`, `lashes`, `bushy` (buschige Brauen), `lines` (Lachfältchen) –
+      nichts direkt neben die Augen setzen (Sommersprossen lasen sich wie ein Schielen).
     - Licht (`lightField`, `PEOPLE_LIGHT`): seitlich von oben links, weiche Schlagschatten,
       Verdeckung, geglättet je Stoff; Glanz über `gloss` am Stoff, Gegenlicht, eigene Tonschwellen
       (`PEOPLE_PAINT.tones`).

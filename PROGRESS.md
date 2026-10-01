@@ -106,6 +106,11 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
 - **F6c – Büschel statt Rillen:** Haar am Hinterkopf, Dutts und Bärte haben ungleich breite Strähnen
   mit Kerben (vorher gleich breite Rillen – am Hinterkopf wie Bretter). Bert ist nur noch am Kinn und
   unter den Mundwinkeln grau (vorher graue Einzelspalten wie ein Strichcode).
+- **F6c – Knopf und Gesichter mit Charakter:** Knopf hat zotteliges Fell im Relief statt Sprenkeln
+  (die lasen sich wie Schmutz), einen dunklen Sattel, dunklere Schlappohren und größere Augen mit
+  Glanz. Buschige Brauen für Bert, Balduin, Hannes, Fiete und Anton, Lachfältchen für Hilde, Balduin,
+  Greta, Fiete, Emil, Paula und Edda (`look.bushy`, `look.lines`). Sommersprossen probiert und
+  verworfen – neben den kleinen Augen lasen sie sich wie ein Schielen.
 - **G7:** die Geschichte der Ankunft – eigener Eintrag oben.
 
 ## F5: Die Menschen schöner gezeichnet ✓

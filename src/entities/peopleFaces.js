@@ -206,7 +206,8 @@ export function placeFace(face, raster, faceParts, skin) {
 
 /**
  * Die kleinen Bilder eines Ausdrucks für eine Platzierung: Liste von { rows, x0, y0 } (Texel der
- * linken oberen Ecke). `o.lashes` gibt Wimpern, `o.glasses` eine Brille.
+ * linken oberen Ecke). `o.lashes` gibt Wimpern, `o.glasses` eine Brille; F6c: `o.bushy` buschige
+ * Brauen, `o.lines` Lachfältchen (Sommersprossen lasen sich neben den kleinen Augen wie ein Schielen).
  */
 export function faceStamps(place, expr, o = {}) {
   const out = [];
@@ -232,7 +233,8 @@ export function faceStamps(place, expr, o = {}) {
     // Wimpern am äußeren oberen Winkel offener Augen
     if (o.lashes && open && e.width > 1) put(['L'], e.inward > 0 ? x0 - 1 : x0 + e.width, y0);
   });
-  // Brauen über den Augen (so breit wie das Auge; das schmale Auge bekommt eine längere)
+  // Brauen über den Augen (so breit wie das Auge; das schmale Auge bekommt eine längere). F6c:
+  // `o.bushy` – buschig, innen zwei Reihen hoch
   const brow = BROWS[expr] || [0, 0];
   const gap = BROW_GAP[expr] || 2;
   for (const { e, x0, y0 } of tops) {
@@ -244,7 +246,18 @@ export function faceStamps(place, expr, o = {}) {
       // innen ist die Seite zur Nase
       const inner = e.inward > 0 ? k === w - 1 : k === 0;
       const outer = e.inward > 0 ? k === 0 : k === w - 1;
-      put(['b'], x, y + (inner ? brow[0] : outer ? brow[1] : 0));
+      const by = y + (inner ? brow[0] : outer ? brow[1] : 0);
+      put(['b'], x, by);
+      if (o.bushy && !outer) put(['b'], x, by - 1);
+    }
+  }
+  // F6c: Lachfältchen – ein Strich im Hautschatten am äußeren unteren Augenwinkel (die Älteren)
+  if (o.lines) {
+    for (const { e, x0, y0 } of tops) {
+      if (e.width < 2) continue;
+      const out = e.inward > 0 ? x0 - 1 : x0 + e.width;
+      put(['l'], out, y0 + 2);
+      if (expr === 'froh' || expr === 'grinsen') put(['l'], out + (e.inward > 0 ? -1 : 1), y0 + 1);
     }
   }
   // Brille: ein runder Rahmen um jedes Auge, zwischen den Augen der Steg, im Profil der Bügel

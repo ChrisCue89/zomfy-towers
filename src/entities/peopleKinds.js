@@ -13,7 +13,7 @@ import { P, RAMPS } from '../render/palette.js';
 import { humanoid, headEllipsoid, headCapsule, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
 import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
 import { faceOf, FACE, FACE_CHILD } from './peopleFaces.js';
-import { ribs as knitRibs, folds, rings as ringFolds, strands, combine } from './peopleRelief.js';
+import { ribs as knitRibs, folds, rings as ringFolds, strands, combine, locks } from './peopleRelief.js';
 
 const R = RAMPS;
 
@@ -750,10 +750,12 @@ const balduin = {
  * dunkle Schlappohren, eine helle Schwanzspitze, das rote Halsband mit dem großen goldenen Knopf –
  * daher der Name.
  */
+// F6c: zwei Texel große Augen mit Glanz oben (vorher ein Punkt über einem weißen – das las sich wie
+// zwei Tropfen)
 const KNOPF_EYES = {
-  S: ['k.....k', 'w.....w'],
-  SO: ['k...k.', 'w...w.'],
-  O: ['..k', '..w'],
+  S: ['wk...wk', 'kk...kk'],
+  SO: ['wk..wk.', 'kk..kk.'],
+  O: ['.wk', '.kk'],
 };
 const knopf = {
   size: 1.3,
@@ -762,14 +764,14 @@ const knopf = {
   shadowSize: { x: 0.26, z: 0.4 },
   parts: { base: { anims: ['stehen', 'traben', 'sitzen', 'bellen'] } },
   materials: {
-    fell: rampOf([R.e[2], R.e[3], R.e[4], R.e[5], R.e[6]], 3, { pattern: (p) => {
-      const h = hash(Math.floor(p[0] * 20 + 99), Math.floor(p[1] * 20 + 99), Math.floor(p[2] * 20 + 99));
-      return h < 0.08 ? 2 : h < 0.3 ? -1 : 0;
-    } }),
+    // F6c: struppig durch Zotteln im Relief statt Sprenkeln (die lasen sich als Schmutz), ein dunkler
+    // Sattel auf dem Rücken, die Ohren deutlich dunkler
+    fell: rampOf([R.e[2], R.e[3], R.e[4], R.e[5], R.e[6]], 3),
+    sattel: rampOf([R.e[1], R.e[2], R.e[3], R.e[4], R.e[5]], 3),
     bauch: rampOf([R.e[4], R.e[5], R.e[6], R.e[7]], 2),
     pfote: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 2),
     schnauze: rampOf([R.e[4], R.e[5], R.e[6], R.e[7], R.e[8]], 3),
-    ohr: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 2),
+    ohr: rampOf([R.e[0], R.e[1], R.e[2], R.e[3]], 2),
     maul: rampOf([R.r[0], R.r[1], P.a0], 1),
     schwanzspitze: rampOf([R.e[5], R.e[6], R.e[7], R.e[8]], 2),
     halsband: rampOf([R.r[0], R.r[1], R.r[2], R.r[3], R.r[4]], 3),
@@ -778,6 +780,19 @@ const knopf = {
     const { W, stamps, dir, pose } = ctx;
     const M = { fell: 'fell', bauch: 'bauch', pfote: 'pfote', schnauze: 'schnauze', ohr: 'ohr', maul: 'maul', schwanzspitze: 'schwanzspitze' };
     const res = quadruped(ctx, DOG, pose, M);
+    // Sattel auf dem Rücken, Zotteln: senkrechte Büschel an den Flanken, rund um Kopf und Hals
+    const rumpf = ctx.part('rumpf');
+    if (rumpf) {
+      const belly = rumpf.matAt;
+      rumpf.matAt = (l, p) => (l[1] > 0.07 + 0.02 * Math.sin(l[2] * 30) ? 'sattel' : belly(l, p));
+      rumpf.bump = (l) => {
+        const u = l[2] / 0.055 + 0.3 * Math.sin(l[2] * 41 + 1.7);
+        const f = u - Math.floor(u);
+        return [0, 0, 0.45 * (f < 0.7 ? -1 + f / 0.35 : 1 - (f - 0.7) / 0.15)];
+      };
+    }
+    const kopf = ctx.part('kopf');
+    if (kopf) kopf.bump = locks(16, { amp: 0.35, seed: 3, fade: [0.04, 0.12] });
     // Halsband und der goldene Knopf
     const collar = add(res.headC, [0, -0.1, -0.06]);
     ctx.ellipsoid(collar, [0.085, 0.03, 0.08], 'halsband', { pitch: -0.4 });
@@ -2001,24 +2016,24 @@ const CHEEK_ON = { [P.h2]: R.d[5], [P.h1]: R.d[4], [P.h0]: R.d[3] };
 
 /** Gesichter der Leute: Haut, Haar (Brauen), Augen, Wangen und Brille bzw. Bart. */
 const FOLK_FACES = {
-  hilde: { look: { glasses: true }, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.a1 }) },
-  bert: { look: {}, legend: faceLegend({ skin: P.h2, hair: P.e3, cheek: P.r4, lips: P.a0, brow: P.e2 }) },
+  hilde: { look: { glasses: true, lines: true }, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.a1 }) },
+  bert: { look: { bushy: true }, legend: faceLegend({ skin: P.h2, hair: P.e3, cheek: P.r4, lips: P.a0, brow: P.e2 }) },
   juna: { look: {}, legend: faceLegend({ skin: P.h2, hair: P.n2, cheek: P.a0 }) },
   yusuf: { look: { glasses: true }, legend: faceLegend({ skin: P.h1, hair: P.n1, eyes: P.n0, cheek: P.r4, lips: P.a0, brow: P.n0 }) },
-  balduin: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.a1, lips: P.a0, brow: P.s6 }) },
-  hannes: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a0, lips: P.a0, brow: P.e1 }) },
+  balduin: { look: { bushy: true, lines: true }, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.a1, lips: P.a0, brow: P.s6 }) },
+  hannes: { look: { bushy: true }, legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a0, lips: P.a0, brow: P.e1 }) },
   clara: { look: { lashes: true }, legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.a1, brow: P.r1 }) },
   lotte: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e8, cheek: P.a1, brow: P.e6 }) },
-  greta: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.r4, brow: P.s5 }) },
-  fiete: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s8, cheek: P.r4, lips: P.a0, brow: P.s9 }) },
+  greta: { look: { lines: true }, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.r4, brow: P.s5 }) },
+  fiete: { look: { bushy: true, lines: true }, legend: faceLegend({ skin: P.h3, hair: P.s8, cheek: P.r4, lips: P.a0, brow: P.s9 }) },
   ida: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e3, cheek: P.a1, brow: P.e3 }) },
   rosa: { look: { lashes: true }, legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a1, brow: P.e2 }) },
-  anton: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e4, cheek: P.r4, brow: P.e3 }) },
-  emil: { look: {}, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.r4, brow: P.s8 }) },
+  anton: { look: { bushy: true }, legend: faceLegend({ skin: P.h3, hair: P.e4, cheek: P.r4, brow: P.e3 }) },
+  emil: { look: { lines: true }, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.r4, brow: P.s8 }) },
   frieda: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.r4, brow: P.r2 }) },
   mara: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.n1, cheek: P.a1, brow: P.n1 }) },
-  paula: { look: { glasses: true }, legend: faceLegend({ skin: P.h4, hair: P.s8, cheek: P.a1, brow: P.s7 }) },
-  edda: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s9, cheek: P.a1, brow: P.s8 }) },
+  paula: { look: { glasses: true, lines: true }, legend: faceLegend({ skin: P.h4, hair: P.s8, cheek: P.a1, brow: P.s7 }) },
+  edda: { look: { lines: true }, legend: faceLegend({ skin: P.h3, hair: P.s9, cheek: P.a1, brow: P.s8 }) },
   marthe: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e5, cheek: P.a0, brow: P.e3 }) },
   pim: { look: {}, legend: faceLegend({ skin: P.h4, hair: P.r4, cheek: P.a1, brow: P.r2 }) },
   lu: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e2, cheek: P.a0, brow: P.e1 }) },
