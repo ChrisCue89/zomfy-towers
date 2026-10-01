@@ -4,11 +4,12 @@
 // (Blinzeln, Lächeln, »Aua« ändern nur diese Texel) und Anker für das Werkzeug, das als eigenes
 // Bild darüber oder dahinter liegt. Reines JavaScript ohne three.js – der Worker backt mit.
 
-import { trace, paint, stampAt, toTexel, TEXEL } from '../render/spriteBaker.js';
+import { trace, paint, stampAt, toTexel, lightField, TEXEL } from '../render/spriteBaker.js';
 import { encodeFrame, encodePatch } from '../render/spriteCode.js';
 import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './spriteFigure.js';
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
 import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
+import { mapFace, placeFace, stampFace } from './peopleFaces.js';
 
 /** Gezeichnete Richtungen: 0 S, 1 SO, 2 O, 3 NO, 4 N, 5 NW, 6 W, 7 SW. */
 export const PEOPLE_DIRS = 8;
@@ -64,14 +65,20 @@ export function tiltFrame(ctx, angle, pivot = [0, 0, 0]) {
       s.c = at(s.c);
       s.ax = (s.ax || IDENTITY).map(turn);
     }
+    const capsule = s.kind === 'capsule'; // bei Kapseln ist l der Weltabstand zu a
     if (s.matAt) {
       const f = s.matAt;
-      const capsule = s.kind === 'capsule'; // bei Kapseln ist l der Weltabstand zu a
       s.matAt = (l, p) => f(capsule ? back(l) : l, from(p));
+    }
+    // F6c: Relief – bei Kapseln liegt die Neigung in der Welt und dreht mit, sonst im eigenen Rahmen
+    if (s.bump) {
+      const f = s.bump;
+      s.bump = capsule ? (l, p) => { const v = f(back(l), from(p)); return v && turn(v); } : (l, p) => f(l, from(p));
     }
   }
   for (const st of ctx.stamps || []) st.at = at(st.at);
-  if (ctx.face) ctx.face.at = at(ctx.face.at);
+  if (ctx.face?.eyes) mapFace(ctx.face, at, turn);
+  else if (ctx.face) ctx.face.at = at(ctx.face.at);
   return at;
 }
 
@@ -115,7 +122,8 @@ export function personShapes(id, spec, part, d, anim, k) {
   scaleFrame(ctx, size);
   if (size !== 1) {
     for (const s of ctx.stamps) s.at = s.at.map((v) => v * size);
-    if (ctx.face) ctx.face.at = ctx.face.at.map((v) => v * size);
+    if (ctx.face?.eyes) mapFace(ctx.face, (p) => p.map((v) => v * size));
+    else if (ctx.face) ctx.face.at = ctx.face.at.map((v) => v * size);
   }
   // F5: frontaler backen; die Anker liegen im gekippten Bild, Richtung und Seite des Werkzeugs
   // rechnen weiter mit der ungekippten Figur
@@ -154,7 +162,12 @@ function groupsOf(shapes) {
 }
 
 /** Wie die Menschen gemalt werden (F5): Schattenlinien ab 2,5 cm Abstand, Töne aufgeräumt. */
-export const PEOPLE_PAINT = { occlude: 0.025, tidy: true };
+export const PEOPLE_PAINT = { occlude: 0.025, tidy: true, backlight: true };
+/**
+ * F6b: Licht wie gezeichnet – seitlicher von oben links als bei der Horde (sonst ist von vorn alles
+ * gleich hell und flach), Schlagschatten bis 55 cm, Verdeckung in Falten, geglättete Tonflächen.
+ */
+export const PEOPLE_LIGHT = { dir: [-0.7, 0.6, 0.38], wrap: 0.15, shadow: 0.55, ao: 0.75, smooth: true };
 
 /** Schatten als Ellipse um den Fußpunkt, nur wo die Figur nicht selbst steht. */
 function shadowOf(raster, color, size) {
@@ -190,23 +203,25 @@ export function bakePerson(id, spec, part, d, anim, k) {
   const ctx = personShapes(id, spec, part, d, anim, k);
   const raster = trace(ctx.shapes, kind.cell || PEOPLE_CELL);
   const materials = materialsOf(id, spec);
-  const out = paint(raster, materials, { ...PEOPLE_PAINT, groups: groupsOf(ctx.shapes) });
+  const groups = groupsOf(ctx.shapes);
+  const light = PEOPLE_LIGHT ? lightField(raster, ctx.shapes, { ...PEOPLE_LIGHT, groups }) : null;
+  const out = paint(raster, materials, { ...PEOPLE_PAINT, groups, light });
   for (const s of ctx.stamps) stampAt(out, raster, s.stamp, s.at, s.opts);
   const patches = {};
   let color = out.color;
   let glow = out.glow;
-  if (ctx.face && kind.expressions?.length) {
-    const { faces, legend } = facesOf(id, spec);
+  if (ctx.face?.eyes && kind.expressions?.length) {
+    const { look, legend } = facesOf(id, spec);
     const mask = new Uint8Array(raster.w * raster.h);
-    // Das Gesicht liegt nur auf dem Kopf (und der Nase), nie auf Mütze, Hand oder Werkzeug davor
+    // Das Gesicht liegt nur auf dem Kopf (und Nase, Bart), nie auf Mütze, Hand oder Werkzeug davor;
+    // Augen und Wangen nur auf Haut (F6a: jedes Merkmal an seinem Punkt auf dem Kopf)
     const parts = new Set();
     ctx.shapes.forEach((sh, i) => (sh.part === 'head' || sh.face) && parts.add(i));
+    const place = placeFace(ctx.face, raster, parts, new Set([kind.skin || 'haut']));
     const results = {};
     for (const expr of kind.expressions) {
-      const face = faces[expr]?.[ctx.face.view];
-      if (!face) continue;
       const res = { color: out.color.slice(), glow: out.glow.slice() };
-      stampAt(res, raster, { rows: face, legend }, ctx.face.at, { flip: ctx.face.flip, mark: mask, parts });
+      stampFace(res, raster, place, expr, legend, look, parts, mask);
       results[expr] = res;
     }
     const first = kind.expressions[0];

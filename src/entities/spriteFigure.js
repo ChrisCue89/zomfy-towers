@@ -243,7 +243,7 @@ export function humanoid(ctx, B, skip = {}) {
     ctx.capsule(add(neck, [0, -0.03, 0]), add(headC, turn ? turn(chin) : chin), B.neckR, null, M.neck, { blend: 0.03, part: 'neck' });
     ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, taper: B.head.taper, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head' });
   }
-  return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll };
+  return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll, head: B.head };
 }
 
 /**

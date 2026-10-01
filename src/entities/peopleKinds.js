@@ -5,182 +5,18 @@
 // schon von Weitem liest (DESIGN 4.5), und bekommt die kleinen Dinge dazu, die sie erzählen.
 //
 // Ein Bauplan `build(ctx, spec)` setzt Formen und Stempel in Figurkoordinaten und mit
-// `ctx.face = faceAt(ctx, punkt)` die Stelle des Gesichts; gebacken wird in peopleSprites.js.
+// `ctx.face = faceOf(ctx, body, FACE)` die Merkmale des Gesichts (peopleFaces.js, F6a); gebacken
+// wird in peopleSprites.js.
 // Kein three.js – der Worker backt mit denselben Bauplänen.
 
 import { P, RAMPS } from '../render/palette.js';
 import { humanoid, headEllipsoid, headCapsule, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
 import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
+import { faceOf, FACE, FACE_CHILD } from './peopleFaces.js';
 
 const R = RAMPS;
 
 // --- Gesichter -----------------------------------------------------------------------------------
-
-/**
- * Ein Gesicht als Stempel: Augen, Brauen, Wangen, Nase, Mund je Ausdruck, gezeichnet für drei
- * Blicke (S von vorn, SO halb gedreht, O im Profil). Legende: k Auge, i Iris (unten im Auge),
- * w Lichtpunkt, l Lid, K unteres Lid, b Braue, c Wange, n Nase, m Mund, t Zunge, z Zähne, L Wimper.
- * `o.lashes` gibt Wimpern, `o.glasses` eine Brille.
- *
- * F5 (recherche/menschen-gestaltung.md): Die Augen sind von vorn 3 Texel breit und 3 hoch, so weit
- * auseinander wie ein Auge breit ist, mit dem Lichtpunkt in beiden Augen oben links und der Iris
- * unten; im Halbprofil ist das ferne Auge schmaler. Die Brauen stehen eine Reihe über den Augen.
- */
-export function faceRows(view, expr, o = {}) {
-  const W = view === 'S' ? 15 : view === 'SO' ? 13 : 7;
-  const H = 9;
-  const g = Array.from({ length: H }, () => Array(W).fill('.'));
-  const set = (x, y, ch) => {
-    if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = ch;
-  };
-  // Augen [linke Spalte, Breite, außen (−1 links, 1 rechts)], Mund und Wangen je Blick
-  const eyes = view === 'S' ? [[3, 3, -1], [9, 3, 1]] : view === 'SO' ? [[2, 3, -1], [8, 2, 1]] : [[1, 2, 1]];
-  const mouth = view === 'S' ? 7 : view === 'SO' ? 6 : 3;
-  const cheeks = view === 'S' ? [[1, 2], [12, 2]] : view === 'SO' ? [[0, 2], [10, 1]] : [[0, 2]];
-  /** Brauen so breit wie das Auge (das schmale im Halbprofil eine Spalte länger); inner/outer heben bzw. senken die Enden. */
-  const brow = (y, inner, outer) => {
-    for (const [x0, w, side] of eyes) {
-      const from = side < 0 && w < 3 ? x0 - 1 : x0;
-      const to = side > 0 && w < 3 ? x0 + w : x0 + w - 1;
-      for (let x = from; x <= to; x++) {
-        const out = side < 0 ? x === from : x === to;
-        const inn = side < 0 ? x === to : x === from;
-        set(x, y + (out ? outer : inn ? inner : 0), 'b');
-      }
-    }
-  };
-  /** Augen aus Zeilen je Breite (3 bzw. 2), ab Reihe 3. */
-  const eyeRows = (rows3, rows2 = rows3.map((r) => r && r.slice(0, 1) + r.slice(2))) => {
-    for (const [x0, w] of eyes) {
-      const rows = w === 3 ? rows3 : rows2;
-      rows.forEach((row, dy) => row && [...row].forEach((ch, dx) => ch !== '.' && set(x0 + dx, 3 + dy, ch)));
-    }
-  };
-  const open = () => eyeRows(['wkk', 'kkk', 'kik'], ['wk', 'kk', 'ik']);
-  const cheek = (y = 6) => {
-    for (const [x0, w] of cheeks) for (let x = x0; x < x0 + w; x++) set(x, y, 'c');
-  };
-  const nose = () => set(mouth, 6, 'n');
-  const line = (y, x0, x1, ch = 'm') => {
-    for (let x = x0; x <= x1; x++) set(x, y, ch);
-  };
-  switch (expr) {
-    case 'froh': // lachende Bögen (hinter einer Brille bleiben die Augen offen), ein offenes Lächeln
-      brow(1, -1, 0);
-      if (o.glasses) open();
-      else {
-        for (const [x0, w] of eyes) {
-          for (let x = x0; x < x0 + w; x++) set(x, 3, 'k');
-          set(x0 - 1, 4, 'k');
-          set(x0 + w, 4, 'k');
-        }
-      }
-      cheek(5);
-      nose();
-      line(7, mouth - 2, mouth + 2);
-      line(8, mouth - 1, mouth + 1, 't');
-      break;
-    case 'aua': // zusammengekniffen > <, der Mund ein kleines O
-      brow(1, -1, 1);
-      for (const [x0, w, side] of eyes) {
-        const a = side < 0 ? x0 : x0 + w - 1; // die Spitze zeigt zur Nase
-        const b = side < 0 ? x0 + w - 1 : x0;
-        set(a, 3, 'k');
-        for (let x = Math.min(a, b) + 1; x < Math.max(a, b); x++) set(x, 4, 'k');
-        set(b, 4, 'k');
-        set(a, 5, 'k');
-      }
-      cheek();
-      line(7, mouth - 1, mouth + 1);
-      line(8, mouth - 1, mouth + 1);
-      set(mouth, 8, 't');
-      break;
-    case 'staunen': // weit offen, die Brauen hoch, ein rundes O
-      brow(0, 0, 0);
-      eyeRows(['wkw', 'kkk', 'kik'], ['wk', 'kk', 'ik']);
-      cheek();
-      nose();
-      line(7, mouth, mouth);
-      line(8, mouth - 1, mouth + 1);
-      set(mouth, 8, 't');
-      break;
-    case 'muede': // die Lider halb zu, die Brauen tief
-      brow(1, 1, 1);
-      eyeRows(['lll', 'kkk', 'kik'], ['ll', 'kk', 'ik']);
-      cheek();
-      nose();
-      set(mouth, 7, 't');
-      break;
-    case 'besorgt': // die Brauen innen hoch, der Mund ein kleiner Bogen nach unten
-      brow(1, -1, 1);
-      open();
-      cheek();
-      nose();
-      set(mouth, 7, 'm');
-      set(mouth - 1, 8, 'm');
-      set(mouth + 1, 8, 'm');
-      break;
-    case 'entschlossen': // die Brauen innen tief, die Lider ein wenig zu, die Zähne zusammen
-      brow(1, 1, -1);
-      eyeRows(['lll', 'kkk', 'kik'], ['ll', 'kk', 'ik']);
-      cheek();
-      nose();
-      line(7, mouth - 2, mouth + 2);
-      line(7, mouth - 1, mouth + 1, 'z');
-      break;
-    case 'blinzeln': // die Lider zu: eine dunkle Linie, darüber Haut
-      brow(1, 0, 0);
-      eyeRows([null, 'lll', 'kkk'], [null, 'll', 'kk']);
-      cheek();
-      nose();
-      set(mouth, 7, 't');
-      break;
-    case 'grinsen': // Balduin: ein breites Grinsen mit Goldzahn
-      brow(1, -1, 0);
-      eyeRows(['wkk', 'kkk', 'KKK'], ['wk', 'kk', 'KK']);
-      cheek(5);
-      line(7, mouth - 2, mouth + 2);
-      line(8, mouth - 1, mouth + 1, 'z');
-      set(mouth + 1, 8, 'g');
-      break;
-    default: // normal: offene Augen mit Lichtpunkt, ein kleiner Mund
-      brow(1, 0, 0);
-      open();
-      cheek();
-      nose();
-      line(7, mouth, mouth, 't');
-      if (view !== 'O') set(mouth - 1, 7, 'n');
-      break;
-  }
-  // Wimpern am äußeren Augenwinkel (offene Augen)
-  if (o.lashes && ['normal', 'staunen', 'besorgt'].includes(expr)) {
-    for (const [x0, w, side] of eyes) set(side < 0 ? x0 - 1 : x0 + w, 3, 'L');
-  }
-  // Brille: ein runder Rahmen um jedes Auge (F5: hell, ohne Ecken – dunkel und eckig sah sie wie eine
-  // Schweißerbrille aus), dazwischen der Steg, im Profil der Bügel nach hinten
-  if (o.glasses) {
-    for (const [x0, w] of eyes) {
-      for (let x = x0; x < x0 + w; x++) {
-        set(x, 2, 'G');
-        set(x, 6, 'G');
-      }
-      for (let y = 3; y <= 5; y++) {
-        set(x0 - 1, y, 'G');
-        set(x0 + w, y, 'G');
-      }
-    }
-    if (eyes.length === 2) for (let x = eyes[0][0] + eyes[0][1] + 1; x < eyes[1][0] - 1; x++) set(x, 3, 'S');
-    else for (let x = eyes[0][0] - 3; x < eyes[0][0] - 1; x++) set(x, 3, 'S');
-  }
-  return g.map((r) => r.join(''));
-}
-
-/** Gesichter einer Figur je Ausdruck und Blick (einmal gebaut). */
-function faceSet(exprs, o = {}) {
-  const out = {};
-  for (const e of exprs) out[e] = { S: faceRows('S', e, o), SO: faceRows('SO', e, o), O: faceRows('O', e, o) };
-  return out;
-}
 
 /** Legende eines Gesichts aus Haut, Haar, Augen und Wangen (Palettenwerte). */
 function faceLegend({ skin, hair, eyes = P.n1, cheek = P.a1, lips = P.r1, brow = null }) {
@@ -212,7 +48,8 @@ export const MIKA_BASE = {
 };
 
 const MIKA_EXPRESSIONS = ['normal', 'froh', 'aua', 'staunen', 'muede', 'besorgt', 'entschlossen', 'blinzeln'];
-const MIKA_FACES = { frau: faceSet(MIKA_EXPRESSIONS, { lashes: true }), mann: faceSet(MIKA_EXPRESSIONS) };
+/** Wie Mikas Gesicht aussieht (F6a: die Ausdrücke baut peopleFaces je Merkmal). */
+const MIKA_FACES = { frau: { lashes: true }, mann: {} };
 
 /**
  * Wo der Kopf Haar trägt (Punkt im Kopfrahmen): oben und hinten, über den Ohren; vorn ein Pony
@@ -248,7 +85,7 @@ const mika = {
     const r = (c, below = 2, above = 2, more = {}) => ({ ...rampAround(c, below, above), ...more });
     return {
       haut: r(s.skin, 2, 1, { shine: true }),
-      haar: r(s.hair, 2, 2, { seam: true, pattern: (p) => (Math.floor((p[0] - p[2]) * 44) % 4 === 0 ? -1 : 0) }),
+      haar: r(s.hair, 2, 2, { seam: true, gloss: 0.9, pattern: (p) => (Math.floor((p[0] - p[2]) * 44) % 4 === 0 ? -1 : 0) }),
       muetze: r(s.hat, 2, 2, { seam: true }),
       muetzeAb: r(s.hat, 2, 2, { base: rampAround(s.hat, 2, 2).base, pattern: () => -1 }),
       rippe: r(s.hat, 2, 1, { seam: true, base: rampAround(s.hat, 2, 1).base - 1 }),
@@ -260,7 +97,7 @@ const mika = {
       zipper: { ramp: [R.s[3], R.s[4], R.s[5], R.s[6]], base: 1 },
       hose: { ramp: [R.b[0], R.b[1], R.b[2], R.b[3], R.b[4]], base: 2, seam: true },
       flicken: { ramp: [R.b[1], R.b[2], R.b[3], R.b[4], R.b[5]], base: 2, seam: true },
-      stiefel: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true, shine: true },
+      stiefel: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true, shine: true, gloss: 0.93 },
       stiefelRand: { ramp: [R.e[2], R.e[3], R.e[4], R.e[5]], base: 2, seam: true },
       sohle: { ramp: [R.n[0], R.e[0], R.e[1]], base: 1, seam: true },
       rucksack: { ramp: [R.e[3], R.e[4], R.e[5], R.e[6], R.e[7]], base: 3, seam: true },
@@ -381,7 +218,7 @@ const mika = {
     ctx.mark('back', add(spine(0.25), [0, 0, -0.36]));
     ctx.mark('chest', spine(0.25));
     // Stempel: Gesicht, Schnallen, Taschen, Schnürung
-    ctx.face = faceAt(ctx, H([0, -0.05, 0.265]));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 2 || dir >= 6) for (const leg of legs) stamps.push({ stamp: STAMPS.schnuerung, at: W(add(leg.foot, [0, 0.045, 0.06])), opts: { depth: 0.05 } });
   },
 };
@@ -433,8 +270,6 @@ function skirt(ctx, body, mat, { drop = 0.1, rr = [0.25, 0.15, 0.2] } = {}) {
   return ctx.ellipsoid(add(body.hip, [0, -drop, 0.01]), rr, mat, { blend: 0.03, part: 'rock' });
 }
 
-/** Die Stelle des Gesichts (wie bei Mika) und Stempel für die Augen eines Kindes oder Hundes. */
-const FACE_POINT = [0, -0.05, 0.265];
 
 // --- Oma Hilde ------------------------------------------------------------------------------------
 
@@ -495,7 +330,7 @@ const hilde = {
     earsNose(ctx, body);
     visorCap(ctx, body, { h: 0.075, lift: 0.17, visorLen: 0.12 });
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     // Stempel: Posthorn an der Mütze, Knöpfe, Abzeichen an der Tasche
     if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.posthorn, at: W(H([0, 0.21, 0.275])), opts: { depth: 0.08 } });
     if (dir <= 1 || dir === 7) for (const y of [0.3, 0.2, 0.1]) stamps.push({ stamp: STAMPS_FOLK.knopfWeiss, at: W(add(spine(y), [0, 0, 0.19])) });
@@ -563,7 +398,7 @@ const bert = {
     visorCap(ctx, body, { h: 0.1, lift: 0.17, visorLen: 0.17 });
     headEllipsoid(ctx, body, [0, 0.31, -0.02], [0.035, 0.02, 0.035], 'band'); // Knopf oben
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) {
       stamps.push({ stamp: STAMPS_FOLK.schuerzenTasche, at: W(add(spine(0.15), [0, 0, 0.255])) });
       stamps.push({ stamp: STAMPS_FOLK.bleistift, at: W(add(spine(0.21), [0.06, 0, 0.25])), opts: { depth: 0.08 } });
@@ -640,7 +475,7 @@ const juna = {
     ctx.capsule(antA, antB, 0.012, 0.009, 'antenne');
     ctx.ellipsoid(antB, [0.028, 0.028, 0.028], 'spitze');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.kordel, at: W(add(spine(0.33), [side * 0.05, 0, 0.19])) });
     if (dir <= 2) stamps.push({ stamp: STAMPS_FOLK.spange, at: W(H([0.2, 0.12, 0.2])), opts: { need: false } });
     if (dir >= 6) stamps.push({ stamp: STAMPS_FOLK.spange, at: W(H([0.2, 0.12, 0.2])), opts: { need: false, flip: true } });
@@ -707,7 +542,7 @@ const yusuf = {
     ctx.capsule(neckR, add(spine(0.26), [0.1, 0, 0.19]), 0.016, null, 'stetho');
     ctx.ellipsoid(add(endL, [0, -0.02, 0.01]), [0.035, 0.035, 0.02], 'stetho');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) stamps.push({ stamp: STAMPS_FOLK.stifte, at: W(add(spine(0.28), [0.15, 0, 0.17])) });
   },
 };
@@ -788,7 +623,7 @@ const balduin = {
     ctx.push({ kind: 'box', c: ctx.W(H([0, 0.14, 0.31])), h: [0.19, 0.014, 0.055], r: 0.012, ax: body.headAxes(0.3), mat: 'schirm' });
     headEllipsoid(ctx, body, [0, 0.29, 0.0], [0.03, 0.02, 0.03], 'schirm');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.26, 0.16, 0.06, -0.04]) stamps.push({ stamp: STAMPS_FOLK.messing, at: W(add(spine(y), [0.04, 0, 0.2])) });
   },
 };
@@ -922,7 +757,7 @@ const hannes = {
     brim(ctx, body, [0, 0.235, -0.04], [0.37, 0.017, 0.33], 'hut', 0.08);
     headEllipsoid(ctx, body, [0, 0.31, -0.03], [0.225, 0.095, 0.205], 'hut', { blend: 0.02, matAt: (l) => (l[1] < -0.045 ? 'hutband' : null) });
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.31, 0.23, 0.15]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfWeiss, at: W(add(spine(y), [side * 0.075, 0, 0.19])) });
   },
 };
@@ -979,7 +814,7 @@ const clara = {
     ctx.box(H([0, 0.135, -0.01]), [0.296, 0.03, 0.27], 0.12, 'gurt', { ax: body.headAx });
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.11, 0.14, 0.255], [0.07, 0.062, 0.04], 'brille', { matAt: (l) => (l[2] > 0.0 && Math.hypot(l[0], l[1]) < 0.042 ? 'glas' : null) });
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) {
       stamps.push({ stamp: STAMPS_FOLK.tasche, at: W(add(spine(0.27), [0.13, 0, 0.17])) });
       stamps.push({ stamp: STAMPS_FOLK.schluessel, at: W(add(spine(0.3), [0.13, 0, 0.18])), opts: { depth: 0.08 } });
@@ -1043,7 +878,7 @@ const lotte = {
     ctx.box(c, [0.038, 0.05, 0.038], 0.012, 'glas', { matAt: (l) => (Math.abs(l[1]) > 0.04 ? 'rahmen' : null), part: 'laterne' });
     ctx.capsule(add(c, [0, 0.055, 0]), add(c, [0, 0.085, 0]), 0.03, 0.014, 'dach');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.3, 0.2, 0.1]) stamps.push({ stamp: STAMPS_FOLK.knebel, at: W(add(spine(y), [-0.03, 0, 0.2])) });
   },
 };
@@ -1103,7 +938,7 @@ const greta = {
     headCapsule(ctx, body, [0.2, 0.24, -0.06], [0.27, 0.41, -0.19], 0.022, 0.012, 'feder');
     headEllipsoid(ctx, body, [0.275, 0.43, -0.2], [0.014, 0.02, 0.014], 'federSpitze');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.29, 0.19, 0.09]) stamps.push({ stamp: STAMPS_FOLK.hornknopf, at: W(add(spine(y), [0, 0, 0.2])) });
   },
 };
@@ -1164,7 +999,7 @@ const fiete = {
     headEllipsoid(ctx, body, [0, 0.19, -0.03], [0.3, 0.13, 0.28], 'hut', { blend: 0.02 });
     brim(ctx, body, [0, 0.11, -0.09], [0.33, 0.02, 0.35], 'hut', -0.32);
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
   },
 };
 
@@ -1223,7 +1058,7 @@ const ida = {
     ctx.capsule(add(hip, [0, 0.07, 0]), add(hip, [0, -0.14, 0.02]), 0.016, null, 'stiel');
     ctx.box(add(hip, [0, 0.07, 0.045]), [0.012, 0.035, 0.045], 0.008, 'eisen');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
   },
 };
 
@@ -1277,7 +1112,7 @@ const rosa = {
     for (const side of [-1, 1]) headCapsule(ctx, body, [side * 0.03, -0.04, -0.33], [side * 0.08, -0.17, -0.34], 0.03, 0.02, 'tuch');
     earsNose(ctx, body);
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.32, 0.25, 0.18]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfGrau, at: W(add(spine(y), [side * 0.07, 0, 0.18])) });
   },
 };
@@ -1344,7 +1179,7 @@ const anton = {
       ctx.capsule(top, add(box, [side * 0.12, 0.1, -0.03]), 0.02, null, 'gurt');
     }
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
   },
 };
 
@@ -1405,7 +1240,7 @@ const emil = {
     headEllipsoid(ctx, body, [0, 0.27, -0.02], [0.235, 0.1, 0.215], 'stroh', { blend: 0.02, matAt: (l) => (l[1] < -0.045 ? 'hutband' : null) });
     headEllipsoid(ctx, body, [0.2, 0.23, 0.08], [0.045, 0.04, 0.04], 'blume');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfGelb, at: W(add(spine(0.3), [side * 0.12, 0, 0.18])) });
   },
 };
@@ -1462,7 +1297,7 @@ const frieda = {
     ctx.box(H([0, 0.1, -0.01]), [0.305, 0.036, 0.28], 0.12, 'band', { ax: body.headAx });
     earsNose(ctx, body);
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const [x, y] of [[-0.14, 0.26], [0.14, 0.26], [-0.15, 0.04], [0.15, 0.04]]) stamps.push({ stamp: STAMPS_FOLK.niete, at: W(add(spine(y), [x, 0, 0.19])) });
   },
 };
@@ -1513,7 +1348,7 @@ const mara = {
     headCapsule(ctx, body, [0, 0.24, -0.16], [0.02, 0.38, -0.33], 0.085, 0.02, 'umhang');
     earsNose(ctx, body);
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.schliesse, at: W(add(spine(0.4), [0, 0, 0.2])), opts: { need: false } });
     if (dir <= 1 || dir === 7) stamps.push({ stamp: STAMPS_FOLK.kompass, at: W(add(spine(0.2), [0.08, 0, 0.23])) });
   },
@@ -1572,7 +1407,7 @@ const paula = {
     headEllipsoid(ctx, body, [-0.17, 0.38, -0.12], [0.022, 0.022, 0.022], 'knauf');
     earsNose(ctx, body);
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) for (const y of [0.3, 0.2, 0.1]) stamps.push({ stamp: STAMPS_FOLK.knopfWeiss, at: W(add(spine(y), [0, 0, 0.19])) });
   },
 };
@@ -1630,7 +1465,7 @@ const edda = {
     earsNose(ctx, body);
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.29, -0.11, 0.0], [0.016, 0.02, 0.016], 'gold');
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
     if (dir <= 1 || dir === 7) stamps.push({ stamp: STAMPS_FOLK.brosche, at: W(add(spine(0.3), [0, 0, 0.19])) });
   },
 };
@@ -1687,14 +1522,13 @@ const marthe = {
     ctx.box(H([0, 0.165, -0.01]), [0.305, 0.06, 0.28], 0.12, 'umschlag', { ax: body.headAx, matAt: ribs });
     headEllipsoid(ctx, body, [0, 0.22, -0.02], [0.28, 0.11, 0.255], 'muetze', { blend: 0.02 });
     ctx.mark('chest', spine(0.25));
-    ctx.face = faceAt(ctx, H(FACE_POINT));
+    ctx.face = faceOf(ctx, body, FACE);
   },
 };
 
 // --- Pim und Lu -----------------------------------------------------------------------------------
 
 /** Die Stelle des Gesichts eines Kindes (kleinerer Kopf). */
-const FACE_POINT_CHILD = [0, -0.04, 0.228];
 
 /**
  * Pim, Marthes Sohn: ein Hut aus Zeitungspapier über roten Locken, Sommersprossen; der weiße
@@ -1740,7 +1574,7 @@ const pim = {
     ctx.box(H([0, 0.15, -0.01]), [0.26, 0.035, 0.235], 0.1, 'papier', { ax: body.headAx });
     ctx.push({ kind: 'box', c: ctx.W(H([0, 0.17, -0.02])), h: [0.19, 0.19, 0.085], r: 0.03, ax: body.headAxes(0, Math.PI / 4), mat: 'papier', matAt: print });
     ctx.mark('chest', spine(0.2));
-    ctx.face = faceAt(ctx, H(FACE_POINT_CHILD));
+    ctx.face = faceOf(ctx, body, FACE_CHILD);
     if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.sommersprossen, at: W(H([side * 0.12, -0.07, 0.235])), opts: { depth: 0.06 } });
   },
 };
@@ -1797,7 +1631,7 @@ const lu = {
     ctx.ellipsoid(apple, [0.048, 0.044, 0.048], 'apfel');
     ctx.ellipsoid(add(apple, [0.02, 0.05, 0]), [0.02, 0.008, 0.012], 'blatt');
     ctx.mark('chest', spine(0.2));
-    ctx.face = faceAt(ctx, H(FACE_POINT_CHILD));
+    ctx.face = faceOf(ctx, body, FACE_CHILD);
     if (dir <= 1 || dir === 7) for (const y of [0.22, 0.15, 0.08]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knebel, at: W(add(spine(y), [side * 0.045, 0, 0.16])) });
   },
 };
@@ -2042,8 +1876,8 @@ export const PEOPLE = {
 
 /** Gesichter und Legende einer Figur für einen Stand (Mika: aus dem Aussehen). */
 export function facesOf(id, spec) {
-  if (id === 'mika') return { faces: MIKA_FACES[spec.body === 'mann' ? 'mann' : 'frau'], legend: faceLegend({ skin: spec.skin, hair: spec.hair, eyes: spec.eyes, cheek: CHEEK_ON[spec.skin] ?? spec.cheek }) };
-  return FOLK_FACES[id] || { faces: {}, legend: {} };
+  if (id === 'mika') return { look: MIKA_FACES[spec.body === 'mann' ? 'mann' : 'frau'], legend: faceLegend({ skin: spec.skin, hair: spec.hair, eyes: spec.eyes, cheek: CHEEK_ON[spec.skin] ?? spec.cheek }) };
+  return FOLK_FACES[id] || { look: {}, legend: {} };
 }
 
 /** F5: Wangen auf dunklerer Haut gedämpfter (helles Rosa leuchtete dort wie zwei Lämpchen). */
@@ -2051,27 +1885,27 @@ const CHEEK_ON = { [P.h2]: R.d[5], [P.h1]: R.d[4], [P.h0]: R.d[3] };
 
 /** Gesichter der Leute: Haut, Haar (Brauen), Augen, Wangen und Brille bzw. Bart. */
 const FOLK_FACES = {
-  hilde: { faces: faceSet(FOLK_EXPRESSIONS, { glasses: true }), legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.a1 }) },
-  bert: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h2, hair: P.e3, cheek: P.r4, lips: P.a0, brow: P.e2 }) },
-  juna: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h2, hair: P.n2, cheek: P.a0 }) },
-  yusuf: { faces: faceSet(FOLK_EXPRESSIONS, { glasses: true }), legend: faceLegend({ skin: P.h1, hair: P.n1, eyes: P.n0, cheek: P.r4, lips: P.a0, brow: P.n0 }) },
-  balduin: { faces: faceSet(['grinsen', 'blinzeln']), legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.a1, lips: P.a0, brow: P.s6 }) },
-  hannes: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a0, lips: P.a0, brow: P.e1 }) },
-  clara: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.a1, brow: P.r1 }) },
-  lotte: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e8, cheek: P.a1, brow: P.e6 }) },
-  greta: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.r4, brow: P.s5 }) },
-  fiete: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s8, cheek: P.r4, lips: P.a0, brow: P.s9 }) },
-  ida: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e3, cheek: P.a1, brow: P.e3 }) },
-  rosa: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a1, brow: P.e2 }) },
-  anton: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e4, cheek: P.r4, brow: P.e3 }) },
-  emil: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.r4, brow: P.s8 }) },
-  frieda: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.r4, brow: P.r2 }) },
-  mara: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.n1, cheek: P.a1, brow: P.n1 }) },
-  paula: { faces: faceSet(FOLK_EXPRESSIONS, { glasses: true }), legend: faceLegend({ skin: P.h4, hair: P.s8, cheek: P.a1, brow: P.s7 }) },
-  edda: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s9, cheek: P.a1, brow: P.s8 }) },
-  marthe: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e5, cheek: P.a0, brow: P.e3 }) },
-  pim: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h4, hair: P.r4, cheek: P.a1, brow: P.r2 }) },
-  lu: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e2, cheek: P.a0, brow: P.e1 }) },
+  hilde: { look: { glasses: true }, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.a1 }) },
+  bert: { look: {}, legend: faceLegend({ skin: P.h2, hair: P.e3, cheek: P.r4, lips: P.a0, brow: P.e2 }) },
+  juna: { look: {}, legend: faceLegend({ skin: P.h2, hair: P.n2, cheek: P.a0 }) },
+  yusuf: { look: { glasses: true }, legend: faceLegend({ skin: P.h1, hair: P.n1, eyes: P.n0, cheek: P.r4, lips: P.a0, brow: P.n0 }) },
+  balduin: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.a1, lips: P.a0, brow: P.s6 }) },
+  hannes: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a0, lips: P.a0, brow: P.e1 }) },
+  clara: { look: { lashes: true }, legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.a1, brow: P.r1 }) },
+  lotte: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e8, cheek: P.a1, brow: P.e6 }) },
+  greta: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.r4, brow: P.s5 }) },
+  fiete: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s8, cheek: P.r4, lips: P.a0, brow: P.s9 }) },
+  ida: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e3, cheek: P.a1, brow: P.e3 }) },
+  rosa: { look: { lashes: true }, legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a1, brow: P.e2 }) },
+  anton: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e4, cheek: P.r4, brow: P.e3 }) },
+  emil: { look: {}, legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.r4, brow: P.s8 }) },
+  frieda: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.r4, brow: P.r2 }) },
+  mara: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.n1, cheek: P.a1, brow: P.n1 }) },
+  paula: { look: { glasses: true }, legend: faceLegend({ skin: P.h4, hair: P.s8, cheek: P.a1, brow: P.s7 }) },
+  edda: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.s9, cheek: P.a1, brow: P.s8 }) },
+  marthe: { look: {}, legend: faceLegend({ skin: P.h3, hair: P.e5, cheek: P.a0, brow: P.e3 }) },
+  pim: { look: {}, legend: faceLegend({ skin: P.h4, hair: P.r4, cheek: P.a1, brow: P.r2 }) },
+  lu: { look: { lashes: true }, legend: faceLegend({ skin: P.h4, hair: P.e2, cheek: P.a0, brow: P.e1 }) },
 };
 
 export { DOG, quadruped };

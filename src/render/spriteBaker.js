@@ -127,6 +127,23 @@ function normalOf(shapes, list, p) {
   return [nx / l, ny / l, nz / l];
 }
 
+/**
+ * F6c (nur Menschen): Relief auf einer Form. `bump(l, p)` gibt eine kleine Neigung der Normale –
+ * im eigenen Rahmen der Form (bei Kapseln in der Welt, l ist dann der Abstand zu a). Falten, Rippen
+ * und Strähnen fangen so Licht und Schatten, ohne dass sich die Form selbst ändert.
+ */
+function bend(n, s, p) {
+  const capsule = s.kind === 'capsule';
+  const v = s.bump(capsule ? sub(p, s.a) : local(p, s), p);
+  if (!v) return n;
+  const ax = capsule ? null : s.ax;
+  const m = ax
+    ? [n[0] + v[0] * ax[0][0] + v[1] * ax[1][0] + v[2] * ax[2][0], n[1] + v[0] * ax[0][1] + v[1] * ax[1][1] + v[2] * ax[2][1], n[2] + v[0] * ax[0][2] + v[1] * ax[1][2] + v[2] * ax[2][2]]
+    : [n[0] + v[0], n[1] + v[1], n[2] + v[2]];
+  const l = Math.hypot(m[0], m[1], m[2]) || 1;
+  return [m[0] / l, m[1] / l, m[2] / l];
+}
+
 /** Bildlage eines Weltpunkts in Texeln (x nach rechts, y nach unten), Fußpunkt bei (px, py). */
 export function toTexel(p, px, py) {
   return { x: px + p[0] / TEXEL, y: py - dot(p, U) / TEXEL };
@@ -213,7 +230,7 @@ export function trace(shapes, cell) {
       // Flicken auf dem Knie) – l ist der Punkt im eigenen Rahmen der Form (bei Kapseln ab a), p in der Welt
       mat[idx] = s.cut ? s.wall || s.mat : (s.matAt && s.matAt(s.kind === 'capsule' ? sub(p, s.a) : local(p, s), p)) || s.mat;
       depth[idx] = t;
-      const n = normalOf(shapes, list, p);
+      const n = s.bump ? bend(normalOf(shapes, list, p), s, p) : normalOf(shapes, list, p);
       normal[idx * 3] = n[0];
       normal[idx * 3 + 1] = n[1];
       normal[idx * 3 + 2] = n[2];
@@ -252,7 +269,7 @@ const TONES = { deep: -0.35, shade: 0.05, light: 0.62, shine: 0.93 };
  * @param {Record<string, {ramp:number[], base:number, pattern?:Function, glow?:boolean, shine?:boolean, seam?:boolean, flat?:boolean, outline?:number, outlineLit?:number}>} materials
  * @returns {{color: Int32Array, glow: Uint8Array, tone: Int8Array}}
  */
-export function paint(raster, materials, { outline = true, rim = true, groups = null, occlude = 0, tidy = false } = {}) {
+export function paint(raster, materials, { outline = true, rim = true, groups = null, occlude = 0, tidy = false, light = null, backlight = false } = {}) {
   const { w, h, mat, normal, depth, pos, hit } = raster;
   const color = new Int32Array(w * h).fill(-1);
   const tone = new Int8Array(w * h).fill(-1);
@@ -262,10 +279,11 @@ export function paint(raster, materials, { outline = true, rim = true, groups = 
     const m = mat[i] && materials[mat[i]];
     if (!m) continue;
     const n = [normal[i * 3], normal[i * 3 + 1], normal[i * 3 + 2]];
-    const lit = dot(n, LIGHT);
+    const lit = light ? light[i] : dot(n, LIGHT); // F6b: Lichtwert aus lightField (Schatten, Verdeckung)
     let step = m.flat ? 0 : lit > TONES.light ? 1 : lit > TONES.shade ? 0 : lit > TONES.deep ? -1 : -2;
     if (!m.flat && n[1] < -0.55) step = Math.min(step, -1); // Unterseiten immer im Schatten
     if (m.shine && lit > TONES.shine) step = 2;
+    if (light?.gloss && m.gloss !== undefined && light.gloss[i] > m.gloss) step = 2; // F6b: Glanz (Haar, Leder, Metall)
     if (m.pattern) step += m.pattern([pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]], n) || 0;
     const k = Math.max(0, Math.min(m.ramp.length - 1, m.base + step));
     color[i] = m.ramp[k];
@@ -320,6 +338,29 @@ export function paint(raster, materials, { outline = true, rim = true, groups = 
       color[idx] = m.ramp[tone[idx]];
     }
   }
+  // F6b: Gegenlicht – am Rand der Schattenseite fängt die Figur kühles Himmelslicht (eine Stufe
+  // heller), wie in gezeichneter Pixel-Art; nicht an Unterseiten
+  if (light?.dir && backlight) {
+    const L = light.dir;
+    const lift = [];
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const idx = j * w + i;
+        if (color[idx] < 0) continue;
+        const m = materials[mat[idx]];
+        if (!m || m.flat || m.glow) continue;
+        const emptyAt = (di, dj) => !inside(i + di, j + dj) || color[(j + dj) * w + i + di] < 0;
+        if (!(emptyAt(1, 0) || emptyAt(1, -1))) continue;
+        const n = [normal[idx * 3], normal[idx * 3 + 1], normal[idx * 3 + 2]];
+        if (dot(n, L) < -0.05 && n[1] > -0.35) lift.push(idx);
+      }
+    }
+    for (const idx of lift) {
+      const m = materials[mat[idx]];
+      tone[idx] = Math.min(m.ramp.length - 1, tone[idx] + 1);
+      color[idx] = m.ramp[tone[idx]];
+    }
+  }
   // Aufräumen: ein einzelnes Texel, dessen vier Nachbarn alle denselben anderen Ton desselben
   // Materials haben, nimmt diesen Ton an (sonst wird es Gries)
   for (let j = 1; j < h - 1; j++) {
@@ -363,6 +404,131 @@ export function paint(raster, materials, { outline = true, rim = true, groups = 
     else color[idx] = toneOf(m, lightSide && pos[src * 3 + 1] > 0.3 ? 1 : 0);
   }
   return { color, glow, tone };
+}
+
+const norm3 = (v) => {
+  const l = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / l, v[1] / l, v[2] / l];
+};
+
+/** Kugel um eine Form (Mitte, Radius) – für die Kandidaten der Schatten- und Verdeckungsproben. */
+function sphereOf(s) {
+  if (s.kind === 'capsule') {
+    const c = [(s.a[0] + s.b[0]) / 2, (s.a[1] + s.b[1]) / 2, (s.a[2] + s.b[2]) / 2];
+    return { c, r: len(sub(s.b, s.a)) / 2 + Math.max(s.r, s.r1 ?? s.r) + (s.blend || 0) };
+  }
+  return { c: s.c, r: reachOf(s) + (s.blend || 0) };
+}
+
+/**
+ * F6b (nur Menschen): ein Lichtwert je Texel wie in einer gezeichneten Figur. Das Hauptlicht kommt
+ * von oben links (weich umgeschlagen, `wrap`); was zwischen dem Texel und dem Licht liegt, wirft
+ * einen Schlagschatten (die Mütze auf die Stirn, der Kopf auf den Kragen, der Arm auf die Seite);
+ * Falten und Winkel (Achseln, unter dem Kinn, zwischen den Beinen, am Boden) verdeckt das
+ * Abstandsfeld selbst. Zuletzt wird der Wert je Stoff und Gruppe geglättet, damit die Tongrenzen als
+ * ruhige Linien statt als Zacken verlaufen. Das Ergebnis geht als `light` an paint().
+ * @returns {Float32Array} Lichtwert je Texel (wie dot(n, LIGHT), etwa −1 … 1)
+ */
+export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0.55, ao = 0.75, smooth = true, groups = null } = {}) {
+  const { w, h, hit, normal, pos, mat } = raster;
+  const L = norm3(dir);
+  const Hv = norm3([L[0], L[1] + 0.6, L[2] + 0.8]); // halber Weg zwischen Licht und Blick (Glanz)
+  const gloss = new Float32Array(w * h);
+  const raw = new Float32Array(w * h);
+  const spheres = shapes.map(sphereOf);
+  const solid = shapes.map((sh, k) => k).filter((k) => !shapes[k].cut);
+  const list = [];
+  const pick = (from, to) => {
+    // Formen, deren Kugel die Strecke from → to berührt
+    list.length = 0;
+    const d = sub(to, from);
+    const dd = dot(d, d) || 1;
+    for (let k = 0; k < shapes.length; k++) {
+      const sp = spheres[k];
+      const t = Math.max(0, Math.min(1, dot(sub(sp.c, from), d) / dd));
+      const q = [from[0] + d[0] * t - sp.c[0], from[1] + d[1] * t - sp.c[1], from[2] + d[2] * t - sp.c[2]];
+      if (dot(q, q) <= (sp.r + 0.02) * (sp.r + 0.02)) list.push(k);
+    }
+    return list.length && list.some((k) => !shapes[k].cut);
+  };
+  void solid;
+  for (let i = 0; i < w * h; i++) {
+    if (hit[i] < 0) continue;
+    const p = [pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]];
+    const n = [normal[i * 3], normal[i * 3 + 1], normal[i * 3 + 2]];
+    const key = dot(n, L);
+    gloss[i] = dot(n, Hv);
+    let lit = (key + wrap) / (1 + wrap);
+    // Schlagschatten: weicher Schatten (Quilez) auf dem Weg zum Licht
+    if (shadow && key > -0.15) {
+      const from = [p[0] + n[0] * 0.012, p[1] + n[1] * 0.012, p[2] + n[2] * 0.012];
+      const to = [from[0] + L[0] * shadow, from[1] + L[1] * shadow, from[2] + L[2] * shadow];
+      if (pick(from, to)) {
+        let res = 1;
+        let t = 0.01;
+        for (let k = 0; k < 40 && t < shadow; k++) {
+          const q = [from[0] + L[0] * t, from[1] + L[1] * t, from[2] + L[2] * t];
+          const d = distanceOf(shapes, list, q);
+          if (d < 0.002) {
+            res = 0;
+            break;
+          }
+          res = Math.min(res, (14 * d) / t);
+          t += Math.max(d, 0.006);
+        }
+        res = Math.max(0, Math.min(1, res));
+        lit = res * lit + (1 - res) * Math.min(lit, -0.05);
+      }
+    }
+    // Umgebungsverdeckung: wie viel Abstandsfeld fehlt entlang der Normale
+    if (ao) {
+      if (pick(p, [p[0] + n[0] * 0.14, p[1] + n[1] * 0.14, p[2] + n[2] * 0.14])) {
+        let occ = 0;
+        let sc = 1;
+        for (let k = 1; k <= 4; k++) {
+          const hk = 0.025 * k;
+          const d = distanceOf(shapes, list, [p[0] + n[0] * hk, p[1] + n[1] * hk, p[2] + n[2] * hk]);
+          occ += (hk - Math.min(hk, d)) * sc;
+          sc *= 0.75;
+        }
+        const a = Math.max(0, Math.min(1, 1 - 4.5 * occ));
+        lit -= (1 - a) * ao;
+      }
+    }
+    if (lit < 0.5) gloss[i] = 0; // kein Glanz im Schatten
+    raw[i] = lit;
+  }
+  raw.gloss = gloss;
+  raw.dir = L;
+  if (!smooth) return raw;
+  // Glätten je Stoff und Gruppe (Mitte 4, Seiten 2, Ecken 1)
+  const out = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const idx = j * w + i;
+      if (hit[idx] < 0) continue;
+      const g = groups ? groups[hit[idx]] : null;
+      let sum = 0;
+      let wsum = 0;
+      for (let dj = -1; dj <= 1; dj++) {
+        for (let di = -1; di <= 1; di++) {
+          const x = i + di;
+          const y = j + dj;
+          if (x < 0 || y < 0 || x >= w || y >= h) continue;
+          const q = y * w + x;
+          if (hit[q] < 0 || mat[q] !== mat[idx]) continue;
+          if (groups && groups[hit[q]] !== g) continue;
+          const wt = di === 0 && dj === 0 ? 4 : di === 0 || dj === 0 ? 2 : 1;
+          sum += raw[q] * wt;
+          wsum += wt;
+        }
+      }
+      out[idx] = sum / wsum;
+    }
+  }
+  out.gloss = gloss;
+  out.dir = L;
+  return out;
 }
 
 /**
@@ -415,12 +581,13 @@ function tidyTones(raster, materials, color, tone, glow) {
  * Formen vorn liegt – statt der Tiefe (ein Gesicht auf einem halb gedrehten Kopf).
  * @param {{rows:string[], legend:Record<string, number|{glow:number}>}} stamp
  */
-export function stampAt(out, raster, stamp, point, { flip = false, need = true, depth = 0.06, mark = null, parts = null } = {}) {
+export function stampAt(out, raster, stamp, point, { flip = false, need = true, depth = 0.06, mark = null, parts = null, texel = null } = {}) {
   const { w, h, px, py } = raster;
-  const t = toTexel(point, px, py);
-  const tq = dot(point, F);
-  const cx = Math.floor(t.x);
-  const cy = Math.floor(t.y);
+  // F6: `texel` setzt die Mitte direkt auf ein Texel (Gesichter, die schon im Bild platziert sind)
+  const t = texel ? null : toTexel(point, px, py);
+  const tq = texel ? 0 : dot(point, F);
+  const cx = texel ? texel[0] : Math.floor(t.x);
+  const cy = texel ? texel[1] : Math.floor(t.y);
   const rows = stamp.rows;
   const sw = rows[0].length;
   const sh = rows.length;
