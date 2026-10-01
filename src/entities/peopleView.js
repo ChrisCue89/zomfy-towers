@@ -29,6 +29,11 @@ function wrapAngle(a) {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
+/** G7: In welcher Reihenfolge Mikas Teile gebacken werden, solange sie nicht im Bild sind (0 ist jetzt). */
+const MIKA_PRIO = { laterne: 0.5, base: 0.55 };
+/** Ersatz, solange ein Teil noch fehlt: mit Laterne → ohne. */
+const FALLBACK = { laterne: 'base', laterneAktion: 'aktion' };
+
 export class PeopleSprites {
   /** @param {THREE.Scene} scene */
   constructor(scene) {
@@ -458,7 +463,13 @@ export class PeopleSprites {
    * Werkzeug. Gibt zurück, was gezeigt wird (oder null).
    */
   drawFigure(L, id, spec, specKey, st, dir, x, y, z, prio) {
-    const v = this.person(id, spec, specKey, st.part, prio);
+    let v = this.person(id, spec, specKey, st.part, prio);
+    // G7: Ist der Teil mit Laterne noch nicht gebacken, aber derselbe ohne, zeigt Mika ihn (die Laterne
+    // fehlt dann kurz) – lieber das als die Voxel-Figur im Intro
+    if (!v.ready && FALLBACK[st.part]) {
+      const alt = this.person(id, spec, specKey, FALLBACK[st.part], prio + 0.1);
+      if (alt.ready) v = alt;
+    }
     if (!v.ready) return null;
     const entry = v.table.get(`${dir}:${st.anim}:${st.k}`);
     if (!entry) return null;
@@ -499,8 +510,9 @@ export class PeopleSprites {
           shown = this.drawFigure(this.layers.mika, 'mika', spec, specKey, st, dir, pos.x, y, pos.z, 0);
         }
         // Alle Teile vorbereiten, auch solange Mika noch Voxel ist (N12: die Ankunft beginnt im Boot –
-        // bis Mika auf dem Steg steht, ist das Gehen gebacken)
-        for (const part of Object.keys(PEOPLE.mika.parts)) this.person('mika', spec, specKey, part, part === 'base' ? 0.5 : 1);
+        // bis Mika auf dem Steg steht, ist das Gehen gebacken). G7: Auf dem Steg trägt Mika die Laterne
+        // vom Bug, bis halb acht – darum kommt die Laterne vor dem Gehen ohne sie
+        for (const part of Object.keys(PEOPLE.mika.parts)) this.person('mika', spec, specKey, part, MIKA_PRIO[part] ?? 1);
         if (shown) this.lastMika = { ...st, dir, ...shown };
       }
       this.setVoxel(player.character.root, !shown);

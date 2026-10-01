@@ -8,7 +8,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
-| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern), die Präsentation am Anfang (`praesentation.md`, N11); seit 01.10.: die Menschen schöner zeichnen (`menschen-gestaltung.md`, F5) |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern), die Präsentation am Anfang (`praesentation.md`, N11); seit 01.10.: die Menschen schöner zeichnen (`menschen-gestaltung.md`, F5), die Geschichte der Ankunft (`ankunft-geschichte.md`, G7: Kanon, Lücken, Entscheidungen) |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
@@ -268,9 +268,13 @@ gilt bis auf Weiteres:
       (`PEOPLE_PAINT.tones`).
     - Relief (`bump(l, p)` an einer Form, Helfer in `peopleRelief.js`: `ribs`, `folds`, `rings`,
       `strands`, `roundFace`): neigt nur die Normale, kommt nach dem Glätten scharf dazu;
-      `tiltFrame` und `scaleFrame` reichen es durch. Falten in Ellenbeuge und Hose setzt
-      `clothRelief` für alle, die der Bauplan nicht selbst gesetzt hat. Strickmuster sind senkrechte
-      Rippen, nie Karos (die lasen sich als Rauschen).
+      `tiltFrame` und `scaleFrame` reichen es durch. `clothRelief` setzt für alle, die der Bauplan
+      nicht selbst gesetzt hat: Falten in Ellenbeuge und Hose, Haar in Strähnen (am Kopf nur, wo
+      `matAt` »haar« sagt; Locken und Zöpfe aus Haar mit Rillen), Bärte in senkrechten Strähnen, zwei
+      weiche Falten über dem Bauch (`torso: 1`, das Gerüst merkt die Rumpfformen), Röcke
+      (`part: 'rock'`) in Längsfalten, eine Kante über der Sohle. Strickmuster sind senkrechte
+      Rippen, nie Karos (die lasen sich als Rauschen); Muster in Bärten unregelmäßig, nie jede
+      n-te Spalte (das las sich wie ein Gitter).
     - Die Strahlen der Menschen prüfen nur Formen, die sie berühren (`trace(…, { cull: true })`).
     - Mika im Ruderboot (`seated.rowing` gesetzt) ist ein Sprite: Teil `boot`, Zustand `rudern`
       (Bild nach `seated.phase`), die Füße auf dem Bootsboden. Alle Teile Mikas werden angefordert,
@@ -565,6 +569,18 @@ Grundprinzipien:
   `funk.say`). Zeilen über ein Ziel bekommen `stale` mit (`funk.once(flag,
   text, stale)`): Ist das Ziel erreicht, bevor Edda dazu kommt, fällt die Zeile
   weg (N10).
+  - **Glaubhaft (G7, `recherche/ankunft-geschichte.md`):** Am Bug brennt Mikas Sturmlaterne
+    (`buildRowboat().lantern`, Glühmaterial ohne Licht); beim Aussteigen nimmt Mika sie mit
+    (`arrival.takeLantern`, sie brennt bis halb acht). Neben der Haustür hängt der Blechkasten mit
+    dem Handfunkgerät (`shelter.radio`, Lämpchen `glow.led`); Flag `funkImKasten` und
+    `world.setRadioBox(an)` sagen, ob es noch drinsteckt (auch nach dem Laden). In der Phase `funk`
+    knistert es, nach der letzten Zeile wartet die Sprechtaste (`arrival.prompt`, `ARRIVAL.talkAfter`,
+    unten im Balken `T.ankunft.taste`); E drückt sie, sonst drückt Mika nach `ARRIVAL.answer`
+    selbst. Danach trägt Mika das Gerät am Gürtel. Solange der Kamin kalt ist, sind die
+    Hauslichter aus (`world.applyHouseLights`: Licht über `on`, Glühen über `glow.on`, Lichtinseln
+    über `lightPools.setDark`). `arrival.start` setzt einmalige Flags: `stationNeu` (die Station
+    beim ersten Mal, `T.ankunft.station`), `lichterNeu` (am ersten Abend ein Gedanke, sobald Mika
+    draußen am Haus ist), `abendrufOffen` (um halb acht Eddas Abendruf, `T.funk.abendruf`).
 - **Das erste Feuer (N10, `core/firstFire.js`, `FIRST_FIRE` in `data/arrival.js`):**
   - `arrival.start` ruft `firstFire.coldStart()`: Feuerstelle und Kamin sind kalt
     (Flags `feuerKalt`, `kaminKalt`, nie im Startzustand – alte Stände und `?test`
@@ -1289,7 +1305,9 @@ Grundprinzipien:
    und das erste Ziel; Esc halten überspringt; ohne Einführung ein kurzer
    Dialog und keine Schritte; Speichern v24 und Migration v23 → v24 (Bilder:
    figur-erklaerung, ankunft-karte, ankunft-see, ankunft-steg,
-   edda-erstkontakt); ab M29 (Abschnitt `bindung`): das erste Gespräch des Tages
+   edda-erstkontakt; seit G7 brennt am Bug die Laterne, auf dem Steg trägt Mika sie, am Haus ist es
+   dunkel, im Kasten an der Tür knistert es, und erst eine echte Taste E öffnet den Funk – Bild
+   ankunft-funk); ab M29 (Abschnitt `bindung`): das erste Gespräch des Tages
    zählt einmal, ein Kartenabend macht vertraut und über dem Kopf steht »möchte
    reden«, E erzählt den Moment statt des Gesprächs, morgens grüßt Hilde (beim
    Spitznamen, sobald befreundet), abends setzt sie sich zu Mika ans Feuer, der
@@ -1435,7 +1453,9 @@ Grundprinzipien:
    Gedanken, der Pfeil zeigt zur Haustür, E geht hinein, E nimmt die Dose, E zündet den Kamin
    an; mit einem Scheit zeigt das Ziel zu den Ästen, E sammelt sie, E zündet das Lagerfeuer an
    (zwei Scheite), die Flammen wachsen, Edda sieht den Rauch, dann die Axt; nach dem Neuladen
-   bleibt der halbe Weg (Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer); ab F3
+   bleibt der halbe Weg (Bilder: erstes-feuer-kalt, streichhoelzer, erstes-feuer); seit G7 sind die
+   Hauslichter aus, bis der Kamin brennt, am ersten Abend gehen sie mit einem Gedanken an, und um
+   halb acht ruft Edda die Holzlände – genau einmal; ab F3
    (Abschnitt `buch`): eine Nacht ganz auf »Wild« bringt den vierten Stern (N ruft mit echter
    Taste, der Bericht zeigt vier), mittendrin auf »Ausgewogen« gestellt ist er fort (Meldung), auf
    »Ausgewogen« drei, Speichern v33 und Migration v32 → v33; die Schlurferkunde zeigt den
