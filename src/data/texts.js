@@ -653,6 +653,7 @@ export const T = {
     ohne: 'Kalte Asche, nasses Laub. Ich brauche etwas zum Anzünden – im Haus finde ich bestimmt was.',
     zuWenigHolz: 'Zu wenig Holz. Ein paar Äste würden schon reichen.',
     an: 'Na also. Jetzt sieht es hier nach Zuhause aus.',
+    lichter: 'Lichterkette eingesteckt, Kerzen angezündet. Sie leuchtet noch – wie auf meinem Kalenderblatt.', // G7: am ersten Abend
   },
   // Reifenschaukel (m12-r1: Mika schaukelt wirklich – als Gedanken, nicht als Dialog)
   schaukel: {
@@ -1632,13 +1633,23 @@ export const T = {
     },
     danach: 'Danke, Mika. Jetzt kann ich bald nach Hause kommen.',
     katalog: 'Das Funkgerät in der Stube erreicht auch Balduins Boot. Aus seinem Katalog bestellst du, er bringt es am nächsten Morgen.',
+    // G7: Eddas Abendruf um halb acht – seit drei Jahren jeden Abend, am ersten Abend hört jemand zu
+    abendruf: [
+      'Holzlände und alle, die zuhören: Hier ist Edda. … Ach. Das sag ich seit drei Jahren jeden Abend. Heute hört zum ersten Mal jemand zu.',
+      'Ein Licht ins Fenster hätte sie gelockt. Also hab ich eine Stimme an die Tür gehängt – für irgendwen, der bleibt.',
+      'Wetter für die Nacht: klar und kalt. Heute kommen sie – wo Feuer brennt, kommen sie immer. Bleib im Hellen, da werden sie müde. Ich bleib dran.',
+    ],
   },
   // Die Ankunft (N5): Mikas Gedanken im Dunkel, auf dem See und auf dem Steg
   ankunft: {
-    karte: ['Drei Herbste ist es her, dass der Moder kam. Seitdem bin ich unterwegs.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
-    see: ['Der Kranichsee. Auf dem Wasser sind sie nicht – Wasser meiden sie.', 'Da vorn … ein Steg. Ein Haus mit Schornstein – aber kein Rauch.'], // N10: noch ist alles kalt
-    steg: ['Leer. Aber jemand hat die Lichterkette hängen lassen.'],
-    funk: 'Da knistert was … ein altes Funkgerät, hier auf der Bank.',
+    // G7: Mika kommt aus Aalbek (Hausmeisterei am Mühlenhang), mit dem alten Floßkahn der Sägemühle
+    karte: ['Drei Herbste hab ich in Aalbek gewartet, dass die Nachbarn heimkommen. Jetzt ist das Holz alle.', 'Ich suche keinen sicheren Ort. Ich suche ein Zuhause.'],
+    see: ['Eine Nacht im Schilf, bei den Kranichen. Wasser mag der Moder nicht.', 'Vorhin im Nebel ein dunkler Leuchtturm. Ob da noch jemand wohnt?', 'Da – der hohe Mast und der Steg. Genau wie auf meinem Kalenderblatt.'],
+    steg: ['Kein Rauch, die Lichterkette dunkel. Hier war lange keiner.', '„Hallo? … Ist hier jemand?“'],
+    funk: ['„…krrz… Holzlände … bitte kommen … krrz…“', 'Neben der Tür, in einem Blechkasten: ein Funkgerät. Es ist an.', 'Darauf ein Klebestreifen: »Drücken: sprechen. Loslassen: hören.«'],
+    taste: 'E: Sprechtaste drücken',
+    // Die Station in der Stube beim ersten Mal (Strom, Foto)
+    station: ['Die große Funkstation. Ein grünes Lämpchen brennt, darunter eine Autobatterie. Das Kabel läuft zum Sonnenpaneel aufs Dach – sauber verlegt.', 'Daneben klebt ein altes Foto: eine junge Frau mit Kopfhörern. Hinten drauf: »E., achtzehn. Wetter und Pegel, um acht.«'],
     ueberspringen: 'Esc halten: überspringen',
   },
   // Das Tutorial (N5): Edda, Schritt für Schritt – nur mit Einführung

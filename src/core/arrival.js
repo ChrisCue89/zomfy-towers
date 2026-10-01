@@ -1,18 +1,24 @@
 // Die Ankunft (N5, Probespiel 29.09.: »Das Intro muss liebevoll sein – unser Charakter
 // kommt auf der Suche nach einem neuen Zuhause dahin«). Mika rudert im Morgennebel über
 // den See (Wasser meiden die Schlurfer), legt nördlich am Steg an, geht über den Steg zum
-// Haus – und auf der Bank knistert Eddas altes Funkgerät. Danach spricht Edda (Dialog
-// »eddaErstkontakt«, mit Einführung zeigt sie dabei die Wege).
+// Haus – und im Blechkasten neben der Tür knistert das alte Handfunkgerät der Holzlände.
+// Mika drückt die Sprechtaste (E), Edda antwortet (Dialog »eddaErstkontakt«, mit Einführung
+// zeigt sie dabei die Wege).
+//
+// G7 (die Geschichte, recherche/ankunft-geschichte.md): Am Bug brennt Mikas Sturmlaterne –
+// Edda hat das Licht im Nebel vom Sturmhuk aus gesehen und ruft seitdem. Beim Aussteigen nimmt
+// Mika die Laterne mit (um halb acht geht sie wie immer aus).
 //
 // Ablauf: karte (Titelkarte im Dunkel, Mikas Gedanken) → see (das Boot gleitet heran,
-// die Kamera schwebt mit) → steg (Mika geht zum Haus) → funk (es knistert) → Dialog.
-// Mit gehaltenem Esc ist alles bis zum Dialog vorbei. Das Boot bleibt danach am Steg.
-// Texte stehen oben im schwarzen Balken (Kinobild), nie mitten im Bild.
+// die Kamera schwebt mit) → steg (Mika geht zum Haus) → funk (es knistert, E drückt die
+// Sprechtaste) → Dialog. Mit gehaltenem Esc ist alles bis zum Dialog vorbei. Das Boot bleibt
+// danach am Steg. Texte stehen oben im schwarzen Balken (Kinobild), nie mitten im Bild.
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
 import { ARRIVAL, ARRIVAL_LINES } from '../data/arrival.js';
 import { buildRowboat } from '../entities/traderModels.js';
+import { createGlowMaterial } from '../render/materials.js';
 import { COLORS } from '../ui/ui.js';
 import { wrap, measure, drawText, LINE_HEIGHT } from '../ui/font.js';
 
@@ -65,8 +71,12 @@ export class Arrival {
     this.walkIndex = 0;
     this.time = 0;
     this.stroke = 0; // Takt der Riemen (rad)
-    this.boat = buildRowboat({ world: game.world.materials.occluder });
+    // G7: das Glas der Bootslaterne leuchtet immer (sichtbar ist sie nur während der Ankunft)
+    const glow = createGlowMaterial(0xffffff, { occluder: true });
+    game.world.lights.addGlow(glow, { dim: 0xffc86a, bright: 0xffd890, boost: 1.5, mode: 'always' });
+    this.boat = buildRowboat({ world: game.world.materials.occluder, glow });
     game.scene.add(this.boat.root);
+    this.talk = 0; // G7: wann die Sprechtaste gedrückt wurde (Spielzeit der Phase, 0 = noch nicht)
     this.moor();
   }
 
@@ -96,6 +106,12 @@ export class Arrival {
     g.introRunning = true;
     g.builder.cancel?.();
     g.firstFire.coldStart(); // N10: drei Herbste ohne Feuer – Feuerstelle und Kamin sind kalt
+    g.state.flags.funkImKasten = true; // G7: das Handgerät steckt noch im Kasten an der Tür
+    // G7: einmal nach der Ankunft – die Station zum ersten Mal, die Hauslichter am ersten Abend, Eddas Abendruf
+    Object.assign(g.state.flags, { stationNeu: true, lichterNeu: true, abendrufOffen: true });
+    g.world.setRadioBox(true);
+    this.boat.lantern.visible = true; // G7: die Laterne am Bug – Eddas Licht im Nebel
+    this.talk = 0;
     routeAt(this.route, 0, this.pose);
     this.placeBoat(0);
     this.seatMika();
@@ -182,11 +198,12 @@ export class Arrival {
       player.idle(dt);
       this.focus.set(this.pose.x - 1.5, 0, this.pose.z);
       if (this.t >= ARRIVAL.lake + 0.6) {
-        // Aussteigen: auf den Steg, das Boot liegt fest
+        // Aussteigen: auf den Steg, das Boot liegt fest; Mika nimmt die Laterne vom Bug mit
         player.seat(null);
         const [x, z] = ARRIVAL.walkPath[0];
         player.place(x, z, -Math.PI / 2);
         this.moor();
+        this.takeLantern();
         this.walkIndex = 1;
         g.sound.play('schritt');
         this.next('steg');
@@ -206,15 +223,43 @@ export class Arrival {
         g.sound.play('funk');
         this.next('funk');
       } else {
-        player.update(dt, { x: dx / d, z: dz / d }, false);
+        // G7: langsam – Mika schaut sich um, ruft »Hallo?«
+        player.update(dt, { x: (dx / d) * ARRIVAL.stroll, z: (dz / d) * ARRIVAL.stroll }, false);
       }
       this.focus.set(p.x, 0, p.z);
     } else if (this.phase === 'funk') {
       this.placeBoat(dt);
       player.idle(dt);
       this.focus.set(player.position.x, 0, player.position.z);
-      if (this.t >= ARRIVAL.crackle) this.finish(false);
+      // G7: erst Stille, dann knistert der Kasten an der Tür; mit der letzten Zeile die Sprechtaste
+      const lines = ARRIVAL_LINES.funk;
+      if (this.t - dt < lines[0] && this.t >= lines[0]) g.sound.play('funk');
+      if (this.talk) {
+        if (this.t >= this.talk + 0.35) this.finish(false); // das Knacken, dann antwortet Edda
+      } else if ((this.prompt && input.pressed('use')) || this.t >= this.talkAt + ARRIVAL.answer) {
+        this.talk = this.t;
+        g.sound.play('funk', { rate: 1.6 });
+      }
     }
+  }
+
+  /** G7: Mika nimmt die Laterne vom Bug (sie brennt in der Hand weiter, um halb acht geht sie aus). */
+  takeLantern() {
+    const g = this.game;
+    this.boat.lantern.visible = false;
+    g.player.holdingLantern = true;
+    g.player.lanternLit = true;
+    g.state.player.lantern = true;
+  }
+
+  /** G7: Ab wann (s in der Phase am Funk) die Sprechtaste wartet – die letzte Zeile ist dann zu lesen. */
+  get talkAt() {
+    return ARRIVAL_LINES.funk[ARRIVAL_LINES.funk.length - 1] + ARRIVAL.talkAfter;
+  }
+
+  /** G7: Zeigt die Ankunft gerade die Sprechtaste? (Hinweis unten und für die Prüfung) */
+  get prompt() {
+    return this.phase === 'funk' && !this.talk && this.t >= this.talkAt;
   }
 
   next(phase) {
@@ -227,6 +272,11 @@ export class Arrival {
     const g = this.game;
     const player = g.player;
     player.seat(null);
+    // G7: Mika nimmt das Handgerät aus dem Kasten (am Gürtel trägt Mika es fortan), die Laterne vom Bug
+    delete g.state.flags.funkImKasten;
+    g.world.setRadioBox(false);
+    if (this.boat.lantern.visible) this.takeLantern();
+    this.talk = 0;
     if (skipped || this.phase !== 'funk') {
       const end = ARRIVAL.walkPath[ARRIVAL.walkPath.length - 1];
       player.place(end[0], end[1], Math.PI);
@@ -241,10 +291,19 @@ export class Arrival {
 
   /** Zeile(n) der aktuellen Phase: welche Gedanken schon zu sehen sind. */
   lines() {
-    if (this.phase === 'karte') return T.ankunft.karte.filter((_, k) => this.t >= ARRIVAL_LINES.card[k]);
-    if (this.phase === 'see') return T.ankunft.see.filter((_, k) => this.t >= ARRIVAL_LINES.lake[k]).slice(-1);
-    if (this.phase === 'steg') return T.ankunft.steg.filter((_, k) => this.t >= ARRIVAL_LINES.walk[k]);
-    if (this.phase === 'funk') return [T.ankunft.funk];
+    return this.shown().map((l) => l.text);
+  }
+
+  /** Zeilen der Phase mit ihrem Beginn (s): auf dem See, am Steg und am Funk nur die neueste. */
+  shown() {
+    const pick = (texts, times, latest) => {
+      const list = [].concat(texts).map((text, k) => ({ text, at: times[k] ?? 0 })).filter((l) => this.t >= l.at);
+      return latest ? list.slice(-1) : list;
+    };
+    if (this.phase === 'karte') return pick(T.ankunft.karte, ARRIVAL_LINES.card, false);
+    if (this.phase === 'see') return pick(T.ankunft.see, ARRIVAL_LINES.lake, true);
+    if (this.phase === 'steg') return pick(T.ankunft.steg, ARRIVAL_LINES.walk, true);
+    if (this.phase === 'funk') return pick(T.ankunft.funk, ARRIVAL_LINES.funk, true);
     return [];
   }
 
@@ -263,19 +322,25 @@ export class Arrival {
       ctx.fillRect(0, 0, ui.width, bar);
       ctx.fillRect(0, ui.height - bar, ui.width, bar);
     }
-    // Gedanken: oben (in der Karte im oberen Drittel), warm und deutlich, Buchstabe für Buchstabe
-    const lines = this.lines();
+    // Gedanken: oben (in der Karte im oberen Drittel), warm und deutlich, Buchstabe für Buchstabe.
+    // G7: Gesprochenes („…“) warm, die Stimme aus dem Funk (»…krrz…«) kühl
     let y = card ? Math.round(ui.height * 0.3) : Math.round((bar - LINE_HEIGHT) / 2);
-    lines.forEach((text, k) => {
-      const since = this.phase === 'karte' ? this.t - ARRIVAL_LINES.card[k] : this.phase === 'see' ? this.t - ARRIVAL_LINES.lake[T.ankunft.see.indexOf(text)] : this.t - (ARRIVAL_LINES.walk[k] || 0);
-      const shown = text.slice(0, Math.max(0, Math.floor(since * 40)));
+    for (const { text, at } of this.shown()) {
+      const shown = text.slice(0, Math.max(0, Math.floor((this.t - at) * 40)));
+      const color = card || text.startsWith('„') ? (text.includes('krrz') ? COLORS.textDim : COLORS.textWarm) : COLORS.text;
       for (const line of wrap(shown, ui.width - 80)) {
         const x = Math.round((ui.width - measure(line)) / 2);
-        drawText(ctx, line, x, y, card ? COLORS.textWarm : COLORS.text, { outline: COLORS.outline });
+        drawText(ctx, line, x, y, color, { outline: COLORS.outline });
         y += LINE_HEIGHT;
       }
       y += card ? 8 : 2;
-    });
+    }
+    // G7: die Sprechtaste – mittig im unteren Balken
+    if (this.prompt) {
+      const key = T.ankunft.taste;
+      const ky = ui.height - Math.round((bar + LINE_HEIGHT) / 2);
+      drawText(ctx, key, Math.round((ui.width - measure(key)) / 2), ky, COLORS.gold, { outline: COLORS.outline });
+    }
     // Überspringen: klein unten rechts im Balken, mit einem Balken, solange Esc gehalten wird
     const hint = T.ankunft.ueberspringen;
     const hx = ui.width - measure(hint) - 8;

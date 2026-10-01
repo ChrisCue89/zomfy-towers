@@ -118,6 +118,7 @@ import { PeopleSprites } from '../entities/peopleView.js';
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
   radioHoeren: 'radioGehoert', // N4: das Radio hinter dem Funkgerät-Menü
+  radio: 'stationGesehen', // G7: die Station beim ersten Mal (nach einer Ankunft)
   briefkasten: 'briefkastenGesehen',
   sessel: 'sesselProbiert',
   schild: 'schildGelesen', // G5: Birkhagen steht jetzt in der Ortskunde
@@ -575,6 +576,7 @@ export class Game {
     this.posts.apply();
     this.trader.apply();
     this.firstFire.apply(); // N10: was kalt war, bleibt kalt – alte Stände brennen weiter
+    this.world.setRadioBox(Boolean(this.state.flags.funkImKasten)); // G7: das Funkgerät liegt noch im Kasten an der Tür
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
     this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
@@ -3148,6 +3150,19 @@ export class Game {
     if (before < 12.5 && h >= 12.5 && this.furnishing.orders.some((o) => o.day < this.state.time.day)) this.deliverOrders();
     // N4: Nach Balduins erstem Besuch erzählt Edda vom Katalog (einmal, sobald Mika im Haus ist)
     if (this.viewInside && this.state.flags.balduinGetroffen && !this.nights.active) this.funk.once('katalog', T.funk.katalog);
+    // G7: Am ersten Abend nach der Ankunft gehen die Hauslichter an (der Kamin brennt) – einmal ein
+    // Gedanke, sobald Mika draußen am Haus ist; um halb acht ruft Edda wie jeden Abend die Holzlände
+    if (flags.lichterNeu && !flags.kaminKalt && h >= 18.6 && h < 23 && !this.viewInside && this.mode === 'play') {
+      const door = this.world.shelter.door.center;
+      if (Math.hypot(this.player.position.x - door.x, this.player.position.z - door.z) < 9) {
+        delete flags.lichterNeu;
+        this.hud.say(T.feuer.lichter, 5);
+      }
+    }
+    if (flags.abendrufOffen && h >= 19.5 && h < 21) {
+      delete flags.abendrufOffen;
+      for (const line of T.funk.abendruf) this.funk.say(line);
+    }
     if (!flags.abendHorde && h >= 19 && h < 20.5 && !this.world.buildings.towers.length) {
       flags.abendHorde = true;
       this.startDialog('abendHorde');
@@ -3754,7 +3769,7 @@ export class Game {
       arrival: () => {
         const a = game.arrival;
         const b = a.boat.root.position;
-        return { active: a.active, phase: a.phase, t: a.t, hold: a.hold, boat: { x: b.x, z: b.z }, seated: Boolean(game.player.seated), rowing: game.player.seated?.rowing || 0, mode: game.mode, lines: a.lines(), focus: { x: a.focus.x, z: a.focus.z } };
+        return { active: a.active, phase: a.phase, t: a.t, hold: a.hold, boat: { x: b.x, z: b.z }, seated: Boolean(game.player.seated), rowing: game.player.seated?.rowing || 0, mode: game.mode, lines: a.lines(), focus: { x: a.focus.x, z: a.focus.z }, prompt: a.prompt, talk: a.talk, laterne: { boot: a.boat.lantern.visible, hand: Boolean(game.player.holdingLantern), an: Boolean(game.player.lanternLit) }, kasten: Boolean(game.world.radioInBox), hausLicht: { tuer: Boolean(game.world.porchLight?.on), lampe: Boolean(game.world.lampLight?.on), fenster: (game.world.houseGlows || []).some((g) => g.on) } };
       },
       startArrival: () => game.arrival.start(),
       tutorial: () => ({ on: game.tutorial.on, laufen: Boolean(game.state.flags.funk_laufen), gut: Boolean(game.state.flags.funk_laufenGut), goal: game.goal?.id || null, walkFrom: game.tutorial.walkFrom ? { ...game.tutorial.walkFrom } : null }),

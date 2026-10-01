@@ -127,6 +127,7 @@ const mika = {
       matteHell: { ramp: [R.b[2], R.b[3], R.b[4], R.b[5]], base: 2 },
       riemen: { ramp: [R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true },
       gurt: { ramp: [R.e[3], R.e[4], R.e[5], R.e[6], R.e[7]], base: 2, seam: true },
+      funk: { ramp: [R.s[0], R.s[1], R.s[2], R.s[3], R.s[5]], base: 2, seam: true, shine: true, gloss: 0.9 }, // G7: das Handfunkgerät
       ...LANTERN_MATERIALS,
     };
   },
@@ -266,6 +267,12 @@ const mika = {
     headEllipsoid(ctx, body, [0, 0.21, -0.02], [0.27, 0.12, 0.243], 'muetze', { blend: 0.02, matAt: dome, bump: knitRibs(22, { amp: 0.32, from: 0.005 }) });
     headEllipsoid(ctx, body, [0, 0.325, -0.03], [0.045, 0.03, 0.045], 'muetze');
     for (const [x, y, z, r] of [[0, 0.395, -0.035, 0.088], [-0.05, 0.38, -0.01, 0.05], [0.05, 0.4, -0.06, 0.05], [0.02, 0.43, 0.02, 0.045]]) headEllipsoid(ctx, body, [x, y - sway.y * 0.5, z + sway.z * 0.5], [r, r * 0.9, r], 'bommel', { blend: 0.012 });
+    // G7: Eddas altes Handfunkgerät am Gürtel, vorn links mit kurzer Antenne (im Boot verdeckt)
+    if (ctx.anim !== 'rudern') {
+      const radioC = add(spine(0.035), [-0.19, 0, 0.14]);
+      ctx.box(radioC, [0.027, 0.05, 0.022], 0.012, 'funk', { pitch: body.stoop });
+      ctx.capsule(add(radioC, [0.012, 0.04, -0.004]), add(radioC, [0.016, 0.115, -0.008]), 0.013, 0.011, 'funk');
+    }
     // Laterne in der linken Hand
     if (pose.lantern) lanternShapes(ctx, arms[0].hand);
     // Anker: Hand rechts (Werkzeug), Rücken (Werkzeug auf dem Rücken), Brust (Tiefe)
@@ -424,7 +431,12 @@ const bert = {
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
     haar: cloth(P.e3, 2, 2),
-    bart: rampOf([R.e[1], R.e[2], R.e[3], R.e[4], R.s[6]], 2, { pattern: (p) => (Math.floor(p[0] * 40 + 40) % 3 === 0 ? 1 : 0) }),
+    // F6c: graue Strähnen unregelmäßig (vorher jede dritte Spalte – das las sich wie ein Gitter),
+    // nach unten länger: je Spalte ein Zufall, ob und ab welcher Höhe sie grau ist
+    bart: rampOf([R.e[1], R.e[2], R.e[3], R.e[4], R.s[6]], 2, { pattern: (p) => {
+      const c = Math.floor(p[0] * 40 + 40);
+      return hash(c, 3, 11) < 0.42 && hash(c, 5, 13) * 0.1 + 1.0 > p[1] ? 1 : 0;
+    } }),
     muetze: cloth(P.r3, 2, 1),
     band: cloth(P.r2, 1, 2),
     schirm: cloth(P.r2, 2, 1, { shine: true }),
@@ -524,6 +536,8 @@ const juna = {
     for (const [i] of legs.entries()) ctx.part(`shoe${i}`).matAt = (l) => (Math.abs(l[0]) > 0.05 && Math.abs(l[1] + 0.005) < 0.013 ? 'streifen' : null);
     // Kragen der Jacke
     ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'jackeDunkel', { pitch: body.stoop });
+    // F6c: Die Kapuze liegt zusammengeschoben im Nacken, innen dunkel, in weichen Falten
+    ctx.ellipsoid(add(spine(0.4), [0, 0.0, -0.15]), [0.17, 0.085, 0.085], 'jacke', { pitch: body.stoop - 0.3, matAt: (l) => (l[1] > 0.05 && l[2] > -0.02 ? 'jackeDunkel' : null), bump: knitRibs(9, { amp: 0.55 }) });
     // Wuschel oben auf dem Kopf
     for (const [x, y, z, r] of [[-0.12, 0.2, 0.05, 0.08], [0.1, 0.21, 0.0, 0.085], [0.0, 0.23, -0.1, 0.09], [-0.05, 0.2, 0.15, 0.07], [0.15, 0.17, 0.13, 0.06]]) headEllipsoid(ctx, body, [x, y, z], [r, r * 0.75, r], 'haar', { blend: 0.02 });
     earsNose(ctx, body);
@@ -577,12 +591,29 @@ const yusuf = {
     const { W, stamps, dir } = ctx;
     // Der Kittel ist vorn offen: in der Mitte das Hemd, daneben die Kanten
     const open = (l) => (l[2] > 0.08 ? (Math.abs(l[0]) < 0.05 ? 'hemd' : Math.abs(l[0]) < 0.07 ? 'kittelSaum' : null) : null);
+    // F6c: Auf der Brust öffnet sich der Kittel zum V mit umgeschlagenen Revers – die Kante dunkel,
+    // das Revers selbst schräg nach außen gestellt (zum Licht hin heller, auf der anderen Seite dunkler)
+    const vee = (l) => 0.05 + 0.45 * Math.max(0, l[1] + 0.03);
+    const lapels = (l) => {
+      if (l[2] <= 0.06) return null;
+      const ax = Math.abs(l[0]);
+      const v = vee(l);
+      if (ax < v) return 'hemd';
+      if (ax < v + 0.014) return 'kittelSaum';
+      return null;
+    };
+    const lapelTilt = (l) => {
+      if (l[2] <= 0.06 || l[1] < -0.03) return null;
+      const ax = Math.abs(l[0]);
+      const v = vee(l);
+      return ax >= v && ax < v + 0.065 ? [Math.sign(l[0]) * 0.55, 0.12, 0] : null;
+    };
     const B = {
       ...HUMAN,
       torso: [
         { ...HUMAN.torso[0], mat: 'kittel' },
         { ...HUMAN.torso[1], mat: 'kittel', matAt: open },
-        { ...HUMAN.torso[2], mat: 'kittel', matAt: open },
+        { ...HUMAN.torso[2], mat: 'kittel', matAt: lapels, bump: lapelTilt },
       ],
       head: { ...HUMAN.head, r: 0.2, matAt: (l) => {
         const h = hairOf({ top: 0.07, fringe: 0.11, back: -0.12, sides: -0.04, zig: 0.02 })(l);
@@ -641,6 +672,8 @@ const balduin = {
     schal: rampOf([R.r[0], R.r[1], R.r[2], R.r[3], R.r[4]], 3, { pattern: (p) => (Math.floor(p[1] * 20 + 20) % 3 === 0 ? -1 : 0) }),
     mantel: rampOf([R.n[2], R.n[3], R.b[0], R.b[1], R.b[2]], 3),
     rucksack: rampOf([R.e[3], R.e[4], R.e[5], R.e[6], R.e[7]], 3),
+    rucksackDunkel: rampOf([R.e[2], R.e[3], R.e[4], R.e[5]], 2),
+    schnalle: rampOf([R.f[3], R.f[5], R.f[6], R.f[7]], 2, { shine: true }),
     rolle: rampOf([R.t[1], R.t[2], P.a5, P.a6], 2, { pattern: (p) => (Math.floor(p[0] * 20 + 20) % 3 === 0 ? 1 : 0) }),
     pfanne: rampOf([R.s[0], R.s[1], R.s[2], R.s[3], R.s[5]], 2, { shine: true }),
     gurt: cloth(P.e2, 1, 2),
@@ -666,7 +699,19 @@ const balduin = {
     ctx.ellipsoid(add(body.hip, [0, -0.12, 0.0]), [0.265, 0.17, 0.215], 'mantel', { blend: 0.03, part: 'rock' });
     // Riesiger Rucksack, obenauf die Deckenrolle, an der Seite die Pfanne
     const packC = add(spine(0.2), [0, 0.05, -0.3]);
-    ctx.box(packC, [0.26, 0.27, 0.13], 0.07, 'rucksack', { pitch: body.stoop, matAt: (l) => (Math.abs(l[1] - 0.02) < 0.02 ? 'gurt' : null) });
+    // F6c: Segeltuch mit Deckelklappe, zwei Riemen mit Messingschnallen und einer Außentasche;
+    // Nähte an Klappe und Tasche fangen Licht
+    const packMat = (l) => {
+      if (Math.abs(l[1] - 0.02) < 0.02) return 'gurt';
+      if (l[2] < -0.07) {
+        if (Math.abs(Math.abs(l[0]) - 0.13) < 0.022 && l[1] > -0.06) return 'gurt';
+        if (l[1] > 0.1) return 'rucksackDunkel';
+      }
+      return null;
+    };
+    ctx.box(packC, [0.26, 0.27, 0.13], 0.07, 'rucksack', { pitch: body.stoop, matAt: packMat, bump: folds([0.1, -0.17], { w: 0.012, amp: 0.7, wave: 0.004 }) });
+    for (const side of [-1, 1]) ctx.ellipsoid(add(packC, [side * 0.13, 0.07, -0.14]), [0.03, 0.022, 0.015], 'schnalle', { pitch: body.stoop });
+    ctx.box(add(packC, [0, -0.15, -0.15]), [0.15, 0.075, 0.035], 0.025, 'rucksack', { pitch: body.stoop, matAt: (l) => (l[1] > 0.035 ? 'rucksackDunkel' : null) });
     const rollA = W(add(packC, [-0.2, 0.32, -0.02]));
     const rollB = W(add(packC, [0.2, 0.32, -0.02]));
     ctx.push({ kind: 'capsule', a: rollA, b: rollB, r: 0.085, r1: 0.085, mat: 'rolle' });
@@ -880,7 +925,8 @@ const clara = {
     headEllipsoid(ctx, body, [0, 0.2, -0.22], [0.06, 0.05, 0.05], 'gummi');
     earsNose(ctx, body);
     // Schweißbrille auf der Stirn: Band ringsum, vorn zwei runde Gläser
-    ctx.box(H([0, 0.135, -0.01]), [0.296, 0.03, 0.27], 0.12, 'gurt', { ax: body.headAx });
+    // F6c: hinten verschwindet das Band im Haar – sonst sah der Hinterkopf mit dem Zopf wie ein Gesicht aus
+    ctx.box(H([0, 0.135, -0.01]), [0.296, 0.03, 0.27], 0.12, 'gurt', { ax: body.headAx, matAt: (l) => (l[2] < -0.12 ? 'haar' : null) });
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.11, 0.14, 0.255], [0.07, 0.062, 0.04], 'brille', { matAt: (l) => (l[2] > 0.0 && Math.hypot(l[0], l[1]) < 0.042 ? 'glas' : null) });
     ctx.mark('chest', spine(0.25));
     ctx.face = faceOf(ctx, body, FACE);

@@ -10,7 +10,7 @@ import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './sprite
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
 import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
-import { rings } from './peopleRelief.js';
+import { rings, ribs, strands, folds } from './peopleRelief.js';
 
 /** Gezeichnete Richtungen: 0 S, 1 SO, 2 O, 3 NO, 4 N, 5 NW, 6 W, 7 SW. */
 export const PEOPLE_DIRS = 8;
@@ -124,6 +124,38 @@ function clothRelief(ctx) {
     if (up && !up.bump) up.bump = rings(...along(up), [0.5, 0.8], { w: 0.016, amp: 0.8, side: ctx.fwd, bias: 0.01 });
     if (fo && !fo.bump) fo.bump = rings(...along(fo), [0.22], { w: 0.016, amp: 0.7, side: ctx.fwd, bias: -0.01 });
     if (sh && !sh.bump) sh.bump = rings(...along(sh), [0.5, 0.6], { w: 0.014, amp: 0.6 });
+    // Schuhe: eine Kante über der Sohle (heller Grat, darunter Schatten)
+    const shoe = ctx.part(`shoe${i}`);
+    if (shoe && !shoe.bump && shoe.kind === 'ellipsoid') shoe.bump = folds([-shoe.rr[1] * 0.3], { w: 0.011, amp: 0.65, wave: 0 });
+  }
+  // Haar in Strähnen: am Kopf nur, wo Haar ist (das Gesicht behält seine Wölbung); Locken, Zöpfe und
+  // Wuschel aus Haar bekommen Rillen – Kapseln längs, Ellipsoide rund um die eigene Hochachse; Bärte
+  // fallen in senkrechten Strähnen. Rund 0,07 m je Strähne (knapp drei Texel), sonst wird es Gries.
+  const head = ctx.part('head');
+  if (head && head.matAt && !head.hairRelief) {
+    const face = head.bump;
+    const hairy = head.matAt;
+    const crown = ribs(26, { amp: 0.42 });
+    head.bump = (l, p) => (hairy(l, p) === 'haar' ? crown(l) : face ? face(l, p) : null);
+    head.hairRelief = true;
+  }
+  // Stoff: über dem Bauch staucht sich der Stoff zu zwei weichen Falten (vorn), Röcke und
+  // Mantelschöße fallen in senkrechten Falten
+  for (const s of ctx.shapes) {
+    if (s.bump) continue;
+    if (s.torso === 1 && s.kind === 'ellipsoid') s.bump = folds([-s.rr[1] * 0.55, -s.rr[1] * 0.25], { w: 0.013, amp: 0.55, wave: 0.01, waveK: 11, front: s.rr[2] * 0.3 });
+    else if (s.part === 'rock' && s.kind === 'ellipsoid') s.bump = ribs(Math.max(8, Math.round((2 * Math.PI * Math.max(s.rr[0], s.rr[2])) / 0.11)), { amp: 0.5, to: s.rr[1] * 0.4 });
+  }
+  for (const s of ctx.shapes) {
+    if (s.bump || (s.mat !== 'haar' && s.mat !== 'bart')) continue;
+    if (s.kind === 'capsule') {
+      const [axis] = along(s);
+      s.bump = strands(axis, { period: 0.065, amp: 0.38, across: ctx.right });
+    } else if (s.kind === 'ellipsoid' && s.mat === 'bart') {
+      s.bump = (l) => [0.4 * Math.sin((l[0] + 0.012 * Math.sin(l[1] * 40)) * 90), 0, 0];
+    } else if (s.kind === 'ellipsoid') {
+      s.bump = ribs(Math.max(5, Math.round((2 * Math.PI * Math.max(s.rr[0], s.rr[2])) / 0.07)), { amp: 0.4 });
+    }
   }
 }
 

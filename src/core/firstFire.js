@@ -174,7 +174,7 @@ export class FirstFire {
       campCold: this.campCold,
       kaminCold: this.kaminCold,
       matches: this.hasMatches,
-      light: { camp: w.fireLight.on, kamin: w.kaminLight.on },
+      light: { camp: w.fireLight.on, kamin: w.kaminLight.on, haus: Boolean(w.porchLight.on) }, // G7: die Hauslichter mit dem Kamin
       flames: { camp: fire.frames.some((o) => o.visible), kamin: w.interior.flames.some((o) => o.visible) },
       models: { warm: fire.warm.visible, cold: fire.cold.visible, embers: w.interior.embers.visible, tin: w.interior.matches.object.visible },
       grow: { ...w.fireGrow, scale: fire.group.scale.y },

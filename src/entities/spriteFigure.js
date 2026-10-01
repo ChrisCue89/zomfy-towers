@@ -208,7 +208,7 @@ export function humanoid(ctx, B, skip = {}) {
   const spine = (d, x = 0, y = 0, z = 0) => [x + Math.sin(roll) * d, hip[1] + d * Math.cos(stoop) * Math.cos(roll) + y, Math.sin(stoop) * d + z];
   const tilt = ctx.AX(stoop, roll);
   if (!skip.torso) {
-    for (const t of B.torso) ctx.push({ kind: 'ellipsoid', c: W(spine(t.d, t.x || 0, t.y || 0, t.z || 0)), rr: t.rr, ax: t.roll ? ctx.AX(stoop, roll + t.roll) : tilt, mat: t.mat, blend: t.blend ?? 0.06, part: t.part, matAt: t.matAt, ...(t.bump ? { bump: t.bump } : {}) });
+    B.torso.forEach((t, k) => ctx.push({ kind: 'ellipsoid', c: W(spine(t.d, t.x || 0, t.y || 0, t.z || 0)), rr: t.rr, ax: t.roll ? ctx.AX(stoop, roll + t.roll) : tilt, mat: t.mat, blend: t.blend ?? 0.06, part: t.part, matAt: t.matAt, torso: k, ...(t.bump ? { bump: t.bump } : {}) }));
   }
   const arms = [];
   for (const [i, side, swing] of [[0, -1, pose.armL], [1, 1, pose.armR]]) {

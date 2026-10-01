@@ -884,7 +884,10 @@ export const DIALOGE = {
       },
     ];
   },
+  // G7: Beim ersten Mal nach der Ankunft sieht Mika sich die Station an – woher der Strom kommt, wer
+  // hier gefunkt hat (das Foto)
   radio: (state) => [
+    ...(state.flags?.stationNeu && !state.flags?.stationGesehen ? T.ankunft.station.map((t) => ({ s: 'mika', t })) : []),
     {
       s: 'mika',
       t: 'Das Funkgerät. Wen rufe ich?',

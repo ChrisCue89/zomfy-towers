@@ -245,13 +245,26 @@ function dresser(m, x0, seed) {
     if (z === 11 && x === Math.round((x0 + x1) / 2) && (y === FLOOR + 8 || y === FLOOR + 13 || y === FLOOR + 2)) return P.s6; // Knäufe
     return hash3(x, y, z, seed) > 0.97 ? P.e4 : P.e5;
   });
-  // Radio mit Antenne
+  // Radio mit Antenne – G7: die Station aus dem alten Floßschlepper, mit grünem Lämpchen
   m.box(x0 + 2, FLOOR + 17, 5, x0 + 9, FLOOR + 22, 9, P.s2);
   m.box(x0 + 3, FLOOR + 18, 9, x0 + 5, FLOOR + 21, 9, P.e8); // Lautsprecher
   m.set(x0 + 7, FLOOR + 20, 9, P.s6).set(x0 + 8, FLOOR + 19, 9, P.f6);
+  m.set(x0 + 8, FLOOR + 21, 9, P.g9); // das Lämpchen: Strom ist da
   m.line(x0 + 9, FLOOR + 23, 6, x0 + 13, FLOOR + 31, 6, P.s5);
-  // Bücherstapel
+  // Bücherstapel (Eddas Funkbücher)
   m.box(x0 + 10, FLOOR + 17, 6, x0 + 13, FLOOR + 17, 9, P.r3).box(x0 + 10, FLOOR + 18, 6, x0 + 13, FLOOR + 18, 9, P.b3);
+  // G7: das alte Foto an der Wand – eine junge Frau mit Kopfhörern (weißer Rand, sepia)
+  m.box(x0 + 10, FLOOR + 19, 4, x0 + 12, FLOOR + 22, 4, (x, y) => {
+    if (x === x0 + 10 || x === x0 + 12 || y === FLOOR + 19 || y === FLOOR + 22) return P.e9;
+    return y === FLOOR + 21 ? P.e3 : P.e6;
+  });
+  // G7: die Autobatterie neben der Kommode, Kabel hinauf zur Station und in der Ecke zum Paneel
+  m.box(x0 - 3, FLOOR, 6, x0 - 1, FLOOR + 2, 10, (x, y, z) => (y === FLOOR + 2 ? P.s1 : z === 10 && y === FLOOR + 1 ? P.s3 : P.s0));
+  m.set(x0 - 3, FLOOR + 3, 7, P.r3).set(x0 - 1, FLOOR + 3, 7, P.s6); // Pole
+  for (let y = FLOOR + 3; y <= FLOOR + 17; y++) m.set(x0 - 1, y, 6, P.n1);
+  m.set(x0, FLOOR + 17, 6, P.n1).set(x0 + 1, FLOOR + 17, 6, P.n1);
+  for (let z = 4; z <= 6; z++) m.set(x0 - 3, FLOOR + 3, z, P.n1);
+  for (let y = FLOOR + 3; y <= TOP; y++) m.set(x0 - 3, y, 4, P.n1);
   return { x0, x1 };
 }
 
@@ -482,7 +495,7 @@ export function createInterior({ seed, colliders, level = 1, materials }) {
   box(ENTRY.x1 + 1, INNER_Z1 + 1, xE, DEPTH - 1, 'wand');
   box(ENTRY.x0 - 2, DEPTH + 3, ENTRY.x1 + 2, DEPTH + 5, 'wand'); // hinter der Tür geht es nur nach draußen
   box(kamin.x0 + 2, 4, kamin.x1 - 2, 12, 'kamin');
-  box(dres.x0, 4, dres.x1, 11, 'kommode');
+  box(dres.x0 - 3, 4, dres.x1, 11, 'kommode'); // G7: mit der Batterie daneben
   box(tab.x0, tab.z0 - 6, tab.x1, tab.z1 + 5, 'tisch');
   box(kamin.x0 - 8, 12, kamin.x0 - 1, 17, 'holzkorb');
   box(216, 100, 221, 105, 'pflanze');

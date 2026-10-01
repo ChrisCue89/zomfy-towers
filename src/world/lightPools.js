@@ -149,6 +149,22 @@ export class LightPools {
   }
 
   /**
+   * G7: Lichtinseln dunkel halten (oder wieder freigeben) – etwa die Fenster des Hauses, solange
+   * niemand darin wohnt. Dunkle Inseln zählen nicht als Licht (Nebelwelle, Laternenhexe).
+   */
+  setDark(meshes, dark) {
+    const set = new Set(meshes);
+    for (const s of this.spots) {
+      if (!set.has(s.mesh) || Boolean(s.dark) === dark) continue;
+      s.dark = dark;
+      if (dark) {
+        s.grow = 0;
+        this.place(s, 0);
+      } else s.grow = undefined;
+    }
+  }
+
+  /**
    * Alle Lichtinseln größer oder wieder normal (M27: Lotte, die Laternenmacherin).
    * @param {number} k Faktor auf den Radius
    */
@@ -164,13 +180,13 @@ export class LightPools {
   /** Liegt die Stelle in einer Lichtinsel? (M22) */
   litAt(x, z) {
     const k = this.scale * this.scale;
-    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= s.r * s.r * k) return true;
+    for (const s of this.spots) if (!s.off && !s.dark && (x - s.x) ** 2 + (z - s.z) ** 2 <= s.r * s.r * k) return true;
     return false;
   }
 
   /** Brennt im Umkreis `r` noch ein Licht? (Die Laternenhexe greift nur danach, M22.) */
   litNear(x, z, r) {
-    for (const s of this.spots) if (!s.off && (x - s.x) ** 2 + (z - s.z) ** 2 <= r * r) return true;
+    for (const s of this.spots) if (!s.off && !s.dark && (x - s.x) ** 2 + (z - s.z) ** 2 <= r * r) return true;
     return false;
   }
 
@@ -222,7 +238,7 @@ export class LightPools {
     // M33: Schwelle und Flackern – jede Insel wächst auf, sobald die Lampenstufe ihre Schwelle
     // erreicht (nah am Haus zuerst), Flammen atmen leicht; morgens gehen sie andersherum aus
     for (const s of this.spots) {
-      if (s.off) continue;
+      if (s.off || s.dark) continue;
       const want = lampLevel >= (s.on || 0) ? 1 : 0;
       const g0 = s.grow ?? want;
       const g1 = want > g0 ? Math.min(1, g0 + dt * 3.5) : want < g0 ? Math.max(0, g0 - dt * 2.5) : g0;

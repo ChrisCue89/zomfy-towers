@@ -261,6 +261,28 @@ function oarModel() {
  * Mikas Ruderboot mit zwei beweglichen Riemen.
  * @returns {{root: THREE.Group, oars: THREE.Object3D[]}}
  */
+/**
+ * G7: Mikas Sturmlaterne am Bug – an einem Stock über dem Bündel. Im Morgennebel sieht Edda vom
+ * Sturmhuk aus nur dieses Licht (die Geschichte der Ankunft); beim Aussteigen nimmt Mika sie mit.
+ */
+function bowLanternModel() {
+  const m = new VoxelModel();
+  const x = -ROWBOAT.halfLength + 5;
+  m.box(x, 10, 0, x, 21, 0, P.e3); // Stock
+  m.box(x - 2, 22, -2, x + 2, 22, 2, P.s2); // Boden
+  m.box(x - 2, 28, -2, x + 2, 28, 2, (vx, vy, vz) => (Math.abs(vz) === 2 ? P.s2 : P.s3)); // Dach
+  m.box(x - 1, 29, -1, x + 1, 29, 1, P.s3);
+  m.set(x, 30, 0, P.s4); // Bügel
+  for (const [dx, dz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) m.box(x + dx, 23, dz, x + dx, 27, dz, P.s2); // Streben
+  return m;
+}
+function bowLanternGlass() {
+  const m = new VoxelModel();
+  const x = -ROWBOAT.halfLength + 5;
+  m.box(x - 1, 23, -1, x + 1, 27, 1, 0xffffff);
+  return m;
+}
+
 export function buildRowboat(materials) {
   const root = new THREE.Group();
   root.name = 'Mikas Ruderboot';
@@ -269,6 +291,15 @@ export function buildRowboat(materials) {
   mesh.receiveShadow = true;
   mesh.position.set(-U / 2, 0, -U / 2);
   root.add(mesh);
+  // G7: die Laterne am Bug (nur während der Ankunft sichtbar; das Glas leuchtet über `glow`)
+  const lantern = new THREE.Group();
+  const frame = new THREE.Mesh(bowLanternModel().toGeometry({ jitter: 0.02, seed: 69, size: U }), materials.world);
+  frame.castShadow = true;
+  const glass = new THREE.Mesh(bowLanternGlass().toGeometry({ jitter: 0, seed: 70, size: U }), materials.glow);
+  lantern.add(frame, glass);
+  lantern.position.set(-U / 2, 0, -U / 2);
+  lantern.visible = false;
+  root.add(lantern);
   const geo = oarModel().toGeometry({ jitter: 0.02, seed: 68, size: U });
   const oars = [-1, 1].map((s) => {
     const pivot = new THREE.Group();
@@ -281,5 +312,5 @@ export function buildRowboat(materials) {
     root.add(pivot);
     return pivot;
   });
-  return { root, oars };
+  return { root, oars, lantern };
 }

@@ -136,7 +136,7 @@ export class World {
     this.lightPools = new LightPools(scene);
     this.interiorPools = [];
     this.addInteriorPools();
-    for (const l of this.props.lanterns) this.lightPools.add(l.x, l.z + 0.25, 1.2, { flicker: true }); // Kürbislaternen (M12), M33: Kerzen flackern
+    this.lanternPools = this.props.lanterns.map((l) => this.lightPools.add(l.x, l.z + 0.25, 1.2, { flicker: true })); // Kürbislaternen (M12), M33: Kerzen flackern
     this.refreshWindowPools(); // M33: Fensterlicht vor dem Haus
     if (this.props.torches.length) this.lightPools.addMany(this.props.torches, 2.4, this.props.torchFlames); // Fackeln an den Wegen
     this.buildings = new Buildings({
@@ -216,19 +216,23 @@ export class World {
     this.lanternLight = L.addLight({ position: new THREE.Vector3(), color: 0xff9a4a, intensity: 3.2, distance: 7, mode: 'manual', dimByDay: true, dayFactor: 0.2, flickerSpeed: 3.5, flickerAmount: 0.05 });
     this.lanternLight.on = false;
 
-    L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });
+    const windowGlow = L.addGlow(s.glow.window, { dim: 0x2c3a58, bright: 0xffd27a, boost: 1.35, mode: 'lamp' });
+    L.addGlow(s.glow.led, { dim: 0xffffff, bright: 0xffffff, boost: 1.3, mode: 'always' }); // G7: Lämpchen am Funkkasten
     L.addGlow(s.glow.lantern, { dim: 0x6a6f80, bright: 0xffc86a, boost: 1.1, entry: this.porchLight });
     const im = this.interiorMaterials;
     L.addGlow(im.sky, { dim: 0x2a3560, bright: 0xbfd8f0, boost: 1.15, mode: 'sky' });
     L.addGlow(im.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.kaminLight });
-    L.addGlow(im.candle, { dim: 0x6a5a40, bright: 0xffe8a0, boost: 1.3, mode: 'lamp' });
+    const candleGlow = L.addGlow(im.candle, { dim: 0x6a5a40, bright: 0xffe8a0, boost: 1.3, mode: 'lamp' });
     L.addGlow(im.lamp, { dim: 0x8a8070, bright: 0xfff0b0, boost: 1.5, entry: this.lampLight });
-    L.addGlow(s.glow.fairy, { dim: 0x555555, bright: 0xffffff, boost: 1.6, mode: 'lamp', twinkle: true });
+    const fairyGlow = L.addGlow(s.glow.fairy, { dim: 0x555555, bright: 0xffffff, boost: 1.6, mode: 'lamp', twinkle: true });
     L.addGlow(this.materials.flame, { dim: 0xffffff, bright: 0xffffff, boost: 1.0, entry: this.fireLight });
     L.addGlow(this.materials.beacon, { dim: 0xc8b070, bright: 0xfff2c4, boost: 1.8, mode: 'lamp' });
     L.addGlow(this.materials.spawnGlow, { dim: 0x3b4a44, bright: 0x6cc0ae, boost: 1.05, mode: 'lamp' });
     // Kürbislaternen: tagsüber dunkle Löcher, nachts ein flackerndes Kerzenlicht (M12)
-    L.addGlow(this.materials.pumpkinGlow, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.45, mode: 'lamp', twinkle: true });
+    const pumpkinGlow = L.addGlow(this.materials.pumpkinGlow, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.45, mode: 'lamp', twinkle: true });
+    // G7: Was nur brennt, wenn jemand im Haus wohnt (dunkel, solange der Kamin kalt ist – die
+    // Holzlände war drei Herbste leer): Fenster, Kerzen, Lichterkette, Kürbislaternen
+    this.houseGlows = [windowGlow, candleGlow, fairyGlow, pumpkinGlow];
     // Fackeln: tagsüber aus (dunkler Kopf), nachts helles Feuer
     L.addGlow(this.materials.torchGlow, { dim: 0x2e1f17, bright: 0xffb347, boost: 1.6, mode: 'lamp', twinkle: true });
     // Moder (M15): tagsüber blasses Lila, nachts ein kühles Glimmen im Unterholz
@@ -263,6 +267,7 @@ export class World {
   refreshWindowPools() {
     for (const p of this.windowPools || []) this.lightPools.remove(p);
     this.windowPools = (this.shelter.lights.windows || []).map((w) => this.lightPools.add(w.x, w.z, 1.15, { on: 0.02 }));
+    if (this.fires) this.applyHouseLights(); // G7: dunkel, solange der Kamin kalt ist
   }
 
   /** M33: der Angelplatz am Steg (mit Einblendung, sobald es eine Angel gibt). */
@@ -324,9 +329,29 @@ export class World {
     this.applyFires();
   }
 
+  /**
+   * G7: Die Hauslichter brennen erst, wenn der Kamin brennt – vorher war die Holzlände drei Herbste
+   * leer (Fenster, Wandlaterne, Lampe, Kerzen, Lichterkette, Kürbislaternen und ihre Lichtinseln).
+   * Die Lichter bleiben in der Szene, nur ihr `on` wechselt (Lichtanzahl konstant).
+   */
+  applyHouseLights() {
+    const lit = this.fires.kamin;
+    if (this.porchLight) this.porchLight.on = lit;
+    if (this.lampLight) this.lampLight.on = lit;
+    for (const g of this.houseGlows || []) g.on = lit;
+    if (this.lightPools) this.lightPools.setDark([...(this.windowPools || []), ...(this.lanternPools || []), ...(this.interiorPools || [])], !lit);
+  }
+
+  /** G7: Steckt das Handgerät noch im Kasten an der Tür? (Nach der Ankunft trägt Mika es.) */
+  setRadioBox(inBox) {
+    this.radioInBox = Boolean(inBox);
+    if (this.shelter.radio) this.shelter.radio.handset.visible = this.radioInBox;
+  }
+
   applyFires() {
     const f = this.fires;
     const fire = this.props.fire;
+    this.applyHouseLights();
     fire.warm.visible = f.camp;
     fire.cold.visible = !f.camp;
     if (!f.camp) for (const o of fire.frames) o.visible = false;
@@ -376,6 +401,7 @@ export class World {
     this.shelter = createShelter({ seed: this.seed, colliders: this.colliders, level: outer, stage: level, materials: this.shelterMaterials });
     this.scene.add(this.shelter.group);
     this.refreshWindowPools(); // M33: Fensterlicht auf dem Boden
+    this.setRadioBox(this.radioInBox); // G7: das Handgerät bleibt, wo es war
     this.props.setHouseLevel(outer);
     this.heightZones = [...this.shelter.heightZones, ...this.props.heightZones];
     this.placeHomeCat(); // N6: auf die Veranda
@@ -589,6 +615,7 @@ export class World {
   addInteriorPools() {
     for (const pool of this.interiorPools) this.lightPools.remove(pool);
     this.interiorPools = this.interior.pools.map((p) => this.lightPools.add(p.x, p.z, p.radius));
+    if (this.fires) this.applyHouseLights(); // G7
   }
 
   /** Laterne der Spielfigur anbinden (Glas-Material + Licht). */

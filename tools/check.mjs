@@ -8019,11 +8019,11 @@ async function runArrivalChecks(browser, url) {
   const see1 = await z(() => window.zomfy.arrival());
   await page.screenshot({ path: join(SHOTS, 'ankunft-see.png') });
   note('  Screenshot: screenshots/ankunft-see.png');
-  if (a0.phase === 'karte' && a0.mode === 'ankunft' && karte.lines.length === 2 && see0.phase === 'see' && see1.boat.x < see0.boat.x - 3 && see1.seated && see1.rowing > 0) {
-    note(`✓ Ankunft (N5): erst die Titelkarte mit zwei Gedanken, dann rudert Mika über den See (Boot von x ${see0.boat.x.toFixed(1)} nach ${see1.boat.x.toFixed(1)}, sitzend, im Takt der Riemen)`);
+  if (a0.phase === 'karte' && a0.mode === 'ankunft' && karte.lines.length === 2 && see0.phase === 'see' && see1.boat.x < see0.boat.x - 3 && see1.seated && see1.rowing > 0 && see1.laterne.boot) {
+    note(`✓ Ankunft (N5): erst die Titelkarte mit zwei Gedanken, dann rudert Mika über den See (Boot von x ${see0.boat.x.toFixed(1)} nach ${see1.boat.x.toFixed(1)}, sitzend, im Takt der Riemen) – G7: am Bug brennt die Laterne`);
   } else fail(`Ankunft See: ${JSON.stringify({ a0, karte, see0, see1 })}`);
   let steg = null;
-  for (let k = 0; k < 30 && !steg; k++) {
+  for (let k = 0; k < 45 && !steg; k++) {
     await step(300);
     const a = await z(() => window.zomfy.arrival());
     if (a.phase === 'steg') steg = a;
@@ -8032,8 +8032,29 @@ async function runArrivalChecks(browser, url) {
   await page.screenshot({ path: join(SHOTS, 'ankunft-steg.png') });
   note('  Screenshot: screenshots/ankunft-steg.png');
   const unterwegs = await z(() => ({ ...window.zomfy.arrival(), p: window.zomfy.state().player }));
-  for (let k = 0; k < 60 && (await z(() => window.zomfy.mode)) !== 'dialog'; k++) await step(300);
+  // G7: Am Haus brennt kein Licht (der Kamin ist kalt), Mika trägt die Laterne vom Bug
+  if (unterwegs.laterne.hand && unterwegs.laterne.an && !unterwegs.laterne.boot && unterwegs.kasten && !unterwegs.hausLicht.tuer && !unterwegs.hausLicht.lampe && !unterwegs.hausLicht.fenster) {
+    note('✓ Ankunft (G7): Mika nimmt die Laterne vom Bug mit; Fenster, Wandlaterne und Lichterkette sind dunkel – die Holzlände war drei Herbste leer');
+  } else fail(`Ankunft G7: Laterne und Hauslicht ${JSON.stringify(unterwegs)}`);
+  // G7: Es knistert im Kasten an der Tür; erst die echte Taste E drückt die Sprechtaste
+  let taste = null;
+  let zuFrueh = false;
+  for (let k = 0; k < 60 && !taste; k++) {
+    await step(300);
+    const a = await z(() => ({ ...window.zomfy.arrival(), modus: window.zomfy.mode }));
+    if (a.modus === 'dialog') zuFrueh = true;
+    if (a.prompt) taste = a;
+  }
+  await page.screenshot({ path: join(SHOTS, 'ankunft-funk.png') });
+  note('  Screenshot: screenshots/ankunft-funk.png');
+  await step(600);
+  const wartet = await z(() => ({ modus: window.zomfy.mode, a: window.zomfy.arrival() }));
+  await page.keyboard.press('KeyE');
+  await step(600);
   const kontakt = await z(() => ({ d: window.zomfy.dialogInfo(), a: window.zomfy.arrival(), p: window.zomfy.state().player }));
+  if (taste && !zuFrueh && taste.lines.some((l) => l.includes('Drücken: sprechen')) && wartet.modus === 'ankunft' && wartet.a.prompt && kontakt.d.open && !kontakt.a.kasten) {
+    note(`✓ Ankunft (G7): Im Blechkasten an der Tür knistert Eddas Ruf, auf dem Kasten »${taste.lines[0]}« – die Sprechtaste wartet – erst ein echtes E öffnet den Funk; Mika nimmt das Handgerät aus dem Kasten`);
+  } else fail(`Ankunft G7: Sprechtaste ${JSON.stringify({ taste, zuFrueh, wartet, kontakt })}`);
   await step(1500);
   await page.screenshot({ path: join(SHOTS, 'edda-erstkontakt.png') });
   note('  Screenshot: screenshots/edda-erstkontakt.png');
@@ -12846,8 +12867,8 @@ async function runFirstFireChecks(browser, url) {
   await tap('KeyZ', 600); // nah heran: die kalte Feuerstelle mit Moos und Laub
   await still(page, 'erstes-feuer-kalt');
   await tap('KeyZ', 300);
-  const altOk = !alt.campCold && !alt.kaminCold && alt.light.camp && alt.flames.camp && alt.goal?.id === 'axt';
-  const kaltOk = kalt.campCold && kalt.kaminCold && !kalt.light.camp && !kalt.light.kamin && !kalt.flames.camp && !kalt.flames.kamin && kalt.models.cold && !kalt.models.warm && !kalt.models.embers && kalt.models.tin && kalt.goal?.id === 'streichhoelzer';
+  const altOk = !alt.campCold && !alt.kaminCold && alt.light.camp && alt.light.haus && alt.flames.camp && alt.goal?.id === 'axt';
+  const kaltOk = kalt.campCold && kalt.kaminCold && !kalt.light.camp && !kalt.light.kamin && !kalt.light.haus && !kalt.flames.camp && !kalt.flames.kamin && kalt.models.cold && !kalt.models.warm && !kalt.models.embers && kalt.models.tin && kalt.goal?.id === 'streichhoelzer';
   if (altOk && kaltOk) note(`✓ Erstes Feuer (N10): ein alter Stand brennt weiter (erstes Ziel: Axt); nach der Ankunft sind Feuerstelle und Kamin kalt – kein Licht, keine Flammen, keine Glut, die Dose steht auf dem Sims, Ziel »${kalt.goal.text}«`);
   else fail(`Erstes Feuer, kalt: ${JSON.stringify({ alt, kalt })}`);
 
@@ -12887,7 +12908,7 @@ async function runFirstFireChecks(browser, url) {
   const kamin = { hinweis: await hinweis(), ff: await ff() };
   const hineinOk = tuer.pfeil && Math.hypot(tuer.pfeil.x - tuer.x, tuer.pfeil.z - tuer.z) < 1.5 && drinnen.inside && drinnen.ff.target && Math.abs(drinnen.ff.target.x - k.x) < 1;
   const doseOk = /Streichhölzer nehmen/.test(vorKamin || '') && dose.ff.matches && !dose.ff.models.tin && /Kamin anzünden/.test(dose.hinweis || '') && /Streichhölzer/.test(dose.speech) && dose.ff.goal?.id === 'kamin';
-  const kaminOk = !kamin.ff.kaminCold && kamin.ff.light.kamin && kamin.ff.models.embers && kamin.ff.grow.kamin < 1 && kamin.ff.goal?.id === 'feuer' && kamin.ff.campCold && /Ans Feuer setzen/.test(kamin.hinweis || '');
+  const kaminOk = !kamin.ff.kaminCold && kamin.ff.light.kamin && kamin.ff.light.haus && kamin.ff.models.embers && kamin.ff.grow.kamin < 1 && kamin.ff.goal?.id === 'feuer' && kamin.ff.campCold && /Ans Feuer setzen/.test(kamin.hinweis || '');
   if (ohneOk && hineinOk && doseOk && kaminOk) note(`✓ Erstes Feuer (N10): E an der kalten Feuerstelle – »${ohne.speech}«; der Pfeil zeigt zur Haustür, E geht hinein, E nimmt die Dose vom Kaminsims (»${dose.speech}«), E zündet den Kamin an (Licht und Glut, die Flammen wachsen)`);
   else fail(`Erstes Feuer, drinnen: ${JSON.stringify({ ohne, tuer, drinnen, vorKamin, dose, kamin })}`);
 
@@ -12936,6 +12957,22 @@ async function runFirstFireChecks(browser, url) {
   });
   await step(600);
   await still(page, 'erstes-feuer');
+  // G7: Am ersten Abend gehen die Hauslichter an (einmal ein Gedanke), um halb acht ruft Edda wie
+  // jeden Abend die Holzlände – nach einer Ankunft genau einmal
+  const lichter = await speech();
+  await z(() => window.zomfy.setTime(19, 28));
+  await step(4000);
+  const ruf = await z(() => ({ f: window.zomfy.funk(), flags: window.zomfy.state().flags }));
+  await z(() => {
+    window.zomfy.game.funk.clear();
+    window.zomfy.setTime(19, 28);
+  });
+  await step(4000);
+  const ruf2 = await z(() => window.zomfy.funk());
+  const rufZeilen = [ruf.f.current?.key, ...ruf.f.queue].filter((k) => typeof k === 'string' && k.includes('Edda'));
+  const nochmal = [ruf2.current?.key, ...ruf2.queue].filter((k) => typeof k === 'string' && k.includes('Hier ist Edda'));
+  if (/Lichterkette eingesteckt/.test(lichter) && !ruf.flags.lichterNeu && !ruf.flags.abendrufOffen && rufZeilen.length && !nochmal.length) note(`✓ Erstes Feuer (G7): am ersten Abend gehen die Hauslichter an (»${lichter}«), um halb acht ruft Edda die Holzlände (»${rufZeilen[0].slice(0, 60)}…«) – nur einmal`);
+  else fail(`Erstes Feuer G7, Abend: ${JSON.stringify({ lichter, ruf, ruf2 })}`);
 
   // 5) Speichern: der halbe Weg bleibt (Dose genommen, Kamin und Feuer noch kalt)
   await z(() => {

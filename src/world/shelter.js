@@ -441,6 +441,47 @@ function buildAwning() {
   return m;
 }
 
+/**
+ * G7: Der Funkkasten links neben der Tür – ein Blechkasten mit Dach, Antennenstummel und Kabel in
+ * die Wand. Darin steckt (bis Mika es nimmt) das Handgerät der Holzlände in seiner Ladehalterung,
+ * auf der Rückseite ein Klebestreifen; ein grünes Lämpchen zeigt, dass Strom vom Paneel kommt.
+ */
+const RADIO = { x0: 21, x1: 30, y0: 40, y1: 52 };
+function buildRadioBox(seed) {
+  const m = new VoxelModel();
+  const { x0, x1, y0, y1 } = RADIO;
+  const tin = (x, y, z) => {
+    const rust = hash3(x, y, z, seed + 31) > 0.86;
+    return rust ? P.e3 : null;
+  };
+  m.box(x0, y0, FZ + 1, x1, y1, FZ + 1, (x, y, z) => tin(x, y, z) || P.s2); // Rückwand
+  for (const x of [x0, x1]) m.box(x, y0, FZ + 1, x, y1, FZ + 4, (vx, y, z) => tin(vx, y, z) || (x === x0 ? P.s5 : P.s3)); // Seiten
+  m.box(x0, y0 - 1, FZ + 1, x1, y0 - 1, FZ + 4, (x, y, z) => (z === FZ + 4 ? P.s4 : P.s3)); // Boden
+  m.box(x0 - 1, y1 + 1, FZ + 1, x1 + 1, y1 + 1, FZ + 5, (x, y, z) => (z === FZ + 5 ? P.s4 : tin(x, y, z) || P.s5)); // Dach
+  m.box(x0, y1 + 2, FZ + 1, x1, y1 + 2, FZ + 3, P.s4);
+  m.box(x1 - 1, y1 + 3, FZ + 2, x1 - 1, y1 + 11, FZ + 2, (x, y) => (y === y1 + 11 ? P.s6 : P.s2)); // Antenne
+  m.box(x0 + 2, y0 + 1, FZ + 2, x1 - 2, y0 + 2, FZ + 3, P.s3); // Ladehalterung
+  for (let y = FFLOOR; y < y0 - 1; y++) m.set(x0 + 2 + (y % 7 === 0 ? 1 : 0), y, FZ + 1, P.n2); // Kabel hinab in die Wand
+  return m;
+}
+/** Das Handgerät im Kasten (eigenes Mesh: Nach der Ankunft trägt Mika es am Gürtel). */
+function buildRadioHandset() {
+  const m = new VoxelModel();
+  const { x0, y0 } = RADIO;
+  const hx = x0 + 3;
+  m.box(hx, y0 + 3, FZ + 2, hx + 3, y0 + 10, FZ + 3, (x, y, z) => (x === hx ? P.n3 : z === FZ + 3 && y >= y0 + 7 && (y - y0) % 2 === 0 ? P.n1 : P.n2)); // Gehäuse, oben das Gitter
+  m.box(hx, y0 + 5, FZ + 4, hx + 3, y0 + 5, FZ + 4, P.e9); // Klebestreifen
+  m.box(hx + 3, y0 + 11, FZ + 2, hx + 3, y0 + 13, FZ + 2, P.n2); // Antennenstummel
+  m.set(hx + 1, y0 + 11, FZ + 2, P.s3); // Knopf
+  return m;
+}
+/** Das grüne Lämpchen am Kasten (leuchtet immer). */
+function buildRadioLed() {
+  const m = new VoxelModel();
+  m.set(RADIO.x1 - 2, RADIO.y1 - 2, FZ + 2, P.g8);
+  return m;
+}
+
 function buildLanternGlass() {
   const m = new VoxelModel();
   m.box(71, 54, FZ + 4, 76, 63, FZ + 9, 0xffffff);
@@ -722,6 +763,7 @@ export function createShelterMaterials() {
     window: createGlowMaterial(0xffffff),
     fairy: createGlowMaterial(0xffffff, { vertexColors: true }),
     lantern: createGlowMaterial(0xffffff, { occluder: true }),
+    led: createGlowMaterial(0xffffff, { vertexColors: true }), // G7: Lämpchen am Funkkasten
   };
   return { baseMat, glow };
 }
@@ -762,6 +804,10 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
   const fairyWire = mesh(buildFairyWire(), baseMat, { shadow: 'none' });
   const fairy = mesh(buildFairyLights(), glow.fairy, { shadow: 'none', jitter: 0 });
   const lanternGlass = mesh(buildLanternGlass(), glow.lantern, { shadow: 'none', jitter: 0 });
+  // G7: der Funkkasten links neben der Tür, das Handgerät darin, das grüne Lämpchen
+  const radioBox = mesh(buildRadioBox(seed), baseMat);
+  const radioHandset = mesh(buildRadioHandset(), baseMat, { shadow: 'none' });
+  const radioLed = mesh(buildRadioLed(), glow.led, { shadow: 'none', jitter: 0 });
 
   // Tür mit Drehpunkt an der Angel
   const doorPivot = new THREE.Group();
@@ -772,7 +818,7 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
   door.receiveShadow = true;
   doorPivot.add(door);
 
-  group.add(base, front, roof, awning, windowGlass, fairyWire, fairy, lanternGlass, doorPivot);
+  group.add(base, front, roof, awning, windowGlass, fairyWire, fairy, lanternGlass, doorPivot, radioBox, radioHandset, radioLed);
   if (level >= 2) {
     group.add(
       mesh(buildAnnexBase(seed), baseMat),
@@ -820,6 +866,7 @@ export function createShelter({ seed, colliders, level = 1, stage = level, mater
     stage,
     door: { pivot: doorPivot, hinge: toWorld(DOOR.x0, 0, D), center: toWorld((DOOR.x0 + DOOR.x1 + 1) / 2, 0, D), angle: 0 },
     glow,
+    radio: { handset: radioHandset, at: toWorld((RADIO.x0 + RADIO.x1 + 1) / 8, (RADIO.y0 + RADIO.y1) / 8, D + 1) }, // G7
     lights: {
       porch: toWorld(18.5, 14.75, 29.75), // Wandlaterne neben der Tür (Mitte im Maß 1/32: 74, 59, 119)
       // M33: Fensterlicht auf dem Boden vor dem Haus (Stubenfenster, ab der Hütte das Fenster im Anbau)

@@ -30,6 +30,15 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   Reißverschluss mit Zipper, heller Fellrand an den Stiefeln, Haar in Strähnen mit Spitzen, die
   Mütze ohne Sprenkel mit feinen Maschen. Hilde: Zopfrippen statt Karo-Rauschen, Falten im Rock.
   Yusuf: Längsfalten im Kittel.
+- **F6c – Formen (zweiter Teil, alle Leute):** Haar fällt bei allen in Strähnen (am Kopf nur, wo Haar
+  ist; Locken, Zöpfe und Dutts mit Rillen), Bärte in senkrechten Strähnen, über dem Bauch staucht sich
+  der Stoff zu zwei weichen Falten, Röcke und Mantelschöße fallen in Längsfalten, die Schuhe haben
+  eine Kante über der Sohle. Einzeln: Yusufs Kittel öffnet sich auf der Brust zum V mit Revers;
+  Balduins Rucksack hat Deckelklappe, zwei Riemen mit Messingschnallen und eine Außentasche; Juna
+  trägt die Kapuze zusammengeschoben im Nacken; Berts graue Barthaare liegen unregelmäßig (vorher
+  jede dritte Spalte – das las sich wie ein Gitter); Claras Brillenband verschwindet hinten im Haar
+  (der Hinterkopf mit Zopf sah wie ein Gesicht aus). Mika trägt seit der Ankunft Eddas Handfunkgerät
+  vorn links am Gürtel (G7).
 - **Backen doppelt so schnell** (F6e vorgezogen): Abstandsfelder und Licht ohne Zwischen-Arrays,
   Wurzel statt `Math.hypot`, Strahlen der Menschen prüfen nur Formen, die sie berühren (`cull`).
   Mika 48 statt 94 ms je Bild; im Spiel steht Mika nach dem Umschalten deutlich früher als Sprite
