@@ -49,6 +49,12 @@ Balance-Durchlauf alle Nächte, ohne dass die Horde je ernsthaft an die Barrikad
   Nächten, ab Nacht 17 in fast jeder (bis zu 780 auf einmal), die Laternenhexe (Nacht 15) bis an
   die Barrikaden, der zweite Holzfäller (Nacht 25) schlägt die Reihen und das Tor ein und fällt
   davor; Durchbrüche in Nacht 28 (das Lager wird geplündert, das Haus hält) und in der Frostnacht.
+- **Ergebnis (30 Nächte, Wild):** alle gehalten; Schlurfer an den Barrikaden in 27 von 30 Nächten,
+  knapp (Barrikaden zerschlagen oder Tor getroffen) in 17; Mika sinkt in Nacht 8 auf 6; der zweite
+  Holzfäller (Nacht 25) schlägt das Tor ein, die Frostnacht bricht durch (36 im Lager, das Haus
+  hält).
+- **Prüfung** (Abschnitt `nacht16`): Nacht 2 unverändert, Nacht 3 zäher, der Holzfäller trägt die
+  Zähigkeit seiner Nacht.
 - **Offen:**
   - Das Moderherz erstarrt beim Bot mit 95–97 % Leben (in M25: 43 %). Mit den alten Werten
     nachgespielt bleibt es gleich: Es kommt in Phase 2 (unter zwei Drittel) und heilt sich dort mit
@@ -56,9 +62,6 @@ Balance-Durchlauf alle Nächte, ohne dass die Horde je ernsthaft an die Barrikad
     Türme binden; die zähen Brummer der späten Nächte haben fast so viel Leben wie das Herz (die
     Scharfschützen zielen auf den Stärksten). Ob das Herz das Feuer auf sich ziehen soll, ist eine
     Frage an den Auftraggeber.
-  - »Wild« ist nach B1 über 30 Nächte noch nicht vermessen.
-- **Prüfung** (Abschnitt `nacht16`): Nacht 2 unverändert, Nacht 3 zäher, der Holzfäller trägt die
-  Zähigkeit seiner Nacht.
 
 ---
 
