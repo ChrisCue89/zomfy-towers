@@ -388,14 +388,15 @@ async function runPeopleChecks(browser, url) {
       const gerade = augen.every((rows) => rows.every((r) => r.every((c, x) => c === r[r.length - 1 - x])));
       const gleich = augen.length < 2 || JSON.stringify(augen[0]) === JSON.stringify(augen[1]);
       const glanz = d !== 0 || (augen.length === 2 && augen.every((rows) => rows[1][1] === P.s9));
-      // Im Profil höchstens ein Auge (es darf unter Mütze oder Bart verschwinden), ohne Weiß am Rand
+      // Im Profil genau ein Auge ohne Weiß am Rand, sonst beide. F6h: Es verschwindet weder unter
+      // Koteletten (Bert) noch hinter einer großen Nase (Balduin schräg: Auge, Nase, Auge)
       const profil = d === 2 || d === 6;
-      const gut = profil ? augen.length <= 1 && augen.every((rows) => rows.every((r) => r.every((c, x) => c !== P.s9 || x === (r.length - 1) / 2))) : augen.length > 0 && gerade && gleich && glanz;
+      const gut = profil ? augen.length === 1 && augen.every((rows) => rows.every((r) => r.every((c, x) => c !== P.s9 || x === (r.length - 1) / 2))) : augen.length === 2 && gerade && gleich && glanz;
       if (gut) blicke++;
       else schielen.push(`${id}:${d}:${JSON.stringify(augen)}`);
     }
   }
-  if (!schielen.length) note(`✓ Menschen (F6g): niemand schielt – ${blicke} Blicke von zwölf Figuren in fünf Richtungen geprüft (jedes Auge gerade und gespiegelt, beide gleich, von vorn mit Glanz in der Mitte, im Profil kein Weiß am Rand)`);
+  if (!schielen.length) note(`✓ Menschen (F6g): niemand schielt – ${blicke} Blicke von zwölf Figuren in fünf Richtungen geprüft (jedes Auge gerade und gespiegelt, beide gleich, von vorn mit Glanz in der Mitte, schräg beide Augen, im Profil genau eins ohne Weiß am Rand)`);
   else fail(`Menschen F6g: Schielen ${schielen.join(' | ')}`);
   checkMessages(session);
   await session.context.close();

@@ -265,7 +265,9 @@ gilt bis auf Weiteres:
       (das schmalere bestimmt), ein Glanz nur mittig in der Pupille (bei drei Texeln), nie Weiß am Rand
       (ein weißer Pixel am Rand liest sich als Augapfel), Wimpern nur von vorn. Seitenblicke lasen sich
       in der Schrägansicht als schief und schielend (»Mach sie gerade«). Der Bäcker gibt die Lage der
-      Augen mit (`f.eyes`: Mitte, Breite) – die Prüfung liest das Bild dort. Merkmale je Figur in
+      Augen mit (`f.eyes`: Mitte, Breite) – die Prüfung liest das Bild dort. Im Profil genau ein Auge,
+      sonst beide (F6h): Nichts darf es verdecken (Koteletten hinter die Augen setzen); liegt schräg
+      eine große Nase vor dem fernen Auge, rückt `placeFace` es knapp an ihr vorbei. Merkmale je Figur in
       `FOLK_FACES[id].look`: `glasses`, `lashes`, `bushy` (buschige Brauen), `lines` (Lachfältchen) –
       nichts direkt neben die Augen setzen (Sommersprossen lasen sich wie ein Schielen).
     - Licht (`lightField`, `PEOPLE_LIGHT`): seitlich von oben links, weiche Schlagschatten,

@@ -401,7 +401,8 @@ const hilde = {
     const bagC = add(spine(-0.02), [-0.28, 0, 0.02]);
     ctx.box(bagC, [0.05, 0.1, 0.13], 0.03, 'tasche', { pitch: body.stoop, matAt: (l) => (l[1] > 0.05 ? 'gurt' : null) });
     // Grauer Dutt hinten, Postmütze
-    headEllipsoid(ctx, body, [0, 0.03, -0.29], [0.1, 0.09, 0.07], 'haar', { blend: 0.02 });
+    // F6h: kaum verschmolzen, damit der Dutt von hinten eine Kehle zum Kopf hat und als Knoten liest
+    headEllipsoid(ctx, body, [0, 0.03, -0.29], [0.1, 0.09, 0.07], 'haar', { blend: 0.006 });
     earsNose(ctx, body);
     visorCap(ctx, body, { h: 0.075, lift: 0.17, visorLen: 0.12 });
     ctx.mark('chest', spine(0.25));
@@ -474,7 +475,7 @@ const bert = {
     const chin = (l) => (Math.abs(l[0] + 0.01) < 0.045 + (l[1] < -0.02 ? 0.025 : 0) ? 'bartGrau' : null);
     headEllipsoid(ctx, body, [0, -0.17, 0.17], [0.25, 0.13, 0.12], 'bart', { blend: 0.03, face: true, matAt: corners });
     headEllipsoid(ctx, body, [0, -0.26, 0.12], [0.18, 0.08, 0.1], 'bart', { blend: 0.03, face: true, matAt: chin });
-    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.22, -0.08, 0.14], [0.07, 0.1, 0.09], 'bart', { blend: 0.02 });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.22, -0.1, 0.07], [0.07, 0.1, 0.08], 'bart', { blend: 0.02 });
     earsNose(ctx, body, { noseR: [0.045, 0.04, 0.04] });
     visorCap(ctx, body, { h: 0.1, lift: 0.17, visorLen: 0.17 });
     headEllipsoid(ctx, body, [0, 0.31, -0.02], [0.035, 0.02, 0.035], 'band'); // Knopf oben
@@ -1771,7 +1772,8 @@ const lu = {
 const STAMPS_FOLK = {
   posthorn: { rows: ['.yy.', 'y..y', '.yyy'], legend: { y: R.f[6] } },
   knopfWeiss: { rows: ['w'], legend: { w: P.a4 } },
-  nadel: { rows: ['s', 's', 'k'], legend: { s: R.s[7], k: R.r[3] } },
+  // F6h: der Kopf oben, der Schaft dunkel – hell auf dem grauen Dutt sah man nur den roten Punkt
+  nadel: { rows: ['k', 's', 's'], legend: { s: R.s[3], k: R.r[3] } },
   schuerzenTasche: { rows: ['kkkkkk', 'k....k', 'kkkkkk'], legend: { k: R.f[2] } },
   bleistift: { rows: ['k', 'y', 'y', 'y'], legend: { k: R.n[1], y: R.f[6] } },
   kordel: { rows: ['w', 'w', 's'], legend: { w: P.a4, s: R.s[6] } },

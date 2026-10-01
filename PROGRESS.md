@@ -93,6 +93,11 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
   (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
   der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
+- **F6h – Jeder hat seine Augen:** Bert hatte im Profil kein Auge (die Koteletten saßen vor ihm,
+  jetzt weiter hinten), Balduin schräg nur eins (seine große Nase lag vor dem fernen Auge – es rückt
+  jetzt knapp an ihr vorbei: Auge, Nase, Auge). Hildes Haarnadel hat einen dunklen Schaft unter dem
+  roten Kopf (vorher sah man auf dem grauen Dutt nur einen roten Punkt). Die Prüfung verlangt jetzt
+  im Profil genau ein Auge und sonst beide (`menschen`, Schritt 10).
 - **F6g – Gerade Augen** (Rückmeldung: »Bruder. Die Augen schielen immer noch. Du machst sie schräg.
   Mach sie gerade und es sieht besser raus«): In der Schrägansicht lag das Weiß bei beiden Augen auf
   einer Seite (Seitenblick), das nahe Auge war drei Texel breit und das ferne zwei, und eine Wimper zog

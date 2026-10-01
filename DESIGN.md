@@ -2146,7 +2146,8 @@ Lektorat und die Reiter des Baumenüs.
 Zeit der Welt dafür.«
 
 - **Gesichter je Merkmal** an der Kopfform, kein Schielen: Die Augen blicken in jeder Richtung gerade,
-  beide gleich groß, der Glanz mittig (F6g, Nr. 226).
+  beide gleich groß, der Glanz mittig (F6g, Nr. 226); im Profil hat jeder ein Auge, schräg zwei (F6h:
+  Berts Koteletten verdeckten es, Balduins große Nase das ferne Auge).
 - **Licht wie gezeichnet:** seitlich von oben links, weiche Schlagschatten, Verdeckung, Glanz,
   Gegenlicht.
 - **Formen:** Relief (Strähnen, Falten, Rippen, Sohlenkanten) für alle Menschen, Hände mit Daumen,

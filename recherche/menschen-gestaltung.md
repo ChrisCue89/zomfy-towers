@@ -192,3 +192,7 @@ zeigt die Kopfform, nicht das Auge.
 
 Je Figur oben der Stand vor F6g, darunter gerade Augen (Mika, Hilde, Bert, Juna; von vorn, schräg
 nach rechts und links, von der Seite).
+
+Nachtrag (F6h): Jede Figur hat im Profil genau ein Auge und sonst beide. Bei Bert lagen die
+Koteletten vor dem Auge (jetzt weiter hinten), bei Balduin lag schräg die große Nase vor dem fernen
+Auge – es rückt knapp an ihr vorbei, wie man es zeichnen würde: Auge, Nase, Auge.

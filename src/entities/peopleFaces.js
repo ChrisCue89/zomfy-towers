@@ -157,8 +157,29 @@ export function placeFace(face, raster, faceParts, skin) {
     return { i, j, x: t.x, y: t.y, facing };
   };
   const look = face.fwd[0] > 0.35 ? 1 : face.fwd[0] < -0.35 ? -1 : 0;
+  const center = at(face.center, false);
+  // F6h: Liegt eine große Nase schräg vor dem fernen Auge, rückt es knapp an ihr vorbei nach außen
+  // (wie gezeichnet: Auge, Nase, Auge) – sonst blickte Balduin schräg mit nur einem Auge
+  const beside = (f) => {
+    const t = toTexel(f.p, px, py);
+    const away = center ? Math.sign(t.x - center.x) : 0;
+    const at0 = Math.floor(t.y) * w + Math.floor(t.x);
+    // nur, wenn ein Teil des Gesichts davor liegt (Nase, Bart) – nie unter Mütze, Hand oder Haar
+    if (!away || t.x < 0 || t.y < 0 || t.x >= w || t.y >= h || !faceParts.has(raster.hit[at0]) || raster.mat[at0] === 'haar') return null;
+    for (let s = 1; s <= 2; s++) {
+      const i = Math.floor(t.x) + away * s;
+      const j = Math.floor(t.y);
+      const ok = (x) => {
+        const idx = j * w + x;
+        return x >= 0 && x < w && faceParts.has(raster.hit[idx]) && skin.has(raster.mat[idx]);
+      };
+      if (ok(i) && ok(i + away)) return { i: i + (away > 0 ? 1 : 0), j, x: t.x + away * (s + 0.5), y: t.y, facing: dot(f.n, V) };
+    }
+    return null;
+  };
   const eyes = face.eyes.map((f) => {
-    const e = at(f, true);
+    let e = at(f, true);
+    if (!e && f && dot(f.n, V) >= EYE_WIDTH.two) e = beside(f);
     if (!e || e.facing < EYE_WIDTH.hidden) return null;
     e.width = e.facing >= EYE_WIDTH.three ? 3 : e.facing >= EYE_WIDTH.two ? 2 : 1;
     return e;
@@ -166,7 +187,6 @@ export function placeFace(face, raster, faceParts, skin) {
   // Von vorn sitzen beide Augen auf einer Reihe und spiegelgleich um die Mitte (die Mitte rundet
   // einmal, nicht jedes Auge für sich – sonst stünde ein Auge einen Texel höher). F6g: Beide sind
   // gleich breit – ein breites und ein schmales Auge lasen sich in der Schrägansicht als schief.
-  const center = at(face.center, false);
   if (eyes[0] && eyes[1]) {
     const row = Math.floor((eyes[0].y + eyes[1].y) / 2);
     eyes[0].j = row;
