@@ -13,6 +13,7 @@ import { P, RAMPS } from '../render/palette.js';
 import { humanoid, headEllipsoid, headCapsule, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
 import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
 import { faceOf, FACE, FACE_CHILD } from './peopleFaces.js';
+import { ribs as knitRibs, folds, rings as ringFolds, strands, combine } from './peopleRelief.js';
 
 const R = RAMPS;
 
@@ -48,6 +49,21 @@ export const MIKA_BASE = {
 };
 
 const MIKA_EXPRESSIONS = ['normal', 'froh', 'aua', 'staunen', 'muede', 'besorgt', 'entschlossen', 'blinzeln'];
+/**
+ * F6d: Wie weit Haar, Bommel und Zipfel im Gehen und Rennen nachschwingen (Meter im Kopfrahmen):
+ * nach hinten, solange der Schritt zieht, und auf und ab mit jedem Aufsetzen – etwas später als der
+ * Körper (die Spitzen hängen dem Schritt nach).
+ */
+export function swayOf(ctx) {
+  const walk = ctx.anim === 'gehen' ? 1 : ctx.anim === 'rennen' ? 1.8 : 0;
+  if (!walk) return { y: 0, z: 0 };
+  const n = ctx.anim === 'rennen' ? 6 : 6;
+  const ph = (ctx.k / n) * Math.PI * 2 - 0.9;
+  return { y: 0.014 * walk * Math.cos(2 * ph), z: -walk * (0.018 + 0.012 * Math.cos(2 * ph)) };
+}
+
+/** F6c: Höhen der Steppnähte der Jacke (Meter die Wirbelsäule hinauf). */
+const MIKA_QUILT = [0.115, 0.205, 0.295];
 /** Wie Mikas Gesicht aussieht (F6a: die Ausdrücke baut peopleFaces je Merkmal). */
 const MIKA_FACES = { frau: { lashes: true }, mann: {} };
 
@@ -79,6 +95,7 @@ const mika = {
     aktion: { anims: ['schwung', 'treffer', 'rolle', 'suchen', 'wurf', 'jubel', 'blitz'] },
     laterne: { anims: ['stehen', 'gehen', 'rennen'], lantern: true },
     laterneAktion: { anims: ['schwung', 'treffer', 'suchen', 'wurf'], lantern: true },
+    boot: { anims: ['rudern'] }, // N12: im Ruderboot (Ankunft, Inseln, Nebelfahrt)
   },
   /** Stoffe aus dem Aussehen (spec = lookSpec(MIKA_BASE, look)). */
   materials(s) {
@@ -94,11 +111,15 @@ const mika = {
       jacke: r(s.jacket, 2, 2, { seam: true }),
       saum: r(s.jacket, 2, 1, { seam: true, base: rampAround(s.jacket, 2, 1).base - 1 }),
       kragen: r(s.jacket, 1, 3, { seam: true, base: rampAround(s.jacket, 1, 3).base + 1 }),
-      zipper: { ramp: [R.s[3], R.s[4], R.s[5], R.s[6]], base: 1 },
+      // F6c: Reißverschluss und Taschenleisten als dunkle Linie im Stoff, der Zipper aus Metall
+      zipper: r(s.jacket, 2, 2, { base: 0 }),
+      naht: r(s.jacket, 2, 2, { base: 0 }),
+      metall: { ramp: [R.s[4], R.s[5], R.s[6], R.s[7], R.s[8]], base: 2, gloss: 0.9 },
       hose: { ramp: [R.b[0], R.b[1], R.b[2], R.b[3], R.b[4]], base: 2, seam: true },
       flicken: { ramp: [R.b[1], R.b[2], R.b[3], R.b[4], R.b[5]], base: 2, seam: true },
       stiefel: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true, shine: true, gloss: 0.93 },
-      stiefelRand: { ramp: [R.e[2], R.e[3], R.e[4], R.e[5]], base: 2, seam: true },
+      // F6c: Fellrand der Stiefel – hell und gemütlich, trennt Hose und Stiefel
+      stiefelRand: { ramp: [R.e[6], R.e[7], R.e[8], R.e[9]], base: 2, seam: true },
       sohle: { ramp: [R.n[0], R.e[0], R.e[1]], base: 1, seam: true },
       rucksack: { ramp: [R.e[3], R.e[4], R.e[5], R.e[6], R.e[7]], base: 3, seam: true },
       klappe: { ramp: [R.e[2], R.e[3], R.e[4], R.e[5], R.e[6]], base: 2, seam: true },
@@ -112,21 +133,53 @@ const mika = {
   build(ctx, s) {
     const { W, stamps, dir, pose } = ctx;
     const long = s.body === 'frau';
-    // Der Saum der Jacke unten am Bauch (gerippt), der Reißverschluss vorn in der Mitte
+    // Der Saum der Jacke unten am Bauch (gerippt), der Reißverschluss vorn in der Mitte. F6c: Die
+    // Riemen des Rucksacks sind ein Band im Stoff (gleich breit, über die Schulter bis in den Rucksack),
+    // vorn unten zwei schräge Taschenleisten
     const zip = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.014 ? 'zipper' : null);
-    const belly = (l) => (l[1] < -0.12 ? 'saum' : zip(l));
+    const strap = (l) => (Math.abs(Math.abs(l[0]) - 0.155) < 0.026 ? 'riemen' : null);
+    const pocket = (l) => {
+      if (l[2] < 0.1) return null;
+      const x = Math.abs(l[0]) - 0.1;
+      const y = l[1] + 0.005;
+      const t = Math.max(0, Math.min(1, (x * 0.07 - y * 0.09) / (0.07 * 0.07 + 0.09 * 0.09)));
+      return Math.hypot(x - 0.07 * t, y + 0.09 * t) < 0.011 ? 'naht' : null;
+    };
+    const belly = (l) => (l[1] < -0.12 ? 'saum' : (l[1] > -0.035 && strap(l)) || zip(l) || pocket(l));
+    const chest = (l) => strap(l) || zip(l);
     const B = {
       ...HUMAN,
       torso: [
         { ...HUMAN.torso[0], mat: 'hose' },
         { ...HUMAN.torso[1], mat: 'jacke', matAt: belly },
-        { ...HUMAN.torso[2], mat: 'jacke', matAt: zip },
+        { ...HUMAN.torso[2], mat: 'jacke', matAt: chest },
       ],
       head: { ...HUMAN.head, r: 0.2, matAt: mikaHair(long) },
       mats: { thigh: 'hose', shin: 'hose', shoe: 'stiefel', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
     };
     const body = humanoid(ctx, B);
     const { spine, H, legs, arms } = body;
+    // F6d: Nachschwingen im Gehen und Rennen – Haar und Bommel folgen dem Schritt etwas später
+    const sway = swayOf(ctx);
+    // F6c: Relief. Die Jacke ist gesteppt (Kammern quer über Rumpf und Ärmel, die Nähte in
+    // Rumpfhöhe gerechnet, damit sie über beide Formen laufen), in der Ellenbeuge Falten, die Hose
+    // am Knie und über dem Stiefel gestaucht
+    const quilt = (d0) => folds(MIKA_QUILT.map((y) => y - d0), { w: 0.016, amp: 1.0, wave: 0.004 });
+    ctx.shapes.forEach((sh) => {
+      if (sh.mat !== 'jacke' || sh.kind !== 'ellipsoid') return;
+      const t = B.torso.find((tt) => tt.mat === 'jacke' && tt.rr === sh.rr);
+      if (t) sh.bump = quilt(t.d);
+    });
+    const lengthOf = (sh) => Math.hypot(sh.b[0] - sh.a[0], sh.b[1] - sh.a[1], sh.b[2] - sh.a[2]);
+    const along = (sh) => norm(sub(sh.b, sh.a));
+    for (const i of [0, 1]) {
+      const up = ctx.part(`upper${i}`);
+      const fo = ctx.part(`fore${i}`);
+      up.bump = ringFolds(along(up), lengthOf(up), [0.42, 0.78], { w: 0.016, amp: 0.9, side: ctx.fwd, bias: 0.01 });
+      fo.bump = ringFolds(along(fo), lengthOf(fo), [0.2, 0.55], { w: 0.016, amp: 0.8, side: ctx.fwd, bias: -0.01 });
+      const sh = ctx.part(`shin${i}`);
+      sh.bump = ringFolds(along(sh), lengthOf(sh), [0.08, 0.44, 0.52], { w: 0.014, amp: 0.9 });
+    }
     // Hose: Flicken auf dem linken Knie, die Stiefel reichen bis über den Knöchel (heller Rand)
     legs.forEach((leg, i) => {
       const kneeW = W(leg.knee);
@@ -178,37 +231,41 @@ const mika = {
         return null;
       },
     });
-    // Riemen über die Schultern und gerade über die Brust hinab (F5: ruhig, ohne Schnallen – ein
-    // Pixel Metall auf der Jacke war im Spiel nur Rauschen)
-    for (const side of [-1, 1]) {
-      const top = add(spine(0.37), [side * 0.15, 0.045, 0.02]);
-      const chest = add(spine(0.26), [side * 0.155, 0, 0.172]);
-      const low = add(spine(0.13), [side * 0.165, 0, 0.17]);
-      ctx.capsule(add(top, [0, 0, -0.14]), top, 0.03, null, 'riemen');
-      ctx.capsule(top, chest, 0.03, null, 'riemen');
-      ctx.capsule(chest, low, 0.028, null, 'riemen');
-    }
+    // F6c: Die Riemen liegen als Band im Stoff der Jacke (siehe `strap`); vorn enden sie an einer
+    // kleinen Schnalle, oben am Kragen hängt der Zipper
+    for (const side of [-1, 1]) ctx.box(add(spine(0.155), [side * 0.155, 0, 0.176]), [0.022, 0.012, 0.01], 0.006, 'metall', { pitch: body.stoop });
+    ctx.ellipsoid(add(spine(0.365), [0.014, 0, 0.17]), [0.011, 0.02, 0.01], 'metall', { pitch: body.stoop - 0.3 });
     // Kopf: Ohren, Nase; bei »Frau« schulterlanges Haar und ein kurzer Zopf mit Haargummi
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.285, -0.04, -0.01], [0.04, 0.07, 0.055], long ? 'haar' : 'haut', { blend: 0.02 });
     headEllipsoid(ctx, body, [0, -0.07, 0.262], [0.038, 0.033, 0.036], 'haut', { blend: 0.012, face: true });
     if (long) {
-      for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.27, -0.11, -0.1], [0.05, 0.15, 0.15], 'haar', { blend: 0.03 });
-      headEllipsoid(ctx, body, [0, -0.12, -0.2], [0.25, 0.15, 0.08], 'haar', { blend: 0.03 });
-      headCapsule(ctx, body, [0, 0.0, -0.27], [0, -0.3, -0.35], 0.07, 0.045, 'haar');
-      headEllipsoid(ctx, body, [0, -0.05, -0.3], [0.06, 0.03, 0.05], 'muetze');
+      // F6c: Das Haar fällt in Strähnen bis auf die Schultern – oben verschmolzen, unten mit Spitzen,
+      // jede mit Rillen längs (Strähnen brechen den Glanz); hinten der kurze Zopf mit Haargummi.
+      // F6d: Im Gehen schwingen die Spitzen nach (hinter dem Schritt her, zweimal je Umlauf)
+      const lock = (a, b0, r, r1, phase = 0) => {
+        const b = [b0[0], b0[1] + sway.y * 0.6, b0[2] + sway.z];
+        const sh = headCapsule(ctx, body, a, b, r, r1, 'haar', { blend: 0.022 });
+        sh.bump = strands(norm(sub(sh.b, sh.a)), { period: 0.06, amp: 0.3, across: ctx.right, phase });
+        return sh;
+      };
+      for (const side of [-1, 1]) {
+        lock([side * 0.27, 0.1, 0.0], [side * 0.3, -0.22, -0.02], 0.062, 0.02, 0.5);
+        lock([side * 0.25, 0.1, -0.11], [side * 0.29, -0.25, -0.15], 0.075, 0.026, 2.2);
+        lock([side * 0.12, 0.08, -0.22], [side * 0.14, -0.23, -0.27], 0.08, 0.028, 4.1);
+      }
+      lock([0, 0.08, -0.25], [0, -0.2, -0.3], 0.085, 0.032, 0);
+      headCapsule(ctx, body, [0, -0.02, -0.29], [0, -0.32, -0.37], 0.065, 0.04, 'haar').bump = strands(norm(sub(H([0, -0.32, -0.37]), H([0, -0.02, -0.29]))), { period: 0.05, amp: 0.3, across: ctx.right });
+      headEllipsoid(ctx, body, [0, -0.06, -0.31], [0.058, 0.03, 0.05], 'muetze');
     }
     // Mütze: gerippter Bund, Kuppel mit hellem Streifen, Bommel
     const ribs = (l) => (Math.floor((Math.abs(l[0]) > 0.24 ? l[2] : l[0]) * 40 + 40) & 1 ? 'rippe' : 'muetze');
     ctx.box(H([0, 0.18, -0.01]), [0.297, 0.054, 0.27], 0.12, 'rippe', { ax: body.headAx, matAt: ribs });
     // Die Kuppel: ein heller Streifen rundum, oben sechs Abnäher (die Maschen laufen zur Mitte)
-    const dome = (l) => {
-      if (l[1] > -0.03 && l[1] < 0.0) return 'streifen';
-      if (l[1] > 0.02 && Math.floor((Math.atan2(l[0], l[2]) / Math.PI) * 3 + 3) & 1) return 'muetzeAb';
-      return null;
-    };
-    headEllipsoid(ctx, body, [0, 0.21, -0.02], [0.27, 0.12, 0.243], 'muetze', { blend: 0.02, matAt: dome });
+    // F6c: Die Kuppel ohne Sprenkel – Maschen als feine Rippen, die oben zusammenlaufen
+    const dome = (l) => (l[1] > -0.03 && l[1] < 0.0 ? 'streifen' : null);
+    headEllipsoid(ctx, body, [0, 0.21, -0.02], [0.27, 0.12, 0.243], 'muetze', { blend: 0.02, matAt: dome, bump: knitRibs(22, { amp: 0.32, from: 0.005 }) });
     headEllipsoid(ctx, body, [0, 0.325, -0.03], [0.045, 0.03, 0.045], 'muetze');
-    for (const [x, y, z, r] of [[0, 0.395, -0.035, 0.088], [-0.05, 0.38, -0.01, 0.05], [0.05, 0.4, -0.06, 0.05], [0.02, 0.43, 0.02, 0.045]]) headEllipsoid(ctx, body, [x, y, z], [r, r * 0.9, r], 'bommel', { blend: 0.012 });
+    for (const [x, y, z, r] of [[0, 0.395, -0.035, 0.088], [-0.05, 0.38, -0.01, 0.05], [0.05, 0.4, -0.06, 0.05], [0.02, 0.43, 0.02, 0.045]]) headEllipsoid(ctx, body, [x, y - sway.y * 0.5, z + sway.z * 0.5], [r, r * 0.9, r], 'bommel', { blend: 0.012 });
     // Laterne in der linken Hand
     if (pose.lantern) lanternShapes(ctx, arms[0].hand);
     // Anker: Hand rechts (Werkzeug), Rücken (Werkzeug auf dem Rücken), Brust (Tiefe)
@@ -229,8 +286,12 @@ const mika = {
 const cloth = (c, below = 2, above = 2, more = {}) => ({ ...rampAround(c, below, above), seam: true, ...more });
 /** Stoff aus einer festen Rampe. */
 const rampOf = (ramp, base, more = {}) => ({ ramp, base, seam: true, ...more });
-/** Strickmuster: jede zweite Doppelreihe eine Stufe dunkler (grob, kein Gries). */
-const knit = (p) => (Math.floor(p[1] * 20) & 1 && Math.floor(p[0] * 20 + p[2] * 20) & 1 ? -1 : 0);
+/**
+ * Strickmuster: F6c – senkrechte Rippen (jede zweite Masche eine Stufe dunkler) statt Karos; die
+ * Karos lasen sich im Spiel als Rauschen. Die Ebenen x + z stehen senkrecht, also laufen die Rippen
+ * in jeder Richtung der Figur senkrecht im Bild.
+ */
+const knit = (p) => (Math.floor((p[0] + p[2]) * 28 + 40) & 1 ? -1 : 0);
 
 /** Die Teile der Leute: stehen, gehen, winken, sitzen. */
 const FOLK_PARTS = { base: { anims: ['stehen', 'gehen', 'winken', 'sitzen'] } };
@@ -289,7 +350,7 @@ const hilde = {
     muetze: rampOf([R.b[1], R.b[2], R.b[3], R.b[4], R.b[5]], 2),
     band: rampOf([R.b[0], R.b[1], R.b[2], R.b[3]], 2),
     schirm: rampOf([R.n[2], R.b[0], R.b[1], R.b[2]], 2, { shine: true }),
-    jacke: rampOf([R.d[1], R.d[2], P.a2, P.a3], 2, { pattern: knit }),
+    jacke: rampOf([R.d[1], R.d[2], P.a2, P.a3], 2),
     blende: rampOf([R.d[0], R.d[1], R.d[2], P.a2], 2),
     tasche: cloth(P.e5, 2, 2),
     gurt: cloth(P.e3, 2, 1),
@@ -313,7 +374,14 @@ const hilde = {
     };
     const body = humanoid(ctx, B);
     const { spine, H, arms } = body;
-    skirt(ctx, body, 'rock', { drop: 0.1, rr: [0.25, 0.16, 0.21] });
+    // F6c: Die Strickjacke mit Zopfmuster – Rippen längs über Rumpf und Ärmel statt Karos
+    for (const sh of ctx.shapes) if (sh.mat === 'jacke' && sh.kind === 'ellipsoid') sh.bump = knitRibs(30, { amp: 0.85 });
+    for (const i of [0, 1]) for (const name of [`upper${i}`, `fore${i}`]) {
+      const sh = ctx.part(name);
+      sh.bump = strands(norm(sub(sh.b, sh.a)), { period: 0.05, amp: 0.75, across: ctx.right });
+    }
+    const rock = skirt(ctx, body, 'rock', { drop: 0.1, rr: [0.25, 0.16, 0.21] });
+    rock.bump = knitRibs(14, { amp: 0.35, to: -0.02 }); // weiche Falten im Rock
     // Kragen der Strickjacke
     ctx.ellipsoid(spine(0.41), [0.16, 0.055, 0.14], 'blende', { pitch: body.stoop });
     // Riemen der Posttasche von der rechten Schulter zur linken Hüfte, die Tasche an der Seite
@@ -526,7 +594,8 @@ const yusuf = {
     const body = humanoid(ctx, B);
     const { spine, H } = body;
     // Kittelschoß bis über die Oberschenkel, offen in der Mitte (dort sieht man die Hose)
-    ctx.ellipsoid(add(body.hip, [0, -0.08, 0.0]), [0.255, 0.13, 0.205], 'kittel', { blend: 0.03, matAt: (l) => (l[2] > 0.1 && Math.abs(l[0]) < 0.045 ? 'hose' : null) });
+    // F6c: Der Schoß fällt in weichen Längsfalten
+    ctx.ellipsoid(add(body.hip, [0, -0.08, 0.0]), [0.255, 0.13, 0.205], 'kittel', { blend: 0.03, matAt: (l) => (l[2] > 0.1 && Math.abs(l[0]) < 0.045 ? 'hose' : null), bump: knitRibs(9, { amp: 0.7 }) });
     ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'kittel', { pitch: body.stoop });
     // Welliges Haar oben, ein kurzer Bart ums Kinn
     for (const [x, z] of [[-0.14, 0.05], [0.0, 0.08], [0.14, 0.04], [-0.08, -0.12], [0.1, -0.13]]) headEllipsoid(ctx, body, [x, 0.215, z], [0.09, 0.05, 0.09], 'haar', { blend: 0.02 });
@@ -867,7 +936,7 @@ const lotte = {
     skirt(ctx, body, 'mantel', { drop: 0.13, rr: [0.255, 0.18, 0.21] });
     for (const a of arms) ctx.capsule(along(a.elbow, a.wrist, 0.7), a.wrist, 0.066, 0.062, 'mantelDunkel');
     // Der Strickschal: dick um den Hals, ein Ende hängt vorn bis zur Hüfte (Streifen in vier Farben)
-    const stripes = (l, p) => SCARF[((Math.floor(p[1] * 16 + 40) % 4) + 4) % 4];
+    const stripes = (l, p) => SCARF[((Math.floor(p[1] * 9 + 40) % 4) + 4) % 4]; // F6c: breite Streifen statt Konfetti
     ctx.ellipsoid(spine(0.41), [0.19, 0.075, 0.17], 'schal1', { pitch: body.stoop, matAt: (l) => SCARF[((Math.floor((Math.atan2(l[0], l[2]) / Math.PI) * 6 + 6) % 4) + 4) % 4] });
     ctx.capsule(add(spine(0.38), [0.08, 0, 0.15]), add(spine(0.02), [0.11, 0, 0.21]), 0.05, 0.045, 'schal1', { matAt: stripes });
     // Zöpfe hinter den Ohren mit Schleifen

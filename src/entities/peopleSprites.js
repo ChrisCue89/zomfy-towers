@@ -10,6 +10,7 @@ import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './sprite
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
 import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
+import { rings } from './peopleRelief.js';
 
 /** Gezeichnete Richtungen: 0 S, 1 SO, 2 O, 3 NO, 4 N, 5 NW, 6 W, 7 SW. */
 export const PEOPLE_DIRS = 8;
@@ -106,6 +107,26 @@ function uprightNormals(raster, shapes) {
   return out;
 }
 
+/**
+ * F6c: Falten für alle, die der Bauplan nicht selbst gesetzt hat – in der Ellenbeuge (zur Innenseite
+ * des Arms) und an der Hose über dem Schuh gestaucht.
+ */
+function clothRelief(ctx) {
+  const along = (sh) => {
+    const d = [sh.b[0] - sh.a[0], sh.b[1] - sh.a[1], sh.b[2] - sh.a[2]];
+    const l = Math.hypot(d[0], d[1], d[2]) || 1;
+    return [[d[0] / l, d[1] / l, d[2] / l], l];
+  };
+  for (const i of [0, 1]) {
+    const up = ctx.part(`upper${i}`);
+    const fo = ctx.part(`fore${i}`);
+    const sh = ctx.part(`shin${i}`);
+    if (up && !up.bump) up.bump = rings(...along(up), [0.5, 0.8], { w: 0.016, amp: 0.8, side: ctx.fwd, bias: 0.01 });
+    if (fo && !fo.bump) fo.bump = rings(...along(fo), [0.22], { w: 0.016, amp: 0.7, side: ctx.fwd, bias: -0.01 });
+    if (sh && !sh.bump) sh.bump = rings(...along(sh), [0.5, 0.6], { w: 0.014, amp: 0.6 });
+  }
+}
+
 /** Formen, Stempel, Gesicht und Anker eines Bildes (Welt-Meter, Fußpunkt im Ursprung). */
 export function personShapes(id, spec, part, d, anim, k) {
   const kind = PEOPLE[id];
@@ -118,6 +139,7 @@ export function personShapes(id, spec, part, d, anim, k) {
   ctx.stamps = [];
   ctx.face = null;
   kind.build(ctx, spec);
+  if (!kind.dog) clothRelief(ctx);
   const size = kind.size || 1;
   scaleFrame(ctx, size);
   if (size !== 1) {
@@ -155,14 +177,14 @@ function materialsOf(id, spec) {
 /** F5: Gruppe je Form für die Schattenlinien – jeder Arm und jedes Bein für sich, der Rest ist Körper. */
 function groupsOf(shapes) {
   return shapes.map((s) => {
-    const m = /^(upper|cuff|fore|hand|thigh|shin|shoe)(\d)$/.exec(s.part || '');
+    const m = /^(upper|cuff|fore|hand|thumb|thigh|shin|shoe)(\d)$/.exec(s.part || '');
     if (!m) return 'body';
     return (['thigh', 'shin', 'shoe'].includes(m[1]) ? 'leg' : 'arm') + m[2];
   });
 }
 
 /** Wie die Menschen gemalt werden (F5): Schattenlinien ab 2,5 cm Abstand, Töne aufgeräumt. */
-export const PEOPLE_PAINT = { occlude: 0.025, tidy: true, backlight: true };
+export const PEOPLE_PAINT = { occlude: 0.025, tidy: true, backlight: true, tones: { deep: -0.3, shade: 0.18, light: 0.52, shine: 0.9 } };
 /**
  * F6b: Licht wie gezeichnet – seitlicher von oben links als bei der Horde (sonst ist von vorn alles
  * gleich hell und flach), Schlagschatten bis 55 cm, Verdeckung in Falten, geglättete Tonflächen.
@@ -201,7 +223,7 @@ function anchorOf(point, raster) {
 export function bakePerson(id, spec, part, d, anim, k) {
   const kind = PEOPLE[id];
   const ctx = personShapes(id, spec, part, d, anim, k);
-  const raster = trace(ctx.shapes, kind.cell || PEOPLE_CELL);
+  const raster = trace(ctx.shapes, kind.cell || PEOPLE_CELL, { cull: true });
   const materials = materialsOf(id, spec);
   const groups = groupsOf(ctx.shapes);
   const light = PEOPLE_LIGHT ? lightField(raster, ctx.shapes, { ...PEOPLE_LIGHT, groups }) : null;
@@ -275,7 +297,7 @@ export function bakeTool(id, d, bucket) {
   buildTool(ctx, id, bucket, [0, TOOL_LIFT, 0]);
   tiltFrame(ctx, VIEW_TILT, [0, TOOL_LIFT, 0]); // F5: gekippt wie die Figur, um den Griff
   const lift = Math.round((TOOL_LIFT * 0.8) / TEXEL);
-  const raster = trace(ctx.shapes, { ...TOOL_CELL, py: TOOL_CELL.py + lift });
+  const raster = trace(ctx.shapes, { ...TOOL_CELL, py: TOOL_CELL.py + lift }, { cull: true });
   const out = paint(raster, TOOL_MATERIALS);
   return { w: raster.w, h: raster.h, px: raster.px, py: raster.py - lift, color: out.color, glow: out.glow, normal: uprightNormals(raster, ctx.shapes), shadow: null };
 }

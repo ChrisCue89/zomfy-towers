@@ -255,9 +255,27 @@ gilt bis auf Weiteres:
     - Gemalt mit `PEOPLE_PAINT` (Schlagschatten zwischen Armen, Beinen und Rumpf, aufgeräumte Töne)
       und Sel-out (`outline`/`outlineLit` aus `withOutlines`); der Kopf wird mit `taper` zum Kinn
       schmaler. Alles sind Optionen des Bäckers – die Schlurfer setzen sie nie und bleiben gleich.
-    - Augen 3 Texel breit mit Glanz oben links und Iris (`faceRows`), Brillen hell und rund.
     - Farben mit eigener Rampe (`OWN_RAMPS` in `peopleFigure.js`): Violett, Rosa, Weiß, Türkis und
       Blond – die Akzente der Palette taugen nicht als Rampe.
+  - **Auf dem Weg zu »Triple A« (F6):**
+    - Gesichter je Merkmal (`peopleFaces.js`): `ctx.face = faceOf(ctx, body, FACE)` setzt Augen,
+      Brauen, Mund, Nase und Wangen an Punkte der gerundeten Kopfform; `placeFace`/`stampFace` setzen
+      sie einzeln ins Bild, die Breite der Augen folgt der Zuwendung. **Nie schielen:** von vorn
+      beide Augen gespiegelt mit dem Glanz in der Pupille, schräg das Weiß bei beiden Augen auf
+      derselben Seite (ein weißer Pixel am Rand liest sich als Augapfel).
+    - Licht (`lightField`, `PEOPLE_LIGHT`): seitlich von oben links, weiche Schlagschatten,
+      Verdeckung, geglättet je Stoff; Glanz über `gloss` am Stoff, Gegenlicht, eigene Tonschwellen
+      (`PEOPLE_PAINT.tones`).
+    - Relief (`bump(l, p)` an einer Form, Helfer in `peopleRelief.js`: `ribs`, `folds`, `rings`,
+      `strands`, `roundFace`): neigt nur die Normale, kommt nach dem Glätten scharf dazu;
+      `tiltFrame` und `scaleFrame` reichen es durch. Falten in Ellenbeuge und Hose setzt
+      `clothRelief` für alle, die der Bauplan nicht selbst gesetzt hat. Strickmuster sind senkrechte
+      Rippen, nie Karos (die lasen sich als Rauschen).
+    - Die Strahlen der Menschen prüfen nur Formen, die sie berühren (`trace(…, { cull: true })`).
+    - Mika im Ruderboot (`seated.rowing` gesetzt) ist ein Sprite: Teil `boot`, Zustand `rudern`
+      (Bild nach `seated.phase`), die Füße auf dem Bootsboden. Alle Teile Mikas werden angefordert,
+      sobald die Ansicht läuft – auch solange Mika noch Voxel ist (sonst stand im Intro die 3D-Figur).
+    - Nachschwingen (`swayOf(ctx)` in `peopleKinds.js`): Haar und Bommel folgen dem Schritt.
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -404,7 +422,9 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       kiteModels (Pims Drachen, Schleifen, Spule, Schnüre, N9),
                       fishingModels (Angel, Pose, Fänge, M33),
                       peopleFigure (Menschen als Sprites: Maße, Posen, Laterne,
-                      Gesichtsblick, Vierbeiner, F4), peopleKinds (Mika, die
+                      Gesichtsblick, Vierbeiner, F4), peopleFaces (Gesichter je
+                      Merkmal an der Kopfform, F6), peopleRelief (Falten,
+                      Rippen, Strähnen als Relief, F6), peopleKinds (Mika, die
                       Leute, die Wanderer, Edda, Marthe und die Kinder, Knopf,
                       Werkzeuge, Gesichter), peopleSprites (ein
                       Bild backen: Flicken je Ausdruck, Anker fürs Werkzeug),
@@ -1422,11 +1442,12 @@ Grundprinzipien:
    Schlurfer als Bild und den Flitzer als Schattenriss (Bilder: sterne-wild, schlurferkunde-riss);
    ab F4 (Abschnitt `menschen`): für Spieler 2D, in der Prüfung 3D (nichts gebacken), »Figuren: 2D«
    backt mit einem Worker und Mika steht als Sprite da (Voxel versteckt), alle Fassungen (Mika in
-   vier Teilen, die Axt, fünf Leute, Balduins Gesten, Knopf, die zwölf Wanderer, Edda, Marthe, Pim
+   fünf Teilen, die Axt, fünf Leute, Balduins Gesten, Knopf, die zwölf Wanderer, Edda, Marthe, Pim
    und Lu) ohne leeres Bild mit Gesichtsflicken,
    mit echten Tasten geht Mika nach Osten, rennt mit Umschalt, dreht nach Süden, die Axt auf dem
    Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
-   Teil, am Tisch sitzt Mika aus Voxeln, Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
+   Teil, am Tisch sitzt Mika aus Voxeln, im Ruderboot rudert Mika als Sprite im Takt der Riemen
+   (N12), Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
    Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
    wie die Mütze und die Augen sitzen weit oben (Bilder: menschen-tag, menschen-3d, menschen-nacht,
    menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit

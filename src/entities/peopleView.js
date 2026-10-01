@@ -294,6 +294,14 @@ export class PeopleSprites {
    */
   poseOfPlayer(p) {
     const a = p.action;
+    // N12: im Ruderboot (die Sitze der Boote tragen `rowing`) – rudern im Takt der Riemen
+    if (p.seated && p.seated.rowing !== undefined && !p.fishingPose && !p.kitePose) {
+      const n = animsOf('mika').rudern;
+      const q = p.seated.rowing ? (((p.seated.phase ?? p.time * p.seated.rowing) / (Math.PI * 2)) % 1 + 1) % 1 : 0;
+      let expr = p.faceShown || 'normal';
+      if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
+      return { part: 'boot', anim: 'rudern', k: Math.round(q * n) % n, expr, tool: null, seatY: p.seated.seatY ?? 0.28 };
+    }
     if (p.seated || p.fishingPose || p.kitePose || p.riding !== null || p.spinAngle) return null;
     if (a && (a.kind === 'shoot' || a.kind === 'pfiff' || a.kind === 'wirbel')) return null;
     const anims = animsOf('mika');
@@ -483,13 +491,16 @@ export class PeopleSprites {
       if (on) {
         const st = this.poseOfPlayer(player);
         const dir = this.direction(player, player.facing, dt);
+        const { spec, specKey } = this.mikaSpec(look);
         if (st) {
-          const { spec, specKey } = this.mikaSpec(look);
           const pos = player.position;
-          shown = this.drawFigure(this.layers.mika, 'mika', spec, specKey, st, dir, pos.x, pos.y, pos.z, 0);
-          // Die übrigen Teile schon vorbereiten (Taten, Laterne)
-          for (const part of Object.keys(PEOPLE.mika.parts)) this.person('mika', spec, specKey, part, 1);
+          // Im Boot steht das Bild auf dem Bootsboden: die Hüfte sitzt auf der Bank (wie die Voxel-Figur)
+          const y = st.seatY !== undefined ? pos.y + Math.max(0, st.seatY - SIT_HIP) : pos.y;
+          shown = this.drawFigure(this.layers.mika, 'mika', spec, specKey, st, dir, pos.x, y, pos.z, 0);
         }
+        // Alle Teile vorbereiten, auch solange Mika noch Voxel ist (N12: die Ankunft beginnt im Boot –
+        // bis Mika auf dem Steg steht, ist das Gehen gebacken)
+        for (const part of Object.keys(PEOPLE.mika.parts)) this.person('mika', spec, specKey, part, part === 'base' ? 0.5 : 1);
         if (shown) this.lastMika = { ...st, dir, ...shown };
       }
       this.setVoxel(player.character.root, !shown);

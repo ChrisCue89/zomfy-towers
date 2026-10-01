@@ -152,9 +152,9 @@ async function runPeopleChecks(browser, url) {
     return { ready: r.ready, failed: r.failed, waiting: r.waiting, leer, bilder, flicken, atlas: r.atlas };
   }, PEOPLE_IDS);
   const backzeit = (Date.now() - t1) / 1000;
-  const erwartet = ['mika|frau-orange-gruen-braun-mittel|base', 'mika|frau-orange-gruen-braun-mittel|aktion', 'mika|frau-orange-gruen-braun-mittel|laterne', 'mika|frau-orange-gruen-braun-mittel|laterneAktion', 'werkzeug|axt', ...PEOPLE_IDS.map((id) => `${id}|fest|base`), 'balduin|fest|gesten'];
+  const erwartet = ['mika|frau-orange-gruen-braun-mittel|base', 'mika|frau-orange-gruen-braun-mittel|aktion', 'mika|frau-orange-gruen-braun-mittel|laterne', 'mika|frau-orange-gruen-braun-mittel|laterneAktion', 'mika|frau-orange-gruen-braun-mittel|boot', 'werkzeug|axt', ...PEOPLE_IDS.map((id) => `${id}|fest|base`), 'balduin|fest|gesten'];
   const fehlt = erwartet.filter((k) => !alles.ready.includes(k));
-  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in vier Teilen, Axt, fünf Leute, Knopf, zwölf Wanderer, Edda, Marthe, Pim und Lu) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
+  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in fünf Teilen – seit N12 mit dem Boot –, Axt, fünf Leute, Knopf, zwölf Wanderer, Edda, Marthe, Pim und Lu) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
   else fail(`Menschen: Backen ${JSON.stringify({ fehlt, failed: alles.failed, leer: alles.leer, flicken: alles.flicken, waiting: alles.waiting })}`);
 
   // 3. Mit echten Tasten: D geht nach Osten, Umschalt rennt, S dreht nach Süden
@@ -220,6 +220,27 @@ async function runPeopleChecks(browser, url) {
   });
   if (sitzen.im.mika === null && sitzen.im.voxel && sitzen.nach.mika && !sitzen.nach.voxel) note('✓ Menschen (F4): eine seltene Pose (am Tisch sitzen) zeigt die Voxel-Figur, danach wieder das Sprite');
   else fail(`Menschen: seltene Pose ${JSON.stringify(sitzen)}`);
+
+  // 5b. N12: Im Ruderboot (Ankunft, Inseln) rudert Mika als Sprite – die Bilder folgen dem Takt der
+  // Riemen, die Füße stehen auf dem Bootsboden (die Hüfte auf der Bank)
+  const boot = await z(() => {
+    const Z = window.zomfy;
+    const p = Z.game.player;
+    p.seat({ x: p.position.x, z: p.position.z, facing: 0, seatY: 0.42, rowing: 2.2, phase: 0 });
+    const ks = [];
+    for (let i = 0; i < 4; i++) {
+      p.seated.phase = (i * Math.PI) / 2;
+      window.__zomfyStep(34);
+      ks.push(Z.people().mika);
+    }
+    const voxel = p.character.root.children.some((c) => c.visible);
+    p.seat(null);
+    window.__zomfyStep(60);
+    return { ks, voxel, nach: Z.people().mika };
+  });
+  const takte = boot.ks.map((m) => m?.k);
+  if (boot.ks.every((m) => m?.part === 'boot' && m.anim === 'rudern') && new Set(takte).size === 4 && !boot.voxel && boot.nach?.part === 'base') note(`✓ Menschen (N12): im Ruderboot rudert Mika als Sprite (Bilder ${takte.join(', ')} im Takt der Riemen, keine Voxel), danach wieder zu Fuß`);
+  else fail(`Menschen: Boot ${JSON.stringify(boot)}`);
 
   // 6. Die Leute: alle eingezogen stehen als Sprites im Hof, wer Mika nah ist, lächelt
   const leute = await z((ids) => {
@@ -315,6 +336,63 @@ async function runPeopleChecks(browser, url) {
   }
   if (gesicht >= 0.6 * muetze && augen >= 32) note(`✓ Menschen schöner (F5): Mika von vorn mit ${gesicht} Texeln Gesicht zu ${muetze} Texeln Mütze, die Augen ${augen} Texel über dem Fuß`);
   else fail(`Menschen F5: Gesicht ${gesicht}, Mütze ${muetze}, Augen ${augen} Texel über dem Fuß`);
+
+  // 10. F6: Niemand schielt – von vorn liegen die Augen gespiegelt (das Weiß in der Pupille), schräg
+  // liegt das Weiß bei beiden Augen auf derselben Seite (ein weißer Pixel am Rand liest sich als
+  // Augapfel; lag er bei beiden oben links, sah das eine Auge zur Nase und das andere weg)
+  const { P } = await import('../src/render/palette.js');
+  const augenVon = (f, eye) => {
+    let top = f.h;
+    for (let k = 0; k < f.color.length; k++) if (f.color[k] >= 0) { top = Math.floor(k / f.w); break; }
+    const seen = new Uint8Array(f.w * f.h);
+    const out = [];
+    for (let j = top; j < Math.min(f.h, top + 26); j++) {
+      for (let i = 0; i < f.w; i++) {
+        const k0 = j * f.w + i;
+        if (seen[k0] || f.color[k0] !== eye) continue;
+        const stack = [k0];
+        seen[k0] = 1;
+        const pts = [];
+        while (stack.length) {
+          const k = stack.pop();
+          pts.push(k);
+          const x = k % f.w;
+          const y = (k / f.w) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const q = ny * f.w + nx;
+            if (nx < 0 || nx >= f.w || ny < 0 || ny >= f.h || seen[q] || f.color[q] !== eye) continue;
+            seen[q] = 1;
+            stack.push(q);
+          }
+        }
+        if (pts.length < 2 || pts.length > 14) continue;
+        const xs = pts.map((k) => k % f.w);
+        const ys = pts.map((k) => (k / f.w) | 0);
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        const weiss = [];
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (f.color[y * f.w + x] === P.s9) weiss.push(x);
+        if (weiss.length) out.push(weiss.reduce((a, b) => a + b, 0) / weiss.length - (x0 + x1) / 2);
+      }
+    }
+    return out;
+  };
+  const schielen = [];
+  let blicke = 0;
+  for (const id of ['mika', 'hilde', 'bert', 'juna', 'yusuf', 'balduin', 'lotte', 'greta', 'edda', 'marthe', 'pim', 'lu']) {
+    const spec = id === 'mika' ? looks.lookSpec(kinds.MIKA_BASE, looks.DEFAULT_LOOK) : kinds.PEOPLE[id].spec || {};
+    const eye = kinds.facesOf(id, spec).legend.k;
+    for (const d of [0, 1, 7]) {
+      const w = augenVon(bogen.bakePerson(id, spec, 'base', d, 'stehen', 0), eye);
+      // schräg kann das ferne Auge hinter Bart oder Mütze verschwinden – dann gibt es nichts zu schielen
+      const gut = d === 0 ? w.length === 2 && Math.abs(w[0] + w[1]) <= 0.5 : w.every((r) => Math.sign(r) === Math.sign(w[0]));
+      if (gut) blicke++;
+      else schielen.push(`${id}:${d}:${JSON.stringify(w)}`);
+    }
+  }
+  if (!schielen.length) note(`✓ Menschen (F6): niemand schielt – ${blicke} Blicke von zwölf Figuren geprüft (von vorn gespiegelt, schräg schauen beide Augen in dieselbe Richtung)`);
+  else fail(`Menschen F6: Schielen ${schielen.join(' | ')}`);
   checkMessages(session);
   await session.context.close();
 }

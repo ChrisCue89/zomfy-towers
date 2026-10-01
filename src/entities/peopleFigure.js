@@ -8,6 +8,7 @@
 
 import { RAMPS } from '../render/palette.js';
 import { BODY, add, sub, mul, norm, lerp, hash } from './spriteFigure.js';
+import { roundFace } from './peopleRelief.js';
 
 // --- Farben ------------------------------------------------------------------------------------
 
@@ -88,13 +89,14 @@ export const HUMAN = {
   upper: 0.19,
   fore: 0.17,
   armR: [0.074, 0.066, 0.062, 0.057],
-  hand: [0.056, 0.062, 0.054],
+  hand: [0.06, 0.066, 0.056],
+  thumb: { at: 0.034, len: 0.034, r: 0.02 }, // F6c: Daumen (Abstand vor der Handmitte, Länge, Radius)
   limp: 0,
   cuff: null,
   neckD: 0.41,
   neckR: 0.08,
   headOffset: [0, 0.235, 0.0],
-  head: { h: [0.29, 0.235, 0.26], r: 0.17, taper: 0.22 },
+  head: { h: [0.29, 0.235, 0.26], r: 0.17, taper: 0.22, bump: roundFace }, // F6c: gewölbt im Licht
   headPitch: 0,
   headRoll: 0,
   mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
@@ -120,10 +122,11 @@ export const CHILD = {
   fore: 0.13,
   armR: [0.06, 0.054, 0.05, 0.047],
   hand: [0.047, 0.052, 0.045],
+  thumb: { at: 0.027, len: 0.026, r: 0.016 },
   neckD: 0.31,
   neckR: 0.065,
   headOffset: [0, 0.2, 0.0],
-  head: { h: [0.25, 0.205, 0.225], r: 0.15 },
+  head: { h: [0.25, 0.205, 0.225], r: 0.15, bump: roundFace },
 };
 
 // --- Posen ---------------------------------------------------------------------------------------
@@ -150,6 +153,7 @@ export const PERSON_ANIMS = {
   blitz: 2,
   winken: 2,
   sitzen: 2,
+  rudern: 4,
   muetze: 1,
   reiben: 2,
   daumen: 1,
@@ -184,13 +188,17 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {})
       legR: -0.44 * s,
       kneeL: 0.07 + 0.62 * Math.max(0, -Math.sin(ph + 0.55)),
       kneeR: 0.07 + 0.62 * Math.max(0, Math.sin(ph + 0.55)),
-      armL: -0.42 * s + 0.04,
-      armR: 0.42 * s + 0.04,
-      elbowL: 0.18 + 0.22 * Math.max(0, -s),
-      elbowR: 0.18 + 0.22 * Math.max(0, s),
-      bob: 0.024 * Math.abs(c) - 0.012,
+      armL: -0.5 * s + 0.04,
+      armR: 0.5 * s + 0.04,
+      elbowL: 0.18 + 0.3 * Math.max(0, -s),
+      elbowR: 0.18 + 0.3 * Math.max(0, s),
+      spread: 0.1,
+      // F6d: Federn – oben beim Durchschwingen, unten nach dem Aufsetzen –, das Gewicht wandert
+      // über das Standbein, der Kopf hält dagegen
+      bob: 0.034 * Math.abs(c) - 0.017,
+      roll: 0.035 * s,
       nod: 0.03 * Math.abs(c),
-      head: 0.035 * s,
+      head: 0.035 * s - 0.03 * s,
     });
   } else if (anim === 'rennen') {
     // Vorgebeugt, Knie hoch, die Arme angewinkelt im Takt
@@ -210,7 +218,8 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {})
     });
   } else if (anim === 'stehen') {
     // Atmen: die Brust hebt sich kaum, die Arme rücken ein wenig vom Körper
-    Object.assign(p, { bob: -0.006 * k, spread: 0.09 + 0.02 * k, armL: 0.06 + 0.02 * k, armR: 0.06 - 0.01 * k, nod: 0.02 * k });
+    // F6c: die Arme etwas weiter vom Körper – an der Taille bleibt Luft, die Figur liest sich
+    Object.assign(p, { bob: -0.006 * k, spread: 0.2 + 0.02 * k, armL: 0.06 + 0.02 * k, armR: 0.06 - 0.01 * k, nod: 0.02 * k });
   } else if (anim === 'schwung') {
     // Rechts mit dem Werkzeug: hoch über die Schulter, herab, Treffer, ausschwingen; der linke Arm
     // hält das Gleichgewicht, das linke Bein steht vorn
@@ -268,6 +277,11 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {})
   } else if (anim === 'sitzen') {
     // Auf einer Bank oder am Tisch: die Oberschenkel nach vorn, die Füße hängen, die Hände auf den Knien
     Object.assign(p, { legL: 1.5, legR: 1.42, kneeL: 1.42, kneeR: 1.32, armL: 0.95, armR: 0.95, elbow: 0.32, spread: 0.06, bob: -0.004 * k, nod: 0.03 * k });
+  } else if (anim === 'rudern') {
+    // N12: im Boot rudern (wie die Voxel-Figur in player.js): sitzen, beide Hände an den Griffen,
+    // ein Zug je Umlauf – vorgebeugt ausgreifen, zurückgelehnt durchziehen
+    const q = Math.sin((k / n) * Math.PI * 2);
+    Object.assign(p, { legL: 1.42, legR: 1.36, kneeL: 1.25, kneeR: 1.2, armL: 1.2 - 0.45 * q, armR: 1.2 - 0.45 * q, elbow: 0.65 + 0.35 * q, spread: 0.22, lean: 0.08 - 0.12 * q, nod: 0.04 - 0.05 * q });
   } else if (anim === 'muetze') {
     Object.assign(p, { armR: 2.85, elbowR: 0.45, spreadR: -0.42, nod: 0.12 });
   } else if (anim === 'reiben') {

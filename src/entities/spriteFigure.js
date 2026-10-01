@@ -120,6 +120,11 @@ export function scaleFrame(ctx, k) {
       const f = s.matAt;
       s.matAt = (l, p) => f(mul(l, 1 / k), mul(p, 1 / k));
     }
+    if (s.bump) {
+      // F6c: Relief ebenso (die Neigung selbst hat kein Maß)
+      const f = s.bump;
+      s.bump = (l, p) => f(mul(l, 1 / k), mul(p, 1 / k));
+    }
   }
   for (const key of Object.keys(ctx.marks)) {
     const m = ctx.marks[key];
@@ -203,7 +208,7 @@ export function humanoid(ctx, B, skip = {}) {
   const spine = (d, x = 0, y = 0, z = 0) => [x + Math.sin(roll) * d, hip[1] + d * Math.cos(stoop) * Math.cos(roll) + y, Math.sin(stoop) * d + z];
   const tilt = ctx.AX(stoop, roll);
   if (!skip.torso) {
-    for (const t of B.torso) ctx.push({ kind: 'ellipsoid', c: W(spine(t.d, t.x || 0, t.y || 0, t.z || 0)), rr: t.rr, ax: t.roll ? ctx.AX(stoop, roll + t.roll) : tilt, mat: t.mat, blend: t.blend ?? 0.06, part: t.part, matAt: t.matAt });
+    for (const t of B.torso) ctx.push({ kind: 'ellipsoid', c: W(spine(t.d, t.x || 0, t.y || 0, t.z || 0)), rr: t.rr, ax: t.roll ? ctx.AX(stoop, roll + t.roll) : tilt, mat: t.mat, blend: t.blend ?? 0.06, part: t.part, matAt: t.matAt, ...(t.bump ? { bump: t.bump } : {}) });
   }
   const arms = [];
   for (const [i, side, swing] of [[0, -1, pose.armL], [1, 1, pose.armR]]) {
@@ -224,6 +229,15 @@ export function humanoid(ctx, B, skip = {}) {
     }
     ctx.capsule(elbow, wrist, B.armR[2], B.armR[3], M.fore, { part: `fore${i}` });
     if (!skip.hands) ctx.ellipsoid(hand, B.hand, M.hand, { pitch: Math.PI - fore + limp, part: `hand${i}` });
+    if (!skip.hands && B.thumb) {
+      // F6c (nur Menschen): ein Daumen vorn innen an der Hand – die Hand wird lesbar statt Klecks
+      const down = norm(sub(wrist, elbow));
+      const ahead = norm(sub([0, 0, 1], mul(down, down[2])));
+      const inward = [-side, 0, 0];
+      const base = add(add(hand, mul(ahead, B.thumb.at)), add(mul(inward, 0.012), mul(down, -0.012)));
+      const tip = add(base, add(mul(down, B.thumb.len), add(mul(ahead, 0.012), mul(inward, 0.006))));
+      ctx.capsule(base, tip, B.thumb.r, B.thumb.r * 0.85, M.hand, { blend: 0.012, part: `thumb${i}` });
+    }
   }
   const neck = spine(B.neckD);
   const headRoll = B.headRoll + pose.head + roll;
@@ -241,7 +255,7 @@ export function humanoid(ctx, B, skip = {}) {
   if (!skip.head) {
     const chin = [0, -B.head.h[1] + 0.055, -0.02];
     ctx.capsule(add(neck, [0, -0.03, 0]), add(headC, turn ? turn(chin) : chin), B.neckR, null, M.neck, { blend: 0.03, part: 'neck' });
-    ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, taper: B.head.taper, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head' });
+    ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, taper: B.head.taper, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head', ...(B.head.bump ? { bump: B.head.bump } : {}) });
   }
   return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll, head: B.head };
 }

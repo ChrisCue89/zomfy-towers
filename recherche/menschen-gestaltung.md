@@ -107,3 +107,48 @@ Neu erzeugen lässt sich ein Bogen mit `node tools/menschen-bogen.mjs datei.png 
 
 Mikas ganzer Bogen (acht Richtungen, Gehen, Rennen, Taten mit der Axt, Laterne, alle Gesichter, unten
 in Spielgröße): ![Mika](menschen-gestaltung/bogen-mika.png)
+
+## 5. Zweite Runde: auf dem Weg zu »Triple A« (F6)
+
+Auftrag (01.10.): »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle Zeit
+der Welt dafür.« Dazu: »Die schielen auch wenn sie schief stehen« und »guck wie andere das machen
+und dann fix das«.
+
+### 5.1 Warum sie schielten
+
+Quellen: [Sandro Maglione: Pixel-Art-Augen](https://www.sandromaglione.com/articles/pixel-art-eyes-techniques-and-styles),
+[SLYNYRD Pixelblog 29: Gesichter und Haare](https://www.slynyrd.com/blog/2020/7/28/pixelblog-29-anime-faces-and-hair),
+[Eldraev: Pixel Eye Tutorial](https://www.deviantart.com/eldraev/art/Pixel-Eye-Tutorial-730162641).
+
+- Bei Augen aus wenigen Pixeln liest das Auge einen hellen Pixel am **Rand** als Augapfel, nicht als
+  Glanz. Lag das Weiß bei beiden Augen oben links, sah das linke Auge zur Nase und das rechte nach
+  außen – das ist Schielen, und schräg stehend wurde es schlimmer.
+- Wie es andere lösen: Von vorn sind beide Augen **gespiegelt**, der Glanz sitzt **in** der Pupille
+  (oder fehlt); im Halbprofil liegt das Weiß bei **beiden** Augen auf derselben Seite – hinter der
+  Blickrichtung –, dann schauen beide gleich. Das ferne Auge wird schmaler, nie anders gezeichnet.
+- Umgesetzt (`src/entities/peopleFaces.js`): Augen, Brauen, Mund, Nase und Wangen sitzen je an einem
+  Punkt der gerundeten Kopfform und werden einzeln ins Bild gesetzt; die Breite (3, 2, 1 Texel) folgt
+  der Zuwendung, von vorn liegt alles symmetrisch um die Mitte.
+
+### 5.2 Was hochwertige Pixel-Figuren ausmacht – und was davon jetzt drin ist
+
+1. **Licht aus einer Richtung mit Schatten:** seitlich von oben links, weiche Schlagschatten (die
+   Mütze auf die Stirn, der Kopf auf den Kragen, der Arm auf die Seite) und Verdeckung in Falten –
+   flache Figuren wirken wie ausgeschnitten (`lightField`).
+2. **Klare Licht- und Schattenseite:** kräftigere Tonschwellen nur für die Menschen.
+3. **Material zeigt sich in der Form:** Falten an Ellbogen und Knie, Steppnähte, Strickrippen,
+   Haarsträhnen mit gebrochenem Glanz – als Relief, das Licht und Schatten fängt (`peopleRelief.js`),
+   nicht als aufgemalte Linien.
+4. **Ruhige Muster:** Karos und Konfetti wurden im Spiel zu Rauschen; Strick sind jetzt senkrechte
+   Rippen, Streifen sind breit.
+5. **Silhouette mit Luft:** Arme stehen etwas vom Körper ab (Licht zwischen Arm und Taille), Hände
+   haben einen Daumen.
+6. **Bewegung mit Gewicht:** Der Gang federt, das Gewicht wandert über das Standbein, Haar und Bommel
+   schwingen nach.
+
+### 5.3 Ergebnis
+
+![F5 gegen F6](menschen-gestaltung/f6-vorher-nachher.png)
+
+Je Figur oben der Stand von F5, darunter F6 (Mika, Hilde, Bert, Juna; von vorn, schräg, von der
+Seite und von hinten, anderthalbfache Spielgröße).

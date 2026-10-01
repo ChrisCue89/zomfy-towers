@@ -30,13 +30,20 @@ function len(a) {
   return Math.hypot(a[0], a[1], a[2]);
 }
 
-/** Kapsel von a nach b mit Radius r (r1 am Ende b, sonst gleich – dann ein Kegelstumpf). */
+/**
+ * Kapsel von a nach b mit Radius r (r1 am Ende b, sonst gleich – dann ein Kegelstumpf). F6e: ohne
+ * Zwischen-Arrays (das Aufräumen des Speichers kostete ein Zehntel der Backzeit) und in genau der
+ * Reihenfolge der Rechnung wie vorher – die Bilder bleiben bitgleich.
+ */
 function sdCapsule(p, a, b, r, r1 = r) {
-  const pa = sub(p, a);
-  const ba = sub(b, a);
-  const h = Math.max(0, Math.min(1, dot(pa, ba) / Math.max(1e-9, dot(ba, ba))));
-  const d = [pa[0] - ba[0] * h, pa[1] - ba[1] * h, pa[2] - ba[2] * h];
-  return len(d) - (r + (r1 - r) * h);
+  const pax = p[0] - a[0];
+  const pay = p[1] - a[1];
+  const paz = p[2] - a[2];
+  const bax = b[0] - a[0];
+  const bay = b[1] - a[1];
+  const baz = b[2] - a[2];
+  const h = Math.max(0, Math.min(1, (pax * bax + pay * bay + paz * baz) / Math.max(1e-9, bax * bax + bay * bay + baz * baz)));
+  return Math.sqrt((pax - bax * h) ** 2 + (pay - bay * h) ** 2 + (paz - baz * h) ** 2) - (r + (r1 - r) * h);
 }
 
 /** Lage eines Punkts im eigenen Rahmen einer Form (Achsen `ax` in Weltkoordinaten, sonst die Weltachsen). */
@@ -46,13 +53,34 @@ function local(p, s) {
   return [dot(d, s.ax[0]), dot(d, s.ax[1]), dot(d, s.ax[2])];
 }
 
+// Lage im eigenen Rahmen für die Abstandsfelder, ohne neues Array (dieselbe Rechnung wie local)
+const LOC = [0, 0, 0];
+function localTo(p, s) {
+  const dx = p[0] - s.c[0];
+  const dy = p[1] - s.c[1];
+  const dz = p[2] - s.c[2];
+  const A = s.ax;
+  if (!A) {
+    LOC[0] = dx;
+    LOC[1] = dy;
+    LOC[2] = dz;
+  } else {
+    LOC[0] = dx * A[0][0] + dy * A[0][1] + dz * A[0][2];
+    LOC[1] = dx * A[1][0] + dy * A[1][1] + dz * A[1][2];
+    LOC[2] = dx * A[2][0] + dy * A[2][1] + dz * A[2][2];
+  }
+  return LOC;
+}
+
 /** Ellipsoid um c mit Halbachsen rr (Näherung nach Quilez), gedreht mit `ax`. */
 function sdEllipsoid(p, s) {
-  const l = local(p, s);
+  const l = localTo(p, s);
   const r = s.rr;
-  const q = [l[0] / r[0], l[1] / r[1], l[2] / r[2]];
-  const k0 = len(q);
-  const k1 = Math.hypot(q[0] / r[0], q[1] / r[1], q[2] / r[2]);
+  const q0 = l[0] / r[0];
+  const q1 = l[1] / r[1];
+  const q2 = l[2] / r[2];
+  const k0 = Math.sqrt(q0 * q0 + q1 * q1 + q2 * q2);
+  const k1 = Math.sqrt((q0 / r[0]) ** 2 + (q1 / r[1]) ** 2 + (q2 / r[2]) ** 2);
   return k1 > 1e-9 ? (k0 * (k0 - 1)) / k1 : -Math.min(r[0], r[1], r[2]);
 }
 
@@ -62,12 +90,15 @@ function sdEllipsoid(p, s) {
  * Abstand wird dann vorsichtig geteilt, damit kein Strahl durch die Form springt.
  */
 function sdBox(p, s) {
-  const l = local(p, s);
+  const l = localTo(p, s);
   const k = s.taper ? 1 + s.taper * Math.min(1, Math.max(0, -l[1] / s.h[1])) : 1;
   const qx = Math.abs(l[0]) * k - s.h[0] + s.r;
   const qy = Math.abs(l[1]) - s.h[1] + s.r;
   const qz = Math.abs(l[2]) - s.h[2] + s.r;
-  const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - s.r;
+  const mx = Math.max(qx, 0);
+  const my = Math.max(qy, 0);
+  const mz = Math.max(qz, 0);
+  const d = Math.sqrt(mx * mx + my * my + mz * mz) + Math.min(Math.max(qx, qy, qz), 0) - s.r;
   return s.taper ? d / (1 + s.taper) : d;
 }
 
@@ -118,11 +149,19 @@ function nearestOf(shapes, list, p) {
   return part;
 }
 
+const PROBE = [0, 0, 0];
+const RAY = [0, 0, 0];
+function probe(shapes, list, x, y, z) {
+  PROBE[0] = x;
+  PROBE[1] = y;
+  PROBE[2] = z;
+  return distanceOf(shapes, list, PROBE);
+}
 function normalOf(shapes, list, p) {
   const e = 0.004;
-  const nx = distanceOf(shapes, list, [p[0] + e, p[1], p[2]]) - distanceOf(shapes, list, [p[0] - e, p[1], p[2]]);
-  const ny = distanceOf(shapes, list, [p[0], p[1] + e, p[2]]) - distanceOf(shapes, list, [p[0], p[1] - e, p[2]]);
-  const nz = distanceOf(shapes, list, [p[0], p[1], p[2] + e]) - distanceOf(shapes, list, [p[0], p[1], p[2] - e]);
+  const nx = probe(shapes, list, p[0] + e, p[1], p[2]) - probe(shapes, list, p[0] - e, p[1], p[2]);
+  const ny = probe(shapes, list, p[0], p[1] + e, p[2]) - probe(shapes, list, p[0], p[1] - e, p[2]);
+  const nz = probe(shapes, list, p[0], p[1], p[2] + e) - probe(shapes, list, p[0], p[1], p[2] - e);
   const l = Math.hypot(nx, ny, nz) || 1;
   return [nx / l, ny / l, nz / l];
 }
@@ -162,15 +201,21 @@ function reachOf(s) {
  * Formen → Texelfeld. Je Texel ein Strahl (Sphere Tracing); getroffen wird die vorderste Form.
  * Jeder Strahl prüft nur die Formen, deren Bildrechteck (samt Rand fürs weiche Verschmelzen)
  * sein Texel enthält, und nur ihren Tiefenbereich – so bleibt ein Bild bei wenigen Millisekunden.
+ * F6e (nur Menschen, `cull`): dazu fallen die Formen weg, deren Kugel (samt doppeltem Rand fürs
+ * Verschmelzen) der Strahl gar nicht berührt – die Fläche bleibt dieselbe, nur die Schritte durch
+ * den leeren Raum ändern sich, und ein Bild ist mehr als doppelt so schnell.
  * @param {Array} shapes Formen in Welt-Metern (Fußpunkt im Ursprung)
  * @param {{w:number, h:number, px:number, py:number}} cell Zelle und Fußpunkt (Texel)
+ * @param {{cull?: boolean}} [opts]
  * @returns {{w, h, px, py, hit: Int16Array, depth: Float32Array, normal: Float32Array, mat: Array, pos: Float32Array}}
  */
-export function trace(shapes, cell) {
+export function trace(shapes, cell, { cull = false } = {}) {
   const { w, h, px, py } = cell;
   const hit = new Int16Array(w * h).fill(-1);
   const depth = new Float32Array(w * h).fill(Infinity);
   const normal = new Float32Array(w * h * 3);
+  // F6c: Mit Relief merkt sich das Bild auch die Normale der glatten Form (fürs geglättete Licht)
+  const flat = shapes.some((s) => s.bump) ? new Float32Array(w * h * 3) : null;
   const mat = new Array(w * h).fill(null);
   const pos = new Float32Array(w * h * 3);
   // Bildrechteck und Tiefenbereich jeder Form (Schnitte rechnen nur dort mit, wo sie liegen)
@@ -191,15 +236,30 @@ export function trace(shapes, cell) {
     }
     return box;
   });
+  const balls = cull ? shapes.map((s) => { const b = sphereOf(s); return { c: b.c, r: b.r + (s.blend || 0) + 0.012 }; }) : null;
   const list = [];
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
       list.length = 0;
       let tMin = Infinity;
       let tMax = -Infinity;
+      const ou = (i + 0.5 - px) * TEXEL;
+      const ov = (py - j - 0.5) * TEXEL;
       for (let n = 0; n < shapes.length; n++) {
         const r = rects[n];
         if (i < r.x0 || i > r.x1 || j < r.y0 || j > r.y1) continue;
+        if (balls) {
+          // Abstand der Kugelmitte vom Strahl (Ursprung in der Bildebene, Richtung F)
+          const b = balls[n];
+          const dx = b.c[0] - ou;
+          const dy = b.c[1] - ov * U[1];
+          const dz = b.c[2] - ov * U[2];
+          const along = dx * F[0] + dy * F[1] + dz * F[2];
+          const ex = dx - along * F[0];
+          const ey = dy - along * F[1];
+          const ez = dz - along * F[2];
+          if (ex * ex + ey * ey + ez * ez > b.r * b.r) continue;
+        }
         list.push(n);
         if (shapes[n].cut) continue;
         tMin = Math.min(tMin, r.t0);
@@ -211,10 +271,11 @@ export function trace(shapes, cell) {
       // Vom vordersten Rand der Kandidaten aus in Blickrichtung
       let t = tMin - 0.02;
       let found = false;
-      let p = null;
       for (let k = 0; k < 64 && t < tMax + 0.02; k++) {
-        p = [u + t * F[0], v * U[1] + t * F[1], v * U[2] + t * F[2]];
-        const d = distanceOf(shapes, list, p);
+        RAY[0] = u + t * F[0];
+        RAY[1] = v * U[1] + t * F[1];
+        RAY[2] = v * U[2] + t * F[2];
+        const d = distanceOf(shapes, list, RAY);
         if (d < 0.002) {
           found = true;
           break;
@@ -222,6 +283,7 @@ export function trace(shapes, cell) {
         t += Math.max(d, 0.003);
       }
       if (!found) continue;
+      const p = [RAY[0], RAY[1], RAY[2]];
       const idx = j * w + i;
       const part = nearestOf(shapes, list, p);
       const s = shapes[part];
@@ -230,16 +292,22 @@ export function trace(shapes, cell) {
       // Flicken auf dem Knie) – l ist der Punkt im eigenen Rahmen der Form (bei Kapseln ab a), p in der Welt
       mat[idx] = s.cut ? s.wall || s.mat : (s.matAt && s.matAt(s.kind === 'capsule' ? sub(p, s.a) : local(p, s), p)) || s.mat;
       depth[idx] = t;
-      const n = s.bump ? bend(normalOf(shapes, list, p), s, p) : normalOf(shapes, list, p);
+      const n0 = normalOf(shapes, list, p);
+      const n = s.bump ? bend(n0, s, p) : n0;
       normal[idx * 3] = n[0];
       normal[idx * 3 + 1] = n[1];
       normal[idx * 3 + 2] = n[2];
+      if (flat) {
+        flat[idx * 3] = n0[0];
+        flat[idx * 3 + 1] = n0[1];
+        flat[idx * 3 + 2] = n0[2];
+      }
       pos[idx * 3] = p[0];
       pos[idx * 3 + 1] = p[1];
       pos[idx * 3 + 2] = p[2];
     }
   }
-  return { w, h, px, py, hit, depth, normal, mat, pos };
+  return { w, h, px, py, hit, depth, normal, flat, mat, pos };
 }
 
 // --- Pixelregeln -----------------------------------------------------------------------------
@@ -269,7 +337,7 @@ const TONES = { deep: -0.35, shade: 0.05, light: 0.62, shine: 0.93 };
  * @param {Record<string, {ramp:number[], base:number, pattern?:Function, glow?:boolean, shine?:boolean, seam?:boolean, flat?:boolean, outline?:number, outlineLit?:number}>} materials
  * @returns {{color: Int32Array, glow: Uint8Array, tone: Int8Array}}
  */
-export function paint(raster, materials, { outline = true, rim = true, groups = null, occlude = 0, tidy = false, light = null, backlight = false } = {}) {
+export function paint(raster, materials, { outline = true, rim = true, groups = null, occlude = 0, tidy = false, light = null, backlight = false, tones = TONES } = {}) {
   const { w, h, mat, normal, depth, pos, hit } = raster;
   const color = new Int32Array(w * h).fill(-1);
   const tone = new Int8Array(w * h).fill(-1);
@@ -280,9 +348,9 @@ export function paint(raster, materials, { outline = true, rim = true, groups = 
     if (!m) continue;
     const n = [normal[i * 3], normal[i * 3 + 1], normal[i * 3 + 2]];
     const lit = light ? light[i] : dot(n, LIGHT); // F6b: Lichtwert aus lightField (Schatten, Verdeckung)
-    let step = m.flat ? 0 : lit > TONES.light ? 1 : lit > TONES.shade ? 0 : lit > TONES.deep ? -1 : -2;
+    let step = m.flat ? 0 : lit > tones.light ? 1 : lit > tones.shade ? 0 : lit > tones.deep ? -1 : -2;
     if (!m.flat && n[1] < -0.55) step = Math.min(step, -1); // Unterseiten immer im Schatten
-    if (m.shine && lit > TONES.shine) step = 2;
+    if (m.shine && lit > tones.shine) step = 2;
     if (light?.gloss && m.gloss !== undefined && light.gloss[i] > m.gloss) step = 2; // F6b: Glanz (Haar, Leder, Metall)
     if (m.pattern) step += m.pattern([pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]], n) || 0;
     const k = Math.max(0, Math.min(m.ramp.length - 1, m.base + step));
@@ -429,45 +497,63 @@ function sphereOf(s) {
  * ruhige Linien statt als Zacken verlaufen. Das Ergebnis geht als `light` an paint().
  * @returns {Float32Array} Lichtwert je Texel (wie dot(n, LIGHT), etwa −1 … 1)
  */
-export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0.55, ao = 0.75, smooth = true, groups = null } = {}) {
-  const { w, h, hit, normal, pos, mat } = raster;
+export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0.55, ao = 0.75, smooth = true, groups = null, relief = 1 } = {}) {
+  const { w, h, hit, normal, pos, mat, flat } = raster;
+  // F6c: Das Relief (Falten, Steppnähte, Strähnen) kommt nach dem Glätten scharf dazu
+  const detail = flat ? new Float32Array(w * h) : null;
   const L = norm3(dir);
   const Hv = norm3([L[0], L[1] + 0.6, L[2] + 0.8]); // halber Weg zwischen Licht und Blick (Glanz)
   const gloss = new Float32Array(w * h);
   const raw = new Float32Array(w * h);
   const spheres = shapes.map(sphereOf);
-  const solid = shapes.map((sh, k) => k).filter((k) => !shapes[k].cut);
   const list = [];
-  const pick = (from, to) => {
-    // Formen, deren Kugel die Strecke from → to berührt
+  // Formen, deren Kugel die Strecke von (fx, fy, fz) um (dx, dy, dz) berührt (ohne neue Arrays)
+  const pick = (fx, fy, fz, dx, dy, dz) => {
     list.length = 0;
-    const d = sub(to, from);
-    const dd = dot(d, d) || 1;
+    const dd = dx * dx + dy * dy + dz * dz || 1;
+    let solid = false;
     for (let k = 0; k < shapes.length; k++) {
       const sp = spheres[k];
-      const t = Math.max(0, Math.min(1, dot(sub(sp.c, from), d) / dd));
-      const q = [from[0] + d[0] * t - sp.c[0], from[1] + d[1] * t - sp.c[1], from[2] + d[2] * t - sp.c[2]];
-      if (dot(q, q) <= (sp.r + 0.02) * (sp.r + 0.02)) list.push(k);
+      const c = sp.c;
+      const t = Math.max(0, Math.min(1, ((c[0] - fx) * dx + (c[1] - fy) * dy + (c[2] - fz) * dz) / dd));
+      const qx = fx + dx * t - c[0];
+      const qy = fy + dy * t - c[1];
+      const qz = fz + dz * t - c[2];
+      const r = sp.r + 0.02;
+      if (qx * qx + qy * qy + qz * qz <= r * r) {
+        list.push(k);
+        if (!shapes[k].cut) solid = true;
+      }
     }
-    return list.length && list.some((k) => !shapes[k].cut);
+    return solid;
   };
-  void solid;
+  const q = [0, 0, 0];
   for (let i = 0; i < w * h; i++) {
     if (hit[i] < 0) continue;
-    const p = [pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]];
-    const n = [normal[i * 3], normal[i * 3 + 1], normal[i * 3 + 2]];
-    const key = dot(n, L);
-    gloss[i] = dot(n, Hv);
+    const px = pos[i * 3];
+    const py = pos[i * 3 + 1];
+    const pz = pos[i * 3 + 2];
+    const src = flat || normal;
+    const nx = src[i * 3];
+    const ny = src[i * 3 + 1];
+    const nz = src[i * 3 + 2];
+    const key = nx * L[0] + ny * L[1] + nz * L[2];
+    // Glanz aus der Normale mit Relief (Strähnen brechen den Glanz)
+    gloss[i] = normal[i * 3] * Hv[0] + normal[i * 3 + 1] * Hv[1] + normal[i * 3 + 2] * Hv[2];
+    if (detail) detail[i] = ((normal[i * 3] * L[0] + normal[i * 3 + 1] * L[1] + normal[i * 3 + 2] * L[2]) - key) * relief;
     let lit = (key + wrap) / (1 + wrap);
     // Schlagschatten: weicher Schatten (Quilez) auf dem Weg zum Licht
     if (shadow && key > -0.15) {
-      const from = [p[0] + n[0] * 0.012, p[1] + n[1] * 0.012, p[2] + n[2] * 0.012];
-      const to = [from[0] + L[0] * shadow, from[1] + L[1] * shadow, from[2] + L[2] * shadow];
-      if (pick(from, to)) {
+      const fx = px + nx * 0.012;
+      const fy = py + ny * 0.012;
+      const fz = pz + nz * 0.012;
+      if (pick(fx, fy, fz, L[0] * shadow, L[1] * shadow, L[2] * shadow)) {
         let res = 1;
         let t = 0.01;
         for (let k = 0; k < 40 && t < shadow; k++) {
-          const q = [from[0] + L[0] * t, from[1] + L[1] * t, from[2] + L[2] * t];
+          q[0] = fx + L[0] * t;
+          q[1] = fy + L[1] * t;
+          q[2] = fz + L[2] * t;
           const d = distanceOf(shapes, list, q);
           if (d < 0.002) {
             res = 0;
@@ -482,12 +568,15 @@ export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0
     }
     // Umgebungsverdeckung: wie viel Abstandsfeld fehlt entlang der Normale
     if (ao) {
-      if (pick(p, [p[0] + n[0] * 0.14, p[1] + n[1] * 0.14, p[2] + n[2] * 0.14])) {
+      if (pick(px, py, pz, nx * 0.14, ny * 0.14, nz * 0.14)) {
         let occ = 0;
         let sc = 1;
         for (let k = 1; k <= 4; k++) {
           const hk = 0.025 * k;
-          const d = distanceOf(shapes, list, [p[0] + n[0] * hk, p[1] + n[1] * hk, p[2] + n[2] * hk]);
+          q[0] = px + nx * hk;
+          q[1] = py + ny * hk;
+          q[2] = pz + nz * hk;
+          const d = distanceOf(shapes, list, q);
           occ += (hk - Math.min(hk, d)) * sc;
           sc *= 0.75;
         }
@@ -500,7 +589,10 @@ export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0
   }
   raw.gloss = gloss;
   raw.dir = L;
-  if (!smooth) return raw;
+  if (!smooth) {
+    if (detail) for (let i = 0; i < w * h; i++) raw[i] += detail[i];
+    return raw;
+  }
   // Glätten je Stoff und Gruppe (Mitte 4, Seiten 2, Ecken 1)
   const out = new Float32Array(w * h);
   for (let j = 0; j < h; j++) {
@@ -523,7 +615,7 @@ export function lightField(raster, shapes, { dir = LIGHT, wrap = 0.2, shadow = 0
           wsum += wt;
         }
       }
-      out[idx] = sum / wsum;
+      out[idx] = sum / wsum + (detail ? detail[idx] : 0);
     }
   }
   out.gloss = gloss;

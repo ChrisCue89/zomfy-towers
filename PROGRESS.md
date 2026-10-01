@@ -5,6 +5,44 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F6: Die Menschen auf dem Weg zu »Triple A« (in Arbeit)
+
+**Auftrag (01.10.):** »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
+Zeit der Welt dafür.« Dazu: »Die schielen auch wenn sie schief stehen« und »guck wie andere das
+machen und dann fix das«; »das intro ist die figur noch 3d!«
+
+- **F6a – Gesichter je Merkmal** (`src/entities/peopleFaces.js`): Augen, Brauen, Mund, Nase und
+  Wangen sitzen je an einem Punkt auf der gerundeten Kopfform und werden einzeln ins Bild gesetzt
+  (in allen acht Richtungen, auch im Profil); die Breite der Augen folgt der Zuwendung.
+- **Kein Schielen mehr:** Ein weißer Pixel am Rand eines Auges liest sich als Augapfel – lag er bei
+  beiden Augen oben links, sah das linke Auge zur Nase und das rechte weg. Jetzt sind die Augen von
+  vorn gespiegelt mit dem Glanz in der Pupille, schräg liegt das Weiß bei beiden Augen auf derselben
+  Seite (beide schauen in dieselbe Richtung).
+- **F6b – Licht wie gezeichnet** (`lightField`): Hauptlicht seitlich von oben links, weiche
+  Schlagschatten (Mütze auf die Stirn, Kopf auf den Kragen), Verdeckung in Falten, geglättet je
+  Stoff; Glanz über den halben Vektor (Haar, Stiefel), Gegenlicht am Rand der Schattenseite; für die
+  Menschen kräftigere Tonschwellen (`PEOPLE_PAINT.tones`).
+- **F6c – Formen (erster Teil):** Relief im Bäcker (`bump` je Form, `src/entities/peopleRelief.js`:
+  Rippen, Querfalten, Ringfalten, Strähnen) – Falten fangen Licht und Schatten, ohne die Form zu
+  ändern, und kommen nach dem Glätten scharf dazu. Alle Menschen: Daumen und etwas größere Hände,
+  Arme mit Luft zur Taille, ein im Licht gewölbtes Gesicht, Falten in der Ellenbeuge und an der Hose.
+  Mika: gesteppte Jacke, die Riemen als gleichmäßiges Band über die Schulter mit Schnalle, dunkler
+  Reißverschluss mit Zipper, heller Fellrand an den Stiefeln, Haar in Strähnen mit Spitzen, die
+  Mütze ohne Sprenkel mit feinen Maschen. Hilde: Zopfrippen statt Karo-Rauschen, Falten im Rock.
+  Yusuf: Längsfalten im Kittel.
+- **Backen doppelt so schnell** (F6e vorgezogen): Abstandsfelder und Licht ohne Zwischen-Arrays,
+  Wurzel statt `Math.hypot`, Strahlen der Menschen prüfen nur Formen, die sie berühren (`cull`).
+  Mika 48 statt 94 ms je Bild; im Spiel steht Mika nach dem Umschalten deutlich früher als Sprite
+  da. Die Schlurfer backen 1,7× schneller; durch die andere Wurzel kippt genau ein Texel einer
+  Laternenhexe von 1,3 Millionen (unsichtbar) – der Fingerabdruck der Schlurfer ist neu gesetzt.
+- **N12 – Ankunft in 2D:** Im Boot war Mika eine »seltene Pose« (Voxel), und gebacken wurde erst,
+  wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
+  (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
+  der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
+- **G7 (in Arbeit):** Die Geschichte der Ankunft – drei Agenten haben Kanon und Lücken (woher das
+  Funkgerät, Strom, warum Edda gerade dann funkt, warum Mika bleibt), Mikas Herkunft und das Haus
+  mit dem Funkgerät ausgearbeitet; eine Redaktion führt sie zusammen.
+
 ## F5: Die Menschen schöner gezeichnet ✓
 
 **Auftrag (01.10.):** »Hab mir die 2d Modelle angeguckt. Die Zombies gefallen mir. Die Menschen
