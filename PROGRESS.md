@@ -50,7 +50,7 @@ ist nicht glaubhaft. komm schon. schick agenten ins rennen die gemeinsam die int
   den Spielstand geschriebene Barrikade verschwand beim nächsten Speichern (der Stand wird aus der
   Welt neu geschrieben) – die Prüfung baut jetzt eine echte.
 
-## F6: Die Menschen auf dem Weg zu »Triple A« (in Arbeit)
+## F6: Die Menschen auf dem Weg zu »Triple A« ✓
 
 **Auftrag (01.10.):** »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
 Zeit der Welt dafür.« Dazu: »Die schielen auch wenn sie schief stehen« und »guck wie andere das
@@ -93,6 +93,11 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   wenn Mika ausstieg – auf dem Steg stand deshalb die 3D-Figur. Jetzt hat Mika den Teil `boot`
   (rudern, vier Bilder im Takt der Riemen, die Füße auf dem Bootsboden), und alle Teile werden mit
   der Ankunft angefordert: Mika rudert und geht als Sprite. Prüfung `menschen` 5b.
+- **Prüfung (F6e):** Die volle Prüfung über G7 und F6f besteht mit 575 Prüfpunkten (Tag 50, Nacht
+  49 ms je Bild in Software-WebGL); der Abschnitt `menschen` besteht auf dem Stand mit F6g und F6h
+  (2752 Bilder in 29 Fassungen ohne leeres Bild, Mika zu 100 % auf Texelgrenzen nah und weit, 60
+  gerade Blicke). Recherche mit Vorher-Nachher-Bild der Augen (`recherche/menschen-gestaltung.md` 5.4
+  und 5.5).
 - **F6h – Jeder hat seine Augen:** Bert hatte im Profil kein Auge (die Koteletten saßen vor ihm,
   jetzt weiter hinten), Balduin schräg nur eins (seine große Nase lag vor dem fernen Auge – es rückt
   jetzt knapp an ihr vorbei: Auge, Nase, Auge). Hildes Haarnadel hat einen dunklen Schaft unter dem
