@@ -58,8 +58,8 @@ export const SPRECHER = {
 
 // --- Überlebende (Meilenstein 6) ------------------------------------------------------
 
-const RES_NAMES = { holz: 'Holz', stein: 'Stein', fasern: 'Fasern', stoff: 'Stoff', schrott: 'Schrott', teile: 'Zombieteile', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern' };
-const amount = (res) => Object.entries(res).map(([r, n]) => `${n} ${RES_NAMES[r] || r}`).join(', ');
+// L1: Einzahl und Mehrzahl aus den Texten (»1 Zahnrad«, »3 Zahnräder«)
+const amount = (res) => Object.entries(res).map(([r, n]) => T.menge(n, r)).join(', ');
 
 /** Ist ein Schlafplatz frei? (M27: Zelte, Schlafhütte, Dachkammer – umgeworfene zählen nicht) */
 function freeTent(state) {
@@ -285,7 +285,7 @@ export const DIALOGE = {
     { s: 'juna', t: 'Der alte Mast am Steg hat früher den Fischern heimgeleuchtet. Der Lange Jakob, so sagen sie hier. Wenn wir ihn wieder hochkriegen …' },
     { s: 'juna', t: '… mit Antenne und einem Licht ganz oben, dann sieht man uns über den ganzen See. Alle, die noch unterwegs sind, finden her.' },
     { s: 'mika', t: 'Ein Leuchtfeuer. Ich bin dabei. Was brauchen wir?' },
-    { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht im Baumenü, Reiter „Leute“.' },
+    { s: 'juna', t: 'Erst mal eine Leiter und eine Plattform. Schrott und Holz. Der Rest steht im Baumenü, Reiter »Leute«.' },
   ],
   juna: (state) => {
     const stage = state.world?.tower || 0;
@@ -350,7 +350,7 @@ export const DIALOGE = {
                     ],
                     state.time.day
                   )
-              : 'Ein Zelt wäre schön. Mein Rücken ist nicht mehr der jüngste.',
+              : 'Ein Zelt wäre schön. Mein Rücken ist nicht mehr der Jüngste.',
         },
       ],
       guestAnswers(state, 'yusuf', canHandIn(state, 'yusuf') ? [handIn('yusuf')] : [])
@@ -546,11 +546,13 @@ export const DIALOGE = {
   // Solange noch etwas fehlt
   martheWarten: (state) => {
     const inv = state.inventory || {};
-    const fehlt = [!(inv.naegel >= 1) && 'Nägel', !(inv.zucker >= 1) && 'Zucker'].filter(Boolean).join(' und ');
+    const liste = [!(inv.naegel >= 1) && 'Nägel', !(inv.zucker >= 1) && 'Zucker'].filter(Boolean);
+    const fehlt = liste.join(' und ');
+    const verb = liste.length === 1 && liste[0] === 'Zucker' ? 'fehlt' : 'fehlen'; // L1: »Noch fehlt Zucker«
     return [
       pick(
         [
-          { s: 'marthe', t: `Noch fehlen ${fehlt}. Nägel schmiedet man aus Schrott – an deiner Werkbank geht das bestimmt.` },
+          { s: 'marthe', t: `Noch ${verb} ${fehlt}. Nägel schmiedet man aus Schrott – an deiner Werkbank geht das bestimmt.` },
           { s: 'marthe', t: `${fehlt}, dann ist der Kahn dicht. Zucker hat vielleicht euer Händler. Händler haben immer Zucker.` },
           { s: 'marthe', t: 'Die Kinder fragen jeden Morgen, ob heute der Tag ist. Ich sag: bald.' },
         ],
@@ -649,11 +651,12 @@ export const DIALOGE = {
     const inv = state.inventory || {};
     const fehlt = [!(inv.stoff >= 2) && 'Stoff', !(inv.fasern >= 4) && 'Fasern', !(inv.holz >= 2) && 'Holz'].filter(Boolean);
     const liste = fehlt.length > 1 ? `${fehlt.slice(0, -1).join(', ')} und ${fehlt[fehlt.length - 1]}` : fehlt[0] || 'nichts';
+    const verb = fehlt.length === 1 && fehlt[0] !== 'Fasern' ? 'fehlt' : 'fehlen'; // L1: »es fehlt noch Holz«
     return [
       pick(
         [
-          { s: 'pim', t: `Mama sagt, es fehlen noch ${liste}. Stoff gibt es in alten Zelten, sagt sie. Und die Schnur dreht sie aus Fasern.` },
-          { s: 'lu', t: `Pim sagt, uns fehlen ${liste}. Ich hab einen Stock gefunden! Der ist aber krumm.` },
+          { s: 'pim', t: `Mama sagt, es ${verb} noch ${liste}. Stoff gibt es in alten Zelten, sagt sie. Und die Schnur dreht sie aus Fasern.` },
+          { s: 'lu', t: `Pim sagt, uns ${verb} ${liste}. Ich hab einen Stock gefunden! Der ist aber krumm.` },
           { s: 'pim', t: `Noch ${liste}. Der Wind wartet bestimmt auf uns. Oder? Wartet Wind?` },
         ],
         state.time.day
@@ -690,7 +693,7 @@ export const DIALOGE = {
   idaEntscheidung: (state) =>
     decision(state, 'ida', [
       { s: 'ida', t: 'Gustav hat die Nacht gut überstanden. Ich auch.' },
-      { s: 'ida', t: 'Wenn ich bleibe, pflege ich eure Bäume – dann wachsen sie schneller nach, wenn du fällst. Sonst geh ich zum Forsthaus Eulenbruch. Da braucht man mich auch.' },
+      { s: 'ida', t: 'Wenn ich bleibe, pflege ich eure Bäume – dann wachsen sie schneller nach, wenn du welche fällst. Sonst geh ich zum Forsthaus Eulenbruch. Da braucht man mich auch.' },
     ]),
   ida: (state) =>
     resident(state, 'ida', [
@@ -699,7 +702,7 @@ export const DIALOGE = {
       'Im Wald war es früher nie still. Hier bei euch hör ich es wieder – das Knacken, das Rascheln.',
       'Der Moder mag keine Wurzeln. Wurzeln halten fest. Wie wir.',
       'Gustav lässt grüßen.',
-      'Die Seewelle? Hab ich jeden Abend gehört. Und manchmal angerufen. »Die Försterin« – das war ich.', // G2
+      'Die Seewelle? Hab ich jeden Abend gehört. Und manchmal angefunkt. »Die Försterin« – das war ich.', // G2
     ]),
   // --- Rosa, die Köchin ---
   rosaTreffen: [
@@ -925,7 +928,7 @@ export const DIALOGE = {
     pick(
       [
         { s: 'edda', t: 'Ich bin immer da, Mika. Nur nicht immer am Funkgerät. Ist das Feuer an?' },
-        { s: 'edda', t: 'Die Holzlände hat mein Großvater gebaut. Den Steg, die Hütte, das Tor. Ich hab dort Laufen gelernt.' },
+        { s: 'edda', t: 'Die Holzlände hat mein Großvater gebaut. Den Steg, die Hütte, das Tor. Ich hab dort laufen gelernt.' },
         { s: 'edda', t: 'Wo ich bin? Irgendwo, wo man den See sehen kann. Mehr sag ich noch nicht.' },
         { s: 'edda', t: 'Der Moder hört auf Licht und Wärme. Merk dir das. Es wird wichtig.' },
         { s: 'edda', t: 'Balduin? Wir kennen uns lange. Er schuldet mir noch einen Tanz.' },
@@ -1054,7 +1057,7 @@ export const DIALOGE = {
     { s: 'mika', t: 'Die Bäume mit dem rot-weißen Band darf ich fällen. Und in den Schrotthaufen findet sich Kram für einen Turm – das Baumenü unten rechts (Tab) zeigt, was geht.' },
   ],
 
-  werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen – und Überschuss zu Schrott verwerten.' }],
+  werkbankGebaut: [{ s: 'mika', t: 'Eine richtige Werkbank! Hier kann ich eine Spitzhacke bauen, Überschuss zu Schrott verwerten – und auf der Seite »Figur« an mir selbst feilen.' }], // H5
 
   // Ausbau des Zuhauses (M11): je Stufe ein Raum
   hausAusbau: (state) => [
@@ -1110,7 +1113,7 @@ export const DIALOGE = {
   abendHorde: (state) => [
     { s: 'mika', t: 'Es wird dunkel. Aus dem Wald kommt ein Stöhnen … Heute Nacht kommt die Horde.' },
     (state.inventory?.schrott || 0) >= TOWERS.bolzen.base[0].cost.schrott
-      ? { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott habe ich genug – schnell einen bauen, unten in der Bauleiste!' }
+      ? { s: 'mika', t: 'Ohne Turm stehe ich da allein. Schrott habe ich genug – schnell einen bauen, unten rechts im Baumenü!' }
       : {
           s: 'mika',
           t: state.flags?.wrackLeer
@@ -1239,7 +1242,7 @@ export const DIALOGE = {
   yusufMoment1: [
     { s: 'yusuf', t: 'Zeig mal deine Hand. Nein, die andere. Ah. Eine Schwiele vom Axtstiel.' },
     { s: 'yusuf', t: 'Pferde kriegen so etwas am Widerrist. Ich empfehle Ringelblumensalbe und weniger Holzhacken.' },
-    { s: 'mika', t: 'Und was empfehlen Sie, wenn man das Holz braucht?' },
+    { s: 'mika', t: 'Und was empfiehlst du, wenn man das Holz braucht?' },
     { s: 'yusuf', t: 'Dann Ringelblumensalbe. Das mit dem Holzhacken war ohnehin nur als Scherz gemeint.' },
   ],
   // --- G2: Fäden verknoten (data/knots.js) ---------------------------------------------
@@ -1462,7 +1465,7 @@ export const DIALOGE = {
   ],
   antonMoment3: [
     { s: 'anton', t: 'Hier. Meine erste Mundharmonika. Damit hab ich angefangen, mit sieben.' },
-    { s: 'anton', t: 'Sie kann nur eine Tonleiter, und die ist schief. Aber sie hat mich hierher gebracht.' },
+    { s: 'anton', t: 'Sie kann nur eine Tonleiter, und die ist schief. Aber sie hat mich hierhergebracht.' },
     { s: 'anton', t: 'Spiel drauf, wenn es still wird. Dann weiß ich, dass du an uns denkst.' },
   ],
   emilMoment1: [

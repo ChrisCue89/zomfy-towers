@@ -4,11 +4,14 @@
 // angesetzt, an den Quellen der Karte geeicht: Äste, Bäume, Kiesel, Felsen,
 // Faserbüsche, zwei Schrotthaufen, am ersten Tag das Wrack), sammelt die Beute
 // der Nacht ein, tauscht ab Tag 2 Zombieteile bei Balduin gegen Schrott, flickt,
-// baut Türme an die Wege (zuerst dort, wo sie am meisten Weg abdecken), wertet
-// sie auf, hält Barrikadenreihen auf dem letzten Abschnitt und stärkt das Tor;
-// was dann noch übrig ist (über einem Rest fürs Flicken), wird zu weiteren
-// Türmen. Nachts steht sie hinter der ersten Barrikadenreihe und schlägt mit der
-// Axt zu (die echte Schlag-Funktion des Spiels), wenn einer in Reichweite kommt.
+// baut Türme an die Wege (zuerst dort, wo sie am meisten Weg abdecken – der
+// zweite und vierte decken die Barrikaden am letzten Abschnitt, B1), wertet sie
+// auf, hält Barrikadenreihen auf dem letzten Abschnitt und stärkt das Tor; kündigt
+// der Nachtplan eine Nebelwelle an, stellt sie Laternen an den Weg (wie Edda rät),
+// nach einem Durchbruch baut sie Wall und Tor zuerst wieder auf; was dann noch
+// übrig ist (über einem Rest fürs Flicken), wird zu weiteren Türmen. Nachts steht
+// sie hinter der ersten Barrikadenreihe und schlägt mit der Axt zu (die echte
+// Schlag-Funktion des Spiels), wenn einer in Reichweite kommt.
 // Balanciert wird in src/data/ – hier stehen nur die Annahmen über den Spieler.
 //
 //   node tools/balance.mjs [--naechte=12] [--schwierigkeit=gemuetlich,ausgewogen,wild]
@@ -16,12 +19,16 @@
 //                          [--sichern=4,8,12 --ordner=pfad]   Spielstand vor diesen Nächten ablegen
 //   node tools/balance.mjs --nacht=pfad/ausgewogen-8.json --hp=1,2,4
 //                          eine abgelegte Nacht mit mehr Leben je Schlurfer nachspielen
+//   --zaeh=2,0.55,0.025[,0.4]   Zähigkeit zum Ausprobieren (TOUGHNESS: from, per, grow,
+//                          bossNight), ohne src/data/waves.js zu ändern (B1)
+//   --boss=3               Bosse mit so viel mehr Leben (zum Ausprobieren, B1)
 //
 // Ausgabe: je Nacht gehalten/verloren, Zuhause, Durchbruch, besiegte Schlurfer,
 // Türme (Stufen), Barrikaden, Vorrat, dazu der Druck auch in gehaltenen Nächten
 // (wie weit die Horde nach Osten kam – das Tor steht bei x = −8 –, wie viel die
-// Barrikaden und das Tor abbekamen, Mikas niedrigstes Leben) – und eine
-// Zusammenfassung.
+// Barrikaden und das Tor abbekamen, Mikas niedrigstes Leben, wer am weitesten kam,
+// wie viele aus welcher Welle bis an die Barrikaden kamen, wie weit der Boss kam) – und
+// eine Zusammenfassung.
 
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -41,6 +48,30 @@ const SAVE_DAYS = arg('sichern', '').split(',').filter(Boolean).map(Number);
 const SAVE_DIR = arg('ordner', '.');
 const REPLAY = arg('nacht', null);
 const HP_MULS = arg('hp', '1').split(',').map(Number);
+const TOUGH = arg('zaeh', null)
+  ?.split(',')
+  .map(Number)
+  .reduce((o, v, k) => ({ ...o, [['from', 'per', 'grow', 'bossNight'][k]]: v }), {});
+
+const BOSS_MUL = Number(arg('boss', 1));
+
+/**
+ * Zähigkeit zum Ausprobieren in das Modul im Browser schreiben (dasselbe Objekt, das der Wellenplan
+ * liest); Bosse mit mehr Leben über den Plan der Nacht (ihr `hp` ist ein eigener Faktor).
+ */
+async function applyTough(page) {
+  if (TOUGH) await page.evaluate(async (t) => Object.assign((await import('./src/data/waves.js')).TOUGHNESS, t), TOUGH);
+  if (BOSS_MUL === 1) return;
+  await page.evaluate((k) => {
+    const nights = window.zomfy.game.nights;
+    const plan = nights.planFor.bind(nights);
+    nights.planFor = (day) => {
+      const p = plan(day);
+      for (const w of p.waves) for (const sp of w.spawns) if (sp.hp) sp.hp *= k;
+      return p;
+    };
+  }, BOSS_MUL);
+}
 
 /**
  * Was ein fleißiger Spieler an einem Tag an den Quellen der Karte sammelt (Karte 3:
@@ -100,7 +131,10 @@ function dayTurn({ day, income, keep, reserve }) {
       traded += 2;
     }
   }
-  // Flicken: Zuhause, Tor, Wall, Türme; Barrikaden-Trümmer neu aufbauen
+  // Flicken: zuerst eingeschlagene Wall- und Torstücke einzeln (nach einem Durchbruch reicht der
+  // Vorrat oft nicht für alles – ein offenes Lager wäre die nächste verlorene Nacht), dann Zuhause,
+  // Tor, Wall, Türme; Barrikaden-Trümmer neu aufbauen
+  for (const b of bs.list.filter((q) => q.broken && (q.type === 'tor' || q.type.startsWith('wall')))) g.builder.repairBuilding(b);
   g.builder.repairAll();
   for (const b of bs.list.filter((q) => q.type === 'barrikade' && q.broken)) Z.rebuildBarricade(b.id);
   const option = (b, test) => {
@@ -113,14 +147,27 @@ function dayTurn({ day, income, keep, reserve }) {
   };
   // Türme zuerst (neue an die besten freien Stellen), dann Tor, Barrikaden, Aufwertungen
   const spots = window.__balanceSpots;
+  const kill = window.__balanceKill; // B1: Plätze neben dem letzten Abschnitt, die die Barrikaden decken
   const towers = () => bs.list.filter((q) => q.type === 'bolzen' || q.type === 'katapult' || q.type === 'sprenger' || q.type === 'laternenturm');
   const want = Math.min(spots.length, 2 + day);
   const kinds = ['bolzen', 'bolzen', 'katapult', 'bolzen', 'sprenger', 'katapult', 'bolzen', 'laternenturm', 'katapult'];
+  const free = (type, list) => list.find((s) => !s.used && Z.placeCheck(type, s.i, s.j).ok);
   for (let guard = 0; towers().length < want && guard < 20; guard++) {
-    const type = kinds[towers().length % kinds.length];
-    const spot = spots.find((s) => !s.used && Z.placeCheck(type, s.i, s.j).ok);
+    const k = towers().length;
+    const type = kinds[k % kinds.length];
+    // Der zweite und der vierte Turm decken die Barrikaden (wie man es vom Hof aus täte)
+    const spot = ((k === 1 || k === 3) && free(type, kill)) || free(type, spots);
     if (!spot || Z.build(type, spot.i, spot.j) !== 'ok') break;
     spot.used = true;
+  }
+  // Nebelwelle im Nachtplan (M22): Laternen an den Weg – bei den Türmen, wo der meiste Weg ist
+  if (g.nights.planFor(day).waves.some((w) => w.trait === 'nebel')) {
+    const lamps = () => bs.list.filter((q) => q.type === 'laternenpfahl').length;
+    for (let guard = 0; guard < 12 && lamps() < Math.min(6, 2 + Math.floor(day / 3)); guard++) {
+      const spot = free('laternenpfahl', spots);
+      if (!spot || Z.build('laternenpfahl', spot.i, spot.j) !== 'ok') break;
+      spot.used = true;
+    }
   }
   const gate = bs.list.find((q) => q.type === 'tor');
   if (gate && ((day >= 4 && gate.level < 2) || (day >= 8 && gate.level < 3))) option(gate, (id) => id.startsWith('stufe'));
@@ -171,7 +218,16 @@ function armMika(on) {
     // Druck messen: wie weit kam die Horde nach Osten (Tor bei x = −8), wie tief sank Mikas Leben?
     const m = window.__balanceMeter;
     if (m) {
-      for (const z of g.horde.list) if (z.state !== 'dying' && z.x > m.maxX) m.maxX = z.x;
+      for (const z of g.horde.list) {
+        if (z.state === 'dying') continue;
+        if (!m.wave.has(z.id)) m.wave.set(z.id, st.night.wave); // aus welcher Welle (die zuletzt losgelassene)
+        if (z.x > m.maxX) {
+          m.maxX = z.x;
+          m.who = `${z.type}${z.champion ? ', Champion' : ''}${z.trait ? `, ${z.trait}` : ''}, W${m.wave.get(z.id)}`;
+        }
+        if (z.x > -15.5) m.reached.add(z.id); // bis an die Barrikaden (Reihen bei x = −11 und −14)
+        if (z.def.boss && !z.def.heart) m.bossX = Math.max(m.bossX ?? -Infinity, z.x); // B1: wie weit kam der Boss?
+      }
       m.minHp = Math.min(m.minHp, st.player.hp);
       const heart = g.autumn?.heart; // M25: die Frostnacht – wie weit kam das Moderherz?
       if (heart && heart.state !== 'dying') {
@@ -222,6 +278,9 @@ async function nightTurn(page, day) {
     const bs = Z.game.world.buildings.list;
     window.__balanceMeter = {
       maxX: -Infinity,
+      who: null,
+      reached: new Set(),
+      wave: new Map(),
       minHp: Z.game.state.player.hp,
       bar: bs.filter((q) => q.type === 'barrikade' && !q.broken).reduce((a, q) => a + q.hp, 0),
       gate: bs.find((q) => q.type === 'tor')?.hp ?? 0,
@@ -254,7 +313,11 @@ async function nightTurn(page, day) {
     const bs = g.world.buildings.list;
     const barNow = bs.filter((q) => q.type === 'barrikade' && !q.broken).reduce((a, q) => a + q.hp, 0);
     const gateNow = bs.find((q) => q.type === 'tor')?.hp ?? 0;
-    const pressure = { maxX: Number.isFinite(m.maxX) ? Math.round(m.maxX * 10) / 10 : null, minHp: Math.round(m.minHp), barLost: Math.max(0, Math.round(m.bar - barNow)), gateLost: Math.max(0, Math.round(m.gate - gateNow)) };
+    // Wer an die Barrikaden kam, nach Wellen: »W3 9, W4 4«
+    const perWave = {};
+    for (const id of m.reached) perWave[m.wave.get(id)] = (perWave[m.wave.get(id)] || 0) + 1;
+    const waves = Object.entries(perWave).map(([w, k]) => `W${w} ${k}`).join(', ');
+    const pressure = { maxX: Number.isFinite(m.maxX) ? Math.round(m.maxX * 10) / 10 : null, who: m.who, reached: m.reached.size, waves, bossX: m.bossX === undefined ? null : Math.round(m.bossX * 10) / 10, minHp: Math.round(m.minHp), barLost: Math.max(0, Math.round(m.bar - barNow)), gateLost: Math.max(0, Math.round(m.gate - gateNow)) };
     // M25: Frostnacht – fiel das Herz, oder erstarrte es im Morgengrauen (Phase, wie weit, wie viel Leben übrig)?
     const finale = m.phase ? { fell: Boolean(r.finale?.heart), phase: m.phase, x: Math.round(m.heartX * 10) / 10, hp: Math.round((r.finale?.heart ? 0 : m.heartHp) * 100) } : null;
     return { won: n.won, kills: n.kills, homeLost: r.homeLost ?? null, homeNow: r.homeNow ?? Math.round(st.world.homeHp), homeMax: r.homeMax ?? null, breach: Boolean(n.breach), inCamp: n.inCamp || 0, broken: n.broken || 0, level: st.player.level, pressure, finale };
@@ -271,6 +334,7 @@ async function runLevel(browser, url, level) {
   });
   await page.goto(`${url}index.html?test&playtest&nosave&map=${MAP}`);
   await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  await applyTough(page);
   await page.evaluate((lv) => {
     window.__zomfyHold = true;
     const Z = window.zomfy;
@@ -297,6 +361,8 @@ async function runLevel(browser, url, level) {
     const spots = [];
     for (const s of sorted) if (!spots.some((o) => (o.i - s.i) ** 2 + (o.j - s.j) ** 2 < 6.25)) spots.push(s);
     window.__balanceSpots = spots.slice(0, 70);
+    // B1: Plätze neben dem letzten Abschnitt zwischen den Barrikadenreihen und dem Tor (x −17 … −10)
+    window.__balanceKill = sorted.filter((s) => s.i >= -17 && s.i <= -10).slice(0, 6);
   }, level);
   await page.evaluate(armMika, MIKA);
   const rows = [];
@@ -316,7 +382,7 @@ async function runLevel(browser, url, level) {
     const nacht = await nightTurn(page, day);
     rows.push({ day, ...nacht, ...tag });
     const home = nacht.homeMax ? `${nacht.homeNow}/${nacht.homeMax}` : `${nacht.homeNow}`;
-    console.log(`${level.padEnd(10)} Nacht ${String(day).padStart(2)} · ${nacht.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${home} (−${nacht.homeLost ?? '?'}) · ${nacht.breach ? `Durchbruch (${nacht.inCamp} im Lager)` : 'Tor hält'} · besiegt ${nacht.kills} · Türme ${tag.tuerme || '–'} · Barrikaden ${tag.barrikaden} (${nacht.broken} zerschlagen) · Schrott ${tag.vorrat.schrott} (getauscht ${tag.traded}), Teile ${tag.vorrat.teile} · Stufe ${nacht.level} · Druck: bis x ${nacht.pressure.maxX ?? '–'}, Barrikaden −${nacht.pressure.barLost}, Tor −${nacht.pressure.gateLost}, Mika ≥ ${nacht.pressure.minHp}${finaleText(nacht.finale)}`);
+    console.log(`${level.padEnd(10)} Nacht ${String(day).padStart(2)} · ${nacht.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${home} (−${nacht.homeLost ?? '?'}) · ${nacht.breach ? `Durchbruch (${nacht.inCamp} im Lager)` : 'Tor hält'} · besiegt ${nacht.kills} · Türme ${tag.tuerme || '–'} · Barrikaden ${tag.barrikaden} (${nacht.broken} zerschlagen) · Schrott ${tag.vorrat.schrott} (getauscht ${tag.traded}), Teile ${tag.vorrat.teile} · Stufe ${nacht.level} · Druck: bis x ${nacht.pressure.maxX ?? '–'}${nacht.pressure.who ? ` (${nacht.pressure.who})` : ''}, an den Barrikaden ${nacht.pressure.reached}${nacht.pressure.waves ? ` (${nacht.pressure.waves})` : ''}, Barrikaden −${nacht.pressure.barLost}, Tor −${nacht.pressure.gateLost}, Mika ≥ ${nacht.pressure.minHp}${nacht.pressure.bossX !== null ? ` · Boss bis x ${nacht.pressure.bossX}` : ''}${finaleText(nacht.finale)}`);
     await page.evaluate(() => window.zomfy.game.advanceToMorning());
   }
   if (errors.length) console.log(`  Fehler im Spiel: ${errors.slice(0, 5).join(' | ')}`);
@@ -336,6 +402,7 @@ async function replayNight(browser, url) {
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${url}index.html?test&playtest&map=${MAP}`);
     await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+    await applyTough(page);
     await page.evaluate((m) => {
       window.__zomfyHold = true;
       const g = window.zomfy.game;
@@ -345,7 +412,7 @@ async function replayNight(browser, url) {
     await page.evaluate(armMika, MIKA);
     const n = await nightTurn(page, day);
     const p = n.pressure;
-    console.log(`Nacht ${day} · Leben ×${mul} · ${n.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${n.homeNow}/${n.homeMax ?? '?'} · ${n.breach ? `Durchbruch (${n.inCamp} im Lager)` : 'Tor hält'} · besiegt ${n.kills} · zerschlagen ${n.broken} · bis x ${p.maxX ?? '–'}, Barrikaden −${p.barLost}, Tor −${p.gateLost}, Mika ≥ ${p.minHp}${finaleText(n.finale)}${errors.length ? ` · Fehler: ${errors[0]}` : ''}`);
+    console.log(`Nacht ${day} · Leben ×${mul} · ${n.won ? 'gehalten' : 'VERLOREN'} · Zuhause ${n.homeNow}/${n.homeMax ?? '?'} · ${n.breach ? `Durchbruch (${n.inCamp} im Lager)` : 'Tor hält'} · besiegt ${n.kills} · zerschlagen ${n.broken} · bis x ${p.maxX ?? '–'}${p.who ? ` (${p.who})` : ''}, an den Barrikaden ${p.reached}${p.waves ? ` (${p.waves})` : ''}, Barrikaden −${p.barLost}, Tor −${p.gateLost}, Mika ≥ ${p.minHp}${p.bossX !== null ? ` · Boss bis x ${p.bossX}` : ''}${finaleText(n.finale)}${errors.length ? ` · Fehler: ${errors[0]}` : ''}`);
     await context.close();
   }
 }
@@ -367,9 +434,12 @@ for (const level of LEVELS) {
   const breaches = rows.filter((r) => r.breach).map((r) => r.day);
   const homeLoss = rows.reduce((a, r) => a + (r.homeLost || 0), 0);
   const tense = rows.filter((r) => r.won && !r.breach && (r.broken > 0 || r.pressure.gateLost > 0)).map((r) => r.day);
-  summary.push(`${level}: ${rows.length - lost.length}/${rows.length} gehalten${lost.length ? ` (verloren: ${lost.join(', ')})` : ''} · Durchbrüche: ${breaches.length ? breaches.join(', ') : 'keine'} · knapp (Barrikaden zerschlagen oder Tor getroffen): ${tense.length ? tense.join(', ') : 'keine'} · Zuhause verlor zusammen ${homeLoss}`);
+  const contact = rows.filter((r) => r.pressure.reached > 0).map((r) => r.day); // B1: bis an die Barrikaden
+  summary.push(`${level}: ${rows.length - lost.length}/${rows.length} gehalten${lost.length ? ` (verloren: ${lost.join(', ')})` : ''} · Durchbrüche: ${breaches.length ? breaches.join(', ') : 'keine'} · an den Barrikaden: ${contact.length ? contact.join(', ') : 'keine'} · knapp (Barrikaden zerschlagen oder Tor getroffen): ${tense.length ? tense.join(', ') : 'keine'} · Zuhause verlor zusammen ${homeLoss}`);
 }
 console.log('');
+if (TOUGH) console.log(`Zähigkeit zum Ausprobieren: ${JSON.stringify(TOUGH)}`);
+if (BOSS_MUL !== 1) console.log(`Bosse mit ×${BOSS_MUL} Leben`);
 for (const line of summary) console.log(line);
 await browser.close();
 server.close();

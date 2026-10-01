@@ -16,6 +16,13 @@ export function bossOfNight(n) {
   return BOSS_ORDER[(n / 5 - 1) % BOSS_ORDER.length];
 }
 
+/**
+ * Leben der Bosse (B1): Sie tragen die Zähigkeit ihrer Nacht (wie deren Horde, mit dem Rabatt der
+ * Bossnacht) und ein Fünftel mehr – so kommt der Holzfäller auf »Ausgewogen« bis an die erste
+ * Barrikadenreihe und zeigt dort seinen Hieb, statt 20 m davor zu fallen (Balance-Durchlauf).
+ */
+export const BOSS_HP = 1.2;
+
 /** Leben-Faktor des Bosses: jede weitere Runde durch alle vier 60 % mehr. */
 export function bossHpFactor(n) {
   return 1 + Math.floor((n / 5 - 1) / BOSS_ORDER.length) * 0.6;

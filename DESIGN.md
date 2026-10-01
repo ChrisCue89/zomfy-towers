@@ -224,13 +224,12 @@ Wort gibt.
   bleibt als Wahl in den Einstellungen und als Rückfall, solange eine Art
   noch backt. Nachts glimmt um das Eigenlicht ein Hof aus einem Texel,
   Champions tragen einen goldenen Rand (F3).
-- **Die Menschen als Sprites (F4, Standard 2D):** Mika, Hilde, Bert, Juna, Dr. Yusuf, Balduin
-  und Knopf sind ebenso Pixelfiguren aus runden Formen – aufrecht, mit großem Kopf, in acht
-  gezeichneten Richtungen (Mika trägt links die Laterne, rechts das Werkzeug). Das Gesicht liegt
-  als kleiner Flicken je Ausdruck darüber (Blinzeln, Lächeln, »Aua«), das Werkzeug als eigenes
-  Bild vor oder hinter der Figur. Seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen,
-  die Lagerglocke) und die übrigen Figuren bleiben vorerst Voxel; »Figuren: 3D« bringt alle
-  zurück.
+- **Die Menschen als Sprites (F4, Standard 2D):** Mika, die Bewohner, die Wanderer, Balduin,
+  Edda, Marthe mit Pim und Lu und Knopf sind ebenso Pixelfiguren aus runden Formen – aufrecht, mit
+  großem Kopf, in acht gezeichneten Richtungen (Mika trägt links die Laterne, rechts das Werkzeug).
+  Das Gesicht liegt als kleiner Flicken je Ausdruck darüber (Blinzeln, Lächeln, »Aua«), das
+  Werkzeug als eigenes Bild vor oder hinter der Figur. Seltene Posen (Rudern, Angeln, Kartentisch,
+  Schaukel, Schießen, die Lagerglocke) bleiben Voxel; »Figuren: 3D« bringt alle zurück.
 - **Technik:** echte 3D-Szene (three.js) aus Voxel-Modellen, alles im Code
   erzeugt – keine fremden Assets. Orthografische Dreiviertel-Kamera mit
   **Blick nach Norden**: der See am rechten Rand, die Landseite mit den
@@ -533,12 +532,19 @@ die Figur oder das Zuhause?
 - Randmarken zeigen, wo außerhalb des Bildes noch etwas liegt. Der
   Sammelradius ist eine Aufwertung der Figur.
 
-### 6.6 Bauleiste
+### 6.6 Baumenü (früher Bauleiste)
 
-- Unten rechts im HUD, Reiter **Verteidigung** (Türme und Barrikaden) ·
-  **Figur** · **Zuhause** · **Einrichten**. `Tab` wechselt den Reiter.
-  Jede Option zeigt Symbol und Preis, ausgegraut mit Füllbalken bis
-  bezahlbar, dann leuchtet sie auf. Tastenkürzel **Q R T G C V**.
+- Unten rechts im HUD, zugeklappt nur der Knopf **Bauen** (H1). `Tab` öffnet
+  das Menü und wechselt den Reiter, Q R T G C gehören zugeklappt immer den
+  Türmen. **Reiter nach Zweck (H5):** **Türme** (Bolzenwerfer, Katapult,
+  Sprenger, Laternenturm, Barrikade) · **Helfer** (Türme aus Bauplänen) ·
+  **Fallen** (mit der Moderlocke) · **Lager** (Werkbank, Holzlager, Beet,
+  Bank, Laternenpfahl) · **Leute** (Zelt, Schlafhütte, Hochsitz, Übungsplatz,
+  Lagerglocke, Langer Jakob) · **Zuhause** (Ausbau des Hauses, Reparieren) ·
+  **Schmuck**. Jede Kachel zeigt ein Bild aus dem Modell und den Preis,
+  ausgegraut mit Füllbalken bis bezahlbar, dann leuchtet sie auf.
+  Tastenkürzel **Q R T G C V**. Mikas Aufwertungen liegen an der Werkbank
+  (6.7).
 - **Turm bauen:** Turm wählen, auf dem Raster neben einem Weg platzieren
   (grün = passt, rot = geht nicht, z. B. auf einem Weg), Klick oder `E` setzt
   ihn. **Barrikade bauen:** wählen und auf ein Wegfeld setzen – nur dort
@@ -546,9 +552,9 @@ die Figur oder das Zuhause?
 - **Ausbauen und Reparieren:** Turm oder Barrikade anklicken (oder davor `E`):
   Die Leiste zeigt Stufen, Spezialisierungen, Reparatur und »Abreißen«
   (immer auf `V`, mit Rückfrage).
-- **Zuhause:** Werkbank, Beete, Bänke, Laternen, Zelte und Deko stehen frei
-  auf dem Raster (nie auf einem Weg); Ausbauten des
-  Hauses und Nebengebäude haben feste Plätze.
+- **Lager und Leute:** Werkbank, Beete, Bänke, Laternen, Zelte und Schmuck
+  stehen frei auf dem Raster (nie auf einem Weg); Ausbauten des Hauses und
+  Nebengebäude haben feste Plätze.
 - Bauen geht jederzeit; Reparieren nicht, solange nachts eine Welle läuft.
 - **Baupläne (M19):** Am Anfang kennt Mika die vier Türme und die
   Holzbarriere. Nach jeder gewonnenen Nacht liegt ein Bauplan bereit: Nach
@@ -556,17 +562,20 @@ die Figur oder das Zuhause?
   1/2/3), einer kommt in die Bauleiste. Baupläne gibt es auch einmal im
   Wrack und an ungeraden Tagen ab Tag 3 bei Balduin (12 Zombieteile). Die
   Wahl hängt am Startwert der Karte – neu laden würfelt nicht neu.
-- **Reiter mit Seiten (M19):** Mehr als fünf Türme – dann kommt »Türme 2«
+- **Reiter mit Seiten (M19, H1):** Mehr als fünf Türme – dann kommt »Helfer«
   dazu; die erste Seite bleibt Q Bolzen, R Katapult, T Sprenger, G Laterne,
   C Barrikade. Fallen haben ihren eigenen Reiter »Fallen«. Tab geht alle
-  Reiter durch.
+  Reiter durch; mehr als sechs Kacheln blättern mit »weiter«.
 
 ### 6.7 Crafting (Werkbank)
 
 Werkzeuge (Spitzhacke), Waffen und Möbel; Überschuss lässt sich zu Schrott
 verwerten (ein Druck einmal, gehaltenes E weiter). Rezepte kommen mit Tagen,
 Funden, Überlebenden, Balduin und dem Ausbau des Zuhauses. Später steht die
-Werkbank in der Werkstatt.
+Werkbank in der Werkstatt. **Zwei Seiten (H5):** »Herstellen« und »Figur« –
+dort wertet Mika sich selbst auf (Sammelradius, Lebenskraft, Schlagkraft,
+Tempo, je drei Stufen) und jede gebaute Waffe zweimal. A/D, Tab oder ein Klick
+auf den Reiter wechselt die Seite.
 
 ### 6.8 Zuhause und Basis
 
@@ -2060,6 +2069,22 @@ Lektorat und die Reiter des Baumenüs.
 - **Werkzeuge als eigenes Bild:** in 16 Winkelstufen um die Hand und schräg auf dem Rücken, vor
   oder hinter der Figur – je nachdem, ob es zur Kamera hin liegt.
 - **Rückfall:** Was keine Fassung hat oder eine seltene Pose zeigt, bleibt Voxel (Nr. 218).
+- **Zweite Stufe:** die Wanderer, Edda, Marthe, Pim und Lu (Kinder mit eigenem Körper).
+
+#### S1, L1, H5, B1 – der Rest der Liste ✓
+
+*Umgesetzt (01.10.2026):*
+
+- **S1 – Spielstand als Datei:** Pausenmenü und Titelbild sichern den Stand als JSON und laden
+  ihn wieder (mit Migration und Rückfrage, Nr. 219).
+- **L1 – Lektorat:** Beute statt Loot, Baumenü statt Bauleiste, Vorteil statt Perk, Mengen und
+  Verben, die zusammenpassen (Nr. 221).
+- **H5 – Reiter nach Zweck:** Türme · Helfer · Fallen · Lager · Leute · Zuhause · Schmuck; »Figur«
+  ist die zweite Seite der Werkbank (Nr. 220).
+- **B1 – Spannung der Nächte:** Die Zähigkeit setzt eine Nacht früher ein, Bosse wachsen mit ihrer
+  Nacht – der Holzfäller kommt bis an die erste Barrikadenreihe und zerschlägt sie. Der
+  Balance-Durchlauf baut dafür wie ein Mensch (Türme an den Barrikaden, Laternen bei Nebel) und
+  sagt, wer wie weit kam (Nr. 222).
 
 ## 9. Ideen-Parkplatz
 

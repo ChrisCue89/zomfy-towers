@@ -5,6 +5,123 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## B1: Spannung der Nächte ✓
+
+**Auftrag (01.10.):** Punkt 2 der Liste »Qualität und Spielspaß« – auf »Ausgewogen« hielt der
+Balance-Durchlauf alle Nächte, ohne dass die Horde je ernsthaft an die Barrikaden kam
+(OFFENE-FRAGEN 222).
+
+- **Der Balance-Durchlauf baut jetzt wie ein Mensch:** Der zweite und vierte Turm decken die
+  Barrikaden am letzten Abschnitt (vorher standen alle Türme 20–40 m weiter westlich an den
+  Abzweigen – was durchkam, traf nur noch auf Mika); kündigt der Nachtplan eine Nebelwelle an,
+  stellt er Laternen an den Weg, wie Edda rät; nach einem Durchbruch baut er Wall und Tor zuerst
+  wieder auf (sonst stand das Lager offen und jede weitere Nacht ging verloren).
+- **Er sagt mehr:** wer am weitesten kam (Art, Champion, Merkmal, Welle), wie viele aus welcher
+  Welle bis an die Barrikaden kamen, wie weit der Boss kam; `--zaeh=…` und `--boss=…` probieren
+  Werte aus, ohne `src/data/` anzufassen. Dieselbe Nacht streut von Lauf zu Lauf (einmal still,
+  einmal knapp) – geurteilt wird über alle Nächte.
+- **Gefunden:**
+  - Vorher kamen auf »Ausgewogen« nur in den Nächten 1, 2, 4, 7 und 9 einzelne Schlurfer an die
+    Barrikaden, keine ging zu Bruch.
+  - Die Spanne zwischen »still« und »verloren« ist schmal: Mit 1,5-fach zäheren Schlurfern ab
+    Nacht 3 verlor der Bot Nacht 9 (Nebel, Moderflut und Brüter in einer Nacht) und danach jede
+    weitere. Schuld war keine einzelne Welle, sondern dass sich die Wellen stauten.
+  - Die Bosse waren die leichtesten Nächte: Der Holzfäller fiel 20 m vor den Barrikaden, die
+    Pilzmutter noch weiter draußen – ihre Angriffe zeigten sich nie. Mit doppeltem Leben kommt der
+    Holzfäller bis an die erste Reihe, mit dreifachem zerschlägt er alle und das Tor.
+- **Geändert:**
+  - Die Zähigkeit setzt eine Nacht früher ein (`TOUGHNESS.from` 3 → 2): Nacht 3 ×1,4, Nacht 6
+    ×1,2, Nacht 9 ×1,16, Nacht 12 ×1,1, die Frostnacht ×1,06 gegenüber vorher.
+  - Bosse tragen die Zähigkeit einer Bossnacht und ein Fünftel mehr (`BOSS_HP` = 1,2): der
+    Holzfäller in Nacht 5 ×2, die Pilzmutter in Nacht 10 ×3,9; Bossnächte bekommen die Hälfte statt
+    40 % der Zähigkeit. Das Moderherz behält seine Kurve und ist in der Frostnacht der einzige Boss –
+    vorher lief dort die Pilzmutter der Nacht 30 mit (mit dem alten Bossleben fiel sie sofort, mit
+    dem neuen hätte sie das Herz geheilt).
+- **Ergebnis (zwölf Nächte):**
+  - *Ausgewogen:* zwölf gehalten, kein Durchbruch; Schlurfer an den Barrikaden in 7 von 12
+    Nächten (1, 2, 4, 5, 7, 9, 10), Barrikaden zerschlagen in den Nächten 5 (Holzfäller) und 7,
+    angeschlagen in 9 und 10; die Pilzmutter kommt bis an die erste Reihe.
+  - *Gemütlich:* zwölf gehalten; nur die Bosse und zwei Nächte kommen an die Barrikaden, Mika nie
+    unter 82.
+  - *Wild:* zwölf gehalten, aber eng – an den Barrikaden in 8 von 12 Nächten, in Nacht 5 schlägt
+    der Holzfäller neun Barrikaden und das Tor ein, in den Nächten 8 und 9 sinkt Mika auf 5 und 4.
+- **Ergebnis (30 Nächte, Ausgewogen):** alle gehalten; Schlurfer an den Barrikaden in 22 von 30
+  Nächten, ab Nacht 17 in fast jeder (bis zu 780 auf einmal), die Laternenhexe (Nacht 15) bis an
+  die Barrikaden, der zweite Holzfäller (Nacht 25) schlägt die Reihen und das Tor ein und fällt
+  davor; Durchbrüche in Nacht 28 (das Lager wird geplündert, das Haus hält) und in der Frostnacht.
+- **Offen:**
+  - Das Moderherz erstarrt beim Bot mit 95–97 % Leben (in M25: 43 %). Mit den alten Werten
+    nachgespielt bleibt es gleich: Es kommt in Phase 2 (unter zwei Drittel) und heilt sich dort mit
+    den Sporen (10 % alle 11 s) wieder hoch, weil vor dem Tor Hunderte Schlurfer das Feuer der
+    Türme binden; die zähen Brummer der späten Nächte haben fast so viel Leben wie das Herz (die
+    Scharfschützen zielen auf den Stärksten). Ob das Herz das Feuer auf sich ziehen soll, ist eine
+    Frage an den Auftraggeber.
+  - »Wild« ist nach B1 über 30 Nächte noch nicht vermessen.
+- **Prüfung** (Abschnitt `nacht16`): Nacht 2 unverändert, Nacht 3 zäher, der Holzfäller trägt die
+  Zähigkeit seiner Nacht.
+
+---
+
+## H5: Das Baumenü nach Zweck, die Figur an der Werkbank ✓
+
+**Auftrag (01.10.):** Punkt 5 der Liste »Qualität und Spielspaß« (recherche/hud-baumenue.md 5.3,
+OFFENE-FRAGEN 220).
+
+- **Reiter nach Zweck**, immer in derselben Reihenfolge: Türme · Helfer · Fallen · Lager · Leute ·
+  Zuhause · Schmuck (Helfer und Fallen mit den Bauplänen, Leute mit dem ersten Gast, Schmuck aus dem
+  Herbstbuch). Zugeklappt gehören Q R T G C weiter den Türmen.
+- **»Lager« ist neu:** Werkbank, Holzlager, Beet, Bank, Laternenpfahl. »Leute« trägt Schlafplätze,
+  Hochsitz, Übungsplatz, Lagerglocke und den Langen Jakob – sechs Kacheln, kein »weiter« mehr.
+  »Zuhause« baut das Haus aus und repariert.
+- **Die Figur an der Werkbank:** Das Fenster hat zwei Seiten, »Herstellen« und »Figur« (A/D, Tab
+  oder Klick auf den Reiter). »Figur« zeigt Mikas vier Aufwertungen und die nächste Stufe jeder
+  gebauten Waffe (vorher nur die Waffe in der Hand). Zu ist die Werkbank wieder bei den Rezepten.
+- Edda nennt beim Ziel »Werkbank« den Reiter »Lager«; die Werkbank sagt beim ersten Bau, dass sie
+  auch »Figur« kann; die Steuerung nennt »Kacheln im Baumenü« und »Baumenü öffnen, Reiter wechseln«.
+- **Prüfung:** Tab bis »Lager«, Q, E baut die Werkbank (`bauen`); die Reiter mit allen Bauplänen
+  (`spielzeug`); »Leute« auf einer Seite, »Lager« und »Zuhause«, das Blättern bleibt für lange
+  Listen (`oberflaeche`); an der Werkbank D zur Seite »Figur«, S zur Bratpfanne, E wertet auf
+  (`nahkampf`, Bild: werkbank-figur).
+
+---
+
+## L1: Lektorat der Spieltexte ✓
+
+**Auftrag (01.10.):** Punkt 4 der Liste – alle Spieltexte durchlesen (OFFENE-FRAGEN 221).
+
+- Gelesen: `texts.js`, `dialogs.js` und die Szenen in `scenes.js`. Die Texte waren gut in Form;
+  korrigiert wurden Kleinigkeiten:
+  - **Begriffe:** »Beute« statt »Loot« (Glückslaterne, Sammelradius, Sammlerherz), »Vorteil
+    wählen« statt »Perk-Wahl«, »Baumenü« statt »Bauleiste« (Bericht nach einer verlorenen Nacht,
+    Herbstschmuck, Steuerung, Mikas Abendsatz), »tagsüber« statt »über Tag«.
+  - **Rechtschreibung:** wehtut, laufen gelernt, hierhergebracht, »nicht mehr der Jüngste«.
+  - **Grammatik:** »Noch fehlt Zucker« und »es fehlt noch Holz« (das Verb folgt der Menge),
+    »Hildes Zelt« über `T.genitiv`, Mengen im Handel über `T.menge` (»1 Zahnrad«, »3 Zahnräder«).
+  - **Sinn:** Ida pflegt die Bäume, »wenn du welche fällst« (vorher: »wenn du fällst«), sie hat die
+    Seewelle »angefunkt«; Mika duzt auch Dr. Yusuf; der Moder fing »vor drei Jahren« an (nicht »vor
+    drei Herbsten, in einem … Herbst«).
+  - **Zeichen:** »…« für Reiter und Einstellungen (»Leute«, »Gemütlich«), „…“ für Rede.
+- Kein Prüfpunkt fragt die alten Texte ab (alle geänderten Zeilen gegen `tools/check.mjs` gesucht).
+
+---
+
+## S1: Der Spielstand als Datei ✓
+
+**Auftrag (01.10.):** Punkt 3 der Liste »Qualität und Spielspaß« – den Stand aufheben oder auf
+einen anderen Rechner mitnehmen können.
+
+- **Pausenmenü → »Spielstand«** (auch im Titelbild): »Als Datei sichern« speichert erst und lädt
+  dann eine Datei herunter (`zomfy-towers-Name-tag-7.json`, mit Version und Kennung).
+- **»Aus Datei laden«** öffnet die Dateiwahl. Die Datei läuft durch die Migrationen und
+  `sanitizeState`; eine fremde Datei oder eine aus einer neueren Fassung wird mit Meldung
+  abgelehnt. Die Rückfrage nennt Name und Tag, vorgewählt ist »Lieber nicht«; »Ja, laden« ersetzt
+  den Stand und lädt die Seite neu (die Karte gehört zum Stand).
+- Im Test-Modus ohne Speichern sagt das Spiel, dass Laden aus Datei dort nicht geht.
+- **Prüfung** (Abschnitt `datei`): Sichern und Laden mit echten Tasten, Dateiwahl und Download
+  über Playwright, Ablehnen (Bilder: spielstand-menue, spielstand-frage).
+
+---
+
 ## F4: Die Menschen als Sprites (erste Stufe) ✓
 
 **Auftrag (01.10.):** »Ja alles machen. Die Sprites als erstes. Dann gucke ich ob mir das
@@ -25,15 +142,27 @@ gefällt.« – fünf Punkte, die Menschen als Sprites zuerst (Nr. 218).
 - **Die Leute:** Oma Hilde, Bert, Juna, Dr. Yusuf, Balduin (mit seinen Gesten) und Knopf, jede
   Figur mit ihrem Merkmal und kleinen Dingen (Posthorn, Bleistift, Antenne, Stethoskop, Goldzahn,
   der goldene Knopf am Halsband).
+- **Zweite Stufe (gleich danach):** die zwölf Wanderer, Edda nach dem Herbst, Marthe und ihre
+  Kinder nach ihren Voxel-Vorbildern – Hannes mit dem breiten Hut der Walz, Clara mit Schweißbrille
+  und Pferdeschwanz, Lotte mit Strickschal und leuchtender Laterne an der Hüfte, Greta mit
+  Federhut und Fernglas, Fiete mit Südwester und Pfeife, Ida mit Bommelmütze und Warnstreifen, Rosa
+  mit gepunktetem Kopftuch und Kochlöffel, Anton mit Baskenmütze und Quetschkommode, Emil mit
+  Strohhut und Blume, Frieda mit Stirnband und Lederschürze, Mara mit Zipfelkapuze und Kartenrolle,
+  Paula mit Dutt und Stricknadeln, Edda mit silbernem Zopfkranz und Kopfhörern um den Hals, Marthe
+  mit Hafenmütze und Zollstock; Pim (Zeitungshut, Sommersprossen) und Lu (Zöpfe, Dufflecoat,
+  Apfel) mit dem kleineren Körper der Kinder. Jede Figur braucht rund ein Siebtel einer
+  Atlasseite.
 - **Im Spiel:** Einstellung »Figuren: 3D/2D« (Standard 2D, `?figuren=`). Die Voxel laufen
-  unsichtbar mit; seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen, Lagerglocke …)
-  und die übrigen Figuren (Wanderer, Edda, Marthe, die Kinder) bleiben vorerst Voxel.
+  unsichtbar mit; seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen, Lagerglocke,
+  Übungsplatz, Drachen …) bleiben Voxel. Mit der neuen Zeile hat die Einstellungsseite vierzehn
+  Knöpfe – bei großer Oberfläche (270 Zeilen) rücken sie auf 14 Pixel zusammen (die Prüfung
+  `groesse` fand, dass die Seite sonst oben und unten übers Bild ragte).
 - **Werkzeug zum Ansehen:** `node tools/menschen-bogen.mjs bogen.png --figur=mika`.
 - **Prüfung** (Abschnitt `menschen`): Standard und Backen, alle Fassungen ohne leeres Bild,
   Laufen mit echten Tasten, Axt auf dem Rücken und im Schwung, »Aua«, Laterne, Rückfall auf Voxel,
   die Leute im Hof mit Lächeln (Bilder: menschen-tag, menschen-3d, menschen-nacht, menschen-bogen).
-- **Offen (zweite Stufe):** die Wanderer, Edda, Marthe, Pim und Lu; Sitzen am Tisch, Rudern und
-  Angeln als Bilder; Feinschliff nach dem Urteil des Auftraggebers.
+- **Offen:** Sitzen am Tisch, Rudern und Angeln als Bilder; Feinschliff nach dem Urteil des
+  Auftraggebers.
 
 ---
 

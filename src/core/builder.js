@@ -1,17 +1,19 @@
-// Bauen: Optionen der Bauleiste, Platzieren mit Vorschau, Auswählen,
-// Ausbauen, Reparieren, Abreißen und der Ausbau des Zuhauses. Die Bauleiste
+// Bauen: Optionen des Baumenüs, Platzieren mit Vorschau, Auswählen,
+// Ausbauen, Reparieren, Abreißen und der Ausbau des Zuhauses. Das Baumenü
 // (ui/buildbar.js) zeigt nur an, was hier entschieden wird.
 //
-// Reiter: Türme · Figur · Zuhause (DESIGN.md 6.6). Ist ein Turm ausgewählt,
-// zeigt die Leiste seine Ausbau- und Spezialisierungsoptionen. Mit den
-// Bauplänen (M19) kommen »Türme 2« (mehr als fünf Türme) und »Fallen« dazu.
+// Reiter nach Zweck (H5, DESIGN.md 6.6): Türme · Helfer · Fallen · Lager · Leute ·
+// Zuhause · Schmuck – Helfer und Fallen mit den Bauplänen (M19), Leute mit den
+// ersten Gästen, Schmuck aus dem Herbstbuch. Ist ein Turm ausgewählt, zeigt das
+// Menü seine Ausbau- und Spezialisierungsoptionen. Mikas Aufwertungen liegen an
+// der Werkbank (Seite »Figur«, `figureRows`).
 //
 // Platzieren: Die Vorschau folgt der Maus, sobald sie bewegt wurde – sonst
 // steht sie vor der Figur (reine Tastatur: Q … wählen, E setzt).
 
 import * as THREE from 'three';
 import { T } from '../data/texts.js';
-import { BUILDINGS, HOME_TAB, TOWER_TAB, TRAP_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
+import { BUILDINGS, YARD_TAB, TOWER_TAB, TRAP_TAB, HOUSE_LEVELS, footprint, maxHpOf, hasHp, barricadeLevel, barricadeInvested, BARRICADE_LEVELS, BARRICADE_REBUILD, CAMP_MAX, CAMP_REBUILD, RAID, GEAR, GEAR_ORDER, gearSlots, gearFits, campLevel, campInvested, campUpgradeCost } from '../data/buildings.js';
 import { TOWERS, towerStats, towerStatsOf, towerInvested, towerBuildCost, TOWER_REFUND, TOWER_EXTRA, TOWER_PART_IDS, TOWER_PARTS, partFits, partSlots, hasPart } from '../data/towers.js';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades.js';
 import { WEAPONS, WEAPON_ORDER, weaponStats } from '../data/weapons.js';
@@ -57,15 +59,16 @@ export class Builder {
   // --- Bauleiste ------------------------------------------------------------------
 
   tabs() {
-    // »Einrichten« (Zelte, Möbel, Funkturm) kommt mit dem ersten Besuch (Meilenstein 6)
+    // »Leute« (Zelte, Hochsitz, Langer Jakob; ID einrichten) kommt mit dem ersten Besuch (Meilenstein 6)
     const guests = Object.values(this.game.state.survivors).some((s) => s.stage > 0);
-    // Baupläne (M19): mehr als fünf Türme – zweite Seite; die erste bleibt Q R T G C
+    // Baupläne (M19): mehr als fünf Türme – die Helfer; die erste Seite bleibt Q R T G C
     const outside = this.knownTowers().length > TAB_PAGE ? ['tuerme', 'tuerme2'] : ['tuerme'];
     if (this.knownTraps().length || this.lureUnlocked()) outside.push('fallen'); // M24: die Moderlocke liegt bei den Fallen
-    if (this.game.book?.decoUnlocked().length) outside.push('schmuck'); // M25: Herbstschmuck aus dem Herbstbuch
-    const tabs = [...outside, 'figur', 'zuhause', ...(guests ? ['einrichten'] : [])];
-    // Drinnen (M11) wird nichts aufgestellt: keine Türme, nur Figur, Zuhause und Einrichten
-    return this.game.viewInside ? tabs.filter((t) => !outside.includes(t)) : tabs;
+    const deco = this.game.book?.decoUnlocked().length ? ['schmuck'] : []; // M25: Herbstschmuck aus dem Herbstbuch
+    // H5: nach Zweck – Türme · Helfer · Fallen · Lager · Leute · Zuhause · Schmuck; die Figur ist an der Werkbank
+    const tabs = [...outside, 'lager', ...(guests ? ['einrichten'] : []), 'zuhause', ...deco];
+    // Drinnen (M11) wird nichts aufgestellt: keine Türme, Fallen und kein Schmuck
+    return this.game.viewInside ? tabs.filter((t) => !outside.includes(t) && !deco.includes(t)) : tabs;
   }
 
   /** Türme und Barrikade, die Mika kennt – die vier ersten immer, dazu die aus Bauplänen (M19). */
@@ -150,7 +153,7 @@ export class Builder {
     if (tab === 'tuerme') return this.buildOptions(this.knownTowers().slice(0, TAB_PAGE));
     if (tab === 'tuerme2') return this.buildOptions(this.knownTowers().slice(TAB_PAGE));
     if (tab === 'fallen') return this.buildOptions([...(this.lureUnlocked() ? ['moderlocke'] : []), ...this.knownTraps()]);
-    if (tab === 'figur') return this.figureOptions();
+    if (tab === 'lager') return this.placeOptions(YARD_TAB); // H5
     if (tab === 'zuhause') return this.homeOptions();
     if (tab === 'einrichten') return this.furnishOptions();
     if (tab === 'schmuck') return this.buildOptions(this.game.book.decoUnlocked());
@@ -195,11 +198,11 @@ export class Builder {
     return options;
   }
 
-  /** Reiter »Einrichten«: Schlafzelt, das nächste Möbelstück, Körbchen, Funkturm. */
+  /** Reiter »Leute« (ID einrichten): Schlafplätze, Hochsitz, Übungsplatz, Lagerglocke, Langer Jakob. */
   furnishOptions() {
     const inv = this.game.state.inventory;
     // M23: der Hochsitz gehört zu den Überlebenden; M30: der Übungsplatz; M31: die Lagerglocke, sobald der Waffenschrank offen ist
-    const options = this.placeOptions(['zelt', 'schlafhuette', 'holzlager', 'hochsitz', 'uebungsplatz', ...(this.game.state.arms?.unlocked ? ['lagerglocke'] : [])]);
+    const options = this.placeOptions(['zelt', 'schlafhuette', 'hochsitz', 'uebungsplatz', ...(this.game.state.arms?.unlocked ? ['lagerglocke'] : [])]);
     // M27: Die Schlafhütte gibt es erst mit dem Schlafzimmer (Zuhause-Stufe 3)
     const hut = options.find((o) => o.id === 'schlafhuette');
     if (hut && (this.game.state.world.houseLevel || 1) < BUILDINGS.schlafhuette.house) Object.assign(hut, { disabled: true, locked: true, disabledText: T.wanderer.huetteAb });
@@ -209,9 +212,10 @@ export class Builder {
     return options;
   }
 
+  /** Reiter »Zuhause«: das Haus ausbauen und alles reparieren (H5: die Bauten im Hof liegen unter »Lager«). */
   homeOptions() {
     const inv = this.game.state.inventory;
-    const options = this.placeOptions(HOME_TAB);
+    const options = [];
     const level = this.game.state.world.houseLevel;
     const next = HOUSE_LEVELS[level + 1];
     // Ausbau (M11): jede Stufe ein Raum – Küche, Schlafzimmer, Werkstatt, Lager
@@ -295,64 +299,31 @@ export class Builder {
     for (const [res, n] of Object.entries(cost)) inv[res] = Math.max(0, (inv[res] || 0) - Math.min(inv[res] || 0, Math.ceil(n * share - 1e-6)));
   }
 
-  figureOptions() {
+  /**
+   * H5: Die Seite »Figur« der Werkbank – Mikas Aufwertungen und für jede gebaute Waffe die
+   * nächste Stufe (vorher ein Reiter im Baumenü, der nur die Waffe in der Hand zeigte). Die
+   * Zeilen haben die Form der Werkbank-Rezepte; `game.craft` kauft über `gives`.
+   */
+  figureRows() {
     const st = this.game.state;
-    const options = UPGRADE_ORDER.map((id) => {
+    const row = (o, maxed) => ({ ...o, owned: maxed, ownedText: T.figur.voll, affordable: !maxed && canAfford(st.inventory, o.cost) });
+    const rows = UPGRADE_ORDER.map((id) => {
       const u = UPGRADES[id];
       const level = st.upgrades[id] || 0;
       const maxed = level >= u.cost.length;
       const [name, info] = T.figur[id];
       const nextValue = u.values[Math.min(level + 1, u.values.length - 1)];
-      return this.option(
-        {
-          id: `figur-${id}`,
-          icon: u.icon,
-          name: `${name} ${Math.min(level + 1, u.cost.length)}/${u.cost.length}`,
-          info: maxed ? T.figur.max : info(num(nextValue)),
-          cost: maxed ? {} : u.cost[level],
-          disabled: maxed,
-          disabledText: T.figur.max,
-          badge: String(level),
-          buy: true,
-          action: () => this.buyUpgrade(id),
-        },
-        st.inventory
-      );
+      const step = `${name} ${Math.min(level + 1, u.cost.length)}/${u.cost.length}`;
+      return row({ id: `figur-${id}`, icon: u.icon, name: step, info: maxed ? T.figur.max : info(num(nextValue)), cost: maxed ? {} : u.cost[level], gives: { upgrade: id } }, maxed);
     });
-    const weapon = this.weaponToUpgrade();
-    if (weapon) options.push(this.weaponOption(weapon));
-    return options;
-  }
-
-  /** Welche Waffe die Leiste zum Aufwerten anbietet: die in der Hand, sonst die erste gebaute. */
-  weaponToUpgrade() {
-    const st = this.game.state;
-    const held = this.game.player.heldTool;
-    if (held && WEAPONS[held]?.cost && st.weapons[held]) return held;
-    return WEAPON_ORDER.find((id) => st.weapons[id]) || null;
-  }
-
-  weaponOption(id) {
-    const st = this.game.state;
-    const level = st.weapons[id];
-    const maxed = level >= 3;
-    const next = maxed ? level : level + 1;
-    const damage = Math.round(weaponStats(id, { ...st, weapons: { ...st.weapons, [id]: next } }).damage);
-    return this.option(
-      {
-        id: `waffe-${id}`,
-        icon: WEAPONS[id].icon,
-        name: T.figur.waffe(T.gegenstaende[id], next),
-        info: maxed ? T.figur.max : T.figur.waffeInfo(damage),
-        cost: maxed ? {} : WEAPONS[id].upgrades[level - 1],
-        disabled: maxed,
-        disabledText: T.figur.max,
-        badge: String(level),
-        buy: true,
-        action: () => this.upgradeWeapon(id),
-      },
-      st.inventory
-    );
+    for (const id of WEAPON_ORDER.filter((w) => st.weapons[w] && WEAPONS[w].upgrades)) {
+      const level = st.weapons[id];
+      const maxed = level >= 3;
+      const next = maxed ? level : level + 1;
+      const damage = Math.round(weaponStats(id, { ...st, weapons: { ...st.weapons, [id]: next } }).damage);
+      rows.push(row({ id: `waffe-${id}`, icon: WEAPONS[id].icon, name: T.figur.waffe(T.gegenstaende[id], next), info: maxed ? T.figur.max : T.figur.waffeInfo(damage), cost: maxed ? {} : WEAPONS[id].upgrades[level - 1], gives: { weaponUp: id } }, maxed));
+    }
+    return rows;
   }
 
   upgradeWeapon(id) {
@@ -637,6 +608,7 @@ export class Builder {
     if (level >= u.cost.length || !pay(st.inventory, u.cost[level])) return;
     st.upgrades[id] = level + 1;
     if (id === 'leben') st.player.hp += u.values[level + 1] - u.values[level];
+    this.game.sound.play('aufwertung'); // H5: an der Werkbank – wie die Waffen
     this.game.hud.toast(T.meldungen.aufgewertet(T.figur[id][0], level + 1), u.icon, 2.4);
     this.game.effects.splat(this.game.player.position.x, 1.2, this.game.player.position.z, 'funken', 14, 0.8);
     this.game.quietSave();

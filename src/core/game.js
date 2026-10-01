@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Events } from './events.js';
 import { Input } from './input.js';
-import { SaveStore, randomMapSeed } from './save.js';
+import { SaveStore, randomMapSeed, saveFileName, saveFileText, parseSaveFile } from './save.js';
 import { createNewState, hoursOf, clockText, DAY_MINUTES, absoluteMinute } from './state.js';
 import { canAfford, pay, gain } from './inventory.js';
 import { Builder } from './builder.js';
@@ -450,6 +450,7 @@ export class Game {
       this.pendingIntro = false;
       // Startbild (N2): erst »Tales of Cue präsentiert« mit der Spieluhr, dann das Titelbild
       const hasSave = loaded.status === 'ok';
+      this.titleHasSave = hasSave; // S1: vom Titelbild aus nur sichern, was es gibt
       this.mode = 'splash';
       this.splash.open(() => {
         this.mode = 'title';
@@ -1265,6 +1266,15 @@ export class Game {
     if (!canAfford(st.inventory, recipe.cost)) {
       this.hud.toast(T.meldungen.zuTeuer, null, 1.8);
       return false;
+    }
+    // H5: die Seite »Figur« der Werkbank – Aufwertungen bezahlen selbst
+    if (recipe.gives.upgrade) {
+      this.builder.buyUpgrade(recipe.gives.upgrade);
+      return true;
+    }
+    if (recipe.gives.weaponUp) {
+      this.builder.upgradeWeapon(recipe.gives.weaponUp);
+      return true;
     }
     pay(st.inventory, recipe.cost);
     if (recipe.gives.tool) {
@@ -2453,6 +2463,85 @@ export class Game {
     this.portraits.mika = mikaPortrait(spec);
   }
 
+  /**
+   * S1: Den Stand als Datei sichern – erst speichern, dann als Datei herunterladen. Vom Titelbild
+   * aus nur, wenn es einen Stand gibt. Gibt den Dateinamen zurück (oder null).
+   */
+  exportSaveFile() {
+    if (this.menu.fromTitle && !this.titleHasSave) {
+      this.hud.toast(T.spielstand.keinStand, 'spielstand', 2.4);
+      return null;
+    }
+    if (!this.menu.fromTitle) this.quietSave();
+    const name = saveFileName(this.state);
+    const text = saveFileText(this.state);
+    this.lastExport = { name, text };
+    try {
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      this.hud.toast(T.spielstand.gesichert(name), 'spielstand', 3.2);
+      this.sound.play('klick');
+      return name;
+    } catch {
+      this.hud.toast(T.spielstand.fehler, 'spielstand', 2.6);
+      return null;
+    }
+  }
+
+  /** S1: Eine Datei wählen lassen und prüfen; ein guter Stand wartet auf die Rückfrage im Menü. */
+  importSaveFile() {
+    if (this.saves.disabled || !this.saves.available) {
+      this.hud.toast(T.spielstand.aus, 'spielstand', 3);
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      file.text().then((text) => this.offerImport(text)).catch(() => this.offerImport(''));
+    });
+    document.body.appendChild(input);
+    input.click();
+  }
+
+  /** S1: Text einer Datei prüfen; ist er ein Spielstand, fragt das Menü nach (vorgewählt »Lieber nicht«). */
+  offerImport(text) {
+    const r = parseSaveFile(text, CONFIG);
+    if (r.status !== 'ok') {
+      this.pendingImport = null;
+      this.hud.toast(T.spielstand[r.status] || T.spielstand.kaputt, 'spielstand', 3);
+      this.sound.play('klick');
+      return r.status;
+    }
+    this.pendingImport = { data: r.data, name: r.state.player.name, day: r.state.time.day };
+    if (this.menu.isOpen) this.menu.go('importFrage');
+    return 'ok';
+  }
+
+  /** S1: Den geprüften Stand übernehmen – speichern und neu laden (die Karte gehört zum Stand). */
+  confirmImport() {
+    const p = this.pendingImport;
+    this.pendingImport = null;
+    if (!p || !this.saves.replace(p.data)) {
+      this.hud.toast(T.spielstand.aus, 'spielstand', 3);
+      return false;
+    }
+    this.holdSave = true;
+    location.reload();
+    return true;
+  }
+
   openMenuFromTitle(screen) {
     this.menu.open();
     this.menu.fromTitle = true;
@@ -3523,6 +3612,7 @@ export class Game {
               return `${i === this.crafting.focus ? '> ' : ''}${r.name ?? T.rezepte[r.id]} (${r.owned ? r.ownedText ?? T.werkbank.vorhanden : costText(r.cost)})${werte}`;
             })
           : null,
+      werkbankSeite: this.mode === 'craft' && !this.crafting.shop ? this.crafting.page : null, // H5: »herstellen« oder »figur«
       handelsfenster: this.mode === 'craft' && this.crafting.shop ? { titel: T.haendler.titel, spruch: this.trader.quote() } : null,
       dialog: line
         ? {

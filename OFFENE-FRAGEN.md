@@ -2723,14 +2723,74 @@ die Pixelregeln zu brechen. Der Rand hebt den Champion hervor, ohne ihn umzufär
   gedreht (sonst sähe man eine Axt von vorn nur als Strich). Vorn liegt es, wenn seine Mitte
   näher zur Kamera steht als die Brust.
 - **Rückfall auf Voxel:** seltene Posen (Rudern, Angeln, Kartentisch, Schaukel, Schießen, Pfiff,
-  Wirbel, die Lagerglocke, Übungsplatz, Drachen) und alle Figuren ohne Sprite (Wanderer, Edda,
-  Marthe, die Kinder). Die Voxel laufen unsichtbar mit und liefern Laternenlicht und Anker.
+  Wirbel, die Lagerglocke, Übungsplatz, Drachen). Die Voxel laufen unsichtbar mit und liefern
+  Laternenlicht und Anker. Seit der zweiten Stufe haben alle Figuren ein Sprite – auch die zwölf
+  Wanderer, Edda, Marthe und die Kinder (mit kleinerem Körper); sonst stünden mitten in der Bucht
+  Voxel-Figuren neben Pixelfiguren.
 - **Standard 2D** für Spieler (wie die Horde), die Prüfung bleibt bei 3D; die Einstellung
   »Figuren« stellt um.
 
 **Warum:** Neben der gebackenen Horde wirkten die Voxel-Figuren wie aus einem anderen Spiel. Mit
 eigenen Sprites passen Menschen und Schlurfer zusammen, und die Figuren bekommen die kleinen
 Dinge, die sie erzählen (Posthorn, Bleistift, Goldzahn), ohne dass das Bild zu Gries wird.
+
+### 219. Wie kommt der Spielstand auf einen anderen Rechner? (S1)
+**Entscheidung:** Als Datei – im Pausenmenü und im Titelbild unter »Spielstand«: »Als Datei
+sichern« lädt den gespeicherten Stand als JSON herunter, »Aus Datei laden« liest eine Datei,
+migriert und prüft sie wie einen Stand aus dem Browser, fragt mit Name und Tag nach (vorgewählt
+»Lieber nicht«) und lädt die Seite mit dem neuen Stand neu. Keine Konten, keine Server
+(CLAUDE.md: alles liegt im Repo, keine Requests an fremde Server).
+
+**Warum:** Der Stand liegt nur im Browser. Wer den Browser leert, den Rechner wechselt oder das
+Spiel im Artefakt und auf GitHub Pages spielt, verlor bisher alles. Eine Datei ist das
+Einfachste, was ohne Server geht.
+
+### 220. Wie ordnet sich das Baumenü, und wohin wandert »Figur«? (H5, recherche/hud-baumenue.md 5.3)
+**Entscheidung:** Die Reiter folgen dem Zweck, immer in derselben Reihenfolge: **Türme · Helfer ·
+Fallen · Lager · Leute · Zuhause · Schmuck**. Neu ist **»Lager«** (Werkbank, Holzlager, Beet, Bank,
+Laternenpfahl – was im Hof dem Lager dient); »Leute« trägt nur noch, was den Menschen gehört
+(Schlafplätze, Hochsitz, Übungsplatz, Lagerglocke, Langer Jakob) und passt damit auf eine Seite;
+»Zuhause« baut das Haus aus und repariert. **»Figur« ist kein Reiter mehr**, sondern die zweite
+Seite der Werkbank (»Herstellen« · »Figur«, A/D oder Tab): Mikas vier Aufwertungen und die nächste
+Stufe **jeder** gebauten Waffe.
+
+**Warum:** »Figur« enthielt keine Bauten – im Baumenü war es ein Fremdkörper, und es zeigte nur die
+Waffe in der Hand. An der Werkbank liegt das Aufwerten neben dem Bauen der Waffen, wo man es
+sucht; die Werkbank ist eines der ersten Ziele, also fehlt es niemandem lange. Werkbank und
+Holzlager standen vorher in zwei verschiedenen Reitern, »Leute« brauchte »weiter«.
+
+### 221. Welche Wörter und Zeichen gelten in den Texten? (L1)
+**Entscheidung:** Das Lektorat (alle Texte in `texts.js`, `dialogs.js` und den Szenen) hält fest:
+**Beute** statt »Loot«, **Baumenü** statt »Bauleiste«, **Vorteil** statt »Perk« im Bild; „…“ für
+Rede und Zitate, »…« für Namen von Reitern, Einstellungen und Inschriften sowie für ein Zitat im
+Zitat. Mika duzt alle. Mengen im Satz über `T.menge` (»1 Zahnrad«, »3 Zahnräder«), Verben passen
+sich an (»Noch fehlt Zucker«).
+
+**Warum:** Ein Spiel, das ganz auf Deutsch erzählt, stolpert über Anglizismen und schwankende
+Begriffe; wer »Bauleiste« liest und »Bauen« auf dem Knopf sieht, sucht.
+
+### 222. Wie viel Spannung braucht eine Nacht auf »Ausgewogen«? (B1)
+**Entscheidung:** Ein guter Spieler soll in gut der Hälfte der Nächte Schlurfer an den Barrikaden
+sehen und in einigen eine Barrikade verlieren – verlieren soll er auf »Ausgewogen« keine Nacht.
+Gemessen wird mit dem Balance-Durchlauf, der dafür wie ein Mensch baut: zwei Türme decken die
+Barrikaden, bei angekündigtem Nebel stehen Laternen am Weg, nach einem Durchbruch kommen Wall und
+Tor zuerst. Dazu:
+- Die **Zähigkeit setzt eine Nacht früher ein** (`TOUGHNESS.from` 3 → 2): Nacht 3 ×1,4, Nacht 6
+  ×1,2, Nacht 12 ×1,1, die Frostnacht ×1,06 – vorn am meisten, wo die Türme am weitesten voraus
+  waren; die späten Nächte bleiben fast, wie sie in M25 vermessen wurden.
+- **Bosse wachsen mit ihrer Nacht** (`BOSS_HP` 1,2 × Zähigkeit der Bossnacht, vorher ohne): Der
+  Holzfäller fiel 20 m vor den Barrikaden und zeigte seinen Hieb nie; jetzt erreicht er die erste
+  Reihe und zerschlägt sie. Bossnächte bekommen die Hälfte statt 40 % der Zähigkeit. In der
+  Frostnacht ist das Moderherz der einzige Boss (vorher lief die Pilzmutter mit).
+- Kein »Ansturm« als neues Wellenmerkmal: Die Nächte sind sehr verschieden (Nebel, Moderflut,
+  Wege), und die Spanne zwischen »still« und »verloren« ist schmal – schon 1,5-fach zähere Horden
+  ließen den Bot ab Nacht 9 jede Nacht verlieren. Das Merkmal bliebe späteren Nächten vorbehalten,
+  wenn der Auftraggeber mehr will.
+
+**Warum:** Auf »Ausgewogen« hielt der Bot zwölf Nächte, ohne dass mehr als eine Handvoll Schlurfer
+die Barrikaden je erreichte; Barrikaden, Tor und Mikas Nahkampf hatten fast nichts zu tun, und der
+erste Boss war die leichteste Nacht. Die Spannung soll aus der Nacht kommen, nicht aus einem
+Zahlenschalter – deshalb zuerst die Bosse und die frühen Nächte.
 
 ## Technik mit Auswirkung aufs Design
 

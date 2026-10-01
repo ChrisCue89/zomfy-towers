@@ -214,7 +214,7 @@ export const T = {
   },
   bauleiste: {
     // H1: »Türme 2« war eine Seitenzahl, »Einrichten« enthält seit N4 keine Möbel mehr (IDs bleiben)
-    reiter: { zuhause: 'Zuhause', tuerme: 'Türme', tuerme2: 'Helfer', fallen: 'Fallen', figur: 'Figur', einrichten: 'Leute', schmuck: 'Schmuck' },
+    reiter: { tuerme: 'Türme', tuerme2: 'Helfer', fallen: 'Fallen', lager: 'Lager', einrichten: 'Leute', zuhause: 'Zuhause', schmuck: 'Schmuck' }, // H5: nach Zweck
     // H1: das Baumenü – zu ein Knopf, offen Kacheln mit Bildern und der Bauzettel
     bauen: 'Bauen',
     tab: 'Tab',
@@ -270,20 +270,21 @@ export const T = {
       bolzen: ['Repetierer', 'Sehr schnell, zwei Ziele auf einmal.'],
       katapult: ['Streukürbis', 'Zerplatzt in kleine Kürbisse.'],
       sprenger: ['Schlammschleuder', 'Stößt zurück, hält Zähe auf.'],
-      laternenturm: ['Glückslaterne', 'Mehr Loot von allem im Licht.'],
+      laternenturm: ['Glückslaterne', 'Mehr Beute von allem im Licht.'],
       // M19
       glockenturm: ['Friedensglocke', 'Jeder Schlag flickt Barrikaden, Tor und Wall ringsum.'],
-      windrad: ['Mühle', 'Mahlt über Tag Schrott – morgens liegt er bereit.'],
+      windrad: ['Mühle', 'Mahlt tagsüber Schrott – morgens liegt er bereit.'],
       bienenkorb: ['Honig', 'Ein starker Schwarm, Honig klebt und bremst.'],
       vogelscheuche: ['Krähenscheuche', 'Krähen picken nach allen, die sie lockt.'],
     },
   },
   figur: {
-    radius: ['Sammelradius', (v) => `Loot fliegt aus ${v} m zu dir.`],
+    radius: ['Sammelradius', (v) => `Beute fliegt aus ${v} m zu dir.`],
     leben: ['Lebenskraft', (v) => `${v} Lebenspunkte.`],
     schlag: ['Schlagkraft', (v) => `Jeder Schlag macht ×${v} Schaden.`],
     tempo: ['Tempo', (v) => `Lauftempo ×${v}.`],
     max: 'Voll ausgebaut.',
+    voll: 'ausgebaut', // H5: in der Zeile der Werkbank statt der Kosten
     waffe: (name, stufe) => `${name} ${stufe}`,
     waffeInfo: (schaden) => `Schaden ${schaden} pro Schlag.`,
   },
@@ -291,10 +292,10 @@ export const T = {
     titel: (stufe) => `Stufe ${stufe}! Wähle einen Vorteil.`,
     hinweis: '1 · 2 · 3 oder A/D und E',
     stufeAuf: (stufe) => `Stufe ${stufe} erreicht!`,
-    wartet: 'Perk-Wahl, sobald keine Horde in der Nähe ist',
+    wartet: 'Vorteil wählen, sobald keine Horde in der Nähe ist',
     gewaehlt: (name) => `Neu: ${name}`,
     stufe: (n) => `Stufe ${n}`,
-    sammler: ['Sammlerherz', 'Loot fliegt aus größerer Entfernung zu dir (+30 %).'],
+    sammler: ['Sammlerherz', 'Beute fliegt aus größerer Entfernung zu dir (+30 %).'],
     konter: ['Konter', 'Nach dem Ausweichen trifft der nächste Schlag doppelt so hart.'],
     flicker: ['Flickschusterei', 'Wo du stehst, reparieren sich Bauten nach und nach.'],
     turmfreund: ['Rückendeckung', 'Nahe eines Turms schlägst du 25 % härter.'],
@@ -467,17 +468,21 @@ export const T = {
     // Was eine verlorene Nacht angeschlagen hat (ohne Angabe: alter Bericht aus einem früheren Spielstand)
     trost: (d) =>
       !d || (d.towers && !d.barricades)
-        ? 'Die Türme sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+        ? 'Die Türme sind angeschlagen. Reparieren geht über das Baumenü (Reiter »Zuhause«).'
         : d.towers
-          ? 'Türme und Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+          ? 'Türme und Barrikaden sind angeschlagen. Reparieren geht über das Baumenü (Reiter »Zuhause«).'
           : d.barricades
-            ? 'Die Barrikaden sind angeschlagen. Reparieren geht über die Bauleiste (Zuhause).'
+            ? 'Die Barrikaden sind angeschlagen. Reparieren geht über das Baumenü (Reiter »Zuhause«).'
             : 'Ohne Turm kommt die Horde bis ans Haus. Schrott gibt es in den Haufen an den Wegen und bei Balduin.',
     weiter: 'E – weiter',
   },
   werkbank: {
     titel: 'Werkbank',
+    // H5: zwei Seiten – was die Werkbank baut und was sie an Mika und den Waffen verbessert
+    seiten: { herstellen: 'Herstellen', figur: 'Figur' },
+    seitenTaste: 'A/D',
     hinweis: 'W/S wählen · E herstellen · Esc schließen',
+    hinweisFigur: 'W/S wählen · E aufwerten · Esc schließen',
     hinweisVerwerten: 'W/S wählen · E verwerten · Esc schließen',
     halten: (info) => `${info} E halten: weiter`,
     zaehler: (n) => `+${n}`,
@@ -514,7 +519,7 @@ export const T = {
     eisblock: ['Eisblock', 'Nass und frostig: Er friert ein – der nächste Treffer zerspringt doppelt.', 'Wasser zuerst, dann Kälte. Das Geflecht wird spröde wie Glas.'],
     dampf: ['Dampf', 'Nass und brennend: Das Feuer erlischt, aber ringsum stehen alle verwirrt im Dampf.', 'Feuer auf nassem Moder gibt Dampf – und der macht sie blind wie Maulwürfe.'],
     glut: ['Glut', 'Brennend und matschig: Der Schlamm hält die Glut – der Brand dauert doppelt so lange.', 'Schlamm hält die Hitze. Wie ein Kachelofen, nur weniger gemütlich.'],
-    schwachstelle: ['Schwachstelle', 'Ein Bolzen trifft einen Geblendeten: doppelter Schaden.', 'Im Licht zieht sich das Geflecht zusammen – dann trifft man, wo es weh tut.'],
+    schwachstelle: ['Schwachstelle', 'Ein Bolzen trifft einen Geblendeten: doppelter Schaden.', 'Im Licht zieht sich das Geflecht zusammen – dann trifft man, wo es wehtut.'],
     splitter: ['Splitter', 'Ein Streukürbis trifft einen Frostigen: Eissplitter fliegen auf alle ringsum.', 'Gefrorenes zerspringt. Die Splitter fliegen weit.'],
     klebekuerbis: ['Klebekürbis', 'Ein Kürbis trifft einen Matschigen: Die Stelle klebt und bremst eine Weile.', 'Kürbisbrei und Schlamm – da kommt keiner schnell durch.'],
     zerspringt: 'Klirr!',
@@ -727,7 +732,7 @@ export const T = {
     zeltFrei: (name) => `${name} könnte ins freie Zelt ziehen – ich frag mal.`,
     zeltBauen: 'Wer bleiben will, braucht einen Schlafplatz. Ein Zelt aus dem Baumenü (Reiter »Leute«).',
     ohneZelt: (name) => `${name} hat kein Zelt mehr und schläft wieder am Feuer.`,
-    zeltUmgeworfen: (name) => `${name}s Zelt liegt am Boden – heute bringt ${name} nichts.`,
+    zeltUmgeworfen: (name) => `${T.genitiv(name)} Zelt liegt am Boden – heute bringt ${name} nichts.`,
     eingezogen: (name) => `${name} wohnt jetzt hier!`,
     knopfHilft: 'Knopf bleibt! Er bellt, bevor die Horde kommt – und morgens buddelt er Sachen aus.',
     bellt: 'Knopf bellt – gleich kommt die Horde!',
@@ -1038,7 +1043,7 @@ export const T = {
       ziel: 'Dr. Yusuf: Bring 6 Fasern und 1 Stoff für Kamillentee.',
       fertig: 'Kamillentee! Dr. Yusufs Tee heilt jetzt noch schneller.',
     },
-    funkturm: (stufe) => `Juna: Baut den Langen Jakob aus (Stufe ${stufe}/3, Reiter „Leute“).`,
+    funkturm: (stufe) => `Juna: Baut den Langen Jakob aus (Stufe ${stufe}/3, Reiter »Leute«).`,
   },
   funkturm: {
     stufe: [null, 'Langer Jakob: Leiter und Plattform', 'Langer Jakob: Antenne', 'Langer Jakob: Leuchtfeuer'],
@@ -1289,7 +1294,7 @@ export const T = {
     naechsterSchmuck: (n, name) => `Noch ${n === 1 ? 'eine Tat' : `${n} Taten`} bis zum nächsten Herbstschmuck: ${name}.`,
     allerSchmuck: 'Aller Herbstschmuck gehört dir – zu finden unter »Schmuck«.',
     tatNeu: (name) => `Herbstbuch: „${name}“ geschafft!`,
-    schmuckNeu: (name) => `Neuer Herbstschmuck: ${name} – in der Bauleiste unter »Schmuck«.`,
+    schmuckNeu: (name) => `Neuer Herbstschmuck: ${name} – im Baumenü unter »Schmuck«.`,
     taten: {
       ersteNacht: ['Die erste Nacht', 'Halte eine Nacht bis zum Morgen.'],
       dreiSterne: ['Drei Sterne', 'Eine Nacht mit allen drei Sternen: gehalten, makellos (niemand im Lager, das Zuhause heil) und mutig (eine Welle früh gerufen).'],
@@ -1578,7 +1583,7 @@ export const T = {
       turm: 'Die Schlurfer kommen nur über die alten Holzfällerwege. Durchsuch den Schrott, dann setz mit Q einen Bolzenwerfer neben den Weg – nie darauf.',
       nacht: 'Heute Nacht kommen sie. Die Türme schießen von allein, du hältst den Hof. Das Haus darf nicht fallen.',
       haendler: 'Morgens legt Balduin am Steg an. Er nimmt Zombieteile – frag ihn lieber nicht, wofür. Tausch sie gegen das, was dir fehlt.',
-      werkbank: 'Für alles Weitere brauchst du eine Werkbank. Holz und Stein sammeln, dann im Reiter »Zuhause« bauen – Tab wechselt die Reiter.',
+      werkbank: 'Für alles Weitere brauchst du eine Werkbank. Holz und Stein sammeln, dann im Reiter »Lager« bauen – Tab wechselt die Reiter.',
       spitzhacke: 'An der Werkbank machst du dir eine Spitzhacke. Dann geben die Felsen Stein her.',
       waffe: 'Bau dir an der Werkbank eine Waffe. Im Hof bist du die letzte Verteidigung.',
       barrikaden: 'Barrikaden gehören auf den Weg, quer. Drei hintereinander, dann müssen sie sich erst durch Holz beißen.',
@@ -1742,8 +1747,8 @@ export const T = {
     verlusteInfo: {
       an: 'Wer nach der Lagerglocke zu lange liegen bleibt, kann sterben.',
       aus: 'Wer liegen bleibt, verliert nur seine Waffe.',
-      gemuetlich: 'Auf „Gemütlich“ stirbt niemand.',
-      nurAus: 'Nur noch von „an“ zu „aus“.',
+      gemuetlich: 'Auf »Gemütlich« stirbt niemand.',
+      nurAus: 'Nur noch von »an« zu »aus«.',
     },
     an: 'an',
     aus: 'aus',
@@ -2058,6 +2063,7 @@ export const T = {
     weiter: 'Weiter spielen',
     steuerung: 'Steuerung',
     einstellungen: 'Einstellungen',
+    spielstand: 'Spielstand', // S1: als Datei sichern und laden
     vollbild: 'Vollbild',
     neuesSpiel: 'Neues Spiel',
     zurueck: 'Zurück',
@@ -2082,6 +2088,23 @@ export const T = {
     sicherNein: 'Lieber nicht',
     fusszeile: 'Das Spiel speichert von selbst.',
   },
+  // S1: der Spielstand als Datei – zum Aufheben oder für einen anderen Rechner
+  spielstand: {
+    sichern: 'Als Datei sichern',
+    laden: 'Aus Datei laden',
+    hinweis: 'Der Stand liegt nur in diesem Browser. Als Datei hebst du ihn auf oder nimmst ihn auf einen anderen Rechner mit.',
+    gesichert: (name) => `Gesichert: ${name}`,
+    keinStand: 'Noch kein Spielstand zum Sichern.',
+    fehler: 'Die Datei ließ sich nicht sichern.',
+    frage: (name, tag) => `Den Stand von ${name}, Tag ${tag}, laden? Der jetzige Stand wird ersetzt.`,
+    ja: 'Ja, laden',
+    nein: 'Lieber nicht',
+    kaputt: 'Das ist kein Spielstand von Zomfy Towers.',
+    neuer: 'Dieser Spielstand stammt aus einer neueren Fassung des Spiels.',
+    leer: 'Die Datei ist leer.',
+    aus: 'Im Test-Modus wird nicht gespeichert – Laden aus Datei geht hier nicht.',
+    geladen: 'Spielstand geladen.',
+  },
   steuerung: [
     ['W A S D / Pfeile', 'Laufen'],
     ['Umschalt', 'Rennen'],
@@ -2091,8 +2114,8 @@ export const T = {
     ['F', 'Laterne an/aus'],
     ['M', 'Karte der Wege'],
     ['Z', 'Ansicht nah / weit'],
-    ['Q R T G C V', 'Bauleiste'],
-    ['Tab', 'Reiter der Bauleiste'],
+    ['Q R T G C V', 'Kacheln im Baumenü'],
+    ['Tab', 'Baumenü öffnen, Reiter wechseln'],
     ['Linksklick', 'Schlagen, bauen, auswählen'],
     ['Rechtsklick', 'Fähigkeit (beim Bauen: abbrechen)'],
     ['X', 'Zweite Fähigkeit'],
@@ -2249,7 +2272,7 @@ export const T = {
       ablage: {
         name: 'Alte Ablage',
         herkunft: 'Auf einer Ablage liegt geschlagenes Holz, bis es abgefahren wird. Als die Flößerei endete, blieb das letzte Holz einfach liegen – abgelegt und vergessen.',
-        jetzt: 'Dort, tief im Dämmerwohld, fing der Moder an. Vor drei Herbsten, in einem warmen, nassen Herbst.',
+        jetzt: 'Dort, tief im Dämmerwohld, fing der Moder an. Vor drei Jahren, in einem warmen, nassen Herbst.',
         herz: 'Unter dem ältesten Holzstapel schlug sein Herz. Jetzt schläft es im Frost.',
       },
       wartholm: {

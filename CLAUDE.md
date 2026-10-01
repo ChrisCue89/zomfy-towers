@@ -96,7 +96,8 @@ Seit dem neuen Grundkonzept gilt für jede Karte, Mechanik und Oberfläche:
    eine Taste nur verlangen, damit Klang entstehen darf (Startbild, N11).
 6. **Spielstand nie kaputt machen.** Änderungen am Speicherformat erhöhen
    `SAVE_VERSION` in `src/core/state.js` und bekommen eine Migration in
-   `src/core/save.js`; `sanitizeState` ergänzen. Alte Stände müssen laden.
+   `src/core/save.js`; `sanitizeState` ergänzen. Alte Stände müssen laden – auch aus einer
+   gesicherten Datei (S1: `parseSaveFile` migriert und prüft sie genauso).
 7. **Lichtanzahl konstant halten.** Lichter werden beim Start angelegt und nur
    über `intensity` gedimmt, nie über `visible` oder Hinzufügen/Entfernen
    (sonst übersetzt three.js alle Shader neu).
@@ -224,10 +225,12 @@ gilt bis auf Weiteres:
     - Müde statt gierig, kein Blut, jede Art mit Merkmal oben und Eigenlicht für die Nacht.
     - Neue Arten dort bauen und ansehen mit `node tools/schlurfer-bogen.mjs datei.png --art=…` und
       `node tools/schlurfer-reihe.mjs datei.png` (ohne Browser).
-- **Menschen als Sprites (F4, Standard 2D):** Mika, Hilde, Bert, Juna, Yusuf, Balduin und Knopf
-  backen wie die Horde aus Formen (`peopleKinds.js`, Gerüst `peopleFigure.js`: `HUMAN`, `posePerson`,
-  Laterne, Vierbeiner), aber in **acht gezeichneten Richtungen** (nichts gespiegelt) und in einem
-  eigenen Atlas mit eigenem Worker (`peopleView.js`, Einstellung »Figuren: 3D/2D«, `game.people`).
+- **Menschen als Sprites (F4, Standard 2D):** Mika, die Bewohner, die zwölf Wanderer, Balduin,
+  Edda, Marthe, Pim und Lu (Kinder: `CHILD`) und Knopf backen wie die Horde aus Formen
+  (`peopleKinds.js`, Gerüst `peopleFigure.js`: `HUMAN`, `posePerson`, Laterne, Vierbeiner), aber in
+  **acht gezeichneten Richtungen** (nichts gespiegelt) und in einem eigenen Atlas mit eigenem Worker
+  (`peopleView.js`, Einstellung »Figuren: 3D/2D«, `game.people`). Die Schlüssel von `PEOPLE` sind
+  die IDs der Figuren in `npcs.js`; eine neue Figur bekommt einen Eintrag dort und in `FOLK_FACES`.
   - Eine Fassung ist ein Teil einer Figur in einem Stand (Mika: `base`, `aktion`, `laterne`,
     `laterneAktion` je Aussehen; die Leute `base`, Balduin dazu `gesten`); fertig, wenn alle Bilder
     da sind, bis dahin Voxel.
@@ -389,7 +392,8 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       fishingModels (Angel, Pose, Fänge, M33),
                       peopleFigure (Menschen als Sprites: Maße, Posen, Laterne,
                       Gesichtsblick, Vierbeiner, F4), peopleKinds (Mika, die
-                      Leute, Knopf, Werkzeuge, Gesichter), peopleSprites (ein
+                      Leute, die Wanderer, Edda, Marthe und die Kinder, Knopf,
+                      Werkzeuge, Gesichter), peopleSprites (ein
                       Bild backen: Flicken je Ausdruck, Anker fürs Werkzeug),
                       peopleView (Atlas, Worker, welches Bild Mika und die
                       Leute zeigen, Rückfall auf Voxel)
@@ -400,8 +404,9 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       (Pausenmenü, Notizbuch, Werkstattbuch, Herbstbuch),
                       buildbar (Baumenü: Knopf, Reiter, Kacheln, Bauzettel,
                       H1), buildPictures (Bilder der Kacheln aus den
-                      Modellen, H1), crafting (Werkbank und
-                      Handel mit Balduin), mapView (Übersichtskarte, M), report
+                      Modellen, H1), crafting (Werkbank mit den Seiten
+                      Herstellen und Figur, H5, und Handel mit Balduin),
+                      mapView (Übersichtskarte, M), report
                       (Morgenbericht), perkChoice (Perk-Wahl), cardTable
                       (Kartentisch), cardArt (Karten und Rückseiten, M28), splash
                       (Startbild, N2: läuft seit N11 von selbst, Taste
@@ -687,15 +692,21 @@ Grundprinzipien:
 - **Balance-Durchlauf (M24):** `node tools/balance.mjs` spielt je Schwierigkeit
   zwölf Nächte: festes Tageseinkommen (an den Quellen der Karte geeicht),
   Beute und Tausch bei Balduin, Türme an die Stellen mit der meisten
-  Wegabdeckung, Barrikadenreihen, Tor, der Rest wird zu weiteren Türmen;
+  Wegabdeckung (der zweite und vierte decken die Barrikaden, B1), Barrikadenreihen,
+  Tor, der Rest wird zu weiteren Türmen; kündigt der Plan eine Nebelwelle an, stellt
+  er Laternen an den Weg, nach einem Durchbruch baut er Wall und Tor zuerst wieder auf;
   nachts schlägt Mika hinter der ersten Reihe zu (`--mika=aus`: nur die
-  Bauten). Je Nacht misst er auch den Druck (wie weit die Horde kam, Schaden
-  an Barrikaden und Tor, Mikas niedrigstes Leben). `--sichern=4,8 --ordner=…`
+  Bauten). Je Nacht misst er auch den Druck (wie weit die Horde kam und wer, wie viele
+  aus welcher Welle bis an die Barrikaden kamen, Schaden an Barrikaden und Tor, Mikas
+  niedrigstes Leben, wie weit der Boss kam). `--sichern=4,8 --ordner=…`
   legt den Spielstand vor diesen Nächten ab, `--nacht=datei --hp=1,2,4` spielt
   eine solche Nacht mit mehr Leben je Schlurfer nach (ein bis drei Minuten
-  statt einer halben Stunde). Er ersetzt die Testspieler für die Frage »zu
+  statt einer halben Stunde); `--zaeh=from,per,grow[,bossNight]` und `--boss=k`
+  probieren Zähigkeit und Bossleben aus, ohne `src/data/` zu ändern (B1). Die
+  Ergebnisse streuen von Lauf zu Lauf (dieselbe Nacht einmal still, einmal knapp) –
+  über mehrere Nächte urteilen, nie über eine. Er ersetzt die Testspieler für die Frage »zu
   leicht, zu schwer?«; balanciert wird in `src/data/` (Zähigkeit:
-  `TOUGHNESS` in `waves.js`). Ab Nacht 13 wächst die Menge der Horde nur noch
+  `TOUGHNESS` in `waves.js`, Bossleben `BOSS_HP` in `bosses.js`). Ab Nacht 13 wächst die Menge der Horde nur noch
   linear (`CROWD`, `nightBudget`), die fehlende Masse tragen die Schlurfer als
   Zähigkeit (`crowd`) – sonst kamen über 1500 je Nacht, mehr als das Bild lesbar
   zeigt. `node tools/balance.mjs --naechte=30` meldet in der Frostnacht, ob das
@@ -960,6 +971,14 @@ Grundprinzipien:
   werden Seiten mit »weiter«. Der Bauzettel (`noteLayout`) zeigt die Kachel unter der Maus oder
   die wartende Rückfrage; beim Setzen trägt das Schild am Geist Preis und Grund
   (`builder.drawGhostLabel`).
+  - **Reiter nach Zweck (H5, `builder.tabs`):** Türme · Helfer (`tuerme2`) · Fallen · Lager
+    (`YARD_TAB`) · Leute (`einrichten`) · Zuhause · Schmuck, immer in dieser Reihenfolge; drinnen
+    nur Lager, Leute und Zuhause. Neue Bauten kommen in den Reiter ihres Zwecks, nie in einen
+    Sammelreiter.
+  - **Die Figur an der Werkbank (H5, `ui/crafting.js`):** zwei Seiten, `page` 'herstellen' und
+    'figur' (A/D, Tab, Klick); die Zeilen der Figur baut `builder.figureRows()` in der Form der
+    Rezepte, `game.craft` kauft über `gives.upgrade` bzw. `gives.weaponUp`. Beim Schließen steht
+    die Werkbank wieder auf »Herstellen«.
 - **Wucht (M26, `data/feel.js`):** Rückmeldung nur über `game.feel(ereignis,
   { dx, dz, x, z })` – Trefferstopp, Kamerastoß (Trauma, gerichtet) und Zeitlupe
   aus der Tabelle; nie `hitstop` oder Wackeln von Hand setzen. Die Kamera wackelt
@@ -1323,8 +1342,9 @@ Grundprinzipien:
    (Abschnitt `oberflaeche`): zugeklappt nur der Knopf »Bauen«, Tab öffnet die Türme mit Bildern
    aus den Modellen (Kacheln 48 × 58, der Bolzenwerfer mit über 300 Punkten), Esc klappt zu, ohne
    das Pausenmenü, Q setzt zugeklappt den Bolzenwerfer (Preis am Geist, kein Bauzettel) und E baut
-   ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; »Leute« mit mehr
-   als sechs Möglichkeiten zeigt »weiter« und dort den Langen Jakob; Edda spricht unten links, nie
+   ihn, danach ist das Menü zu; der Bauzettel nennt die Kachel unter der Maus; seit H5 die Reiter
+   nach Zweck (»Leute« mit dem Langen Jakob auf einer Seite, »Lager«, »Zuhause«), acht
+   Möglichkeiten blättern mit »weiter«; Edda spricht unten links, nie
    auf Schnellleiste oder Menü (Bilder: hud-tag, bau-menue, bau-setzen); ab F1 (Abschnitt
    `sprites`, seit F2 alle Formen): für Spieler 2D, in der Prüfung 3D; »Schlurfer: 2D« backt mit
    Workern, der Schlurfer im Bild zuerst (bis dahin Voxel), der Plan von Nacht 5 zieht den
@@ -1389,12 +1409,22 @@ Grundprinzipien:
    Schlurfer als Bild und den Flitzer als Schattenriss (Bilder: sterne-wild, schlurferkunde-riss);
    ab F4 (Abschnitt `menschen`): für Spieler 2D, in der Prüfung 3D (nichts gebacken), »Figuren: 2D«
    backt mit einem Worker und Mika steht als Sprite da (Voxel versteckt), alle Fassungen (Mika in
-   vier Teilen, die Axt, fünf Leute, Balduins Gesten, Knopf) ohne leeres Bild mit Gesichtsflicken,
+   vier Teilen, die Axt, fünf Leute, Balduins Gesten, Knopf, die zwölf Wanderer, Edda, Marthe, Pim
+   und Lu) ohne leeres Bild mit Gesichtsflicken,
    mit echten Tasten geht Mika nach Osten, rennt mit Umschalt, dreht nach Süden, die Axt auf dem
    Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
    Teil, am Tisch sitzt Mika aus Voxeln, Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
    Hof und Hilde lächelt, wenn Mika dabeisteht (Bilder: menschen-tag, menschen-3d, menschen-nacht,
-   menschen-bogen).
+   menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
+   echten Tasten eine Datei herunter (Version, Kennung, Name, Tag, Vorrat), eine fremde Datei und
+   eine aus einer neueren Fassung werden abgelehnt, »Aus Datei laden« öffnet die Dateiwahl, fragt
+   mit Name und Tag nach (vorgewählt »Lieber nicht«) und lädt nach »Ja, laden« mit dem Stand aus
+   der Datei neu (Bilder: spielstand-menue, spielstand-frage); ab H5 (Abschnitte `bauen`,
+   `spielzeug`, `oberflaeche`, `nahkampf`): Tab bis »Lager«, Q und E bauen die Werkbank, mit allen
+   Bauplänen Türme · Helfer · Fallen · Lager · Zuhause, »Leute« auf einer Seite, an der Werkbank
+   wechselt D zur Seite »Figur«, S und E werten die Bratpfanne auf (Bild: werkbank-figur); ab B1
+   (Abschnitt `nacht16`): Nacht 2 unverändert, Nacht 3 zäher, der Holzfäller in Nacht 5 mit der
+   Zähigkeit seiner Nacht.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.

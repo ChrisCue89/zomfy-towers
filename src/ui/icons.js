@@ -4,6 +4,11 @@
 import { P, hexToCss } from '../render/palette.js';
 
 const ICONS = {
+  // S1: der Spielstand als Datei – eine kleine Holzkiste mit goldenem Verschluss (zum Aufheben)
+  spielstand: {
+    legend: { k: P.e1, b: P.e3, r: P.e5, l: P.e6, y: P.f6 },
+    rows: ['..........', '.kkkkkkkk.', 'kbllllllbk', 'kbrrrrrrbk', 'kkkkyykkkk', 'kbrrryrrbk', 'kbrrrrrrbk', 'kbrrrrrrbk', 'kbbbbbbbbk', '.kkkkkkkk.'],
+  },
   // M28: Farbpaare am Kartentisch (7 × 7)
   'karte-blatt': { legend: { k: P.g1, g: P.g5, l: P.g7, s: P.e3 }, rows: ['...k...', '..kgk..', '.kggl..', 'kgggglk', '.kgglk.', '..kkk..', '...s...'] },
   'karte-feuer': { legend: { k: P.f0, R: P.f2, y: P.f6 }, rows: ['..k....', '..kRk..', '.kRRk.k', '.kRyRkR', 'kRyyyRk', 'kRyyyRk', '.kkkkk.'] },

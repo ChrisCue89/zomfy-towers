@@ -5,7 +5,7 @@
 import { Rng } from '../core/rng.js';
 import { difficultyOf } from './difficulty.js';
 import { addChampions } from './champions.js';
-import { bossOfNight, bossHpFactor, BOSS_ORDER, FINALE_BOSS } from './bosses.js';
+import { bossOfNight, bossHpFactor, BOSS_HP, BOSS_ORDER, FINALE_BOSS } from './bosses.js';
 import { LURE } from './risk.js';
 import { AUTUMN, FINALE, ROGUE } from './autumn.js';
 
@@ -29,16 +29,20 @@ export function wavesInNight(n) {
 }
 
 /**
- * Zähigkeit (M24, »die große Balance«): Bis Nacht 3 wie bisher, danach wächst
- * das Leben je Schlurfer zusätzlich um `per` je Nacht. Der Balance-Durchlauf
+ * Zähigkeit (M24, »die große Balance«): Ab Nacht `from` + 1 wächst das Leben je
+ * Schlurfer zusätzlich um `per` je Nacht. Der Balance-Durchlauf
  * (tools/balance.mjs) zeigte: Die Türme wuchsen viel schneller als die Horde –
  * ab Nacht 3 kam kein Schlurfer mehr bis an die Barrikaden, Mikas Nahkampf und
- * die Barrikaden hatten nichts mehr zu tun. Bosse behalten ihre eigene Kurve.
+ * die Barrikaden hatten nichts mehr zu tun.
+ * B1 (»Spannung der Nächte«): Sie setzt eine Nacht früher ein (Nacht 3 ×1,4,
+ * Nacht 6 ×1,2, Nacht 12 ×1,1, Nacht 30 ×1,06 gegenüber M24) – vorn, wo die Türme
+ * am weitesten voraus waren, am meisten. Bossnächte bekommen die Hälfte statt
+ * 40 % davon; der Boss selbst wächst seitdem mit (BOSS_HP in data/bosses.js).
  */
-export const TOUGHNESS = { from: 3, per: 0.4, grow: 0.02, bossNight: 0.4 };
+export const TOUGHNESS = { from: 2, per: 0.4, grow: 0.02, bossNight: 0.5 };
 
 /**
- * Zusätzliche Zähigkeit ab Nacht 4; in Bossnächten nur ein Teil davon – dort ist
+ * Zusätzliche Zähigkeit ab Nacht 3; in Bossnächten nur ein Teil davon – dort ist
  * der Boss die Prüfung (`boss`; die Frostnacht rechnet ohne diesen Rabatt, M25).
  * Dazu der Ausgleich für die gedeckelte Menge (`crowd`, ab Nacht 13).
  */
@@ -220,9 +224,12 @@ export function planNight(n, seed, entries, difficulty, mode = null) {
     // Jede fünfte Nacht führt ein Boss die letzte Welle an (M22; vorher der Anführer).
     // M25: In der Frostnacht ist es das Moderherz (über den mittleren Weg, schon in der
     // zweiten Welle – FINALE.heartWave, sonst käme es nie an), nach dem Herbst ein zufälliger Boss.
-    // Bosse behalten ihre eigene Kurve (ohne die Zähigkeit, M24).
+    // Das Herz behält seine eigene Kurve (ohne die Zähigkeit, M24) und ist in der Frostnacht der
+    // einzige Boss (B1: vorher lief die Pilzmutter der Nacht 30 mit und heilte es). Die anderen
+    // Bosse wachsen seit B1 mit der Zähigkeit einer Bossnacht – vorher fiel der Holzfäller 20 m vor
+    // den Barrikaden und zeigte seinen Hieb nie (plan.hpFactor trägt die Zähigkeit dieser Nacht).
     if (mode === 'finale' && w === Math.min(count - 1, FINALE.heartWave)) spawns.push({ type: FINALE_BOSS, entry: entries[Math.floor(entries.length / 2)], delay: span + 4, hp: (FINALE.heartHp * bossHpFactor(n)) / toughness(g, boss) });
-    else if (isLeaderNight(n) && w === count - 1) spawns.push({ type: mode === 'rogue' ? rng.pick(BOSS_ORDER) : bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: bossHpFactor(n) / toughness(g, boss) });
+    else if (mode !== 'finale' && isLeaderNight(n) && w === count - 1) spawns.push({ type: mode === 'rogue' ? rng.pick(BOSS_ORDER) : bossOfNight(n) || 'anfuehrer', entry: used[0], delay: span + 4, hp: (BOSS_HP * bossHpFactor(n) * toughness(g, true)) / toughness(g, boss) });
     const shuffled = spawns.sort((a, b) => a.delay - b.delay);
     waves.push({ at: Math.round(at), entries: used, spawns: shuffled });
     // Verschnaufpausen zum Einsammeln und Flicken, später dichter (m3-r1: das

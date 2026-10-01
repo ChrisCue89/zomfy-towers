@@ -130,8 +130,9 @@ async function runPeopleChecks(browser, url) {
     note(`✓ Menschen (F4): Standard für Spieler 2D, in der Prüfung 3D (nichts gebacken); »Figuren: 2D« backt mit einem Worker, Mika steht nach ${sekunden.toFixed(1).replace('.', ',')} s als Sprite da, die Voxel sind versteckt`);
   } else fail(`Menschen: Start ${JSON.stringify({ vorher: { look: vorher.look, baked: vorher.baked, standard: vorher.standard }, voxelVorher, workers: backen.workers, mika: fertig.mika, drawn: fertig.drawn, voxelNachher })}`);
 
-  // 2. Alles backen (Mika in allen Teilen, die Axt, die Leute): jedes Bild hat Inhalt, nichts scheitert
-  const PEOPLE_IDS = ['hilde', 'bert', 'juna', 'yusuf', 'balduin', 'knopf'];
+  // 2. Alles backen (Mika in allen Teilen, die Axt, die Leute – seit der zweiten Stufe auch die
+  // Wanderer, Edda, Marthe und die Kinder): jedes Bild hat Inhalt, nichts scheitert
+  const PEOPLE_IDS = ['hilde', 'bert', 'juna', 'yusuf', 'balduin', 'knopf', 'hannes', 'clara', 'lotte', 'greta', 'fiete', 'ida', 'rosa', 'anton', 'emil', 'frieda', 'mara', 'paula', 'edda', 'marthe', 'pim', 'lu'];
   const t1 = Date.now();
   const alles = await z((ids) => {
     const r = window.zomfy.people({ mika: true, tools: ['axt'], people: ids });
@@ -152,7 +153,7 @@ async function runPeopleChecks(browser, url) {
   const backzeit = (Date.now() - t1) / 1000;
   const erwartet = ['mika|frau-orange-gruen-braun-mittel|base', 'mika|frau-orange-gruen-braun-mittel|aktion', 'mika|frau-orange-gruen-braun-mittel|laterne', 'mika|frau-orange-gruen-braun-mittel|laterneAktion', 'werkzeug|axt', ...PEOPLE_IDS.map((id) => `${id}|fest|base`), 'balduin|fest|gesten'];
   const fehlt = erwartet.filter((k) => !alles.ready.includes(k));
-  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in vier Teilen, Axt, fünf Leute, Knopf) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
+  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in vier Teilen, Axt, fünf Leute, Knopf, zwölf Wanderer, Edda, Marthe, Pim und Lu) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
   else fail(`Menschen: Backen ${JSON.stringify({ fehlt, failed: alles.failed, leer: alles.leer, flicken: alles.flicken, waiting: alles.waiting })}`);
 
   // 3. Mit echten Tasten: D geht nach Osten, Umschalt rennt, S dreht nach Süden
@@ -293,6 +294,110 @@ async function runPeopleChecks(browser, url) {
   });
   writeFileSync(join(SHOTS, 'menschen-bogen.png'), png.encodePng(cv.w, cv.h, cv.px));
   note('  Screenshot: screenshots/menschen-bogen.png');
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * S1: der Spielstand als Datei. Mit echten Tasten: Esc, »Spielstand«, »Als Datei sichern« lädt eine
+ * Datei herunter (Version, Kennung, Name, Tag); »Aus Datei laden« öffnet die Dateiwahl, fragt nach
+ * (vorgewählt »Lieber nicht«) und lädt nach »Ja, laden« neu mit dem Stand aus der Datei. Eine
+ * fremde Datei und eine aus einer neueren Fassung werden abgelehnt.
+ */
+async function runSaveFileChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test`, 'Spielstand als Datei (S1)', { init: () => { if (!sessionStorage.getItem('zt-s1')) { localStorage.clear(); sessionStorage.setItem('zt-s1', '1'); } } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const { tmpdir } = await import('node:os');
+  const tmp = join(tmpdir(), 'zomfy-s1');
+  mkdirSync(tmp, { recursive: true });
+  // Ein Stand mit Wiedererkennung: Tag 7, Name Frieda, 42 Holz
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setHorde(false);
+    Z.setDay(7);
+    Z.game.state.player.name = 'Frieda';
+    Z.game.state.inventory.holz = 42;
+    Z.save();
+  });
+  await settle(page, 20);
+  // Pausenmenü → »Spielstand« (mit S hinunter) → E
+  const toScreen = async (label) => {
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.zomfy.mode === 'menu', null, { timeout: 30000 });
+    await settle(page, 25);
+    for (let i = 0; i < 12; i++) {
+      const at = await z(() => {
+        const m = window.zomfy.game.menu;
+        return m.buttons()[m.focus]?.label;
+      });
+      if (at === label) break;
+      await page.keyboard.press('KeyS');
+      await settle(page, 2);
+    }
+    await page.keyboard.press('KeyE');
+    await settle(page, 25);
+  };
+  const T = await z(async () => (await import('./src/data/texts.js')).T);
+  await toScreen(T.menue.spielstand);
+  const screen = await z(() => window.zomfy.game.menu.screen);
+  await page.screenshot({ path: join(SHOTS, 'spielstand-menue.png') });
+  note('  Screenshot: screenshots/spielstand-menue.png');
+  // Sichern: die erste Zeile, E – eine Datei kommt herunter
+  const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), page.keyboard.press('KeyE')]);
+  const file = join(tmp, download.suggestedFilename());
+  await download.saveAs(file);
+  const { readFileSync } = await import('node:fs');
+  const saved = JSON.parse(readFileSync(file, 'utf8'));
+  const version = await z(async () => (await import('./src/core/state.js')).SAVE_VERSION);
+  const gesichert = { name: download.suggestedFilename(), version: saved.version, spiel: saved.spiel, wer: saved.player?.name, tag: saved.time?.day, holz: saved.inventory?.holz };
+  if (screen === 'spielstand' && gesichert.version === version && gesichert.spiel === 'zomfy-towers' && gesichert.wer === 'Frieda' && gesichert.tag === 7 && gesichert.holz === 42 && /^zomfy-towers-Frieda-tag-7\.json$/.test(gesichert.name)) {
+    note(`✓ Spielstand (S1): Esc, »Spielstand«, »Als Datei sichern« lädt ${gesichert.name} herunter (Version ${version}, Kennung, Name, Tag, Vorrat)`);
+  } else fail(`Spielstand: Sichern ${JSON.stringify({ screen, gesichert })}`);
+
+  // Der Stand ändert sich weiter: Tag 9, 5 Holz
+  await page.keyboard.press('Escape'); // zurück ins Hauptmenü
+  await settle(page, 10);
+  await page.keyboard.press('Escape'); // weiter spielen
+  await settle(page, 10);
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setDay(9);
+    Z.game.state.inventory.holz = 5;
+    Z.save();
+  });
+  // Eine fremde Datei und eine aus der Zukunft werden abgelehnt
+  const abgelehnt = await z((v) => {
+    const g = window.zomfy.game;
+    const a = g.offerImport('hallo');
+    const b = g.offerImport(JSON.stringify({ version: v + 5, player: { name: 'X' }, time: { day: 1 } }));
+    const c = g.offerImport(JSON.stringify({ irgendwas: true }));
+    return { a, b, c, toasts: g.hud.toasts.map((t) => t.text) };
+  }, version);
+  if (abgelehnt.a === 'kaputt' && abgelehnt.b === 'neuer' && abgelehnt.c === 'kaputt' && abgelehnt.toasts.includes(T.spielstand.kaputt) && abgelehnt.toasts.includes(T.spielstand.neuer)) note('✓ Spielstand (S1): eine fremde Datei und eine aus einer neueren Fassung werden mit Meldung abgelehnt');
+  else fail(`Spielstand: Ablehnen ${JSON.stringify(abgelehnt)}`);
+
+  // Laden: »Aus Datei laden« öffnet die Dateiwahl, die Rückfrage hat »Lieber nicht« vorgewählt
+  await toScreen(T.menue.spielstand);
+  await page.keyboard.press('KeyS'); // »Aus Datei laden«
+  await settle(page, 2);
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser', { timeout: 30000 }), page.keyboard.press('KeyE')]);
+  await chooser.setFiles(file);
+  await page.waitForFunction(() => window.zomfy.game.menu.screen === 'importFrage', null, { timeout: 30000 });
+  await settle(page, 25);
+  const frage = await z(() => {
+    const m = window.zomfy.game.menu;
+    return { vor: m.buttons()[m.focus]?.label, text: m.layout(window.zomfy.game.ui).confirmText.join(' ') };
+  });
+  await page.screenshot({ path: join(SHOTS, 'spielstand-frage.png') });
+  note('  Screenshot: screenshots/spielstand-frage.png');
+  await page.keyboard.press('KeyW'); // »Ja, laden«
+  await settle(page, 2);
+  await Promise.all([page.waitForEvent('load', { timeout: 120000 }), page.keyboard.press('KeyE')]);
+  await page.waitForFunction(() => window.zomfy && window.zomfy.ready, null, { timeout: 120000 });
+  const danach = await z(() => ({ tag: window.zomfy.game.state.time.day, holz: window.zomfy.game.state.inventory.holz, wer: window.zomfy.game.state.player.name }));
+  if (frage.vor === T.spielstand.nein && frage.text.includes('Frieda') && frage.text.includes('Tag 7') && danach.tag === 7 && danach.holz === 42 && danach.wer === 'Frieda') note('✓ Spielstand (S1): »Aus Datei laden« öffnet die Dateiwahl, fragt mit Name und Tag nach (vorgewählt »Lieber nicht«), »Ja, laden« lädt neu – wieder Tag 7 mit 42 Holz');
+  else fail(`Spielstand: Laden ${JSON.stringify({ frage, danach })}`);
   checkMessages(session);
   await session.context.close();
 }
@@ -446,6 +551,7 @@ async function runBrowserChecks() {
     if (want('oberflaeche')) await runMenuChecks(browser, url);
     if (want('sprites')) await runSpriteChecks(browser, url);
     if (want('menschen')) await runPeopleChecks(browser, url);
+    if (want('datei')) await runSaveFileChecks(browser, url);
     if (want('aufraeumen')) await runTidyChecks(browser, url);
     if (want('knoten')) await runKnotChecks(browser, url);
     if (want('wald')) await runForestChecks(browser, url);
@@ -662,6 +768,16 @@ async function runNight16Checks(browser, url) {
   const mehrWege = plan.wege.slice(1).filter((n) => n.some((k) => k >= 2)).length;
   if (plan.wege[0].every((k) => k === 1) && mehrWege >= 3 && plan.gemuetlich[1] < plan.ausgewogen[1] && plan.ausgewogen[1] < plan.wild[1]) note(`✓ Wellenplan (M16): Nacht 1 über je einen Weg, ${mehrWege} der Nächte 2–6 auch über zwei oder drei; Nacht 6 mit ${plan.gemuetlich[1]}/${plan.ausgewogen[1]}/${plan.wild[1]} Schlurfern (gemütlich/ausgewogen/wild)`);
   else fail(`Wellenplan: ${JSON.stringify(plan)}`);
+
+  // B1: Die Zähigkeit setzt eine Nacht früher ein, der Boss wächst mit der Horde seiner Nacht
+  const zaeh = await z(() => {
+    const g = window.zomfy.game;
+    const [p2, p3, p5] = [2, 3, 5].map((n) => g.nights.planFor(n));
+    const boss = p5.waves.flatMap((w) => w.spawns).find((s) => s.type === 'holzfaeller');
+    return { n2: +p2.hpFactor.toFixed(2), n3: +p3.hpFactor.toFixed(2), n5: +p5.hpFactor.toFixed(2), boss: boss?.hp ?? null };
+  });
+  if (zaeh.n2 === 1.25 && zaeh.n3 > 2 && zaeh.boss > 1 && zaeh.n5 * zaeh.boss > 3.5) note(`✓ Spannung (B1): Nacht 2 unverändert (×${zaeh.n2}), Nacht 3 mit ×${zaeh.n3} Leben (vorher ×1,5), der Holzfäller in Nacht 5 mit ×${(zaeh.n5 * zaeh.boss).toFixed(1)} (vorher ×2)`);
+  else fail(`Spannung (B1): ${JSON.stringify(zaeh)}`);
 
   // Zwei Türme und eine Barrikade am Weg
   const setup = await z(() => {
@@ -1803,7 +1919,7 @@ async function runToyChecks(browser, url) {
   const gewaehlt = await z(() => ({ b: window.zomfy.blueprints(), mode: window.zomfy.game.mode, tab: window.zomfy.game.buildbar.tabId, meldungen: window.zomfy.game.hud.toasts.map((t) => t.text) }));
   if (
     vorher.known.length === 0 &&
-    vorher.tabs.join() === 'tuerme,figur,zuhause' &&
+    vorher.tabs.join() === 'tuerme,lager,zuhause' && // H5: Reiter nach Zweck, die Figur ist an der Werkbank
     wartet.b.choice?.options.length === 3 &&
     !wartet.b.open &&
     offen.b.open &&
@@ -1831,8 +1947,8 @@ async function runToyChecks(browser, url) {
     gesehen.push(await z(() => window.zomfy.game.buildbar.tab));
     await tap('Tab');
   }
-  if (reiter.tabs.join() === 'tuerme,tuerme2,fallen,figur,zuhause' && reiter.eins.join() === 'bolzen,katapult,sprenger,laternenturm,barrikade' && reiter.zwei.join() === 'glockenturm,windrad,bienenkorb,vogelscheuche' && reiter.fallen.length === 5 && gesehen.join() === reiter.tabs.join()) {
-    note(`✓ Bauleiste (M19): Q R T G C bleiben, „Türme 2“ trägt ${reiter.zwei.join(', ')}, „Fallen“ ${reiter.fallen.join(', ')}; Tab geht alle Reiter durch`);
+  if (reiter.tabs.join() === 'tuerme,tuerme2,fallen,lager,zuhause' && reiter.eins.join() === 'bolzen,katapult,sprenger,laternenturm,barrikade' && reiter.zwei.join() === 'glockenturm,windrad,bienenkorb,vogelscheuche' && reiter.fallen.length === 5 && gesehen.join() === reiter.tabs.join()) {
+    note(`✓ Baumenü (M19, H5): Q R T G C bleiben, »Helfer« trägt ${reiter.zwei.join(', ')}, »Fallen« ${reiter.fallen.join(', ')}, dahinter »Lager« und »Zuhause«; Tab geht alle Reiter durch`);
   } else fail(`Bauleiste mit Bauplänen: ${JSON.stringify({ reiter, gesehen })}`);
 
   // 3) Die Familien am Weg: je eine Wegspalte, der Turm daneben, ein Trupp läuft vorbei
@@ -3571,18 +3687,18 @@ async function runBuildChecks(browser, url) {
   if (erste >= 2 && st2.inventory.schrott === st.inventory.schrott) note(`✓ Durchsuchen: +${erste} Schrott, zweites Mal am selben Tag leer`);
   else fail(`Durchsuchen: Ertrag ${erste}, danach ${st2.inventory.schrott - st.inventory.schrott}`);
 
-  // Werkbank über das Baumenü: Tab öffnet (Türme), zweimal weiter (Figur → Zuhause), Q, dann E setzt vor der Figur (H1)
+  // Werkbank über das Baumenü: Tab öffnet (Türme), weiter bis »Lager« (H5: Reiter nach Zweck), Q, dann E setzt vor der Figur (H1)
   await z(() => {
     window.zomfy.give({ holz: 20, stein: 10 });
     window.zomfy.teleport(3.5, 2.5, 0);
   });
   await settle(page, 3);
-  await page.keyboard.press('Tab');
-  await settle(page, 2);
-  await page.keyboard.press('Tab');
-  await settle(page, 2);
-  await page.keyboard.press('Tab');
-  await settle(page, 2);
+  const openTab = () => z(() => (window.zomfy.game.buildbar.open ? window.zomfy.game.buildbar.tab : null));
+  let tabs = 0;
+  for (; tabs < 8 && (await openTab()) !== 'lager'; tabs++) {
+    await page.keyboard.press('Tab');
+    await settle(page, 2);
+  }
   await page.keyboard.press('KeyQ');
   await settle(page, 3);
   const plan = await z(() => window.zomfy.placement);
@@ -3590,15 +3706,17 @@ async function runBuildChecks(browser, url) {
   await settle(page, 3);
   await z(() => window.zomfy.finishDialog());
   const bauten = await z(() => window.zomfy.buildings());
-  if (plan && plan.type === 'werkbank' && bauten.some((b) => b.type === 'werkbank')) note('✓ Bauleiste: Tab wechselt zum Reiter Zuhause, Q wählt die Werkbank, E setzt sie');
+  if (tabs === 2 && plan && plan.type === 'werkbank' && bauten.some((b) => b.type === 'werkbank')) note('✓ Baumenü (H5): Tab öffnet die Türme, das zweite Tab wechselt zum Reiter »Lager«, Q wählt die Werkbank, E setzt sie');
   else fail(`Bauleiste: Werkbank nicht gebaut (Plan ${JSON.stringify(plan)}, Bauten ${JSON.stringify(bauten)})`);
   const zweite = await z(() => window.zomfy.build('werkbank', -6, 4));
   if (zweite === 'max') note('✓ Bauleiste: nur eine Werkbank möglich');
   else fail(`Bauleiste: zweite Werkbank ergab „${zweite}“`);
 
   // Esc bricht das Platzieren ab, ohne das Menü zu öffnen (Tab: zurück zu den Türmen, C = Barrikade)
-  await page.keyboard.press('Tab');
-  await settle(page, 2);
+  for (let k = 0; k < 8 && (await openTab()) !== 'tuerme'; k++) {
+    await page.keyboard.press('Tab');
+    await settle(page, 2);
+  }
   await page.keyboard.press('KeyC');
   await settle(page, 3);
   await page.keyboard.press('Escape');
@@ -5144,19 +5262,32 @@ async function runCombatChecks(browser, url) {
     await step(100);
   }
 
-  // Waffen-Aufwertung über den Reiter »Figur« (C = Waffe in der Hand) – H1: Tab öffnet das Baumenü, das zweite wechselt
-  await z(() => window.zomfy.game.buildbar.close());
-  await page.keyboard.press('Tab');
+  // Waffen-Aufwertung an der Werkbank (H5: Seite »Figur«, vorher ein Reiter im Baumenü) – D wechselt die Seite, S wählt, E wertet auf
+  await z(() => {
+    window.zomfy.game.buildbar.close();
+    window.zomfy.game.openCrafting('werkbank');
+  });
+  await step(700); // gleich nach dem Öffnen stellt E nichts her
+  const vorSeite = await z(() => window.zomfyView().werkbankSeite);
+  await page.keyboard.press('KeyD');
   await step(100);
-  await page.keyboard.press('Tab');
-  await step(100);
-  await page.keyboard.press('KeyC');
-  await step(100);
-  await page.keyboard.press('KeyC'); // Kaufen per Taste braucht einen zweiten Druck
+  const seite = await z(() => ({ page: window.zomfyView().werkbankSeite, rows: window.zomfy.game.crafting.recipes().map((r) => r.id), focus: window.zomfy.game.crafting.focus }));
+  const ziel = seite.rows.indexOf('waffe-pfanne');
+  for (let k = 0; k < (ziel - seite.focus + seite.rows.length) % seite.rows.length; k++) {
+    await page.keyboard.press('KeyS');
+    await step(60);
+  }
+  await step(400); // ein ruhiger Druck, kein Hämmern auf E
+  await page.screenshot({ path: join(SHOTS, 'werkbank-figur.png') });
+  note('  Screenshot: screenshots/werkbank-figur.png');
+  await page.keyboard.press('KeyE');
   await step(100);
   const aufgewertet = (await state()).weapons.pfanne;
-  if (aufgewertet === 2) note('✓ Waffen: Bratpfanne über die Bauleiste (Figur, C) auf Stufe 2');
-  else fail(`Waffen: Bratpfanne auf Stufe ${aufgewertet}`);
+  await page.keyboard.press('Escape');
+  await step(100);
+  const nachWerkbank = await z(() => window.zomfy.mode);
+  if (vorSeite === 'herstellen' && seite.page === 'figur' && ziel >= 4 && aufgewertet === 2 && nachWerkbank === 'play') note(`✓ Waffen (H5): Die Werkbank öffnet bei »Herstellen«, D wechselt zur Seite »Figur« (${seite.rows.join(', ')}), S wählt die Bratpfanne, E wertet sie auf Stufe 2 auf`);
+  else fail(`Waffen an der Werkbank: ${JSON.stringify({ vorSeite, seite, ziel, aufgewertet, nachWerkbank })}`);
 
   // Ein Schlurfer jagt Mika, eine Werkbank steht dazwischen: Er bleibt nicht ewig
   // davor stehen, sondern gibt die Jagd auf und kommt außen herum (m7-r1)
@@ -10879,7 +11010,9 @@ async function runMenuChecks(browser, url) {
   await page.mouse.move(640, 200);
   await tap('Escape');
 
-  // 5) Mehr als sechs Möglichkeiten: »Leute« mit Lagerglocke und Leuchtmast – der Rest über »weiter«
+  // 5) H5: Reiter nach Zweck – »Leute« trägt Schlafplätze, Hochsitz, Übungsplatz, Lagerglocke und den
+  // Langen Jakob auf einer Seite, das Holzlager steht unter »Lager«, »Zuhause« baut nur noch das Haus aus
+  // und repariert. Lange Listen (eine Auswahl mit vielen Möglichkeiten) blättern weiter mit »weiter«.
   const leute = await z(() => {
     const Z = window.zomfy;
     const g = Z.game;
@@ -10888,16 +11021,21 @@ async function runMenuChecks(browser, url) {
     g.state.arms = { ...(g.state.arms || {}), unlocked: true };
     g.buildbar.openMenu();
     g.buildbar.tabId = 'einrichten';
-    return Z.buildMenu();
+    const menu = Z.buildMenu();
+    const probe = Array.from({ length: 8 }, (_, k) => ({ id: `probe${k}` }));
+    const p1 = g.buildbar.pageOptions(probe, 'probe');
+    p1.shown[p1.shown.length - 1].action();
+    const p2 = g.buildbar.pageOptions(probe, 'probe');
+    g.buildbar.pages.delete('probe');
+    return { menu, tabs: g.builder.tabs(), lager: g.builder.options('lager').map((o) => o.id), zuhause: g.builder.options('zuhause').map((o) => o.id), p1: p1.shown.map((o) => o.id), p2: p2.shown.map((o) => o.id) };
   });
-  const seite1 = leute.tiles.map((t) => t.id);
-  const weiter = leute.tiles.find((t) => t.id === 'weiter');
-  if (weiter) await tap(['KeyQ', 'KeyR', 'KeyT', 'KeyG', 'KeyC', 'KeyV'][leute.tiles.indexOf(weiter)]);
-  const seite2 = (await menu()).tiles.map((t) => t.id);
-  const alle = new Set([...seite1, ...seite2]);
-  const funkturm = alle.has('funkturm');
-  if (leute.all && leute.all.length > 6 && weiter && [...leute.all].every((id) => alle.has(id)) && funkturm) note(`✓ Baumenü: Reiter »${leute.tabs[leute.tabs.length - 1] || 'Leute'}« mit ${leute.all.length} Möglichkeiten – die sechste Kachel heißt »weiter«, dort liegt der Rest (${seite2.filter((id) => id !== 'weiter').join(', ')})`);
-  else fail(`Baumenü weiter: ${JSON.stringify({ leute, seite2 })}`);
+  const leuteKacheln = leute.menu.tiles.map((t) => t.id);
+  const leuteVoll = ['zelt', 'schlafhuette', 'hochsitz', 'uebungsplatz', 'lagerglocke', 'funkturm'].every((id) => leuteKacheln.includes(id)) && !leuteKacheln.includes('weiter') && !leuteKacheln.includes('holzlager');
+  const reihe = ['tuerme', 'lager', 'einrichten', 'zuhause'].map((t) => leute.tabs.indexOf(t));
+  const ordnung = reihe.every((k, i) => k >= 0 && (i === 0 || k > reihe[i - 1])) && !leute.tabs.includes('figur');
+  const blaettern = leute.p1.length === 6 && leute.p1[5] === 'weiter' && leute.p2.join() === 'probe5,probe6,probe7,weiter';
+  if (leuteVoll && ordnung && leute.lager.join() === 'werkbank,holzlager,beet,bank,laternenpfahl' && leute.zuhause.join() === 'huette,reparieren' && blaettern) note(`✓ Baumenü (H5): Reiter ${leute.menu.tabs.join(' · ')} – »Leute« zeigt ${leuteKacheln.join(', ')} auf einer Seite, »Lager« ${leute.lager.join(', ')}, »Zuhause« Ausbau und Reparieren; acht Möglichkeiten blättern mit »weiter« (5 + 3)`);
+  else fail(`Baumenü nach Zweck: ${JSON.stringify({ leute, leuteKacheln, reihe })}`);
   await tap('Escape');
 
   // 6) Edda kompakt unten links über Mikas Leiste – nie auf dem Menü

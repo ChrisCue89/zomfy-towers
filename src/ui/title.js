@@ -63,6 +63,7 @@ export class TitleScreen {
       if (this.hasSave) list.push({ label: T.titel.weiter, action: () => g.startFromTitle() });
       list.push({ label: T.titel.neu, action: () => this.go(this.hasSave ? 'confirm' : 'figur') });
       list.push({ label: T.menue.einstellungen, action: () => g.openMenuFromTitle('settings') });
+      list.push({ label: T.menue.spielstand, action: () => g.openMenuFromTitle('spielstand') }); // S1
       list.push({ label: T.menue.steuerung, action: () => g.openMenuFromTitle('controls') });
       return list;
     }

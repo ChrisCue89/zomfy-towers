@@ -1,5 +1,6 @@
 // Pause-Menü: Weiter, Steuerung, Herbstbuch (M25), Notizbuch (M18),
-// Werkstattbuch (M20), Einstellungen, Vollbild, Neues Spiel (mit Rückfrage).
+// Werkstattbuch (M20), Einstellungen, Spielstand (S1: als Datei sichern und laden),
+// Vollbild, Neues Spiel (mit Rückfrage).
 // Layout wird einmal berechnet und von update() (Klicks) und draw() genutzt.
 // Schutz vor versehentlichem Löschen: Nach jedem Seitenwechsel zählen Klicks
 // kurz nicht, die Maus wählt nur aus, wenn sie bewegt wird, und in der
@@ -90,6 +91,7 @@ export class Menu {
         { label: T.notizbuch.menue, action: () => this.go('notes') },
         { label: T.werkstattbuch.menue, action: () => this.go('recipes') },
         { label: T.menue.einstellungen, action: () => this.go('settings') },
+        { label: T.menue.spielstand, action: () => this.go('spielstand') },
         { label: T.menue.vollbild, action: () => this.game.toggleFullscreen() },
         { label: T.menue.neuesSpiel, action: () => this.go('confirm') },
       ];
@@ -106,6 +108,22 @@ export class Menu {
       // M31: »Verluste« gehört zum Spielstand und geht nur noch von »an« nach »aus«
       if (!this.fromTitle) rows.push({ label: `${T.glocke.verluste}: ${this.game.defense.losses ? T.glocke.an : T.glocke.aus}`, setting: 'losses', action: () => this.change('losses', 1) });
       return [...rows, { label: T.menue.zurueck, action: () => this.go('main') }];
+    }
+    // S1: der Spielstand als Datei – sichern, laden (mit Rückfrage), zurück
+    if (this.screen === 'spielstand') {
+      const list = [];
+      if (!this.fromTitle || this.game.titleHasSave) list.push({ label: T.spielstand.sichern, action: () => this.game.exportSaveFile() });
+      list.push({ label: T.spielstand.laden, action: () => this.game.importSaveFile() });
+      return [...list, { label: T.menue.zurueck, action: () => this.go('main') }];
+    }
+    if (this.screen === 'importFrage') {
+      return [
+        { label: T.spielstand.ja, action: () => this.game.confirmImport() },
+        { label: T.spielstand.nein, action: () => {
+          this.game.pendingImport = null;
+          this.go('spielstand');
+        }, safe: true },
+      ];
     }
     if (this.screen === 'confirm') {
       return [
@@ -557,15 +575,26 @@ export class Menu {
     if (this.screen === 'notes' || this.screen === 'recipes') return this.notesLayout(ui);
     const buttons = this.buttons();
     const controls = this.screen === 'controls' ? T.steuerung : [];
-    const confirmText = this.screen === 'confirm' ? wrap(T.menue.sicherFrage, 190) : this.screen === 'settings' ? [T.menue.einstellungenHinweis] : [];
+    const pending = this.game.pendingImport;
+    const confirmText =
+      this.screen === 'confirm'
+        ? wrap(T.menue.sicherFrage, 190)
+        : this.screen === 'settings'
+          ? [T.menue.einstellungenHinweis]
+          : this.screen === 'spielstand'
+            ? wrap(T.spielstand.hinweis, 190)
+            : this.screen === 'importFrage' && pending
+              ? wrap(T.spielstand.frage(pending.name, pending.day), 190)
+              : [];
     // m16-r1: Die Steuerung wird so breit, dass Taste und Text nie aneinanderstoßen
     // H4: Die Einstellungen werden so breit wie ihre längste Zeile (»Oberfläche: groß (hier wie mittel)«)
     const w = this.screen === 'controls' ? Math.max(250, ...controls.map(([key, what]) => measure(key) + measure(what) + 36)) : this.screen === 'settings' ? Math.max(220, ...buttons.map((b) => measure(b.label) + 50)) : 220;
     const bodyH = controls.length ? controls.length * LINE_HEIGHT + 8 : confirmText.length ? confirmText.length * LINE_HEIGHT + 8 : 0;
     // M26: Mit Wackeln und Blitzen hat die Einstellungsseite zehn Zeilen – etwas enger;
-    // H4: bei großer Oberfläche (wenige Zeilen) so eng, dass alles ins Bild passt
+    // H4: bei großer Oberfläche (wenige Zeilen) so eng, dass alles ins Bild passt (F4: mit
+    // »Figuren« vierzehn Zeilen – bei 270 Zeilen 14 Pixel je Knopf)
     const room = Math.floor((ui.height - 16 - 30 - bodyH - 20) / Math.max(1, buttons.length));
-    const step = Math.max(15, Math.min(buttons.length > 9 ? 20 : 22, room));
+    const step = Math.max(14, Math.min(buttons.length > 9 ? 20 : 22, room));
     const h = 30 + bodyH + buttons.length * step + 20;
     const x = Math.round((ui.width - w) / 2);
     const y = Math.round((ui.height - h) / 2);
@@ -673,7 +702,7 @@ export class Menu {
     ui.ditherFill(0.5);
     const L = this.layout(ui);
     ui.panel(L.x, L.y, L.w, L.h);
-    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel, recipes: T.werkstattbuch.titel, buch: T.buch.titel }[this.screen] || T.menue.titel;
+    const title = { controls: T.menue.steuerung, confirm: T.menue.neuesSpiel, settings: T.menue.einstellungen, notes: T.notizbuch.titel, recipes: T.werkstattbuch.titel, buch: T.buch.titel, spielstand: T.menue.spielstand, importFrage: T.menue.spielstand }[this.screen] || T.menue.titel;
     ui.textCentered(title, L.x + L.w / 2, L.y + 7, COLORS.gold);
     ui.rect(L.x + 10, L.y + 21, L.w - 20, 1, COLORS.frameDark);
     let cy = L.y + 28;

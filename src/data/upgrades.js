@@ -1,4 +1,4 @@
-// Aufwertungen der Figur (Bauleiste, Reiter »Figur«). Jede hat drei Stufen;
+// Aufwertungen der Figur (H5: an der Werkbank, Seite »Figur«). Jede hat drei Stufen;
 // value(stufe) liefert den Wert, cost[stufe] den Preis der nächsten Stufe.
 
 export const UPGRADES = {

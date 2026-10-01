@@ -295,6 +295,49 @@ export function migrate(data) {
   return current;
 }
 
+/** S1: Kennung in gesicherten Dateien (ältere Stände aus dem Browser haben sie nicht). */
+export const SAVE_FILE_TAG = 'zomfy-towers';
+
+/** Ein Name für die Datei: Spiel, Figur, Tag – nur Zeichen, die jedes System mag. */
+export function saveFileName(state) {
+  const name = String(state?.player?.name || 'Mika')
+    .replace(/[ÄÖÜäöüß]/g, (c) => ({ Ä: 'Ae', Ö: 'Oe', Ü: 'Ue', ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' })[c])
+    .replace(/[^A-Za-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'Mika';
+  return `zomfy-towers-${name}-tag-${Math.max(1, Math.floor(state?.time?.day || 1))}.json`;
+}
+
+/** S1: den Stand als Text für eine Datei (mit Version, Zeitpunkt und Kennung). */
+export function saveFileText(state) {
+  return JSON.stringify({ ...state, version: SAVE_VERSION, savedAt: new Date().toISOString(), spiel: SAVE_FILE_TAG });
+}
+
+/**
+ * S1: eine Datei prüfen. Ein Spielstand ist ein Objekt mit Version, Spielfigur und Zeit; ältere
+ * Fassungen laufen durch die Migrationen, dann durch sanitizeState.
+ * @returns {{status: 'ok'|'leer'|'kaputt'|'neuer', state?: object, data?: object}}
+ */
+export function parseSaveFile(text, config) {
+  if (!text || !String(text).trim()) return { status: 'leer' };
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return { status: 'kaputt' };
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return { status: 'kaputt' };
+  if (data.spiel !== undefined && data.spiel !== SAVE_FILE_TAG) return { status: 'kaputt' };
+  if (!data.player || typeof data.player !== 'object' || !data.time || typeof data.time !== 'object') return { status: 'kaputt' };
+  if ((Number(data.version) || 1) > SAVE_VERSION) return { status: 'neuer' };
+  try {
+    const migrated = migrate(data);
+    const state = sanitizeState(migrated, config);
+    return { status: 'ok', state, data: { ...migrated, version: SAVE_VERSION } };
+  } catch {
+    return { status: 'kaputt' };
+  }
+}
+
 export class SaveStore {
   constructor({ disabled = false, config }) {
     this.config = config;
@@ -342,6 +385,28 @@ export class SaveStore {
       const data = { ...state, version: SAVE_VERSION, savedAt: new Date().toISOString() };
       this.storage.setItem(SAVE_KEY, JSON.stringify(data));
       return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** S1: einen geprüften Stand aus einer Datei an die Stelle des jetzigen setzen. */
+  replace(data) {
+    if (this.disabled || !this.storage) return false;
+    try {
+      const { spiel, ...rest } = data;
+      void spiel;
+      this.storage.setItem(SAVE_KEY, JSON.stringify({ ...rest, version: SAVE_VERSION, savedAt: new Date().toISOString() }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** S1: Gibt es einen gespeicherten Stand? */
+  hasSave() {
+    try {
+      return Boolean(this.storage?.getItem(SAVE_KEY));
     } catch {
       return false;
     }

@@ -247,13 +247,15 @@ export function blockOf(b) {
 }
 
 /**
- * Reihenfolge in den Reitern der Bauleiste. Die erste Seite der Türme bleibt
- * immer gleich (Q R T G C); Familien aus den Bauplänen kommen dahinter (M19),
- * Fallen in den eigenen Reiter »Fallen«.
+ * Reihenfolge in den Reitern des Baumenüs. Die erste Seite der Türme bleibt
+ * immer gleich (Q R T G C); Familien aus den Bauplänen kommen dahinter (M19,
+ * Reiter »Helfer«), Fallen in den eigenen Reiter »Fallen«. H5: Was im Hof steht
+ * und dem Lager dient, liegt im Reiter »Lager« (vorher teils unter »Zuhause«,
+ * das Holzlager unter »Leute«).
  */
 export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade', 'glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche'];
 export const TRAP_TAB = ['stachelbrett', 'leimtopf', 'klettenteppich', 'knallerbsen', 'oelspur'];
-export const HOME_TAB = ['werkbank', 'laternenpfahl', 'beet', 'bank'];
+export const YARD_TAB = ['werkbank', 'holzlager', 'beet', 'bank', 'laternenpfahl'];
 
 /**
  * Ausbaustufen des Zuhauses (DESIGN.md 6.8, Meilenstein 11). Jede Stufe gibt

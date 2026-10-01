@@ -10,7 +10,7 @@
 
 import { P, RAMPS } from '../render/palette.js';
 import { humanoid, headEllipsoid, headCapsule, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
-import { HUMAN, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
+import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
 
 const R = RAMPS;
 
@@ -834,6 +834,968 @@ const knopf = {
   },
 };
 
+// --- Die Wanderer (F4, zweite Stufe) ------------------------------------------------------------
+// Vorbild sind ihre Voxel-Figuren (survivorModels.js, M27/M29): jede behält das Merkmal, das man
+// schon von Weitem liest, und bekommt ein paar kleine Dinge dazu.
+
+/** Gemeinsam: Gesichter, Teile (stehen, gehen, winken, sitzen). */
+const WANDER = { expressions: FOLK_EXPRESSIONS, parts: FOLK_PARTS };
+
+/** Punkt zwischen a und b (t = 0 … 1). */
+const along = (a, b, t) => add(a, mul(sub(b, a), t));
+
+/** Die Hosenbeine unten weit (Schlaghose, Wathose): ein Kegel vom Schienbein zum Knöchel. */
+function flare(ctx, legs, mat, r0, r1, from = 0.5) {
+  for (const leg of legs) ctx.capsule(along(leg.knee, leg.ankle, from), add(leg.ankle, [0, 0.01, 0]), r0, r1, mat);
+}
+
+/** Ein flacher Rand um den Kopf (Hutkrempe), geneigt um `tilt` (vorn runter positiv). */
+function brim(ctx, body, l, rr, mat, tilt = 0, more = {}) {
+  return ctx.push({ kind: 'ellipsoid', c: ctx.W(body.H(l)), rr, ax: ctx.AX(body.pitch + tilt, body.roll), mat, ...more });
+}
+
+/** Ein Zopf als Kette aus Kapseln im Kopfrahmen; `tie` legt ein Band ans Ende. */
+function braid(ctx, body, points, r, mat, tie = null) {
+  for (let i = 0; i + 1 < points.length; i++) headCapsule(ctx, body, points[i], points[i + 1], r * (1 - i * 0.08), r * (1 - (i + 1) * 0.08), mat);
+  if (tie) headEllipsoid(ctx, body, points[points.length - 1], [r * 1.05, r * 0.6, r * 1.05], tie);
+}
+
+/** Streifen quer (in Bildhöhe): jede `n`-te Lage aus `stripe`. */
+const rings = (stripe, n = 3, k = 13) => (l, p) => (Math.floor(p[1] * k + 40) % n === 0 ? stripe : null);
+
+// --- Hannes ---------------------------------------------------------------------------------------
+
+/**
+ * Hannes, Zimmermann auf der Walz: der breite schwarze Hut, ein kurzer brauner Vollbart; die schwarze
+ * Cordweste mit zwei Reihen Perlmuttknöpfen über der weißen Staude, das rote Halstuch mit Knoten;
+ * die weite schwarze Schlaghose der Kluft und feste Stiefel.
+ */
+const hannes = {
+  ...WANDER,
+  size: 1.02,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: cloth(P.e2, 1, 2),
+    bart: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 1, { pattern: (p) => (Math.floor(p[0] * 40 + 40) % 3 === 0 ? 1 : 0) }),
+    hut: rampOf([R.n[0], R.n[1], R.n[2], R.n[3]], 1, { shine: true }),
+    hutband: rampOf([R.s[1], R.s[2], R.s[3], R.s[4]], 1),
+    hemd: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    weste: rampOf([R.n[0], R.n[1], R.n[2], R.n[3]], 2, { pattern: (p) => (Math.floor(p[0] * 20 + 40) & 1 ? -1 : 0) }),
+    tuch: rampOf([R.r[0], R.r[1], R.r[2], R.r[3], R.r[4]], 3),
+    hose: rampOf([R.n[0], R.n[1], R.n[2], R.n[3]], 1, { pattern: (p) => (Math.floor(p[0] * 20 + 40) & 1 ? -1 : 0) }),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    // Die Weste ist vorn offen: in der Mitte die weiße Staude
+    const vest = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.045 ? 'hemd' : null);
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose' },
+        { ...HUMAN.torso[1], mat: 'weste', matAt: vest },
+        { ...HUMAN.torso[2], mat: 'weste', matAt: vest },
+      ],
+      shoulderW: 0.28,
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.06, fringe: null, back: -0.12, sides: -0.05 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'hemd', fore: 'hemd', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, legs } = body;
+    flare(ctx, legs, 'hose', 0.08, 0.105, 0.45);
+    // Rotes Halstuch mit Knoten und zwei Zipfeln
+    ctx.ellipsoid(spine(0.41), [0.15, 0.05, 0.135], 'tuch', { pitch: body.stoop });
+    ctx.ellipsoid(add(spine(0.37), [0, 0, 0.15]), [0.045, 0.04, 0.035], 'tuch');
+    for (const side of [-1, 1]) ctx.capsule(add(spine(0.36), [side * 0.02, 0, 0.16]), add(spine(0.28), [side * 0.05, 0, 0.175]), 0.026, 0.014, 'tuch');
+    // Kurzer, dichter Vollbart
+    headEllipsoid(ctx, body, [0, -0.16, 0.17], [0.24, 0.11, 0.11], 'bart', { blend: 0.03, face: true });
+    headEllipsoid(ctx, body, [0, -0.23, 0.12], [0.16, 0.06, 0.09], 'bart', { blend: 0.03, face: true });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.22, -0.07, 0.12], [0.06, 0.09, 0.08], 'bart', { blend: 0.02 });
+    earsNose(ctx, body, { noseR: [0.042, 0.037, 0.038] });
+    // Der breite Hut: Krempe, darauf die Krone mit Band
+    brim(ctx, body, [0, 0.235, -0.04], [0.37, 0.017, 0.33], 'hut', 0.08);
+    headEllipsoid(ctx, body, [0, 0.31, -0.03], [0.225, 0.095, 0.205], 'hut', { blend: 0.02, matAt: (l) => (l[1] < -0.045 ? 'hutband' : null) });
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const y of [0.31, 0.23, 0.15]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfWeiss, at: W(add(spine(y), [side * 0.075, 0, 0.19])) });
+  },
+};
+
+// --- Clara ----------------------------------------------------------------------------------------
+
+/**
+ * Clara, Mechanikerin: roter Pferdeschwanz hoch am Hinterkopf, die Schweißbrille auf der Stirn; der
+ * blaue Overall mit Reißverschluss und Gürtel, ein gelber Flicken, die Brusttasche mit dem
+ * Schraubenschlüssel, an der Hüfte ein roter Lappen.
+ */
+const clara = {
+  ...WANDER,
+  size: 0.98,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.r[1], R.r[2], R.r[3], R.r[4], R.f[3]], 2),
+    gummi: rampOf([R.f[4], R.f[5], R.f[6]], 1),
+    overall: rampOf([R.b[0], R.b[1], R.b[2], R.b[3], R.b[4]], 2),
+    overallDunkel: rampOf([R.n[3], R.b[0], R.b[1], R.b[2]], 2),
+    zipper: { ramp: [R.s[4], R.s[6], R.s[7], R.s[8]], base: 1 },
+    gurt: cloth(P.e2, 1, 2),
+    brille: rampOf([R.s[1], R.s[2], R.s[3], R.s[4]], 2, { shine: true }),
+    glas: rampOf([R.t[4], P.a6, R.s[9]], 1, { shine: true }),
+    lappen: rampOf([R.r[2], R.r[3], R.r[4]], 1),
+    schuh: cloth(P.e2, 2, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const zip = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.014 ? 'zipper' : null);
+    const belt = (l) => (l[1] < -0.13 ? 'gurt' : zip(l));
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'overall' },
+        { ...HUMAN.torso[1], mat: 'overall', matAt: belt },
+        { ...HUMAN.torso[2], mat: 'overall', matAt: zip },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.04, fringe: 0.09, back: -0.12, sides: -0.03 }) },
+      mats: { thigh: 'overall', shin: 'overall', shoe: 'schuh', upper: 'overall', fore: 'overall', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    // Ärmel hochgekrempelt (dunkler Umschlag)
+    for (const a of arms) ctx.capsule(along(a.elbow, a.wrist, 0.55), along(a.elbow, a.wrist, 0.75), 0.068, 0.064, 'overallDunkel');
+    ctx.ellipsoid(spine(0.41), [0.16, 0.055, 0.14], 'overallDunkel', { pitch: body.stoop });
+    // Lappen an der linken Hüfte
+    ctx.capsule(add(spine(0.06), [-0.24, 0, 0.06]), add(spine(-0.1), [-0.26, 0, 0.08]), 0.035, 0.03, 'lappen');
+    // Hoher Pferdeschwanz mit Haargummi
+    braid(ctx, body, [[0, 0.2, -0.2], [0, 0.12, -0.33], [0, -0.04, -0.37], [0, -0.16, -0.34]], 0.07, 'haar');
+    headEllipsoid(ctx, body, [0, 0.2, -0.22], [0.06, 0.05, 0.05], 'gummi');
+    earsNose(ctx, body);
+    // Schweißbrille auf der Stirn: Band ringsum, vorn zwei runde Gläser
+    ctx.box(H([0, 0.135, -0.01]), [0.296, 0.03, 0.27], 0.12, 'gurt', { ax: body.headAx });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.11, 0.14, 0.255], [0.07, 0.062, 0.04], 'brille', { matAt: (l) => (l[2] > 0.0 && Math.hypot(l[0], l[1]) < 0.042 ? 'glas' : null) });
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) {
+      stamps.push({ stamp: STAMPS_FOLK.tasche, at: W(add(spine(0.27), [0.13, 0, 0.17])) });
+      stamps.push({ stamp: STAMPS_FOLK.schluessel, at: W(add(spine(0.3), [0.13, 0, 0.18])), opts: { depth: 0.08 } });
+      stamps.push({ stamp: STAMPS_FOLK.flicken, at: W(add(spine(0.22), [-0.13, 0, 0.19])) });
+    }
+  },
+};
+
+// --- Lotte ----------------------------------------------------------------------------------------
+
+/**
+ * Lotte, Laternenmacherin: blonde Zöpfe mit mintgrünen Schleifen; der rosa Mantel mit Knebelknöpfen
+ * bis übers Knie, ein langer bunter Strickschal, dessen eines Ende vorn bis zur Hüfte hängt; an der
+ * Hüfte eine kleine Laterne, die nachts leuchtet; lila Strumpfhose, braune Schuhe.
+ */
+const SCARF = ['schal1', 'schal2', 'schal3', 'schal4'];
+const lotte = {
+  ...WANDER,
+  size: 0.95,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.e[6], R.e[7], R.e[8], R.e[9]], 2, { pattern: (p) => (Math.floor(p[1] * 20 + 40) % 3 === 0 ? -1 : 0) }),
+    schleife: rampOf([R.t[4], P.a6, R.s[9]], 1),
+    mantel: rampOf([R.d[4], R.d[5], P.a0, P.a1], 2),
+    mantelDunkel: rampOf([R.d[3], R.d[4], R.d[5], P.a0], 2),
+    knebel: rampOf([R.s[7], R.s[8], R.s[9]], 1),
+    schal1: rampOf([R.f[5], R.f[6], R.f[7]], 1),
+    schal2: rampOf([R.t[4], P.a6, R.s[9]], 1),
+    schal3: rampOf([R.f[3], R.f[4], R.f[5]], 1),
+    schal4: rampOf([P.a2, P.a3, R.s[9]], 1),
+    strumpf: rampOf([R.d[1], R.d[2], R.d[3], R.d[4]], 1),
+    schuh: cloth(P.e2, 2, 2, { shine: true }),
+    ...LANTERN_MATERIALS,
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'mantel' },
+        { ...HUMAN.torso[1], mat: 'mantel' },
+        { ...HUMAN.torso[2], mat: 'mantel' },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.05, fringe: 0.1, back: -0.12, sides: -0.06 }) },
+      mats: { thigh: 'mantel', shin: 'strumpf', shoe: 'schuh', upper: 'mantel', fore: 'mantel', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    // Mantelschoß bis übers Knie, unten ein dunkler Saum
+    skirt(ctx, body, 'mantel', { drop: 0.13, rr: [0.255, 0.18, 0.21] });
+    for (const a of arms) ctx.capsule(along(a.elbow, a.wrist, 0.7), a.wrist, 0.066, 0.062, 'mantelDunkel');
+    // Der Strickschal: dick um den Hals, ein Ende hängt vorn bis zur Hüfte (Streifen in vier Farben)
+    const stripes = (l, p) => SCARF[((Math.floor(p[1] * 16 + 40) % 4) + 4) % 4];
+    ctx.ellipsoid(spine(0.41), [0.19, 0.075, 0.17], 'schal1', { pitch: body.stoop, matAt: (l) => SCARF[((Math.floor((Math.atan2(l[0], l[2]) / Math.PI) * 6 + 6) % 4) + 4) % 4] });
+    ctx.capsule(add(spine(0.38), [0.08, 0, 0.15]), add(spine(0.02), [0.11, 0, 0.21]), 0.05, 0.045, 'schal1', { matAt: stripes });
+    // Zöpfe hinter den Ohren mit Schleifen
+    for (const side of [-1, 1]) braid(ctx, body, [[side * 0.26, 0.0, -0.09], [side * 0.29, -0.16, -0.07], [side * 0.3, -0.31, -0.04]], 0.058, 'haar', 'schleife');
+    earsNose(ctx, body);
+    // Kleine Laterne an der linken Hüfte (leuchtet nachts)
+    const c = add(body.hip, [-0.3, -0.02, 0.1]);
+    ctx.box(c, [0.038, 0.05, 0.038], 0.012, 'glas', { matAt: (l) => (Math.abs(l[1]) > 0.04 ? 'rahmen' : null), part: 'laterne' });
+    ctx.capsule(add(c, [0, 0.055, 0]), add(c, [0, 0.085, 0]), 0.03, 0.014, 'dach');
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const y of [0.3, 0.2, 0.1]) stamps.push({ stamp: STAMPS_FOLK.knebel, at: W(add(spine(y), [-0.03, 0, 0.2])) });
+  },
+};
+
+// --- Greta ----------------------------------------------------------------------------------------
+
+/**
+ * Greta, Jägerin: der grüne Filzhut mit Feder, kurzes graues Haar mit einem Knoten im Nacken; die
+ * Lodenjacke mit Knopfleiste und Taschen, das Fernglas am Riemen vor der Brust; Kniebundhose,
+ * graue Wollstrümpfe, schwere Stiefel.
+ */
+const greta = {
+  ...WANDER,
+  size: 0.97,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.s[4], R.s[5], R.s[6], R.s[7], R.s[8]], 3),
+    hut: rampOf([R.t[0], R.t[1], R.t[2], R.t[3]], 2),
+    hutband: rampOf([R.n[0], R.t[0], R.t[1]], 1),
+    feder: rampOf([R.s[7], R.s[8], R.s[9]], 2),
+    federSpitze: rampOf([R.n[1], R.n[2], R.n[3]], 1),
+    jacke: rampOf([R.t[1], R.t[2], R.t[3], R.t[4]], 2, { pattern: (p) => (hash(Math.floor(p[0] * 20 + 99), Math.floor(p[1] * 20 + 99), Math.floor(p[2] * 20 + 99)) < 0.18 ? -1 : 0) }),
+    jackeDunkel: rampOf([R.t[0], R.t[1], R.t[2]], 1),
+    glas: rampOf([R.s[1], R.s[2], R.s[3], R.s[5]], 2, { shine: true }),
+    gurt: cloth(P.e2, 1, 2),
+    hose: cloth(P.e4, 2, 2),
+    strumpf: rampOf([R.s[4], R.s[5], R.s[6], R.s[7]], 2, { pattern: knit }),
+    schuh: cloth(P.e2, 2, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const placket = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.02 ? 'jackeDunkel' : null);
+    const hem = (l) => (l[1] < -0.12 ? 'jackeDunkel' : placket(l));
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose' },
+        { ...HUMAN.torso[1], mat: 'jacke', matAt: hem },
+        { ...HUMAN.torso[2], mat: 'jacke', matAt: placket },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.05, fringe: 0.12, back: -0.15, sides: -0.07 }) },
+      mats: { thigh: 'hose', shin: 'strumpf', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, legs } = body;
+    // Die Kniebundhose endet unter dem Knie
+    for (const leg of legs) ctx.capsule(leg.knee, along(leg.knee, leg.ankle, 0.3), 0.09, 0.085, 'hose');
+    ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'jackeDunkel', { pitch: body.stoop });
+    // Fernglas am Riemen vor der Brust
+    for (const side of [-1, 1]) ctx.capsule(add(spine(0.4), [side * 0.1, 0.02, 0.08]), add(spine(0.24), [side * 0.07, 0, 0.21]), 0.014, null, 'gurt');
+    for (const side of [-1, 1]) ctx.capsule(add(spine(0.24), [side * 0.05, 0, 0.225]), add(spine(0.16), [side * 0.05, 0, 0.225]), 0.04, 0.042, 'glas');
+    // Knoten im Nacken, Filzhut mit schmaler Krempe, Band und Feder
+    headEllipsoid(ctx, body, [0, -0.1, -0.29], [0.09, 0.08, 0.07], 'haar', { blend: 0.02 });
+    earsNose(ctx, body);
+    brim(ctx, body, [0, 0.19, -0.02], [0.35, 0.016, 0.32], 'hut');
+    headEllipsoid(ctx, body, [0, 0.28, -0.02], [0.225, 0.11, 0.205], 'hut', { blend: 0.02, matAt: (l) => (l[1] < -0.06 ? 'hutband' : null) });
+    headCapsule(ctx, body, [0.2, 0.24, -0.06], [0.27, 0.41, -0.19], 0.022, 0.012, 'feder');
+    headEllipsoid(ctx, body, [0.275, 0.43, -0.2], [0.014, 0.02, 0.014], 'federSpitze');
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const y of [0.29, 0.19, 0.09]) stamps.push({ stamp: STAMPS_FOLK.hornknopf, at: W(add(spine(y), [0, 0, 0.2])) });
+  },
+};
+
+// --- Fiete ----------------------------------------------------------------------------------------
+
+/**
+ * Fiete, der alte Fischer: der gelbe Südwester (hinten lang), weißes Haar und ein weißer Vollbart,
+ * die Pfeife im Mundwinkel; der dunkelblaue Fischerpullover, darüber die grüne Wathose mit Trägern
+ * bis zur Brust, grüne Gummistiefel.
+ */
+const fiete = {
+  ...WANDER,
+  size: 1.0,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    bart: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2, { pattern: (p) => (Math.floor(p[0] * 40 + 40) % 3 === 0 ? 1 : 0) }),
+    hut: rampOf([R.f[4], R.f[5], R.f[6], R.f[7], R.f[8]], 2, { shine: true }),
+    pulli: rampOf([R.n[2], R.n[3], R.n[4], R.n[5]], 1, { pattern: knit }),
+    wathose: rampOf([R.g[1], R.g[2], R.g[3], R.g[4]], 2, { shine: true }),
+    traeger: rampOf([R.g[0], R.g[1], R.g[2]], 1),
+    stiefel: rampOf([R.g[1], R.g[2], R.g[3], R.g[4]], 1, { shine: true }),
+    pfeife: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 1),
+    glut: { ramp: [R.f[2], R.f[3], R.f[4]], base: 1, glow: true },
+  },
+  build(ctx) {
+    const { dir } = ctx;
+    const bib = (l) => (l[2] > 0.04 && l[1] < 0.0 && Math.abs(l[0]) < 0.16 ? 'wathose' : null);
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'wathose' },
+        { ...HUMAN.torso[1], mat: 'wathose' },
+        { ...HUMAN.torso[2], mat: 'pulli', matAt: bib },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.05, fringe: null, back: -0.12, sides: -0.07 }) },
+      mats: { thigh: 'wathose', shin: 'wathose', shoe: 'stiefel', upper: 'pulli', fore: 'pulli', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, legs } = body;
+    flare(ctx, legs, 'stiefel', 0.088, 0.095, 0.4); // die Stiefel reichen bis übers Schienbein
+    ctx.ellipsoid(spine(0.41), [0.17, 0.065, 0.15], 'pulli', { pitch: body.stoop });
+    for (const side of [-1, 1]) {
+      const top = add(spine(0.37), [side * 0.14, 0.04, 0.0]);
+      ctx.capsule(add(top, [0, 0, -0.15]), top, 0.02, null, 'traeger');
+      ctx.capsule(top, add(spine(0.27), [side * 0.13, 0, 0.17]), 0.02, null, 'traeger');
+    }
+    // Weißer Vollbart, die Pfeife im rechten Mundwinkel
+    headEllipsoid(ctx, body, [0, -0.17, 0.17], [0.26, 0.13, 0.12], 'bart', { blend: 0.03, face: true });
+    headEllipsoid(ctx, body, [0, -0.28, 0.12], [0.18, 0.08, 0.1], 'bart', { blend: 0.03, face: true });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.22, -0.07, 0.13], [0.07, 0.1, 0.09], 'bart', { blend: 0.02 });
+    earsNose(ctx, body, { noseR: [0.045, 0.04, 0.04] });
+    headCapsule(ctx, body, [0.07, -0.14, 0.28], [0.16, -0.19, 0.36], 0.013, null, 'pfeife');
+    headEllipsoid(ctx, body, [0.17, -0.15, 0.37], [0.032, 0.04, 0.032], 'pfeife');
+    if (dir !== 4) headEllipsoid(ctx, body, [0.17, -0.11, 0.37], [0.02, 0.008, 0.02], 'glut');
+    // Südwester: runde Kappe, die Krempe vorn kurz und hinten lang heruntergezogen
+    headEllipsoid(ctx, body, [0, 0.19, -0.03], [0.3, 0.13, 0.28], 'hut', { blend: 0.02 });
+    brim(ctx, body, [0, 0.11, -0.09], [0.33, 0.02, 0.35], 'hut', -0.32);
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+  },
+};
+
+// --- Ida ------------------------------------------------------------------------------------------
+
+/**
+ * Ida, die Försterin: die orange Strickmütze mit Bommel, ein langer brauner Zopf über dem Rücken; die
+ * grüne Jacke mit orangen Warnstreifen um Arme und Brust; dunkle Hose, Stiefel, am Gürtel ein kleines
+ * Beil.
+ */
+const ida = {
+  ...WANDER,
+  size: 0.98,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 2, { pattern: (p) => (Math.floor(p[1] * 20 + 40) % 3 === 0 ? -1 : 0) }),
+    muetze: rampOf([R.f[1], R.f[2], R.f[3], R.f[4]], 2, { pattern: knit }),
+    bund: rampOf([R.f[0], R.f[1], R.f[2], R.f[3]], 2),
+    bommel: rampOf([R.f[4], R.f[5], R.f[6], R.f[7]], 2, { pattern: (p) => ((Math.floor(p[0] * 50) * 7 + Math.floor(p[1] * 50) * 3) % 5 === 0 ? -1 : 0) }),
+    jacke: rampOf([R.g[2], R.g[3], R.g[4], R.g[5]], 2),
+    jackeDunkel: rampOf([R.g[1], R.g[2], R.g[3]], 1),
+    warn: rampOf([R.f[3], R.f[4], R.f[5], R.f[6]], 1, { shine: true }),
+    hose: rampOf([R.t[0], R.t[1], R.t[2]], 1),
+    schuh: cloth(P.e2, 2, 2, { shine: true }),
+    stiel: rampOf([R.e[4], R.e[5], R.e[6], R.e[7]], 2),
+    eisen: rampOf([R.s[3], R.s[4], R.s[5], R.s[7]], 2, { shine: true }),
+  },
+  build(ctx) {
+    const warn = (l) => (Math.abs(l[1] + 0.01) < 0.022 ? 'warn' : null); // Warnstreifen quer über die Brust
+    const zip = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.014 ? 'jackeDunkel' : null);
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose' },
+        { ...HUMAN.torso[1], mat: 'jacke', matAt: (l) => (l[1] < -0.13 ? 'jackeDunkel' : zip(l)) },
+        { ...HUMAN.torso[2], mat: 'jacke', matAt: (l) => warn(l) || zip(l) },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.04, fringe: 0.09, back: -0.12, sides: -0.05 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    // Warnstreifen um die Oberarme
+    for (const a of arms) ctx.capsule(along(a.shoulder, a.elbow, 0.55), along(a.shoulder, a.elbow, 0.72), 0.078, 0.076, 'warn');
+    ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'jackeDunkel', { pitch: body.stoop });
+    // Langer Zopf über den Rücken
+    braid(ctx, body, [[0, 0.02, -0.25], [0, -0.2, -0.31], [0, -0.42, -0.3], [0, -0.6, -0.26]], 0.06, 'haar', 'bund');
+    earsNose(ctx, body);
+    // Strickmütze: gerippter Bund, Kuppel, Bommel
+    const ribs = (l) => (Math.floor((Math.abs(l[0]) > 0.24 ? l[2] : l[0]) * 40 + 40) & 1 ? 'bund' : 'muetze');
+    ctx.box(H([0, 0.17, -0.01]), [0.297, 0.05, 0.27], 0.12, 'bund', { ax: body.headAx, matAt: ribs });
+    headEllipsoid(ctx, body, [0, 0.21, -0.02], [0.27, 0.12, 0.243], 'muetze', { blend: 0.02 });
+    for (const [x, y, z, r] of [[0, 0.36, -0.03, 0.085], [-0.045, 0.35, 0.0, 0.05], [0.05, 0.37, -0.06, 0.05]]) headEllipsoid(ctx, body, [x, y, z], [r, r * 0.9, r], 'bommel', { blend: 0.012 });
+    // Kleines Beil am Gürtel rechts
+    const hip = add(body.hip, [0.25, 0.02, 0.04]);
+    ctx.capsule(add(hip, [0, 0.07, 0]), add(hip, [0, -0.14, 0.02]), 0.016, null, 'stiel');
+    ctx.box(add(hip, [0, 0.07, 0.045]), [0.012, 0.035, 0.045], 0.008, 'eisen');
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+  },
+};
+
+// --- Rosa -----------------------------------------------------------------------------------------
+
+/**
+ * Rosa, die Köchin: das rote Kopftuch mit weißen Punkten, hinten geknotet; die weiße Kochjacke mit
+ * zwei Knopfreihen, darüber die blau-weiß gestreifte Schürze; der Kochlöffel steckt im Schürzenband.
+ */
+const rosa = {
+  ...WANDER,
+  size: 0.97,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.e[0], R.e[1], R.e[2], R.e[3]], 2),
+    tuch: rampOf([R.r[1], R.r[2], R.r[3], R.r[4]], 2),
+    punkt: rampOf([R.s[8], R.s[9]], 1),
+    jacke: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    schuerze: rampOf([R.b[1], R.b[2], R.b[3], R.b[4]], 2),
+    streifen: rampOf([R.s[7], R.s[8], R.s[9]], 1),
+    loeffel: rampOf([R.e[4], R.e[5], R.e[6], R.e[7]], 2),
+    hose: rampOf([R.n[2], R.n[3], R.n[4]], 1),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const apronStripes = (l, p) => (Math.floor(p[0] * 20 + 40) % 3 === 0 ? 'streifen' : null);
+    const apron = (l, p) => (l[2] > 0.06 && Math.abs(l[0]) < 0.2 ? apronStripes(l, p) || 'schuerze' : null);
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose', matAt: apron },
+        { ...HUMAN.torso[1], mat: 'jacke', matAt: (l, p) => (l[1] < -0.04 ? apron(l, p) : null) },
+        { ...HUMAN.torso[2], mat: 'jacke' },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.03, fringe: 0.08, back: -0.13, sides: -0.05 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    // Schürze bis übers Knie
+    ctx.ellipsoid(add(body.hip, [0, -0.13, 0.1]), [0.21, 0.17, 0.11], 'schuerze', { blend: 0.02, matAt: apronStripes });
+    ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'jacke', { pitch: body.stoop });
+    // Kochlöffel im Schürzenband rechts
+    ctx.capsule(add(spine(0.08), [0.16, 0, 0.17]), add(spine(-0.14), [0.18, 0, 0.19]), 0.013, null, 'loeffel');
+    ctx.ellipsoid(add(spine(0.12), [0.155, 0, 0.17]), [0.03, 0.045, 0.015], 'loeffel');
+    // Kopftuch mit Punkten, hinten geknotet
+    const dots = (l) => (hash(Math.floor(l[0] * 22 + 99), Math.floor(l[1] * 22 + 99), Math.floor(l[2] * 22 + 99)) < 0.16 ? 'punkt' : null);
+    headEllipsoid(ctx, body, [0, 0.11, -0.04], [0.31, 0.18, 0.29], 'tuch', { blend: 0.02, matAt: dots });
+    headEllipsoid(ctx, body, [0, -0.02, -0.31], [0.07, 0.05, 0.05], 'tuch');
+    for (const side of [-1, 1]) headCapsule(ctx, body, [side * 0.03, -0.04, -0.33], [side * 0.08, -0.17, -0.34], 0.03, 0.02, 'tuch');
+    earsNose(ctx, body);
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const y of [0.32, 0.25, 0.18]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfGrau, at: W(add(spine(y), [side * 0.07, 0, 0.18])) });
+  },
+};
+
+// --- Anton ----------------------------------------------------------------------------------------
+
+/**
+ * Anton, der Musiker: die rote Baskenmütze schief auf dem Kopf, lange braune Haare bis auf die
+ * Schultern; die braune Jacke, vor der Brust die Quetschkommode am Riemen – roter Balg, weiße und
+ * schwarze Tasten.
+ */
+const anton = {
+  ...WANDER,
+  size: 1.0,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.e[2], R.e[3], R.e[4], R.e[5]], 2, { pattern: (p) => (Math.floor((p[0] - p[2]) * 30) % 3 === 0 ? -1 : 0) }),
+    muetze: rampOf([R.r[0], R.r[1], R.r[2], R.r[3]], 2),
+    jacke: rampOf([R.e[4], R.e[5], R.e[6], R.e[7]], 2),
+    jackeDunkel: rampOf([R.e[3], R.e[4], R.e[5]], 1),
+    balg: rampOf([R.r[1], R.r[2], R.r[3], R.r[4]], 2),
+    balgDunkel: rampOf([R.r[0], R.r[1], R.r[2]], 1),
+    kasten: rampOf([R.n[0], R.n[1], R.n[2], R.n[3]], 1, { shine: true }),
+    tasten: rampOf([R.s[7], R.s[8], R.s[9]], 1),
+    tastenDunkel: rampOf([R.n[0], R.n[1]], 1),
+    gurt: cloth(P.e2, 1, 2),
+    hose: rampOf([R.n[2], R.n[3], R.n[4]], 1),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose' },
+        { ...HUMAN.torso[1], mat: 'jacke', matAt: (l) => (l[1] < -0.13 ? 'jackeDunkel' : null) },
+        { ...HUMAN.torso[2], mat: 'jacke' },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.04, fringe: 0.08, back: -0.2, sides: -0.16 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    ctx.ellipsoid(spine(0.41), [0.16, 0.06, 0.14], 'jackeDunkel', { pitch: body.stoop });
+    // Lange Haare bis auf die Schultern
+    headEllipsoid(ctx, body, [0, -0.14, -0.17], [0.27, 0.17, 0.1], 'haar', { blend: 0.03 });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.26, -0.16, -0.06], [0.06, 0.15, 0.1], 'haar', { blend: 0.03 });
+    earsNose(ctx, body);
+    // Baskenmütze schief nach rechts, mit Stiel oben
+    ctx.push({ kind: 'ellipsoid', c: ctx.W(H([0.04, 0.22, -0.02])), rr: [0.3, 0.07, 0.28], ax: ctx.AX(body.pitch, body.roll - 0.22), mat: 'muetze', blend: 0.02 });
+    headEllipsoid(ctx, body, [0.02, 0.3, -0.02], [0.018, 0.03, 0.018], 'muetze');
+    // Quetschkommode vor der Brust: zwei Kästen, dazwischen der gefaltete Balg; rechts die Tasten
+    const box = add(spine(0.2), [0, 0, 0.27]);
+    ctx.box(box, [0.17, 0.12, 0.075], 0.025, 'balg', {
+      pitch: body.stoop,
+      matAt: (l) => {
+        if (l[0] > 0.1) return l[2] > 0.045 && Math.abs(l[1]) < 0.1 ? (Math.floor(l[1] * 40 + 40) % 2 ? 'tasten' : 'tastenDunkel') : 'kasten';
+        if (l[0] < -0.11) return 'kasten';
+        return Math.floor(l[0] * 40 + 40) % 2 ? 'balgDunkel' : null;
+      },
+    });
+    for (const side of [-1, 1]) {
+      const top = add(spine(0.37), [side * 0.15, 0.04, 0.03]);
+      ctx.capsule(add(top, [0, 0, -0.15]), top, 0.02, null, 'gurt');
+      ctx.capsule(top, add(box, [side * 0.12, 0.1, -0.03]), 0.02, null, 'gurt');
+    }
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+  },
+};
+
+// --- Emil -----------------------------------------------------------------------------------------
+
+/**
+ * Emil, der Gärtner: der Strohhut mit grünem Band und einer rosa Blume, ein grauer Schnurrbart; das
+ * blaue Hemd unter der grünen Latzhose mit gelben Knöpfen, die Pflanzkelle in der Brusttasche;
+ * Gummistiefel. Ein wenig gebeugt.
+ */
+const emil = {
+  ...WANDER,
+  size: 0.98,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.s[5], R.s[6], R.s[7], R.s[8]], 2),
+    bart: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    stroh: rampOf([R.e[6], R.e[7], R.e[8], R.e[9]], 2, { pattern: (p) => (Math.floor((p[0] + p[2]) * 30 + 99) % 3 === 0 ? -1 : 0) }),
+    hutband: rampOf([R.g[1], R.g[2], R.g[3], R.g[4]], 2),
+    blume: rampOf([R.d[6], P.a0, P.a1], 1),
+    hemd: rampOf([R.b[3], R.b[4], R.b[5]], 1),
+    latz: rampOf([R.g[2], R.g[3], R.g[4], R.g[5]], 2),
+    knopf: rampOf([R.f[5], R.f[6], R.f[7]], 1),
+    kelle: rampOf([R.s[4], R.s[5], R.s[6], R.s[7]], 1, { shine: true }),
+    griff: rampOf([R.e[4], R.e[5], R.e[6]], 1),
+    schuh: cloth(P.e3, 2, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const bib = (l) => (l[2] > 0.04 && Math.abs(l[0]) < 0.14 ? 'latz' : null);
+    const B = {
+      ...HUMAN,
+      stoop: 0.06,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'latz' },
+        { ...HUMAN.torso[1], mat: 'latz' },
+        { ...HUMAN.torso[2], mat: 'hemd', matAt: bib },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.06, fringe: null, back: -0.12, sides: -0.06 }) },
+      mats: { thigh: 'latz', shin: 'latz', shoe: 'schuh', upper: 'hemd', fore: 'hemd', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    for (const side of [-1, 1]) {
+      const top = add(spine(0.37), [side * 0.13, 0.04, 0.0]);
+      ctx.capsule(add(top, [0, 0, -0.15]), top, 0.02, null, 'latz');
+      ctx.capsule(top, add(spine(0.28), [side * 0.12, 0, 0.17]), 0.02, null, 'latz');
+    }
+    ctx.ellipsoid(spine(0.41), [0.16, 0.055, 0.14], 'hemd', { pitch: body.stoop });
+    // Pflanzkelle in der Brusttasche
+    ctx.capsule(add(spine(0.3), [-0.06, 0, 0.19]), add(spine(0.38), [-0.07, 0, 0.19]), 0.012, null, 'griff');
+    ctx.ellipsoid(add(spine(0.25), [-0.06, 0, 0.195]), [0.025, 0.04, 0.01], 'kelle');
+    // Grauer Schnurrbart
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.05, -0.12, 0.27], [0.06, 0.022, 0.025], 'bart', { face: true });
+    earsNose(ctx, body);
+    // Strohhut: weite Krempe, Krone mit grünem Band, die Blume rechts
+    brim(ctx, body, [0, 0.18, -0.02], [0.4, 0.018, 0.37], 'stroh');
+    headEllipsoid(ctx, body, [0, 0.27, -0.02], [0.235, 0.1, 0.215], 'stroh', { blend: 0.02, matAt: (l) => (l[1] < -0.045 ? 'hutband' : null) });
+    headEllipsoid(ctx, body, [0.2, 0.23, 0.08], [0.045, 0.04, 0.04], 'blume');
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knopfGelb, at: W(add(spine(0.3), [side * 0.12, 0, 0.18])) });
+  },
+};
+
+// --- Frieda ---------------------------------------------------------------------------------------
+
+/**
+ * Frieda, die Schmiedin: rote Stoppeln und ein blaues Stirnband; das graue Hemd mit hochgekrempelten
+ * Ärmeln (kräftige Unterarme), die Lederschürze mit Nieten von der Brust bis übers Knie, der Hammer
+ * am Gürtel; graue Hose, schwere Stiefel. Breit in den Schultern.
+ */
+const frieda = {
+  ...WANDER,
+  size: 1.0,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.r[2], R.r[3], R.r[4], R.f[3]], 1, { pattern: (p) => (hash(Math.floor(p[0] * 40 + 99), Math.floor(p[1] * 40 + 99), Math.floor(p[2] * 40 + 99)) < 0.3 ? -1 : 0) }),
+    band: rampOf([R.b[1], R.b[2], R.b[3], R.b[4]], 2),
+    hemd: rampOf([R.s[4], R.s[5], R.s[6], R.s[7]], 2),
+    schuerze: rampOf([R.e[1], R.e[2], R.e[3], R.e[4]], 2, { pattern: (p) => (hash(Math.floor(p[0] * 20 + 99), Math.floor(p[1] * 20 + 99), 7) < 0.12 ? 1 : 0) }),
+    hammer: rampOf([R.s[2], R.s[3], R.s[4], R.s[6]], 2, { shine: true }),
+    stiel: rampOf([R.e[4], R.e[5], R.e[6]], 1),
+    hose: rampOf([R.s[1], R.s[2], R.s[3], R.s[4]], 2),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const apron = (l) => (l[2] > 0.04 && Math.abs(l[0]) < 0.17 ? 'schuerze' : null);
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose', matAt: apron },
+        { ...HUMAN.torso[1], rr: [0.27, 0.17, 0.2], mat: 'hemd', matAt: apron },
+        { ...HUMAN.torso[2], rr: [0.29, 0.14, 0.19], mat: 'hemd', matAt: (l) => (l[1] < 0.02 ? apron(l) : null) },
+      ],
+      shoulderW: 0.29,
+      armR: [0.08, 0.072, 0.07, 0.064],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.08, fringe: 0.14, back: -0.1, sides: 0.0 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'hemd', fore: 'haut', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    // Hochgekrempelte Ärmel: ein dicker Wulst über dem Ellbogen
+    for (const a of arms) ctx.capsule(along(a.shoulder, a.elbow, 0.75), add(a.elbow, mul(norm(sub(a.wrist, a.elbow)), 0.02)), 0.085, 0.08, 'hemd');
+    // Lederschürze bis übers Knie, Träger um den Nacken
+    ctx.ellipsoid(add(body.hip, [0, -0.13, 0.1]), [0.2, 0.18, 0.11], 'schuerze', { blend: 0.02 });
+    ctx.capsule(add(spine(0.31), [-0.12, 0, 0.17]), add(spine(0.42), [-0.06, 0.02, 0.09]), 0.02, null, 'schuerze');
+    ctx.capsule(add(spine(0.31), [0.12, 0, 0.17]), add(spine(0.42), [0.06, 0.02, 0.09]), 0.02, null, 'schuerze');
+    // Hammer am Gürtel links
+    const hip = add(body.hip, [-0.26, 0.03, 0.03]);
+    ctx.capsule(add(hip, [0, 0.06, 0]), add(hip, [0, -0.15, 0.02]), 0.017, null, 'stiel');
+    ctx.box(add(hip, [0, 0.075, 0.0]), [0.025, 0.028, 0.06], 0.008, 'hammer');
+    // Stirnband über den Stoppeln
+    ctx.box(H([0, 0.1, -0.01]), [0.305, 0.036, 0.28], 0.12, 'band', { ax: body.headAx });
+    earsNose(ctx, body);
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const [x, y] of [[-0.14, 0.26], [0.14, 0.26], [-0.15, 0.04], [0.15, 0.04]]) stamps.push({ stamp: STAMPS_FOLK.niete, at: W(add(spine(y), [x, 0, 0.19])) });
+  },
+};
+
+// --- Mara -----------------------------------------------------------------------------------------
+
+/**
+ * Mara, die Späherin: Kapuze mit Zipfel und ein Umhang bis über die Knie, vorn mit goldener Spange;
+ * schwarzes Haar unter der Kapuze; quer über dem Rücken die Kartenrolle, vor der Brust der Kompass;
+ * dunkle Hose, Stiefel.
+ */
+const mara = {
+  ...WANDER,
+  size: 0.98,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.n[0], R.n[1], R.n[2]], 1),
+    umhang: rampOf([R.n[2], R.n[3], R.n[4], R.n[5], R.n[6]], 2),
+    umhangDunkel: rampOf([R.n[1], R.n[2], R.n[3]], 1),
+    spange: rampOf([R.f[4], R.f[5], R.f[6], R.f[7]], 2, { shine: true }),
+    rolle: rampOf([R.e[3], R.e[4], R.e[5], R.e[6]], 2),
+    rolleDunkel: rampOf([R.e[1], R.e[2], R.e[3]], 1),
+    hose: rampOf([R.n[1], R.n[2], R.n[3]], 1),
+    schuh: cloth(P.e2, 2, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'umhang' },
+        { ...HUMAN.torso[1], mat: 'umhang' },
+        { ...HUMAN.torso[2], mat: 'umhang' },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.02, fringe: 0.07, back: -0.12, sides: -0.05 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'umhang', fore: 'umhang', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    // Umhang: über den Schultern weit, unten bis übers Knie
+    ctx.ellipsoid(spine(0.33), [0.33, 0.12, 0.23], 'umhang', { pitch: body.stoop, blend: 0.04 });
+    ctx.ellipsoid(add(body.hip, [0, -0.08, -0.02]), [0.29, 0.24, 0.23], 'umhang', { blend: 0.04, part: 'rock', matAt: (l) => (l[1] < -0.2 ? 'umhangDunkel' : null) });
+    // Kartenrolle quer über dem Rücken
+    ctx.capsule(add(spine(0.38), [-0.17, 0.08, -0.25]), add(spine(0.02), [0.17, 0, -0.24]), 0.05, null, 'rolle');
+    ctx.ellipsoid(add(spine(0.38), [-0.17, 0.08, -0.25]), [0.052, 0.052, 0.052], 'rolleDunkel');
+    // Kapuze: hinter dem Gesicht, oben der Zipfel
+    headEllipsoid(ctx, body, [0, 0.04, -0.07], [0.335, 0.285, 0.3], 'umhang', { blend: 0.02 });
+    headCapsule(ctx, body, [0, 0.24, -0.16], [0.02, 0.38, -0.33], 0.085, 0.02, 'umhang');
+    earsNose(ctx, body);
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.schliesse, at: W(add(spine(0.4), [0, 0, 0.2])), opts: { need: false } });
+    if (dir <= 1 || dir === 7) stamps.push({ stamp: STAMPS_FOLK.kompass, at: W(add(spine(0.2), [0.08, 0, 0.23])) });
+  },
+};
+
+// --- Paula ----------------------------------------------------------------------------------------
+
+/**
+ * Paula, die Näherin: der hohe weiße Dutt mit zwei Stricknadeln, eine Brille; die fliederfarbene
+ * Strickjacke, um den Hals das gelbe Maßband, am linken Handgelenk das Nadelkissen; der lila Rock,
+ * Strümpfe, Schuhe. Etwas kleiner, ein wenig gebeugt.
+ */
+const paula = {
+  ...WANDER,
+  size: 0.93,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    nadel: rampOf([R.s[4], R.s[5], R.s[6], R.s[7]], 1, { shine: true }),
+    knauf: rampOf([R.d[6], P.a0, P.a1], 1),
+    jacke: rampOf([P.a2, P.a3, R.s[8]], 1, { pattern: knit }),
+    blende: rampOf([R.d[2], P.a2, P.a3], 1),
+    band: rampOf([R.f[5], R.f[6], R.f[7]], 1, { pattern: (p) => (Math.floor(p[1] * 40 + 400) % 3 === 0 ? -1 : 0) }),
+    kissen: rampOf([R.r[2], R.r[3], R.r[4]], 1),
+    rock: rampOf([R.d[1], R.d[2], R.d[3], R.d[4]], 2),
+    strumpf: rampOf([R.s[4], R.s[5], R.s[6], R.s[7]], 2),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const button = (l) => (l[2] > 0.1 && Math.abs(l[0]) < 0.022 ? 'blende' : null);
+    const B = {
+      ...HUMAN,
+      stoop: 0.07,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'rock', rr: [0.25, 0.13, 0.19] },
+        { ...HUMAN.torso[1], mat: 'jacke', matAt: button },
+        { ...HUMAN.torso[2], mat: 'jacke', matAt: button },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.06, fringe: 0.12, back: -0.12, sides: -0.07 }) },
+      mats: { thigh: 'rock', shin: 'strumpf', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    skirt(ctx, body, 'rock', { drop: 0.12, rr: [0.25, 0.18, 0.21] });
+    ctx.ellipsoid(spine(0.41), [0.16, 0.055, 0.14], 'blende', { pitch: body.stoop });
+    // Maßband um den Nacken, beide Enden hängen vorn herab
+    for (const side of [-1, 1]) ctx.capsule(add(spine(0.41), [side * 0.1, 0.02, 0.09]), add(spine(0.2), [side * 0.09, 0, 0.21]), 0.017, null, 'band');
+    // Nadelkissen am linken Handgelenk
+    ctx.ellipsoid(add(arms[0].wrist, [0, 0.01, 0]), [0.05, 0.03, 0.05], 'kissen');
+    // Hoher Dutt mit zwei Stricknadeln über Kreuz
+    headEllipsoid(ctx, body, [0, 0.27, -0.06], [0.13, 0.1, 0.12], 'haar', { blend: 0.03 });
+    headCapsule(ctx, body, [-0.2, 0.22, -0.02], [0.17, 0.36, -0.1], 0.011, null, 'nadel');
+    headCapsule(ctx, body, [0.2, 0.22, -0.02], [-0.16, 0.37, -0.12], 0.011, null, 'nadel');
+    headEllipsoid(ctx, body, [0.18, 0.37, -0.1], [0.022, 0.022, 0.022], 'knauf');
+    headEllipsoid(ctx, body, [-0.17, 0.38, -0.12], [0.022, 0.022, 0.022], 'knauf');
+    earsNose(ctx, body);
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) for (const y of [0.3, 0.2, 0.1]) stamps.push({ stamp: STAMPS_FOLK.knopfWeiss, at: W(add(spine(y), [0, 0, 0.19])) });
+  },
+};
+
+// --- Edda -----------------------------------------------------------------------------------------
+
+/**
+ * Edda nach dem Herbst (M32): der silberne Zopfkranz, kleine goldene Ohrringe; das grüne Strick-
+ * tuch über der weißen Bluse, die Bernsteinbrosche, die alten Kopfhörer um den Hals; der dunkle
+ * Rock, Schuhe. Ein wenig gebeugt.
+ */
+const edda = {
+  ...WANDER,
+  size: 0.95,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    zopf: rampOf([R.s[5], R.s[6], R.s[7], R.s[8], R.s[9]], 3, { pattern: (p) => (Math.floor((p[0] + p[2] + p[1] * 2) * 26 + 999) % 3 === 0 ? -2 : 0) }),
+    tuch: rampOf([R.t[1], R.t[2], R.t[3], R.t[4]], 2, { pattern: knit }),
+    bluse: rampOf([R.s[7], R.s[8], R.s[9]], 2),
+    gold: rampOf([R.f[4], R.f[5], R.f[6]], 1, { shine: true }),
+    kopfhoerer: rampOf([R.n[1], R.n[2], R.n[3], R.s[4]], 1, { shine: true }),
+    rock: rampOf([R.n[1], R.n[2], R.n[3]], 1),
+    strumpf: rampOf([R.s[3], R.s[4], R.s[5]], 1),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const blouse = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.06 && l[1] > -0.02 ? 'bluse' : null);
+    const B = {
+      ...HUMAN,
+      stoop: 0.06,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'rock', rr: [0.25, 0.13, 0.19] },
+        { ...HUMAN.torso[1], mat: 'tuch' },
+        { ...HUMAN.torso[2], mat: 'tuch', matAt: blouse },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.06, fringe: 0.11, back: -0.08, sides: -0.03 }) },
+      mats: { thigh: 'rock', shin: 'strumpf', shoe: 'schuh', upper: 'tuch', fore: 'tuch', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    skirt(ctx, body, 'rock', { drop: 0.14, rr: [0.25, 0.2, 0.21] });
+    ctx.ellipsoid(spine(0.41), [0.15, 0.05, 0.13], 'bluse', { pitch: body.stoop });
+    // Alte Kopfhörer um den Hals: zwei Muscheln auf den Schultern
+    for (const side of [-1, 1]) ctx.ellipsoid(add(spine(0.42), [side * 0.15, 0.0, 0.05]), [0.045, 0.06, 0.05], 'kopfhoerer');
+    ctx.capsule(add(spine(0.42), [-0.15, 0, 0.0]), add(spine(0.44), [0, 0.0, -0.13]), 0.016, null, 'kopfhoerer');
+    ctx.capsule(add(spine(0.44), [0, 0.0, -0.13]), add(spine(0.42), [0.15, 0, 0.0]), 0.016, null, 'kopfhoerer');
+    // Silberner Zopfkranz rund um den Kopf
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      const b = ((k + 1) / 8) * Math.PI * 2;
+      headCapsule(ctx, body, [Math.sin(a) * 0.27, 0.18, Math.cos(a) * 0.245 - 0.02], [Math.sin(b) * 0.27, 0.18, Math.cos(b) * 0.245 - 0.02], 0.065, null, 'zopf');
+    }
+    earsNose(ctx, body);
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.29, -0.11, 0.0], [0.016, 0.02, 0.016], 'gold');
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+    if (dir <= 1 || dir === 7) stamps.push({ stamp: STAMPS_FOLK.brosche, at: W(add(spine(0.3), [0, 0, 0.19])) });
+  },
+};
+
+// --- Marthe ---------------------------------------------------------------------------------------
+
+/**
+ * Marthe, die Bootsbauerin vom Apfelwerder: die petrolfarbene Hafenmütze mit dickem Umschlag,
+ * kastanienbraunes Haar mit grauen Strähnen, der dicke Zopf über der rechten Schulter mit rotem Band,
+ * der Bleistift hinter dem Ohr; der helle Zopfmusterpullover, die Lederschürze mit Latz, in der Tasche
+ * der gelbe Zollstock; dunkelblaue Hose, Stiefel.
+ */
+const marthe = {
+  ...WANDER,
+  size: 0.99,
+  materials: {
+    haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
+    haar: rampOf([R.e[3], R.e[4], R.e[5], R.e[6]], 2, { pattern: (p) => (Math.floor((p[0] * 7 + p[1] * 3 + p[2] * 5) * 20 + 999) % 11 === 0 ? 3 : 0) }),
+    muetze: rampOf([R.t[2], R.t[3], P.a5, P.a6], 2, { pattern: knit }),
+    umschlag: rampOf([R.t[0], R.t[1], R.t[2], R.t[3]], 2),
+    pulli: rampOf([R.s[5], R.s[6], R.s[7], R.s[8], R.s[9]], 3, { pattern: (p) => (Math.floor(p[0] * 20 + 40) % 4 === 0 ? -1 : 0) }),
+    schuerze: rampOf([R.e[2], R.e[3], R.e[4], R.e[5], R.e[6]], 2, { pattern: (p) => (hash(Math.floor(p[0] * 20 + 99), Math.floor(p[1] * 20 + 99), 3) < 0.1 ? 1 : 0) }),
+    band: rampOf([R.r[2], R.r[3], R.r[4]], 1),
+    stift: rampOf([R.f[4], R.f[5], R.f[6]], 1),
+    zollstock: rampOf([R.f[5], R.f[6], R.f[7]], 1, { pattern: (p) => (Math.floor(p[1] * 40 + 400) % 2 ? -2 : 0) }),
+    hose: rampOf([R.b[0], R.b[1], R.b[2]], 1),
+    schuh: cloth(P.e1, 1, 2, { shine: true }),
+  },
+  build(ctx) {
+    const B = {
+      ...HUMAN,
+      torso: [
+        { ...HUMAN.torso[0], mat: 'hose', matAt: (l) => (l[2] > 0.04 && Math.abs(l[0]) < 0.18 ? 'schuerze' : null) },
+        { ...HUMAN.torso[1], mat: 'pulli', matAt: (l) => (l[2] > 0.04 && Math.abs(l[0]) < 0.18 ? 'schuerze' : null) },
+        { ...HUMAN.torso[2], mat: 'pulli', matAt: (l) => (l[2] > 0.06 && Math.abs(l[0]) < 0.12 && l[1] < 0.06 ? 'schuerze' : null) },
+      ],
+      head: { ...HUMAN.head, r: 0.2, matAt: hairOf({ top: 0.04, fringe: 0.1, back: -0.12, sides: -0.05 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'pulli', fore: 'pulli', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    ctx.ellipsoid(add(body.hip, [0, -0.12, 0.1]), [0.2, 0.16, 0.11], 'schuerze', { blend: 0.02 });
+    ctx.ellipsoid(spine(0.41), [0.17, 0.065, 0.15], 'pulli', { pitch: body.stoop });
+    for (const side of [-1, 1]) ctx.capsule(add(spine(0.3), [side * 0.11, 0, 0.17]), add(spine(0.42), [side * 0.07, 0.02, 0.07]), 0.018, null, 'schuerze');
+    // Zollstock aus der Schürzentasche
+    ctx.capsule(add(spine(0.08), [-0.1, 0, 0.21]), add(spine(0.2), [-0.11, 0, 0.21]), 0.016, null, 'zollstock');
+    // Der dicke Zopf über der rechten Schulter, unten das rote Band
+    braid(ctx, body, [[0.2, -0.05, -0.12], [0.26, -0.22, 0.02], [0.24, -0.4, 0.14], [0.22, -0.56, 0.18]], 0.065, 'haar', 'band');
+    earsNose(ctx, body);
+    // Bleistift hinter dem linken Ohr
+    headCapsule(ctx, body, [-0.31, 0.02, -0.06], [-0.3, 0.02, 0.1], 0.014, null, 'stift');
+    // Hafenmütze: dicker gerippter Umschlag, oben etwas flach
+    const ribs = (l) => (Math.floor((Math.abs(l[0]) > 0.24 ? l[2] : l[0]) * 40 + 40) & 1 ? 'umschlag' : 'muetze');
+    ctx.box(H([0, 0.165, -0.01]), [0.305, 0.06, 0.28], 0.12, 'umschlag', { ax: body.headAx, matAt: ribs });
+    headEllipsoid(ctx, body, [0, 0.22, -0.02], [0.28, 0.11, 0.255], 'muetze', { blend: 0.02 });
+    ctx.mark('chest', spine(0.25));
+    ctx.face = faceAt(ctx, H(FACE_POINT));
+  },
+};
+
+// --- Pim und Lu -----------------------------------------------------------------------------------
+
+/** Die Stelle des Gesichts eines Kindes (kleinerer Kopf). */
+const FACE_POINT_CHILD = [0, -0.04, 0.228];
+
+/**
+ * Pim, Marthes Sohn: ein Hut aus Zeitungspapier über roten Locken, Sommersprossen; der weiße
+ * Ringelpulli mit blauen Streifen und Rollkragen, braune Hose, grüne Gummistiefel.
+ */
+const pim = {
+  ...WANDER,
+  size: 1.0,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.r[2], R.r[3], R.r[4], R.f[3]], 2),
+    papier: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
+    tinte: rampOf([R.s[3], R.s[4], R.s[5]], 1),
+    pulli: rampOf([R.s[7], R.s[8], R.s[9]], 2, { pattern: knit }),
+    streifen: rampOf([R.b[1], R.b[2], R.b[3], R.b[4]], 2),
+    hose: cloth(P.e3, 2, 2),
+    schuh: rampOf([R.g[2], R.g[3], R.g[4], R.g[5]], 1, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const stripes = rings('streifen', 3, 14);
+    const B = {
+      ...CHILD,
+      torso: [
+        { ...CHILD.torso[0], mat: 'hose' },
+        { ...CHILD.torso[1], mat: 'pulli', matAt: stripes },
+        { ...CHILD.torso[2], mat: 'pulli', matAt: stripes },
+      ],
+      head: { ...CHILD.head, r: 0.17, matAt: hairOf({ top: 0.02, fringe: 0.06, back: -0.1, sides: -0.04, zig: 0.035 }) },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'pulli', fore: 'pulli', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H } = body;
+    for (const i of [0, 1]) for (const p of [`upper${i}`, `fore${i}`]) ctx.part(p).matAt = stripes;
+    // Rollkragen
+    ctx.ellipsoid(spine(0.31), [0.12, 0.05, 0.11], 'streifen', { pitch: body.stoop });
+    // Locken, die unter dem Hut hervorschauen
+    for (const [x, y, z] of [[-0.22, 0.1, 0.1], [0.22, 0.1, 0.1], [-0.24, 0.02, -0.05], [0.24, 0.02, -0.05]]) headEllipsoid(ctx, body, [x, y, z], [0.05, 0.045, 0.05], 'haar', { blend: 0.02 });
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.245, -0.035, -0.01], [0.035, 0.06, 0.045], 'haut', { blend: 0.02 });
+    headEllipsoid(ctx, body, [0, -0.06, 0.226], [0.032, 0.028, 0.03], 'haut', { blend: 0.012, face: true });
+    // Hut aus Zeitungspapier: Band um den Kopf, darüber die gefaltete Spitze (von vorn ein Dreieck)
+    const print = (l, p) => (Math.floor(p[1] * 40 + 400) % 2 === 0 && hash(Math.floor(p[0] * 40 + 99), Math.floor(p[1] * 40 + 99), 5) < 0.45 ? 'tinte' : null);
+    ctx.box(H([0, 0.15, -0.01]), [0.26, 0.035, 0.235], 0.1, 'papier', { ax: body.headAx });
+    ctx.push({ kind: 'box', c: ctx.W(H([0, 0.17, -0.02])), h: [0.19, 0.19, 0.085], r: 0.03, ax: ctx.AX(body.pitch, body.roll + Math.PI / 4), mat: 'papier', matAt: print });
+    ctx.mark('chest', spine(0.2));
+    ctx.face = faceAt(ctx, H(FACE_POINT_CHILD));
+    if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.sommersprossen, at: W(H([side * 0.12, -0.07, 0.235])), opts: { depth: 0.06 } });
+  },
+};
+
+/**
+ * Lu, Marthes Tochter: zwei abstehende Zöpfe mit roten Bändern, Mittelscheitel; der rote Dufflecoat
+ * mit hellen Knebeln und Kapuze im Nacken, gelbe Gummistiefel; in der rechten Hand ein Apfel.
+ */
+const lu = {
+  ...WANDER,
+  size: 1.0,
+  materials: {
+    haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
+    haar: rampOf([R.e[0], R.e[1], R.e[2], R.e[3]], 2),
+    band: rampOf([R.r[2], R.r[3], R.r[4]], 1),
+    mantel: rampOf([R.r[1], R.r[2], R.r[3], R.r[4]], 2),
+    mantelDunkel: rampOf([R.r[0], R.r[1], R.r[2]], 1),
+    knebel: rampOf([R.e[7], R.e[8], R.e[9]], 1),
+    apfel: rampOf([R.f[1], R.f[2], R.r[4], R.f[4]], 1, { shine: true }),
+    blatt: rampOf([R.g[4], R.g[5], R.g[6]], 1),
+    hose: rampOf([R.n[2], R.n[3], R.n[4]], 1),
+    schuh: rampOf([R.f[5], R.f[6], R.f[7]], 1, { shine: true }),
+  },
+  build(ctx) {
+    const { W, stamps, dir } = ctx;
+    const placket = (l) => (l[2] > 0.08 && Math.abs(l[0]) < 0.016 ? 'mantelDunkel' : null);
+    const B = {
+      ...CHILD,
+      torso: [
+        { ...CHILD.torso[0], mat: 'mantel', matAt: (l) => (l[1] < -0.06 ? 'mantelDunkel' : null) },
+        { ...CHILD.torso[1], mat: 'mantel', matAt: placket },
+        { ...CHILD.torso[2], mat: 'mantel', matAt: placket },
+      ],
+      head: { ...CHILD.head, r: 0.17, matAt: (l) => {
+        const h = hairOf({ top: 0.02, fringe: 0.09, back: -0.1, sides: -0.04 })(l);
+        if (h && l[2] > -0.15 && l[1] > 0.12 && Math.abs(l[0]) < 0.012) return null; // Mittelscheitel (Haut)
+        return h;
+      } },
+      mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'mantel', fore: 'mantel', hand: 'haut', neck: 'haut', head: 'haut' },
+    };
+    const body = humanoid(ctx, B);
+    const { spine, H, arms } = body;
+    // Kapuze im Nacken
+    ctx.ellipsoid(add(spine(0.28), [0, 0.02, -0.12]), [0.16, 0.06, 0.07], 'mantel', { pitch: body.stoop });
+    // Zwei abstehende Zöpfe mit roten Bändern
+    for (const side of [-1, 1]) {
+      headCapsule(ctx, body, [side * 0.22, 0.08, -0.06], [side * 0.36, 0.0, -0.06], 0.05, 0.035, 'haar');
+      headEllipsoid(ctx, body, [side * 0.23, 0.08, -0.06], [0.035, 0.05, 0.05], 'band');
+    }
+    for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.245, -0.035, -0.01], [0.035, 0.06, 0.045], 'haut', { blend: 0.02 });
+    headEllipsoid(ctx, body, [0, -0.06, 0.226], [0.032, 0.028, 0.03], 'haut', { blend: 0.012, face: true });
+    // Ein Apfel in der rechten Hand, mit Stiel und Blatt
+    const apple = add(arms[1].hand, [0, -0.02, 0.045]);
+    ctx.ellipsoid(apple, [0.048, 0.044, 0.048], 'apfel');
+    ctx.ellipsoid(add(apple, [0.02, 0.05, 0]), [0.02, 0.008, 0.012], 'blatt');
+    ctx.mark('chest', spine(0.2));
+    ctx.face = faceAt(ctx, H(FACE_POINT_CHILD));
+    if (dir <= 1 || dir === 7) for (const y of [0.22, 0.15, 0.08]) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.knebel, at: W(add(spine(y), [side * 0.045, 0, 0.16])) });
+  },
+};
+
 /** Kleine Stempel der Leute. */
 const STAMPS_FOLK = {
   posthorn: { rows: ['.yy.', 'y..y', '.yyy'], legend: { y: R.f[6] } },
@@ -847,6 +1809,19 @@ const STAMPS_FOLK = {
   messing: { rows: ['y'], legend: { y: R.f[5] } },
   nase: { rows: ['kk'], legend: { k: P.n0 } },
   knopfGold: { rows: ['.y.', 'yYy', '.y.'], legend: { y: R.f[6], Y: R.f[4] } },
+  // Die Wanderer, Edda, Marthe und die Kinder (zweite Stufe)
+  tasche: { rows: ['kkkk', 'k..k', 'kkkk'], legend: { k: R.b[1] } },
+  schluessel: { rows: ['s.s', 'sss', '.s.', '.s.'], legend: { s: R.s[7] } },
+  flicken: { rows: ['yyy', 'yYy', 'yyy'], legend: { y: R.f[5], Y: R.f[4] } },
+  knebel: { rows: ['ww'], legend: { w: R.e[8] } },
+  hornknopf: { rows: ['k'], legend: { k: R.e[2] } },
+  knopfGrau: { rows: ['k'], legend: { k: R.s[5] } },
+  knopfGelb: { rows: ['y'], legend: { y: R.f[6] } },
+  niete: { rows: ['s'], legend: { s: R.s[7] } },
+  kompass: { rows: ['.y.', 'yky', '.y.'], legend: { y: R.f[6], k: R.n[1] } },
+  schliesse: { rows: ['yy', 'yY'], legend: { y: R.f[6], Y: R.f[4] } },
+  brosche: { rows: ['.y.', 'yoy', '.y.'], legend: { y: R.f[4], o: R.f[6] } },
+  sommersprossen: { rows: ['f.f', '.f.'], legend: { f: P.h2 } },
 };
 
 // --- Werkzeuge und Waffen -----------------------------------------------------------------------
@@ -1053,7 +2028,11 @@ export const TOOL_MATERIALS = TOOL_MATS;
 
 // --- Alle Figuren -----------------------------------------------------------------------------
 
-export const PEOPLE = { mika, hilde, bert, juna, yusuf, balduin, knopf };
+export const PEOPLE = {
+  mika, hilde, bert, juna, yusuf, balduin, knopf,
+  // Zweite Stufe: die Wanderer, Edda nach dem Herbst, Marthe und ihre Kinder
+  hannes, clara, lotte, greta, fiete, ida, rosa, anton, emil, frieda, mara, paula, edda, marthe, pim, lu,
+};
 
 /** Gesichter und Legende einer Figur für einen Stand (Mika: aus dem Aussehen). */
 export function facesOf(id, spec) {
@@ -1068,6 +2047,22 @@ const FOLK_FACES = {
   juna: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h2, hair: P.n2, cheek: P.a0 }) },
   yusuf: { faces: faceSet(FOLK_EXPRESSIONS, { glasses: true }), legend: faceLegend({ skin: P.h1, hair: P.n1, eyes: P.n0, cheek: P.r4, lips: P.a0, brow: P.n0 }) },
   balduin: { faces: faceSet(['grinsen', 'blinzeln']), legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.a1, lips: P.a0, brow: P.s6 }) },
+  hannes: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a0, lips: P.a0, brow: P.e1 }) },
+  clara: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.a1, brow: P.r1 }) },
+  lotte: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e8, cheek: P.a1, brow: P.e6 }) },
+  greta: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s7, cheek: P.r4, brow: P.s5 }) },
+  fiete: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s8, cheek: P.r4, lips: P.a0, brow: P.s9 }) },
+  ida: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e3, cheek: P.a1, brow: P.e3 }) },
+  rosa: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h3, hair: P.e2, cheek: P.a1, brow: P.e2 }) },
+  anton: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e4, cheek: P.r4, brow: P.e3 }) },
+  emil: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h4, hair: P.s7, cheek: P.r4, brow: P.s8 }) },
+  frieda: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.r3, cheek: P.r4, brow: P.r2 }) },
+  mara: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.n1, cheek: P.a1, brow: P.n1 }) },
+  paula: { faces: faceSet(FOLK_EXPRESSIONS, { glasses: true }), legend: faceLegend({ skin: P.h4, hair: P.s8, cheek: P.a1, brow: P.s7 }) },
+  edda: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.s9, cheek: P.a1, brow: P.s8 }) },
+  marthe: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h3, hair: P.e5, cheek: P.a0, brow: P.e3 }) },
+  pim: { faces: faceSet(FOLK_EXPRESSIONS), legend: faceLegend({ skin: P.h4, hair: P.r4, cheek: P.a1, brow: P.r2 }) },
+  lu: { faces: faceSet(FOLK_EXPRESSIONS, { lashes: true }), legend: faceLegend({ skin: P.h4, hair: P.e2, cheek: P.a0, brow: P.e1 }) },
 };
 
 export { DOG, quadruped };

@@ -1,7 +1,7 @@
 // Nahkampf-Waffen (DESIGN.md 6.13). Mika schlägt mit dem, was sie in der
 // Hand hat (Schnellleiste): Waffe, Axt, Spitzhacke – ohne Werkzeug mit den
-// Fäusten. Waffen baut man an der Werkbank und wertet sie in der Bauleiste
-// (Reiter »Figur«) zweimal auf; jede Stufe erhöht den Schaden.
+// Fäusten. Waffen baut man an der Werkbank und wertet sie dort (H5: Seite
+// »Figur«) zweimal auf; jede Stufe erhöht den Schaden.
 //
 //   damage    Schaden pro Treffer          rate    Schläge pro Sekunde
 //   reach     Reichweite in Metern         arc     halber Öffnungswinkel (Grad)
@@ -71,7 +71,7 @@ export const WEAPONS = {
   schlaeger: { icon: 'schlaeger', damage: 15, rate: 2.5, reach: 1.5, arc: 60, targets: 2, push: 0.6, stun: 0.45, cabinet: true }, // schnell, betäubt kurz
 };
 
-/** Waffen, die man bauen kann (Reihenfolge in Werkbank und Bauleiste). */
+/** Waffen, die man bauen kann (Reihenfolge an der Werkbank: Herstellen und Figur). */
 export const WEAPON_ORDER = ['schaufel', 'pfanne', 'rechen', 'faeustlinge'];
 
 /** Schaden je Aufwertungsstufe (Stufe 1, 2, 3). */
