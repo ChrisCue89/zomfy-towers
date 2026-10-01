@@ -99,7 +99,8 @@ machen und dann fix das«; »das intro ist die figur noch 3d!«
   roten Kopf (vorher sah man auf dem grauen Dutt nur einen roten Punkt). Friedas Stirnband liegt auf
   der Kopfform (als eigener Quader lag es vorn hinter der Stirn – an den Schläfen standen nur zwei
   blaue Ecken wie Brauen), Eddas Zopfkranz sitzt tiefer und vorn höher als hinten (oben stand er
-  über den Kopf hinaus – das sah aus wie eine Kochmütze). Die Prüfung verlangt jetzt im Profil genau
+  über den Kopf hinaus – das sah aus wie eine Kochmütze), und Knopfs rotes Halsband liegt unter dem
+  Kinn statt im Kopf (man sah nur den goldenen Knopf). Die Prüfung verlangt jetzt im Profil genau
   ein Auge und sonst beide (`menschen`, Schritt 10).
 - **F6g – Gerade Augen** (Rückmeldung: »Bruder. Die Augen schielen immer noch. Du machst sie schräg.
   Mach sie gerade und es sieht besser raus«): In der Schrägansicht lag das Weiß bei beiden Augen auf

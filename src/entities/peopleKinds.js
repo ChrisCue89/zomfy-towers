@@ -794,15 +794,16 @@ const knopf = {
     }
     const kopf = ctx.part('kopf');
     if (kopf) kopf.bump = locks(16, { amp: 0.35, seed: 3, fade: [0.04, 0.12] });
-    // Halsband und der goldene Knopf
-    const collar = add(res.headC, [0, -0.1, -0.06]);
-    ctx.ellipsoid(collar, [0.085, 0.03, 0.08], 'halsband', { pitch: -0.4 });
+    // Halsband und der goldene Knopf. F6h: breiter als der Hals unter dem Kinn – vorher lag es im
+    // Kopf und man sah nur den Knopf, nicht das rote Band, das ihm den Namen gab
+    const collar = add(res.headC, [0, -0.145, -0.075]);
+    ctx.ellipsoid(collar, [0.115, 0.03, 0.11], 'halsband', { pitch: -0.4 });
     const face = faceAt(ctx, res.H([0, 0.015, 0.1]), 0.05);
     if (face) {
       stamps.push({ stamp: { rows: KNOPF_EYES[face.view], legend: { k: P.n0, w: P.s8 } }, at: face.at, opts: { flip: face.flip, depth: 0.12 } });
       stamps.push({ stamp: STAMPS_FOLK.nase, at: W(res.H([0, -0.01, 0.2])), opts: { depth: 0.1 } });
     }
-    if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.knopfGold, at: W(add(collar, [0, -0.03, 0.08])), opts: { need: false } });
+    if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.knopfGold, at: W(add(collar, [0, -0.03, 0.11])), opts: { need: false } });
   },
 };
 
