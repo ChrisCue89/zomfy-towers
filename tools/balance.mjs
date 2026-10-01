@@ -22,6 +22,8 @@
 //   --zaeh=2,0.55,0.025[,0.4]   Zähigkeit zum Ausprobieren (TOUGHNESS: from, per, grow,
 //                          bossNight), ohne src/data/waves.js zu ändern (B1)
 //   --boss=3               Bosse mit so viel mehr Leben (zum Ausprobieren, B1)
+//   --herz=ziel,heil:0.5   Moderherz zum Ausprobieren: Scharfschützen zielen zuerst aufs Herz
+//                          (ziel), seine Sporen heilen es nur zu diesem Teil (heil)
 //
 // Ausgabe: je Nacht gehalten/verloren, Zuhause, Durchbruch, besiegte Schlurfer,
 // Türme (Stufen), Barrikaden, Vorrat, dazu der Druck auch in gehaltenen Nächten
@@ -54,6 +56,12 @@ const TOUGH = arg('zaeh', null)
   .reduce((o, v, k) => ({ ...o, [['from', 'per', 'grow', 'bossNight'][k]]: v }), {});
 
 const BOSS_MUL = Number(arg('boss', 1));
+const HEART = arg('herz', null)
+  ?.split(',')
+  .reduce((o, w) => {
+    const [k, v] = w.split(':');
+    return { ...o, [k]: v === undefined ? true : Number(v) };
+  }, {});
 
 /**
  * Zähigkeit zum Ausprobieren in das Modul im Browser schreiben (dasselbe Objekt, das der Wellenplan
@@ -61,6 +69,30 @@ const BOSS_MUL = Number(arg('boss', 1));
  */
 async function applyTough(page) {
   if (TOUGH) await page.evaluate(async (t) => Object.assign((await import('./src/data/waves.js')).TOUGHNESS, t), TOUGH);
+  if (HEART) {
+    await page.evaluate((h) => {
+      const g = window.zomfy.game;
+      if (h.ziel) {
+        // Scharfschützen (strongest) nehmen das Herz vor jedem anderen Ziel in Reichweite
+        const targets = g.towers.targets.bind(g.towers);
+        g.towers.targets = (t, range, n, strongest, minRange) => {
+          const list = targets(t, range, 999, strongest, minRange);
+          const k = strongest ? list.findIndex((z) => z.def.heart) : -1;
+          if (k > 0) list.unshift(list.splice(k, 1)[0]);
+          return list.slice(0, n);
+        };
+      }
+      if (h.heil !== undefined) {
+        // Die Sporen des Herzens heilen es selbst nur zu diesem Teil
+        const attack = g.onBossAttack.bind(g);
+        g.onBossAttack = (z, kind) => {
+          const before = z.hp;
+          attack(z, kind);
+          if (z.def.heart && kind === 'sporen' && z.hp > before) z.hp = before + (z.hp - before) * h.heil;
+        };
+      }
+    }, HEART);
+  }
   if (BOSS_MUL === 1) return;
   await page.evaluate((k) => {
     const nights = window.zomfy.game.nights;
@@ -440,6 +472,7 @@ for (const level of LEVELS) {
 console.log('');
 if (TOUGH) console.log(`Zähigkeit zum Ausprobieren: ${JSON.stringify(TOUGH)}`);
 if (BOSS_MUL !== 1) console.log(`Bosse mit ×${BOSS_MUL} Leben`);
+if (HEART) console.log(`Moderherz zum Ausprobieren: ${JSON.stringify(HEART)}`);
 for (const line of summary) console.log(line);
 await browser.close();
 server.close();

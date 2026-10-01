@@ -2792,6 +2792,20 @@ die Barrikaden je erreichte; Barrikaden, Tor und Mikas Nahkampf hatten fast nich
 erste Boss war die leichteste Nacht. Die Spannung soll aus der Nacht kommen, nicht aus einem
 Zahlenschalter – deshalb zuerst die Bosse und die frühen Nächte.
 
+### 223. Wie frontal stehen die Menschen im Bild? (F5, recherche/menschen-gestaltung.md)
+**Entscheidung:** Die Menschen werden frontaler gebacken, als die Kamera die Welt sieht: die
+ganze Figur um 0,2 rad zur Kamera gekippt (samt Werkzeug), der Kopf um weitere 0,25 rad. Die
+Schlurfer behalten den echten Blickwinkel. Dazu für die Menschen: Augen 3 Texel breit mit Glanz,
+Sel-out zwei Stufen unter dem Stoff, Schlagschatten zwischen Armen und Rumpf, aufgeräumte Töne,
+ein zum Kinn schmalerer Kopf und eigene Rampen für Violett, Rosa, Weiß, Türkis und Blond.
+
+**Warum:** So machen es die Draufsicht-Spiele, die der Auftraggeber im Sinn hat (Stardew Valley,
+Zelda, Chrono Trigger, Eastward): Die Welt zeigt ihre Dächer, die Figuren ihr Gesicht. Streng von
+oben sah man bei Mika fast nur Mütze und Scheitel, die Augen lagen dicht über dem Kragen. Die
+müden, gebeugten Schlurfer dürfen dagegen auf ihre Füße schauen – sie gefielen dem Auftraggeber,
+also bleiben sie unverändert (Fingerabdruck aller 510 Bilder vorher und nachher gleich). Die
+Menschen sind im Bild dadurch gut 10 % größer; die Voxel-Figuren (3D) ändern sich nicht.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

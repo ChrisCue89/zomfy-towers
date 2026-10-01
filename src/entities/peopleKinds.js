@@ -18,9 +18,13 @@ const R = RAMPS;
 
 /**
  * Ein Gesicht als Stempel: Augen, Brauen, Wangen, Nase, Mund je Ausdruck, gezeichnet für drei
- * Blicke (S von vorn, SO halb gedreht, O im Profil). Legende: k Auge, w Lichtpunkt, l Lid, K
- * unteres Lid, b Braue, c Wange, n Nase, m Mund, t Zunge, z Zähne, L Wimper.
- * `o.lashes` gibt Wimpern, `o.wide` setzt die Augen weiter auseinander (Kinder).
+ * Blicke (S von vorn, SO halb gedreht, O im Profil). Legende: k Auge, i Iris (unten im Auge),
+ * w Lichtpunkt, l Lid, K unteres Lid, b Braue, c Wange, n Nase, m Mund, t Zunge, z Zähne, L Wimper.
+ * `o.lashes` gibt Wimpern, `o.glasses` eine Brille.
+ *
+ * F5 (recherche/menschen-gestaltung.md): Die Augen sind von vorn 3 Texel breit und 3 hoch, so weit
+ * auseinander wie ein Auge breit ist, mit dem Lichtpunkt in beiden Augen oben links und der Iris
+ * unten; im Halbprofil ist das ferne Auge schmaler. Die Brauen stehen eine Reihe über den Augen.
  */
 export function faceRows(view, expr, o = {}) {
   const W = view === 'S' ? 15 : view === 'SO' ? 13 : 7;
@@ -30,20 +34,29 @@ export function faceRows(view, expr, o = {}) {
     if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = ch;
   };
   // Augen [linke Spalte, Breite, außen (−1 links, 1 rechts)], Mund und Wangen je Blick
-  const eyes = view === 'S' ? [[3, 2, -1], [10, 2, 1]] : view === 'SO' ? [[2, 2, -1], [8, 2, 1]] : [[1, 2, 1]];
+  const eyes = view === 'S' ? [[3, 3, -1], [9, 3, 1]] : view === 'SO' ? [[2, 3, -1], [8, 2, 1]] : [[1, 2, 1]];
   const mouth = view === 'S' ? 7 : view === 'SO' ? 6 : 3;
   const cheeks = view === 'S' ? [[1, 2], [12, 2]] : view === 'SO' ? [[0, 2], [10, 1]] : [[0, 2]];
+  /** Brauen so breit wie das Auge (das schmale im Halbprofil eine Spalte länger); inner/outer heben bzw. senken die Enden. */
   const brow = (y, inner, outer) => {
     for (const [x0, w, side] of eyes) {
-      const xs = side < 0 ? [x0 - 1, x0, x0 + w - 1] : [x0, x0 + w - 1, x0 + w];
-      const out = side < 0 ? xs[0] : xs[2];
-      const inn = side < 0 ? xs[2] : xs[0];
-      for (const x of xs) set(x, x === out ? y + outer : x === inn ? y + inner : y, 'b');
+      const from = side < 0 && w < 3 ? x0 - 1 : x0;
+      const to = side > 0 && w < 3 ? x0 + w : x0 + w - 1;
+      for (let x = from; x <= to; x++) {
+        const out = side < 0 ? x === from : x === to;
+        const inn = side < 0 ? x === to : x === from;
+        set(x, y + (out ? outer : inn ? inner : 0), 'b');
+      }
     }
   };
-  const eyeRows = (rows) => {
-    for (const [x0, w] of eyes) rows.forEach((row, dy) => row && [...row].slice(0, w).forEach((ch, dx) => ch !== '.' && set(x0 + dx, 3 + dy, ch)));
+  /** Augen aus Zeilen je Breite (3 bzw. 2), ab Reihe 3. */
+  const eyeRows = (rows3, rows2 = rows3.map((r) => r && r.slice(0, 1) + r.slice(2))) => {
+    for (const [x0, w] of eyes) {
+      const rows = w === 3 ? rows3 : rows2;
+      rows.forEach((row, dy) => row && [...row].forEach((ch, dx) => ch !== '.' && set(x0 + dx, 3 + dy, ch)));
+    }
   };
+  const open = () => eyeRows(['wkk', 'kkk', 'kik'], ['wk', 'kk', 'ik']);
   const cheek = (y = 6) => {
     for (const [x0, w] of cheeks) for (let x = x0; x < x0 + w; x++) set(x, y, 'c');
   };
@@ -54,7 +67,7 @@ export function faceRows(view, expr, o = {}) {
   switch (expr) {
     case 'froh': // lachende Bögen (hinter einer Brille bleiben die Augen offen), ein offenes Lächeln
       brow(1, -1, 0);
-      if (o.glasses) eyeRows(['wk', 'kk', 'kk']);
+      if (o.glasses) open();
       else {
         for (const [x0, w] of eyes) {
           for (let x = x0; x < x0 + w; x++) set(x, 3, 'k');
@@ -70,9 +83,10 @@ export function faceRows(view, expr, o = {}) {
     case 'aua': // zusammengekniffen > <, der Mund ein kleines O
       brow(1, -1, 1);
       for (const [x0, w, side] of eyes) {
-        const a = side < 0 ? x0 : x0 + w - 1;
-        const b = side < 0 ? x0 + 1 : x0;
+        const a = side < 0 ? x0 : x0 + w - 1; // die Spitze zeigt zur Nase
+        const b = side < 0 ? x0 + w - 1 : x0;
         set(a, 3, 'k');
+        for (let x = Math.min(a, b) + 1; x < Math.max(a, b); x++) set(x, 4, 'k');
         set(b, 4, 'k');
         set(a, 5, 'k');
       }
@@ -83,7 +97,7 @@ export function faceRows(view, expr, o = {}) {
       break;
     case 'staunen': // weit offen, die Brauen hoch, ein rundes O
       brow(0, 0, 0);
-      eyeRows(['wk', 'kk', 'kk']);
+      eyeRows(['wkw', 'kkk', 'kik'], ['wk', 'kk', 'ik']);
       cheek();
       nose();
       line(7, mouth, mouth);
@@ -91,15 +105,15 @@ export function faceRows(view, expr, o = {}) {
       set(mouth, 8, 't');
       break;
     case 'muede': // die Lider halb zu, die Brauen tief
-      brow(2, 0, 0);
-      eyeRows(['ll', 'kk', 'KK']);
+      brow(1, 1, 1);
+      eyeRows(['lll', 'kkk', 'kik'], ['ll', 'kk', 'ik']);
       cheek();
       nose();
       set(mouth, 7, 't');
       break;
     case 'besorgt': // die Brauen innen hoch, der Mund ein kleiner Bogen nach unten
       brow(1, -1, 1);
-      eyeRows(['wk', 'kk', 'kk']);
+      open();
       cheek();
       nose();
       set(mouth, 7, 'm');
@@ -108,7 +122,7 @@ export function faceRows(view, expr, o = {}) {
       break;
     case 'entschlossen': // die Brauen innen tief, die Lider ein wenig zu, die Zähne zusammen
       brow(1, 1, -1);
-      eyeRows(['ll', 'kk', 'kk']);
+      eyeRows(['lll', 'kkk', 'kik'], ['ll', 'kk', 'ik']);
       cheek();
       nose();
       line(7, mouth - 2, mouth + 2);
@@ -116,14 +130,14 @@ export function faceRows(view, expr, o = {}) {
       break;
     case 'blinzeln': // die Lider zu: eine dunkle Linie, darüber Haut
       brow(1, 0, 0);
-      eyeRows([null, 'll', 'kk']);
+      eyeRows([null, 'lll', 'kkk'], [null, 'll', 'kk']);
       cheek();
       nose();
       set(mouth, 7, 't');
       break;
     case 'grinsen': // Balduin: ein breites Grinsen mit Goldzahn
       brow(1, -1, 0);
-      eyeRows(['wk', 'kk', 'KK']);
+      eyeRows(['wkk', 'kkk', 'KKK'], ['wk', 'kk', 'KK']);
       cheek(5);
       line(7, mouth - 2, mouth + 2);
       line(8, mouth - 1, mouth + 1, 'z');
@@ -131,7 +145,7 @@ export function faceRows(view, expr, o = {}) {
       break;
     default: // normal: offene Augen mit Lichtpunkt, ein kleiner Mund
       brow(1, 0, 0);
-      eyeRows(['wk', 'kk', 'kk']);
+      open();
       cheek();
       nose();
       line(7, mouth, mouth, 't');
@@ -142,10 +156,11 @@ export function faceRows(view, expr, o = {}) {
   if (o.lashes && ['normal', 'staunen', 'besorgt'].includes(expr)) {
     for (const [x0, w, side] of eyes) set(side < 0 ? x0 - 1 : x0 + w, 3, 'L');
   }
-  // Brille: ein Rahmen um jedes Auge, dazwischen der Steg, im Profil der Bügel nach hinten
+  // Brille: ein runder Rahmen um jedes Auge (F5: hell, ohne Ecken – dunkel und eckig sah sie wie eine
+  // Schweißerbrille aus), dazwischen der Steg, im Profil der Bügel nach hinten
   if (o.glasses) {
     for (const [x0, w] of eyes) {
-      for (let x = x0 - 1; x <= x0 + w; x++) {
+      for (let x = x0; x < x0 + w; x++) {
         set(x, 2, 'G');
         set(x, 6, 'G');
       }
@@ -157,7 +172,6 @@ export function faceRows(view, expr, o = {}) {
     if (eyes.length === 2) for (let x = eyes[0][0] + eyes[0][1] + 1; x < eyes[1][0] - 1; x++) set(x, 3, 'S');
     else for (let x = eyes[0][0] - 3; x < eyes[0][0] - 1; x++) set(x, 3, 'S');
   }
-  // Im Spiegel: der Lichtpunkt bleibt oben links (sonst schaute das Licht von rechts)
   return g.map((r) => r.join(''));
 }
 
@@ -170,7 +184,7 @@ function faceSet(exprs, o = {}) {
 
 /** Legende eines Gesichts aus Haut, Haar, Augen und Wangen (Palettenwerte). */
 function faceLegend({ skin, hair, eyes = P.n1, cheek = P.a1, lips = P.r1, brow = null }) {
-  return { k: eyes, w: P.s9, l: toneOf(skin, -1), K: P.n2, b: brow ?? toneOf(hair, -1), c: cheek, n: toneOf(skin, -1), m: lips, t: P.a0, z: P.s9, L: eyes, g: P.f6, G: P.s2, S: P.s4 };
+  return { k: eyes, i: toneOf(eyes, 2), w: P.s9, l: toneOf(skin, -1), K: P.n2, b: brow ?? toneOf(hair, -1), c: cheek, n: toneOf(skin, -1), m: lips, t: P.a0, z: P.s9, L: eyes, g: P.f6, G: P.s6, S: P.s6 };
 }
 
 // --- Gemeinsame Stempel ------------------------------------------------------------------------
@@ -243,7 +257,7 @@ const mika = {
       jacke: r(s.jacket, 2, 2, { seam: true }),
       saum: r(s.jacket, 2, 1, { seam: true, base: rampAround(s.jacket, 2, 1).base - 1 }),
       kragen: r(s.jacket, 1, 3, { seam: true, base: rampAround(s.jacket, 1, 3).base + 1 }),
-      zipper: { ramp: [R.s[4], R.s[6], R.s[7], R.s[8]], base: 1 },
+      zipper: { ramp: [R.s[3], R.s[4], R.s[5], R.s[6]], base: 1 },
       hose: { ramp: [R.b[0], R.b[1], R.b[2], R.b[3], R.b[4]], base: 2, seam: true },
       flicken: { ramp: [R.b[1], R.b[2], R.b[3], R.b[4], R.b[5]], base: 2, seam: true },
       stiefel: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true, shine: true },
@@ -307,8 +321,8 @@ const mika = {
         return null;
       },
     });
-    const rollA = W(add(spine(0.0), [-0.17, 0.01, -0.25]));
-    const rollB = W(add(spine(0.0), [0.17, 0.01, -0.25]));
+    const rollA = W(add(spine(0.0), [-0.14, 0.01, -0.25]));
+    const rollB = W(add(spine(0.0), [0.14, 0.01, -0.25]));
     const axis = norm(sub(rollB, rollA));
     ctx.push({
       kind: 'capsule',
@@ -319,24 +333,23 @@ const mika = {
       mat: 'matte',
       matAt: (l) => {
         const t = dot(l, axis);
-        if (Math.abs(t - 0.08) < 0.02 || Math.abs(t - 0.26) < 0.02) return 'riemen';
-        if (t < 0.02 || t > 0.32) {
+        if (Math.abs(t - 0.07) < 0.02 || Math.abs(t - 0.21) < 0.02) return 'riemen';
+        if (t < 0.02 || t > 0.26) {
           const radial = Math.hypot(...sub(l, mul(axis, t)));
           return Math.floor(radial * 55) & 1 ? 'matteHell' : 'matte'; // die Spirale an der Stirnseite
         }
         return null;
       },
     });
-    // Riemen über die Schultern nach vorn, mit Schnallen auf der Brust
-    const buckles = [];
+    // Riemen über die Schultern und gerade über die Brust hinab (F5: ruhig, ohne Schnallen – ein
+    // Pixel Metall auf der Jacke war im Spiel nur Rauschen)
     for (const side of [-1, 1]) {
-      const top = add(spine(0.37), [side * 0.16, 0.045, 0.02]);
-      const chest = add(spine(0.26), [side * 0.17, 0, 0.172]);
-      const low = add(spine(0.12), [side * 0.215, 0, 0.14]);
-      ctx.capsule(add(top, [0, 0, -0.14]), top, 0.026, null, 'gurt');
-      ctx.capsule(top, chest, 0.026, null, 'gurt');
-      ctx.capsule(chest, low, 0.022, null, 'gurt');
-      buckles.push(chest);
+      const top = add(spine(0.37), [side * 0.15, 0.045, 0.02]);
+      const chest = add(spine(0.26), [side * 0.155, 0, 0.172]);
+      const low = add(spine(0.13), [side * 0.165, 0, 0.17]);
+      ctx.capsule(add(top, [0, 0, -0.14]), top, 0.03, null, 'riemen');
+      ctx.capsule(top, chest, 0.03, null, 'riemen');
+      ctx.capsule(chest, low, 0.028, null, 'riemen');
     }
     // Kopf: Ohren, Nase; bei »Frau« schulterlanges Haar und ein kurzer Zopf mit Haargummi
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.285, -0.04, -0.01], [0.04, 0.07, 0.055], long ? 'haar' : 'haut', { blend: 0.02 });
@@ -369,13 +382,6 @@ const mika = {
     ctx.mark('chest', spine(0.25));
     // Stempel: Gesicht, Schnallen, Taschen, Schnürung
     ctx.face = faceAt(ctx, H([0, -0.05, 0.265]));
-    if (dir <= 1 || dir === 7) {
-      for (const b of buckles) stamps.push({ stamp: STAMPS.schnalle, at: W(add(b, [0, 0, 0.02])) });
-      // Taschen mit Klappe und Knopf (in der Farbe der Jacke)
-      const dark = toneOf(s.jacket, -1);
-      const flap = { rows: ['kkkkk', 'kkskk', '.....', 'k...k', 'kkkkk'], legend: { k: dark, s: R.s[7] } };
-      for (const side of [-1, 1]) stamps.push({ stamp: flap, at: W(add(spine(0.12), [side * 0.12, 0, 0.2])) });
-    }
     if (dir <= 2 || dir >= 6) for (const leg of legs) stamps.push({ stamp: STAMPS.schnuerung, at: W(add(leg.foot, [0, 0.045, 0.06])), opts: { depth: 0.05 } });
   },
 };
@@ -419,7 +425,7 @@ function earsNose(ctx, body, { ear = 'haut', nose = 'haut', noseR = [0.038, 0.03
 function visorCap(ctx, body, { top = 'muetze', band = 'band', visor = 'schirm', h = 0.1, lift = 0.17, visorLen = 0.13, wide = 1 } = {}) {
   ctx.box(body.H([0, lift, -0.01]), [0.298 * wide, 0.045, 0.272 * wide], 0.1, band, { ax: body.headAx });
   headEllipsoid(ctx, body, [0, lift + 0.035, -0.02], [0.288 * wide, h, 0.262 * wide], top, { blend: 0.02 });
-  ctx.push({ kind: 'box', c: ctx.W(body.H([0, lift - 0.035, 0.265 + visorLen / 2])), h: [0.2 * wide, 0.013, visorLen / 2], r: 0.012, ax: ctx.AX(body.pitch + 0.2, body.roll), mat: visor });
+  ctx.push({ kind: 'box', c: ctx.W(body.H([0, lift - 0.035, 0.265 + visorLen / 2])), h: [0.2 * wide, 0.013, visorLen / 2], r: 0.012, ax: body.headAxes(0.2), mat: visor });
 }
 
 /** Ein Rock bzw. Mantelschoß um die Hüften (Ellipsoid, das die Oberschenkel bedeckt). */
@@ -778,8 +784,8 @@ const balduin = {
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.23, -0.07, 0.12], [0.07, 0.11, 0.09], 'bart', { blend: 0.02 });
     earsNose(ctx, body, { nose: 'nase', noseR: [0.05, 0.045, 0.045] });
     // Schiebermütze: flach, nach vorn gezogen, mit kurzem Schirm und Knopf
-    ctx.push({ kind: 'ellipsoid', c: ctx.W(H([0, 0.2, 0.02])), rr: [0.31, 0.085, 0.3], ax: ctx.AX(body.pitch + 0.14, body.roll), mat: 'muetze', blend: 0.02 });
-    ctx.push({ kind: 'box', c: ctx.W(H([0, 0.14, 0.31])), h: [0.19, 0.014, 0.055], r: 0.012, ax: ctx.AX(body.pitch + 0.3, body.roll), mat: 'schirm' });
+    ctx.push({ kind: 'ellipsoid', c: ctx.W(H([0, 0.2, 0.02])), rr: [0.31, 0.085, 0.3], ax: body.headAxes(0.14), mat: 'muetze', blend: 0.02 });
+    ctx.push({ kind: 'box', c: ctx.W(H([0, 0.14, 0.31])), h: [0.19, 0.014, 0.055], r: 0.012, ax: body.headAxes(0.3), mat: 'schirm' });
     headEllipsoid(ctx, body, [0, 0.29, 0.0], [0.03, 0.02, 0.03], 'schirm');
     ctx.mark('chest', spine(0.25));
     ctx.face = faceAt(ctx, H(FACE_POINT));
@@ -851,7 +857,7 @@ function flare(ctx, legs, mat, r0, r1, from = 0.5) {
 
 /** Ein flacher Rand um den Kopf (Hutkrempe), geneigt um `tilt` (vorn runter positiv). */
 function brim(ctx, body, l, rr, mat, tilt = 0, more = {}) {
-  return ctx.push({ kind: 'ellipsoid', c: ctx.W(body.H(l)), rr, ax: ctx.AX(body.pitch + tilt, body.roll), mat, ...more });
+  return ctx.push({ kind: 'ellipsoid', c: ctx.W(body.H(l)), rr, ax: body.headAxes(tilt), mat, ...more });
 }
 
 /** Ein Zopf als Kette aus Kapseln im Kopfrahmen; `tie` legt ein Band ans Ende. */
@@ -1320,7 +1326,7 @@ const anton = {
     for (const side of [-1, 1]) headEllipsoid(ctx, body, [side * 0.26, -0.16, -0.06], [0.06, 0.15, 0.1], 'haar', { blend: 0.03 });
     earsNose(ctx, body);
     // Baskenmütze schief nach rechts, mit Stiel oben
-    ctx.push({ kind: 'ellipsoid', c: ctx.W(H([0.04, 0.22, -0.02])), rr: [0.3, 0.07, 0.28], ax: ctx.AX(body.pitch, body.roll - 0.22), mat: 'muetze', blend: 0.02 });
+    ctx.push({ kind: 'ellipsoid', c: ctx.W(H([0.04, 0.22, -0.02])), rr: [0.3, 0.07, 0.28], ax: body.headAxes(0, -0.22), mat: 'muetze', blend: 0.02 });
     headEllipsoid(ctx, body, [0.02, 0.3, -0.02], [0.018, 0.03, 0.018], 'muetze');
     // Quetschkommode vor der Brust: zwei Kästen, dazwischen der gefaltete Balg; rechts die Tasten
     const box = add(spine(0.2), [0, 0, 0.27]);
@@ -1732,7 +1738,7 @@ const pim = {
     // Hut aus Zeitungspapier: Band um den Kopf, darüber die gefaltete Spitze (von vorn ein Dreieck)
     const print = (l, p) => (Math.floor(p[1] * 40 + 400) % 2 === 0 && hash(Math.floor(p[0] * 40 + 99), Math.floor(p[1] * 40 + 99), 5) < 0.45 ? 'tinte' : null);
     ctx.box(H([0, 0.15, -0.01]), [0.26, 0.035, 0.235], 0.1, 'papier', { ax: body.headAx });
-    ctx.push({ kind: 'box', c: ctx.W(H([0, 0.17, -0.02])), h: [0.19, 0.19, 0.085], r: 0.03, ax: ctx.AX(body.pitch, body.roll + Math.PI / 4), mat: 'papier', matAt: print });
+    ctx.push({ kind: 'box', c: ctx.W(H([0, 0.17, -0.02])), h: [0.19, 0.19, 0.085], r: 0.03, ax: body.headAxes(0, Math.PI / 4), mat: 'papier', matAt: print });
     ctx.mark('chest', spine(0.2));
     ctx.face = faceAt(ctx, H(FACE_POINT_CHILD));
     if (dir <= 1 || dir === 7) for (const side of [-1, 1]) stamps.push({ stamp: STAMPS_FOLK.sommersprossen, at: W(H([side * 0.12, -0.07, 0.235])), opts: { depth: 0.06 } });
@@ -2036,9 +2042,12 @@ export const PEOPLE = {
 
 /** Gesichter und Legende einer Figur für einen Stand (Mika: aus dem Aussehen). */
 export function facesOf(id, spec) {
-  if (id === 'mika') return { faces: MIKA_FACES[spec.body === 'mann' ? 'mann' : 'frau'], legend: faceLegend({ skin: spec.skin, hair: spec.hair, eyes: spec.eyes, cheek: spec.cheek }) };
+  if (id === 'mika') return { faces: MIKA_FACES[spec.body === 'mann' ? 'mann' : 'frau'], legend: faceLegend({ skin: spec.skin, hair: spec.hair, eyes: spec.eyes, cheek: CHEEK_ON[spec.skin] ?? spec.cheek }) };
   return FOLK_FACES[id] || { faces: {}, legend: {} };
 }
+
+/** F5: Wangen auf dunklerer Haut gedämpfter (helles Rosa leuchtete dort wie zwei Lämpchen). */
+const CHEEK_ON = { [P.h2]: R.d[5], [P.h1]: R.d[4], [P.h0]: R.d[3] };
 
 /** Gesichter der Leute: Haut, Haar (Brauen), Augen, Wangen und Brille bzw. Bart. */
 const FOLK_FACES = {

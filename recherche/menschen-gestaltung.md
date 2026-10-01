@@ -1,0 +1,109 @@
+# Die Menschen als Sprites – schöner zeichnen (F5)
+
+Stand: 01.10.2026 · Auftrag: »Hab mir die 2d Modelle angeguckt. Die Zombies gefallen mir. Die
+Menschen könnten schöner sein. Recherchiere wie andere das machen und dann zeichne sie schöner.«
+
+Die Schlurfer bleiben, wie sie sind (ein Fingerabdruck aller 510 Schlurfer-Bilder wird vor und
+nach der Arbeit verglichen). Alles Neue gilt nur für die Menschen und ihre Werkzeuge.
+
+## 1. Wie andere es machen
+
+Quellen (gelesen über die Suche; einige Seiten sperrt das Netz der Arbeitsumgebung, ihr Inhalt
+kam aus den Zusammenfassungen der Suche):
+
+- SLYNYRD, [Pixelblog 22 – Top Down Character Sprites](https://www.slynyrd.com/blog/2019/10/21/pixelblog-22-top-down-character-sprites),
+  [Pixelblog 55 – Top Down Character Animation](https://www.slynyrd.com/blog/2025/3/24/pixelblog-55-top-down-character-animation),
+  [Pixelblog 29 – Anime Faces and Hair](https://www.slynyrd.com/blog/2020/7/28/pixelblog-29-anime-faces-and-hair),
+  [Pixelblog 17 – Human Anatomy](https://www.slynyrd.com/blog/2019/5/21/pixelblog-17-human-anatomy)
+- Derek Yu (Spelunky), [Pixel Art Tutorial: Basics](https://www.derekyu.com/makegames/pixelart.html);
+  [pixnote: Outlines und Sel-out](https://pixnote.net/en/learn/outlines/),
+  [pixnote: Figuren, Gesichter, Posen](https://pixnote.net/en/learn/character/)
+- [sprite-ai: Anime-Pixel-Art](https://www.sprite-ai.art/blog/anime-pixel-art),
+  [Sandro Maglione: Pixel-Art-Augen](https://www.sandromaglione.com/articles/pixel-art-eyes-techniques-and-styles)
+- [pixel-editor.com: Farbtheorie und Hue-Shifting](https://www.pixel-editor.com/articles/color-theory-for-pixel-art),
+  [Lospec: Sel-out-Tutorials](https://lospec.com/pixel-art-tutorials/tags/selectiveoutlining)
+- Spiele als Maßstab: Stardew Valley (Figuren 16 × 32), Eastward, Sea of Stars, Octopath
+  Traveler, die Zelda-Teile in Draufsicht, Chrono Trigger.
+
+Was sich durch alle Quellen zieht:
+
+1. **Die Welt von schräg oben, die Figur von vorn.** Die „3/4-Draufsicht“ zeigt bei Gebäuden viel
+   Dach, bei Figuren aber fast nur die Vorderseite: Gesicht und Körper werden frontal gezeichnet,
+   vom Scheitel sieht man nur den Umriss der Haare. Das ist ein bewusster Betrug an der
+   Perspektive (Stardew, Zelda, Chrono Trigger). Eine Figur, die streng von oben gesehen wird,
+   „schaut auf ihre Füße“.
+2. **Der Kopf ist das Wichtigste.** Bei kleinen Figuren ist er ein Drittel bis die Hälfte der
+   Größe (Chibi: 2–2,5 Köpfe hoch, bei 32 Pixeln ein 16er Kopf). Die Augen sitzen etwa auf halber
+   Höhe zwischen Scheitel und Kinn; Haare und Mütze dürfen das Gesicht nicht erdrücken.
+3. **Augen mit Glanz.** Ein Auge ist bei dieser Größe 2–3 Pixel breit und 3 hoch, dunkel, mit
+   genau einem hellen Glanzpixel – in beiden Augen in derselben Ecke, sonst wirkt es wie
+   Schielen. Ein Pixel am Lid oder an der Braue ändert den Ausdruck. Weit auseinander und klein
+   wirken Augen müde oder teilnahmslos.
+4. **Sel-out statt Einheitskontur.** Die Kontur ist eine dunklere, eher kühlere Fassung des
+   Stoffs, nie reines Schwarz; zur Lichtseite heller, zur Schattenseite und am Boden dunkel – so
+   steht die Figur auf jedem Grund (grüne Jacke auf grünem Gras!).
+5. **Innen auch Linien.** Wo ein Arm vor dem Körper liegt, trennt ihn eine dunkle Linie bzw. ein
+   Schlagschatten auf dem Rumpf; sonst verschmelzen Arm und Jacke zu einem Klotz.
+6. **Licht aus einer Richtung, Flächen statt Kissen.** Kein „Pillow-Shading“ (dunkle Ringe um
+   eine helle Mitte); Licht von oben links, Schatten unten rechts, große zusammenhängende Flächen
+   (Cluster) und keine einzelnen Gries-Pixel.
+7. **Hue-Shifting.** Schatten ziehen ins Kühle (Blau, Violett), Lichter ins Warme (Gelb,
+   Orange) – die Palette von Zomfy Towers ist schon so gebaut.
+8. **Weniger ist mehr.** Kleine Dinge (Schnallen, Knöpfe, Taschen) nur, wenn sie als Fläche
+   lesbar sind; ein Pixel Metall auf einer Jacke ist im Spiel nur Rauschen.
+
+## 2. Befund: die Menschen aus F4
+
+Gebacken wurden sie wie die Schlurfer mit dem echten Kamerawinkel (36,9° von oben). Für die
+gebeugten, müden Schlurfer passt das, für die Menschen nicht:
+
+- **Mütze statt Gesicht.** Von Mikas Kopf (27 Texel hoch) gehören 24 Texel der Mütze und dem
+  Scheitel, nur 10 dem Gesicht. Die Augen liegen dicht über dem Kragen – Mika wirkt müde und
+  schaut nach unten.
+- **Knopfaugen.** 2 × 3 Texel auf einem 23 Texel breiten Gesicht, weit auseinander; der Glanz
+  links lässt die Pupille nach rechts rutschen.
+- **Grün auf Grün.** Die Kontur der grünen Jacke ist das dunkelste Grün ihrer Rampe – auf dem
+  Gras verschwindet der Umriss.
+- **Arme im Rumpf.** Gleiche Farbe, keine Linie: Arme und Jacke werden ein Block.
+- **Rauschen auf der Brust.** Reißverschluss, Riemen, zwei Schnallen, zwei Taschenklappen mit
+  Knöpfen – im Spiel ein paar graue und braune Punkte.
+- **Gries an den Tonwechseln.** Einzelne helle und dunkle Texel an den Schultern und Ärmeln.
+
+## 3. Plan
+
+1. **Frontaler backen** (nur Menschen und ihre Werkzeuge): Die Figur wird zum Backen leicht nach
+   hinten gekippt, der Kopf deutlich – als stünde die Kamera tiefer. Füße, Schatten und Anker
+   bleiben, wo sie sind.
+2. **Kopf und Mütze:** kleinere, höher sitzende Mütze, ein größeres Gesicht.
+3. **Neue Augen:** 3 Texel breit, 3 hoch, Glanz in derselben Ecke, die Brauen mit Abstand; die
+   Ausdrücke bleiben (froh, Aua, staunen, müde, besorgt, entschlossen, blinzeln).
+4. **Kontur und Innenlinien:** Sel-out zwei Stufen unter dem Stoff, zur Lichtseite eine Stufe
+   heller; Schlagschatten, wo ein Arm vor dem Körper liegt.
+5. **Ruhige Flächen:** Gries aufräumen (Mehrheitsregel je Stoff), weniger Kleinkram auf der Brust.
+6. Erst Mika, dann Hilde, Bert, Juna, Yusuf, Balduin, Knopf, die zwölf Wanderer, Edda, Marthe,
+   Pim und Lu.
+
+## 4. Ergebnis
+
+![Vorher und nachher](menschen-gestaltung/vorher-nachher.png)
+
+Oben Mika (links vorher, rechts nachher), darunter alle 22 Figuren von vorn und schräg von vorn,
+jeweils obere Reihe vorher, untere nachher – in anderthalbfacher Spielgröße.
+
+- **Frontaler:** Die Figur wird zum Backen um 0,2 rad zur Kamera gekippt (mit dem Werkzeug um
+  seinen Griff), der Kopf um weitere 0,25 rad. Mikas Augen sitzen 35 statt 26 Texel über dem Fuß;
+  von vorn ist ihr Gesicht fast so groß wie die Mütze (vorher ein Zehntel davon).
+- **Augen:** 3 × 3 Texel mit Glanz oben links und Iris unten, im Halbprofil das ferne Auge 2 breit;
+  Brauen so breit wie das Auge; helle runde Brillen; Wangen auf dunklerer Haut gedämpft.
+- **Kontur:** zwei Stufen unter dem dunkelsten Ton des Stoffs, zur Lichtseite eine; dazu ein
+  Schatten, wo ein Arm oder Bein vor dem Körper liegt.
+- **Flächen:** Gries nach der Mehrheit der Nachbarn aufgeräumt; auf Mikas Brust nur noch gerade
+  Riemen und ein dunkler Reißverschluss.
+- **Form und Farbe:** ein zum Kinn schmalerer Kopf, etwas schmalere Schultern; eigene Rampen für
+  Violett, Rosa, Weiß, Türkis und Blond.
+- **Die Schlurfer:** unverändert (Fingerabdruck aller 510 Bilder vorher und nachher gleich).
+
+Neu erzeugen lässt sich ein Bogen mit `node tools/menschen-bogen.mjs datei.png --figur=…`.
+
+Mikas ganzer Bogen (acht Richtungen, Gehen, Rennen, Taten mit der Axt, Laterne, alle Gesichter, unten
+in Spielgröße): ![Mika](menschen-gestaltung/bogen-mika.png)

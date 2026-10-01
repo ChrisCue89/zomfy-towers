@@ -12,12 +12,26 @@ import { BODY, add, sub, mul, norm, lerp, hash } from './spriteFigure.js';
 // --- Farben ------------------------------------------------------------------------------------
 
 /**
+ * F5: Eigene Rampen für Farben, deren Palettenrampe für Stoff und Haar nicht taugt: Die Akzente
+ * liegen dort nebeneinander (Rosa, Violett, Weiß, Türkis – dunkler als Violett wäre Rosa), Blond
+ * liegt in der Feuerrampe (darunter Orange und Rot). Sie gehen den Rampen der Palette vor.
+ */
+const OWN_RAMPS = [
+  [RAMPS.d[1], RAMPS.d[2], RAMPS.d[4], RAMPS.a[0], RAMPS.a[1]], // Rosa
+  [RAMPS.d[0], RAMPS.d[1], RAMPS.d[2], RAMPS.a[2], RAMPS.a[3]], // Violett
+  [RAMPS.s[5], RAMPS.s[6], RAMPS.s[8], RAMPS.a[4]], // Weiß
+  [RAMPS.t[0], RAMPS.t[1], RAMPS.t[2], RAMPS.a[5], RAMPS.a[6]], // Türkis
+  [RAMPS.e[5], RAMPS.e[7], RAMPS.f[6], RAMPS.f[7], RAMPS.f[8]], // Blond (Honig statt Feuer)
+];
+const ALL_RAMPS = [...OWN_RAMPS, ...Object.values(RAMPS)];
+
+/**
  * Eine Rampe um eine Palettenfarbe: `below` Stufen dunkler, `above` heller, soweit ihre Rampe
  * reicht. Gibt { ramp, base } – base ist die Stelle der Farbe selbst (für das Aussehen aus
  * data/looks.js, dessen Farben einzelne Palettenwerte sind).
  */
 export function rampAround(color, below = 2, above = 2) {
-  for (const ramp of Object.values(RAMPS)) {
+  for (const ramp of ALL_RAMPS) {
     const i = ramp.indexOf(color);
     if (i < 0) continue;
     const lo = Math.max(0, i - below);
@@ -29,12 +43,22 @@ export function rampAround(color, below = 2, above = 2) {
 
 /** Eine Stufe dunkler bzw. heller in der eigenen Rampe (am Rand bleibt die Farbe). */
 export function toneOf(color, step) {
-  for (const ramp of Object.values(RAMPS)) {
+  for (const ramp of ALL_RAMPS) {
     const i = ramp.indexOf(color);
     if (i >= 0) return ramp[Math.max(0, Math.min(ramp.length - 1, i + step))];
   }
   return color;
 }
+
+// --- Frontaler gezeichnet (F5) ---------------------------------------------------------------------
+
+/**
+ * Menschen werden frontaler gebacken, als die Kamera die Welt sieht (recherche/menschen-gestaltung.md):
+ * die ganze Figur um `body` nach hinten gekippt (um die x-Achse der Welt durch den Fußpunkt, mit ihr
+ * die Werkzeuge um den Griff), der Kopf um `HUMAN.headView` dazu. So steht das Gesicht fast frontal
+ * im Bild, der Scheitel zeigt nur noch seinen Umriss – wie in Stardew Valley oder Zelda.
+ */
+export const VIEW_TILT = 0.2;
 
 // --- Der Körper ----------------------------------------------------------------------------------
 
@@ -45,6 +69,7 @@ export function toneOf(color, step) {
  */
 export const HUMAN = {
   ...BODY,
+  headView: 0.25, // F5: der Kopf zum Backen zusätzlich zur Kamera gedreht (spriteFigure.humanoid)
   gap: 0.112,
   thigh: 0.17,
   shin: 0.16,
@@ -54,12 +79,12 @@ export const HUMAN = {
   footZ: 0.05,
   stoop: 0.03,
   torso: [
-    { d: 0.04, rr: [0.235, 0.12, 0.18], mat: 'hose', blend: 0.05 },
-    { d: 0.19, rr: [0.26, 0.17, 0.195], mat: 'jacke' },
-    { d: 0.33, rr: [0.275, 0.135, 0.185], mat: 'jacke', part: 'brust' },
+    { d: 0.04, rr: [0.225, 0.12, 0.18], mat: 'hose', blend: 0.05 },
+    { d: 0.19, rr: [0.245, 0.17, 0.195], mat: 'jacke' },
+    { d: 0.33, rr: [0.255, 0.135, 0.185], mat: 'jacke', part: 'brust' },
   ],
   shoulderD: 0.37,
-  shoulderW: 0.27,
+  shoulderW: 0.25,
   upper: 0.19,
   fore: 0.17,
   armR: [0.074, 0.066, 0.062, 0.057],
@@ -69,7 +94,7 @@ export const HUMAN = {
   neckD: 0.41,
   neckR: 0.08,
   headOffset: [0, 0.235, 0.0],
-  head: { h: [0.29, 0.235, 0.26], r: 0.17 },
+  head: { h: [0.29, 0.235, 0.26], r: 0.17, taper: 0.22 },
   headPitch: 0,
   headRoll: 0,
   mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'jacke', fore: 'jacke', hand: 'haut', neck: 'haut', head: 'haut' },

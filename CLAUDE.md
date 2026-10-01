@@ -8,7 +8,7 @@ Dieses Dokument gilt für jede Arbeitssitzung an diesem Repository.
 | `PROGRESS.md` | Logbuch: was fertig ist, Playtest-Befunde, Änderungen, Offenes |
 | `OFFENE-FRAGEN.md` | Designentscheidungen, die DESIGN.md offenließ (mit Begründung) |
 | `KONZEPT-GEMEINSCHAFT.md` | Gemeinschaftskonzept des Auftraggebers mit Analyse (entschieden 29.09.2026: OFFENE-FRAGEN 161–176, Plan M26–M33) |
-| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern), die Präsentation am Anfang (`praesentation.md`, N11) |
+| `recherche/` | Recherche-Berichte: Gemeinschaft, Glocke und Waffen, Kartenspiel (mit Simulator `karten-sim.mjs`), Premium-Pixel, Intro und Einführung; seit 30.09.: Schlurfer als Sprites, HUD und Baumenü, Storytelling und Namen (Plan in DESIGN 8, Nr. 196–198), Gestaltungsbogen der Horde (`schlurfer-gestaltung.md` mit Bildern), die Präsentation am Anfang (`praesentation.md`, N11); seit 01.10.: die Menschen schöner zeichnen (`menschen-gestaltung.md`, F5) |
 | `playtests/` | Archiv: Testspieler-Personas, Berichte je Runde, Zusammenfassungen (keine neuen Runden mehr) |
 
 ## Projekt in Kürze
@@ -245,6 +245,19 @@ gilt bis auf Weiteres:
     die Kinder ihres Wurzelknotens (`root.visible` sagt bei den Leuten, ob sie da sind). Seltene
     Posen und Figuren ohne Sprite bleiben Voxel.
   - Ansehen ohne Browser: `node tools/menschen-bogen.mjs datei.png --figur=mika --aussehen=…`.
+  - **Schöner gezeichnet (F5, `recherche/menschen-gestaltung.md`, Nr. 223):**
+    - Frontaler als die Welt: `tiltFrame` kippt jedes Bild um `VIEW_TILT` (0,2 rad) zur Kamera, das
+      Werkzeug um seinen Griff; den Kopf dreht `humanoid` über `HUMAN.headView` (0,25 rad) weiter.
+      Formen am Kopf nehmen `body.H`, `body.headAx` bzw. `body.headAxes(neigung, kippung)`, nie
+      `ctx.AX(body.pitch …)` – sonst drehen sie nicht mit. Fürs Licht im Spiel drehen die Normalen
+      zurück (`uprightNormals`; am Kopf erkennt sie `part: 'head'` bzw. `head` aus `headEllipsoid`
+      und `headCapsule`), sonst erreichte die Laterne das Gesicht nicht.
+    - Gemalt mit `PEOPLE_PAINT` (Schlagschatten zwischen Armen, Beinen und Rumpf, aufgeräumte Töne)
+      und Sel-out (`outline`/`outlineLit` aus `withOutlines`); der Kopf wird mit `taper` zum Kinn
+      schmaler. Alles sind Optionen des Bäckers – die Schlurfer setzen sie nie und bleiben gleich.
+    - Augen 3 Texel breit mit Glanz oben links und Iris (`faceRows`), Brillen hell und rund.
+    - Farben mit eigener Rampe (`OWN_RAMPS` in `peopleFigure.js`): Violett, Rosa, Weiß, Türkis und
+      Blond – die Akzente der Palette taugen nicht als Rampe.
 - **Der Moder (M15)** ist dunkles Pflaumenviolett (`P.d1`/`P.d2`, Knoten
   `P.a2`) und wächst nur im Unterholz, nie im Begehbaren. Nachts glimmt er
   nur über Eigenlicht (Bodentextur `emissiveMap`, Material `moderGlow`), nie
@@ -1414,7 +1427,8 @@ Grundprinzipien:
    mit echten Tasten geht Mika nach Osten, rennt mit Umschalt, dreht nach Süden, die Axt auf dem
    Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
    Teil, am Tisch sitzt Mika aus Voxeln, Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
-   Hof und Hilde lächelt, wenn Mika dabeisteht (Bilder: menschen-tag, menschen-3d, menschen-nacht,
+   Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
+   wie die Mütze und die Augen sitzen weit oben (Bilder: menschen-tag, menschen-3d, menschen-nacht,
    menschen-bogen); ab S1 (Abschnitt `datei`): Esc, »Spielstand«, »Als Datei sichern« lädt mit
    echten Tasten eine Datei herunter (Version, Kennung, Name, Tag, Vorrat), eine fremde Datei und
    eine aus einer neueren Fassung werden abgelehnt, »Aus Datei laden« öffnet die Dateiwahl, fragt

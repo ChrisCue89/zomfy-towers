@@ -7,7 +7,7 @@
 import { trace, paint, stampAt, toTexel, TEXEL } from '../render/spriteBaker.js';
 import { encodeFrame, encodePatch } from '../render/spriteCode.js';
 import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './spriteFigure.js';
-import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS } from './peopleFigure.js';
+import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
 import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
 
 /** Gezeichnete Richtungen: 0 S, 1 SO, 2 O, 3 NO, 4 N, 5 NW, 6 W, 7 SW. */
@@ -42,6 +42,63 @@ export function partFrames(id, part) {
   return list;
 }
 
+const IDENTITY = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+
+/**
+ * F5: Ein Bild zum Backen nach hinten kippen – um die x-Achse der Welt durch `pivot` (der obere Teil
+ * von der Kamera weg), damit die Figur frontaler im Bild steht. Formen, Stempel und Gesicht drehen
+ * mit; Muster (`matAt`) rechnen weiter im ungekippten Bild. Gibt die Drehung für Punkte zurück.
+ */
+export function tiltFrame(ctx, angle, pivot = [0, 0, 0]) {
+  const ca = Math.cos(angle);
+  const sa = Math.sin(angle);
+  const turn = (v) => [v[0], v[1] * ca + v[2] * sa, -v[1] * sa + v[2] * ca];
+  const back = (v) => [v[0], v[1] * ca - v[2] * sa, v[1] * sa + v[2] * ca];
+  const at = (p) => add(turn(sub(p, pivot)), pivot);
+  const from = (p) => add(back(sub(p, pivot)), pivot);
+  for (const s of ctx.shapes) {
+    if (s.kind === 'capsule') {
+      s.a = at(s.a);
+      s.b = at(s.b);
+    } else {
+      s.c = at(s.c);
+      s.ax = (s.ax || IDENTITY).map(turn);
+    }
+    if (s.matAt) {
+      const f = s.matAt;
+      const capsule = s.kind === 'capsule'; // bei Kapseln ist l der Weltabstand zu a
+      s.matAt = (l, p) => f(capsule ? back(l) : l, from(p));
+    }
+  }
+  for (const st of ctx.stamps || []) st.at = at(st.at);
+  if (ctx.face) ctx.face.at = at(ctx.face.at);
+  return at;
+}
+
+/**
+ * F5: Fürs Licht im Spiel zählt die ungekippte Figur. Die Normalen des Bildes drehen um die Kippung
+ * zurück, am Kopf (Kopf und Formen im Kopfrahmen) um dessen Drehung dazu – sonst wiese das Gesicht
+ * zum Himmel, und die Laterne vor der Brust erreichte es nicht mehr. Die Töne des Bildes bleiben, wie
+ * sie im gekippten Bild gemalt sind.
+ */
+function uprightNormals(raster, shapes) {
+  const out = raster.normal.slice();
+  const turns = shapes.map((s) => {
+    const a = -(VIEW_TILT + (s.part === 'head' || s.head ? HUMAN.headView : 0));
+    return [Math.cos(a), Math.sin(a)];
+  });
+  for (let i = 0; i < raster.hit.length; i++) {
+    const s = raster.hit[i];
+    if (s < 0) continue;
+    const [ca, sa] = turns[s];
+    const y = out[i * 3 + 1];
+    const z = out[i * 3 + 2];
+    out[i * 3 + 1] = y * ca + z * sa;
+    out[i * 3 + 2] = -y * sa + z * ca;
+  }
+  return out;
+}
+
 /** Formen, Stempel, Gesicht und Anker eines Bildes (Welt-Meter, Fußpunkt im Ursprung). */
 export function personShapes(id, spec, part, d, anim, k) {
   const kind = PEOPLE[id];
@@ -60,18 +117,44 @@ export function personShapes(id, spec, part, d, anim, k) {
     for (const s of ctx.stamps) s.at = s.at.map((v) => v * size);
     if (ctx.face) ctx.face.at = ctx.face.at.map((v) => v * size);
   }
+  // F5: frontaler backen; die Anker liegen im gekippten Bild, Richtung und Seite des Werkzeugs
+  // rechnen weiter mit der ungekippten Figur
+  ctx.view = tiltFrame(ctx, VIEW_TILT);
   return ctx;
+}
+
+/**
+ * F5: Sel-out – die Kontur eines Stoffs liegt zwei Stufen unter seinem dunkelsten Ton (in der Rampe
+ * der Palette), zur Lichtseite eine Stufe. So steht eine grüne Jacke auch auf grünem Gras.
+ */
+function withOutlines(materials) {
+  const out = {};
+  for (const [name, m] of Object.entries(materials)) {
+    out[name] = m && !m.glow && m.outline === undefined ? { ...m, outline: toneOf(m.ramp[0], -2), outlineLit: toneOf(m.ramp[0], -1) } : m;
+  }
+  return out;
 }
 
 const materialCache = new Map();
 /** Stoffe einer Figur für einen Stand (Mika: je Aussehen einmal gebaut). */
 function materialsOf(id, spec) {
   const kind = PEOPLE[id];
-  if (typeof kind.materials !== 'function') return kind.materials;
-  const key = `${id}:${JSON.stringify(spec)}`;
-  if (!materialCache.has(key)) materialCache.set(key, kind.materials(spec));
+  const key = typeof kind.materials === 'function' ? `${id}:${JSON.stringify(spec)}` : id;
+  if (!materialCache.has(key)) materialCache.set(key, withOutlines(typeof kind.materials === 'function' ? kind.materials(spec) : kind.materials));
   return materialCache.get(key);
 }
+
+/** F5: Gruppe je Form für die Schattenlinien – jeder Arm und jedes Bein für sich, der Rest ist Körper. */
+function groupsOf(shapes) {
+  return shapes.map((s) => {
+    const m = /^(upper|cuff|fore|hand|thigh|shin|shoe)(\d)$/.exec(s.part || '');
+    if (!m) return 'body';
+    return (['thigh', 'shin', 'shoe'].includes(m[1]) ? 'leg' : 'arm') + m[2];
+  });
+}
+
+/** Wie die Menschen gemalt werden (F5): Schattenlinien ab 2,5 cm Abstand, Töne aufgeräumt. */
+export const PEOPLE_PAINT = { occlude: 0.025, tidy: true };
 
 /** Schatten als Ellipse um den Fußpunkt, nur wo die Figur nicht selbst steht. */
 function shadowOf(raster, color, size) {
@@ -107,7 +190,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
   const ctx = personShapes(id, spec, part, d, anim, k);
   const raster = trace(ctx.shapes, kind.cell || PEOPLE_CELL);
   const materials = materialsOf(id, spec);
-  const out = paint(raster, materials);
+  const out = paint(raster, materials, { ...PEOPLE_PAINT, groups: groupsOf(ctx.shapes) });
   for (const s of ctx.stamps) stampAt(out, raster, s.stamp, s.at, s.opts);
   const patches = {};
   let color = out.color;
@@ -138,8 +221,9 @@ export function bakePerson(id, spec, part, d, anim, k) {
   // getragen), der Rücken; vorn heißt näher an der Kamera als die Brust
   const anchors = {};
   const m = ctx.marks;
+  const view = ctx.view || ((p) => p);
   if (m.handR && m.chest) {
-    const hand = anchorOf(m.handR, raster);
+    const hand = anchorOf(view(m.handR), raster);
     // Richtung des Unterarms in Figurkoordinaten (die Welt dreht nur um die Hochachse)
     const yaw = ctx.yaw;
     const dw = norm(sub(m.handR, m.elbowR));
@@ -153,7 +237,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
     anchors.hand = [hand.x, hand.y, bucket, mid[2] - m.chest[2] > 0.08 ? 1 : 0];
   }
   if (m.back) {
-    const back = anchorOf(m.back, raster);
+    const back = anchorOf(view(m.back), raster);
     // Der Rücken zeigt zur Kamera (NO, N, NW): das Werkzeug liegt davor
     anchors.back = [back.x, back.y, BACK_BUCKET, m.back[2] - m.chest[2] > 0.08 ? 1 : 0];
   }
@@ -161,7 +245,7 @@ export function bakePerson(id, spec, part, d, anim, k) {
     const l = m.laterne;
     anchors.lantern = [+l[0].toFixed(3), +l[1].toFixed(3), +l[2].toFixed(3)];
   }
-  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py, color, glow, normal: raster.normal, shadow, patches, anchors };
+  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py, color, glow, normal: uprightNormals(raster, ctx.shapes), shadow, patches, anchors };
 }
 
 /**
@@ -174,10 +258,11 @@ export function bakeTool(id, d, bucket) {
   const ctx = frameContext(d, null);
   ctx.stamps = [];
   buildTool(ctx, id, bucket, [0, TOOL_LIFT, 0]);
+  tiltFrame(ctx, VIEW_TILT, [0, TOOL_LIFT, 0]); // F5: gekippt wie die Figur, um den Griff
   const lift = Math.round((TOOL_LIFT * 0.8) / TEXEL);
   const raster = trace(ctx.shapes, { ...TOOL_CELL, py: TOOL_CELL.py + lift });
   const out = paint(raster, TOOL_MATERIALS);
-  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py - lift, color: out.color, glow: out.glow, normal: raster.normal, shadow: null };
+  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py - lift, color: out.color, glow: out.glow, normal: uprightNormals(raster, ctx.shapes), shadow: null };
 }
 
 /** Bilder eines Werkzeugs der Reihe nach: je Richtung die Winkelstufen und der Rücken. */

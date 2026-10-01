@@ -2086,6 +2086,20 @@ Lektorat und die Reiter des Baumenüs.
   Balance-Durchlauf baut dafür wie ein Mensch (Türme an den Barrikaden, Laternen bei Nebel) und
   sagt, wer wie weit kam (Nr. 222).
 
+#### F5 – Die Menschen schöner ✓
+
+*Umgesetzt (01.10.2026), Recherche und Bilder in `recherche/menschen-gestaltung.md`:*
+
+- **Von vorn statt von oben:** Die Menschen werden zum Backen zur Kamera gekippt, der Kopf
+  stärker als der Körper – das Gesicht steht fast frontal im Bild, die Mütze tritt zurück
+  (Nr. 223). Die Schlurfer bleiben im echten Blickwinkel.
+- **Wache Gesichter:** größere Augen mit Glanzpunkt und Iris, Brauen mit Abstand, helle runde
+  Brillen, gedämpfte Wangen auf dunklerer Haut.
+- **Klarer Umriss:** Sel-out unter dem Stoff (eine grüne Jacke steht auch auf Gras), Schatten
+  zwischen Armen und Rumpf, keine Gries-Pixel, weniger Kleinkram auf der Brust.
+- **Form:** ein zum Kinn schmalerer Kopf, etwas schmalere Schultern, eigene Rampen für Violett,
+  Rosa, Weiß, Türkis und Blond.
+
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.

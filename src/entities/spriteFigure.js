@@ -228,24 +228,49 @@ export function humanoid(ctx, B, skip = {}) {
   const neck = spine(B.neckD);
   const headRoll = B.headRoll + pose.head + roll;
   const pitch = B.headPitch + pose.nod;
-  const hAx = axesOf(0, pitch, headRoll); // Kopfrahmen in Figurkoordinaten
-  const headC = add(neck, B.headOffset);
+  // F5 (nur Menschen, `headView`): Der Kopf dreht sich zum Backen über dem Hals zur Kamera (um die
+  // x-Achse der Welt, der Scheitel von ihr weg) – das Gesicht steht fast frontal im Bild, vom
+  // Scheitel bleibt nur der Umriss (recherche/menschen-gestaltung.md 1.1)
+  const turn = B.headView ? viewTurn(ctx.yaw, B.headView) : null;
+  const hAx = turn ? axesOf(0, pitch, headRoll).map(turn) : axesOf(0, pitch, headRoll); // Kopfrahmen in Figurkoordinaten
+  const headC = turn ? add(neck, turn(B.headOffset)) : add(neck, B.headOffset);
   const H = (l) => inFrame(headC, hAx, l);
-  const headAx = ctx.AX(pitch, headRoll);
+  const headAx = turn ? hAx.map((v) => toWorld(v, ctx.yaw)) : ctx.AX(pitch, headRoll);
+  /** Achsen in der Welt für eine Form am Kopf, die zusätzlich geneigt ist (Schirm, Krempe). */
+  const headAxes = (dPitch = 0, dRoll = 0) => (turn ? axesOf(0, pitch + dPitch, headRoll + dRoll).map((v) => toWorld(turn(v), ctx.yaw)) : ctx.AX(pitch + dPitch, headRoll + dRoll));
   if (!skip.head) {
-    ctx.capsule(add(neck, [0, -0.03, 0]), add(headC, [0, -B.head.h[1] + 0.055, -0.02]), B.neckR, null, M.neck, { blend: 0.03, part: 'neck' });
-    ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head' });
+    const chin = [0, -B.head.h[1] + 0.055, -0.02];
+    ctx.capsule(add(neck, [0, -0.03, 0]), add(headC, turn ? turn(chin) : chin), B.neckR, null, M.neck, { blend: 0.03, part: 'neck' });
+    ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, taper: B.head.taper, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head' });
   }
-  return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, pitch, roll: headRoll };
+  return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll };
 }
 
-/** Eine Form im Kopfrahmen: Ellipsoid bei `l` (Kopfpunkt) mit Halbachsen `rr`. */
+/**
+ * F5: Eine Drehung um die x-Achse der Welt (der obere Teil von der Kamera weg), ausgedrückt in
+ * Figurkoordinaten einer Figur, die um `yaw` gedreht steht. Für Vektoren (ohne Verschiebung).
+ */
+export function viewTurn(yaw, angle) {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  const ca = Math.cos(angle);
+  const sa = Math.sin(angle);
+  return (v) => {
+    const wx = v[0] * c + v[2] * s;
+    const wz = -v[0] * s + v[2] * c;
+    const y = v[1] * ca + wz * sa;
+    const z = -v[1] * sa + wz * ca;
+    return [wx * c - z * s, y, wx * s + z * c];
+  };
+}
+
+/** Eine Form im Kopfrahmen: Ellipsoid bei `l` (Kopfpunkt) mit Halbachsen `rr` (`head` merkt: am Kopf, F5). */
 export function headEllipsoid(ctx, body, l, rr, mat, more = {}) {
-  return ctx.push({ kind: 'ellipsoid', c: ctx.W(body.H(l)), rr, ax: body.headAx, mat, ...more });
+  return ctx.push({ kind: 'ellipsoid', c: ctx.W(body.H(l)), rr, ax: body.headAx, mat, head: true, ...more });
 }
 /** Eine Kapsel im Kopfrahmen von Kopfpunkt a nach b. */
 export function headCapsule(ctx, body, a, b, r, r1, mat, more = {}) {
-  return ctx.push({ kind: 'capsule', a: ctx.W(body.H(a)), b: ctx.W(body.H(b)), r, r1: r1 ?? r, mat, ...more });
+  return ctx.push({ kind: 'capsule', a: ctx.W(body.H(a)), b: ctx.W(body.H(b)), r, r1: r1 ?? r, mat, head: true, ...more });
 }
 
 // --- Posen ---------------------------------------------------------------------------------------

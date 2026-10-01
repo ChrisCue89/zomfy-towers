@@ -56,13 +56,19 @@ function sdEllipsoid(p, s) {
   return k1 > 1e-9 ? (k0 * (k0 - 1)) / k1 : -Math.min(r[0], r[1], r[2]);
 }
 
-/** Gerundeter Quader um c, halbe Kanten h, Rundung r, gedreht mit `ax`. */
+/**
+ * Gerundeter Quader um c, halbe Kanten h, Rundung r, gedreht mit `ax`. F5: `taper` macht ihn nach
+ * unten (−y) schmaler – am unteren Rand um den Faktor 1 + taper (ein Kopf mit runderem Kinn); der
+ * Abstand wird dann vorsichtig geteilt, damit kein Strahl durch die Form springt.
+ */
 function sdBox(p, s) {
   const l = local(p, s);
-  const qx = Math.abs(l[0]) - s.h[0] + s.r;
+  const k = s.taper ? 1 + s.taper * Math.min(1, Math.max(0, -l[1] / s.h[1])) : 1;
+  const qx = Math.abs(l[0]) * k - s.h[0] + s.r;
   const qy = Math.abs(l[1]) - s.h[1] + s.r;
   const qz = Math.abs(l[2]) - s.h[2] + s.r;
-  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - s.r;
+  const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - s.r;
+  return s.taper ? d / (1 + s.taper) : d;
 }
 
 /** Weiche Vereinigung (Polynom, Breite k). */
@@ -237,11 +243,16 @@ const TONES = { deep: -0.35, shade: 0.05, light: 0.62, shine: 0.93 };
  * Kuppen einen Glanz. Muster (Karo, Flicken) über `pattern(pos, n)`. Danach Linien an
  * Tiefensprüngen und – mit `seam` – an Materialgrenzen, Kantenlicht auf der Lichtseite,
  * Aufräumen einzelner Texel und die farbige Kontur (Sel-out: oben links heller).
+ * F5 (nur Menschen): `groups` nennt je Form eine Gruppe (Arm, Bein, Körper); wo eine Form einer
+ * anderen Gruppe um mehr als `occlude` Meter davor liegt, wird das hintere Texel eine Stufe dunkler
+ * (der Arm wirft einen Schatten auf die Jacke). `tidy` räumt die Töne vor den Linien nach der
+ * Mehrheit der acht Nachbarn auf (Stoffe ohne Muster). Ein Stoff mit `outlineLit` hat zur Lichtseite
+ * eine eigene Kontur.
  * @param {object} raster aus trace()
- * @param {Record<string, {ramp:number[], base:number, pattern?:Function, glow?:boolean, shine?:boolean, seam?:boolean, flat?:boolean, outline?:number}>} materials
+ * @param {Record<string, {ramp:number[], base:number, pattern?:Function, glow?:boolean, shine?:boolean, seam?:boolean, flat?:boolean, outline?:number, outlineLit?:number}>} materials
  * @returns {{color: Int32Array, glow: Uint8Array, tone: Int8Array}}
  */
-export function paint(raster, materials, { outline = true, rim = true } = {}) {
+export function paint(raster, materials, { outline = true, rim = true, groups = null, occlude = 0, tidy = false } = {}) {
   const { w, h, mat, normal, depth, pos, hit } = raster;
   const color = new Int32Array(w * h).fill(-1);
   const tone = new Int8Array(w * h).fill(-1);
@@ -262,6 +273,7 @@ export function paint(raster, materials, { outline = true, rim = true } = {}) {
     if (m.glow) glow[i] = 1;
   }
   const inside = (i, j) => i >= 0 && j >= 0 && i < w && j < h;
+  if (tidy) tidyTones(raster, materials, color, tone, glow);
   // Linien: wo die Tiefe zwischen zwei Teilen springt (das ferne Texel zwei Stufen dunkler) und –
   // bei Materialien mit `seam` – wo ein anderes Material beginnt (eine Stufe, nur auf der Seite,
   // die weiter hinten liegt)
@@ -278,6 +290,7 @@ export function paint(raster, materials, { outline = true, rim = true } = {}) {
         if (color[q] < 0) continue;
         if (hit[q] !== hit[idx] && depth[q] < d - 0.09) steps = Math.max(steps, 2);
         else if (mat[q] !== mat[idx] && materials[mat[idx]]?.seam && depth[q] < d + 0.004) steps = Math.max(steps, 1);
+        else if (groups && groups[hit[q]] !== groups[hit[idx]] && depth[q] < d - occlude) steps = Math.max(steps, 1);
       }
       if (steps) dark.push([idx, steps]);
     }
@@ -346,10 +359,52 @@ export function paint(raster, materials, { outline = true, rim = true } = {}) {
   for (const [idx, src, lightSide] of edge) {
     const m = materials[mat[src]];
     if (!m) color[idx] = 0x0d0b18;
-    else if (m.outline !== undefined) color[idx] = m.outline;
+    else if (m.outline !== undefined) color[idx] = m.outlineLit !== undefined && lightSide && pos[src * 3 + 1] > 0.3 ? m.outlineLit : m.outline;
     else color[idx] = toneOf(m, lightSide && pos[src * 3 + 1] > 0.3 ? 1 : 0);
   }
   return { color, glow, tone };
+}
+
+/**
+ * F5: Töne nach der Mehrheit aufräumen (vor den Linien). Ein Texel übernimmt den Ton, den mindestens
+ * fünf seiner acht Nachbarn desselben Stoffs tragen, solange höchstens einer der vier direkten
+ * Nachbarn seinen eigenen Ton teilt – so verschwinden Gries und Zacken an den Tonwechseln, Linien
+ * und Flächen bleiben. Stoffe mit Muster, Glühen oder flacher Farbe bleiben, wie sie sind.
+ */
+function tidyTones(raster, materials, color, tone, glow) {
+  const { w, h, mat } = raster;
+  const next = tone.slice();
+  const count = new Int8Array(16);
+  for (let j = 1; j < h - 1; j++) {
+    for (let i = 1; i < w - 1; i++) {
+      const idx = j * w + i;
+      if (color[idx] < 0 || glow[idx]) continue;
+      const m = materials[mat[idx]];
+      if (!m || m.pattern || m.flat || m.glow) continue;
+      count.fill(0);
+      let same = 0;
+      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const q = idx + di + dj * w;
+        if (mat[q] === mat[idx] && color[q] >= 0 && tone[q] === tone[idx]) same++;
+      }
+      if (same > 1) continue;
+      for (let dj = -1; dj <= 1; dj++) {
+        for (let di = -1; di <= 1; di++) {
+          if (!di && !dj) continue;
+          const q = idx + di + dj * w;
+          if (mat[q] === mat[idx] && color[q] >= 0 && tone[q] >= 0) count[tone[q]]++;
+        }
+      }
+      let best = -1;
+      for (let k = 0; k < count.length; k++) if (count[k] >= 5 && (best < 0 || count[k] > count[best])) best = k;
+      if (best >= 0 && best !== tone[idx]) next[idx] = best;
+    }
+  }
+  for (let idx = 0; idx < w * h; idx++) {
+    if (next[idx] === tone[idx]) continue;
+    tone[idx] = next[idx];
+    color[idx] = materials[mat[idx]].ramp[tone[idx]];
+  }
 }
 
 /**

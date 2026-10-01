@@ -5,6 +5,50 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F5: Die Menschen schöner gezeichnet ✓
+
+**Auftrag (01.10.):** »Hab mir die 2d Modelle angeguckt. Die Zombies gefallen mir. Die Menschen
+könnten schöner sein. Recherchiere wie andere das machen und dann zeichne sie schöner.«
+
+- **Recherche** (`recherche/menschen-gestaltung.md`, mit Vorher/Nachher-Bild): Draufsicht-Spiele
+  zeichnen die Welt schräg von oben, ihre Figuren aber fast von vorn; der Kopf ist das Wichtigste,
+  die Augen sitzen auf halber Höhe und tragen einen Glanzpunkt in derselben Ecke; Sel-out statt
+  Einheitskontur, Linien auch innen, Licht aus einer Richtung, keine Gries-Pixel, Hue-Shifting,
+  wenig Kleinkram.
+- **Befund:** Die Menschen wurden wie die Schlurfer mit dem echten Kamerawinkel gebacken. Von
+  Mikas Kopf gehörten 24 von 27 Texeln der Mütze und dem Scheitel, die Augen lagen dicht über dem
+  Kragen – Mika schaute auf die eigenen Füße. Dazu Knopfaugen, eine grüne Kontur auf grünem Gras,
+  Arme, die mit der Jacke verschmolzen, und graue und braune Punkte auf der Brust.
+- **Frontaler gebacken** (nur Menschen und ihre Werkzeuge): Die ganze Figur kippt zum Backen um
+  0,2 rad zur Kamera (`VIEW_TILT`, um die x-Achse der Welt durch den Fußpunkt, das Werkzeug um
+  seinen Griff), der Kopf um weitere 0,25 rad über dem Hals (`HUMAN.headView`). Füße, Schatten und
+  Anker bleiben, wo sie sind; Richtung und Seite des Werkzeugs rechnen mit der ungekippten Figur.
+  Fürs Licht im Spiel drehen die Normalen zurück – im ersten Versuch zeigte das Gesicht zum Himmel,
+  und nachts erreichte die Laterne es nicht mehr (es blieb grau).
+  Mikas Augen sitzen jetzt 35 statt 26 Texel über dem Fuß, das Gesicht ist von vorn fast so groß
+  wie die Mütze (vorher ein Zehntel davon).
+- **Neue Gesichter:** Augen 3 Texel breit und 3 hoch (im Halbprofil das ferne 2), so weit
+  auseinander wie ein Auge breit ist, Glanz oben links, unten die Iris; die Brauen so breit wie das
+  Auge; alle Ausdrücke neu gesetzt. Brillen sind helle, runde Gestelle (dunkel und eckig wirkten
+  sie mit den größeren Augen wie Schweißerbrillen). Wangen auf dunklerer Haut gedämpft.
+- **Kontur und Linien** (`paint` mit Optionen, nur für Menschen): Sel-out zwei Stufen unter dem
+  dunkelsten Ton des Stoffs, zur Lichtseite eine (`outlineLit`); ein Schlagschatten, wo ein Arm
+  oder Bein mehr als 2,5 cm vor einer anderen Gruppe liegt (`groups`, `occlude`); die Töne werden
+  vor den Linien nach der Mehrheit der Nachbarn aufgeräumt (`tidy`, Stoffe ohne Muster).
+- **Kopf und Körper:** Der Kopf wird zum Kinn hin schmaler (`taper` am gerundeten Quader), die
+  Schultern sind etwas schmaler. Mikas Brust ist ruhiger: gerade Riemen ohne Schnallen, keine
+  Taschenklappen, ein dunklerer Reißverschluss; die Isomatte ragt nicht mehr wie eine blaue Hand
+  heraus.
+- **Farben:** Violett, Rosa, Weiß und Türkis haben eigene Rampen (in der Palette liegen die
+  Akzente nebeneinander – die lila Mütze lief von Rosa bis Weiß, Konturen wurden rosa), Blond liegt
+  in einer Honigrampe statt in der Feuerrampe (keine rote Kontur mehr).
+- **Die Schlurfer bleiben, wie sie sind:** Alle Neuerungen sind Optionen, die nur die Menschen
+  setzen; ein Fingerabdruck aller 510 Schlurfer-Bilder ist vorher und nachher gleich.
+- **Werkzeuge:** `tools/menschen-bogen.mjs` hat höhere Zellen (die Figuren sind im Bild etwas
+  größer); Backen dauert gut 10 % länger (rund 42 ms je Bild).
+- **Prüfung** (Abschnitt `menschen`): Mika von vorn mit Gesicht und Mütze im Verhältnis, die Augen
+  weit genug oben.
+
 ## B1: Spannung der Nächte ✓
 
 **Auftrag (01.10.):** Punkt 2 der Liste »Qualität und Spielspaß« – auf »Ausgewogen« hielt der
@@ -62,6 +106,11 @@ Balance-Durchlauf alle Nächte, ohne dass die Horde je ernsthaft an die Barrikad
     Türme binden; die zähen Brummer der späten Nächte haben fast so viel Leben wie das Herz (die
     Scharfschützen zielen auf den Stärksten). Ob das Herz das Feuer auf sich ziehen soll, ist eine
     Frage an den Auftraggeber.
+  - Zum Ausprobieren ohne `src/data/` anzufassen: `node tools/balance.mjs --nacht=datei
+    --herz=ziel,heil:0.5` (Scharfschützen zuerst aufs Herz, halbe Heilung). Nachgespielt auf
+    »Ausgewogen«: nur `ziel` – das Herz fällt; nur `heil:0.5` – erstarrt mit 75 %; `ziel` mit
+    doppeltem Herzleben – erstarrt mit 46 % am Tor. Der Mittelweg läge bei `ziel` und 1,3- bis
+    1,5-fachem Herzleben.
 
 ---
 

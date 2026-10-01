@@ -86,6 +86,7 @@ const report = [];
  * Prüfung bleibt bei 3D; mit »Figuren: 2D« backt ein Worker, Mika zuerst. Zustände (gehen, rennen,
  * Schwung mit der Axt als eigenem Bild, Treffer mit »Aua«, Laterne), seltene Posen als Voxel, die
  * Leute mit Lächeln, Bilder bei Tag und Nacht, 3D zum Vergleich, ein Musterbogen ohne Browser.
+ * F5: frontaler gezeichnet – Mikas Gesicht ist von vorn fast so groß wie die Mütze.
  */
 async function runPeopleChecks(browser, url) {
   const session = await openGame(browser, `${url}index.html?test&nosave&playtest`, 'Menschen als Sprites (F4)', { viewport: { width: 1920, height: 1080 } });
@@ -294,6 +295,26 @@ async function runPeopleChecks(browser, url) {
   });
   writeFileSync(join(SHOTS, 'menschen-bogen.png'), png.encodePng(cv.w, cv.h, cv.px));
   note('  Screenshot: screenshots/menschen-bogen.png');
+
+  // 9. F5: frontaler gezeichnet – von vorn ist Mikas Gesicht fast so groß wie die Mütze, die Augen
+  // sitzen weit oben (vorher sah man vor allem Mütze und Scheitel, die Augen dicht über dem Kragen)
+  const { RAMPS } = await import('../src/render/palette.js');
+  const mf = bogen.bakePerson('mika', looks.lookSpec(kinds.MIKA_BASE, looks.DEFAULT_LOOK), 'base', 0, 'stehen', 0);
+  const haut = new Set(RAMPS.h);
+  const strick = new Set(RAMPS.f.slice(1, 7));
+  let gesicht = 0;
+  let muetze = 0;
+  let augen = -1;
+  for (let j = 0; j < mf.h; j++) {
+    for (let i = 0; i < mf.w; i++) {
+      const c = mf.color[j * mf.w + i];
+      if (haut.has(c) && j < mf.py - 30) gesicht++;
+      if (strick.has(c)) muetze++;
+      if (c === RAMPS.n[1] && augen < 0) augen = mf.py - j;
+    }
+  }
+  if (gesicht >= 0.6 * muetze && augen >= 32) note(`✓ Menschen schöner (F5): Mika von vorn mit ${gesicht} Texeln Gesicht zu ${muetze} Texeln Mütze, die Augen ${augen} Texel über dem Fuß`);
+  else fail(`Menschen F5: Gesicht ${gesicht}, Mütze ${muetze}, Augen ${augen} Texel über dem Fuß`);
   checkMessages(session);
   await session.context.close();
 }

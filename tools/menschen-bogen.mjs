@@ -89,7 +89,7 @@ if (kind.expressions) {
 
 const probe = frame(0, 'stehen', 0);
 const cw = 46 * ZOOM;
-const ch = 62 * ZOOM;
+const ch = 70 * ZOOM;
 const gap = 6;
 const cols = Math.max(...rows.map((r) => r.cells.length));
 const gameH = 70 * 2 + 20;
