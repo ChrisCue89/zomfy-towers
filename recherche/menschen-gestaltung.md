@@ -196,3 +196,32 @@ nach rechts und links, von der Seite).
 Nachtrag (F6h): Jede Figur hat im Profil genau ein Auge und sonst beide. Bei Bert lagen die
 Koteletten vor dem Auge (jetzt weiter hinten), bei Balduin lag schräg die große Nase vor dem fernen
 Auge – es rückt knapp an ihr vorbei, wie man es zeichnen würde: Auge, Nase, Auge.
+
+### 5.6 Alle Posen als Sprites (F7)
+
+Zwischen den gezeichneten Figuren fiel jede Voxel-Figur sofort auf – am Kartentisch, beim Angeln,
+mit der Waffe, beim Pfiff, im Wirbel, mit Pims Drachen, auf der Schaukel und am Boden nach der
+Lagerglocke. Jetzt sind auch das Sprites (Nr. 228):
+
+- **Hände treffen ihr Ziel:** Für Gesten am Kopf reichen Winkel nicht – die Hand lag mal im Gesicht,
+  mal hinter der Mütze. Die Pose nennt jetzt einen Punkt um die Kopfmitte (`reachL`/`reachR`), der Arm
+  folgt über zwei Knochen, der Ellbogen hängt nach außen. So liegen die Karten vor der Brust und die
+  Hand an Mütze, Brille, Mund und Pfeife.
+- **Der Tick bleibt Spielmechanik:** Wer am Kartentisch blufft, verrät sich (Menschenkunde). Der Tick
+  ist ein eigenes Bild je Figur; Bert legt dafür die Karten ab, sonst sähe das Händereiben aus wie
+  Kartenhalten. Karten haben einen weißen Rand – rote Rücken verschwanden auf Berts Karohemd.
+- **Das Werkzeug liegt, wie die Pose es sagt** (`toolPhi`, `toolTurn`): Die Angel steht schräg zur
+  Seite, sonst verschwände sie von hinten genau hinter dem Kopf. Angel und Spule haben eine Spitze im
+  Bild, dort hängen Angelschnur und Drachenschnur.
+- **Sitzen an der Kante:** An der Stegkante liegt die Hüfte des Bildes auf dem Fußpunkt, die Beine
+  hängen in die Erde des Bäckers – von hinten sieht man den Rücken, wie bei einem Menschen auf dem
+  Steg. Am Kartentisch rückt das Bild weniger zur Kamera vor (`TABLE_BIAS`), sonst säße das Gegenüber
+  optisch auf der Tischplatte.
+- **Ganze Figur gedreht:** Auf der Schaukel neigt sich das Bild in sieben gebackenen Stufen, am Boden
+  liegt die Figur auf dem Rücken, den Kopf nach Norden – wie die Voxel-Figur.
+
+![Seltene Posen als Sprites](menschen-gestaltung/f7-posen.png)
+
+Oben Mika: Kartentisch, Angeln (warten, ausholen), Pistole, Flinte, Pfiff, Wirbel, Drachen, Schaukel
+(zwei Neigungen). Unten die Ticks am Kartentisch (Bert, Juna, Balduin, Yusuf, Fiete), Hilde mit der
+Angel, Pim mit der Spule, Lu schaut dem Drachen nach, Hilde im Anschlag, Juna am Boden.
