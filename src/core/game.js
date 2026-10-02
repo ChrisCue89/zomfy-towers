@@ -76,6 +76,9 @@ import { Defense } from './defense.js';
 import { Post } from './post.js';
 import { Fishing } from './fishing.js';
 import { FishingView } from '../ui/fishingView.js';
+import { Cooking } from './cooking.js';
+import { CookingView } from '../ui/cookingView.js';
+import { mealEffect } from '../data/cooking.js';
 import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
@@ -408,6 +411,8 @@ export class Game {
     this.post = new Post(this); // M32: Briefe, Pakete, Stimmen, Besuch, Rückkehr, Signalfeuer
     this.fishing = new Fishing(this); // M33: Angeln am Steg
     this.fishingView = new FishingView(this);
+    this.cooking = new Cooking(this); // A5: gemeinsam kochen am Kessel
+    this.cookingView = new CookingView(this);
     this.isles = new Isles(this); // N6: mit dem Ruderboot zu den Inseln
     this.fogIsle = new FogIsle(this); // N7: die Insel im Nebel – Marthe und die Kinder
     this.kite = new Kite(this); // N9: Pims Drachen
@@ -770,7 +775,7 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.kite?.session ? 'weit' : this.cardNight?.match || this.fishing?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // M33: auch am Steg, N6: auf dem See, N7: im Nebel; N9: beim Drachen weit
+    const view = this.kite?.session ? 'weit' : this.cardNight?.match || this.fishing?.session || this.cooking?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // A5: auch am Kessel // M33: auch am Steg, N6: auf dem See, N7: im Nebel; N9: beim Drachen weit
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
@@ -2837,6 +2842,10 @@ export class Game {
         this.fishing.update(realDt, input);
         this.player.idle(dt);
         break;
+      case 'kochen': // A5: am Kessel – die Uhr steht, die Welt lebt weiter
+        this.cooking.update(realDt, input);
+        this.player.idle(dt);
+        break;
       case 'drachen': // N9: Mika hält Pims Drachen – die Uhr steht, die Welt lebt weiter
         this.kite.updateSession(realDt, input);
         this.player.idle(dt);
@@ -2927,7 +2936,7 @@ export class Game {
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
     this.arrival.update(dt, input); // N5: die Ankunft (und danach schaukelt das Boot am Steg)
-    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.kite.session ? 'drachen' : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.cooking.session ? 'kochen' : this.kite.session ? 'drachen' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
@@ -3008,7 +3017,7 @@ export class Game {
     }
     if (input.pressed('lantern')) this.toggleLantern();
 
-    this.player.speedFactor = upgradeValue(this.state, 'tempo') * this.furnishing.speedFactor();
+    this.player.speedFactor = upgradeValue(this.state, 'tempo') * this.furnishing.speedFactor() * (1 + mealEffect(this.state).speed); // A5: Fischsuppe macht flinker
     if (input.pressed('dodge')) {
       const m = input.moveVector();
       this.combat.roll(m.x, m.z);
@@ -3497,6 +3506,7 @@ export class Game {
     if (!cinematic && !atTable) this.hud.draw(ui, { hotbar: playing || this.mode === 'craft', prompt: playing });
     if (atTable) this.cardTable.draw(ui);
     if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
+    if (this.mode === 'kochen') this.cookingView.draw(ui); // A5
     if (this.mode === 'drachen') this.kite.draw(ui); // N9: Ring in der Böe, Feld unten
     if (this.mode === 'rudern') this.isles.draw(ui); // N6
     this.fogIsle.draw(ui); // N7: Glocken-Marke am Rand, Nebelfahrt
@@ -4620,6 +4630,15 @@ export class Game {
         game.crowGifts.morning();
         return game.crowGifts.info();
       },
+      /** A5: Gemeinsam kochen – Zustand, der laufende Abend (Phase, Gericht, Schnitte, Gewürz, Kessel, Karte), Wirkung. */
+      cooking: () => game.cooking.info(),
+      /** A5: den Koch-Zustand setzen (Prüfung), z. B. { lastDay: 0 }. */
+      setCooking(o) {
+        Object.assign(game.state.cooking, o || {});
+        return game.cooking.info();
+      },
+      /** A5: gleich mit `id` kochen (wie die Antwort im Gespräch). */
+      cookBegin: (id) => game.cooking.begin(id),
       /** A4: Kraniche – Rastende (Zustand, Stelle), der Keil am Himmel, Zähler, Mikas Gedanken. */
       cranes: () => ({ ...game.world.cranes.info(), enabled: game.world.cranes.enabled, thoughts: Object.keys(game.state.flags).filter((k) => k.startsWith('kraniche_')), edda: Boolean(game.state.flags.funk_kranicheEdda), speech: game.hud.speech?.text || null }),
       /** A4: die Kraniche an- oder ausschalten (in der Prüfung sonst aus). */

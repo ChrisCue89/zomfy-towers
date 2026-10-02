@@ -5,6 +5,40 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## A5: Gemeinsam kochen ✓
+
+**Versprochen in Nr. 171** (»zuerst Karten, später Angeln am Steg und gemeinsam Kochen am Feuer«) und
+im Ideen-Parkplatz (»Kochen am Kamin mit kleinen Boni«): die dritte Abendaktivität (OFFENE-FRAGEN 234).
+
+- **Einladen:** abends von sechs bis acht im Gespräch »Kochst du heute mit mir?«. Bei gutem Wetter
+  sitzt das Gegenüber auf dem Stamm am Lagerfeuer und Mika im Sessel, über der Glut hängt ein
+  gusseiserner Kessel an Dreibein und Kette (die Flammen werden kleiner, solange er hängt); bei Regen,
+  Sturm und Schnee stehen beide in der Stube, ein Kupfertopf auf dem Dreifuß vor dem Kamin. Die
+  Kamera rückt nah heran, die Uhr steht, danach sind 45 Minuten vergangen.
+- **Vier Schritte im Feld unten:** ein Gericht wählen (drei Kacheln mit Schüssel, Zutaten und einem
+  Herz beim Leibgericht; was fehlt, sagt die Wahl), schnippeln (das Messer läuft übers Brett, E auf
+  der grünen Marke, fünf Schnitte), würzen (Salz, Kräuter, Pfeffer – das Gegenüber sagt vorher in
+  einer Sprechblase, wie es das mag) und golden vom Feuer nehmen (roh · golden · angebrannt). Am Ende
+  eine Karte mit der Schüssel, ein bis drei Holzlöffeln, dem Satz des Gegenübers und der Wirkung.
+- **Drei Gerichte, Wirkung bis zum Morgen:** Kürbissuppe (zwei Fasern) +30 Leben, Fischsuppe (ein
+  Fisch aus dem Angelkorb, eine Faser) +15 Leben und flinker, Pilzeintopf (drei Pilze) +10 Leben und
+  kräftiger – ein Löffel halb, drei anderthalbfach. Satt heißt volles Leben.
+- **Maronen** an drei Stellen der Bucht (unter der Eiche, bei den jungen Bäumen im Süden), je zwei,
+  nach zwei Tagen wieder da. Erst lagen sie nördlich hinter Bäumen und dem Dach – im Bild verdeckt;
+  jetzt stehen sie davor. Die Natur kennt sie nicht, damit ihr Zufall gleich bleibt.
+- **Geschmack je Person** (Leibgericht, Gewürz); Hilde, Bert, Juna, Yusuf und Rosa sagen zu drei
+  Löffeln ihres Leibgerichts einen eigenen Satz, Rosa ist Köchin (ein Löffel mehr). Ein Abend am
+  Kessel ist gemeinsame Zeit (M29); danach heute weder Karten noch Angeln. Jedes Gericht einmal ist
+  die Tat »Aus einem Topf« (jetzt 15 Taten). **Speichern v35** mit Migration v34 → v35.
+- **Beim Ansehen nachgebessert:** Der Kessel hing anfangs in den Flammen (höher gehängt, die Flammen
+  zur Glut gedämpft), der Topf am Kamin war ein weißer Fleck – er bekam ein Material, das es nicht
+  gab; jetzt Kupfer im Material des Innenraums, mit Suppe und Dampf. Die Löffel auf der Karte lasen
+  sich wie Pfeile; jetzt Holzlöffel mit runder Laffe. Die Kamera am Feuer zeigt das Gegenüber ganz.
+- **Prüfung:** Abschnitt `kochen` (echte Tasten, Bilder pilze, kochen-wahl, kochen-koecheln,
+  kochen-karte, kochen-kamin); die übrigen erwarten jetzt v35 und 15 Taten.
+
+---
+
 ## A4: Die Kraniche ✓
 
 **Selbst gewählt nach A3:** Der Kranichsee heißt nach ihnen, der Morgenbericht (G4) und die

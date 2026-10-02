@@ -41,7 +41,7 @@ export class CardNight {
     const c = this.data;
     if (!CARD_PLAYERS[id]) return 'niemand';
     if (g.nights?.active) return 'nacht';
-    if (c.lastDay === st.time.day || st.fishing?.lastDay === st.time.day) return 'heute'; // M33: ein Abend, eine Aktivität
+    if (c.lastDay === st.time.day || st.fishing?.lastDay === st.time.day || st.cooking?.lastDay === st.time.day) return 'heute'; // M33, A5: ein Abend, eine Aktivität
     if (id === 'balduin') {
       // Balduin spielt eine Runde am Steg, solange er angelegt hat – erst wenn Mika die Farbpaare kennt
       if (g.trader.phase !== 'steht' || g.trader.leaving || c.evenings < RULE_STAGES.pairsFrom - 1) return 'fort';

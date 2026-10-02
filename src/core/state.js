@@ -30,8 +30,9 @@ import { newPost, sanitizePost } from '../data/network.js';
 import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
 import { newCrows, sanitizeCrows } from '../data/crows.js';
+import { newCooking, sanitizeCooking } from '../data/cooking.js';
 
-export const SAVE_VERSION = 34;
+export const SAVE_VERSION = 35;
 
 /**
  * Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene
@@ -65,7 +66,7 @@ export function createNewState(config, mapSeed = 1) {
     // name/look: gewählt auf dem Titelbild (Meilenstein 7)
     player: { x: start.x, z: start.z, facing: start.facing, lantern: false, hp: 100, xp: 0, level: 1, rested: 0, tea: 0, soup: 0, name: 'Mika', look: { ...DEFAULT_LOOK } },
     // M30: Munition (patronen, schrot, leuchtkugeln) liegt ebenfalls im Vorrat – sie gehört allen
-    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0, patronen: 0, schrot: 0, leuchtkugeln: 0, naegel: 0, zucker: 0 },
+    inventory: { holz: 4, stein: 2, fasern: 3, stoff: 1, schrott: 1, teile: 0, zahnraeder: 0, moderkerne: 0, patronen: 0, schrot: 0, leuchtkugeln: 0, naegel: 0, zucker: 0, pilze: 0 },
     hotbar: { slots, selected: 0 },
     tools: { axt: false, spitzhacke: false },
     upgrades: { radius: 0, leben: 0, schlag: 0, tempo: 0 },
@@ -132,6 +133,7 @@ export function createNewState(config, mapSeed = 1) {
     // A3: die Krähen am Futterbrett – Vertrauen, letzte Krümel, wartende Gabe, Gaben, Krähenglas,
     // was Mika zurückgeben will, Zurückgegebenes, Jakobs Schatulle (0, 1 Schlüssel, 2 offen)
     crows: newCrows(),
+    cooking: newCooking(), // A5: Abende am Kessel, was heute wirkt
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -279,6 +281,7 @@ export function sanitizeState(data, config) {
   out.fishing = sanitizeFishing(data.fishing); // M33
   out.isles = sanitizeIsles(data.isles, out.fishing.bottles); // N6 (N7: mit der Nebelinsel)
   out.crows = sanitizeCrows(data.crows); // A3
+  out.cooking = sanitizeCooking(data.cooking); // A5
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

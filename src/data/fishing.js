@@ -102,7 +102,7 @@ export function fishingOffered(state, id) {
   const f = state.fishing;
   if (!f?.rod || state.survivors?.[id]?.stage !== 3) return false;
   const day = state.time?.day;
-  if (f.lastDay === day || state.cards?.lastDay === day) return false;
+  if (f.lastDay === day || state.cards?.lastDay === day || state.cooking?.lastDay === day) return false; // A5: auch nach dem Kessel nicht
   const m = state.time?.minute ?? 0;
   return m >= FISHING.from && m <= FISHING.until;
 }

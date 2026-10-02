@@ -57,9 +57,11 @@ export const T = {
     // N7: für Marthes Kahn
     naegel: 'Nägel',
     zucker: 'Zucker',
+    // A5: für den Kessel
+    pilze: 'Pilze',
   },
   /** Einzahl (»1 Zahnrad«), sonst wie oben. */
-  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern', patronen: 'Patrone', leuchtkugeln: 'Leuchtkugel', naegel: 'Handvoll Nägel', zucker: 'Dose Zucker' },
+  ressourcenEins: { fasern: 'Faser', teile: 'Zombieteil', zahnraeder: 'Zahnrad', moderkerne: 'Moderkern', patronen: 'Patrone', leuchtkugeln: 'Leuchtkugel', naegel: 'Handvoll Nägel', zucker: 'Dose Zucker', pilze: 'Pilz' },
   /** Menge mit passendem Namen: »1 Zahnrad«, »3 Zahnräder«. */
   menge: (n, res) => `${n} ${(n === 1 && T.ressourcenEins[res]) || T.ressourcen[res] || res}`,
   gegenstaende: {
@@ -695,6 +697,7 @@ export const T = {
     abbauen: 'Stein abbauen',
     aufsammeln: 'Aufsammeln',
     rupfen: 'Fasern rupfen',
+    pfluecken: 'Pilze pflücken', // A5
     durchsuchen: 'Durchsuchen',
     werkbank: 'Werkbank benutzen',
     bank: 'Hinsetzen',
@@ -1318,6 +1321,7 @@ export const T = {
       frost: ['Der erste Frost', 'Halte die Frostnacht.'],
       drachen: ['Drachenwetter', 'Drei Loopings hintereinander mit Pims Drachen.'],
       kraehen: ['Krähenfreund', 'Fünf Geschenke von den Krähen am Futterbrett.'], // A3
+      kessel: ['Aus einem Topf', 'Jedes Gericht einmal mit jemandem am Kessel gekocht.'], // A5
     },
     // Schlurferkunde mit Dr. Yusufs Notizen
     kundeZaehler: (n, von) => `${n} von ${von} Arten erledigt`,
@@ -2613,6 +2617,59 @@ export const T = {
     tanz: 'Die tanzen ja! Flügel auf, ein Hüpfer, eine Verbeugung … einfach so.',
     schlaf: 'Auf einem Bein, den Kopf unterm Flügel. Da kommt wirklich kein Fuchs hin.',
     edda: 'Hörst du die Kraniche? Großvater sagte immer: Wenn die letzten fort sind, kommt der Frost. Noch ist Zeit, Mika.',
+  },
+  // A5: Gemeinsam kochen – der Abend am Kessel
+  kochen: {
+    einladen: 'Kochst du heute mit mir?',
+    einladung: ['Gern! Was haben wir denn da?', 'Endlich mal was Warmes. Ich bin dabei.', 'Kochen? Mit dir? Na klar.'],
+    hinweise: {
+      wahl: 'Was kommt in den Kessel?  A/D · E',
+      schnippeln: 'E, wenn das Messer auf der Marke ist',
+      wuerzen: (n) => `Wie mag es ${n}?  A/D · E`,
+      koecheln: 'Golden vom Feuer nehmen: E',
+    },
+    namen: { kuerbissuppe: 'Kürbissuppe mit Kräutern', fischsuppe: 'Fischsuppe', pilzeintopf: 'Pilzeintopf' },
+    kurz: { kuerbissuppe: 'Kürbissuppe', fischsuppe: 'Fischsuppe', pilzeintopf: 'Pilzeintopf' },
+    zutat: (n, r) => (r === 'fisch' ? `${n} Fisch` : T.menge(n, r)),
+    fehlt: (was) => `Dafür fehlt noch: ${was}.`,
+    fehltKurz: (was) => `fehlt: ${was}`,
+    gewaehlt: {
+      kuerbissuppe: 'Kürbis geht immer.',
+      fischsuppe: 'Fischsuppe! Wie früher am Hafen.',
+      pilzeintopf: 'Die braunen sind gute Pilze. Der Moder ist violett – der bleibt draußen.',
+    },
+    gewuerze: { salz: 'Salz', kraeuter: 'Kräuter', pfeffer: 'Pfeffer' },
+    // vor dem Würzen sagt das Gegenüber, wie es das mag
+    wuerzeHinweis: {
+      salz: { allgemein: 'Eine Prise Salz – mehr braucht es nicht.', yusuf: 'Eine Prise Salz. Nur eine – denk an den Blutdruck.' },
+      kraeuter: { allgemein: 'Ein bisschen Grün tut jeder Suppe gut.', hilde: 'Ein paar Kräuter, {name}. Liebstöckel, wenn du hast.' },
+      pfeffer: { allgemein: 'Ordentlich Pfeffer, sonst schmeckt es nach nichts.', bert: 'Pfeffer. Ordentlich. Hmpf.' },
+    },
+    vomFeuer: 'Roh · golden · angebrannt',
+    karte: 'Abend am Kessel',
+    weiter: 'E: weiter',
+    urteil: [
+      ['Essbar. Wirklich!', 'Satt macht es jedenfalls.', 'Beim nächsten Mal wird es besser.'],
+      ['Schmeckt!', 'Gut gemacht, {name}.', 'Das wärmt bis in die Zehen.'],
+      ['Das ist richtig gut.', 'So hat es lange nicht geschmeckt.', 'Davon hätte ich gern das Rezept.'],
+    ],
+    lieblings: ['Mein Leibgericht – na ja, beinahe.', 'Mein Leibgericht!', 'Mein Leibgericht – und dann noch so gut!'],
+    urteilEigen: {
+      hilde: 'Fast wie meine. Aber verrat es keinem, {name}.',
+      bert: 'Hmpf. Gut. Sehr gut sogar.',
+      juna: 'Darf ich das heute Abend über Funk erzählen?',
+      yusuf: 'Ärztlich empfohlen. Ausdrücklich.',
+      rosa: 'Siehst du? Man muss nur mit Gefühl rühren.',
+    },
+    wirkung: (e) => `${[e.hp ? `+${e.hp} Leben` : null, e.speed ? 'flinker' : null, e.damage ? 'kräftiger' : null].filter(Boolean).join(', ')} bis morgen früh`,
+    satt: (name) => `${name} – satt und warm bis morgen früh.`,
+    nicht: {
+      nacht: 'Nicht jetzt – die Horde kommt.',
+      heute: 'Für heute Abend haben wir schon was vor.',
+      zeit: 'Gekocht wird abends, zwischen sechs und acht.',
+      niemand: 'Gerade nicht.',
+      vorrat: 'Im Vorrat ist nichts für den Kessel – Fasern, Fisch oder Pilze.',
+    },
   },
   // K1: der Fotomodus (Pausenmenü)
   foto: {

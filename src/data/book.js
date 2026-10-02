@@ -4,6 +4,7 @@
 
 import { HOUSE_MAX } from './buildings.js';
 import { CROW_DEED } from './crows.js';
+import { COOK_DEED } from './cooking.js';
 import { P } from '../render/palette.js';
 
 /**
@@ -37,6 +38,7 @@ export const DEEDS = [
   { id: 'frost', of: 'frost', need: 1 },
   { id: 'drachen', of: 'kite', need: 3 }, // N9: drei Loopings hintereinander mit Pims Drachen
   { id: 'kraehen', of: 'crows', need: CROW_DEED }, // A3: Gaben am Futterbrett
+  { id: 'kessel', of: 'cooking', need: COOK_DEED }, // A5: jedes Gericht einmal am Kessel
 ];
 
 /** Herbstschmuck als Belohnung: nach 3, 6, 9 und 12 Taten ein Stück mehr (Bauten mit `deco`). */

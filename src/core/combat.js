@@ -9,6 +9,7 @@
 import { T } from '../data/texts.js';
 import { upgradeValue } from '../data/upgrades.js';
 import { WEAPONS, weaponStats } from '../data/weapons.js';
+import { mealEffect } from '../data/cooking.js';
 import { perkValue, xpForLevel, rollPerkChoice, PERKS, PERK_IDS, perkLevel } from '../data/perks.js';
 import { BUILDINGS, SOUP, BENCH, maxHpOf } from '../data/buildings.js';
 import { FLINCH } from '../entities/player.js';
@@ -38,7 +39,8 @@ export class Combat {
   get maxHp() {
     const st = this.game.state;
     const soup = st.player.soup === st.time.day ? this.soupHp() : 0; // Suppe aus der Küche (M11)
-    return upgradeValue(st, 'leben') + (this.game.survivors?.maxHpBonus() || 0) + soup; // Hildes Schal
+    const meal = mealEffect(st).hp; // A5: was am Kessel gekocht wurde (nicht zusätzlich zur Suppe)
+    return upgradeValue(st, 'leben') + (this.game.survivors?.maxHpBonus() || 0) + Math.max(soup, meal); // Hildes Schal
   }
 
   get hp() {
@@ -187,6 +189,7 @@ export class Combat {
       return Math.hypot(c.x - p.x, c.z - p.z) < TOWER_NEAR;
     })) factor *= perkValue(st, 'turmfreund');
     if (g.benchBuff > g.clock) factor *= BENCH.damage; // M24: frisch verschnauft (Sitzbank)
+    factor *= 1 + mealEffect(st).damage; // A5: Pilzeintopf macht kräftiger
     const targets = found.slice(0, w.targets);
     // M26: Wucht gestaffelt (data/feel.js) – schwer (Kombo, Pfanne), Abschuss, gewöhnlich
     const heavy = comboHit || Boolean(w.stun);

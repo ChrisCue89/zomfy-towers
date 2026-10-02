@@ -2230,6 +2230,24 @@ ihnen – jetzt sieht und hört man sie:
   mehr. Edda: »Wenn die letzten fort sind, kommt der Frost.«
 - Mika denkt je einmal etwas dazu (der erste Keil, das Auffliegen, ein Tanz, die Schlafenden).
 
+#### A5 – Gemeinsam kochen ✓ (Nr. 234)
+
+*Versprochen in Nr. 171, aus dem Ideen-Parkplatz »Kochen am Kamin mit kleinen Boni«:* die dritte
+Abendaktivität nach Karten und Angeln.
+
+- **Einladen:** abends im Gespräch »Kochst du heute mit mir?« – bei gutem Wetter am Lagerfeuer (der
+  Kessel hängt am Dreibein über der Glut), bei Regen und Schnee in der Stube am Kamin (Kupfertopf auf
+  der Herdplatte). Die Uhr steht, danach ist es 45 Minuten später.
+- **Vier kleine Schritte:** Gericht wählen, schnippeln (E auf der Marke), würzen, wie das Gegenüber
+  es mag (es sagt es vorher), und golden vom Feuer nehmen – zu spät brennt es an.
+- **Drei Gerichte:** Kürbissuppe (Fasern) gibt mehr Leben, Fischsuppe (Fisch aus dem Angelkorb)
+  macht flinker, Pilzeintopf (Maronen aus der Bucht) kräftiger – bis zum nächsten Morgen, nach ein
+  bis drei Löffeln. Satt heißt volles Leben.
+- **Pilze:** Maronen wachsen an drei Stellen der Bucht und nach zwei Tagen nach. Braun ist gut, der
+  Moder ist violett.
+- **Geschmack:** Jede Figur hat ein Leibgericht (Herz in der Wahl) und ihr Gewürz; Rosa ist Köchin.
+  Ein Abend am Kessel ist gemeinsame Zeit (M29). Jedes Gericht einmal ist die Tat »Aus einem Topf«.
+
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.
@@ -2252,7 +2270,7 @@ ausbauen«
 
 ## 9. Ideen-Parkplatz
 
-- Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
+- Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni (umgesetzt: A5).
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen) (umgesetzt: A3).
 - Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (umgesetzt: N7).

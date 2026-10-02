@@ -3,8 +3,11 @@
 /** Reihenfolge der Ressourcen im HUD. */
 export const RESOURCES = ['holz', 'stein', 'fasern', 'stoff', 'schrott', 'teile', 'zahnraeder', 'moderkerne'];
 
-/** N7: Was Marthe für ihren Kahn braucht – im Vorrat, im HUD nur, solange man es hat. */
-export const QUEST_ITEMS = ['naegel', 'zucker'];
+/**
+ * Sondervorräte – im Vorrat, im HUD nur, solange man sie hat: N7 Nägel und Zucker für Marthes Kahn,
+ * A5 Pilze für den Kessel.
+ */
+export const QUEST_ITEMS = ['naegel', 'zucker', 'pilze'];
 
 /** Seltene Vorräte, die erst nach dem ersten Fund im HUD erscheinen. */
 export const RARE_RESOURCES = ['moderkerne'];

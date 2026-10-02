@@ -40,7 +40,7 @@ export const LAYOUT = {
 
 /**
  * Ressourcenquellen in der Bucht (fest). kind: baum, felsen, kiesel, gras,
- * aeste, schrott. model wählt die Form (bei Bäumen: birke, tanne, eiche,
+ * aeste, schrott, pilze (A5). model wählt die Form (bei Bäumen: birke, tanne, eiche,
  * jung, jungtanne). Entlang der Wege kommen je Spiel weitere dazu (resources.js).
  */
 export const BAY_NODES = [
@@ -56,6 +56,11 @@ export const BAY_NODES = [
   { id: 'aeste-1', kind: 'aeste', x: -1.25, z: 8.25 },
   { id: 'aeste-2', kind: 'aeste', x: 6.0, z: -11.25 },
   { id: 'schrott-1', kind: 'schrott', x: 4.75, z: 9.75 },
+  // A5: Pilze für den Kessel – unter der Eiche und bei den jungen Bäumen, immer südlich davor
+  // (dahinter verdeckte sie die Krone). Die Natur kennt sie nicht (world.js), sonst verschöbe sich ihr Zufall.
+  { id: 'pilze-1', kind: 'pilze', x: -6.25, z: -9.25 },
+  { id: 'pilze-2', kind: 'pilze', x: 2.5, z: 10.75 },
+  { id: 'pilze-3', kind: 'pilze', x: -5.25, z: 10.5 },
 ];
 
 /** Abstand eines Punkts zu einem Polygonzug. */

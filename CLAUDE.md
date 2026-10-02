@@ -393,7 +393,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Einladung, Tisch, KI mit Bedenkzeit und Tick, Einsatz,
                       Wettschuld, Menschenkunde, M28),
                       photo (Fotomodus: freier Blick, Bild asynchron lesen,
-                      PNG, K1),
+                      PNG, K1), cooking (gemeinsam kochen: Einladung, Kessel am
+                      Feuer oder Topf am Kamin, Wahl, Schnippeln, Würzen,
+                      Köcheln, Karte, Wirkung bis zum Morgen, A5),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
                       Wackeln, Blitze, Schlurfer 3D/2D, Figuren 3D/2D – eigener
                       Speicherplatz, nicht im Spielstand)
@@ -451,6 +453,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       keepsakeModels (die siebzehn Erinnerungsstücke, M29),
                       crowModels (Futterbrett, Krümel, Gaben klein und fürs
                       Foto, Krähenglas, Kompass, lose Diele, A3),
+                      cookModels (Dreibein mit Kessel, Kupfertopf, Gerichte,
+                      Maronen als Fundstelle, Schüssel für die Karte, A5),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
@@ -513,6 +517,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       funk (Edda über Funk: Comic-Feld unten rechts, N4),
                       catalog (Balduins Katalog und Lieferkarte, N4),
                       fishingView (Angeln: Schnur, Leisten, Fangkarte, M33),
+                      cookingView (Kochen: Feld mit Gerichten, Brett, Gläsern,
+                      Leiste und Karte mit Schüssel und Löffeln, A5),
                       kindPictures (Bilder der Schlurferkunde aus dem
                       Sprite-Bäcker, F3d)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -550,7 +556,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       anpacken: Dauer, Ertrag je Person, Angebot, A2),
                       crows (Krähengaben: Füttern, Vertrauen, Chance, die Gaben
                       in ihrer Reihenfolge, Krähenglas, A3), cranes (Kraniche:
-                      Zugzeit, Keile, Rastplätze, Gedanken, A4),
+                      Zugzeit, Keile, Rastplätze, Gedanken, A4), cooking
+                      (Kochen: Abend, Spiel, Gerichte, Wirkung, Löffel,
+                      Geschmack je Person, A5),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -594,7 +602,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `foto` (Fotomodus, K1), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `foto` (Fotomodus, K1), `kochen` (am Kessel, A5), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -1097,6 +1105,28 @@ Grundprinzipien:
     (weite Hörweite, `opt.far` in `sound.play`), Momente über `onMoment` → `game.craneMoment`
     (je Art einmal ein Gedanke, Flags `kraniche_<art>`; ein späterer Keil bringt Eddas Zeile
     `funk_kranicheEdda`). In Prüfung und Playtest-Brücke aus (`CONFIG.cranes`, `?kraniche`).
+- **Gemeinsam kochen (A5, `core/cooking.js`, `data/cooking.js`, `ui/cookingView.js`, `world/cookModels.js`):**
+  - Die dritte Abendaktivität (Nr. 171, 234): `cookingOffered(state, id)` (data/cooking.js, rein aus dem
+    Zustand) bietet abends »Kochst du heute mit mir?« an (`guestAnswers`, `resident` in dialogs.js);
+    `survivors.onAnswer` → `cooking.blocked(id)` (nacht, heute, zeit, niemand, vorrat – als Meldung)
+    oder `cooking.begin(id)`. Ein Abend, eine Aktivität: Karten, Angeln und Kochen sehen alle drei
+    `lastDay` (`eveningTaken`).
+  - `world.cookSpot('feuer' | 'kamin')` gibt Kessel, Sitze und Blick (bei Regen, Sturm und Schnee drinnen
+    am Kamin); `world.showKettle(spot, dish)` hängt den Kessel ans Dreibein (draußen werden die Flammen
+    kleiner, `hideKettle` macht sie wieder groß) bzw. stellt den Kupfertopf auf die Herdplatte (Material
+    des Innenraums – ohne Material wäre er weiß), zeigt die Füllung je Gericht und lässt Dampf steigen.
+    Die Kamera schaut über `world.cookLook` (lookSpot »kochen«) nah hin (`applyView`).
+  - Modus `kochen` (die Uhr steht, `update` mit `realDt`): `wahl` → `schnippeln` → `wuerzen` →
+    `koecheln` → `essen`; Esc nur bei der Wahl. `takeOff` rechnet Löffel (`SCORE`), legt
+    `state.cooking.meal` ({ id, day, q }) und füllt das Leben; `end` steht auf, zählt gemeinsame Zeit
+    (`bonds.add(id, 'kochen')`) und bucht `COOKING.minutes` ab.
+  - Die Wirkung liest jeder selbst aus `mealEffect(state)` (nur am Tag der Mahlzeit): `combat.maxHp`
+    (die größere von Suppe und Mahlzeit), der Schlag in `combat.attack`, `player.speedFactor` in
+    `game.update`.
+  - Die Maronen sind Quellen (`kind: 'pilze'` in `BAY_NODES`, Regel in `NODE_RULES`, Modell
+    `buildMushroomPatch`), südlich vor Bäumen – dahinter verdeckt sie die Krone. `createNature` bekommt
+    sie nicht mitgeteilt (`world.js` filtert sie heraus), sonst verschöbe sich der Zufall der ganzen
+    Natur. Pilze liegen als `QUEST_ITEMS` im Vorrat.
 - **Der Fotomodus (K1, `core/photo.js`):** Eintrag im Pausenmenü (nicht vom Titelbild, nicht im
   Dialog); Modus `foto` – die Uhr steht, die Leute arbeiten im echten Takt weiter (Krähen, Balduin
   und die Horde stehen wie im Menü), `render` zeichnet nur Regen, Schnee und `photo.draw` (die
@@ -1637,7 +1667,16 @@ Grundprinzipien:
    staksen umher, mit D gehalten auf die beim Wrack zu fliegen beide rufend auf (Gedanke), die anderen
    bleiben, später kommen sie zurück, ein Keil zieht rufend im Bild über Mika (Gedanke), an Tag 4
    funkt Edda, nachts schlafen alle auf einem Bein (Gedanke in der Nähe), an Tag 25 zwei, ab Tag 29
-   keine (Bilder: kraniche-ufer, kraniche-keil, kraniche-nacht).
+   keine (Bilder: kraniche-ufer, kraniche-keil, kraniche-nacht); ab A5 (Abschnitt `kochen`): drei
+   Maronenstellen in der Bucht, E pflückt zwei (echte Taste, nach zwei Tagen wieder da), tagsüber kein
+   Kochen, abends lädt Mika Hilde im Gespräch ein (echte Tasten) – beide sitzen am Feuer, der Kessel
+   hängt, die Kamera ist nah, die Uhr steht; D D zum Pilzeintopf sagt, was fehlt, A A und E nehmen die
+   Kürbissuppe, fünf saubere Schnitte mit E auf der Marke, Hilde sagt »Kräuter«, D A E würzt, golden
+   vom Feuer gibt drei Löffel und Hildes eigenen Satz, E steht auf (45 Minuten später, +45 Leben bis zum
+   Morgen, gemeinsame Zeit), heute weder Karten noch Angeln, Fischsuppe flinker, Pilzeintopf kräftiger,
+   am Morgen vorbei, bei Regen am Kamin mit dem Kupfertopf, zu lange auf dem Feuer brennt es an, die
+   Tat »Aus einem Topf«, Speichern v35 und Migration v34 → v35 (Bilder: pilze, kochen-wahl,
+   kochen-koecheln, kochen-karte, kochen-kamin).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1827,7 +1866,10 @@ trägt und zurückgab, die Schatulle, das Brett (mit der Krähe darauf), zahm, S
 Zähler, `setCrows(o)` setzt den Krähen-Zustand, `crowMorning()` rechnet den Morgen der Krähen
 (`nextMorning()` tut es auch); ab A4 zeigt `cranes()` die Rastenden (Zustand, Stelle, Platz), den
 Keil am Himmel, Rufe, Tänze, Auffliegen, Mikas Gedanken und Eddas Zeile, `setCranes(an)` schaltet die
-Kraniche (in der Prüfung sonst aus), `craneFlock()` lässt gleich einen Keil über Mika ziehen.
+Kraniche (in der Prüfung sonst aus), `craneFlock()` lässt gleich einen Keil über Mika ziehen; ab A5
+zeigt `cooking()` Abende, Mahlzeit, Gerichte, Geschmack, warum es gerade nicht geht, die Wirkung und
+den laufenden Abend (Phase, Gericht, Messer, Marke, Schnitte, Gewürz und Hinweis, Kessel, Karte),
+`setCooking(o)` setzt den Koch-Zustand, `cookBegin(id)` lädt gleich ein (wie die Antwort im Gespräch).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

@@ -1489,6 +1489,22 @@ const ICONS = {
       '..kkkk....',
     ],
   },
+  // A5: Pilze für den Kessel – zwei Maronen
+  pilze: {
+    legend: { k: P.n1, h: P.e4, H: P.e6, d: P.e3, s: P.e9, S: P.e7, g: P.g5 },
+    rows: [
+      '.kkkk.....',
+      'kHhhhk....',
+      'kddddk.kk.',
+      '.kssk.kHhk',
+      '..sS..kddk',
+      '..sS...sk.',
+      '..sS...Sk.',
+      '.ksSk..sk.',
+      'gkssk.gskg',
+      'gggggggggg',
+    ],
+  },
   zucker: {
     legend: { k: P.n1, b: P.b3, B: P.b4, w: P.s9, W: P.s8, r: P.r3 },
     rows: [

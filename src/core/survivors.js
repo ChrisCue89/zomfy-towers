@@ -578,6 +578,13 @@ export class Survivors {
       else g.fishing.begin(id);
       return;
     }
+    // A5: zusammen kochen – wer nicht kann, sagt warum
+    if (aktion === 'kochen') {
+      const why = g.cooking.blocked(id);
+      if (why) g.hud.toast(T.kochen.nicht[why] || T.kochen.nicht.heute, 'pilze', 2.6);
+      else g.cooking.begin(id);
+      return;
+    }
     if (isWanderer(id)) {
       this.decide(id, aktion);
       g.quietSave();

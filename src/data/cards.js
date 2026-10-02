@@ -118,7 +118,7 @@ export function cardsOffered(state, id) {
   const c = state.cards;
   if (!c || !CARD_PLAYERS[id] || id === 'balduin') return false;
   if (state.survivors?.[id]?.stage !== 3) return false;
-  if (c.lastDay === state.time?.day || state.fishing?.lastDay === state.time?.day) return false; // M33: schon am Steg gewesen
+  if (c.lastDay === state.time?.day || state.fishing?.lastDay === state.time?.day || state.cooking?.lastDay === state.time?.day) return false; // M33: schon am Steg gewesen, A5: am Kessel
   const m = state.time?.minute ?? 0;
   if (m < EVENING.from || m > EVENING.until) return false;
   return Boolean(c.evenings) || id === 'bert';

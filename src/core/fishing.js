@@ -42,7 +42,7 @@ export class Fishing {
     const d = this.data;
     if (!d.rod) return 'angel';
     if (g.nights?.active) return 'nacht';
-    if (d.lastDay === st.time.day || st.cards?.lastDay === st.time.day) return 'heute'; // ein Abend, eine Aktivität
+    if (d.lastDay === st.time.day || st.cards?.lastDay === st.time.day || st.cooking?.lastDay === st.time.day) return 'heute'; // ein Abend, eine Aktivität (A5: auch der Kessel)
     const m = st.time.minute;
     if (m < FISHING.from || m > FISHING.until) return 'zeit';
     if (friend && !g.survivors.resident(friend)) return 'niemand';

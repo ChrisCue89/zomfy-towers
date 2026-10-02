@@ -40,7 +40,7 @@ export const CRANE_REST = {
 export const CRANE_NOTICE = { auf: 12, tanz: 14, schlaf: 8 };
 
 /** In diesen Modi leben die Kraniche weiter (in der Nebelfahrt nicht: dort führt der Klang der Glocke). */
-export const CRANE_MODES = ['play', 'foto', 'drachen', 'ankunft', 'rudern', 'angeln', 'karten'];
+export const CRANE_MODES = ['play', 'foto', 'drachen', 'ankunft', 'rudern', 'angeln', 'karten', 'kochen'];
 
 /** Wie viele Keile an diesem Tag über die Bucht ziehen (morgens und nachmittags zusammen). */
 export function flocksOn(day) {

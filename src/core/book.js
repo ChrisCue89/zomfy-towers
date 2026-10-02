@@ -13,6 +13,7 @@ import { BUILDINGS } from '../data/buildings.js';
 import { towerRank, RANK_NAMES } from '../data/towers.js';
 import { PLACES, placesKnown } from '../data/places.js';
 import { crowGiftCount } from '../data/crows.js';
+import { dishesCooked } from '../data/cooking.js';
 
 /** So oft (Sekunden) schaut das Buch nach, ob eine Tat gelungen ist. */
 const CHECK_EVERY = 1.5;
@@ -119,6 +120,8 @@ export class Book {
         return st.isles?.fog?.kite?.best || 0; // N9: längste Reihe von Loopings
       case 'crows':
         return crowGiftCount(st); // A3: Gaben am Futterbrett
+      case 'cooking':
+        return dishesCooked(st); // A5: verschiedene Gerichte am Kessel
       default:
         return 0;
     }

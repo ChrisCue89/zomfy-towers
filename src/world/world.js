@@ -37,6 +37,7 @@ import { Crows } from '../entities/crows.js';
 import { Cranes } from '../entities/cranes.js';
 import { FLASH_TIME } from '../data/skills.js';
 import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
+import { buildTripodKettle, buildKettleFill, buildHearthPot, buildPotFill, TRIPOD, DISH_COLORS } from './cookModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { buildCrumbs, buildBoardGift, buildCrowJar, buildSillCompass, buildLooseBoard } from './crowModels.js';
 import { STAKES } from '../data/cards.js';
@@ -117,7 +118,8 @@ export class World {
 
     this.resources = new ResourceNodes({ scene, colliders: this.colliders, materials: this.materials, seed, map: this.map });
 
-    const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers, map: this.map, nodes: this.resources.nodes });
+    // A5: Die Pilze kamen nach der Natur – sie kennt sie nicht, sonst verschöbe sich ihr ganzer Zufall
+    const nature = createNature({ seed, materials: this.materials, colliders: this.colliders, blockers: this.props.blockers, map: this.map, nodes: this.resources.nodes.filter((n) => n.kind !== 'pilze') });
     scene.add(nature.group);
     this.stats = nature.stats;
     // G6: Stümpfe mit drei Kreuzen am Waldrand – nach der Natur auf freie Stellen
@@ -590,6 +592,95 @@ export class World {
     if (this.cardProps) this.cardProps.visible = false;
   }
 
+  /**
+   * A5: Wo gekocht wird. Am Feuer sitzt das Gegenüber auf dem Stamm im Norden (mit dem Gesicht zu
+   * uns), Mika im Ohrensessel östlich, der Kessel hängt am Dreibein über der Feuerstelle. Am Kamin
+   * steht der Topf auf dem Dreifuß auf der Herdplatte, beide sitzen auf Hackklötzen daneben.
+   */
+  cookSpot(kind) {
+    const V32 = 1 / 32;
+    if (kind === 'kamin') {
+      const a = this.interior.cardAnchor;
+      return {
+        kind,
+        inside: true,
+        kettle: { x: a.x, z: 15 / 16, y: 1 / 16 },
+        friend: { x: a.x - 1.0, z: a.z - 0.5, facing: 0.7, seatY: 9 * V32 },
+        mika: { x: a.x + 0.875, z: a.z - 0.25, facing: -Math.PI / 2 - 0.35, seatY: 9 * V32 },
+        stumps: true,
+        look: { x: a.x, z: a.z + 0.35 },
+      };
+    }
+    const f = LAYOUT.campfire;
+    return {
+      kind: 'feuer',
+      inside: false,
+      kettle: { x: f.x, z: f.z, y: 0 },
+      friend: { x: f.x - 0.25, z: f.z - 2.1, facing: 0, seatY: 15 * V32 }, // auf dem Sitzstamm
+      mika: { x: f.x + 2.0, z: f.z + 0.05, facing: -Math.PI / 2, seatY: 19 * V32 }, // im Ohrensessel
+      stumps: false,
+      look: { x: f.x + 0.75, z: f.z + 0.3 }, // das Gegenüber auf dem Stamm ganz im Bild, unten bleibt Platz fürs Feld
+    };
+  }
+
+  /** A5: Kessel (draußen) bzw. Topf (drinnen) aufstellen; `dish` füllt ihn (null: leer). Dampf steigt auf. */
+  showKettle(spot, dish) {
+    if (!this.cook) {
+      const g = new THREE.Group();
+      g.name = 'Kessel';
+      const fine = { size: 1 / 32, shadow: 'coarse4', seed: this.seed };
+      const room = { size: 1 / 16, shadow: 'none', seed: this.seed };
+      const tripod = createStaticVoxelObject(buildTripodKettle(), this.materials.world, fine);
+      const pot = createStaticVoxelObject(buildHearthPot(), this.interiorMaterials.room, room);
+      const fills = {};
+      const potFills = {};
+      for (const id of Object.keys(DISH_COLORS)) {
+        fills[id] = createStaticVoxelObject(buildKettleFill(id), this.materials.world, { ...fine, shadow: 'none' });
+        potFills[id] = createStaticVoxelObject(buildPotFill(id), this.interiorMaterials.room, room);
+        g.add(fills[id], potFills[id]);
+      }
+      const stumps = [0, 1].map((k) => createStaticVoxelObject(buildStump(this.seed + 61 + k), this.materials.world, fine));
+      g.add(tripod, pot, ...stumps);
+      this.scene.add(g);
+      this.cook = { group: g, tripod, pot, fills, potFills, stumps, steamT: 0, at: new THREE.Vector3(), dish: null };
+    }
+    const c = this.cook;
+    const k = spot.kettle;
+    c.tripod.visible = !spot.inside;
+    c.pot.visible = spot.inside;
+    c.tripod.position.set(k.x, k.y, k.z);
+    c.pot.position.set(k.x, k.y, k.z);
+    for (const [id, o] of Object.entries(c.fills)) {
+      o.visible = !spot.inside && id === dish;
+      o.position.set(k.x, k.y, k.z);
+    }
+    for (const [id, o] of Object.entries(c.potFills)) {
+      o.visible = spot.inside && id === dish;
+      o.position.set(k.x, k.y, k.z);
+    }
+    c.stumps.forEach((o, n) => {
+      const seat = n ? spot.mika : spot.friend;
+      o.visible = spot.stumps;
+      o.position.set(seat.x, 0, seat.z);
+    });
+    // Dampf: über dem Rand des Kessels bzw. des Topfs
+    c.at.set(k.x, k.y + (spot.inside ? 6 / 16 : (TRIPOD.rim + 1) / 32), k.z);
+    c.dish = dish;
+    c.group.visible = true;
+    // Gekocht wird über der Glut: die Flammen draußen kleiner, solange der Kessel hängt
+    if (!spot.inside && this.fireGrow.camp >= 1) this.props.fire.group.scale.y = 0.55;
+    c.inside = spot.inside;
+  }
+
+  /** A5: Kessel wegräumen. */
+  hideKettle() {
+    if (this.cook) {
+      this.cook.group.visible = false;
+      this.cook.dish = null;
+    }
+    if (this.fireGrow.camp >= 1) this.props.fire.group.scale.y = 1;
+  }
+
   /** Einsatz-Modell (1/32) als statisches Objekt in einer Gruppe. */
   stakeObject(id, parent) {
     const o = createStaticVoxelObject(buildStake(id), this.materials.world, { size: 1 / 32, shadow: 'none', seed: this.seed });
@@ -766,6 +857,7 @@ export class World {
     if (key === 'zusammen') return { x: m.merge.x - 1, z: m.merge.z };
     if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
     if (key === 'angeln' && this.fishLook) return this.fishLook; // M33: übers Wasser am Steg
+    if (key === 'kochen' && this.cookLook) return this.cookLook; // A5: am Kessel
     if (key === 'drachen' && this.kiteLook) return this.kiteLook; // N9: Mika und Pims Drachen
     if (key === 'ankunft') return { x: ARRIVAL.route[0][0], z: ARRIVAL.route[0][1] }; // N5: dort kommt das Boot her
     // Haus, Hof und rechts der See
@@ -940,6 +1032,18 @@ export class World {
     if (this.fires.camp) {
       this.fireSmoke.update(dt, this._smoke0, this._smoke1);
       this.embers.update(dt, 0.6 + night * 0.6);
+    }
+    // A5: Dampf über dem Kessel, solange etwas darin köchelt
+    const cook = this.cook;
+    if (cook?.group.visible && cook.dish) {
+      cook.steamT -= dt;
+      if (cook.steamT <= 0) {
+        cook.steamT = 0.22;
+        const r = this.particles.rng;
+        // drinnen (160 px/m) wären dieselben Flocken viermal so groß – dort kleiner und dünner
+        const k = cook.inside ? 0.4 : 1;
+        this.particles.spawn({ x: cook.at.x + r.range(-0.06, 0.06), y: cook.at.y, z: cook.at.z + r.range(-0.06, 0.06), vx: r.range(-0.03, 0.03), vy: 0.3 * (cook.inside ? 0.6 : 1), vz: r.range(-0.03, 0.03), life: r.range(1.0, 1.6), size0: 2 * k, size1: 4 * k, color0: 0xd0c9bc, alpha0: 0.45, alpha1: 0, drag: 0.3, lift: 0.04, windFactor: cook.inside ? 0 : 0.3 });
+      }
     }
     this.particles.update(dt);
     this.fireflies.update(dt, Math.max(0, (night - 0.55) / 0.45));

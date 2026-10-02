@@ -3003,6 +3003,42 @@ und Ortskunde (G5) erzählen von ihnen, also muss man sie auch sehen und hören:
 **Warum keine Wirkung aufs Spiel:** Nicht alles muss etwas bringen; die Bucht soll leben (wie A1).
 Die Kraniche lenken auch keine Schlurfer ab und fliegen nicht über die Wege der Nacht.
 
+### 234. Gemeinsam kochen – wie geht es, und was bringt es? (A5, zu Nr. 171)
+**Entscheidung:** Die dritte Abendaktivität nach Karten und Angeln, wie Nr. 171 sie versprach.
+Abends (18–20 Uhr) fragt Mika im Gespräch »Kochst du heute mit mir?«. Bei gutem Wetter sitzen beide
+am Lagerfeuer – das Gegenüber auf dem Stamm, Mika im Sessel –, über der Glut hängt der Kessel am
+Dreibein (die Flammen werden kleiner, solange er hängt). Bei Regen und Schnee stehen beide in der
+Stube vor dem Kamin, der Kupfertopf auf dem Dreifuß auf der Herdplatte. Die Uhr steht; danach sind
+45 Minuten vergangen.
+
+- **Vier kleine Schritte statt eines Rezeptbuchs:** ein Gericht wählen (was fehlt, sagt die Wahl),
+  schnippeln (fünfmal E, wenn das Messer über die Marke läuft), würzen (das Gegenüber sagt vorher,
+  wie es das mag), golden vom Feuer nehmen (die Leiste läuft von roh über golden bis angebrannt –
+  wer zu lange wartet, dem brennt es an). Jeder Schritt dauert Sekunden; Fehler machen das Essen
+  schlechter, nie ungenießbar.
+- **Drei Gerichte:** Kürbissuppe (zwei Fasern – Kürbis, Wurzeln und Kräuter zählen im Vorrat zum
+  Pflanzlichen): mehr Leben; Fischsuppe (ein Fisch aus dem Angelkorb, eine Faser): etwas Leben und
+  flinker; Pilzeintopf (drei Pilze): etwas Leben und kräftiger.
+- **Löffel statt Zahlen:** ein bis drei Löffel aus sauberen Schnitten, dem richtigen Gewürz, dem
+  goldenen Moment, dem Leibgericht des Gegenübers und Rosa (Köchin: ein Löffel mehr). Die Wirkung
+  gilt bis zum nächsten Morgen – ein Löffel halb, drei anderthalbfach; satt heißt volles Leben. Mit
+  der Suppe aus der Küche (M11) addiert sie sich nicht, es gilt die größere.
+- **Die Pilze:** Maronen an drei Stellen der Bucht (unter der Eiche, bei den jungen Bäumen im
+  Süden), je zwei, nach zwei Tagen wachsen sie nach. Gute Pilze sind braun; der Moder ist violett und
+  bleibt draußen – Hilde sagt es, wenn der Eintopf in den Kessel kommt.
+- **Jede Figur hat ihren Geschmack:** Leibgericht und Gewürz je Person; das Leibgericht trägt in der
+  Wahl ein Herz und ist vorgewählt, wenn es geht. Hilde, Bert, Juna, Yusuf und Rosa haben zu drei
+  Löffeln im Leibgericht einen eigenen Satz. Gemeinsame Zeit am Kessel zählt als eigene Art (M29).
+- **Ein Abend, eine Aktivität:** Wer gekocht hat, spielt heute keine Karten mehr und angelt nicht
+  (und umgekehrt). Esc geht nur bei der Wahl; der Abend ist dann trotzdem vergeben, wie beim
+  Aufstehen vom Kartentisch.
+- **Herbstbuch:** jedes Gericht einmal ist die Tat »Aus einem Topf«.
+
+**Warum:** Kochen am Feuer ist die wärmste der drei Aktivitäten und verbindet Tag und Nacht: Was
+tagsüber gesammelt und gefangen wird, macht die Nacht ein wenig leichter – sichtbar, aber nie nötig
+(Nr. 161: die Horde wird ohne Hilfe balanciert, die Wirkung ist klein und hält nur eine Nacht). Kurze
+Taktspiele ohne Hetze und ohne Scheitern – nur mit Fehlern, die man schmeckt.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

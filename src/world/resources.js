@@ -11,6 +11,7 @@ import { hash3, Rng, valueNoise } from '../core/rng.js';
 import { BAY_NODES } from './layout.js';
 import { buildBirch, buildDeciduous, buildFir, LEAVES } from './nature.js';
 import { FINE, FINE32, shade, stoneBlob } from './voxelKit.js';
+import { buildMushroomPatch } from './cookModels.js';
 
 /**
  * Regeln je Art. yield = pro Treffer, bonus = beim letzten Treffer.
@@ -23,6 +24,7 @@ export const NODE_RULES = {
   gras: { tool: null, hits: 2, yield: { fasern: 1 }, bonus: { fasern: 1 }, regrowDays: 1, prompt: 'rupfen', sound: 'gras' },
   aeste: { tool: null, hits: 1, yield: { holz: 2 }, bonus: {}, regrowDays: 1, prompt: 'aufsammeln', sound: 'holz' },
   schrott: { tool: null, hits: 1, search: true, regrowDays: 2, prompt: 'durchsuchen', sound: 'schrott' }, // M8: alle zwei Tage
+  pilze: { tool: null, hits: 1, yield: { pilze: 2 }, bonus: {}, regrowDays: 2, prompt: 'pfluecken', sound: 'gras' }, // A5: für den Kessel
 };
 
 /** Beute beim Durchsuchen: [min, max] oder Wahrscheinlichkeit für 1. */
@@ -405,6 +407,10 @@ export class ResourceNodes {
         case 'schrott':
           model = buildScrapPile(Math.floor(s));
           radius = 0.6;
+          break;
+        case 'pilze': // A5: Maronen auf Moos – für den Kessel
+          model = buildMushroomPatch(Math.floor(s));
+          blocking = false;
           break;
         default:
           continue;
