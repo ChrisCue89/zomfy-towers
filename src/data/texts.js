@@ -2537,6 +2537,13 @@ export const T = {
       paula: 'Schön gerade Stiche, {name}. Der Stoff ist für dich.',
     },
   },
+  // K1: der Fotomodus (Pausenmenü)
+  foto: {
+    menue: 'Foto machen',
+    hinweis: 'WASD Blick · Z nah/weit · E Foto · Esc zurück',
+    gespeichert: (name) => `Gespeichert: ${name}`,
+    fehler: 'Das Bild ließ sich nicht speichern.',
+  },
   debug: {
     titel: 'Entwickler',
   },

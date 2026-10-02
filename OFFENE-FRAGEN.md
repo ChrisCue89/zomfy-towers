@@ -2943,6 +2943,18 @@ eigene Pose für Mika: Die Hilfe geschieht in der Abblende, ihr Bild ist der Sat
 und kein Rohstoffweg wird; die gemeinsame Zeit führt wie Karten, Angeln und Üben zu den Momenten der
 Bindung (M29).
 
+### 231. Wie macht man ein Foto? (K1, DESIGN 9)
+**Entscheidung:** Aus dem Pausenmenü (»Foto machen«), nicht über eine eigene Taste – P und Esc öffnen
+schon das Menü, und ein Foto ist ein ruhiger Moment. Die Uhr steht wie im Menü; der Blick ist frei in
+den Grenzen der Kamera (drinnen im Raum), Z wechselt nah und weit wie im Spiel (die Wahl bleibt).
+Gespeichert wird das fertige Bild der Nachbearbeitung in Spielauflösung, ganzzahlig vergrößert auf
+mindestens 1080 Zeilen (pixelgenau), dazu Regen und Schnee der Oberfläche – aber nie die Tafeln und
+nie die Hinweiszeile.
+
+**Wie:** asynchron über `readRenderTargetPixelsAsync` (Pixelpuffer und Zaun) – ein synchrones
+`readPixels` hielte die Grafikkarte an und schriebe eine Warnung (CLAUDE.md, Regel 5). Der
+Dateiname nennt Tag und Uhrzeit.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

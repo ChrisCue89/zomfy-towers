@@ -797,6 +797,7 @@ async function runBrowserChecks() {
     if (want('ankunft')) await runArrivalChecks(browser, url);
     if (want('feuer')) await runFirstFireChecks(browser, url);
     if (want('alltag')) await runChoreChecks(browser, url);
+    if (want('foto')) await runPhotoChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -12751,6 +12752,7 @@ async function runSizeChecks(browser, url) {
 
   // 5) Browserfenster 1920 × 955: 319 Zeilen (aufgerundet), »groß« gilt wie mittel – die Zeile sagt es
   await page.setViewportSize({ width: 1920, height: 955 });
+  await z(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // »resize« kommt erst mit dem nächsten Bild
   await step(200);
   const browser955 = await z(() => {
     const g = window.zomfy.game;
@@ -13245,6 +13247,69 @@ async function runChoreChecks(browser, url) {
   if (!regen.hilde && regen.bert === 'arbeiten') note(`✓ Alltag (A1): im Regen strickt Hilde nicht auf der Bank, Bert hackt weiter`);
   else fail(`Alltag: Regen ${JSON.stringify(regen)}`);
 
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * K1 – Fotomodus: Esc, »Foto machen« (echte Tasten) – die Oberfläche ist weg bis auf die
+ * Hinweiszeile, die Uhr steht, D schiebt den Blick nach Osten, E speichert ein PNG (pixelgenau
+ * vergrößert, mindestens 1080 Zeilen, mit Inhalt), Esc geht zurück ins Spiel; die Konsole bleibt
+ * sauber (das Bild wird asynchron gelesen – kein Anhalten der Grafikkarte).
+ */
+async function runPhotoChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave`, 'Fotomodus (K1)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const { tmpdir } = await import('node:os');
+  const tmp = join(tmpdir(), 'zomfy-k1');
+  mkdirSync(tmp, { recursive: true });
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setTime(10, 0);
+    Z.teleport(3.5, 1.0, 0);
+  });
+  await settle(page, 20);
+  const T = await z(async () => (await import('./src/data/texts.js')).T);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.zomfy.mode === 'menu', null, { timeout: 30000 });
+  await settle(page, 20);
+  for (let i = 0; i < 12; i++) {
+    const at = await z(() => {
+      const m = window.zomfy.game.menu;
+      return m.buttons()[m.focus]?.label;
+    });
+    if (at === T.foto.menue) break;
+    await page.keyboard.press('KeyS');
+    await settle(page, 2);
+  }
+  await page.keyboard.press('KeyE');
+  await settle(page, 25);
+  const an = await z(() => ({ ...window.zomfy.photo(), minute: window.zomfy.game.state.time.minute }));
+  await page.screenshot({ path: join(SHOTS, 'foto.png') });
+  note('  Screenshot: screenshots/foto.png');
+  // D halten, bis der Blick gut einen Meter weiter ist (Headless zeichnet nur wenige Bilder je Sekunde)
+  await page.keyboard.down('KeyD');
+  await page.waitForFunction((x0) => window.zomfy.photo().focus.x > x0 + 1.5, an.focus.x, { timeout: 60000 }).catch(() => null);
+  await page.keyboard.up('KeyD');
+  await settle(page, 20);
+  const geschoben = await z(() => ({ ...window.zomfy.photo(), minute: window.zomfy.game.state.time.minute }));
+  const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.keyboard.press('KeyE')]);
+  const file = join(tmp, download.suggestedFilename());
+  await download.saveAs(file);
+  const { readFileSync, statSync } = await import('node:fs');
+  const png = readFileSync(file);
+  const bild = { name: download.suggestedFilename(), bytes: statSync(file).size, png: png.subarray(1, 4).toString(), width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+  await settle(page, 20);
+  const danach = await z(() => window.zomfy.photo());
+  await page.keyboard.press('Escape');
+  await settle(page, 10);
+  const zurueck = await z(() => window.zomfy.mode);
+  const ok = an.mode === 'foto' && geschoben.focus.x > an.focus.x + 1 && geschoben.minute === an.minute && bild.png === 'PNG' && bild.height >= 1080 && bild.bytes > 50000 && /^zomfy-towers-tag\d+-\d{4}\.png$/.test(bild.name) && danach.saved === 1 && danach.last?.scale >= 1 && bild.width === danach.last.width && zurueck === 'play';
+  if (ok) note(`✓ Fotomodus (K1): Esc, »${T.foto.menue}« – nur noch die Hinweiszeile, die Uhr steht, D schiebt den Blick (x ${an.focus.x} → ${geschoben.focus.x}), E speichert ${bild.name} (${bild.width} × ${bild.height}, ${danach.last.scale}× vergrößert, ${Math.round(bild.bytes / 1024)} KB), Esc geht zurück ins Spiel`);
+  else fail(`Fotomodus: ${JSON.stringify({ an, geschoben, bild, danach, zurueck })}`);
   checkMessages(session);
   await session.context.close();
 }

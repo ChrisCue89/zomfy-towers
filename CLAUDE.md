@@ -390,6 +390,8 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Wertung, Tischansicht, KI, M28), cardNight (Kartenabend:
                       Einladung, Tisch, KI mit Bedenkzeit und Tick, Einsatz,
                       Wettschuld, Menschenkunde, M28),
+                      photo (Fotomodus: freier Blick, Bild asynchron lesen,
+                      PNG, K1),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
                       Wackeln, Blitze, Schlurfer 3D/2D, Figuren 3D/2D – eigener
                       Speicherplatz, nicht im Spielstand)
@@ -582,7 +584,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `foto` (Fotomodus, K1), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -1055,6 +1057,13 @@ Grundprinzipien:
     `chores.help(id)`: nur wenn die Person gerade arbeitet, `startWork` mit der Karte `T.anpacken.karte`,
     in der Abblende `HELP_GIFTS` (Vorrat, `xp`, `heal`) und `bonds.add(id, 'anpacken')`, danach Dank
     als Sprechblase. Einmal am Tag je Person über `flags.anpacken_<id>` (= Tag).
+- **Der Fotomodus (K1, `core/photo.js`):** Eintrag im Pausenmenü (nicht vom Titelbild, nicht im
+  Dialog); Modus `foto` – die Uhr steht, die Leute arbeiten im echten Takt weiter (Krähen, Balduin
+  und die Horde stehen wie im Menü), `render` zeichnet nur Regen, Schnee und `photo.draw` (die
+  Hinweiszeile). Den Blick führt `rig.update` zu `photo.focus`, `rig.clampFocus` hält ihn in den
+  Grenzen. E: im nächsten Bild `capture` – erst die Oberfläche dieses Bildes (nur Regen und Schnee)
+  kopieren, dann `pixel.postTarget` mit `readRenderTargetPixelsAsync` lesen (nie synchron!), Zeilen
+  umdrehen, ganzzahlig vergrößern (`PHOTO.minHeight`), als PNG herunterladen.
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1574,7 +1583,9 @@ Grundprinzipien:
    Feuer und wacht auf, wenn Mika kommt; abends stehen alle auf, Bert legt die Axt weg; im Regen
    strickt niemand draußen (Bilder: alltag, alltag-nah); ab A2 (Abschnitt `alltag`): E bei Bert mit echten
    Tasten, »Ich pack mit an.«, Abblende, +6 Holz, gemeinsame Zeit und Dank, am selben Tag kein
-   zweites Angebot.
+   zweites Angebot; ab K1 (Abschnitt `foto`): Esc, »Foto machen« mit echten Tasten, nur die
+   Hinweiszeile, die Uhr steht, D schiebt den Blick, E lädt ein PNG herunter (mindestens 1080 Zeilen,
+   mit Inhalt, Name mit Tag und Uhrzeit), Esc zurück, die Konsole bleibt sauber (Bild: foto).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1757,7 +1768,9 @@ was kalt ist, die Streichhölzer, Licht, Flammen, Modelle, das Wachsen, Zähler,
 und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft; ab A1 zeigt
 `chores()` je Bewohner Arbeit, Abschnitt (gehen, setzen, arbeiten, aufstehen), Stelle, Bild und ob er
 sitzt, dazu die Arbeitsgeräusche, die Sätze des Tages, die letzte Hilfe (A2) und was die Sprites
-zeigen, `setChores(an)` schaltet das Tagwerk (in der Prüfung sonst aus).
+zeigen, `setChores(an)` schaltet das Tagwerk (in der Prüfung sonst aus); ab K1 zeigt `photo()`
+Modus, Blickpunkt, Kamera, ob gerade gelesen wird, die gespeicherten Bilder (Name, Größe, Faktor)
+und die Meldung.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

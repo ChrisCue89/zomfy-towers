@@ -80,6 +80,7 @@ import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
 import { Chores } from './chores.js';
+import { Photo } from './photo.js';
 import { Wonders } from './wonders.js';
 import { FirstFire } from './firstFire.js';
 import { ISLE_VIEW } from '../data/isles.js';
@@ -387,6 +388,7 @@ export class Game {
     this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
     this.chores = new Chores(this); // A1: das Tagwerk der Bewohner
+    this.photo = new Photo(this); // K1: der Fotomodus
     this.people = new PeopleSprites(this.scene); // F4: Mika, die Leute und Knopf als Sprites
     this.people.setActive(this.settings.figuren === '2d');
     this.trader = new Trader(this);
@@ -2768,6 +2770,10 @@ export class Game {
         this.menu.update(input, realDt);
         this.player.idle(dt);
         break;
+      case 'foto': // K1: die Uhr steht, die Welt lebt weiter, der Blick ist frei
+        this.photo.update(input, realDt);
+        this.player.idle(dt);
+        break;
       case 'splash':
         this.splash.update(input, realDt);
         this.player.idle(dt);
@@ -2870,8 +2876,9 @@ export class Game {
     this.trader.update(this.mode === 'play' ? dt : 0);
     this.posts.update(this.mode === 'play' ? dt : 0); // M23: vor den Überlebenden – wer steht auf dem Posten?
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
-    this.survivors.update(this.mode === 'play' || this.mode === 'drachen' ? dt : dt * 0.5); // N9: beim Drachen rennen die Kinder richtig
-    this.chores.update(this.mode === 'play' || this.mode === 'drachen' ? dt : dt * 0.5); // A1: das Tagwerk im Takt
+    const lively = this.mode === 'play' || this.mode === 'drachen' || this.mode === 'foto'; // N9: beim Drachen rennen die Kinder richtig, K1: im Foto arbeiten alle im echten Takt
+    this.survivors.update(lively ? dt : dt * 0.5);
+    this.chores.update(lively ? dt : dt * 0.5); // A1: das Tagwerk im Takt
     this.quests.update(dt);
     this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
     this.kite.update(dt); // N9: Pims Drachen
@@ -2892,6 +2899,7 @@ export class Game {
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
+    else if (this.mode === 'foto') this.rig.update(realDt, this.photo.focus, ZERO, 14); // K1: frei geführt
     else if (this.testLook) this.rig.update(dt, this.testLook, ZERO); // nur Prüfung: fester Blickpunkt fürs Bild
     else {
       this.tour = null;
@@ -3440,6 +3448,12 @@ export class Game {
     this._lastRain = now;
     this.world.weather.drawRain(ui, frame, dn.night, this.viewInside);
     this.world.weather.drawSnow(ui, frame, dn.night, this.viewInside); // M25
+    // K1: Im Fotomodus nur Bild, Regen und Schnee – und die Hinweiszeile (nicht im gespeicherten Bild)
+    if (this.mode === 'foto') {
+      this.photo.draw(ui);
+      if (this.input.lostFocus) this.drawFocusHint(ui);
+      return;
+    }
     if (playing) this.builder.drawOverlay(ui);
     this.arms.draw(ui); // M30: Leuchtspuren der Schüsse
     if (playing) this.defense.draw(ui); // M31: »Wer kommt?«, Lebensbalken, Ringe um Liegende
@@ -4391,6 +4405,7 @@ export class Game {
       /** N9: gleich eine Böe. */
       kiteGust: () => game.kite.gustNow(),
       /** N10: das erste Feuer – kalt?, Streichhölzer, Licht, Flammen, Modelle, Wachsen, Zähler, Ziel und Zielpfeil. */
+      photo: () => ({ mode: game.mode, focus: { x: +game.photo.focus.x.toFixed(2), z: +game.photo.focus.z.toFixed(2) }, camera: { x: +game.rig.focus.x.toFixed(2), z: +game.rig.focus.z.toFixed(2) }, busy: game.photo.busy, saved: game.photo.saved, last: game.photo.last, note: game.photo.note?.text || null, view: game.view }),
       chores: () => ({ ...game.chores.info(), minute: game.state.time.minute, drawn: game.people.lastPeople ? Object.fromEntries(Object.entries(game.people.lastPeople).map(([id, v]) => [id, { anim: v.anim, k: v.k, part: v.part, dir: v.dir }])) : null }),
       firstFire: () => ({ ...game.firstFire.info(), goal: game.goal ? { id: game.goal.id, text: game.goal.text, progress: game.goal.progress || null } : null, target: game.goalTarget(), holz: game.state.inventory.holz || 0 }),
       /** N10: Feuerstelle und Kamin kalt machen wie bei der Ankunft. */

@@ -2192,6 +2192,12 @@ eine Dreiviertelstunde, danach gibt es gemeinsame Zeit (Bindung), einen Dank und
 Vorrat – Holz bei Bert, ein Zahnrad bei Clara, ein Stück Kürbisbrot bei Rosa. Einmal am Tag je Person;
 die Tageszeit ist der Preis.
 
+#### K1 – Der Fotomodus ✓ (Nr. 231)
+
+Im Pausenmenü »Foto machen«: Die Uhr steht, die Oberfläche geht weg bis auf eine Zeile, der Blick
+ist frei (WASD, Z nah/weit), E speichert das Bild pixelgenau als PNG – ohne Oberfläche, mit Regen und
+Schnee. Esc kehrt zurück.
+
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.
@@ -2220,7 +2226,7 @@ ausbauen«
 - Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (umgesetzt: N7).
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte (eingeplant: Netzwerk, M32).
-- Fotomodus.
+- Fotomodus (umgesetzt: K1).
 
 ## 10. Der Spaß – was die Warcraft-3-Karten so gut machten
 

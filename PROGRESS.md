@@ -5,6 +5,27 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## K1: Der Fotomodus ✓
+
+**Aus dem Ideen-Parkplatz (DESIGN 9):** Die Bucht ist schön geworden – man soll sie festhalten können,
+auch für Rückmeldungen mit sauberen Bildern.
+
+- **Esc → »Foto machen«:** Die Uhr steht, die Welt lebt weiter (Wasser, Wind, Feuer, die Leute bei
+  der Arbeit), von der Oberfläche bleibt nur eine Hinweiszeile. WASD schiebt den Blick (in den Grenzen
+  der Kamera, drinnen im Raum), Z geht nah heran, E nimmt auf, Esc geht zurück ins Spiel.
+- **Das Bild:** das fertige Bild der Nachbearbeitung in Spielauflösung – pixelgenau, ohne Oberfläche,
+  aber mit Regen und Schnee –, ganzzahlig vergrößert auf mindestens 1080 Zeilen, als PNG
+  (`zomfy-towers-tag12-1030.png`). Gelesen wird asynchron (`readRenderTargetPixelsAsync`), ohne die
+  Grafikkarte anzuhalten (CLAUDE.md, Regel 5).
+- **Prüfung:** Abschnitt `foto` mit echten Tasten (Bild foto) – bestanden, zusammen mit `groesse`
+  (das Pausenmenü hat jetzt zehn Einträge und passt bei 270 Zeilen). Zwei Prüfungen sind dabei
+  robuster geworden: D bleibt gedrückt, bis der Blick gut einen Meter weiter ist (Headless zeichnet
+  hier nur zwei, drei Bilder je Sekunde, 700 ms waren ein einziges Bild), und der Größen-Test wartet
+  nach dem neuen Fenstermaß ein Bild ab (»resize« kommt erst mit dem nächsten Bild – im ersten
+  Abschnitt eines frischen Browsers las er noch das alte Maß).
+
+---
+
 ## A2: Mit anpacken ✓
 
 **Weiter nach A1:** Die Bewohner arbeiten jetzt – Mika kann mitmachen.

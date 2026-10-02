@@ -86,6 +86,7 @@ export class Menu {
     if (this.screen === 'main') {
       return [
         { label: T.menue.weiter, action: () => this.game.closeMenu() },
+        ...(this.fromTitle || this.game.dialog.active ? [] : [{ label: T.foto.menue, action: () => this.game.photo.start() }]), // K1
         { label: T.menue.steuerung, action: () => this.go('controls') },
         { label: T.buch.menue, action: () => this.go('buch') },
         { label: T.notizbuch.menue, action: () => this.go('notes') },

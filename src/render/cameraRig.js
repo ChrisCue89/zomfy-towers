@@ -117,17 +117,22 @@ export class CameraRig {
   }
 
   applyBounds() {
+    this.clampFocus(this.focus);
+  }
+
+  /** Einen Blickpunkt in die Grenzen holen (der eigene oder, K1, der des Fotomodus). */
+  clampFocus(p) {
     const b = this.bounds;
     if (!b) return;
-    this.focus.x = Math.min(b.maxX, Math.max(b.minX, this.focus.x));
-    this.focus.z = Math.min(b.maxZ, Math.max(b.minZ, this.focus.z));
+    p.x = Math.min(b.maxX, Math.max(b.minX, p.x));
+    p.z = Math.min(b.maxZ, Math.max(b.minZ, p.z));
     // Breite Sicht: nie über den Rand des Geländes hinaus zeigen
     const L = this.limits;
     if (L) {
       const halfW = (this.rtWidth / 2) * this.px + 0.5;
       const lo = L.x0 + halfW;
       const hi = L.x1 - halfW;
-      this.focus.x = lo <= hi ? Math.min(hi, Math.max(lo, this.focus.x)) : (L.x0 + L.x1) / 2;
+      p.x = lo <= hi ? Math.min(hi, Math.max(lo, p.x)) : (L.x0 + L.x1) / 2;
     }
   }
 
