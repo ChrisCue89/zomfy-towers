@@ -178,6 +178,9 @@ export const PERSON_ANIMS = {
   drachen: 2,
   tick: 2,
   gucken: 2,
+  // F7e: die letzten Voxel – auf der Reifenschaukel (Neigung in sieben Stufen) und am Boden liegen
+  schaukeln: 7,
+  liegen: 1,
   muetze: 1,
   reiben: 2,
   daumen: 1,
@@ -189,6 +192,12 @@ export const PERSON_ANIMS = {
 function basePose() {
   return { legL: 0, legR: 0, kneeL: 0.05, kneeR: 0.05, armL: 0.06, armR: 0.06, elbow: 0.16, bob: 0, lean: 0, head: 0, nod: 0, sink: 0, spread: 0.09, roll: 0, extra: 0 };
 }
+
+/**
+ * F7e: So weit neigt sich die Schaukel (game.js `SWING.amp`) – die Bilder von »schaukeln« decken
+ * −SWING_TILT … +SWING_TILT in gleichen Stufen ab.
+ */
+export const SWING_TILT = 0.42;
 
 /** F7: Beine im Sitzen (wie »sitzen«): die Oberschenkel nach vorn, die Füße hängen. */
 const SIT_LEGS = { legL: 1.5, legR: 1.42, kneeL: 1.42, kneeR: 1.32 };
@@ -325,6 +334,14 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell =
     else if (tell === 'summen') Object.assign(p, { reachR: [0.07, -0.3, 0.25], head: 0.17 * w, nod: 0.04 });
     else if (tell === 'brille') Object.assign(p, { reachR: [0.1, 0.02, 0.28], nod: 0.14 });
     else if (tell === 'pfeife') Object.assign(p, { reachR: [0.16, -0.15 - 0.02 * k, 0.36], nod: -0.04 - 0.06 * k });
+  } else if (anim === 'schaukeln') {
+    // F7e: auf dem Reifen stehen, beide Hände oben an den Seilen; das ganze Bild neigt sich mit der
+    // Schaukel (`rollZ` um den Fußpunkt, wie die Voxel-Figur um ihren Ursprung)
+    Object.assign(p, { kneeL: 0.04, kneeR: 0.04, armL: 2.8, armR: 2.8, elbowL: 0.12, elbowR: 0.12, spreadL: -0.16, spreadR: -0.16, nod: -0.08, rollZ: -SWING_TILT + (2 * SWING_TILT * k) / Math.max(1, n - 1) });
+  } else if (anim === 'liegen') {
+    // F7e: nach der Lagerglocke am Boden – auf dem Rücken, der Kopf nach Norden (`lie`: wie die
+    // Voxel-Figur um die x-Achse gekippt und ein wenig angehoben), die Arme seitlich
+    Object.assign(p, { armL: 0.35, armR: 0.3, spreadL: 0.4, spreadR: 0.45, elbowL: 0.25, elbowR: 0.3, legL: 0.12, legR: -0.06, kneeL: 0.2, kneeR: 0.1, nod: 0.1, lie: true });
   } else if (anim === 'gucken') {
     // F7: dem Drachen nachschauen – der Kopf im Nacken, die Arme locker
     Object.assign(p, { nod: -0.34, lean: -0.05, spread: 0.18, armL: 0.08, armR: 0.1 - 0.04 * k, bob: -0.005 * k });

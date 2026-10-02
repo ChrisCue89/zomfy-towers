@@ -243,12 +243,16 @@ gilt bis auf Weiteres:
     Lage, Stufe, vorn/hinten). Gebacken über dem Boden (`TOOL_LIFT`), sonst schnitte die Erde sie ab.
   - Die Voxel-Figuren laufen unsichtbar mit (Laternenlicht, Anker, Zustand); versteckt werden nur
     die Kinder ihres Wurzelknotens (`root.visible` sagt bei den Leuten, ob sie da sind). Voxel
-    bleiben nur, was noch nicht gebacken ist, die Reifenschaukel und wer am Boden liegt (F7).
+    bleibt nur, was noch nicht gebacken ist (F7).
   - **Alle Posen als Sprites (F7, Nr. 228):**
-    - Mika hat dazu die Teile `waffe` (schießen, Anschlag, Pfiff, Wirbel, Drachen), `laterneWaffe`
-      und `sitz` (Kartentisch, Angeln) – alle vorab im Hintergrund gebacken (`MIKA_PRIO`). Die Leute
-      haben `karten` (Karten und ihr Tick `tell`), `angeln` und `waffe`, Pim und Lu `drachen`
-      (`KID_PARTS`); diese Teile backen erst, wenn sie gebraucht werden.
+    - Mika hat dazu die Teile `waffe` (schießen, Anschlag, Pfiff, Wirbel, Drachen), `laterneWaffe`,
+      `sitz` (Kartentisch, Angeln) und `schaukel` (nur von vorn: `dirs` am Teil) – alle vorab im
+      Hintergrund gebacken (`MIKA_PRIO`). Die Leute haben `karten` (Karten und ihr Tick `tell`),
+      `angeln` und `waffe` (mit `liegen`), Pim und Lu `drachen` (`KID_PARTS`); diese Teile backen
+      erst, wenn sie gebraucht werden.
+    - Die ganze Figur dreht der Bäcker vor der Ansichtskippung (`turnFrame`): `rollZ` neigt sie um den
+      Fußpunkt (Schaukel, sieben Stufen bis `SWING_TILT`), `lie` legt sie auf den Rücken, den Kopf nach
+      Norden und `LIE_LIFT` angehoben (wie `npcs.sync`).
     - Hände treffen ein Ziel über zwei Knochen: `reachL`/`reachR` in der Pose (Figurkoordinaten um
       die Kopfmitte, `reachArm` in `spriteFigure.js`) – so liegen Hand an Mütze, Brille, Mund und
       Pfeife und die Karten vor der Brust (`cardFan` setzt `personShapes` für jeden).
@@ -1516,8 +1520,9 @@ Grundprinzipien:
    Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
    Teil, seit F7 sitzt Mika am Tisch als Sprite mit Karten, angelt an der Stegkante (die Schnur hängt
    an der Spitze im Bild), schießt mit Rückstoß, legt die Flinte an, pfeift, wirbelt (das Bild dreht
-   sich mit) und hält Pims Drachen, Bert hat am Kartentisch seinen Tick, Hilde angelt mit, Juna
-   schießt im Anschlag (Bilder menschen-karten, menschen-angeln), im Ruderboot rudert Mika als Sprite
+   sich mit), hält Pims Drachen und neigt sich auf der Reifenschaukel, Bert hat am Kartentisch seinen
+   Tick, Hilde angelt mit, Juna schießt im Anschlag und liegt danach am Boden (Bilder menschen-karten,
+   menschen-angeln), im Ruderboot rudert Mika als Sprite
    im Takt der Riemen (N12), Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
    Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
    wie die Mütze und die Augen sitzen weit oben, seit F6f liegen nah und weit alle Farbwechsel in

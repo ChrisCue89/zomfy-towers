@@ -29,11 +29,13 @@ fiel dem Auftraggeber im Intro auf (»das intro ist die figur noch 3d!«).
   Seite); die Karten verschwanden rot auf Berts Karohemd (jetzt braun mit weißem Rand); am Tisch saß
   Bert optisch auf der Platte (kleinerer Tiefenversatz am Tisch), dadurch rieb er sich die Hände unter
   der Tischkante (Karten und Hände eine Handbreit höher).
-- **Voxel bleiben:** die Reifenschaukel (die Figur neigt sich mit) und wer nach der Lagerglocke am
-  Boden liegt (Nr. 228).
+- **F7e – die letzten Voxel:** Auf der Reifenschaukel neigt sich das Bild mit (sieben gebackene
+  Stufen, `rollZ`, nur von vorn), und wer nach der Lagerglocke fällt, liegt als Sprite auf dem Rücken
+  (`lie`, Augen zu). Voxel bleibt nur, was noch nicht gebacken ist (Nr. 228).
 - **Prüfung:** Abschnitt `menschen` – Mika in allen seltenen Posen als Sprite (die Schnur hängt an der
-  Spitze im Bild, der Wirbel dreht durch sechs Richtungen), Bert am Tisch mit Tick, Hilde angelt mit,
-  Juna schießt im Anschlag (Bilder menschen-karten, menschen-angeln). Ohne Browser:
+  Spitze im Bild, der Wirbel dreht durch sechs Richtungen, die Schaukel neigt das Bild), Bert am Tisch
+  mit Tick, Hilde angelt mit, Juna schießt im Anschlag und liegt danach am Boden (Bilder
+  menschen-karten, menschen-angeln). Ohne Browser:
   `node tools/menschen-bogen.mjs` zeigt die neuen Posen mit ihrem Werkzeug.
 
 ---

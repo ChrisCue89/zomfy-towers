@@ -2894,9 +2894,9 @@ zurückzunehmen.
 **Entscheidung:** Sprites werden alle Posen, in denen man die Figur länger ansieht oder die etwas
 erzählen: Mika am Kartentisch (mit Karten), an der Stegkante mit der Angel, mit Pistole und langer
 Waffe, beim Pfiff, im Wirbel und mit Pims Drachen; die Leute am Kartentisch (mit ihrem Tick), beim
-Angeln, mit der Waffe (Übungsplatz, Lagerglocke) und Pim und Lu mit dem Drachen. Voxel bleiben nur die
-Reifenschaukel (die Figur neigt sich mit dem Seil – ein Sprite kann nicht kippen) und wer nach der
-Lagerglocke am Boden liegt (selten, nur kurz).
+Angeln, mit der Waffe (Übungsplatz, Lagerglocke) und Pim und Lu mit dem Drachen. Nachgezogen (F7e):
+auch die Reifenschaukel (die Neigung ist in sieben Stufen gebacken – ein Sprite selbst kann nicht
+kippen) und wer nach der Lagerglocke am Boden liegt. Voxel bleibt nur, was noch nicht gebacken ist.
 
 **Wie:** Hände treffen ihr Ziel über zwei Knochen (`reachL`/`reachR` um die Kopfmitte – Mütze,
 Brille, Mund, Pfeife, Karten vor der Brust); die Pose sagt, wie das Werkzeug liegt (`toolPhi`,

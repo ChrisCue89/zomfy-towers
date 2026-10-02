@@ -152,10 +152,10 @@ async function runPeopleChecks(browser, url) {
     return { ready: r.ready, failed: r.failed, waiting: r.waiting, leer, bilder, flicken, atlas: r.atlas };
   }, PEOPLE_IDS);
   const backzeit = (Date.now() - t1) / 1000;
-  const MIKA_TEILE = ['base', 'aktion', 'laterne', 'laterneAktion', 'boot', 'waffe', 'laterneWaffe', 'sitz'];
+  const MIKA_TEILE = ['base', 'aktion', 'laterne', 'laterneAktion', 'boot', 'waffe', 'laterneWaffe', 'sitz', 'schaukel'];
   const erwartet = [...MIKA_TEILE.map((t) => `mika|frau-orange-gruen-braun-mittel|${t}`), ...['axt', 'angel', 'spule', 'pistole', 'doppelflinte'].map((w) => `werkzeug|${w}`), ...PEOPLE_IDS.map((id) => `${id}|fest|base`), 'balduin|fest|gesten'];
   const fehlt = erwartet.filter((k) => !alles.ready.includes(k));
-  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in acht Teilen – seit N12 mit dem Boot, seit F7 mit Waffe, Pfiff, Wirbel, Drachen, Kartentisch und Angeln –, Axt, Angel, Spule, Pistole, Doppelflinte, fünf Leute, Knopf, zwölf Wanderer, Edda, Marthe, Pim und Lu) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
+  if (!fehlt.length && !alles.failed.length && alles.leer === 0 && alles.flicken > 1000) note(`✓ Menschen (F4): ${alles.bilder} Bilder in ${erwartet.length} Fassungen (Mika in neun Teilen – seit N12 mit dem Boot, seit F7 mit Waffe, Pfiff, Wirbel, Drachen, Kartentisch, Angeln und Schaukel –, Axt, Angel, Spule, Pistole, Doppelflinte, fünf Leute, Knopf, zwölf Wanderer, Edda, Marthe, Pim und Lu) ohne leeres Bild, ${alles.flicken} Gesichtsflicken, Atlas ${alles.atlas.pages} Seiten (${backzeit.toFixed(0)} s im Spiel gebacken)`);
   else fail(`Menschen: Backen ${JSON.stringify({ fehlt, failed: alles.failed, leer: alles.leer, flicken: alles.flicken, waiting: alles.waiting })}`);
 
   // 3. Mit echten Tasten: D geht nach Osten, Umschalt rennt, S dreht nach Süden
@@ -261,13 +261,24 @@ async function runPeopleChecks(browser, url) {
     out.drachen = { ...Z.people().mika, voxel: voxel() };
     p.kitePose = null;
     window.__zomfyStep(60);
+    // F7e: die Reifenschaukel – das Bild folgt der Neigung in Stufen
+    g.startSwing();
+    const schaukel = [];
+    for (let i = 0; i < 12; i++) {
+      window.__zomfyStep(68);
+      const m = Z.people().mika;
+      if (m?.anim === 'schaukeln') schaukel.push(m.k);
+    }
+    out.schaukel = { ks: schaukel, voxel: voxel() };
+    g.endRide();
+    window.__zomfyStep(60);
     out.nach = { ...Z.people().mika, voxel: voxel() };
     return out;
   });
   const sl = selten;
   const hoch = sl.angeln?.spitze && sl.angeln.spitze[1] - sl.angeln.fuss[1] > 1.2;
-  if (sl.karten?.part === 'sitz' && sl.karten.anim === 'karten' && !sl.karten.voxel && sl.angeln?.anim === 'angeln' && sl.angeln.tool?.startsWith('angel:hand') && !sl.angeln.voxel && hoch && sl.drill?.k === 3 && sl.schuss?.anim === 'schiessen' && sl.schuss.k === 1 && sl.schuss.tool?.startsWith('pistole:hand') && !sl.schuss.voxel && sl.schussDanach?.k === 0 && sl.flinte?.anim === 'anschlag' && sl.flinte.tool?.startsWith('doppelflinte:hand') && sl.pfiff?.anim === 'pfiff' && sl.pfiff.tool?.startsWith('axt:ruecken') && new Set(sl.wirbel).size >= 3 && sl.drachen?.anim === 'drachen' && sl.drachen.tool?.startsWith('spule:hand') && !sl.drachen.voxel && sl.nach?.part === 'base' && !sl.nach.voxel) {
-    note(`✓ Menschen (F7): Mika bleibt in seltenen Posen ein Sprite – am Kartentisch mit Karten, an der Stegkante mit der Angel (die Schnur hängt ${(sl.angeln.spitze[1] - sl.angeln.fuss[1]).toFixed(1).replace('.', ',')} m über dem Steg an der Spitze im Bild, im Drill Bild 3), die Pistole ruckt beim Schuss hoch, die Doppelflinte im Anschlag, der Pfiff mit der Axt auf dem Rücken, der Wirbel dreht das Bild durch ${new Set(sl.wirbel).size} Richtungen, Pims Drachen an der Spule; danach wieder zu Fuß`);
+  if (sl.karten?.part === 'sitz' && sl.karten.anim === 'karten' && !sl.karten.voxel && sl.angeln?.anim === 'angeln' && sl.angeln.tool?.startsWith('angel:hand') && !sl.angeln.voxel && hoch && sl.drill?.k === 3 && sl.schuss?.anim === 'schiessen' && sl.schuss.k === 1 && sl.schuss.tool?.startsWith('pistole:hand') && !sl.schuss.voxel && sl.schussDanach?.k === 0 && sl.flinte?.anim === 'anschlag' && sl.flinte.tool?.startsWith('doppelflinte:hand') && sl.pfiff?.anim === 'pfiff' && sl.pfiff.tool?.startsWith('axt:ruecken') && new Set(sl.wirbel).size >= 3 && sl.drachen?.anim === 'drachen' && sl.drachen.tool?.startsWith('spule:hand') && !sl.drachen.voxel && new Set(sl.schaukel?.ks).size >= 3 && !sl.schaukel.voxel && sl.nach?.part === 'base' && !sl.nach.voxel) {
+    note(`✓ Menschen (F7): Mika bleibt in seltenen Posen ein Sprite – am Kartentisch mit Karten, an der Stegkante mit der Angel (die Schnur hängt ${(sl.angeln.spitze[1] - sl.angeln.fuss[1]).toFixed(1).replace('.', ',')} m über dem Steg an der Spitze im Bild, im Drill Bild 3), die Pistole ruckt beim Schuss hoch, die Doppelflinte im Anschlag, der Pfiff mit der Axt auf dem Rücken, der Wirbel dreht das Bild durch ${new Set(sl.wirbel).size} Richtungen, Pims Drachen an der Spule, auf der Reifenschaukel neigt sich das Bild (Stufen ${[...new Set(sl.schaukel.ks)].sort().join(', ')}); danach wieder zu Fuß`);
   } else fail(`Menschen: seltene Posen ${JSON.stringify(sl)}`);
 
   // 5b. N12: Im Ruderboot (Ankunft, Inseln) rudert Mika als Sprite – die Bilder folgen dem Takt der
@@ -361,13 +372,19 @@ async function runPeopleChecks(browser, url) {
     n.practice = null;
     g.survivors.npcs.hold(n, null);
     window.__zomfyStep(60);
-    return { schuss, ruhig, nach: Z.people().leute.juna };
+    // F7e: nach der Lagerglocke am Boden – liegt als Sprite (Augen zu)
+    n.lying = true;
+    window.__zomfyStep(34);
+    const liegt = { ...Z.people().leute.juna, voxel: n.model.root.children.some((c) => c.visible) };
+    n.lying = false;
+    window.__zomfyStep(60);
+    return { schuss, ruhig, liegt, nach: Z.people().leute.juna };
   });
   const tb = tisch;
   const ag = angeln;
   const ub = uebung;
-  if (tb.ok && tb.mode === 'karten' && tb.mika?.anim === 'karten' && tb.bert?.anim === 'karten' && !tb.voxel && tb.tick?.anim === 'tick' && ag.ok && ag.mode === 'angeln' && ag.mika?.anim === 'angeln' && ag.hilde?.anim === 'angeln' && ag.hilde.tool?.startsWith('angel:hand') && !ag.voxel && ag.tip && ag.tip[1] - ag.fuss > 1 && ub.schuss?.anim === 'anschlag' && ub.schuss.k === 1 && ub.schuss.tool?.startsWith('doppelflinte:hand') && ub.ruhig?.k === 0 && ub.nach?.anim !== 'anschlag') {
-    note(`✓ Menschen (F7): Bert sitzt am Kartentisch als Sprite mit Karten und reibt sich als Tick die Hände (Bild »tick«), Hilde angelt mit Mika an der Stegkante (Schnur an der Spitze im Bild), Juna schießt im Anschlag mit Rückstoß`);
+  if (tb.ok && tb.mode === 'karten' && tb.mika?.anim === 'karten' && tb.bert?.anim === 'karten' && !tb.voxel && tb.tick?.anim === 'tick' && ag.ok && ag.mode === 'angeln' && ag.mika?.anim === 'angeln' && ag.hilde?.anim === 'angeln' && ag.hilde.tool?.startsWith('angel:hand') && !ag.voxel && ag.tip && ag.tip[1] - ag.fuss > 1 && ub.schuss?.anim === 'anschlag' && ub.schuss.k === 1 && ub.schuss.tool?.startsWith('doppelflinte:hand') && ub.ruhig?.k === 0 && ub.liegt?.anim === 'liegen' && ub.liegt.expr === 'blinzeln' && !ub.liegt.voxel && ub.nach?.anim !== 'anschlag' && ub.nach?.anim !== 'liegen') {
+    note(`✓ Menschen (F7): Bert sitzt am Kartentisch als Sprite mit Karten und reibt sich als Tick die Hände (Bild »tick«), Hilde angelt mit Mika an der Stegkante (Schnur an der Spitze im Bild), Juna schießt im Anschlag mit Rückstoß und liegt danach als Sprite am Boden (Augen zu)`);
   } else fail(`Menschen: Leute in seltenen Posen ${JSON.stringify({ tisch: tb, angeln: ag, uebung: ub })}`);
 
   // 7. Bilder: am Tag nah im Hof (2D und 3D zum Vergleich), nachts mit Laterne

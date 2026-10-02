@@ -2162,8 +2162,8 @@ Zeit der Welt dafür.«
   seinem Tick auch im Bild – Bert legt die Karten ab und reibt sich die Hände), angeln an der
   Stegkante (von hinten nur der Rücken, die Rute schräg zur Seite, die Schnur hängt an ihrer Spitze),
   schießen mit Rückstoß oder legen die Flinte an, pfeifen, wirbeln mit der Waffe herum und halten Pims
-  Drachen an der Spule; Pim und Lu schauen ihm nach. Voxel bleiben nur die Reifenschaukel und wer nach
-  der Lagerglocke am Boden liegt.
+  Drachen an der Spule; Pim und Lu schauen ihm nach. Auch auf der Reifenschaukel (die Neigung in
+  sieben gebackenen Stufen) und am Boden nach der Lagerglocke sind es Sprites (F7e).
 
 #### G7 – Die Ankunft, glaubhaft ✓
 

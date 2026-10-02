@@ -126,6 +126,7 @@ const mika = {
     waffe: { anims: ['schiessen', 'anschlag', 'pfiff', 'wirbel', 'drachen'] },
     laterneWaffe: { anims: ['schiessen', 'anschlag', 'pfiff', 'wirbel'], lantern: true },
     sitz: { anims: ['karten', 'angeln'] },
+    schaukel: { anims: ['schaukeln'], dirs: [0] }, // F7e: auf der Reifenschaukel, nur von vorn
   },
   /** Stoffe aus dem Aussehen (spec = lookSpec(MIKA_BASE, look)). */
   materials(s) {
@@ -335,13 +336,13 @@ const knit = (p) => (Math.floor((p[0] + p[2]) * 28 + 40) & 1 ? -1 : 0);
  * Die Teile der Leute: stehen, gehen, winken, sitzen. F7: dazu die seltenen Posen – gebacken erst,
  * wenn sie gebraucht werden (bis dahin Voxel): am Kartentisch mit den Karten und dem eigenen Tick
  * (`tell`, Menschenkunde), an der Stegkante mit der Angel, mit einer Waffe auf dem Übungsplatz und
- * nach der Lagerglocke.
+ * nach der Lagerglocke (dort auch am Boden liegend).
  */
 const FOLK_PARTS = {
   base: { anims: ['stehen', 'gehen', 'winken', 'sitzen'] },
   karten: { anims: ['karten', 'tick'] },
   angeln: { anims: ['angeln'] },
-  waffe: { anims: ['schiessen', 'anschlag', 'schwung', 'daumen'] },
+  waffe: { anims: ['schiessen', 'anschlag', 'schwung', 'daumen', 'liegen'] }, // F7e: wer nach der Lagerglocke fällt, liegt
 };
 /** F7: Pim und Lu – dazu den Drachen halten und ihm nachschauen. */
 const KID_PARTS = { base: FOLK_PARTS.base, drachen: { anims: ['drachen', 'gucken'] } };

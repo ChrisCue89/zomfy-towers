@@ -11,7 +11,8 @@ import { createSpriteMaterial, createSpriteSilhouetteMaterial } from '../render/
 import { bakePerson, bakeTool, encodeBake, partFrames, toolFrames, animsOf, PEOPLE_DIRS } from './peopleSprites.js';
 import { TEXEL } from '../render/spriteBaker.js';
 import { PEOPLE, MIKA_BASE, TOOLS } from './peopleKinds.js';
-import { darkerColor } from './peopleFigure.js';
+import { darkerColor, SWING_TILT } from './peopleFigure.js';
+import { LIE_LIFT } from './peopleSprites.js';
 import { lookSpec } from '../data/looks.js';
 
 const MAX_MIKA = 6;
@@ -42,7 +43,7 @@ const PEOPLE_NORMAL = 0.4;
  */
 const PEOPLE_NIGHT = { self: 0.5, neutral: 0.8, ramp: 1 };
 /** G7: In welcher Reihenfolge Mikas Teile gebacken werden, solange sie nicht im Bild sind (0 ist jetzt). */
-const MIKA_PRIO = { laterne: 0.5, base: 0.55, waffe: 1.2, sitz: 1.3, laterneWaffe: 1.4 };
+const MIKA_PRIO = { laterne: 0.5, base: 0.55, waffe: 1.2, sitz: 1.3, laterneWaffe: 1.4, schaukel: 1.5 };
 /** Ersatz, solange ein Teil noch fehlt: mit Laterne → ohne. */
 const FALLBACK = { laterne: 'base', laterneAktion: 'aktion', laterneWaffe: 'waffe' };
 
@@ -325,9 +326,14 @@ export class PeopleSprites {
       if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
       return { part: 'boot', anim: 'rudern', k: Math.round(q * n) % n, expr, tool: null, seatY: p.seated.seatY ?? 0.28 };
     }
-    if (p.riding !== null) return null; // auf der Schaukel neigt sich die Figur – das bleibt Voxel
     let expr = p.faceShown || 'normal';
     if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
+    // F7e: auf der Reifenschaukel – das Bild der nächsten Neigung (gebacken in sieben Stufen)
+    if (p.riding !== null) {
+      const n = animsOf('mika').schaukeln;
+      const k = Math.round(((Math.max(-1, Math.min(1, p.riding / SWING_TILT)) + 1) / 2) * (n - 1));
+      return { part: 'schaukel', anim: 'schaukeln', k, expr, tool: null, spin: 0 };
+    }
     // F7: an der Stegkante angeln – die Hüfte auf der Kante, die Beine hängen darunter (`ledge`)
     const fp = p.fishingPose;
     if (fp) {
@@ -419,7 +425,6 @@ export class PeopleSprites {
       if (n.sit > 0.5) return { part: 'base', anim: 'sitzen', k: Math.floor(time * 5) % 2, expr: 'normal' };
       return { part: 'base', anim: 'stehen', k: Math.floor(time * (n.target ? 4 : 6)) % 2, expr: 'normal' };
     }
-    if (n.lying) return null; // nach der Lagerglocke am Boden: bleibt Voxel
     const p = n.model.parts;
     // F7: was die Figur in der rechten Hand hält (Angel, Spule, Waffe) – als eigenes Bild
     const heldId = p.held ? Object.keys(p.held).find((key) => p.held[key].visible) : null;
@@ -429,7 +434,12 @@ export class PeopleSprites {
     let anim = 'stehen';
     let k = Math.floor(time * 1.1 + n.x) % 2;
     const g = n.gestures[0];
-    if (n.fishing) {
+    if (n.lying) {
+      // F7e: nach der Lagerglocke am Boden (ohne Waffe – die liegt im Laub)
+      const kind_ = PEOPLE[n.id];
+      if (!Object.values(kind_.parts).some((s) => s.anims.includes('liegen'))) return null;
+      return { part: Object.entries(kind_.parts).find(([, s]) => s.anims.includes('liegen'))[0], anim: 'liegen', k: 0, expr: kind_.expressions?.includes('blinzeln') ? 'blinzeln' : kind_.expressions?.[0] || 'normal', tool: null, lift: LIE_LIFT };
+    } else if (n.fishing) {
       // F7: an der Stegkante mit der Angel (wartet still)
       anim = 'angeln';
       k = 0;
@@ -628,7 +638,8 @@ export class PeopleSprites {
             const seated = !n.dog && n.seatY !== null && n.seatY !== undefined;
             const ground = root.position.y - (seated ? (n.seatY - n.model.hip) * n.sit : 0);
             // F7: an der Stegkante liegt die Hüfte des Bildes auf seinem Fußpunkt
-            const y = ground + (seated ? (st.ledge ? n.seatY * n.sit : Math.max(0, (n.seatY - SIT_HIP) * n.sit)) : 0);
+            // F7e: Liegende hebt die Voxel-Figur 12 cm an – das Bild trägt die Höhe selbst
+            const y = ground + (seated ? (st.ledge ? n.seatY * n.sit : Math.max(0, (n.seatY - SIT_HIP) * n.sit)) : 0) - (st.lift || 0);
             shown = this.drawFigure(this.layers.leute, n.id, PEOPLE[n.id].spec || {}, 'fest', st, dir, n.x, y, n.z, 0);
             if (shown) this.lastPeople[n.id] = { ...st, dir, ...shown };
           }

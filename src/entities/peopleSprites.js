@@ -40,7 +40,8 @@ export function partFrames(id, part) {
   const spec = kind.parts[part];
   const anims = animsOf(id);
   const list = [];
-  for (let d = 0; d < PEOPLE_DIRS; d++) for (const anim of spec.anims) for (let k = 0; k < anims[anim]; k++) list.push({ d, anim, k });
+  const dirs = spec.dirs || [...Array(PEOPLE_DIRS).keys()]; // F7e: die Schaukel nur von vorn
+  for (const d of dirs) for (const anim of spec.anims) for (let k = 0; k < anims[anim]; k++) list.push({ d, anim, k });
   return list;
 }
 
@@ -56,8 +57,17 @@ export function tiltFrame(ctx, angle, pivot = [0, 0, 0]) {
   const sa = Math.sin(angle);
   const turn = (v) => [v[0], v[1] * ca + v[2] * sa, -v[1] * sa + v[2] * ca];
   const back = (v) => [v[0], v[1] * ca - v[2] * sa, v[1] * sa + v[2] * ca];
-  const at = (p) => add(turn(sub(p, pivot)), pivot);
-  const from = (p) => add(back(sub(p, pivot)), pivot);
+  return turnFrame(ctx, turn, back, pivot);
+}
+
+/**
+ * F7e: Die ganze Figur drehen – `turn` dreht einen Vektor, `back` zurück, um `pivot`, danach um
+ * `shift` verschoben. `marks` dreht auch die benannten Punkte mit (bei der Ansichtskippung nicht:
+ * deren Anker rechnen über `ctx.view`). Gibt die Abbildung für Punkte zurück.
+ */
+function turnFrame(ctx, turn, back, pivot = [0, 0, 0], { shift = [0, 0, 0], marks = false } = {}) {
+  const at = (p) => add(add(turn(sub(p, pivot)), pivot), shift);
+  const from = (p) => add(back(sub(sub(p, shift), pivot)), pivot);
   for (const s of ctx.shapes) {
     if (s.kind === 'capsule') {
       s.a = at(s.a);
@@ -80,7 +90,21 @@ export function tiltFrame(ctx, angle, pivot = [0, 0, 0]) {
   for (const st of ctx.stamps || []) st.at = at(st.at);
   if (ctx.face?.eyes) mapFace(ctx.face, at, turn);
   else if (ctx.face) ctx.face.at = at(ctx.face.at);
+  if (marks) for (const [key, m] of Object.entries(ctx.marks)) ctx.marks[key] = Array.isArray(m[0]) ? m.map(at) : at(m);
   return at;
+}
+
+/** F7e: auf der Schaukel – um die z-Achse der Welt durch den Fußpunkt (wie `rotation.z` der Voxel-Figur). */
+function rollFrame(ctx, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return turnFrame(ctx, (v) => [v[0] * c - v[1] * s, v[0] * s + v[1] * c, v[2]], (v) => [v[0] * c + v[1] * s, -v[0] * s + v[1] * c, v[2]], [0, 0, 0], { marks: true });
+}
+
+/** F7e: am Boden liegen – um −90° um die x-Achse (der Kopf nach Norden) und 12 cm angehoben (npcs.sync). */
+export const LIE_LIFT = 0.12;
+function lieFrame(ctx) {
+  return turnFrame(ctx, (v) => [v[0], v[2], -v[1]], (v) => [v[0], -v[2], v[1]], [0, 0, 0], { shift: [0, LIE_LIFT, 0], marks: true });
 }
 
 /**
@@ -199,6 +223,9 @@ export function personShapes(id, spec, part, d, anim, k) {
     if (ctx.face?.eyes) mapFace(ctx.face, (p) => p.map((v) => v * size));
     else if (ctx.face) ctx.face.at = ctx.face.at.map((v) => v * size);
   }
+  // F7e: die ganze Figur neigt sich mit der Schaukel bzw. liegt am Boden
+  if (pose.rollZ) rollFrame(ctx, pose.rollZ);
+  if (pose.lie) lieFrame(ctx);
   // F5: frontaler backen; die Anker liegen im gekippten Bild, Richtung und Seite des Werkzeugs
   // rechnen weiter mit der ungekippten Figur
   ctx.view = tiltFrame(ctx, VIEW_TILT);
