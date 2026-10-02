@@ -868,6 +868,21 @@ const ICONS = {
       '..k......',
     ],
   },
+  // A6: Kürbislaterne zum Fest – Stiel, Rippen, ein grinsendes Gesicht mit Licht dahinter
+  kuerbis: {
+    legend: { g: P.g4, k: P.f1, o: P.f3, O: P.f4, y: P.f7 },
+    rows: [
+      '....g....',
+      '...gg....',
+      '.kOoOoOk.',
+      'kOOoOoOOk',
+      'kOyOoOyOk',
+      'kOOOyOOOk',
+      'kOyyyyyOk',
+      '.kOOoOOk.',
+      '..kkkkk..',
+    ],
+  },
   herz: {
     legend: { r: P.r2, R: P.a0, W: P.a1 },
     rows: [

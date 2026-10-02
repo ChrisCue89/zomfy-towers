@@ -17,6 +17,7 @@ import { newFog } from '../data/fogIsle.js';
 import { newKite } from '../data/kite.js';
 import { newCrows } from '../data/crows.js';
 import { newCooking } from '../data/cooking.js';
+import { newFestival } from '../data/festival.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -152,6 +153,7 @@ const MIGRATIONS = {
   // v33 -> v34: A3 (Krähengaben). Noch kein Futterbrett, die Krähen kennen Mika noch nicht.
   33: (data) => ({ ...data, version: 34, crows: newCrows() }),
   34: (data) => ({ ...data, version: 35, cooking: newCooking() }), // A5: noch nie zusammen gekocht
+  35: (data) => ({ ...data, version: 36, festival: newFestival() }), // A6: noch kein Kürbisfest (der Tag wird beim Laden bestimmt)
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

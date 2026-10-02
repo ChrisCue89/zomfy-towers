@@ -26,6 +26,9 @@
 //          Flöte und Spieluhr im Wechsel. Läuft am Kartentisch ohne Pause;
 //          klopft jemand oder steht es 1 : 1 (»Letzte Runde«), legt sich eine
 //          Streicherfläche mit leisem Ticken darunter (`tension`).
+//   umzug  »Kleines Licht« (A6) – das Lied zum Laternenumzug am Kürbisfest, F-Dur im
+//          Dreiertakt, 84 Schläge pro Minute: gezupfte Gitarre und Bass, die Spieluhr
+//          singt die Strophe, die Flöte antwortet; ohne Pause, solange der Zug geht.
 //
 // Die Stücke sind Daten: Akkorde je Takt (»Gm7|C7« = je ein halber Takt) und
 // Melodien als »Ton:Länge« in Sechzehnteln (»-« ist eine Pause). Gespielt wird
@@ -164,6 +167,20 @@ const SONGS = {
       { chords: ['Gadd9', 'Em7', 'D', 'Gadd9'], arp: true, brush: true, lead: 1, mel: ['G4:4 B4:4 D5:4', 'E5:6 G5:2 E5:4', 'D5:6 C5:2 A4:4', 'G4:12'] },
     ],
   },
+  umzug: {
+    bpm: 84,
+    verb: 0.36,
+    bellOctave: 2,
+    steps: 12,
+    waltz: true,
+    loop: true,
+    sections: [
+      { chords: ['Fmaj7', 'Bbmaj7', 'C7', 'Fadd9'], arp: true, lead: 1, mel: ['C5:4 A4:4 C5:4', 'D5:4 C5:4 A4:4', 'G4:4 A4:4 Bb4:4', 'A4:8 -:4'] },
+      { chords: ['Dm7', 'Gm7', 'C7', 'Fadd9'], arp: true, lead: 1, mel: ['A4:4 F4:4 A4:4', 'Bb4:4 A4:4 G4:4', 'E4:4 G4:4 C5:4', 'F4:12'] },
+      { chords: ['Bbmaj7', 'Fmaj7', 'Gm7', 'C7'], arp: true, brush: true, lead: 0, mel: ['D5:4 D5:4 C5:4', 'C5:4 A4:4 F4:4', 'Bb4:4 A4:4 G4:4', 'G4:8 C5:4'] },
+      { chords: ['Fmaj7', 'Am7', 'C7', 'Fadd9'], arp: true, brush: true, lead: 0, mel: ['C5:4 A4:4 C5:4', 'E5:6 D5:2 C5:4', 'D5:4 C5:4 G4:4', 'F4:12'] },
+    ],
+  },
   nacht: {
     bpm: 126,
     verb: 0.14,
@@ -253,7 +270,7 @@ export class Music {
   update(dt, s) {
     const t = this.ctx.currentTime;
     // Startbild: noch keine Musik (nur die Spieluhr); Titelbild: das Titelstück (N2)
-    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? (s.boss ? 'boss' : 'nacht') : s.cards ? 'karten' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null;
+    const want = s.splash ? null : s.title ? 'titel' : s.quiet ? null : s.fight ? (s.boss ? 'boss' : 'nacht') : s.parade ? 'umzug' : s.cards ? 'karten' : s.hours >= 6 && s.hours < 17 ? 'tag' : s.hours >= 17 && s.hours < 20.5 ? 'abend' : null; // A6: beim Laternenumzug sein Lied
     this.tension = s.cards ? s.cardTension || 0 : 0; // M28: Klopfen, Letzte Runde
     const level = t < this.duckUntil ? 0.15 : 1;
     if (level !== this.level) {
@@ -263,7 +280,7 @@ export class Music {
     const cur = this.cur;
     // Nacht kommt sofort, sonst darf ein Durchgang zu Ende spielen – nur das
     // Titelstück wechselt gleich (ins Spiel hinein oder zurück zum Titelbild)
-    const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel' || cur.id === 'karten' || want === 'karten');
+    const titleSwitch = cur && want !== cur.id && (cur.id === 'titel' || want === 'titel' || cur.id === 'karten' || want === 'karten' || cur.id === 'umzug' || want === 'umzug');
     // Nacht und Boss (M22) kommen sofort und wechseln gleich
     const fightWant = want === 'nacht' || want === 'boss';
     const fightCur = cur && SONGS[cur.id].night;

@@ -84,6 +84,8 @@ import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
 import { Chores } from './chores.js';
 import { CrowGifts } from './crowGifts.js';
+import { Festival } from './festival.js';
+import { CarveView } from '../ui/carveView.js';
 import { Photo } from './photo.js';
 import { Wonders } from './wonders.js';
 import { FirstFire } from './firstFire.js';
@@ -413,6 +415,8 @@ export class Game {
     this.fishingView = new FishingView(this);
     this.cooking = new Cooking(this); // A5: gemeinsam kochen am Kessel
     this.cookingView = new CookingView(this);
+    this.festival = new Festival(this); // A6: Kürbisfest mit Laternenumzug
+    this.carveView = new CarveView(this);
     this.isles = new Isles(this); // N6: mit dem Ruderboot zu den Inseln
     this.fogIsle = new FogIsle(this); // N7: die Insel im Nebel – Marthe und die Kinder
     this.kite = new Kite(this); // N9: Pims Drachen
@@ -608,6 +612,7 @@ export class Game {
     this.world.setSignalFires(this.nights.active && this.autumn.planMode(st.night.n) === 'finale' ? this.post.places() : []);
     this.isles.apply(); // N6: wer auf einer Insel gespeichert hat, wacht am Steg auf
     this.fogIsle.apply(); // N7: auch von der Nebelinsel; Kahn und Reuse, wenn die drei in der Bucht wohnen
+    this.festival.apply(); // A6: der Festtag, die Kürbisbank (nach den Bauten – sie belegt Zellen)
     this.world.resources.apply(st.world, st.time.day);
     this.quests.apply(); // M23: laufender Auftrag, Fundstücke an den Wegen
     this.book.check({ quiet: true }); // M25: Taten, die der Stand schon erfüllt, ohne Schwall an Meldungen
@@ -775,7 +780,7 @@ export class Game {
     this.viewInside = inside;
     const r = CONFIG.render;
     // M28: Am Kartentisch rückt die Kamera nah heran (160 px/m), danach wie eingestellt
-    const view = this.kite?.session ? 'weit' : this.cardNight?.match || this.fishing?.session || this.cooking?.session || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // A5: auch am Kessel // M33: auch am Steg, N6: auf dem See, N7: im Nebel; N9: beim Drachen weit
+    const view = this.kite?.session ? 'weit' : this.cardNight?.match || this.fishing?.session || this.cooking?.session || this.festival?.carving || this.isles?.away || this.fogIsle?.away ? 'nah' : this.view; // A6: beim Schnitzen // A5: auch am Kessel // M33: auch am Steg, N6: auf dem See, N7: im Nebel; N9: beim Drachen weit
     const ppm = inside ? r.interiorPxPerMeter : view === 'weit' ? r.pxPerMeter : r.nearPxPerMeter;
     this.rig.setPxPerMeter(ppm);
     sharedUniforms.uPointScale.value = ppm / 40;
@@ -1061,6 +1066,7 @@ export class Game {
     }
     else if (it.use === 'fuettern') this.crowGifts.use(); // A3: Krümel streuen oder die Gabe nehmen
     else if (it.crowChest) this.crowGifts.openChest(); // A3: Jakobs Schatulle unter der Diele
+    else if (it.festBench) this.festival.use(); // A6: Kürbis schnitzen oder die Reihe ansehen
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -1589,7 +1595,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.natureLine(st.time.day), ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning(), ...this.crowGifts.news()]; // A3: etwas glänzt auf dem Futterbrett
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.natureLine(st.time.day), ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning(), ...this.crowGifts.news(), ...this.festival.morning()]; // A3: etwas glänzt auf dem Futterbrett, A6: das Kürbisfest
     this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
@@ -1619,6 +1625,7 @@ export class Game {
     this.survivors.arrive(true);
     this.milled = this.grindMills(); // M19
     this.crowGifts.morning(); // A3: Vertrauen der Krähen, vielleicht eine Gabe auf dem Brett
+    this.festival.newDay(); // A6: Festtag, Kürbisbank (bis zum Frost)
     // M25: Die letzten Tage vor dem ersten Frost zählen herunter
     const frost = this.autumn.morningLine(this.state.time.day);
     if (frost) this.hud.toast(frost, 'schnee', 6);
@@ -2610,6 +2617,10 @@ export class Game {
    * Geht es nicht, sagt eine Meldung, warum (m16-r1: vorher kam gar nichts).
    */
   callWave() {
+    if (this.festival.marching()) {
+      this.hud.toast(T.fest.erstUmzug, 'kuerbis', 2.2); // A6: erst der Laternenumzug
+      return;
+    }
     if (this.defense.active) {
       this.hud.toast(T.glocke.keinRufen, 'lagerglocke', 2.2); // M31: solange die Glocke läutet
       return;
@@ -2846,6 +2857,10 @@ export class Game {
         this.cooking.update(realDt, input);
         this.player.idle(dt);
         break;
+      case 'schnitzen': // A6: Mika schnitzt ihren Kürbis – die Uhr steht
+        this.festival.updateCarve(realDt, input);
+        this.player.idle(dt);
+        break;
       case 'drachen': // N9: Mika hält Pims Drachen – die Uhr steht, die Welt lebt weiter
         this.kite.updateSession(realDt, input);
         this.player.idle(dt);
@@ -2917,6 +2932,7 @@ export class Game {
     this.posts.update(this.mode === 'play' ? dt : 0); // M23: vor den Überlebenden – wer steht auf dem Posten?
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
     const lively = this.mode === 'play' || this.mode === 'drachen' || this.mode === 'foto'; // N9: beim Drachen rennen die Kinder richtig, K1: im Foto arbeiten alle im echten Takt
+    this.festival.update(this.mode === 'play' ? dt : 0); // A6: Kürbisfest – vor den Figuren, die es lenkt
     this.survivors.update(lively ? dt : dt * 0.5);
     this.chores.update(lively ? dt : dt * 0.5); // A1: das Tagwerk im Takt
     this.crowGifts.update(dt); // A3: Futterbrett, Gabe, zahme Krähen
@@ -2936,7 +2952,7 @@ export class Game {
     const inside = !titled && this.mode !== 'abspann' && this.world.isInside(this.player.position.x, this.player.position.z);
     if (this.viewInside === null || inside !== this.viewInside) this.applyView(inside);
     this.arrival.update(dt, input); // N5: die Ankunft (und danach schaukelt das Boot am Steg)
-    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.cooking.session ? 'kochen' : this.kite.session ? 'drachen' : this.introLook();
+    const look = titled ? null : this.mode === 'abspann' ? this.autumn.creditsLook() : this.cardNight.match ? 'karten' : this.fishing.session ? 'angeln' : this.cooking.session ? 'kochen' : this.festival.carving ? 'schnitzen' : this.kite.session ? 'drachen' : this.introLook();
     if (titled) this.rig.update(dt, this.titleFocus(dt), ZERO);
     else if (this.arrival.active) this.rig.update(dt, this.arrival.focus, ZERO, TOUR.sharpness);
     else if (look) this.rig.update(dt, this.tourFocus(dt, look), ZERO, TOUR.sharpness);
@@ -3165,7 +3181,7 @@ export class Game {
       if (this.mode !== 'play') return;
     }
     this.gathering.update(input, this.player.busy ? this.gathering.repeat : it);
-    this.advanceTime(dt);
+    if (!this.festival.holdsClock()) this.advanceTime(dt); // A6: beim Laternenumzug steht die Uhr
   }
 
   advanceTime(dt) {
@@ -3182,10 +3198,12 @@ export class Game {
       // M31: Was die Lagerglocke gebracht hat, erzählt der Bericht (oder eine Meldung)
       const bell = this.defense.morning();
       const mail = this.post.morning(); // M32: Post im Briefkasten, Besuch, Edda
-      if ((bell.length || mail.length) && this.state.report) this.state.report.extra = [...(this.state.report.extra || []), ...bell, ...mail];
+      const fest = this.festival.morning(); // A6: das Kürbisfest
+      if ((bell.length || mail.length || fest.length) && this.state.report) this.state.report.extra = [...(this.state.report.extra || []), ...bell, ...mail, ...fest];
       else {
         for (const line of bell) this.hud.toast(line.text, 'lagerglocke', 5);
         for (const line of mail) this.hud.toast(line.text, 'brief', 5);
+        for (const line of fest) this.hud.toast(line.text, 'kuerbis', 5);
       }
       // Wach geblieben: Der Morgenbericht kommt trotzdem (m12-r1: er kam nur nach dem Schlafen)
       if (this.state.report && this.mode === 'play') this.showReport();
@@ -3331,6 +3349,7 @@ export class Game {
     // M28: am Kartentisch »Kartenabend«; Spannung beim Klopfen und in der Letzten Runde
     const cm = this.cardNight.match;
     info.cards = Boolean(cm);
+    info.parade = this.festival.singing(); // A6: der Laternenumzug hat sein Lied
     info.cardTension = cm ? (cm.g?.pending || (cm.wins[0] === 1 && cm.wins[1] === 1) ? 1 : 0) : 0;
     this.sound.update(dt, info);
     // Schritte: bei jedem halben Laufzyklus, drinnen auf Holz
@@ -3507,6 +3526,7 @@ export class Game {
     if (atTable) this.cardTable.draw(ui);
     if (this.mode === 'angeln') this.fishingView.draw(ui); // M33
     if (this.mode === 'kochen') this.cookingView.draw(ui); // A5
+    if (this.mode === 'schnitzen') this.carveView.draw(ui); // A6
     if (this.mode === 'drachen') this.kite.draw(ui); // N9: Ring in der Böe, Feld unten
     if (this.mode === 'rudern') this.isles.draw(ui); // N6
     this.fogIsle.draw(ui); // N7: Glocken-Marke am Rand, Nebelfahrt
@@ -4399,7 +4419,7 @@ export class Game {
         game.state.time.minute = 60;
         game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
         game.crowGifts.morning(); // A3: Vertrauen der Krähen, vielleicht eine Gabe
-        return [...game.crowGifts.news(), ...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post
+        return [...game.crowGifts.news(), ...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning(), ...game.festival.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post, A6: das Kürbisfest
       },
       /** M33: Angeln – Angel, Abende, Fänge, Korb, laufende Runde (Phase, Kescher, Karte), Zähler. */
       fishing: () => ({ ...game.fishing.info(), mode: game.mode, pose: game.player.fishingPose ? { ...game.player.fishingPose } : null, spot: game.world.interactions.find((q) => q.id === 'angelplatz') || null }),
@@ -4639,6 +4659,14 @@ export class Game {
       },
       /** A5: gleich mit `id` kochen (wie die Antwort im Gespräch). */
       cookBegin: (id) => game.cooking.begin(id),
+      /** A6: Kürbisfest – Festtag, Kürbisse, Gesichter, Bank, Abschnitt, Zug (Linie, Stellen), Zähler. */
+      festival: () => ({ ...game.festival.info(), day: game.state.time.day, minute: game.state.time.minute, mode: game.mode, bench: game.world.festBench ? { shown: Boolean(game.world.festBench.group?.visible), slots: [...game.world.festBench.slots.entries()].map(([k, o]) => ({ slot: k, carved: o.key !== '-', glow: game.world.festBench.glows[k]?.on ?? null })), lit: game.world.festBench.lit, at: game.world.festBench.at } : null }),
+      /** A6: den Festzustand setzen ({ day, … }) und alles neu aufbauen (wie nach dem Laden). */
+      setFestival(o) {
+        Object.assign(game.state.festival, o || {});
+        game.festival.apply();
+        return game.festival.info();
+      },
       /** A4: Kraniche – Rastende (Zustand, Stelle), der Keil am Himmel, Zähler, Mikas Gedanken. */
       cranes: () => ({ ...game.world.cranes.info(), enabled: game.world.cranes.enabled, thoughts: Object.keys(game.state.flags).filter((k) => k.startsWith('kraniche_')), edda: Boolean(game.state.flags.funk_kranicheEdda), speech: game.hud.speech?.text || null }),
       /** A4: die Kraniche an- oder ausschalten (in der Prüfung sonst aus). */

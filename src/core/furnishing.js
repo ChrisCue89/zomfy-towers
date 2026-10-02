@@ -19,6 +19,7 @@ import { hoursOf } from './state.js';
 import { houseCozy } from '../data/buildings.js';
 import { ABILITIES } from '../data/wanderers.js';
 import { crowCozy } from '../data/crows.js';
+import { festivalCozy } from '../data/festival.js';
 
 export class Furnishing {
   /** @param {import('./game.js').Game} game */
@@ -35,7 +36,7 @@ export class Furnishing {
   }
 
   get cozy() {
-    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel) + (this.game.state.isles?.cat ? CAT.cozy : 0) + crowCozy(this.game.state); // Schlafzimmer (M11), N6: die Katze, A3: das Krähenglas
+    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel) + (this.game.state.isles?.cat ? CAT.cozy : 0) + crowCozy(this.game.state) + festivalCozy(this.game.state); // Schlafzimmer (M11), N6: die Katze, A3: das Krähenglas, A6: die Kürbisreihe
   }
 
   /** Nach dem Laden: alles Gekaufte aufstellen. */

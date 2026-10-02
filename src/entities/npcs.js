@@ -8,6 +8,7 @@ import { armsModel } from './characters.js';
 import { ROD_TIP } from './fishingModels.js';
 import { SPOOL_TIP } from './kiteModels.js';
 import { buildDog, poseDog } from './dogModel.js';
+import { buildLampionStick, buildLampion, lampionColorOf, LAMPION_STICK } from '../world/festModels.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { damp, dampAngle, clamp } from '../core/math.js';
 
@@ -271,6 +272,15 @@ export class Npcs {
       p.armL.rotation.z = -0.32;
     }
     if (n.kite || n.skyward) p.head.rotation.x = -0.3; // der Blick geht hinauf zum Drachen
+    if (n.lampion && p.lampion) {
+      // A6: Laternenumzug – der Lampion am Stab vor sich, am Stegende hoch gehoben; er hängt
+      // senkrecht unter der Spitze (gegen den Arm zurückgedreht) und pendelt im Schritt
+      const raise = n.lampion.raise || 0;
+      p.armL.rotation.x = -0.95 - raise * 0.85 + Math.sin(n.phase) * 0.05 * amt;
+      p.armL.rotation.z = -0.1;
+      p.lampion.hang.rotation.x = -p.armL.rotation.x + Math.sin(this.time * 2.1 + n.x) * 0.07 + Math.sin(n.phase) * 0.12 * amt;
+      p.lampion.hang.rotation.z = 0.1;
+    }
     if (n.chore?.anim && !n.wave) this.poseChore(n, p);
     this.poseGesture(n, dt);
     // Lächeln beim Winken, bei Gesten und wenn Mika dabeisteht (M12)
@@ -345,6 +355,36 @@ export class Npcs {
       }
     }
     for (const [k, mesh] of Object.entries(p.held)) mesh.visible = k === id;
+  }
+
+  /**
+   * A6: Ein Lampion am Stab in der linken Hand (Kürbisfest), beim ersten Mal gebaut: der Stab aus der
+   * Faust nach vorn, daran der Lampion in der Farbe der Person (das Papier glüht). `on` false legt
+   * ihn weg.
+   */
+  lampion(n, on) {
+    if (n.dog) return;
+    const p = n.model.parts;
+    if (on && !p.lampion) {
+      const group = new THREE.Group();
+      group.position.set(0, n.model.hand, 0);
+      const stick = new THREE.Mesh(buildLampionStick().toGeometry({ jitter: 0.02, seed: 3, size: U }), n.model.material);
+      const hang = new THREE.Group();
+      hang.position.set(0.5 * U, (Math.round(LAMPION_STICK * 0.21) + 0.5) * U, (LAMPION_STICK + 0.5) * U);
+      const { frame, paper } = buildLampion(lampionColorOf(n.id));
+      const rim = new THREE.Mesh(frame.toGeometry({ jitter: 0.02, seed: 4, size: U }), n.model.material);
+      const glow = new THREE.Mesh(paper.toGeometry({ jitter: 0, ao: false, size: U }), this.world.materials.lampionGlow);
+      hang.add(rim, glow);
+      group.add(stick, hang);
+      for (const mesh of [stick, rim, glow]) {
+        mesh.castShadow = mesh !== glow;
+        mesh.renderOrder = 1.6;
+      }
+      p.armL.add(group);
+      p.lampion = { group, hang };
+    }
+    if (p.lampion) p.lampion.group.visible = on;
+    n.lampion = on ? n.lampion || { raise: 0 } : null;
   }
 
   /** Eine Geste vorspielen (M10); mehrere laufen nacheinander. */

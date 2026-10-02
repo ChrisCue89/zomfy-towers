@@ -17,6 +17,7 @@ import { createWorldMaterial } from '../render/materials.js';
 import { Rng } from './rng.js';
 import { hoursOf } from './state.js';
 import { T } from '../data/texts.js';
+import { eveningTaken } from '../data/cooking.js';
 
 const U = 1 / 32;
 const FLIGHT = 0.55; // s, bis die Pose landet
@@ -42,7 +43,7 @@ export class Fishing {
     const d = this.data;
     if (!d.rod) return 'angel';
     if (g.nights?.active) return 'nacht';
-    if (d.lastDay === st.time.day || st.cards?.lastDay === st.time.day || st.cooking?.lastDay === st.time.day) return 'heute'; // ein Abend, eine Aktivität (A5: auch der Kessel)
+    if (eveningTaken(st)) return 'heute'; // ein Abend, eine Aktivität (A5: auch der Kessel, A6: das Kürbisfest)
     const m = st.time.minute;
     if (m < FISHING.from || m > FISHING.until) return 'zeit';
     if (friend && !g.survivors.resident(friend)) return 'niemand';

@@ -395,7 +395,10 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       photo (Fotomodus: freier Blick, Bild asynchron lesen,
                       PNG, K1), cooking (gemeinsam kochen: Einladung, Kessel am
                       Feuer oder Topf am Kamin, Wahl, Schnippeln, Würzen,
-                      Köcheln, Karte, Wirkung bis zum Morgen, A5),
+                      Köcheln, Karte, Wirkung bis zum Morgen, A5), festival
+                      (Kürbisfest: Festtag, Kürbisbank, Schnitzen der Leute und
+                      Mikas, Kreis ums Feuer, Laternenumzug zum Stegende, Jubel,
+                      A6),
                       settings (Lautstärke, Pixelgröße, Textgeschwindigkeit,
                       Wackeln, Blitze, Schlurfer 3D/2D, Figuren 3D/2D – eigener
                       Speicherplatz, nicht im Spielstand)
@@ -455,6 +458,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Foto, Krähenglas, Kompass, lose Diele, A3),
                       cookModels (Dreibein mit Kessel, Kupfertopf, Gerichte,
                       Maronen als Fundstelle, Schüssel für die Karte, A5),
+                      festModels (Kürbisbank mit Eimer und Schnitzeln, Lampion
+                      am Stab für die Voxel-Figuren, A6),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
@@ -519,6 +524,8 @@ src/ui/               font, icons, ui (Leinwand + Panels), hud (auch
                       fishingView (Angeln: Schnur, Leisten, Fangkarte, M33),
                       cookingView (Kochen: Feld mit Gerichten, Brett, Gläsern,
                       Leiste und Karte mit Schüssel und Löffeln, A5),
+                      carveView (Schnitzfenster: Kürbis mit Gesicht, Augen,
+                      Nase, Mund, A6),
                       kindPictures (Bilder der Schlurferkunde aus dem
                       Sprite-Bäcker, F3d)
 src/data/             texts, dialogs, items, buildings, recipes, goals,
@@ -558,7 +565,9 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       in ihrer Reihenfolge, Krähenglas, A3), cranes (Kraniche:
                       Zugzeit, Keile, Rastplätze, Gedanken, A4), cooking
                       (Kochen: Abend, Spiel, Gerichte, Wirkung, Löffel,
-                      Geschmack je Person, A5),
+                      Geschmack je Person, A5), festival (Kürbisfest: Zeiten,
+                      Wege, Formen der Gesichter, Gesichter je Person, Festtag,
+                      Lampionfarben, Gemütlichkeit, A6),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -602,7 +611,7 @@ Grundprinzipien:
   (`src/core/state.js`). three.js-Objekte sind nur Darstellung.
 - Modi der Spielschleife: `splash` (Startbild »Tales of Cue präsentiert«, N2), `title` (Titelbild), `play`, `dialog`, `menu`, `craft` (Werkbank),
   `report` (Morgenbericht), `perk` (Perk-Wahl), `katalog` (Balduins Katalog, N4),
-  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `foto` (Fotomodus, K1), `kochen` (am Kessel, A5), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
+  `lieferung` (Lieferkarte, N4), `ankunft` (die Ankunft, N5), `schrank` (Waffenschrank, M30), `angeln` (am Steg, M33), `rudern` (mit dem Boot zu den Inseln, N6), `nebelfahrt` (der Glocke nach, N7), `drachen` (Pims Drachen halten, N9), `foto` (Fotomodus, K1), `kochen` (am Kessel, A5), `schnitzen` (Mika schnitzt ihren Kürbis, A6), `sleep` (Schlafen, Ausruhen, Werkeln, verlorene
   Nacht, Ohnmacht – alle mit Abblende). Zeit läuft nur in
   `play`; Bauen geht jederzeit in `play`. `Game.step(dt)` ist ein Simulationsschritt
   (Update + Eingabe-Abschluss), gezeichnet wird danach mit `render()`.
@@ -1127,6 +1136,26 @@ Grundprinzipien:
     `buildMushroomPatch`), südlich vor Bäumen – dahinter verdeckt sie die Krone. `createNature` bekommt
     sie nicht mitgeteilt (`world.js` filtert sie heraus), sonst verschöbe sich der Zufall der ganzen
     Natur. Pilze liegen als `QUEST_ITEMS` im Vorrat.
+- **Das Kürbisfest (A6, `core/festival.js`, `data/festival.js`, `world/festModels.js`, `ui/carveView.js`):**
+  - Festtag `state.festival.day` (`festivalDay`: der erste ohne Regen ab `FESTIVAL.from`, bestimmt in
+    `settle` am Morgen davor bzw. nach dem Laden – nach Mittag ab morgen). `festivalTonight(state)` sperrt
+    Karten, Angeln und Kessel (`eveningTaken` in data/cooking.js).
+  - Die Kürbisbank: `findSpot` sucht 5 × 2 freie Hof-Felder außerhalb des Kreises ums Feuer (`f.spot`);
+    ihre Zellen sind `grid.reserved = 3` (Grund `fest`, auch nicht bebaubar beim Laden). `world.setFestBench({
+    spot, pumpkins, lit, interaction })` baut Bank und Kürbisse (`buildJackOLantern(seed, face)` mit dem
+    Gesicht aus `faceGrid`, 15 × 10); jeder geschnitzte Kürbis hat ein eigenes Glühen (`festGlow`), so gehen
+    sie nacheinander an; nachts eine Lichtinsel. Plätze verteilt `benchLayout` (hinten bis sieben, Mika vorn).
+  - Das Fest lenkt Figuren über `festival.controls(id)` – `placeOne`, Gespräche und fogIsle lassen sie in
+    Ruhe, `standSpot` fragt zuerst `festival.spotOf` (das Tagwerk steht auf): Schnitzen zur Stunde
+    `carveHour` an der Bank, ab `FESTIVAL.gather` der Kreis ums Feuer mit Lampion (`npcs.lampion(n, an)`;
+    Sprites: Teil `laterne` mit `lantern: 'papier'`, `lampionShapes`, Pose `heben`; am Festmorgen backt
+    `people.prepare` den Teil vorab). Wieder frei gibt `release` (Bewohner über `placeOne`, Marthe und die
+    Kinder über `fogIsle.placePeople`).
+  - Der Zug ist eine Linie (`polyline`): der Kreisbogen bis `FESTIVAL.exit`, dann `route` (Breitensuche
+    über halbe Meter mit Kollision, gestrafft) und über den Steg bis `dockEnd`. Jede Person steht auf
+    ihrer Bogenlänge (`m.a`), alle gehen gleich schnell (`n.drive`, Stelle von außen); am Stegende rücken
+    sie auf `close` zusammen und gehen dieselbe Linie zurück. `holdsClock()` hält die Uhr (`advanceTime`),
+    `callWave` sagt `T.fest.erstUmzug`. Musik `umzug` über `info.parade`, Liedzeilen mit »♪« als Sprechblasen.
 - **Der Fotomodus (K1, `core/photo.js`):** Eintrag im Pausenmenü (nicht vom Titelbild, nicht im
   Dialog); Modus `foto` – die Uhr steht, die Leute arbeiten im echten Takt weiter (Krähen, Balduin
   und die Horde stehen wie im Menü), `render` zeichnet nur Regen, Schnee und `photo.draw` (die
@@ -1676,7 +1705,17 @@ Grundprinzipien:
    Morgen, gemeinsame Zeit), heute weder Karten noch Angeln, Fischsuppe flinker, Pilzeintopf kräftiger,
    am Morgen vorbei, bei Regen am Kamin mit dem Kupfertopf, zu lange auf dem Feuer brennt es an, die
    Tat »Aus einem Topf«, Speichern v35 und Migration v34 → v35 (Bilder: pilze, kochen-wahl,
-   kochen-koecheln, kochen-karte, kochen-kamin).
+   kochen-koecheln, kochen-karte, kochen-kamin); ab A6 (Abschnitt `fest`): der Festtag ist der erste
+   trockene ab dem 18. (Bericht am Morgen davor und am Tag), am Festmorgen steht die Kürbisbank mit
+   einem Kürbis je Person und einem für Mika (ihre Felder nicht bebaubar), Hilde geht zu ihrer Stunde
+   hin und schnitzt (ein Satz dazu), Mika schnitzt mit echten Tasten (E, D, S D D, S A, E: Kreise,
+   Herz, Zähne – die Uhr steht, danach 20 Minuten), um sechs stehen alle mit Lampions im Kreis ums
+   Feuer (keine Karten, kein Kessel), Mika geht mit echter Taste ans Feuer, der Zug geht los (Laterne,
+   Lied, N ruft keine Nacht), am Stegende rücken alle auf, heben die Lampions, Edda funkt, die Uhr
+   stand, zurück im Kreis gehen die Kürbisse nacheinander an (gemeinsame Zeit, Tat »Lichterkette«, 40
+   Minuten später, gemütlicher), ohne Mika brennen sie ohne Umzug, Lampions als Sprites, Speichern v36
+   und Migration v35 → v36 (Bilder: fest-bank, fest-schnitzen, fest-kreis, fest-umzug, fest-steg,
+   fest-kuerbisse).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1869,7 +1908,10 @@ Keil am Himmel, Rufe, Tänze, Auffliegen, Mikas Gedanken und Eddas Zeile, `setCr
 Kraniche (in der Prüfung sonst aus), `craneFlock()` lässt gleich einen Keil über Mika ziehen; ab A5
 zeigt `cooking()` Abende, Mahlzeit, Gerichte, Geschmack, warum es gerade nicht geht, die Wirkung und
 den laufenden Abend (Phase, Gericht, Messer, Marke, Schnitte, Gewürz und Hinweis, Kessel, Karte),
-`setCooking(o)` setzt den Koch-Zustand, `cookBegin(id)` lädt gleich ein (wie die Antwort im Gespräch).
+`setCooking(o)` setzt den Koch-Zustand, `cookBegin(id)` lädt gleich ein (wie die Antwort im Gespräch);
+ab A6 zeigt `festival()` Festtag, Leute, Gesichter, Plätze, die Bank (Kürbisse, Glühen, belegte Felder),
+den Abschnitt, den Zug (Linie, Stellen, Lampions, Mika dabei) und Zähler, `setFestival(o)` setzt den
+Fest-Zustand und baut alles neu auf (wie nach dem Laden).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

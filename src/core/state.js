@@ -31,8 +31,9 @@ import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
 import { newCrows, sanitizeCrows } from '../data/crows.js';
 import { newCooking, sanitizeCooking } from '../data/cooking.js';
+import { newFestival, sanitizeFestival } from '../data/festival.js';
 
-export const SAVE_VERSION = 35;
+export const SAVE_VERSION = 36;
 
 /**
  * Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene
@@ -134,6 +135,7 @@ export function createNewState(config, mapSeed = 1) {
     // was Mika zurückgeben will, Zurückgegebenes, Jakobs Schatulle (0, 1 Schlüssel, 2 offen)
     crows: newCrows(),
     cooking: newCooking(), // A5: Abende am Kessel, was heute wirkt
+    festival: newFestival(), // A6: Kürbisfest – Festtag, Gesichter, Kürbisbank, Umzug
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -282,6 +284,7 @@ export function sanitizeState(data, config) {
   out.isles = sanitizeIsles(data.isles, out.fishing.bottles); // N6 (N7: mit der Nebelinsel)
   out.crows = sanitizeCrows(data.crows); // A3
   out.cooking = sanitizeCooking(data.cooking); // A5
+  out.festival = sanitizeFestival(data.festival); // A6
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

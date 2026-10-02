@@ -15,6 +15,7 @@ import { axesOf } from '../render/spriteBaker.js';
 import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
 import { faceOf, FACE, FACE_CHILD } from './peopleFaces.js';
 import { ribs as knitRibs, folds, rings as ringFolds, strands, combine, locks } from './peopleRelief.js';
+import { lampionOf } from '../data/festival.js';
 
 const R = RAMPS;
 
@@ -139,7 +140,31 @@ export const PROP_MATERIALS = {
   dingWasser: { ramp: [R.b[3], R.b[4], R.b[5], R.s[9]], base: 2, flat: true },
   dingBlatt: { ramp: [R.g[3], R.g[4], R.g[5], R.g[6], R.g[7]], base: 3 },
   dingErde: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3]], base: 2, pattern: (p) => (Math.floor(p[0] * 40 + 40) * 3 + Math.floor(p[2] * 40 + 40)) % 4 === 0 ? -1 : 0 },
+  // A6: Lampions in fünf Farben (wie die Voxel-Figuren, data/festival.js lampionOf), Papier in Bahnen
+  dingLampion0: { ramp: [R.f[3], R.f[4], R.f[5], R.f[6]], base: 2, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingLampion1: { ramp: [R.r[2], R.r[3], R.r[4], R.f[4]], base: 2, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingLampion2: { ramp: [R.f[5], R.f[6], R.f[7], R.f[8]], base: 1, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingLampion3: { ramp: [R.d[4], R.d[5], R.a[0], R.a[1]], base: 2, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingLampion4: { ramp: [R.t[3], R.t[4], R.a[5], R.a[6]], base: 2, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingRand: { ramp: [R.e[1], R.e[2], R.e[3]], base: 1 },
 };
+
+/**
+ * A6: Der Lampion am Stab (Laternenumzug zum Kürbisfest): aus der linken Faust schräg nach vorn
+ * oben, an der Spitze ein Drahthaken, darunter der Lampion in der Farbe der Person (das Papier glüht),
+ * oben und unten ein dunkler Rand. Figurkoordinaten (x rechts, y oben, z vorn).
+ */
+export function lampionShapes(ctx, hand, id) {
+  const tip = add(hand, [-0.11, 0.6, 0.13]); // nach außen, neben den Kopf
+  ctx.capsule(add(hand, [0, -0.04, -0.01]), tip, 0.012, 0.009, 'dingStiel');
+  const hook = add(tip, [0, -0.05, 0]);
+  ctx.capsule(tip, hook, 0.006, null, 'dingNadel');
+  const c = add(hook, [0, -0.105, 0]);
+  ctx.ellipsoid(c, [0.085, 0.095, 0.085], `dingLampion${lampionOf(id)}`);
+  ctx.ellipsoid(add(c, [0, 0.086, 0]), [0.052, 0.016, 0.052], 'dingRand');
+  ctx.ellipsoid(add(c, [0, -0.086, 0]), [0.046, 0.014, 0.046], 'dingRand');
+  ctx.mark('lampion', c);
+}
 
 /**
  * A1: Dinge in den Händen beim Tagwerk (Figurkoordinaten, aus den Händen von `humanoid`): Strickzeug,
@@ -464,12 +489,13 @@ const FOLK_PARTS = {
   karten: { anims: ['karten', 'tick'] },
   angeln: { anims: ['angeln'] },
   waffe: { anims: ['schiessen', 'anschlag', 'schwung', 'daumen', 'liegen'] }, // F7e: wer nach der Lagerglocke fällt, liegt
+  laterne: { anims: ['stehen', 'gehen', 'heben'], lantern: 'papier' }, // A6: mit dem Lampion beim Umzug
 };
 /** A1: Teile der Leute mit ihrem Tagwerk (`alltag`, nur die Arbeiten dieser Figur). */
 const withChores = (...anims) => ({ ...FOLK_PARTS, alltag: { anims } });
 
 /** F7: Pim und Lu – dazu den Drachen halten und ihm nachschauen. */
-const KID_PARTS = { base: FOLK_PARTS.base, drachen: { anims: ['drachen', 'gucken'] } };
+const KID_PARTS = { base: FOLK_PARTS.base, drachen: { anims: ['drachen', 'gucken'] }, laterne: FOLK_PARTS.laterne };
 const FOLK_EXPRESSIONS = ['normal', 'froh', 'blinzeln'];
 
 /**

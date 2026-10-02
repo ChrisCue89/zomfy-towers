@@ -3039,6 +3039,47 @@ tagsüber gesammelt und gefangen wird, macht die Nacht ein wenig leichter – si
 (Nr. 161: die Horde wird ohne Hilfe balanciert, die Wirkung ist klein und hält nur eine Nacht). Kurze
 Taktspiele ohne Hetze und ohne Scheitern – nur mit Fehlern, die man schmeckt.
 
+### 235. Das Kürbisfest – wann, wer, und was passiert? (A6, DESIGN 9)
+**Entscheidung:** Ein Fest im Herbst ohne Kampf und ohne Pflicht, am ersten Tag ab dem 18. Oktober,
+an dem es nicht regnet (spätestens am 28.; wer einen älteren Stand lädt, bekommt den ersten freien
+Tag ab heute – nach Mittag ab morgen). Der Morgenbericht sagt es am Tag davor und am Tag selbst an.
+
+- **Die Kürbisbank:** Am Festmorgen steht südöstlich vom Feuer – außerhalb des Kreises, den der Umzug
+  braucht, auf freien Feldern im Hof – eine lange Bank: hinten bis zu sieben Kürbisse auf dem Brett,
+  vorn im Gras die übrigen und Mikas. Einen Kürbis hat jede Person in der Bucht (die Bewohner, dazu
+  Marthe, Pim und Lu, wenn sie in der Bucht wohnen; höchstens dreizehn). Die Felder der Bank sind
+  bis zum Frost nicht bebaubar (»Die Kürbisbank«).
+- **Schnitzen:** Jede Person geht zu ihrer Stunde (fest aus Name und Tag, zwischen halb neun und
+  vier) an die Bank, schnitzt eine Weile und sagt etwas dazu, wenn Mika daneben steht – Hilde ein
+  Herz als Nase, Bert grimmig mit Zähnen, Juna Sterne, Yusuf staunt, Marthe wie ihr Vater, Pim
+  gruselig, Lu mit Herz. Wer zu seiner Stunde nicht kann, schnitzt später, zur Not still. Mika
+  schnitzt mit E an der Bank: Augen, Nase und Mund aus je vier oder fünf Formen (W/S Zeile, A/D Form,
+  E schnitzen, Esc später). Das Fenster zeigt den Kürbis mit Licht hinter den Löchern; die Uhr steht,
+  danach sind 20 Minuten vergangen. Jedes Gesicht ist ein Raster aus 15 × 10 Feldern – dasselbe Maß
+  wie die Kürbislaternen an der Tür.
+- **Der Umzug:** Ab sechs stellen sich alle mit Lampions (Papier in fünf Farben, je Person fest) im
+  Kreis ums Feuer auf, Knopf läuft mit. Kommt Mika ans Feuer (näher als sieben Meter), geht es los,
+  und die Uhr steht: ein Stück ums Feuer, über den Hof (der Weg weicht Bauten aus) bis ans Ende des
+  Stegs, alle auf einer Linie im Abstand. Sie singen »Kleines Licht« – ein eigenes Lied, die Zeilen
+  über den Köpfen der Nahen, eine eigene Musik im Dreiertakt. Am Stegende rücken sie auf und heben die
+  Lampions übers Wasser; Edda funkt, dass sie die Lichter sieht (wo sie sitzt, sagt sie nicht – Nr.
+  224); wohnt Clara am Sturmhuk, blinkt die Lampe zurück. Dann geht es dieselbe Linie zurück in den
+  Kreis, die Kürbisse gehen nacheinander an, Jubel. Danach ist es 40 Minuten später.
+- **Mitgegangen:** Wer am Stegende in der Nähe des Zugs war, war dabei: gemeinsame Zeit mit allen
+  (eigene Art »Umzug«) und die Tat »Lichterkette«. Kommt Mika bis halb acht nicht ans Feuer, gibt es
+  keinen Umzug – die Lampions hängen an der Bank, die Kürbisse brennen trotzdem (Wehmut, keine
+  Schuld). Beginnt die Nacht früher (N), fällt der Umzug aus; während des Umzugs ruft N keine Welle.
+- **Danach:** Die Kürbisreihe bleibt bis zum 32. Tag stehen, brennt jeden Abend und macht das
+  Zuhause gemütlicher (+1). E an der Bank gibt einen Gedanken.
+- **Ein Abend, eine Aktivität:** Am Festabend gibt es keine Karten, kein Angeln und keinen Kessel.
+
+**Warum:** Die Bucht hat Arbeit (A1), Abende zu zweit (M28, M33, A5) und Nächte zu dritt (M31) – aber
+keinen Moment, an dem alle zusammen etwas Schönes tun. Ein Laternenumzug ist so ein Moment: ruhig,
+langsam, für jeden ein eigenes Licht und ein eigenes Gesicht im Kürbis. Er steht auf der Kippe zur
+Nacht (Licht gegen Dunkel, wie das ganze Spiel) und gibt der Frostnacht ein Vorbild: Edda sieht die
+Lichter schon jetzt. Mechanisch kostet er nichts und bringt wenig – Nähe, ein Abzeichen, etwas
+Gemütlichkeit –, damit ihn niemand aus Pflicht mitgeht.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

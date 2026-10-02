@@ -77,28 +77,31 @@ export function buildPumpkin(seed, size = 1) {
   return m;
 }
 
+/** Das Gesicht der Kürbislaternen an der Tür: Dreiecksaugen, Nase, Grinsen mit Zähnen (15 × 10). */
+export const JACK_FACE = [
+  '...#.......#...', // Augen: Dreiecke
+  '..###.....###..',
+  '.#####...#####.',
+  '.......#.......', // Nase
+  '......###......',
+  '#.............#', // Grinsen mit Zähnen
+  '##...........##',
+  '.###.##.##.###.',
+  '..###########..',
+  '....#######....',
+];
+
 /**
  * Kürbislaterne (M13g, 1/32 m): großer Kürbis mit geschnitztem Gesicht nach
  * Süden. Das Gesicht ist ein eigenes Modell (Glüh-Material): tagsüber dunkle
  * Löcher, nachts warm. Die Schnittkanten sind hell (frisches Fruchtfleisch).
+ * A6: `face` – ein anderes Gesicht (15 × 10, '#' wird geschnitzt), beim Kürbisfest je Person.
  */
-export function buildJackOLantern(seed) {
+export function buildJackOLantern(seed, face = JACK_FACE) {
   const m = buildPumpkin(seed, 1.25);
   const glow = new VoxelModel();
   const ry = 5.2 * 1.25 + 1.0;
   const cy = Math.floor(ry);
-  const face = [
-    '...#.......#...', // Augen: Dreiecke
-    '..###.....###..',
-    '.#####...#####.',
-    '.......#.......', // Nase
-    '......###......',
-    '#.............#', // Grinsen mit Zähnen
-    '##...........##',
-    '.###.##.##.###.',
-    '..###########..',
-    '....#######....',
-  ];
   face.forEach((row, r) => {
     const y = cy + 5 - r;
     for (let i = 0; i < row.length; i++) {

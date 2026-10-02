@@ -39,6 +39,7 @@ export const DEEDS = [
   { id: 'drachen', of: 'kite', need: 3 }, // N9: drei Loopings hintereinander mit Pims Drachen
   { id: 'kraehen', of: 'crows', need: CROW_DEED }, // A3: Gaben am Futterbrett
   { id: 'kessel', of: 'cooking', need: COOK_DEED }, // A5: jedes Gericht einmal am Kessel
+  { id: 'umzug', of: 'festival', need: 1 }, // A6: beim Laternenumzug bis ans Ende des Stegs
 ];
 
 /** Herbstschmuck als Belohnung: nach 3, 6, 9 und 12 Taten ein Stück mehr (Bauten mit `deco`). */
