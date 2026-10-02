@@ -799,6 +799,7 @@ async function runBrowserChecks() {
     if (want('alltag')) await runChoreChecks(browser, url);
     if (want('foto')) await runPhotoChecks(browser, url);
     if (want('kraehen')) await runCrowChecks(browser, url);
+    if (want('kraniche')) await runCraneChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -13544,6 +13545,212 @@ async function runCrowChecks(browser, url) {
   const geladen = await z(() => ({ v: JSON.parse(localStorage.getItem('zomfy-towers.spielstand') || localStorage.getItem('zomfy-towers') || '{}').version, c: window.zomfy.crowGifts(), glas: Boolean(window.zomfy.game.world.crowJar), kompass: Boolean(window.zomfy.game.world.crowCompass) }));
   if (geladen.c.trust >= 2 && geladen.c.jar.length === 6 && geladen.c.back.includes('fingerhut') && geladen.c.chest === 2 && geladen.c.board && geladen.glas && geladen.kompass) note(`✓ Speichern v34 (A3): Vertrauen ${geladen.c.trust}, sechs Stücke im Glas, der Fingerhut zurück, die Schatulle offen – auch nach dem Neuladen`);
   else fail(`Krähengaben: Speichern ${JSON.stringify(geladen)}`);
+  checkMessages(session);
+  await session.context.close();
+}
+
+/**
+ * A4 – Kraniche: An Tag 3 stehen fünf im flachen Wasser am Ufer (nie an Land) und picken, staksen,
+ * schauen. Geht Mika mit echter Taste auf sie zu, fliegen alle an diesem Platz rufend auf (ein
+ * Gedanke, einmal) und kommen später zurück, wenn Mika fort ist. Morgens zieht ein Keil rufend über
+ * Mika – im Bild über Mika, nicht auf ihr (Gedanke »Kraniche!«); ein Keil an einem späteren Tag
+ * bringt Eddas Zeile. Nachts schlafen sie auf einem Bein, den Kopf auf dem Rücken (ein Gedanke in
+ * der Nähe). Ab Tag 24 weniger, ab Tag 29 keine mehr. In der Prüfung sind sie sonst aus.
+ * Bilder: kraniche-ufer, kraniche-keil, kraniche-nacht.
+ */
+async function runCraneChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&playtest&nosave`, 'Kraniche (A4)');
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const tap = async (key, ms = 250) => {
+    await page.keyboard.press(key);
+    await step(ms);
+  };
+  const T = await z(async () => (await import('./src/data/texts.js')).T);
+  const info = () => z(() => window.zomfy.cranes());
+  const aus = await info();
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setDay(3);
+    Z.setTime(10, 0);
+    Z.game.funk.clear();
+    Z.teleport(4.0, -2.5, 0);
+    Z.setCranes(true);
+  });
+  await step(300);
+
+  // 1) In der Prüfung aus, eingeschaltet stehen an Tag 3 fünf im flachen Wasser – nie an Land
+  let c = await info();
+  const nass = await z(() => window.zomfy.cranes().resting.every((r) => window.zomfy.game.world.map.isWater(r.x, r.z)));
+  const plaetze = [0, 1].map((s) => c.resting.filter((r) => r.spot === s));
+  const abends = c.plan.length === 2 && c.plan.every((h) => h >= 16.4 && h <= 18.3);
+  if (!aus.enabled && c.enabled && c.count === 5 && c.resting.every((r) => r.visible && r.state === 'steht') && nass && plaetze[0].length && plaetze[1].length && abends) note(`✓ Kraniche (A4): in der Prüfung aus; eingeschaltet stehen an Tag 3 fünf im flachen Wasser (${plaetze[0].length} nördlich des Stegs, ${plaetze[1].length} beim Wrack), keiner an Land; um zehn sind die Morgenkeile vorbei, zwei ziehen noch am Abend (${c.plan.join(', ')} Uhr)`);
+  else fail(`Kraniche: Rastende ${JSON.stringify({ aus: aus.enabled, c, nass })}`);
+
+  // 2) Sie leben: picken, staksen, schauen sich um (Mika weit weg)
+  const vorher = c.resting.map((r) => `${r.x}/${r.z}`).join(' ');
+  await step(20000);
+  c = await info();
+  const nachher = c.resting.map((r) => `${r.x}/${r.z}`).join(' ');
+  const nochNass = await z(() => window.zomfy.cranes().resting.every((r) => window.zomfy.game.world.map.isWater(r.x, r.z)));
+  if (vorher !== nachher && nochNass && c.takeoffs === 0) note(`✓ Kraniche (A4): in 20 s staksen sie im Wasser umher (${c.dances} Tänze), bleiben im Wasser und fliegen nicht auf, solange niemand kommt`);
+  else fail(`Kraniche: Leben ${JSON.stringify({ vorher, nachher, nochNass, c })}`);
+
+  // Bild: die Rastenden nördlich des Stegs, nah heran (Mika steht am Strand vor dem Steg)
+  const mitte = (spot) =>
+    z((sp) => {
+      const r = window.zomfy.cranes().resting.filter((k) => k.spot === sp);
+      return { x: r.reduce((a, k) => a + k.x, 0) / r.length, z: r.reduce((a, k) => a + k.z, 0) / r.length };
+    }, spot);
+  const nord = await mitte(0);
+  await z(() => window.zomfy.teleport(10.0, -2.75, 0));
+  await step(300);
+  await tap('KeyZ', 400);
+  await z((n) => window.zomfy.lookAt(n.x - 0.4, n.z - 0.7), nord);
+  await step(200);
+  await still(page, 'kraniche-ufer');
+  await z(() => window.zomfy.lookAt(null));
+  await tap('KeyZ', 300);
+
+  // 3) Mika geht mit echter Taste auf die beim Wrack zu: alle an diesem Platz fliegen rufend auf, ein Gedanke
+  const sued0 = await mitte(1);
+  const rufeVorher = (await info()).calls;
+  await z((s2) => {
+    window.zomfy.teleport(s2.x - 7.5, s2.z - 1.0, Math.PI / 2);
+    window.zomfy.game.hud.speech = null;
+  }, sued0);
+  await step(200);
+  await page.keyboard.down('KeyD');
+  let auf = null;
+  for (let k = 0; k < 40; k++) {
+    await step(150);
+    c = await info();
+    if (c.resting.some((r) => r.spot === 1 && r.state === 'fliegt')) {
+      auf = c;
+      break;
+    }
+  }
+  await page.keyboard.up('KeyD');
+  const gedankeAuf = await z(() => window.zomfy.cranes().speech);
+  const suedAuf = auf ? auf.resting.filter((r) => r.spot === 1) : [];
+  const nordBleibt = auf ? auf.resting.filter((r) => r.spot === 0).every((r) => r.state !== 'fliegt') : false;
+  if (auf && suedAuf.every((r) => r.state === 'fliegt') && nordBleibt && auf.calls > rufeVorher && gedankeAuf === T.kraniche.auf) note(`✓ Kraniche (A4): Mika geht mit D auf die beim Wrack zu – beide fliegen rufend auf (die nördlich des Stegs bleiben), Mika denkt »${gedankeAuf}«`);
+  else fail(`Kraniche: Auffliegen ${JSON.stringify({ auf, gedankeAuf, rufeVorher })}`);
+
+  // 4) Später kommen sie zurück – erst, wenn Mika fort ist
+  await z(() => window.zomfy.teleport(2.0, 2.0, 0));
+  let zurueck = null;
+  for (let k = 0; k < 70; k++) {
+    await step(2000);
+    c = await info();
+    if (c.resting.filter((r) => r.spot === 1).every((r) => r.state === 'steht' || r.state === 'geht' || r.state === 'tanzt')) {
+      zurueck = k * 2 + 2;
+      break;
+    }
+  }
+  const wiederNass = await z(() => window.zomfy.cranes().resting.every((r) => window.zomfy.game.world.map.isWater(r.x, r.z)));
+  if (zurueck !== null && wiederNass) note(`✓ Kraniche (A4): nach ${zurueck} s sind sie über den See zurück und stehen wieder im Wasser`);
+  else fail(`Kraniche: Rückkehr ${JSON.stringify({ zurueck, c, wiederNass })}`);
+
+  // 5) Ein Keil zieht morgens rufend über Mika – im Bild über ihr, nicht auf ihr; ein Gedanke
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setTime(7, 40);
+    Z.teleport(4.0, -2.5, 0);
+    Z.setFlag('kraniche_tanz'); // ein Tanz am Ufer soll dem Keil nicht zuvorkommen
+    Z.game.hud.speech = null;
+  });
+  await step(300);
+  const keil = await z(() => window.zomfy.craneFlock());
+  const rufeKeil = (await info()).calls;
+  let ueber = null;
+  let shot = false;
+  let gedankeZug = null;
+  for (let k = 0; k < 100; k++) {
+    await step(250);
+    c = await info();
+    if (!c.flock) break;
+    if (!gedankeZug && c.speech) gedankeZug = c.speech; // der Gedanke steht nur ein paar Sekunden
+    if (!shot && Math.abs(c.flock.x - 4.0) < 3) {
+      shot = true;
+      ueber = await z(() => {
+        const g = window.zomfy.game;
+        const f = g.world.cranes.flock;
+        const lead = g.worldToUi(f.pos.x, f.pos.y, f.pos.z);
+        const mika = g.worldToUi(g.player.position.x, 1.0, g.player.position.z);
+        return { lead, mika, h: g.ui.height };
+      });
+      await still(page, 'kraniche-keil');
+    }
+  }
+  c = await info();
+  const imBild = ueber && ueber.lead.y < ueber.mika.y - 10 && ueber.lead.y > 0;
+  if (keil && keil.n >= 7 && imBild && c.calls > rufeKeil && c.thoughts.includes('kraniche_zug') && gedankeZug === T.kraniche.zug && !c.flock) note(`✓ Kraniche (A4): ein Keil aus ${keil.n} zieht rufend über Mika hinweg (im Bild ${Math.round(ueber.mika.y - ueber.lead.y)} Zeilen über ihr), Mika denkt »${gedankeZug}«, danach ist der Himmel leer`);
+  else fail(`Kraniche: Keil ${JSON.stringify({ keil, ueber, gedankeZug, c })}`);
+
+  // 6) Ein Keil an einem späteren Tag: Edda funkt einmal
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setDay(4);
+    Z.game.funk.clear();
+  });
+  await step(300);
+  await z(() => window.zomfy.craneFlock());
+  for (let k = 0; k < 80 && !(await info()).edda; k++) await step(250);
+  const edda = await z(() => ({ flag: Boolean(window.zomfy.game.state.flags.funk_kranicheEdda), texts: [window.zomfy.game.funk.current?.text, ...(window.zomfy.game.funk.queue || []).map((q) => q.text)].filter(Boolean) }));
+  for (let k = 0; k < 100 && (await info()).flock; k++) await step(250);
+  if (edda.flag && edda.texts.includes(T.kraniche.edda)) note(`✓ Kraniche (A4): an Tag 4 zieht wieder ein Keil – Edda funkt »${T.kraniche.edda}«`);
+  else fail(`Kraniche: Edda ${JSON.stringify(edda)}`);
+
+  // 7) Nachts schlafen sie im Wasser auf einem Bein, den Kopf auf dem Rücken; ein Gedanke in der Nähe
+  await z(() => {
+    const Z = window.zomfy;
+    Z.setTime(22, 0);
+    Z.game.hud.speech = null;
+    Z.game.funk.clear();
+  });
+  await step(1500);
+  c = await info();
+  const schlafen = c.resting.every((r) => r.state === 'schlaeft');
+  const sued = await mitte(1);
+  await z((s2) => window.zomfy.teleport(s2.x - 6.0, s2.z - 1.0, Math.PI / 2), sued);
+  await step(600);
+  const gedankeSchlaf = await z(() => window.zomfy.cranes().speech);
+  const pose = await z(() => {
+    const k = window.zomfy.game.world.cranes.resting[0];
+    return { kopf: k.tucked.visible, hals: k.neck.visible, bein: k.legs[1].visible };
+  });
+  await tap('KeyZ', 400);
+  await z((s2) => window.zomfy.lookAt(s2.x - 1.0, s2.z + 0.4), sued);
+  await step(200);
+  await still(page, 'kraniche-nacht');
+  await z(() => window.zomfy.lookAt(null));
+  await tap('KeyZ', 300);
+  c = await info();
+  if (schlafen && pose.kopf && !pose.hals && !pose.bein && gedankeSchlaf === T.kraniche.schlaf && c.resting.every((r) => r.state === 'schlaeft')) note(`✓ Kraniche (A4): nachts schlafen alle im Wasser auf einem Bein, den Kopf auf dem Rücken – 6 m davor denkt Mika »${gedankeSchlaf}«`);
+  else fail(`Kraniche: Nacht ${JSON.stringify({ schlafen, pose, gedankeSchlaf, c })}`);
+
+  // 8) Mit den Tagen weniger: an Tag 25 zwei, ab Tag 29 keine – und kein Keil mehr
+  const tage = await z(() => {
+    const Z = window.zomfy;
+    const out = {};
+    for (const d of [25, 29]) {
+      Z.setDay(d);
+      Z.setTime(8, 0);
+      window.__zomfyStep(200);
+      const i = Z.cranes();
+      out[d] = { n: i.count, sichtbar: i.resting.filter((r) => r.visible).length };
+    }
+    return out;
+  });
+  const leer = await z(async () => (await import('./src/data/cranes.js')).flocksOn(29));
+  if (tage[25].n === 2 && tage[25].sichtbar === 2 && tage[29].n === 0 && leer === 0) note('✓ Kraniche (A4): an Tag 25 rasten nur noch zwei, ab Tag 29 sind sie fort – auch kein Keil mehr');
+  else fail(`Kraniche: Herbst ${JSON.stringify({ tage, leer })}`);
   checkMessages(session);
   await session.context.close();
 }

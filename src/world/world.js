@@ -34,6 +34,7 @@ import { Particles, SmokeEmitter, EmberEmitter, Fireflies } from './particles.js
 import { Weather } from './weather.js';
 import { P } from '../render/palette.js';
 import { Crows } from '../entities/crows.js';
+import { Cranes } from '../entities/cranes.js';
 import { FLASH_TIME } from '../data/skills.js';
 import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
@@ -164,6 +165,9 @@ export class World {
         return !this.grid.occupantAt(c.i, c.j);
       },
     });
+
+    // A4: Kraniche – ein paar rasten im flachen Wasser am Ufer, Keile ziehen rufend über die Bucht
+    this.cranes = new Cranes({ scene, seed, isWater: (x, z) => this.map.isWater(x, z) });
 
     this.particles = new Particles(800, seed);
     scene.add(this.particles.object);

@@ -2979,6 +2979,30 @@ Schuld nein – Edda bedankt sich, dass Mika ihn ihr vorgelesen hat.
 **Warum nicht nachts:** Krähen sind tagsüber in der Bucht (wie seit M12); abends sagt das Brett,
 dass sie schon im Wald schlafen.
 
+### 233. Was tun die Kraniche vom Kranichsee? (A4, selbst gewählt)
+**Entscheidung:** Sie sind Stimmung, keine Mechanik – der See heißt nach ihnen, Morgenbericht (G4)
+und Ortskunde (G5) erzählen von ihnen, also muss man sie auch sehen und hören:
+
+- **Keile am Himmel:** morgens (7:00–9:36) und am späten Nachmittag (16:24–18:18) ziehen Keile aus
+  sieben bis dreizehn Vögeln rufend von Nordosten nach Südwesten, so über Mika, dass man sie im Bild
+  sieht – etwas über ihr, damit die Mitte frei bleibt. Ihr Ruf trägt weit (bis 70 m), drinnen und in
+  der Nebelfahrt hört man ihn nicht (dort führt der Klang der Glocke).
+- **Rastende am Ufer:** ein paar stehen im flachen Wasser nördlich des Stegs und beim Wrack, staksen,
+  picken, tanzen manchmal mit offenen Flügeln. Kommt Mika oder ein Schlurfer auf 4,5 m heran,
+  fliegen alle an diesem Platz rufend auf und kommen nach einer Weile zurück, wenn niemand mehr
+  dort ist. Nachts schlafen sie auf einem Bein, den Kopf auf dem Rücken (»da kommt kein Fuchs hin«).
+- **Mit dem Herbst weniger:** bis Tag 2 zwei Keile und drei Rastende, von Tag 3 bis 20 vier Keile
+  (zwei morgens, zwei abends) und fünf, bis Tag 23 wieder zwei und drei, ab Tag 24 einer und zwei, ab
+  Tag 29 keine mehr – wie die Zeilen im Morgenbericht. Die Keile eines Tages sind über die Stunden
+  verteilt (eine Spielstunde dauert 24 Sekunden); ist ihre Zeit vorbei, ziehen sie nicht nach.
+- **Gedanken statt Erklärung:** Der erste Keil, das erste Auffliegen, der erste Tanz und die
+  Schlafenden sind je einmal ein Gedanke Mikas; ein Keil an einem späteren Tag bringt Eddas Zeile
+  »Wenn die letzten fort sind, kommt der Frost« – die letzten ziehen an Tag 29, die Frostnacht ist
+  Tag 30.
+
+**Warum keine Wirkung aufs Spiel:** Nicht alles muss etwas bringen; die Bucht soll leben (wie A1).
+Die Kraniche lenken auch keine Schlurfer ab und fliegen nicht über die Wege der Nacht.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

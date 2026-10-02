@@ -77,6 +77,7 @@ export const CONFIG = {
   // A1: das Tagwerk der Bewohner – in Prüfung und Playtest-Brücke aus (die älteren Abschnitte
   // erwarten die Leute an ihren Tagesplätzen), ?alltag schaltet es dort ein
   chores: params.has('alltag') || !(params.has('test') || params.has('playtest')),
+  cranes: params.has('kraniche') || !(params.has('test') || params.has('playtest')), // A4: in der Prüfung aus (?kraniche oder setCranes schaltet sie ein)
   test: params.has('test'),
   playtest: params.has('playtest'),
   noSave: params.has('nosave'),

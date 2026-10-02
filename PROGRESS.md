@@ -5,6 +5,35 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## A4: Die Kraniche ✓
+
+**Selbst gewählt nach A3:** Der Kranichsee heißt nach ihnen, der Morgenbericht (G4) und die
+Ortskunde (G5) erzählen von Hunderten – zu sehen war bisher keiner.
+
+- **Keile:** morgens (7:00–9:36) und am späten Nachmittag (16:24–18:18) ziehen Keile aus sieben bis
+  dreizehn Graukranichen rufend von Nordosten nach Südwesten – so, dass sie im Bild gut zwei Meter
+  über Mika vorbeiziehen (die Mitte bleibt frei). Der Ruf ist ein rollendes Trompeten, im Keil
+  mehrstimmig, oft im Duett, und trägt bis 70 m weit (`far` in `sound.play`).
+- **Rastende:** drei bis fünf stehen im flachen Wasser nördlich des Stegs und beim Wrack, staksen,
+  picken, schauen sich um und tanzen manchmal mit offenen Flügeln. Kommen Mika oder ein Schlurfer auf
+  4,5 m heran, fliegen alle an diesem Platz rufend über den See auf und kommen nach einer Weile
+  zurück. Nachts schlafen sie auf einem Bein, den Kopf auf dem Rücken.
+- **Das Modell:** aschgrau, schwarzer Vorderhals mit weißem Streifen, rote Kappe, schwarze
+  Schwungfedern, buschige Schmuckfedern – im Maß 1/32 wie die Krähen. Angesehen ohne Browser mit
+  einem kleinen Voxel-Vorschauer (Hals zuerst zebragestreift, Schlafpose mit dem Schnabel nach oben –
+  beides nachgebessert).
+- **Mit dem Herbst weniger** wie im Morgenbericht: ab Tag 24 noch zwei, ab Tag 29 fort. Mika denkt je
+  einmal etwas dazu; an einem späteren Tag funkt Edda: »Wenn die letzten fort sind, kommt der Frost.«
+- Kein Spielstand-Wechsel (die Gedanken sind Flags). In Prüfung und Playtest-Brücke sind die Kraniche
+  aus (`?kraniche` schaltet sie ein), damit Rufe und Gedanken keine anderen Abschnitte stören.
+- **Prüfung:** Abschnitt `kraniche` (echte Taste, Bilder kraniche-ufer, kraniche-keil,
+  kraniche-nacht) – bestanden, dazu `ansicht` (Detailgrad: die Kraniche im Maß 1/32). Die Prüfung
+  fand einen echten Fehler: Eddas Zeile hing an »Einführung aus«, die Einführung bleibt aber das
+  ganze Spiel an – jetzt funkt sie ab Tag 2, sobald der Funk frei ist. Der Ruf offline gerechnet
+  (die Prüfung hört keinen Klang): Spitze 0,03 wie eine Krähe, keine kaputten Samples.
+
+---
+
 ## A3: Krähengaben ✓
 
 **Aus dem Ideen-Parkplatz (DESIGN 9): »Krähen, die etwas bringen (oder stehlen)«.** Krähen merken

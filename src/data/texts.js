@@ -2606,6 +2606,14 @@ export const T = {
     kompass: 'Jakobs Kompass – er steht jetzt auf der Fensterbank.',
     eddaBrief: 'Du hast ihn mir vorgelesen … jedes Wort. Danke, Mika. Behalt den Kompass. Ich weiß ja, wo Licht im Fenster ist.',
   },
+  // A4: die Kraniche vom Kranichsee – Mikas Gedanken (je einmal) und Eddas Zeile beim Keil an einem späteren Tag
+  kraniche: {
+    zug: 'Kraniche! Ein ganzer Keil, und alle rufen. Gute Reise nach Süden!',
+    auf: 'Huch – schon gut! Ich wollte nur gucken.',
+    tanz: 'Die tanzen ja! Flügel auf, ein Hüpfer, eine Verbeugung … einfach so.',
+    schlaf: 'Auf einem Bein, den Kopf unterm Flügel. Da kommt wirklich kein Fuchs hin.',
+    edda: 'Hörst du die Kraniche? Großvater sagte immer: Wenn die letzten fort sind, kommt der Frost. Noch ist Zeit, Mika.',
+  },
   // K1: der Fotomodus (Pausenmenü)
   foto: {
     menue: 'Foto machen',

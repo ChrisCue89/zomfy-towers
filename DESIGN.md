@@ -2216,6 +2216,20 @@ Schnee. Esc kehrt zurück.
   Kompass, der danach auf der Fensterbank steht.
 - Fünf Gaben sind die Tat »Krähenfreund« im Herbstbuch.
 
+#### A4 – Die Kraniche ✓ (Nr. 233)
+
+*Selbst gewählt (02.10.2026):* Der See heißt nach ihnen, Morgenbericht und Ortskunde erzählen von
+ihnen – jetzt sieht und hört man sie:
+
+- **Keile am Himmel:** morgens und am späten Nachmittag ziehen sieben bis dreizehn Kraniche in einem
+  Keil rufend über die Bucht nach Südwesten, im Bild etwas über Mika. Ihr Trompeten trägt weit.
+- **Am Ufer:** ein paar stehen im flachen Wasser nördlich des Stegs und beim Wrack, staksen, picken
+  und tanzen manchmal mit offenen Flügeln; wer ihnen zu nahe kommt, vor dem fliegen alle des Platzes
+  rufend auf – später kommen sie zurück. Nachts schlafen sie auf einem Bein, den Kopf auf dem Rücken.
+- **Der Herbst zieht mit ihnen:** von Tag 3 bis 20 die meisten, ab Tag 24 weniger, ab Tag 29 keine
+  mehr. Edda: »Wenn die letzten fort sind, kommt der Frost.«
+- Mika denkt je einmal etwas dazu (der erste Keil, das Auffliegen, ein Tanz, die Schlafenden).
+
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.

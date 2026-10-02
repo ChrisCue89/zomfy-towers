@@ -165,6 +165,17 @@ const SFX = {
   },
   // Krähe fliegt auf (M12)
   kraehe: (s, t, v, o) => s.caw(t, 0, 1.3 * v, o),
+  // A4: Kraniche rufen – ein rollendes Trompeten, im Keil mehrere Stimmen (opt.n Vögel), oft im Duett
+  kranich: (s, t, v, o, opt = {}) => {
+    const birds = Math.min(3, Math.max(1, Math.round((opt.n || 1) / 4)));
+    for (let b = 0; b < birds; b++) {
+      const f = 600 + Math.random() * 170;
+      const t0 = t + b * (0.12 + Math.random() * 0.25);
+      const vb = v / Math.sqrt(birds);
+      s.trumpet(t0, f, vb, o);
+      if (Math.random() < 0.6) s.trumpet(t0 + 0.42 + Math.random() * 0.1, f * 0.9, 0.8 * vb, o); // die Antwort, etwas tiefer
+    }
+  },
   // Fähigkeiten (M16): Laternenblitz – ein heller Schimmer über einem weichen Wumms
   blitz: (s, t, v, o) => {
     s.tone('sine', 190, t, 0.22, { freqEnd: 80, peak: 0.16 * v, out: o });
@@ -347,7 +358,7 @@ const SFX = {
 };
 
 /** Wie oft ein Effekt höchstens kommt (Sekunden) – sonst prasselt es im Getümmel. */
-const MIN_GAP = { boee: 1, looping: 0.5, zupf: 0.15, schuss: 0.05, schrot: 0.1, leer: 0.3, ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
+const MIN_GAP = { kranich: 0.3, boee: 1, looping: 0.5, zupf: 0.15, schuss: 0.05, schrot: 0.1, leer: 0.3, ballista: 0.1, rakete: 0.12, nebel: 0.4, turmglocke: 0.2, windstoss: 0.35, summen: 0.6, knall: 0.1, reaktion: 0.08, klirr: 0.05, rumpeln: 0.2, bimmel: 0.5, sprenger: 0.28, treffer: 0.03, bolzen: 0.04, loot: 0.05, schritt: 0.08, schrittHolz: 0.08, stoehnen: 0.6, tipp: 0.045, zuhause: 0.12, tod: 0.05 };
 
 export class Sound {
   /** @param {{master:number, music:number, sfx:number}} volumes 0..1 */
@@ -697,8 +708,9 @@ export class Sound {
       const dx = opt.x - this.listener.x;
       const dz = opt.z - this.listener.z;
       const d = Math.hypot(dx, dz);
-      if (d > HEAR) return;
-      v *= Math.pow(clamp(1 - (d - NEAR) / (HEAR - NEAR), 0, 1), 1.4);
+      const hear = opt.far || HEAR; // A4: Kraniche hört man weit über den See
+      if (d > hear) return;
+      v *= Math.pow(clamp(1 - (d - NEAR) / (hear - NEAR), 0, 1), 1.4);
       if (v < 0.02) return;
       out = this.pan(this.sfxPans, this.sfxBus, dx / 10);
     }
@@ -796,6 +808,13 @@ export class Sound {
       this.tone('sawtooth', f, s0, 0.2, { freqEnd: f * 0.72, peak: 0.024 * volume, attack: 0.012, filter: 1500, out: o });
       this.noise(s0, 0.15, { type: 'bandpass', freq: 1300, q: 2, peak: 0.012 * volume, attack: 0.01, out: o });
     }
+  }
+
+  /** A4: Ein Kranichruf – erst das Rollen (kurze Stöße), dann der gezogene Ton mit rauer Kehle. */
+  trumpet(t, f, v, o) {
+    for (let k = 0; k < 6; k++) this.tone('sawtooth', f * (1 + k * 0.012), t + k * 0.034, 0.03, { peak: 0.02 * v, attack: 0.004, filter: 2600, out: o });
+    this.tone('sawtooth', f * 1.06, t + 0.2, 0.22, { freqEnd: f * 0.86, peak: 0.026 * v, attack: 0.012, filter: 2200, vibrato: 28, out: o });
+    this.tone('triangle', f * 2.02, t + 0.2, 0.16, { freqEnd: f * 1.7, peak: 0.008 * v, attack: 0.012, out: o });
   }
 
   cricket(t) {

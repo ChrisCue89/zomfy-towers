@@ -117,6 +117,7 @@ import { RESOURCES, RARE_RESOURCES } from '../data/items.js';
 import { MAX_COZY } from '../data/furniture.js';
 import { HOUSE_DAMAGE, PARTS_FROM_TOWERS } from '../data/zombies.js';
 import { PeopleSprites } from '../entities/peopleView.js';
+import { CRANE_MODES, CRANE_NOTICE } from '../data/cranes.js';
 
 /** Flags, die nach einem Dialog gesetzt werden. */
 const FLAG_AFTER_DIALOG = {
@@ -240,6 +241,10 @@ export class Game {
     this.world = new World({ scene: this.scene, seed: CONFIG.world.seed, mapSeed, renderConfig: CONFIG.render });
     this.world.buildings.lureEntry = (x, z) => this.lureEntryAt(x, z); // M24: die Moderlocke nur auf einen Zulauf am Waldrand
     this.world.crows.onCaw = (x, z) => this.sound.play('kraehe', { x, z }); // Krähen fliegen krächzend auf (M12)
+    // A4: Kraniche rufen weit über den See; was Mika an ihnen sieht, wird je Art einmal ein Gedanke
+    this.world.cranes.onCall = (x, z, n) => this.sound.play('kranich', { x, z, n, far: n > 1 ? 70 : 40, volume: n > 1 ? 1 : 0.8 });
+    this.world.cranes.onMoment = (kind, x, z) => this.craneMoment(kind, x, z);
+    this.world.cranes.setEnabled(CONFIG.cranes);
     this.effects = new Effects(this.world.particles);
     this.player = new Player({ world: this.world, config: CONFIG.player });
     this.scene.add(this.player.object);
@@ -955,6 +960,23 @@ export class Game {
     const when = STORY_DAYS[day];
     if (!when || this.state.autumn?.frost || !when(this.state)) return;
     this.funk.once(`tag_${day}`, T.funk.tage[day]);
+  }
+
+  /**
+   * A4: Was Mika an den Kranichen sieht, wird je Art einmal ein Gedanke – der erste Keil, das
+   * Auffliegen, ein Tanz, die Schlafenden. Zieht ab dem zweiten Tag wieder ein Keil über Mika und
+   * hat Edda gerade nichts anderes zu sagen, funkt sie (einmal).
+   */
+  craneMoment(kind, x, z) {
+    const st = this.state;
+    const f = st.flags;
+    if (this.mode !== 'play' || this.viewInside) return;
+    if (kind === 'zug' && f.kraniche_zug && st.time.day >= 2 && !this.funk.busy) this.funk.once('kranicheEdda', T.kraniche.edda);
+    if (f[`kraniche_${kind}`] || this.hud.speech) return;
+    const p = this.player.position;
+    if (x !== undefined && Math.hypot(p.x - x, p.z - z) > CRANE_NOTICE[kind]) return;
+    f[`kraniche_${kind}`] = true;
+    this.hud.say(T.kraniche[kind], 4);
   }
 
   /** Der Satz zum Wetter eines Tages (M12). */
@@ -2879,6 +2901,7 @@ export class Game {
     this.world.moderFactor = titled ? 1 : this.autumn.moderGlow(this.state.time.day);
     this.world.update(dt, { hours, focus: this.rig.focus, player: this.player, day: this.state.time.day });
     this.world.crows.update(this.mode === 'play' ? dt : 0, { hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) });
+    this.world.cranes.update(CRANE_MODES.includes(this.mode) ? dt : 0, { day: this.state.time.day, hours, player: this.player, zombies: this.horde.list, inside: Boolean(this.viewInside) }); // A4
     this.updateMood();
     this.updateHeartbeat(this.mode === 'play' ? dt : 0);
     this.trader.update(this.mode === 'play' ? dt : 0);
@@ -3800,6 +3823,7 @@ export class Game {
           horde: step(game.horde.group),
           leute: step(game.survivors.npcs.group),
           kraehen: step(w.crows.group),
+          kraniche: step(w.cranes.group), // A4
           beute: step(...Object.values(game.loot.meshes)),
           boot: step(game.trader.boat.root),
           stuempfe: step(w.stumps.group), // G6
@@ -4595,6 +4619,19 @@ export class Game {
       crowMorning() {
         game.crowGifts.morning();
         return game.crowGifts.info();
+      },
+      /** A4: Kraniche – Rastende (Zustand, Stelle), der Keil am Himmel, Zähler, Mikas Gedanken. */
+      cranes: () => ({ ...game.world.cranes.info(), enabled: game.world.cranes.enabled, thoughts: Object.keys(game.state.flags).filter((k) => k.startsWith('kraniche_')), edda: Boolean(game.state.flags.funk_kranicheEdda), speech: game.hud.speech?.text || null }),
+      /** A4: die Kraniche an- oder ausschalten (in der Prüfung sonst aus). */
+      setCranes(on) {
+        game.world.cranes.setEnabled(on);
+        return game.world.cranes.enabled;
+      },
+      /** A4: gleich einen Keil über Mika ziehen lassen. */
+      craneFlock() {
+        const p = game.player.position;
+        game.world.cranes.startFlock(p.x, p.z);
+        return game.world.cranes.info().flock;
       },
       /** A1: das Tagwerk der Bewohner an- oder ausschalten (in der Prüfung sonst aus). */
       setChores(on) {

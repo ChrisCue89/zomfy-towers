@@ -479,6 +479,9 @@ src/entities/         player, characters (Figuren-Bauer), figureKit (Formen
                       survivorModels (auch Balduin, Marthe, Pim und Lu), dogModel, traderModels (Balduins Boot, Mikas
                       Ruderboot, N5),
                       crows (Krähen: sitzen, picken, fliegen auf, M12),
+                      cranes (Kraniche: Rastende am Ufer, Keile am Himmel,
+                      Ruf, A4), craneModels (Graukranich stehend, schlafend,
+                      fliegend, A4),
                       kiteModels (Pims Drachen, Schleifen, Spule, Schnüre, N9),
                       fishingModels (Angel, Pose, Fänge, M33),
                       peopleFigure (Menschen als Sprites: Maße, Posen, Laterne,
@@ -546,7 +549,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Arbeiten mit Takt, wer was wo tut, Zeiten, A1; mit
                       anpacken: Dauer, Ertrag je Person, Angebot, A2),
                       crows (Krähengaben: Füttern, Vertrauen, Chance, die Gaben
-                      in ihrer Reihenfolge, Krähenglas, A3),
+                      in ihrer Reihenfolge, Krähenglas, A3), cranes (Kraniche:
+                      Zugzeit, Keile, Rastplätze, Gedanken, A4),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -1080,6 +1084,19 @@ Grundprinzipien:
     `res`/`part` in Vorrat und Turmteile, `key` macht die lose Diele vor dem Kamin auf
     (`world.setLooseBoard`, Einblendung `crowChest`, `openChest`: Jakobs Brief als Karte ohne
     Porträt, der Kompass auf der Fensterbank, Edda über Funk nach der Karte).
+- **Die Kraniche (A4, `entities/cranes.js`, `entities/craneModels.js`, `data/cranes.js`):**
+  - Reine Stimmung ohne Wirkung aufs Spiel. Rastende stehen an `CRANE_REST.spots` im flachen Wasser
+    (`wadeSpot` fragt `map.isWater`), Zustände `steht`, `geht`, `tanzt`, `fliegt`, `weg`, `kommt`,
+    `schlaeft`; wer Mika oder einem Schlurfer auf `shy` nahe kommt, fliegt mit allen seines Platzes
+    rufend auf (`takeOff`) und kommt nach `back` Sekunden zurück, wenn dort niemand mehr ist. Im
+    Schlaf ersetzt `tucked` (Kopf auf dem Rücken) Hals und zweites Bein.
+  - Keile (`startFlock`) ziehen in `CRANE_FLOCK.times` von Nordost nach Südwest, so dass sie im Bild
+    `above` Meter über Mika stehen (orthografisch: je höher, desto weiter südlich); nie drinnen.
+  - Anzahl je Tag aus `flocksOn`/`restingOn` (ab Tag 29 keine). `game.world.cranes.update` läuft in
+    `CRANE_MODES` (nicht in der Nebelfahrt), Rufe über `onCall` → `sound.play('kranich', { far })`
+    (weite Hörweite, `opt.far` in `sound.play`), Momente über `onMoment` → `game.craneMoment`
+    (je Art einmal ein Gedanke, Flags `kraniche_<art>`; ein späterer Keil bringt Eddas Zeile
+    `funk_kranicheEdda`). In Prüfung und Playtest-Brücke aus (`CONFIG.cranes`, `?kraniche`).
 - **Der Fotomodus (K1, `core/photo.js`):** Eintrag im Pausenmenü (nicht vom Titelbild, nicht im
   Dialog); Modus `foto` – die Uhr steht, die Leute arbeiten im echten Takt weiter (Krähen, Balduin
   und die Horde stehen wie im Menü), `render` zeichnet nur Regen, Schnee und `photo.draw` (die
@@ -1615,7 +1632,12 @@ Grundprinzipien:
    es (Karte), scheu fliegt eine Krähe auf 1,6 m auf, vertraut bleibt sie sitzen, Hildes Fingerhut geht
    mit echten Tasten im Gespräch zurück, der Schlüssel öffnet mit »Diele anheben« Jakobs Schatulle
    (Brief, Kompass, Edda), sechs Stücke im Krähenglas, die Tat »Krähenfreund«, Speichern v34 behält
-   alles (Bilder: kraehen-brett, kraehen-gabe, kraehen-brief, kraehen-glas).
+   alles (Bilder: kraehen-brett, kraehen-gabe, kraehen-brief, kraehen-glas); ab A4 (Abschnitt
+   `kraniche`): in der Prüfung aus, eingeschaltet an Tag 3 fünf im flachen Wasser (nie an Land), sie
+   staksen umher, mit D gehalten auf die beim Wrack zu fliegen beide rufend auf (Gedanke), die anderen
+   bleiben, später kommen sie zurück, ein Keil zieht rufend im Bild über Mika (Gedanke), an Tag 4
+   funkt Edda, nachts schlafen alle auf einem Bein (Gedanke in der Nähe), an Tag 25 zwei, ab Tag 29
+   keine (Bilder: kraniche-ufer, kraniche-keil, kraniche-nacht).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1803,7 +1825,9 @@ Modus, Blickpunkt, Kamera, ob gerade gelesen wird, die gespeicherten Bilder (Nam
 und die Meldung; ab A3 zeigt `crowGifts()` Vertrauen, Krümel, Gabe, Gaben, Krähenglas, was Mika
 trägt und zurückgab, die Schatulle, das Brett (mit der Krähe darauf), zahm, Schnabelhiebe und
 Zähler, `setCrows(o)` setzt den Krähen-Zustand, `crowMorning()` rechnet den Morgen der Krähen
-(`nextMorning()` tut es auch).
+(`nextMorning()` tut es auch); ab A4 zeigt `cranes()` die Rastenden (Zustand, Stelle, Platz), den
+Keil am Himmel, Rufe, Tänze, Auffliegen, Mikas Gedanken und Eddas Zeile, `setCranes(an)` schaltet die
+Kraniche (in der Prüfung sonst aus), `craneFlock()` lässt gleich einen Keil über Mika ziehen.
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |
@@ -1813,6 +1837,7 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 | `?horde=2d` / `?horde=3d` | Look der Schlurfer erzwingen (F2; Standard 2D, mit `?test`/`?playtest` 3D) |
 | `?figuren=2d` / `?figuren=3d` | Look der Menschen erzwingen (F4; Standard 2D, mit `?test`/`?playtest` 3D) |
 | `?alltag` | Das Tagwerk der Bewohner auch mit `?test`/`?playtest` (A1; sonst nur im Spiel) |
+| `?kraniche` | Die Kraniche auch mit `?test`/`?playtest` (A4; sonst nur im Spiel) |
 
 ## Arbeitsweise
 
