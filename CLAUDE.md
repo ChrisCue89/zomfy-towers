@@ -242,9 +242,29 @@ gilt bis auf Weiteres:
     Rücken (Stufe 16), um 45° um den Stiel gedreht; das Bild der Figur trägt Anker (`hand`, `back`:
     Lage, Stufe, vorn/hinten). Gebacken über dem Boden (`TOOL_LIFT`), sonst schnitte die Erde sie ab.
   - Die Voxel-Figuren laufen unsichtbar mit (Laternenlicht, Anker, Zustand); versteckt werden nur
-    die Kinder ihres Wurzelknotens (`root.visible` sagt bei den Leuten, ob sie da sind). Seltene
-    Posen und Figuren ohne Sprite bleiben Voxel.
-  - Ansehen ohne Browser: `node tools/menschen-bogen.mjs datei.png --figur=mika --aussehen=…`.
+    die Kinder ihres Wurzelknotens (`root.visible` sagt bei den Leuten, ob sie da sind). Voxel
+    bleiben nur, was noch nicht gebacken ist, die Reifenschaukel und wer am Boden liegt (F7).
+  - **Alle Posen als Sprites (F7, Nr. 228):**
+    - Mika hat dazu die Teile `waffe` (schießen, Anschlag, Pfiff, Wirbel, Drachen), `laterneWaffe`
+      und `sitz` (Kartentisch, Angeln) – alle vorab im Hintergrund gebacken (`MIKA_PRIO`). Die Leute
+      haben `karten` (Karten und ihr Tick `tell`), `angeln` und `waffe`, Pim und Lu `drachen`
+      (`KID_PARTS`); diese Teile backen erst, wenn sie gebraucht werden.
+    - Hände treffen ein Ziel über zwei Knochen: `reachL`/`reachR` in der Pose (Figurkoordinaten um
+      die Kopfmitte, `reachArm` in `spriteFigure.js`) – so liegen Hand an Mütze, Brille, Mund und
+      Pfeife und die Karten vor der Brust (`cardFan` setzt `personShapes` für jeden).
+    - Die Pose sagt, wie das Werkzeug liegt: `toolPhi` (0 hängt, π/2 vorn, π oben) und `toolTurn`
+      (Achtel zur rechten Seite, der Anker trägt ihn als fünften Wert; gezeigt wird das Bild der
+      gedrehten Richtung). Werkzeuge mit `straight` drehen nicht um 45° um den Stiel, `buckets`
+      und `cell` begrenzen, was gebacken wird.
+    - An der Stegkante (`ledge`) liegt die Hüfte des Bildes auf seinem Fußpunkt, die Beine hängen
+      in die Erde des Bäckers – von hinten sieht man nur den Rücken.
+    - Angel und Spule haben eine Spitze (`tip`, beim Backen als Anker des Werkzeugs);
+      `people.toolTip(wer, out)` gibt sie als Weltpunkt in der Bildebene, `fishing.rodTip`,
+      `friendTip` und `kite.spoolAt` nehmen sie, solange das Sprite zu sehen ist.
+    - `humanoid` merkt seine Gelenke in `ctx.skeleton`; wer `handR`, `back` oder `chest` nicht
+      selbst setzt, bekommt sie daraus (die Leute halten so Angel, Spule und Waffe).
+  - Ansehen ohne Browser: `node tools/menschen-bogen.mjs datei.png --figur=mika --aussehen=…` (seit
+    F7 mit den seltenen Posen und ihrem Werkzeug).
   - **Schöner gezeichnet (F5, `recherche/menschen-gestaltung.md`, Nr. 223):**
     - Frontaler als die Welt: `tiltFrame` kippt jedes Bild um `VIEW_TILT` (0,2 rad) zur Kamera, das
       Werkzeug um seinen Griff; den Kopf dreht `humanoid` über `HUMAN.headView` (0,25 rad) weiter.
@@ -1494,8 +1514,11 @@ Grundprinzipien:
    und Lu) ohne leeres Bild mit Gesichtsflicken,
    mit echten Tasten geht Mika nach Osten, rennt mit Umschalt, dreht nach Süden, die Axt auf dem
    Rücken und beim Schwung als eigenes Bild in der Hand, ein Treffer zeigt »Aua«, die Laterne ihren
-   Teil, am Tisch sitzt Mika aus Voxeln, im Ruderboot rudert Mika als Sprite im Takt der Riemen
-   (N12), Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
+   Teil, seit F7 sitzt Mika am Tisch als Sprite mit Karten, angelt an der Stegkante (die Schnur hängt
+   an der Spitze im Bild), schießt mit Rückstoß, legt die Flinte an, pfeift, wirbelt (das Bild dreht
+   sich mit) und hält Pims Drachen, Bert hat am Kartentisch seinen Tick, Hilde angelt mit, Juna
+   schießt im Anschlag (Bilder menschen-karten, menschen-angeln), im Ruderboot rudert Mika als Sprite
+   im Takt der Riemen (N12), Hilde, Bert, Juna, Yusuf und Knopf stehen als Sprites im
    Hof und Hilde lächelt, wenn Mika dabeisteht, seit F5 ist Mikas Gesicht von vorn fast so groß
    wie die Mütze und die Augen sitzen weit oben, seit F6f liegen nah und weit alle Farbwechsel in
    Mika auf Texelgrenzen (vorher knapp die Hälfte – das Raster des Post-Pass) (Bilder: menschen-tag,
@@ -1679,7 +1702,7 @@ Instanz); ab H2 zeigt `game.hud.shown` die rechts sichtbaren Meldungen, `game.hu
 Alarmzeile, `game.hud.chronicle` das Lesezeichen und `nights.planView(true)` den ganzen Plan; ab F4 stellt `setFigureLook('3d'|'2d')` die Menschen um,
 `people(backen)` zeigt fertige und wartende Fassungen, Atlas, was Mika (`mika`: Teil, Zustand, Bild,
 Ausdruck, Werkzeug, Richtung) und die Leute (`leute`) zeigen; `backen` = `{ mika: true, tools: [...],
-people: [...] }` backt sofort hier;
+people: [...], parts: [...] }` backt sofort hier (`parts`: nur diese Teile, F7);
 ab G2 zeigt `knots()` je Knoten der Geschichte, ob er erzählt ist oder wartet; ab G3
 `forestThought(tag)` Stufe und Satz des Waldrand-Gedankens; ab G4 `calendar(tag)` Datum,
 Naturzeile und Jahrestag; ab G5 zeigt `places()` die bekannten Orte (Namen, Zeilen) und die

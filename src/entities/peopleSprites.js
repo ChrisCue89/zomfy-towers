@@ -8,7 +8,7 @@ import { trace, paint, stampAt, toTexel, lightField, TEXEL } from '../render/spr
 import { encodeFrame, encodePatch } from '../render/spriteCode.js';
 import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './spriteFigure.js';
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
-import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, bucketOf, facesOf } from './peopleKinds.js';
+import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, toolBuckets, bucketOf, facesOf, cardFan, CARD_MATERIALS } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
 import { rings, ribs, strands, folds, locks, beardLocks } from './peopleRelief.js';
 
@@ -169,7 +169,7 @@ export function personShapes(id, spec, part, d, anim, k) {
   const kind = PEOPLE[id];
   const p = kind.parts[part];
   const n = animsOf(id)[anim];
-  const pose = kind.dog ? poseDog(anim, k, n) : posePerson(anim, k, n, { lantern: Boolean(p.lantern), gait: kind.gait });
+  const pose = kind.dog ? poseDog(anim, k, n) : posePerson(anim, k, n, { lantern: Boolean(p.lantern), gait: kind.gait, tell: kind.tell });
   const ctx = frameContext(d, pose);
   ctx.anim = anim;
   ctx.k = k;
@@ -177,6 +177,20 @@ export function personShapes(id, spec, part, d, anim, k) {
   ctx.stamps = [];
   ctx.face = null;
   kind.build(ctx, spec);
+  const sk = ctx.skeleton;
+  if (sk && !kind.dog) {
+    // F7: Karten in der Hand am Tisch; Anker für das Werkzeug auch bei den Leuten (Angel, Spule,
+    // Waffen) – wer sie nicht selbst setzt, bekommt sie aus dem Gerüst
+    if (anim === 'karten' || (anim === 'tick' && kind.tell !== 'reiben')) cardFan(ctx, sk.arms); // wer sich die Hände reibt, hat die Karten abgelegt
+    const m = ctx.marks;
+    if (!m.handR) {
+      ctx.mark('handR', sk.arms[1].hand);
+      ctx.mark('elbowR', sk.arms[1].elbow);
+      ctx.mark('wristR', sk.arms[1].wrist);
+    }
+    if (!m.back) ctx.mark('back', add(sk.spine(0.25), [0, 0, -0.36]));
+    if (!m.chest) ctx.mark('chest', sk.spine(0.25));
+  }
   if (!kind.dog) clothRelief(ctx);
   const size = kind.size || 1;
   scaleFrame(ctx, size);
@@ -208,7 +222,7 @@ const materialCache = new Map();
 function materialsOf(id, spec) {
   const kind = PEOPLE[id];
   const key = typeof kind.materials === 'function' ? `${id}:${JSON.stringify(spec)}` : id;
-  if (!materialCache.has(key)) materialCache.set(key, withOutlines(typeof kind.materials === 'function' ? kind.materials(spec) : kind.materials));
+  if (!materialCache.has(key)) materialCache.set(key, withOutlines({ ...CARD_MATERIALS, ...(typeof kind.materials === 'function' ? kind.materials(spec) : kind.materials) }));
   return materialCache.get(key);
 }
 
@@ -303,15 +317,23 @@ export function bakePerson(id, spec, part, d, anim, k) {
     const hand = anchorOf(view(m.handR), raster);
     // Richtung des Unterarms in Figurkoordinaten (die Welt dreht nur um die Hochachse)
     const yaw = ctx.yaw;
-    const dw = norm(sub(m.handR, m.elbowR));
-    const fig = [dw[0] * Math.cos(yaw) - dw[2] * Math.sin(yaw), dw[1], dw[0] * Math.sin(yaw) + dw[2] * Math.cos(yaw)];
-    let phi = Math.atan2(fig[2], -fig[1]);
-    if (anim !== 'schwung' && anim !== 'suchen') phi += 1.0; // in Ruhe schräg nach vorn (wie die Voxel-Figur)
+    const pose = ctx.pose || {};
+    let phi;
+    if (pose.toolPhi !== undefined) phi = pose.toolPhi; // F7: die Pose sagt, wie sie das Werkzeug hält
+    else {
+      const dw = norm(sub(m.handR, m.elbowR));
+      const fig = [dw[0] * Math.cos(yaw) - dw[2] * Math.sin(yaw), dw[1], dw[0] * Math.sin(yaw) + dw[2] * Math.cos(yaw)];
+      phi = Math.atan2(fig[2], -fig[1]);
+      if (anim !== 'schwung' && anim !== 'suchen') phi += 1.0; // in Ruhe schräg nach vorn (wie die Voxel-Figur)
+    }
     const bucket = bucketOf([0, -Math.cos(phi), Math.sin(phi)]);
+    // F7: `toolTurn` dreht die Ebene des Werkzeugs um die Hochachse zur rechten Seite (in Achteln,
+    // der Wirbel hält die Waffe schräg hinaus) – gezeigt wird dann das Bild der gedrehten Richtung
+    const turn = pose.toolTurn || 0;
     // Vorn liegt das Werkzeug, wenn seine Mitte näher zur Kamera (Süden) steht als die Brust –
     // über dem Kopf ausgeholt liegt es dahinter, von hinten gesehen davor
-    const mid = add(m.handR, toWorld([0, -Math.cos(phi) * 0.3, Math.sin(phi) * 0.3], yaw));
-    anchors.hand = [hand.x, hand.y, bucket, mid[2] - m.chest[2] > 0.08 ? 1 : 0];
+    const mid = add(m.handR, toWorld([0, -Math.cos(phi) * 0.3, Math.sin(phi) * 0.3], yaw + (turn * Math.PI) / 4));
+    anchors.hand = [hand.x, hand.y, bucket, mid[2] - m.chest[2] > 0.08 ? 1 : 0, turn];
   }
   if (m.back) {
     const back = anchorOf(view(m.back), raster);
@@ -334,24 +356,33 @@ export const TOOL_LIFT = 1.5;
 export function bakeTool(id, d, bucket) {
   const ctx = frameContext(d, null);
   ctx.stamps = [];
-  buildTool(ctx, id, bucket, [0, TOOL_LIFT, 0]);
-  tiltFrame(ctx, VIEW_TILT, [0, TOOL_LIFT, 0]); // F5: gekippt wie die Figur, um den Griff
+  const grip = [0, TOOL_LIFT, 0];
+  const tipAt = buildTool(ctx, id, bucket, grip);
+  const view = tiltFrame(ctx, VIEW_TILT, grip); // F5: gekippt wie die Figur, um den Griff
   const lift = Math.round((TOOL_LIFT * 0.8) / TEXEL);
-  const raster = trace(ctx.shapes, { ...TOOL_CELL, py: TOOL_CELL.py + lift }, { cull: true });
+  const cell = TOOLS[id].cell || TOOL_CELL;
+  const raster = trace(ctx.shapes, { ...cell, py: cell.py + lift }, { cull: true });
   const out = paint(raster, TOOL_MATERIALS);
-  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py - lift, color: out.color, glow: out.glow, normal: uprightNormals(raster, ctx.shapes), shadow: null };
+  // F7: die Spitze (Angel, Spule) in Texeln vom Griff aus (x rechts, y oben) – dort hängt die Schnur
+  let anchors = null;
+  if (tipAt) {
+    const a = anchorOf(view(tipAt), raster);
+    const g = anchorOf(view(grip), raster);
+    anchors = { tip: [+(a.x - g.x).toFixed(2), +(a.y - g.y).toFixed(2)] };
+  }
+  return { w: raster.w, h: raster.h, px: raster.px, py: raster.py - lift, color: out.color, glow: out.glow, normal: uprightNormals(raster, ctx.shapes), shadow: null, anchors };
 }
 
 /** Bilder eines Werkzeugs der Reihe nach: je Richtung die Winkelstufen und der Rücken. */
-export function toolFrames() {
+export function toolFrames(id) {
   const list = [];
-  for (let d = 0; d < PEOPLE_DIRS; d++) for (let b = 0; b <= TOOL_BUCKETS; b++) list.push({ d, bucket: b });
+  for (let d = 0; d < PEOPLE_DIRS; d++) for (const b of toolBuckets(id)) list.push({ d, bucket: b });
   return list;
 }
 
 /**
  * Ein gebackenes Bild für den Atlas kodieren: das Bild, je Ausdruck sein Flicken, die Anker.
- * Werkzeuge haben weder Flicken noch Anker.
+ * Werkzeuge haben keine Flicken, als Anker höchstens ihre Spitze (F7).
  */
 export function encodeBake(f) {
   const body = encodeFrame(f);

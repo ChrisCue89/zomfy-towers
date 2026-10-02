@@ -278,6 +278,7 @@ export class Survivors {
       n.sit = 0;
       n.sitTarget = 0;
       n.seatY = null;
+      n.cards = false; // F7
       if (id === 'balduin') this.game.trader.enter('steht', 'steht');
       else this.placeAll(true);
     }

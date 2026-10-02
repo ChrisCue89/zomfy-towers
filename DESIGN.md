@@ -2157,6 +2157,13 @@ Zeit der Welt dafür.«
 - **N12 – die Ankunft in 2D:** Mika rudert, sitzt und geht schon im Intro als Sprite.
 - **F6f – sauber im Spiel:** kein Körnchen-Rauschen mehr auf den Menschen (Licht je Texel, kein
   Raster der Nachbearbeitung), nachts warme Gesichter statt grauer (Nr. 225).
+- **F7 – alle Posen als Sprites (Nr. 228):** Keine Voxel-Figur mehr zwischen den gezeichneten:
+  Mika und die Leute sitzen am Kartentisch mit einem Fächer Karten (das Gegenüber verrät sich mit
+  seinem Tick auch im Bild – Bert legt die Karten ab und reibt sich die Hände), angeln an der
+  Stegkante (von hinten nur der Rücken, die Rute schräg zur Seite, die Schnur hängt an ihrer Spitze),
+  schießen mit Rückstoß oder legen die Flinte an, pfeifen, wirbeln mit der Waffe herum und halten Pims
+  Drachen an der Spule; Pim und Lu schauen ihm nach. Voxel bleiben nur die Reifenschaukel und wer nach
+  der Lagerglocke am Boden liegt.
 
 #### G7 – Die Ankunft, glaubhaft ✓
 

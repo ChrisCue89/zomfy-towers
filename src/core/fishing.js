@@ -455,6 +455,7 @@ export class Fishing {
 
   /** Weltstelle der Angelspitze (für Wurf und Schnur). */
   rodTip(out = new THREE.Vector3()) {
+    if (this.game.people?.toolTip('mika', out)) return out; // F7: die Spitze im Bild des Sprites
     const tip = this.game.player.character.rodTip;
     if (!tip) return out.set(SPOT.mika.x, 1.2, SPOT.mika.z - 1.2);
     this.game.player.object.updateMatrixWorld(true);
@@ -464,6 +465,7 @@ export class Fishing {
   /** Spitze der Angel des Gegenübers (oder null). */
   friendTip(out = new THREE.Vector3()) {
     const s = this.session;
+    if (s?.friend && this.game.people?.toolTip(s.friend, out)) return out; // F7: im Sprite
     const n = s?.friend ? this.game.survivors.npcs.list.get(s.friend) : null;
     const tip = n?.model.parts.rodTip;
     if (!tip) return null;

@@ -5,6 +5,39 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## F7: Alle Posen als Sprites ✓
+
+**Offen seit F4:** Am Kartentisch, beim Angeln, Schießen, Pfeifen, im Wirbel und mit Pims Drachen
+erschien Mika (und erschienen die Leute) noch als Voxel-Figur zwischen den gezeichneten – genau das
+fiel dem Auftraggeber im Intro auf (»das intro ist die figur noch 3d!«).
+
+- **Mika:** neue Teile `waffe` (Pistole mit Rückstoß, Flinte im Anschlag, Pfiff, Wirbel – das Bild dreht
+  sich mit –, Drachen an der Spule), `laterneWaffe` und `sitz` (Kartentisch mit einem Fächer Karten,
+  Angeln an der Stegkante in vier Bildern: warten, ausholen, Wurf, Drill). Vorab im Hintergrund
+  gebacken, damit die Pose nie als Voxel aufblitzt.
+- **Die Leute:** `karten` (Karten in der Hand und der eigene Tick – Bert reibt sich die Hände, Juna
+  kichert hinter der Hand, Balduin tippt an die Mütze, Hilde summt, Yusuf rückt die Brille, Fiete
+  zieht an der Pfeife), `angeln` (wer mitkommt, sitzt mit der Angel daneben), `waffe` (Übungsplatz und
+  Lagerglocke: Anschlag, Schuss, Hieb, Daumen hoch; mit der Waffe in der Hand gehen alle),
+  Pim und Lu `drachen` (die Spule halten, dem Drachen nachschauen). Diese Teile backen erst, wenn sie
+  gebraucht werden.
+- **Wie:** Hände greifen über zwei Knochen nach einem Ziel am Kopf oder vor der Brust (`reachL`/
+  `reachR`), die Pose sagt, wie das Werkzeug liegt (`toolPhi`, `toolTurn`), an der Stegkante liegt die
+  Hüfte auf dem Fußpunkt und die Beine hängen in die Erde (`ledge`). Neue Werkzeugbilder: Angel und
+  Spule mit Spitze – die Angelschnur und die Drachenschnur laufen von dort (`people.toolTip`).
+- **Nachgebessert beim Ansehen:** Die Angel stand von hinten genau hinter dem Kopf (jetzt schräg zur
+  Seite); die Karten verschwanden rot auf Berts Karohemd (jetzt braun mit weißem Rand); am Tisch saß
+  Bert optisch auf der Platte (kleinerer Tiefenversatz am Tisch), dadurch rieb er sich die Hände unter
+  der Tischkante (Karten und Hände eine Handbreit höher).
+- **Voxel bleiben:** die Reifenschaukel (die Figur neigt sich mit) und wer nach der Lagerglocke am
+  Boden liegt (Nr. 228).
+- **Prüfung:** Abschnitt `menschen` – Mika in allen seltenen Posen als Sprite (die Schnur hängt an der
+  Spitze im Bild, der Wirbel dreht durch sechs Richtungen), Bert am Tisch mit Tick, Hilde angelt mit,
+  Juna schießt im Anschlag (Bilder menschen-karten, menschen-angeln). Ohne Browser:
+  `node tools/menschen-bogen.mjs` zeigt die neuen Posen mit ihrem Werkzeug.
+
+---
+
 ## B2: Das Moderherz zieht das Feuer auf sich ✓
 
 **Offen seit B1:** Das Herz erstarrte in der Frostnacht fast unberührt (97 % bzw. 99 % Leben), weil die

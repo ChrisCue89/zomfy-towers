@@ -2890,6 +2890,25 @@ sein soll. Die Frage ging am 01.10. an den Auftraggeber; ohne Antwort nach der A
 entschieden (die spaßigste Annahme) – ein Wert in `src/data/` und eine Zeile in `zombies.js`, leicht
 zurückzunehmen.
 
+### 228. Welche Posen werden Sprites, welche bleiben Voxel? (F7, zu Nr. 223)
+**Entscheidung:** Sprites werden alle Posen, in denen man die Figur länger ansieht oder die etwas
+erzählen: Mika am Kartentisch (mit Karten), an der Stegkante mit der Angel, mit Pistole und langer
+Waffe, beim Pfiff, im Wirbel und mit Pims Drachen; die Leute am Kartentisch (mit ihrem Tick), beim
+Angeln, mit der Waffe (Übungsplatz, Lagerglocke) und Pim und Lu mit dem Drachen. Voxel bleiben nur die
+Reifenschaukel (die Figur neigt sich mit dem Seil – ein Sprite kann nicht kippen) und wer nach der
+Lagerglocke am Boden liegt (selten, nur kurz).
+
+**Wie:** Hände treffen ihr Ziel über zwei Knochen (`reachL`/`reachR` um die Kopfmitte – Mütze,
+Brille, Mund, Pfeife, Karten vor der Brust); die Pose sagt, wie das Werkzeug liegt (`toolPhi`,
+`toolTurn`); an der Stegkante liegt die Hüfte des Bildes auf seinem Fußpunkt und die Beine hängen in
+die Erde des Bäckers (`ledge`) – von hinten sieht man so nur den Rücken, wie bei der Voxel-Figur über
+der Kante. Angel und Spule haben eine Spitze im Bild, dort hängt die Schnur. Die seltenen Teile der
+Leute backen erst, wenn sie gebraucht werden (bis dahin Voxel), Mikas Teile im Hintergrund vorab.
+
+**Warum:** Zwischen den gezeichneten Figuren fiel jede Voxel-Figur sofort auf (»das intro ist die
+figur noch 3d!«). Der Tick am Kartentisch ist Spielmechanik (Menschenkunde) – er muss im Bild der
+Figur zu sehen sein, nicht nur als Voxel-Ersatz.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

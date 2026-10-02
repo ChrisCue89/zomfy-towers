@@ -422,6 +422,8 @@ export class Kite {
   /** Wo die Schnur gerade die Spule verlässt (Pim oder Mika). */
   spoolAt(out) {
     const g = this.game;
+    // F7: Hält jemand die Spule als Sprite, läuft die Schnur von der Spule im Bild
+    if (g.people?.toolTip(this.holder === 'mika' ? 'mika' : 'pim', out)) return out;
     if (this.holder === 'mika') {
       const tip = g.player.character.spoolTip;
       if (tip) {

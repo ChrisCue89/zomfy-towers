@@ -86,6 +86,31 @@ function mikaHair(long) {
   };
 }
 
+/**
+ * F7: Karten am Tisch – weiß, der Rücken braun wie die Laub-Rückseite im Kartenspiel (cardArt) mit
+ * weißem Rand: so liest sich der Fächer auf jedem Hemd (rote Rücken verschwanden auf Berts Karohemd).
+ */
+export const CARD_MATERIALS = {
+  karte: { ramp: [R.s[6], R.s[7], R.s[8], R.s[9]], base: 2 },
+  kartenRuecken: { ramp: [R.e[1], R.e[2], R.e[3], R.e[4]], base: 2 },
+};
+
+/**
+ * F7: Karten in der Hand – ein Fächer aus drei Karten zwischen beiden Händen, leicht nach vorn
+ * gekippt (die Bildseite zur Figur, der rote Rücken nach außen). Macht die rechte Hand gerade ihren
+ * Tick (Menschenkunde), hält die linke die Karten allein. `arms` aus `humanoid`.
+ */
+export function cardFan(ctx, arms) {
+  const [l, r] = [arms[0].hand, arms[1].hand];
+  const both = Math.hypot(l[0] - r[0], l[1] - r[1], l[2] - r[2]) < 0.24;
+  // Etwas größer als echte Karten, sonst blieben im Bild nur zwei Texel
+  const c = add(both ? mul(add(l, r), 0.5) : add(l, [0.04, 0, 0]), [0, 0.07, 0.03]);
+  for (const [i, roll] of [[-1, 0.38], [0, 0], [1, -0.38]]) {
+    const at = add(c, [i * 0.038, 0.007 * (1 - Math.abs(i)), 0.005 * i]);
+    ctx.box(at, [0.042, 0.058, 0.005], 0.007, 'karte', { ax: ctx.AX(-0.35, roll), matAt: (q) => (q[2] > 0 && Math.abs(q[0]) < 0.03 && Math.abs(q[1]) < 0.045 ? 'kartenRuecken' : null) });
+  }
+}
+
 const mika = {
   size: 1,
   expressions: MIKA_EXPRESSIONS,
@@ -96,6 +121,11 @@ const mika = {
     laterne: { anims: ['stehen', 'gehen', 'rennen'], lantern: true },
     laterneAktion: { anims: ['schwung', 'treffer', 'suchen', 'wurf'], lantern: true },
     boot: { anims: ['rudern'] }, // N12: im Ruderboot (Ankunft, Inseln, Nebelfahrt)
+    // F7: was vorher die Voxel-Figur zeigte – schießen (Pistole, lange Waffe), pfeifen, Wirbel, Drachen
+    // halten, am Tisch und an der Stegkante sitzen
+    waffe: { anims: ['schiessen', 'anschlag', 'pfiff', 'wirbel', 'drachen'] },
+    laterneWaffe: { anims: ['schiessen', 'anschlag', 'pfiff', 'wirbel'], lantern: true },
+    sitz: { anims: ['karten', 'angeln'] },
   },
   /** Stoffe aus dem Aussehen (spec = lookSpec(MIKA_BASE, look)). */
   materials(s) {
@@ -128,6 +158,7 @@ const mika = {
       riemen: { ramp: [R.e[1], R.e[2], R.e[3], R.e[4]], base: 2, seam: true },
       gurt: { ramp: [R.e[3], R.e[4], R.e[5], R.e[6], R.e[7]], base: 2, seam: true },
       funk: { ramp: [R.s[0], R.s[1], R.s[2], R.s[3], R.s[5]], base: 2, seam: true, shine: true, gloss: 0.9 }, // G7: das Handfunkgerät
+      ...CARD_MATERIALS,
       ...LANTERN_MATERIALS,
     };
   },
@@ -300,8 +331,20 @@ const rampOf = (ramp, base, more = {}) => ({ ramp, base, seam: true, ...more });
  */
 const knit = (p) => (Math.floor((p[0] + p[2]) * 28 + 40) & 1 ? -1 : 0);
 
-/** Die Teile der Leute: stehen, gehen, winken, sitzen. */
-const FOLK_PARTS = { base: { anims: ['stehen', 'gehen', 'winken', 'sitzen'] } };
+/**
+ * Die Teile der Leute: stehen, gehen, winken, sitzen. F7: dazu die seltenen Posen – gebacken erst,
+ * wenn sie gebraucht werden (bis dahin Voxel): am Kartentisch mit den Karten und dem eigenen Tick
+ * (`tell`, Menschenkunde), an der Stegkante mit der Angel, mit einer Waffe auf dem Übungsplatz und
+ * nach der Lagerglocke.
+ */
+const FOLK_PARTS = {
+  base: { anims: ['stehen', 'gehen', 'winken', 'sitzen'] },
+  karten: { anims: ['karten', 'tick'] },
+  angeln: { anims: ['angeln'] },
+  waffe: { anims: ['schiessen', 'anschlag', 'schwung', 'daumen'] },
+};
+/** F7: Pim und Lu – dazu den Drachen halten und ihm nachschauen. */
+const KID_PARTS = { base: FOLK_PARTS.base, drachen: { anims: ['drachen', 'gucken'] } };
 const FOLK_EXPRESSIONS = ['normal', 'froh', 'blinzeln'];
 
 /**
@@ -351,6 +394,7 @@ const hilde = {
   size: 0.94,
   expressions: FOLK_EXPRESSIONS,
   parts: FOLK_PARTS,
+  tell: 'summen', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
     haar: rampOf([R.s[5], R.s[6], R.s[7], R.s[8], R.s[9]], 3),
@@ -429,6 +473,7 @@ const bert = {
   size: 1.04,
   expressions: FOLK_EXPRESSIONS,
   parts: FOLK_PARTS,
+  tell: 'reiben', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
     haar: cloth(P.e3, 2, 2),
@@ -500,6 +545,7 @@ const juna = {
   size: 0.92,
   expressions: FOLK_EXPRESSIONS,
   parts: FOLK_PARTS,
+  tell: 'kichern', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
     haar: rampOf([R.n[0], R.n[1], R.n[2], R.n[3], R.n[4]], 2),
@@ -577,6 +623,7 @@ const yusuf = {
   size: 1.0,
   expressions: FOLK_EXPRESSIONS,
   parts: FOLK_PARTS,
+  tell: 'brille', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h1, 1, 2, { shine: true, seam: false }),
     haar: rampOf([R.n[0], R.n[1], R.n[2], R.n[3]], 1, { pattern: (p) => (Math.floor((p[0] + p[2]) * 30) % 3 === 0 ? 1 : 0) }),
@@ -663,7 +710,9 @@ const balduin = {
   parts: {
     base: { anims: ['stehen', 'gehen', 'winken', 'sitzen'] },
     gesten: { anims: ['muetze', 'reiben', 'daumen', 'schulter', 'bart'] },
+    karten: FOLK_PARTS.karten, // F7: am Kartentisch auf dem Steg
   },
+  tell: 'muetze', // F7: sein Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
     nase: rampOf([R.r[2], R.r[3], R.r[4], R.d[6]], 2, { shine: true }),
@@ -1086,6 +1135,7 @@ const greta = {
 const fiete = {
   ...WANDER,
   size: 1.0,
+  tell: 'pfeife', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
     haar: rampOf([R.s[6], R.s[7], R.s[8], R.s[9]], 2),
@@ -1669,6 +1719,7 @@ const marthe = {
  */
 const pim = {
   ...WANDER,
+  parts: KID_PARTS,
   size: 1.0,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -1718,6 +1769,7 @@ const pim = {
  */
 const lu = {
   ...WANDER,
+  parts: KID_PARTS,
   size: 1.0,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -1817,6 +1869,10 @@ const TOOL_MATS = {
   strick: { ramp: [R.f[0], R.f[1], R.f[2], R.f[3], R.f[4]], base: 2, pattern: (p) => ((Math.floor(p[0] * 40) + Math.floor(p[1] * 40)) & 1 ? 0 : -1) },
   weiss: { ramp: [R.s[6], R.s[7], R.s[8], R.s[9]], base: 2 },
   holzHell: { ramp: [R.e[5], R.e[6], R.e[7], R.e[8], R.e[9]], base: 2, seam: true },
+  // F7: Angel und Drachenspule
+  kork: { ramp: [R.e[5], R.e[6], R.e[7], R.e[8]], base: 2, pattern: (p) => ((Math.floor(p[0] * 60) * 5 + Math.floor(p[1] * 60) * 3 + Math.floor(p[2] * 60)) % 4 === 0 ? -1 : 0) },
+  rute: { ramp: [R.n[1], R.n[2], R.n[3], R.n[4], R.n[5]], base: 3, seam: true, shine: true },
+  schnur: { ramp: [R.s[6], R.s[7], R.s[8], R.s[9]], base: 2, pattern: (p) => (Math.floor(p[1] * 80) & 1 ? -1 : 0) },
 };
 
 function toolKit(ctx, A, E, X) {
@@ -1941,6 +1997,42 @@ export const TOOLS = {
       k.cap(k.at(0.0, -0.11), k.at(0.2, -0.11), 0.022, 0.022, 'schwarz');
     },
   },
+  // F7: die Angel (M33) – Korkgriff mit Endkappe, darunter die Rolle mit heller Schnur, die lange
+  // dunkle Rute mit Ringen und roter Spitze. Nicht um den Stiel gedreht (`straight`), sonst hinge die
+  // Rolle schräg neben der Rute; nur die Winkelstufen, in denen sie gehalten wird, und eine größere
+  // Zelle (die Rute ragt weit hinaus). `tip`: dort hängt die Schnur (fishing.rodTip)
+  angel: {
+    length: 1.72,
+    straight: true,
+    buckets: [3, 4, 5, 6, 7, 8, 9, 10],
+    cell: { w: 168, h: 116, px: 84, py: 94 },
+    tip: [1.72, 0, 0],
+    build(ctx, k) {
+      k.cap(k.at(-0.1), k.at(-0.07), 0.022, null, 'stielDunkel');
+      k.cap(k.at(-0.07), k.at(0.2), 0.021, 0.018, 'kork');
+      k.cap(k.at(0.06, 0.0), k.at(0.06, 0.05), 0.009, null, 'eisen');
+      k.box(k.at(0.06, 0.075), [0.028, 0.024, 0.03], 0.012, 'eisen', { matAt: (l) => (Math.abs(l[0]) < 0.018 ? 'schnur' : null) });
+      k.cap(k.at(0.06, 0.075, 0.03), k.at(0.03, 0.09, 0.06), 0.007, null, 'stielDunkel');
+      k.cap(k.at(0.2), k.at(0.95), 0.017, 0.015, 'rute');
+      k.cap(k.at(0.95), k.at(1.64), 0.015, 0.014, 'rute');
+      for (const a of [0.55, 0.95, 1.32]) k.cap(k.at(a, 0.018), k.at(a, 0.034), 0.01, null, 'blank');
+      k.cap(k.at(1.64), k.at(1.72), 0.014, null, 'rot');
+    },
+  },
+  // F7: Pims Drachenspule (N9) – zwei Holzscheiben auf einer Achse quer vor der Brust, dazwischen
+  // die helle Schnur; die rechte Hand hält das eine Achsende, die linke das andere. `tip`: oben an
+  // der Schnur, dort läuft sie zum Drachen (kite.spoolAt)
+  spule: {
+    length: 0.2,
+    straight: true,
+    buckets: [2, 3, 4, 5, 6],
+    tip: [0.03, -0.065, -0.08],
+    build(ctx, k) {
+      k.cap(k.at(0.03, 0, 0.02), k.at(0.03, 0, -0.18), 0.011, null, 'stielDunkel');
+      for (const x of [-0.015, -0.145]) k.ell(k.at(0.03, 0, x), [0.012, 0.072, 0.072], 'stiel');
+      k.cap(k.at(0.03, 0, -0.03), k.at(0.03, 0, -0.13), 0.05, null, 'schnur');
+    },
+  },
   // Doppelflinte: zwei Läufe, kurzer Holzschaft
   doppelflinte: {
     length: 0.8,
@@ -1959,7 +2051,7 @@ export const TOOLS = {
  */
 export const TOOL_BUCKETS = 16;
 export const BACK_BUCKET = 16;
-export function toolFrame(bucket, length) {
+export function toolFrame(bucket, length, straight = false) {
   let A;
   let E;
   let X;
@@ -1975,6 +2067,7 @@ export function toolFrame(bucket, length) {
     E = [0, -Math.sin(phi), -Math.cos(phi)];
     X = [1, 0, 0];
   }
+  if (straight) return { A, E, X, origin };
   // Um 45° um den Stiel gedreht: Blatt und Kopf zeigen sich von vorn wie von der Seite (sonst
   // sähe man eine Axt von vorn nur als Strich)
   const E45 = norm(add(E, X));
@@ -1988,14 +2081,24 @@ export function bucketOf(dirFig) {
   return ((Math.round((phi / (Math.PI * 2)) * TOOL_BUCKETS) % TOOL_BUCKETS) + TOOL_BUCKETS) % TOOL_BUCKETS;
 }
 
-/** Werkzeug bauen: Formen im Rahmen der Winkelstufe, um den Griff. */
+/**
+ * Werkzeug bauen: Formen im Rahmen der Winkelstufe, um den Griff. Gibt die Spitze (`tip`, F7) in
+ * der Welt des Bildes zurück, falls das Werkzeug eine hat.
+ */
 export function buildTool(ctx, id, bucket, lift = [0, 0, 0]) {
   const tool = TOOLS[id];
-  const { A, E, X, origin } = toolFrame(bucket, tool.length);
+  const { A, E, X, origin } = toolFrame(bucket, tool.length, tool.straight && bucket !== BACK_BUCKET);
   const k = toolKit(ctx, A, E, X);
   const at0 = k.at;
   k.at = (a, e = 0, x = 0) => add(add(at0(a, e, x), origin), lift);
   tool.build(ctx, k);
+  return tool.tip ? ctx.W(k.at(...tool.tip)) : null;
+}
+
+/** F7: Die Winkelstufen, in denen ein Werkzeug gebacken wird (Angel und Spule nur, wie man sie hält). */
+export function toolBuckets(id) {
+  const list = TOOLS[id]?.buckets;
+  return list || [...Array(TOOL_BUCKETS + 1).keys()];
 }
 
 export const TOOL_MATERIALS = TOOL_MATS;

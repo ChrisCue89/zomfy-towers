@@ -168,6 +168,16 @@ export const PERSON_ANIMS = {
   winken: 2,
   sitzen: 2,
   rudern: 4,
+  // F7: was vorher die Voxel-Figur zeigte
+  karten: 2,
+  angeln: 4,
+  schiessen: 2,
+  anschlag: 2,
+  pfiff: 1,
+  wirbel: 1,
+  drachen: 2,
+  tick: 2,
+  gucken: 2,
   muetze: 1,
   reiben: 2,
   daumen: 1,
@@ -180,6 +190,9 @@ function basePose() {
   return { legL: 0, legR: 0, kneeL: 0.05, kneeR: 0.05, armL: 0.06, armR: 0.06, elbow: 0.16, bob: 0, lean: 0, head: 0, nod: 0, sink: 0, spread: 0.09, roll: 0, extra: 0 };
 }
 
+/** F7: Beine im Sitzen (wie »sitzen«): die Oberschenkel nach vorn, die Füße hängen. */
+const SIT_LEGS = { legL: 1.5, legR: 1.42, kneeL: 1.42, kneeR: 1.32 };
+
 /** Linker Arm mit der Laterne (N1 der Voxel-Figur): Oberarm leicht vor, Unterarm waagerecht. */
 const LANTERN_ARM = { armL: 0.55, elbowL: 0.95, spreadL: 0.02 };
 
@@ -187,7 +200,7 @@ const LANTERN_ARM = { armL: 0.55, elbowL: 0.95, spreadL: 0.02 };
  * Pose je Zustand und Bild. `k` Bild im Zustand, `n` Bilder im Zustand; `lantern` hält links die
  * Laterne (wo der Zustand den linken Arm nicht selbst braucht).
  */
-export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {}) {
+export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell = null } = {}) {
   const p = basePose();
   const ph = (n > 1 ? k / n : 0) * Math.PI * 2;
   const s = Math.sin(ph);
@@ -296,6 +309,55 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {})
     // ein Zug je Umlauf – vorgebeugt ausgreifen, zurückgelehnt durchziehen
     const q = Math.sin((k / n) * Math.PI * 2);
     Object.assign(p, { legL: 1.42, legR: 1.36, kneeL: 1.25, kneeR: 1.2, armL: 1.2 - 0.45 * q, armR: 1.2 - 0.45 * q, elbow: 0.65 + 0.35 * q, spread: 0.22, lean: 0.08 - 0.12 * q, nod: 0.04 - 0.05 * q });
+  } else if (anim === 'karten') {
+    // F7: am Kartentisch – sitzen, beide Hände mit dem Fächer vor der Brust (Ziele um die Kopfmitte,
+    // `reachL`/`reachR`), der Blick in die Karten
+    // (über der Tischkante: die Platte liegt eine Handbreit höher als der Schoß)
+    Object.assign(p, SIT_LEGS, { reachL: [-0.07, -0.3, 0.25], reachR: [0.07, -0.3 + 0.012 * k, 0.25], nod: 0.1, bob: -0.003 * k });
+  } else if (anim === 'tick') {
+    // F7: der eigene Tick am Kartentisch (`tell`, Menschenkunde): sitzen, links die Karten, rechts die
+    // Geste wie bei der Voxel-Figur (npcs.poseGesture) – so verrät sich das Gegenüber auch in 2D
+    const w = k ? 1 : -1;
+    Object.assign(p, SIT_LEGS, { reachL: [-0.09, -0.3, 0.25], reachR: [0.07, -0.3, 0.25], nod: 0.08 });
+    if (tell === 'reiben') Object.assign(p, { reachL: [-0.035 + 0.03 * w, -0.34, 0.22], reachR: [0.035 + 0.03 * w, -0.35 + 0.015 * w, 0.22], nod: 0.06 });
+    else if (tell === 'kichern') Object.assign(p, { reachR: [0.04, -0.12, 0.29], head: 0.12, nod: 0.04, bob: k ? 0.014 : 0 });
+    else if (tell === 'muetze') Object.assign(p, { reachR: [0.09, 0.15 + 0.04 * k, 0.27 - 0.02 * k], nod: 0.06 + 0.1 * k });
+    else if (tell === 'summen') Object.assign(p, { reachR: [0.07, -0.3, 0.25], head: 0.17 * w, nod: 0.04 });
+    else if (tell === 'brille') Object.assign(p, { reachR: [0.1, 0.02, 0.28], nod: 0.14 });
+    else if (tell === 'pfeife') Object.assign(p, { reachR: [0.16, -0.15 - 0.02 * k, 0.36], nod: -0.04 - 0.06 * k });
+  } else if (anim === 'gucken') {
+    // F7: dem Drachen nachschauen – der Kopf im Nacken, die Arme locker
+    Object.assign(p, { nod: -0.34, lean: -0.05, spread: 0.18, armL: 0.08, armR: 0.1 - 0.04 * k, bob: -0.005 * k });
+  } else if (anim === 'angeln') {
+    // F7: an der Stegkante – die Beine hängen über den Rand (`ledge`: die Hüfte liegt auf dem
+    // Fußpunkt, die Beine in der Erde des Bäckers), rechts neben dem Bauch die Rute (eigenes Bild,
+    // `toolPhi` ist ihre Richtung: 0 hängt, π/2 vorn, π oben), links die Hand an der Kurbel. Bilder:
+    // warten, ausholen (über die Schulter), Wurf (nach vorn), Drill (steil, zurückgelehnt)
+    const legs = { legL: 1.45, legR: 1.38, kneeL: 1.55, kneeR: 1.45, ledge: true };
+    // Die Rute steht schräg zur rechten Seite (`toolTurn`), sonst verschwände sie von hinten hinter dem Kopf
+    const arm = [
+      { reachR: [0.24, -0.5, 0.2], reachL: [0.12, -0.53, 0.29], toolPhi: 2.2, lean: 0.02 },
+      { reachR: [0.26, 0.04, 0.0], reachL: [0.1, -0.42, 0.24], toolPhi: 2.95, lean: -0.08, nod: -0.06 },
+      { reachR: [0.22, -0.3, 0.36], reachL: [0.06, -0.44, 0.3], toolPhi: 1.85, lean: 0.1, nod: 0.06 },
+      { reachR: [0.24, -0.4, 0.24], reachL: [0.12, -0.47, 0.32], toolPhi: 2.65, lean: -0.1, nod: -0.04 },
+    ][k];
+    Object.assign(p, legs, arm, { toolTurn: 1 });
+  } else if (anim === 'schiessen') {
+    // F7: Pistole – der rechte Arm gestreckt nach vorn, beim Schuss ruckt er hoch (Rückstoß)
+    Object.assign(p, { armR: 1.52 + 0.22 * k, elbowR: 0.02, spreadR: -0.06, armL: 0.2, elbowL: 0.3, toolPhi: Math.PI / 2 + 0.3 * k, lean: -0.04 * k, nod: 0.02 - 0.05 * k, legL: 0.12, legR: -0.08 });
+  } else if (anim === 'anschlag') {
+    // F7: lange Waffe – rechts am Griff vor der Schulter, links stützt die Hand den Vorderschaft
+    Object.assign(p, { armR: 1.18 + 0.12 * k, elbowR: 0.4, spreadR: -0.16, armL: 1.42 + 0.1 * k, elbowL: 0.12, spreadL: -0.36, toolPhi: Math.PI / 2 + 0.22 * k, lean: 0.04 - 0.08 * k, nod: 0.06, legL: 0.2, legR: -0.12, kneeL: 0.12 });
+  } else if (anim === 'pfiff') {
+    // F7: zwei Finger an den Mund, der Kopf ein wenig zurück
+    Object.assign(p, { reachR: [0.04, -0.11, 0.29], nod: -0.16 });
+  } else if (anim === 'wirbel') {
+    // F7: Wirbel – der Arm mit der Waffe weit hinaus, leicht vorgebeugt (die Figur dreht sich im Spiel)
+    Object.assign(p, { armR: 1.4, elbowR: 0.02, spreadR: 0.75, armL: 0.5, spreadL: 0.3, toolPhi: Math.PI / 2, toolTurn: 1, lean: 0.12, kneeL: 0.18, kneeR: 0.18 });
+  } else if (anim === 'drachen') {
+    // F7: Pims Drachen – beide Hände an der Spule vor der Brust, der Blick geht hinauf; beim Zupfen
+    // ruckt die Spule zur Brust
+    Object.assign(p, { reachL: [-0.08, -0.33 + 0.03 * k, 0.3 - 0.06 * k], reachR: [0.08, -0.33 + 0.03 * k, 0.3 - 0.06 * k], toolPhi: Math.PI / 2, nod: -0.3, lean: -0.04 - 0.08 * k, legL: 0.1, legR: -0.06 });
   } else if (anim === 'muetze') {
     Object.assign(p, { armR: 2.85, elbowR: 0.45, spreadR: -0.42, nod: 0.12 });
   } else if (anim === 'reiben') {
@@ -309,7 +371,7 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen' } = {})
     Object.assign(p, { armR: 2.1, elbowR: 1.25, spreadR: -0.55, nod: -0.1, head: 0.05 });
   }
   // Mit der Laterne: der linke Arm hält sie vor der Brust (nicht beim Blitz, der hebt sie selbst)
-  if (lantern && anim !== 'blitz' && anim !== 'jubel' && anim !== 'winken') {
+  if (lantern && anim !== 'blitz' && anim !== 'jubel' && anim !== 'winken' && anim !== 'drachen') {
     Object.assign(p, LANTERN_ARM);
     if (anim === 'gehen' || anim === 'rennen') p.armL += 0.06 * s;
   }

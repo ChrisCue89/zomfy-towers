@@ -173,6 +173,22 @@ export const BODY = {
   mats: { thigh: 'hose', shin: 'hose', shoe: 'schuh', upper: 'hemd', fore: 'haut', hand: 'haut', neck: 'haut', head: 'haut' },
 };
 
+/**
+ * F7: Zwei Knochen (Länge a, b) von der Schulter `sh` zum Ziel: Ellbogen und Handgelenk. Der
+ * Ellbogen hängt nach unten und ein wenig nach außen (`side`); was zu weit ist, wird gestreckt.
+ */
+export function reachArm(sh, target, a, b, side) {
+  const to = sub(target, sh);
+  const u = norm(to);
+  const d = Math.min(Math.max(Math.hypot(to[0], to[1], to[2]), Math.abs(a - b) + 1e-3), a + b - 1e-3);
+  const cosA = (a * a + d * d - b * b) / (2 * a * d);
+  const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+  const pole = [side * 0.5, -1, -0.2];
+  let v = sub(pole, mul(u, dot(pole, u)));
+  v = Math.hypot(v[0], v[1], v[2]) > 1e-4 ? norm(v) : [side, 0, 0];
+  return { elbow: add(sh, add(mul(u, a * cosA), mul(v, a * sinA))), wrist: add(sh, mul(u, d)) };
+}
+
 /** So hoch steht die Hüfte, wenn der tiefere Fuß gerade den Boden berührt. */
 export function hipHeight(B, pose) {
   let h = 0;
@@ -189,7 +205,9 @@ export function hipHeight(B, pose) {
 export function humanoid(ctx, B, skip = {}) {
   const { pose, W } = ctx;
   const stoop = B.stoop + pose.lean;
-  const hip = [0, hipHeight(B, pose) + pose.bob - pose.sink, 0];
+  // F7: Auf einer Kante sitzend (`ledge`) liegt die Hüfte auf dem Fußpunkt – die Beine hängen
+  // darunter in die Erde und sind nicht zu sehen (wie über die Stegkante)
+  const hip = [0, (pose.ledge ? 0 : hipHeight(B, pose)) + pose.bob - pose.sink, 0];
   const M = B.mats;
   const legs = [];
   for (const [i, side, swing, knee] of [[0, -B.gap, pose.legL, pose.kneeL], [1, B.gap, pose.legR, pose.kneeR]]) {
@@ -211,15 +229,32 @@ export function humanoid(ctx, B, skip = {}) {
     B.torso.forEach((t, k) => ctx.push({ kind: 'ellipsoid', c: W(spine(t.d, t.x || 0, t.y || 0, t.z || 0)), rr: t.rr, ax: t.roll ? ctx.AX(stoop, roll + t.roll) : tilt, mat: t.mat, blend: t.blend ?? 0.06, part: t.part, matAt: t.matAt, torso: k, ...(t.bump ? { bump: t.bump } : {}) }));
   }
   const arms = [];
-  for (const [i, side, swing] of [[0, -1, pose.armL], [1, 1, pose.armR]]) {
+  // F7: Ziel der Hand (`reachL`/`reachR`, Figurkoordinaten um die Kopfmitte) – an Mütze, Brille,
+  // Mund, Pfeife oder vor der Brust; der Arm folgt über zwei Knochen, der Ellbogen hängt nach außen
+  const headRef = add(spine(B.neckD), B.headOffset);
+  for (const [i, side, swing0] of [[0, -1, pose.armL], [1, 1, pose.armR]]) {
     const sh = add(spine(B.shoulderD), [side * B.shoulderW, 0, 0]);
     const out = (i === 0 ? pose.spreadL : pose.spreadR) ?? pose.spread;
-    const elbow = add(sh, [side * (0.03 + out * B.upper), -Math.cos(swing) * B.upper * (1 - 0.4 * out), Math.sin(swing) * B.upper * (1 - 0.4 * out)]);
-    const fore = swing + ((i === 0 ? pose.elbowL : pose.elbowR) ?? pose.elbow);
-    const wrist = add(elbow, [side * (0.01 + 0.5 * out * B.fore), -Math.cos(fore) * B.fore, Math.sin(fore) * B.fore]);
+    const reach = i === 0 ? pose.reachL : pose.reachR;
+    let swing = swing0;
+    let elbow;
+    let wrist;
+    let fore;
+    if (reach) {
+      ({ elbow, wrist } = reachArm(sh, add(headRef, reach), B.upper, B.fore + 0.04, side));
+      const up = norm(sub(elbow, sh));
+      const down = norm(sub(wrist, elbow));
+      swing = Math.atan2(up[2], -up[1]);
+      fore = Math.atan2(down[2], -down[1]);
+      wrist = sub(wrist, mul(down, 0.04)); // das Ziel ist die Mitte der Hand
+    } else {
+      elbow = add(sh, [side * (0.03 + out * B.upper), -Math.cos(swing) * B.upper * (1 - 0.4 * out), Math.sin(swing) * B.upper * (1 - 0.4 * out)]);
+      fore = swing + ((i === 0 ? pose.elbowL : pose.elbowR) ?? pose.elbow);
+      wrist = add(elbow, [side * (0.01 + 0.5 * out * B.fore), -Math.cos(fore) * B.fore, Math.sin(fore) * B.fore]);
+    }
     // Die Hand setzt den Unterarm fort und hängt schlaff herab, solange der Arm nach vorn zeigt
-    const limp = B.limp * Math.max(0, Math.sin(fore));
-    const hand = add(wrist, [0, -Math.cos(fore) * 0.04 - 0.06 * limp, Math.sin(fore) * 0.04]);
+    const limp = reach ? 0 : B.limp * Math.max(0, Math.sin(fore));
+    const hand = reach ? add(wrist, mul(norm(sub(wrist, elbow)), 0.04)) : add(wrist, [0, -Math.cos(fore) * 0.04 - 0.06 * limp, Math.sin(fore) * 0.04]);
     arms.push({ side, shoulder: sh, elbow, wrist, hand, swing, fore, handPitch: Math.PI - fore + limp });
     if (skip.arms) continue;
     ctx.capsule(sh, elbow, B.armR[0], B.armR[1], M.upper, { blend: 0.03, part: `upper${i}` });
@@ -257,7 +292,9 @@ export function humanoid(ctx, B, skip = {}) {
     ctx.capsule(add(neck, [0, -0.03, 0]), add(headC, turn ? turn(chin) : chin), B.neckR, null, M.neck, { blend: 0.03, part: 'neck' });
     ctx.push({ kind: 'box', c: W(headC), h: B.head.h, r: B.head.r, taper: B.head.taper, ax: headAx, mat: M.head, blend: 0.03, matAt: B.head.matAt, part: 'head', ...(B.head.bump ? { bump: B.head.bump } : {}) });
   }
-  return { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll, head: B.head };
+  const out = { hip, legs, spine, tilt, stoop, arms, neck, headC, H, headAx, headAxes, pitch, roll: headRoll, head: B.head };
+  ctx.skeleton = out; // F7: die Gelenke für Anker und Dinge in der Hand (Karten)
+  return out;
 }
 
 /**

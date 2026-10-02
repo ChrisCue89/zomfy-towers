@@ -98,6 +98,8 @@ export class CardNight {
     g.world.cardLook = spot.look; // die Kamera fährt an den Tisch (lookSpot »karten«)
     g.world.showCardTable(spot, id, !c.stakes.includes(CARD_PLAYERS[id].stake) ? CARD_PLAYERS[id].stake : null);
     g.survivors.seatAt(id, spot.opp);
+    const opp = g.survivors.npcs.list.get(id);
+    if (opp) opp.cards = true; // F7: am Tisch mit den Karten in der Hand (Sprite »karten«)
     g.player.seat(spot.mika);
     g.applyView(g.world.isInside(spot.mika.x, spot.mika.z)); // nah heran (160 px/m)
     g.sound.play('karten-mischen');

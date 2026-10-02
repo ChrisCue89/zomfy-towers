@@ -4558,7 +4558,8 @@ export class Game {
       /**
        * F4: Stand der Menschen-Sprites (Fassungen, Atlas, was Mika und die Leute zeigen); `bake`
        * backt sofort hier alles, was schon angefordert ist (oder `{ mika: true }`: alle Teile Mikas
-       * im aktuellen Aussehen, `{ tools: [...] }` Werkzeuge, `{ people: [...] }` Figuren).
+       * im aktuellen Aussehen, `{ tools: [...] }` Werkzeuge, `{ people: [...] }` Figuren, mit
+       * `parts: [...]` nur diese Teile – F7).
        */
       people(bake = null) {
         const pv = game.people;
@@ -4569,7 +4570,7 @@ export class Game {
             for (const part of Object.keys(pv.constructor.parts('mika'))) list.push(pv.person('mika', spec, specKey, part, -1));
           }
           for (const id of bake.tools || []) list.push(pv.tool(id, -1));
-          for (const id of bake.people || []) for (const part of Object.keys(pv.constructor.parts(id))) list.push(pv.person(id, pv.constructor.specOf(id), 'fest', part, -1));
+          for (const id of bake.people || []) for (const part of Object.keys(pv.constructor.parts(id))) if (!bake.parts || bake.parts.includes(part)) list.push(pv.person(id, pv.constructor.specOf(id), 'fest', part, -1));
           if (bake === true) list.push(...[...pv.variants.values()].filter((v) => !v.ready));
           pv.bakeNow(list);
         }

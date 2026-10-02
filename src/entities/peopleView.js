@@ -2,13 +2,14 @@
 // Atlas legen und je Bild für Mika und die Leute das passende Bild zeigen – samt Gesicht (Flicken je
 // Ausdruck) und Werkzeug (eigenes Bild vor oder hinter der Figur). Die Voxel-Figuren laufen weiter
 // unsichtbar mit: Ihre Animation liefert Zustand, Laternenlicht und Anker; gezeigt wird das Sprite.
-// Was (noch) keine Fassung hat oder eine seltene Pose zeigt (Rudern, Angeln, Kartentisch, Schaukel,
-// Schießen …), bleibt Voxel.
+// Seit F7 auch am Kartentisch, beim Angeln, Schießen, Pfeifen, im Wirbel und mit dem Drachen; Voxel
+// bleibt, was (noch) keine Fassung hat, die Schaukel und wer nach der Lagerglocke am Boden liegt.
 
 import * as THREE from 'three';
 import { SpriteAtlas } from '../render/spriteAtlas.js';
 import { createSpriteMaterial, createSpriteSilhouetteMaterial } from '../render/spriteMaterial.js';
 import { bakePerson, bakeTool, encodeBake, partFrames, toolFrames, animsOf, PEOPLE_DIRS } from './peopleSprites.js';
+import { TEXEL } from '../render/spriteBaker.js';
 import { PEOPLE, MIKA_BASE, TOOLS } from './peopleKinds.js';
 import { darkerColor } from './peopleFigure.js';
 import { lookSpec } from '../data/looks.js';
@@ -16,6 +17,7 @@ import { lookSpec } from '../data/looks.js';
 const MAX_MIKA = 6;
 const MAX_OTHERS = 96;
 const DEPTH_BIAS = 0.3; // wie bei der Horde: der vordere Fuß versinkt nicht im Boden
+const TABLE_BIAS = 0.05; // F7: am Kartentisch – die Tischplatte davor verdeckt den Schoß wie bei den Voxeln
 const FACE_BIAS = 0.012; // das Gesicht liegt eine Spur vor dem Bild
 const TOOL_BIAS = 0.06; // das Werkzeug vor oder hinter der Figur
 const SECTOR = Math.PI / 4;
@@ -25,6 +27,8 @@ const IN_FLIGHT = 2;
 const SIT_HIP = 0.23; // Hüfthöhe der Pose »sitzen« (peopleFigure.posePerson)
 /** Seltene Gesten, die nur Balduin als Bild hat (die übrigen bleiben Voxel). */
 const GESTURES = new Set(['muetze', 'reiben', 'daumen', 'schulter', 'bart', 'winken']);
+/** F7: Lange Waffen liegen im Anschlag an der Schulter, die übrigen schießen mit gestrecktem Arm. */
+const LONG_GUNS = new Set(['jagdgewehr', 'doppelflinte']);
 
 function wrapAngle(a) {
   return Math.atan2(Math.sin(a), Math.cos(a));
@@ -38,9 +42,9 @@ const PEOPLE_NORMAL = 0.4;
  */
 const PEOPLE_NIGHT = { self: 0.5, neutral: 0.8, ramp: 1 };
 /** G7: In welcher Reihenfolge Mikas Teile gebacken werden, solange sie nicht im Bild sind (0 ist jetzt). */
-const MIKA_PRIO = { laterne: 0.5, base: 0.55 };
+const MIKA_PRIO = { laterne: 0.5, base: 0.55, waffe: 1.2, sitz: 1.3, laterneWaffe: 1.4 };
 /** Ersatz, solange ein Teil noch fehlt: mit Laterne → ohne. */
-const FALLBACK = { laterne: 'base', laterneAktion: 'aktion' };
+const FALLBACK = { laterne: 'base', laterneAktion: 'aktion', laterneWaffe: 'waffe' };
 
 export class PeopleSprites {
   /** @param {THREE.Scene} scene */
@@ -122,7 +126,7 @@ export class PeopleSprites {
 
   /** Ein Werkzeug in allen Richtungen und Winkelstufen. */
   tool(id, prio) {
-    return this.request(`werkzeug|${id}`, () => ({ family: 'tool', id, frames: toolFrames() }), prio);
+    return this.request(`werkzeug|${id}`, () => ({ family: 'tool', id, frames: toolFrames(id) }), prio);
   }
 
   bestVariant() {
@@ -321,13 +325,40 @@ export class PeopleSprites {
       if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
       return { part: 'boot', anim: 'rudern', k: Math.round(q * n) % n, expr, tool: null, seatY: p.seated.seatY ?? 0.28 };
     }
-    if (p.seated || p.fishingPose || p.kitePose || p.riding !== null || p.spinAngle) return null;
-    if (a && (a.kind === 'shoot' || a.kind === 'pfiff' || a.kind === 'wirbel')) return null;
+    if (p.riding !== null) return null; // auf der Schaukel neigt sich die Figur – das bleibt Voxel
+    let expr = p.faceShown || 'normal';
+    if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
+    // F7: an der Stegkante angeln – die Hüfte auf der Kante, die Beine hängen darunter (`ledge`)
+    const fp = p.fishingPose;
+    if (fp) {
+      let k = 0;
+      if (fp.phase === 'laden') k = (fp.power || 0) > 0.4 ? 1 : 0;
+      else if (fp.phase === 'wurf') k = (fp.t || 0) < 0.25 ? 2 : 0;
+      else if (fp.phase === 'biss' || fp.phase === 'drill' || fp.phase === 'fang') k = 3;
+      return { part: 'sitz', anim: 'angeln', k, expr, tool: { id: 'angel', hand: true }, seatY: p.seated?.seatY ?? 0, ledge: true };
+    }
+    // F7: Pims Drachen halten – beim Zupfen ruckt die Spule zur Brust
+    if (p.kitePose) return { part: 'waffe', anim: 'drachen', k: (p.kitePose.pull || 0) > 0.3 ? 1 : 0, expr, tool: { id: 'spule', hand: true } };
+    // F7: am Kartentisch (die übrigen Sitze tragen keine Karten: nur das Boot hat `rowing`)
+    if (p.seated) return { part: 'sitz', anim: 'karten', k: Math.floor(p.time * 0.7) % 2, expr, tool: null, seatY: p.seated.seatY ?? 0.28, bias: TABLE_BIAS };
     const anims = animsOf('mika');
     let lantern = p.holdingLantern;
     let anim = 'stehen';
     let k = Math.floor(p.time * 1.3) % 2;
-    if (a?.kind === 'roll') {
+    let spin = null;
+    if (a?.kind === 'shoot') {
+      // F7: Schuss – im ersten Augenblick ruckt der Arm hoch (Rückstoß, wie bei der Voxel-Figur)
+      anim = a.long || LONG_GUNS.has(a.tool) ? 'anschlag' : 'schiessen';
+      k = a.t < 0.09 ? 1 : 0;
+    } else if (a?.kind === 'pfiff') {
+      anim = 'pfiff';
+      k = 0;
+    } else if (a?.kind === 'wirbel') {
+      // F7: einmal ganz herum – die Richtung des Bildes folgt der Drehung
+      anim = 'wirbel';
+      k = 0;
+      spin = p.facing + (p.spinAngle || 0);
+    } else if (a?.kind === 'roll') {
       const q = a.t / a.duration;
       anim = 'rolle';
       k = q < 0.3 ? 0 : q < 0.72 ? 1 : 2;
@@ -366,12 +397,10 @@ export class PeopleSprites {
     for (const [name, spec] of Object.entries(parts)) if (spec.anims.includes(anim) && Boolean(spec.lantern) === Boolean(lantern)) part = name;
     if (!part) for (const [name, spec] of Object.entries(parts)) if (spec.anims.includes(anim) && !spec.lantern) part = name;
     if (!part) return null;
-    let expr = p.faceShown || 'normal';
-    if (p.character.parts.eyelids?.visible) expr = 'blinzeln';
     const toolId = p.shownTool && TOOLS[p.shownTool] ? p.shownTool : null;
     const backId = !toolId && p.backTool && TOOLS[p.backTool] ? p.backTool : null;
     const tool = toolId ? { id: toolId, hand: true } : backId ? { id: backId, hand: false } : null;
-    return { part, anim, k, expr, tool };
+    return { part, anim, k, expr, tool, spin };
   }
 
   /** Gangbild aus der Phase (ein Schritt je Bein = einmal um den Kreis). */
@@ -390,16 +419,44 @@ export class PeopleSprites {
       if (n.sit > 0.5) return { part: 'base', anim: 'sitzen', k: Math.floor(time * 5) % 2, expr: 'normal' };
       return { part: 'base', anim: 'stehen', k: Math.floor(time * (n.target ? 4 : 6)) % 2, expr: 'normal' };
     }
-    if (n.lying || n.practice || n.fishing || n.kite || n.skyward) return null;
+    if (n.lying) return null; // nach der Lagerglocke am Boden: bleibt Voxel
     const p = n.model.parts;
-    if (p.held && Object.values(p.held).some((m) => m.visible)) return null;
+    // F7: was die Figur in der rechten Hand hält (Angel, Spule, Waffe) – als eigenes Bild
+    const heldId = p.held ? Object.keys(p.held).find((key) => p.held[key].visible) : null;
+    if (heldId && !TOOLS[heldId]) return null;
+    const tool = heldId ? { id: heldId, hand: true } : null;
+    const anims = animsOf(n.id);
     let anim = 'stehen';
     let k = Math.floor(time * 1.1 + n.x) % 2;
     const g = n.gestures[0];
-    if (g) {
+    if (n.fishing) {
+      // F7: an der Stegkante mit der Angel (wartet still)
+      anim = 'angeln';
+      k = 0;
+    } else if (n.kite) {
+      anim = 'drachen';
+      k = (n.kite.pull || 0) > 0.3 ? 1 : 0;
+    } else if (n.practice) {
+      // F7: Übungsplatz und Lagerglocke – im Anschlag (Rückstoß beim Schuss) oder ein Hieb
+      const q = n.practice.t;
+      if (n.practice.kind === 'schuss') {
+        anim = LONG_GUNS.has(heldId) ? 'anschlag' : 'schiessen';
+        k = q < 0.1 ? 1 : 0;
+      } else {
+        anim = 'schwung';
+        k = q < 0.12 ? 0 : q < 0.2 ? 1 : q < 0.3 ? 2 : 3;
+      }
+    } else if (n.cards && n.sit > 0.5) {
+      // F7: am Kartentisch die Karten in der Hand; der eigene Tick verrät das Blatt (Menschenkunde)
+      anim = g && g.kind === PEOPLE[n.id].tell ? 'tick' : 'karten';
+      k = anim === 'tick' ? Math.floor(g.t * 6) % 2 : Math.floor(time * 0.7 + n.x) % 2;
+    } else if (n.skyward) {
+      anim = 'gucken';
+      k = Math.floor(time * 1.1 + n.x) % 2;
+    } else if (g) {
       if (!GESTURES.has(g.kind)) return null;
       anim = g.kind;
-      k = Math.floor(g.t * 6) % (animsOf(n.id)[anim] || 1);
+      k = Math.floor(g.t * 6) % (anims[anim] || 1);
     } else if (n.wave > 0) {
       anim = 'winken';
       k = Math.floor(n.wave * 7) % 2;
@@ -408,14 +465,21 @@ export class PeopleSprites {
       k = Math.floor(time * 0.9 + n.x) % 2;
     } else if (n.moving > 0.15) {
       anim = 'gehen';
-      k = this.walkFrame(n.phase, animsOf(n.id).gehen);
+      k = this.walkFrame(n.phase, anims.gehen);
     }
     const part = Object.entries(kind.parts).find(([, s]) => s.anims.includes(anim))?.[0];
     if (!part) return null;
     const happy = n.wave > 0 || n.near || n.gestures.length > 0;
     let expr = happy && kind.expressions?.includes('froh') ? 'froh' : 'normal';
     if (p.eyelids?.visible && kind.expressions?.includes('blinzeln')) expr = 'blinzeln';
-    return { part, anim, k, expr };
+    return { part, anim, k, expr, tool, ledge: anim === 'angeln', bias: anim === 'karten' || anim === 'tick' ? TABLE_BIAS : undefined };
+  }
+
+  /** F7: Richtung sofort setzen (Wirbel) – die Hysterese merkt sie sich für danach. */
+  turnTo(obj, facing) {
+    const dir = ((Math.round(facing / SECTOR) % 8) + 8) % 8;
+    this.dirs.set(obj, { dir, hold: 0 });
+    return dir;
   }
 
   /** Richtung 0–7 mit Hysterese (wie die Horde): erst 10° über der Grenze und nach 0,12 s. */
@@ -460,13 +524,13 @@ export class PeopleSprites {
   }
 
   /** Werkzeug an seinem Anker: Griff auf die Hand (bzw. Mitte auf den Rücken). */
-  putTool(L, t, anchor, x, y, z) {
+  putTool(L, t, anchor, x, y, z, bias = DEPTH_BIAS) {
     if (!t || !t.w || L.n >= L.max) return;
     const i = L.n++;
     this._m.makeTranslation(x, y, z);
     L.mesh.setMatrixAt(i, this._m);
     L.aRect.setXYZW(i, t.x, t.y, t.w, t.h);
-    L.aPivot.setXYZW(i, t.px - Math.round(anchor[0]), t.py - Math.round(anchor[1]), 1, DEPTH_BIAS + (anchor[3] ? TOOL_BIAS : -TOOL_BIAS));
+    L.aPivot.setXYZW(i, t.px - Math.round(anchor[0]), t.py - Math.round(anchor[1]), 1, bias + (anchor[3] ? TOOL_BIAS : -TOOL_BIAS));
     L.aTint.setXYZW(i, 1, 1, 1, 0);
     L.aInfo.setXY(i, t.page, 0);
     L.shown[i] = t;
@@ -491,14 +555,29 @@ export class PeopleSprites {
     if (st.tool) {
       const tv = this.tool(st.tool.id, prio);
       const anchor = st.tool.hand ? entry.anchors?.hand : entry.anchors?.back;
-      if (tv.ready && anchor) tool = { frame: tv.table.get(`${dir}:${anchor[2]}`)?.body, anchor };
+      // F7: `anchor[4]` dreht das Werkzeug um Achtel zur rechten Seite (Wirbel, Angel)
+      const te = tv.ready && anchor ? tv.table.get(`${(dir + (anchor[4] || 0)) & 7}:${anchor[2]}`) : null;
+      if (te) tool = { frame: te.body, anchor, tip: te.anchors?.tip || null };
     }
-    if (tool && !tool.anchor[3]) this.putTool(L, tool.frame, tool.anchor, x, y, z);
-    this.put(L, entry.body, x, y, z, DEPTH_BIAS);
+    // Wo eine Angel oder Spule gerade endet (Weltpunkt in der Bildebene): dort hängt die Schnur
+    const tip = tool?.tip ? [x + (tool.anchor[0] + tool.tip[0]) * TEXEL, y + Math.max(0, tool.anchor[1] + tool.tip[1]) * (TEXEL / 0.8), z] : null;
+    const bias = st.bias ?? DEPTH_BIAS;
+    if (tool && !tool.anchor[3]) this.putTool(L, tool.frame, tool.anchor, x, y, z, bias);
+    this.put(L, entry.body, x, y, z, bias);
     const patch = st.expr && st.expr !== PEOPLE[id].expressions?.[0] ? entry.patches[st.expr] : null;
-    if (patch) this.put(L, patch, x, y, z, DEPTH_BIAS + FACE_BIAS);
-    if (tool && tool.anchor[3]) this.putTool(L, tool.frame, tool.anchor, x, y, z);
-    return { key: entry.body.key, expr: patch ? st.expr : PEOPLE[id].expressions?.[0] || null, tool: tool ? `${st.tool.id}:${st.tool.hand ? 'hand' : 'ruecken'}:${tool.anchor[2]}:${tool.anchor[3] ? 'vorn' : 'hinten'}` : null };
+    if (patch) this.put(L, patch, x, y, z, bias + FACE_BIAS);
+    if (tool && tool.anchor[3]) this.putTool(L, tool.frame, tool.anchor, x, y, z, bias);
+    return { key: entry.body.key, expr: patch ? st.expr : PEOPLE[id].expressions?.[0] || null, tool: tool ? `${st.tool.id}:${st.tool.hand ? 'hand' : 'ruecken'}:${tool.anchor[2]}:${tool.anchor[3] ? 'vorn' : 'hinten'}` : null, tip };
+  }
+
+  /**
+   * F7: Die Spitze der Angel bzw. der Spule im Bild einer Figur (`'mika'` oder die ID der Leute) –
+   * oder null, solange sie als Voxel gezeigt wird (dann gilt die Spitze der Voxel-Figur).
+   */
+  toolTip(who, out) {
+    const shown = who === 'mika' ? this.lastMika : this.lastPeople[who];
+    if (!shown?.tip) return null;
+    return out.set(shown.tip[0], shown.tip[1], shown.tip[2]);
   }
 
   /**
@@ -515,12 +594,14 @@ export class PeopleSprites {
       let shown = null;
       if (on) {
         const st = this.poseOfPlayer(player);
-        const dir = this.direction(player, player.facing, dt);
+        // F7: im Wirbel folgt das Bild der Drehung ohne Verzögerung
+        const dir = st?.spin != null ? this.turnTo(player, st.spin) : this.direction(player, player.facing, dt);
         const { spec, specKey } = this.mikaSpec(look);
         if (st) {
           const pos = player.position;
-          // Im Boot steht das Bild auf dem Bootsboden: die Hüfte sitzt auf der Bank (wie die Voxel-Figur)
-          const y = st.seatY !== undefined ? pos.y + Math.max(0, st.seatY - SIT_HIP) : pos.y;
+          // Im Boot steht das Bild auf dem Bootsboden: die Hüfte sitzt auf der Bank (wie die Voxel-Figur);
+          // an der Stegkante liegt die Hüfte des Bildes auf seinem Fußpunkt (F7, `ledge`)
+          const y = st.ledge ? pos.y + st.seatY : st.seatY !== undefined ? pos.y + Math.max(0, st.seatY - SIT_HIP) : pos.y;
           shown = this.drawFigure(this.layers.mika, 'mika', spec, specKey, st, dir, pos.x, y, pos.z, 0);
         }
         // Alle Teile vorbereiten, auch solange Mika noch Voxel ist (N12: die Ankunft beginnt im Boot –
@@ -546,7 +627,8 @@ export class PeopleSprites {
             // Sprite auf dem Boden, höchstens so weit gehoben, wie der Sitz höher als seine Hüfte ist
             const seated = !n.dog && n.seatY !== null && n.seatY !== undefined;
             const ground = root.position.y - (seated ? (n.seatY - n.model.hip) * n.sit : 0);
-            const y = ground + (seated ? Math.max(0, (n.seatY - SIT_HIP) * n.sit) : 0);
+            // F7: an der Stegkante liegt die Hüfte des Bildes auf seinem Fußpunkt
+            const y = ground + (seated ? (st.ledge ? n.seatY * n.sit : Math.max(0, (n.seatY - SIT_HIP) * n.sit)) : 0);
             shown = this.drawFigure(this.layers.leute, n.id, PEOPLE[n.id].spec || {}, 'fest', st, dir, n.x, y, n.z, 0);
             if (shown) this.lastPeople[n.id] = { ...st, dir, ...shown };
           }
