@@ -537,7 +537,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Looping, N9),
                       knots (Knoten der Geschichte: wer, wann, welcher Dialog,
                       G2; Stufen der Waldrand-Gedanken, G3), chores (das Tagwerk:
-                      Arbeiten mit Takt, wer was wo tut, Zeiten, A1),
+                      Arbeiten mit Takt, wer was wo tut, Zeiten, A1; mit
+                      anpacken: Dauer, Ertrag je Person, Angebot, A2),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -1047,7 +1048,13 @@ Grundprinzipien:
     es und Späne fliegen. Kommt Mika näher als `CHORE.near`, hält die Figur inne (`paused`, wer steht,
     schaut auf, Knopf wacht auf); beim ersten Mal am Tag sagt sie ein Wort (`say`, `T.alltag`,
     Sprechblase – nicht, solange schon eine über ihr steht).
-  - Nichts davon wird gespeichert. In Prüfung und Playtest-Brücke aus (`CONFIG.chores`, `?alltag`).
+  - Nichts davon wird gespeichert. In Prüfung und Playtest-Brücke aus (`CONFIG.chores`, `?alltag`;
+    `CHORES_ON` sagt es auch den Gesprächen).
+  - **Mit anpacken (A2):** `choreOffered(state, id)` (data/chores.js, rein aus dem Zustand) bietet im
+    Gespräch »Ich pack mit an.« an (`guestAnswers`, `resident` in dialogs.js); `survivors.onAnswer` →
+    `chores.help(id)`: nur wenn die Person gerade arbeitet, `startWork` mit der Karte `T.anpacken.karte`,
+    in der Abblende `HELP_GIFTS` (Vorrat, `xp`, `heal`) und `bonds.add(id, 'anpacken')`, danach Dank
+    als Sprechblase. Einmal am Tag je Person über `flags.anpacken_<id>` (= Tag).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1565,7 +1572,9 @@ Grundprinzipien:
    2D als Sprites; kommt Mika heran, halten Bert (schaut auf, sagt ein Wort – am selben Tag nicht
    noch einmal) und Hilde (bleibt sitzen) inne und arbeiten danach weiter; mittags schläft Knopf am
    Feuer und wacht auf, wenn Mika kommt; abends stehen alle auf, Bert legt die Axt weg; im Regen
-   strickt niemand draußen (Bilder: alltag, alltag-nah).
+   strickt niemand draußen (Bilder: alltag, alltag-nah); ab A2 (Abschnitt `alltag`): E bei Bert mit echten
+   Tasten, »Ich pack mit an.«, Abblende, +6 Holz, gemeinsame Zeit und Dank, am selben Tag kein
+   zweites Angebot.
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1747,8 +1756,8 @@ hält, Randmarke), Abendgruß, Eisgesang, Plane und Mikas Gedanken; ab N10 zeigt
 was kalt ist, die Streichhölzer, Licht, Flammen, Modelle, das Wachsen, Zähler, Ziel, Zielpfeil
 und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft; ab A1 zeigt
 `chores()` je Bewohner Arbeit, Abschnitt (gehen, setzen, arbeiten, aufstehen), Stelle, Bild und ob er
-sitzt, dazu die Arbeitsgeräusche und was die Sprites zeigen, `setChores(an)` schaltet das Tagwerk
-(in der Prüfung sonst aus).
+sitzt, dazu die Arbeitsgeräusche, die Sätze des Tages, die letzte Hilfe (A2) und was die Sprites
+zeigen, `setChores(an)` schaltet das Tagwerk (in der Prüfung sonst aus).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

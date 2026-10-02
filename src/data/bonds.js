@@ -26,6 +26,7 @@ export const BOND_KINDS = {
   nacht: { first: 1, again: 0.5, daily: true },
   angeln: { first: 3, again: 1, daily: true },
   ueben: { first: 2, again: 1, daily: true }, // M30: am Übungsplatz, Mika war dabei
+  anpacken: { first: 2, again: 1, daily: true }, // A2: Mika hat bei der Arbeit mit angepackt
 };
 
 /** Wer eine Bindung haben kann: die Stammfiguren und alle Wanderer (Knopf ist ein Hund, aber auch ein Freund). */

@@ -2931,6 +2931,18 @@ das Tagwerk aus (die älteren Abschnitte erwarten die Leute an ihren Tagesplätz
 wie Kulissen; wer arbeitet, erzählt ohne ein Wort, wer er ist – und dass er bleiben will. Innehalten,
 wenn Mika kommt, macht aus Mika den Mittelpunkt, ohne dass ein Dialog das Spiel anhält.
 
+### 230. Kann Mika bei der Arbeit helfen? (A2, zu Nr. 229)
+**Entscheidung:** Ja – als Antwort im Gespräch (»Ich pack mit an.«), solange die Person arbeitet und
+danach noch eine Stunde Arbeitszeit bleibt. Mika hilft eine Dreiviertelstunde (Abblende wie beim
+Werkeln, die Uhr läuft weiter), danach gemeinsame Zeit (neue Art `anpacken`, zählt wie Üben), ein Dank
+und bei vielen etwas für den Vorrat, je Person passend (`HELP_GIFTS`). Einmal am Tag je Person. Keine
+eigene Pose für Mika: Die Hilfe geschieht in der Abblende, ihr Bild ist der Satz auf der Karte.
+
+**Warum:** Die Gegenseite ist die Zeit – eine Dreiviertelstunde fehlt dann beim Sammeln und Bauen
+(Leitlinie »jede Wahl hat eine Gegenseite«). Der Ertrag bleibt klein, damit Helfen ein Freundschafts-
+und kein Rohstoffweg wird; die gemeinsame Zeit führt wie Karten, Angeln und Üben zu den Momenten der
+Bindung (M29).
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

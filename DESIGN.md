@@ -2185,6 +2185,13 @@ liest:
   Übungsplatz; im Regen bleiben Wolle, Buch, Papier und Stoff drinnen. Abends stehen alle auf und
   gehen an ihre Plätze – das Fest, die Szenen am Feuer und der Kartenabend gehen vor.
 
+#### A2 – Mit anpacken ✓ (Nr. 230)
+
+Wer arbeitet, freut sich über Hilfe: Im Gespräch bietet die Figur »Ich pack mit an.« an. Mika hilft
+eine Dreiviertelstunde, danach gibt es gemeinsame Zeit (Bindung), einen Dank und oft etwas für den
+Vorrat – Holz bei Bert, ein Zahnrad bei Clara, ein Stück Kürbisbrot bei Rosa. Einmal am Tag je Person;
+die Tageszeit ist der Preis.
+
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.

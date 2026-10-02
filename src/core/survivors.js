@@ -552,6 +552,10 @@ export class Survivors {
 
   onAnswer(id, aktion) {
     const g = this.game;
+    if (aktion === 'anpacken') {
+      g.chores.help(id); // A2: Mika packt bei der Arbeit mit an
+      return;
+    }
     // M33: Angeln – Fiete bringt es bei, abends kommt jemand mit an den Steg
     if (aktion === 'angelnLernen') {
       g.startDialog('fieteAngeln', () => {

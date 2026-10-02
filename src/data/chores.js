@@ -76,3 +76,39 @@ export const CHORES = {
   mara: { act: 'spaehen', facing: -H },
   paula: { act: 'naehen', facing: 0 },
 };
+
+/**
+ * A2: Mit anpacken – Mika hilft eine Weile bei der Arbeit (Abblende, die Uhr läuft `hours` weiter).
+ * Angeboten wird es im Gespräch, solange danach noch gearbeitet wird (`minLeft` Stunden), einmal am
+ * Tag je Person.
+ */
+export const HELP = { hours: 0.75, minLeft: 1 };
+
+/**
+ * Was dabei herauskommt, je Person: Vorrat, `xp` (Erfahrung) oder `heal` (Leben). Ohne Eintrag nur
+ * die gemeinsame Zeit (BOND_KINDS.anpacken) und ein Dank.
+ */
+export const HELP_GIFTS = {
+  hilde: { stoff: 1 }, // ein Stück Gestricktes
+  yusuf: { xp: 15 }, // er erklärt, wo die Schlurfer empfindlich sind
+  bert: { holz: 6 },
+  hannes: { holz: 2 }, // Reste vom Zaun
+  clara: { zahnraeder: 1 },
+  fiete: { fasern: 3 },
+  rosa: { heal: 40 }, // ein Stück Kürbisbrot
+  emil: { fasern: 2 },
+  frieda: { schrott: 3 },
+  paula: { stoff: 1 },
+};
+
+/** Ist das Tagwerk an? (core/chores.js stellt es; in der Prüfung aus, siehe CONFIG.chores) */
+export const CHORES_ON = { on: true };
+
+/** Wird »Ich pack mit an.« angeboten? (aus dem Zustand – für die Gespräche in dialogs.js) */
+export function choreOffered(state, id) {
+  const def = CHORES[id];
+  if (!CHORES_ON.on || !def || state.survivors?.[id]?.stage !== 3) return false;
+  const h = (6 + (state.time?.minute || 0) / 60) % 24;
+  if (h < (def.from ?? CHORE.from) || h > (def.until ?? CHORE.until) - HELP.minLeft) return false;
+  return state.flags?.[`anpacken_${id}`] !== state.time.day;
+}

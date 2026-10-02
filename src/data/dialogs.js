@@ -15,6 +15,7 @@ import { fishingOffered } from './fishing.js';
 import { stepsLeft } from './arms.js';
 import { REPAIR } from './isles.js';
 import { bellRings } from './fogIsle.js';
+import { choreOffered } from './chores.js';
 
 // M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
 const UEBEN_ORDER = ['hilde', 'juna', 'bert', 'yusuf', ...Object.keys(WANDERERS)];
@@ -72,6 +73,7 @@ function guestAnswers(state, id, extra = []) {
   if (state.survivors?.[id]?.stage === 2 && freeTent(state)) answers.push({ t: 'Das Zelt dort ist für dich.', aktion: 'einziehen' });
   if (cardsOffered(state, id)) answers.push({ t: T.karten.einladen, aktion: 'karten' }); // M28: abends eine Runde
   if (fishingOffered(state, id)) answers.push({ t: T.angeln.einladen, aktion: 'angeln' }); // M33: oder zum Steg
+  if (choreOffered(state, id)) answers.push({ t: T.anpacken.frage, aktion: 'anpacken' }); // A2: bei der Arbeit helfen
   if (!answers.length) return undefined;
   answers.push({ t: 'Bis später.', standard: true });
   return answers;
@@ -135,6 +137,7 @@ function resident(state, id, lines) {
   const answers = [];
   if (id === 'fiete' && !state.fishing?.rod) answers.push({ t: T.angeln.lernen, aktion: 'angelnLernen' });
   if (fishingOffered(state, id)) answers.push({ t: T.angeln.einladen, aktion: 'angeln' });
+  if (choreOffered(state, id)) answers.push({ t: T.anpacken.frage, aktion: 'anpacken' }); // A2: bei der Arbeit helfen
   if (answers.length) answers.push({ t: 'Bis später.', standard: true });
   const line = state.survivors?.[id]?.stage === 2 ? { s: id, t: T.wanderer.wartenZeile } : { s: id, t: pick(lines, (state.time?.day || 1) + id.length) };
   return [answers.length ? { ...line, antworten: answers } : line];

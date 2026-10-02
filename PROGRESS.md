@@ -5,6 +5,24 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## A2: Mit anpacken ✓
+
+**Weiter nach A1:** Die Bewohner arbeiten jetzt – Mika kann mitmachen.
+
+- **Im Gespräch:** Wer gerade arbeitet (acht bis fünf, damit noch Zeit bleibt), bietet »Ich pack mit
+  an.« an (`choreOffered`, rein aus dem Zustand). Mika hilft eine Dreiviertelstunde (Abblende wie beim
+  Werkeln: »Bert stellt auf, Mika spaltet …«), danach gibt es gemeinsame Zeit (`anpacken` in der
+  Bindung) und einen Dank als Sprechblase. Einmal am Tag je Person (`flags.anpacken_<id>` = Tag –
+  Flaggen nehmen Zahlen, kein neuer Spielstand nötig).
+- **Was dabei herauskommt** (`HELP_GIFTS`): bei Bert 6 Holz, bei Hannes Reste vom Zaun, bei Clara ein
+  Zahnrad, bei Fiete und Emil Fasern, bei Hilde und Paula Stoff, bei Frieda Schrott, bei Yusuf
+  Erfahrung (er erklärt, wo es denen da draußen wehtut), bei Rosa ein Stück Kürbisbrot (Leben). Bei
+  den anderen ist die gemeinsame Zeit der Lohn.
+- **Prüfung:** Abschnitt `alltag` – mit echten Tasten E bei Bert, »Ich pack mit an.«, Abblende, +6
+  Holz, gemeinsame Zeit, Dank, am selben Tag kein zweites Angebot.
+
+---
+
 ## A1: Die Bucht lebt ✓
 
 **Selbst gewählt nach F7:** Tagsüber standen die Bewohner still an ihren Plätzen – die Bucht wirkte

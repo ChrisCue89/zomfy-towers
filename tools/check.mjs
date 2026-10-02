@@ -13164,7 +13164,62 @@ async function runChoreChecks(browser, url) {
   if (mittag.schlaf?.chore?.anim === 'schlafen' && mittag.drawn?.anim === 'schlafen' && mittag.wach && !mittag.wach.chore && mittag.wieder?.chore?.anim === 'schlafen') note(`✓ Alltag (A1): mittags schläft Knopf am Feuer (Sprite »schlafen«), kommt Mika, wacht er auf, danach schläft er weiter`);
   else fail(`Alltag: Knopf ${JSON.stringify(mittag)}`);
 
-  // 5) Abends stehen sie auf und gehen an ihre Plätze; Bert legt die Axt weg
+  // 5) A2: Mit anpacken – E bei Bert (echte Taste), »Ich pack mit an.« wählen, Abblende (die Uhr
+  //    läuft eine Dreiviertelstunde), danach Holz im Vorrat, gemeinsame Zeit und ein Dank; am selben
+  //    Tag bietet Bert es nicht noch einmal an
+  const tap = async (key) => {
+    await page.keyboard.press(key);
+    await step(100);
+  };
+  const answer = async (pick) => {
+    for (let k = 0; k < 12; k++) {
+      const d = await z(() => window.zomfy.dialogInfo());
+      if (!d.open) return false;
+      if (d.answers.length) {
+        for (let w = 0; w < 30 && !(await z(() => window.zomfy.game.dialog.complete)); w++) await step(200);
+        await step(400);
+        const c = await z(() => window.zomfy.dialogInfo());
+        const i = c.answers.findIndex((a) => a.aktion === pick);
+        if (i < 0) return false;
+        for (let q = 0; q < Math.abs(i - c.choice); q++) await tap(i > c.choice ? 'KeyS' : 'KeyW');
+        await tap('KeyE');
+        return true;
+      }
+      await tap('KeyE');
+    }
+    return false;
+  };
+  const vorher = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const bert = g.survivors.npcs.list.get('bert');
+    Z.teleport(bert.x - 0.6, bert.z + 0.8, 2.5);
+    return { holz: g.state.inventory.holz || 0, minute: g.state.time.minute, bond: g.state.bonds?.bert?.kinds?.anpacken || 0 };
+  });
+  await step(500);
+  await tap('KeyE');
+  await step(150);
+  const angebot = await z(() => window.zomfy.dialogInfo());
+  const gewaehlt = await answer('anpacken');
+  const abblende = await z(() => window.zomfy.game.mode);
+  for (let i = 0; i < 60 && (await z(() => window.zomfy.game.mode)) !== 'play'; i++) await step(250);
+  const geholfen = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const bert = g.survivors.npcs.list.get('bert');
+    return { mode: g.mode, holz: g.state.inventory.holz || 0, minute: g.state.time.minute, bond: g.state.bonds?.bert?.kinds?.anpacken || 0, dank: g.hud.bubbles.find((q) => q.n === bert)?.text || null, flag: g.state.flags.anpacken_bert, tag: g.state.time.day, toasts: (g.hud.shown || []).map((t) => t.text) };
+  });
+  await step(3500);
+  await tap('KeyE');
+  await step(150);
+  const zweites = await z(() => window.zomfy.dialogInfo());
+  for (let k = 0; k < 10 && (await z(() => window.zomfy.dialogInfo().open)); k++) await tap('KeyE');
+  const nochOffen = await z(() => window.zomfy.dialogInfo().open);
+  const angeboten = angebot.answers.some((a) => a.aktion === 'anpacken');
+  if (gewaehlt && abblende === 'sleep' && geholfen.mode === 'play' && geholfen.holz - vorher.holz === 6 && geholfen.minute - vorher.minute >= 44 && geholfen.bond === vorher.bond + 1 && /Holz/.test(geholfen.dank || '') && geholfen.flag === geholfen.tag && !zweites.answers.some((a) => a.aktion === 'anpacken') && !nochOffen && angeboten) note(`✓ Alltag (A2): E bei Bert, »Ich pack mit an.« (echte Tasten) – Abblende, die Uhr läuft ${Math.round(geholfen.minute - vorher.minute)} Minuten, danach +6 Holz, gemeinsame Zeit und »${geholfen.dank}«; am selben Tag kein zweites Angebot`);
+  else fail(`Alltag: mit anpacken ${JSON.stringify({ vorher, angebot, gewaehlt, abblende, geholfen, zweites, nochOffen })}`);
+
+  // 6) Abends stehen sie auf und gehen an ihre Plätze; Bert legt die Axt weg
   const abend = await z(() => {
     const Z = window.zomfy;
     const g = Z.game;
@@ -13177,7 +13232,7 @@ async function runChoreChecks(browser, url) {
   if (!Object.keys(abend.runs).length && !abend.hilde.sit && abend.hilde.seatY === null && !abend.hilde.chore && Math.hypot(abend.hilde.x + 2.25, abend.hilde.z - 5.0) < 1 && !abend.axe) note(`✓ Alltag (A1): abends stehen alle auf und gehen an ihre Plätze (Hilde von der Bank zu ${abend.hilde.x}/${abend.hilde.z}), Bert legt die Axt weg`);
   else fail(`Alltag: Feierabend ${JSON.stringify(abend)}`);
 
-  // 6) Im Regen strickt niemand draußen (Hilde steht an ihrem Platz), Bert hackt weiter
+  // 7) Im Regen strickt niemand draußen (Hilde steht an ihrem Platz), Bert hackt weiter
   const regen = await z(() => {
     const Z = window.zomfy;
     Z.setWeather('regen', true);

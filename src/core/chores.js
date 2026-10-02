@@ -4,7 +4,8 @@
 // `n.chore` ({ act, anim, k, still }): peopleView wählt danach das Bild, npcs.poseHuman die
 // Voxel-Haltung. Nichts davon wird gespeichert – es folgt allein aus Uhrzeit und Bewohnern.
 
-import { CHORE, CHORES, ACTS } from '../data/chores.js';
+import { CHORE, CHORES, ACTS, HELP, HELP_GIFTS, CHORES_ON } from '../data/chores.js';
+import { gain } from './inventory.js';
 import { T } from '../data/texts.js';
 import { personOf } from './survivors.js';
 import { hoursOf } from './state.js';
@@ -20,6 +21,15 @@ export class Chores {
     this.hits = 0; // Prüfung: wie oft ein Arbeitsgeräusch erklang
     this.spoke = new Set(); // wer heute schon ein Wort bei der Arbeit gesagt hat
     this.spokeDay = -1;
+  }
+
+  /** An oder aus – die Gespräche fragen es über CHORES_ON (»Ich pack mit an.«). */
+  get enabled() {
+    return CHORES_ON.on;
+  }
+
+  set enabled(on) {
+    CHORES_ON.on = Boolean(on);
   }
 
   /** Arbeitsplatz von `id` jetzt – oder null (keine Arbeit, falsche Zeit, Nacht, verletzt, Regen). */
@@ -242,6 +252,41 @@ export class Chores {
     g.hud.bubble(n, lines[(day + id.length) % lines.length].replace('{name}', name), 2.8);
   }
 
+  /**
+   * A2: Mit anpacken (Antwort im Gespräch). Arbeitet die Person gerade, hilft Mika eine Weile:
+   * Abblende wie beim Werkeln, die Uhr läuft `HELP.hours` weiter; danach gemeinsame Zeit, was
+   * dabei herauskommt (HELP_GIFTS), und ein Dank als Sprechblase. Einmal am Tag je Person.
+   */
+  help(id) {
+    const g = this.game;
+    const n = g.survivors.npcs.list.get(id);
+    if (this.runs.get(id)?.phase !== 'arbeiten' || !n) {
+      g.hud.toast(T.anpacken.nicht, null, 2.6);
+      return false;
+    }
+    const act = CHORES[id].act;
+    const gift = HELP_GIFTS[id] || null;
+    g.state.flags[`anpacken_${id}`] = g.state.time.day;
+    this.lastHelp = { id, act, gift, day: g.state.time.day, done: false };
+    g.startWork(T.anpacken.karte[act](personOf(id).name), HELP.hours, () => {
+      const goods = {};
+      for (const [k, v] of Object.entries(gift || {})) if (k !== 'xp' && k !== 'heal') goods[k] = v;
+      gain(g.state.inventory, goods);
+      if (gift?.xp) g.combat.gainXp(gift.xp);
+      if (gift?.heal) g.state.player.hp = Math.min(g.combat.maxHp, g.state.player.hp + gift.heal);
+      g.bonds?.add(id, 'anpacken');
+      this.lastHelp.done = true;
+    }, () => {
+      const parts = Object.entries(gift || {}).map(([k, v]) => (k === 'xp' ? T.anpacken.erfahrung(v) : k === 'heal' ? T.anpacken.satt : T.menge(v, k)));
+      if (parts.length) g.hud.toast(T.anpacken.ertrag(parts.join(', ')), null, 4);
+      const name = g.bonds?.callName(id) || 'Mika';
+      g.hud.bubble(n, T.anpacken.danke[id].replace('{name}', name), 3.4);
+      this.spoke.add(id); // das Wort bei der Arbeit ist damit gesagt
+      g.quietSave();
+    });
+    return true;
+  }
+
   /** Ein Arbeitsgeräusch (Axt, Hammer) – leise, und nur, wenn Mika es hören kann. */
   hit(n, act) {
     if (!act.sound) return;
@@ -258,7 +303,7 @@ export class Chores {
       const n = this.game.survivors.npcs.list.get(id);
       out[id] = { act: CHORES[id].act, phase: run.phase, x: n ? +n.x.toFixed(2) : null, z: n ? +n.z.toFixed(2) : null, chore: n?.chore ? { ...n.chore } : null, sitting: Boolean(n && n.sitTarget === 1 && n.seatY !== null && n.seatY !== undefined) };
     }
-    return { runs: out, hits: this.hits, spoke: [...this.spoke] };
+    return { runs: out, hits: this.hits, spoke: [...this.spoke], help: this.lastHelp || null };
   }
 }
 
