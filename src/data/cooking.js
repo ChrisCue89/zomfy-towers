@@ -5,8 +5,6 @@
 // vom Feuer. Das Essen wirkt bis zum nächsten Morgen. Ablauf in core/cooking.js, Bild in
 // ui/cookingView.js, Kessel und Gerichte in world/cookModels.js. Hier wird balanciert.
 
-import { festivalTonight } from './festival.js';
-
 /**
  * Der Abend (Minuten ab 06:00 wie Karten und Angeln) und das kleine Spiel: `cuts` Schnitte, das
  * Messer braucht `knife` Sekunden einmal übers Brett und zurück, die Schnittmarke ist `zone` breit
@@ -124,13 +122,10 @@ export function anyDish(state) {
   return DISH_ORDER.some((id) => !Object.keys(missingFor(state, id)).length);
 }
 
-/**
- * War heute Abend schon etwas (Karten, Angeln, Kochen) – oder ist heute das Kürbisfest (A6)? Ein
- * Abend, eine Aktivität (Nr. 171); Karten und Angeln fragen hier mit.
- */
+/** War heute Abend schon etwas (Karten, Angeln, Kochen)? Ein Abend, eine Aktivität (Nr. 171). */
 export function eveningTaken(state) {
   const day = state.time?.day;
-  return state.cards?.lastDay === day || state.fishing?.lastDay === day || state.cooking?.lastDay === day || festivalTonight(state);
+  return state.cards?.lastDay === day || state.fishing?.lastDay === day || state.cooking?.lastDay === day;
 }
 
 /**

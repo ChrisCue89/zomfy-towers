@@ -122,8 +122,6 @@ export class Book {
         return crowGiftCount(st); // A3: Gaben am Futterbrett
       case 'cooking':
         return dishesCooked(st); // A5: verschiedene Gerichte am Kessel
-      case 'festival':
-        return st.festival?.walked ? 1 : 0; // A6: mitgegangen beim Laternenumzug
       default:
         return 0;
     }

@@ -8,7 +8,7 @@ import { trace, paint, stampAt, toTexel, lightField, TEXEL } from '../render/spr
 import { encodeFrame, encodePatch } from '../render/spriteCode.js';
 import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './spriteFigure.js';
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
-import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, toolBuckets, bucketOf, facesOf, cardFan, CARD_MATERIALS, choreProps, PROP_MATERIALS, lampionShapes } from './peopleKinds.js';
+import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, toolBuckets, bucketOf, facesOf, cardFan, CARD_MATERIALS, choreProps, PROP_MATERIALS } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
 import { rings, ribs, strands, folds, locks, beardLocks } from './peopleRelief.js';
 
@@ -193,7 +193,7 @@ export function personShapes(id, spec, part, d, anim, k) {
   const kind = PEOPLE[id];
   const p = kind.parts[part];
   const n = animsOf(id)[anim];
-  const pose = kind.dog ? poseDog(anim, k, n) : posePerson(anim, k, n, { lantern: p.lantern === 'papier' ? 'papier' : Boolean(p.lantern), gait: kind.gait, tell: kind.tell });
+  const pose = kind.dog ? poseDog(anim, k, n) : posePerson(anim, k, n, { lantern: Boolean(p.lantern), gait: kind.gait, tell: kind.tell });
   const ctx = frameContext(d, pose);
   ctx.anim = anim;
   ctx.k = k;
@@ -207,7 +207,6 @@ export function personShapes(id, spec, part, d, anim, k) {
     // Waffen) – wer sie nicht selbst setzt, bekommt sie aus dem Gerüst
     if (anim === 'karten' || (anim === 'tick' && kind.tell !== 'reiben')) cardFan(ctx, sk.arms); // wer sich die Hände reibt, hat die Karten abgelegt
     choreProps(ctx, anim, k, sk.arms); // A1: Strickzeug, Buch, Netz … beim Tagwerk
-    if (p.lantern === 'papier') lampionShapes(ctx, sk.arms[0].hand, id); // A6: der Lampion beim Umzug
     const m = ctx.marks;
     if (!m.handR) {
       ctx.mark('handR', sk.arms[1].hand);

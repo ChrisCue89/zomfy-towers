@@ -166,7 +166,6 @@ export const PERSON_ANIMS = {
   jubel: 2,
   blitz: 2,
   winken: 2,
-  heben: 2, // A6: den Lampion hoch über den Kopf
   sitzen: 2,
   rudern: 4,
   // F7: was vorher die Voxel-Figur zeigte
@@ -219,12 +218,10 @@ const SIT_LEGS = { legL: 1.5, legR: 1.42, kneeL: 1.42, kneeR: 1.32 };
 
 /** Linker Arm mit der Laterne (N1 der Voxel-Figur): Oberarm leicht vor, Unterarm waagerecht. */
 const LANTERN_ARM = { armL: 0.55, elbowL: 0.95, spreadL: 0.02 };
-/** A6: Den Lampion am Stab hält die Hand höher, vor der Brust – der Stab steht nach oben. */
-const LAMPION_ARM = { armL: 0.8, elbowL: 1.0, spreadL: 0.06 };
 
 /**
  * Pose je Zustand und Bild. `k` Bild im Zustand, `n` Bilder im Zustand; `lantern` hält links die
- * Laterne (wo der Zustand den linken Arm nicht selbst braucht) – 'papier' den Lampion am Stab (A6).
+ * Laterne (wo der Zustand den linken Arm nicht selbst braucht).
  */
 export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell = null } = {}) {
   const p = basePose();
@@ -327,9 +324,6 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell =
     Object.assign(p, { armL: k ? 2.95 : 1.9, elbowL: k ? 0.05 : 0.5, spreadL: 0.1, nod: -0.16 - 0.06 * k, lean: -0.05 });
   } else if (anim === 'winken') {
     Object.assign(p, { armR: 2.6, elbowR: 0.25, spreadR: k ? 0.55 : -0.05, nod: -0.04, head: k ? 0.06 : -0.03 });
-  } else if (anim === 'heben') {
-    // A6: am Stegende den Lampion hoch über den Kopf – ein Gruß übers Wasser, der Blick folgt ihm
-    Object.assign(p, { armL: k ? 2.7 : 2.5, elbowL: k ? 0.2 : 0.35, spreadL: 0.12, nod: -0.1, head: k ? 0.04 : -0.02 });
   } else if (anim === 'sitzen') {
     // Auf einer Bank oder am Tisch: die Oberschenkel nach vorn, die Füße hängen, die Hände auf den Knien
     Object.assign(p, { legL: 1.5, legR: 1.42, kneeL: 1.42, kneeR: 1.32, armL: 0.95, armR: 0.95, elbow: 0.32, spread: 0.06, bob: -0.004 * k, nod: 0.03 * k });
@@ -455,8 +449,8 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell =
     Object.assign(p, { armR: 2.1, elbowR: 1.25, spreadR: -0.55, nod: -0.1, head: 0.05 });
   }
   // Mit der Laterne: der linke Arm hält sie vor der Brust (nicht beim Blitz, der hebt sie selbst)
-  if (lantern && anim !== 'blitz' && anim !== 'jubel' && anim !== 'winken' && anim !== 'drachen' && anim !== 'heben') {
-    Object.assign(p, lantern === 'papier' ? LAMPION_ARM : LANTERN_ARM);
+  if (lantern && anim !== 'blitz' && anim !== 'jubel' && anim !== 'winken' && anim !== 'drachen') {
+    Object.assign(p, LANTERN_ARM);
     if (anim === 'gehen' || anim === 'rennen') p.armL += 0.06 * s;
   }
   p.lantern = lantern || anim === 'blitz';

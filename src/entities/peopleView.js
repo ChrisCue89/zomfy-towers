@@ -125,15 +125,6 @@ export class PeopleSprites {
     return this.request(`${id}|${specKey}|${part}`, () => ({ family: 'person', id, spec, part, frames: partFrames(id, part) }), prio);
   }
 
-  /**
-   * A6: Einen Teil der Leute vorab backen lassen (im Hintergrund, nach allem, was im Bild steht) –
-   * etwa die Lampions am Festmorgen, damit am Abend niemand als Voxel-Figur im Umzug geht.
-   */
-  prepare(ids, part, prio = 3) {
-    if (!this.active) return;
-    for (const id of ids) if (PEOPLE[id]?.parts?.[part]) this.person(id, PEOPLE[id].spec || {}, 'fest', part, prio);
-  }
-
   /** Ein Werkzeug in allen Richtungen und Winkelstufen. */
   tool(id, prio) {
     return this.request(`werkzeug|${id}`, () => ({ family: 'tool', id, frames: toolFrames(id) }), prio);
@@ -490,13 +481,8 @@ export class PeopleSprites {
     } else if (n.moving > 0.15) {
       anim = 'gehen';
       k = this.walkFrame(n.phase, anims.gehen);
-    } else if (n.lampion?.raise > 0.5) {
-      anim = 'heben'; // A6: am Stegende den Lampion hoch
-      k = Math.floor(time * 1.4 + n.x) % 2;
     }
-    // A6: mit dem Lampion (Laternenumzug) der Teil mit dem Papierlicht, sonst nie
-    const lamp = n.lampion ? Object.entries(kind.parts).find(([, s]) => s.lantern === 'papier' && s.anims.includes(anim))?.[0] : null;
-    const part = lamp || Object.entries(kind.parts).find(([, s]) => s.lantern !== 'papier' && s.anims.includes(anim))?.[0];
+    const part = Object.entries(kind.parts).find(([, s]) => s.anims.includes(anim))?.[0];
     if (!part) return null;
     const happy = n.wave > 0 || n.near || n.gestures.length > 0;
     let expr = happy && kind.expressions?.includes('froh') ? 'froh' : 'normal';

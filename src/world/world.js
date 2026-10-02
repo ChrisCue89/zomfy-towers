@@ -38,8 +38,6 @@ import { Cranes } from '../entities/cranes.js';
 import { FLASH_TIME } from '../data/skills.js';
 import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
 import { buildTripodKettle, buildKettleFill, buildHearthPot, buildPotFill, TRIPOD, DISH_COLORS } from './cookModels.js';
-import { buildPumpkinBench, slotPos, BENCH } from './festModels.js';
-import { buildPumpkin, buildJackOLantern } from './decoModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
 import { buildCrumbs, buildBoardGift, buildCrowJar, buildSillCompass, buildLooseBoard } from './crowModels.js';
 import { STAKES } from '../data/cards.js';
@@ -80,7 +78,6 @@ export class World {
       pumpkinGlow: createGlowMaterial(0xffffff), // Gesichter der Kürbislaternen (M12)
       torchGlow: createGlowMaterial(0xffffff), // Fackeln an den Wegen (m12-r1)
       moderGlow: createGlowMaterial(0xffffff), // Kuppen der Moderpilze im Unterholz (M15)
-      lampionGlow: createGlowMaterial(0xffffff, { vertexColors: true }), // A6: Papier der Lampions (in seiner Farbe)
     };
     this.npcInteractions = []; // Überlebende (core/survivors.js)
     this.traderInteractions = []; // Balduin, der Händler (core/trader.js)
@@ -88,7 +85,6 @@ export class World {
     this.isleInteractions = []; // N6: Ruderboot und Fundstellen auf den Inseln (core/isles.js)
     this.fogInteractions = []; // N7: Nebelinsel, Marthe und die Kinder, Reuse (core/fogIsle.js)
     this.crowInteractions = []; // A3: die lose Diele vor dem Kamin (core/crowGifts.js)
-    this.festInteractions = []; // A6: die Kürbisbank zum Fest (core/festival.js)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed, this.map);
@@ -247,8 +243,6 @@ export class World {
     this.houseGlows = [windowGlow, candleGlow, fairyGlow, pumpkinGlow];
     // Fackeln: tagsüber aus (dunkler Kopf), nachts helles Feuer
     L.addGlow(this.materials.torchGlow, { dim: 0x2e1f17, bright: 0xffb347, boost: 1.6, mode: 'lamp', twinkle: true });
-    // A6: Lampions beim Umzug – brennendes Papier leuchtet auch in der Dämmerung
-    L.addGlow(this.materials.lampionGlow, { dim: 0xffffff, bright: 0xffffff, boost: 1.5, mode: 'always', twinkle: true });
     // Moder (M15): tagsüber blasses Lila, nachts ein kühles Glimmen im Unterholz
     this.moderGlowEntry = L.addGlow(this.materials.moderGlow, { dim: 0xa88fd0, bright: 0xc0a0ff, boost: 1.2, mode: 'lamp', twinkle: true });
   }
@@ -409,7 +403,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions, ...this.crowInteractions, ...this.festInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions, ...this.crowInteractions];
   }
 
   /**
@@ -687,96 +681,6 @@ export class World {
     if (this.fireGrow.camp >= 1) this.props.fire.group.scale.y = 1;
   }
 
-  /**
-   * A6: Die Kürbisbank zum Fest (core/festival.js). `spot`: Mitte ihres Feldes (null: weggeräumt);
-   * `pumpkins`: [{ slot, face }] – `face` ist das Gesicht (15 × 10, '#' geschnitzt) oder null (noch
-   * ganz); `lit`: so viele der geschnitzten brennen (nach Plätzen); `interaction`: die Einblendung.
-   * Jeder Kürbis hat ein eigenes Glühen (sie gehen nacheinander an) – Lichter kommen keine dazu,
-   * nachts liegt eine Lichtinsel über der Bank.
-   */
-  setFestBench({ spot = null, pumpkins = [], lit = 0, interaction = null } = {}) {
-    const fb = this.festBench || (this.festBench = { group: null, slots: new Map(), glows: [], collider: null, pool: null, at: null, lit: 0 });
-    if (!spot) {
-      if (fb.group) fb.group.visible = false;
-      if (fb.collider) this.colliders.remove(fb.collider);
-      if (fb.pool) this.lightPools.remove(fb.pool);
-      fb.collider = null;
-      fb.pool = null;
-      fb.at = null;
-      if (this.festInteractions.length) {
-        this.festInteractions = [];
-        this.refreshInteractions();
-      }
-      return;
-    }
-    if (!fb.group) {
-      fb.group = new THREE.Group();
-      fb.group.name = 'Kürbisbank';
-      fb.group.add(createStaticVoxelObject(buildPumpkinBench(this.seed + 71), this.materials.world, { size: 1 / 32, shadow: 'coarse4', seed: this.seed }));
-      this.scene.add(fb.group);
-    }
-    fb.group.visible = true;
-    if (!fb.at || fb.at.x !== spot.x || fb.at.z !== spot.z) {
-      fb.group.position.set(spot.x, 0, spot.z);
-      if (fb.collider) this.colliders.remove(fb.collider);
-      if (fb.pool) this.lightPools.remove(fb.pool);
-      const hw = (BENCH.w - 0.5) / 2;
-      fb.collider = this.colliders.addBox(spot.x - hw, spot.z - 0.8, spot.x + hw, spot.z + 0.65, 'kuerbisbank');
-      fb.pool = this.lightPools.add(spot.x, spot.z, 2.6, { flicker: true, on: 0.05 });
-      fb.at = { x: spot.x, z: spot.z };
-    }
-    // Je Platz ein Kürbis – neu gebaut, wenn sich sein Gesicht ändert; jeder mit eigenem Glühen
-    const want = new Set(pumpkins.map((p) => p.slot));
-    for (const [slot, o] of fb.slots) {
-      if (want.has(slot)) continue;
-      fb.group.remove(o.object);
-      o.object.traverse((x) => x.geometry?.dispose());
-      fb.slots.delete(slot);
-    }
-    for (const p of pumpkins) {
-      const key = p.face ? p.face.join('') : '-';
-      const old = fb.slots.get(p.slot);
-      if (old && old.key === key) continue;
-      if (old) {
-        fb.group.remove(old.object);
-        old.object.traverse((x) => x.geometry?.dispose());
-      }
-      const seed = this.seed + 300 + p.slot * 7;
-      const at = slotPos(p.slot);
-      const fine = { size: 1 / 32, shadow: 'coarse4', seed: this.seed };
-      let object;
-      if (p.face) {
-        const jack = buildJackOLantern(seed, p.face);
-        object = createStaticVoxelObject(jack.model, this.materials.world, fine);
-        object.add(createStaticVoxelObject(jack.glow, this.festGlow(p.slot).material, { size: 1 / 32, shadow: 'none', jitter: 0 }));
-      } else object = createStaticVoxelObject(buildPumpkin(seed, 1.25), this.materials.world, fine);
-      object.position.set(at.x, at.y, at.z);
-      object.name = p.face ? 'Kürbislaterne (Fest)' : 'Kürbis (Fest)';
-      fb.group.add(object);
-      fb.slots.set(p.slot, { object, key });
-    }
-    // Brennen: die ersten `lit` Geschnitzten (nach Plätzen); die Lichtinsel, sobald einer brennt
-    const carved = pumpkins.filter((p) => p.face).map((p) => p.slot).sort((a, b) => a - b);
-    for (const slot of fb.glows.keys()) if (fb.glows[slot]) fb.glows[slot].on = carved.indexOf(slot) >= 0 && carved.indexOf(slot) < lit;
-    fb.lit = Math.min(lit, carved.length);
-    this.lightPools.setDark([fb.pool], fb.lit === 0);
-    const before = this.festInteractions[0];
-    this.festInteractions = interaction ? [interaction] : [];
-    if (before?.prompt !== interaction?.prompt || before?.x !== interaction?.x || Boolean(before) !== Boolean(interaction)) this.refreshInteractions();
-  }
-
-  /** A6: Das Glühen eines Platzes auf der Kürbisbank (einmal angelegt, dann wiederverwendet). */
-  festGlow(slot) {
-    const fb = this.festBench;
-    if (!fb.glows[slot]) {
-      const material = createGlowMaterial(0xffffff);
-      const entry = this.lights.addGlow(material, { dim: 0x3a1a10, bright: 0xffa94d, boost: 1.5, mode: 'lamp', twinkle: true });
-      entry.on = false;
-      fb.glows[slot] = entry;
-    }
-    return fb.glows[slot];
-  }
-
   /** Einsatz-Modell (1/32) als statisches Objekt in einer Gruppe. */
   stakeObject(id, parent) {
     const o = createStaticVoxelObject(buildStake(id), this.materials.world, { size: 1 / 32, shadow: 'none', seed: this.seed });
@@ -954,7 +858,6 @@ export class World {
     if (key === 'karten' && this.cardLook) return this.cardLook; // M28: der Kartentisch
     if (key === 'angeln' && this.fishLook) return this.fishLook; // M33: übers Wasser am Steg
     if (key === 'kochen' && this.cookLook) return this.cookLook; // A5: am Kessel
-    if (key === 'schnitzen' && this.carveLook) return this.carveLook; // A6: an der Kürbisbank
     if (key === 'drachen' && this.kiteLook) return this.kiteLook; // N9: Mika und Pims Drachen
     if (key === 'ankunft') return { x: ARRIVAL.route[0][0], z: ARRIVAL.route[0][1] }; // N5: dort kommt das Boot her
     // Haus, Hof und rechts der See

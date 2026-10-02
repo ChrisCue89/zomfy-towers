@@ -11,7 +11,6 @@ import { newGame, play, view, aiMove, isLegal, showTell, rng } from './cards.js'
 import { CARD_PLAYERS, CARD_PLAYER_ORDER, RULE_STAGES, EVENING, THINK, STAKES, CARD_BACKS, DUTIES, TELL_NOTE_AFTER } from '../data/cards.js';
 import { WEATHER } from '../data/weather.js';
 import { T } from '../data/texts.js';
-import { eveningTaken } from '../data/cooking.js';
 
 /** Geste der Figur zu ihrem Tick (npcs.poseGesture). */
 const TELL_GESTURE = { bert: 'reiben', juna: 'kichern', balduin: 'muetze', hilde: 'summen', yusuf: 'brille', fiete: 'pfeife' };
@@ -42,7 +41,7 @@ export class CardNight {
     const c = this.data;
     if (!CARD_PLAYERS[id]) return 'niemand';
     if (g.nights?.active) return 'nacht';
-    if (eveningTaken(st)) return 'heute'; // M33, A5, A6: ein Abend, eine Aktivität
+    if (c.lastDay === st.time.day || st.fishing?.lastDay === st.time.day || st.cooking?.lastDay === st.time.day) return 'heute'; // M33, A5: ein Abend, eine Aktivität
     if (id === 'balduin') {
       // Balduin spielt eine Runde am Steg, solange er angelegt hat – erst wenn Mika die Farbpaare kennt
       if (g.trader.phase !== 'steht' || g.trader.leaving || c.evenings < RULE_STAGES.pairsFrom - 1) return 'fort';

@@ -236,7 +236,7 @@ export const T = {
     keinTurm: 'Kein Turm reicht hierher', // m16-r1: Barrikaden gehören in den Kreis eines Turms
     nurDraussen: 'Nur draußen',
     // Warum »Kein Platz«? (m7-r1)
-    grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg', stand: 'Balduins Stand', fest: 'Die Kürbisbank' },
+    grundBelegt: { wald: 'Zu nah am Wald', bau: 'Da steht schon ein Bau', zuhause: 'Da steht das Zuhause', haus: 'Platz für den Hausausbau', hindernis: 'Da steht etwas im Weg', rohstoff: 'Rohstoff im Weg', stand: 'Balduins Stand' },
     reparieren: 'Reparieren',
     nichtsKaputt: 'Alles heil.',
     erstWelle: 'Erst die Welle abwehren – dann flicken.',
@@ -684,7 +684,6 @@ export const T = {
     anheben: 'Stein anheben', // N8: eine Seite aus Eddas Funkbuch
     dockGlocke: 'Glocke läuten', // N8: Marthes Glocke am Steg
     drachenHalten: 'Drachen halten', // N9: Pims Drachen
-    schnitzen: 'Kürbis schnitzen', // A6: an der Kürbisbank
     mitnehmen: 'Mitnehmen',
     oeffnen: 'Öffnen',
     ansehen: 'Ansehen',
@@ -1167,7 +1166,6 @@ export const T = {
       hindernis: 'Hier steht etwas im Weg.',
       rohstoff: 'Hier ist kein Platz – da wächst oder liegt etwas zum Sammeln.',
       stand: 'Hier macht Balduin morgens fest. Nachmittags ist der Platz frei.',
-      fest: 'Hier steht die Kürbisbank – bis der Frost kommt.', // A6
     },
     figurImWeg: 'Da stehe ich selbst im Weg.',
     zuTeuer: 'Dafür reicht der Vorrat noch nicht.',
@@ -1324,7 +1322,6 @@ export const T = {
       drachen: ['Drachenwetter', 'Drei Loopings hintereinander mit Pims Drachen.'],
       kraehen: ['Krähenfreund', 'Fünf Geschenke von den Krähen am Futterbrett.'], // A3
       kessel: ['Aus einem Topf', 'Jedes Gericht einmal mit jemandem am Kessel gekocht.'], // A5
-      umzug: ['Lichterkette', 'Beim Kürbisfest mit allen bis ans Ende des Stegs gegangen.'], // A6
     },
     // Schlurferkunde mit Dr. Yusufs Notizen
     kundeZaehler: (n, von) => `${n} von ${von} Arten erledigt`,
@@ -1583,7 +1580,6 @@ export const T = {
   // N4 (Probespiel 29.09.): Edda über Funk – Hinweise unten rechts statt mitten im Bild.
   // Ihr gehörte früher die Holzlände; wo sie jetzt ist, sagt sie nicht (DESIGN 4.1).
   funk: {
-    kuerbisfest: 'Kürbisfest bei euch? Dann geht mit den Lampions bis ans Ende des Stegs. Von hier sieht man jedes Licht.', // A6
     name: 'Edda · Funk',
     start: [
       'Krrz … Hallo? Ist da jemand an der Holzlände? … Gut. Ich bin Edda. Das Funkgerät an deinem Gürtel war mal meins. Das Haus auch.',
@@ -2674,53 +2670,6 @@ export const T = {
       niemand: 'Gerade nicht.',
       vorrat: 'Im Vorrat ist nichts für den Kessel – Fasern, Fisch oder Pilze.',
     },
-  },
-  // A6: Das Kürbisfest mit Laternenumzug
-  fest: {
-    morgenVorher: 'Morgen ist Kürbisfest! Hilde hat für jeden einen Kürbis beiseitegelegt.',
-    heute: 'Heute ist Kürbisfest: Die Kürbisse liegen auf der Bank am Feuer bereit, und um sechs geht der Laternenumzug bis ans Ende des Stegs.',
-    danach: 'Die Kürbisreihe am Feuer grinst in den Morgen.',
-    sammeln: 'Kürbisfest: Alle sammeln sich mit Lampions am Feuer.',
-    los: ['Alle da? Dann los!', 'Lampions hoch – wir gehen!', 'Hinterher, wer mag!'],
-    // »Kleines Licht« – das Lied zum Umzug (zwei Strophen, über den Köpfen)
-    lied: [
-      'Kleines Licht im Kürbisrund,',
-      'leuchte hell zur späten Stund.',
-      'Geh mit uns bis an den See,',
-      'dass dich jeder drüben seh.',
-      'Kleines Licht aus Papier,',
-      'bleib die lange Nacht bei mir.',
-      'Wenn der Nebel kommt und geht,',
-      'weiß ich, wo mein Zuhause steht.',
-    ],
-    stegende: ['Seht ihr? Die Lichter spiegeln sich im Wasser.', 'Jetzt alle hoch damit!', 'Bis ans andere Ufer sieht man uns.'],
-    edda: (n) => `Ich seh euch! ${n} Lichter auf dem Steg – wie eine Kette übers Wasser gespannt.`,
-    eddaPim: (n) => `Ich seh euch! ${n} Lichter auf dem Steg, und das vorderste hüpft. Das ist Pim, oder?`,
-    eddaBlink: (n) => `${n} Lichter auf dem Steg! Schau nach Nordosten, Mika – vom Sturmhuk blinkt es zurück.`,
-    jubel: ['Hurra!', 'Seht doch, wie sie leuchten!', 'Das machen wir jedes Jahr!', 'Schön war’s.'],
-    vorbei: 'Der Umzug ist zurück am Feuer. Die Kürbisse leuchten – so fühlt sich Zuhause an.',
-    vorbeiOhne: 'Der Umzug ist zurück am Feuer, und die Kürbisse leuchten.',
-    ohne: 'Ohne dich wollten sie nicht los. Die Lampions hängen jetzt an der Kürbisbank – und die Kürbisse leuchten trotzdem.',
-    geschnitzt: 'Dein Kürbis grinst jetzt mit.',
-    reihe: ['Lauter Gesichter. Und jedes sieht ein bisschen aus wie wer.', 'Die Kürbisse halten Wache. Grinsend.', 'Meiner guckt am frechsten. Finde ich.', 'Bis zum Frost bleiben die hier stehen.'],
-    schnitzt: {
-      allgemein: 'Schnipp, schnapp – fertig!',
-      hilde: 'Ein Herz als Nase. Wer will, darf lachen.',
-      bert: 'Grimmig muss er gucken. Sonst kommt ja jeder.',
-      juna: 'Sterne als Augen. Damit sieht er weiter.',
-      yusuf: 'Oh. Der sieht überrascht aus. Wie ich beim Rasieren.',
-      marthe: 'So hat mein Vater sie geschnitzt. Genau so.',
-      pim: 'Meiner ist der Gruseligste!',
-      lu: 'Meiner hat ein Herz!',
-    },
-    lob: ['Der guckt ja wie du!', 'Hübsch geworden, {name}.', 'Den erkennt man im Dunkeln sofort.'],
-    erstUmzug: 'Erst der Umzug – die Horde kann warten.',
-    titel: 'Dein Kürbis',
-    zeilen: ['Augen', 'Nase', 'Mund'],
-    augen: { dreieck: 'Dreiecke', rund: 'Kreise', froh: 'Lachend', boese: 'Grimmig', stern: 'Sterne' },
-    nase: { dreieck: 'Dreieck', punkt: 'Punkt', herz: 'Herz', keine: 'Keine' },
-    mund: { grinsen: 'Grinsen', laecheln: 'Lächeln', oh: 'Oh!', zaehne: 'Zähne' },
-    hilfe: 'W/S Zeile · A/D Form · E schnitzen · Esc später',
   },
   // K1: der Fotomodus (Pausenmenü)
   foto: {

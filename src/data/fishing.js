@@ -4,8 +4,6 @@
 // Fisch: Mit gehaltenem E wandert der Kescher-Bereich nach rechts, losgelassen nach links –
 // solange der Fisch darin schwimmt, füllt sich der Fang. Hier wird balanciert.
 
-import { eveningTaken } from './cooking.js';
-
 /**
  * Wo geangelt wird: an der Nordkante des Stegs, Blick übers Wasser nach Norden – östlich von
  * Mikas Ruderboot (N5, bei x 16,6), westlich von Edda am Stegende (M32).
@@ -103,7 +101,8 @@ export function sanitizeFishing(raw) {
 export function fishingOffered(state, id) {
   const f = state.fishing;
   if (!f?.rod || state.survivors?.[id]?.stage !== 3) return false;
-  if (eveningTaken(state)) return false; // A5: auch nach dem Kessel nicht, A6: nicht am Kürbisfest
+  const day = state.time?.day;
+  if (f.lastDay === day || state.cards?.lastDay === day || state.cooking?.lastDay === day) return false; // A5: auch nach dem Kessel nicht
   const m = state.time?.minute ?? 0;
   return m >= FISHING.from && m <= FISHING.until;
 }

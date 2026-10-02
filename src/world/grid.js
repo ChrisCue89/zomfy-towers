@@ -25,7 +25,7 @@ export class BuildGrid {
     this.yard = new Uint8Array(n); // 1 = Hof vor dem Haus (Horde darf hinein)
     this.pathCost = new Float32Array(n).fill(1); // Wegmitte 1, Rand teurer: die Horde läuft in der Mitte
     this.blocked = new Uint8Array(n); // 1 = statisch belegt
-    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle, 2 = Balduins Platz (morgens), 3 = Kürbisbank (A6): nicht bebaubar, aber begehbar
+    this.reserved = new Uint8Array(n); // 1 = Rohstoffquelle, 2 = Balduins Platz (morgens): nicht bebaubar, aber begehbar
     this.house = new Uint8Array(n); // Ausbaustufe, ab der das Zuhause hier steht (0 = nie)
     this.houseLevel = 1; // jetzige Ausbaustufe (world.setHouseLevel)
     this.occupant = new Array(n).fill(null); // Gebäude-ID
@@ -104,7 +104,7 @@ export class BuildGrid {
   /**
    * Warum ist diese Zelle nicht bebaubar? null = frei. (m7-r1: »Kein Platz« ohne
    * sichtbaren Grund – meist ein Grasbüschel oder der künftige Anbau.)
-   * @returns {null|'wald'|'bau'|'zuhause'|'haus'|'hindernis'|'rohstoff'|'stand'|'fest'}
+   * @returns {null|'wald'|'bau'|'zuhause'|'haus'|'hindernis'|'rohstoff'|'stand'}
    */
   blockReason(ci, cj, strict = true) {
     const k = this.index(ci, cj);
@@ -112,7 +112,6 @@ export class BuildGrid {
     if (this.occupant[k] !== null) return 'bau';
     if (this.house[k]) return this.house[k] <= this.houseLevel ? 'zuhause' : 'haus';
     if (this.blocked[k]) return 'hindernis';
-    if (this.reserved[k] === 3) return 'fest'; // A6: die Kürbisbank (auch beim Laden alter Stände)
     if (strict && this.reserved[k]) return this.reserved[k] === 2 ? 'stand' : 'rohstoff';
     return null;
   }
@@ -126,7 +125,7 @@ export class BuildGrid {
   /** @param {boolean} [strict] false = Rohstoff-Zellen zählen als frei (alte Spielstände laden) */
   isFree(ci, cj, strict = true) {
     const k = this.index(ci, cj);
-    return k >= 0 && this.inside[k] === 1 && this.blocked[k] === 0 && this.occupant[k] === null && !(strict && this.reserved[k]) && this.reserved[k] !== 3;
+    return k >= 0 && this.inside[k] === 1 && this.blocked[k] === 0 && this.occupant[k] === null && !(strict && this.reserved[k]);
   }
 
   /** Alle Zellen eines Grundrisses (w × d Zellen ab ci, cj). */

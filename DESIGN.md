@@ -2248,27 +2248,6 @@ Abendaktivität nach Karten und Angeln.
 - **Geschmack:** Jede Figur hat ein Leibgericht (Herz in der Wahl) und ihr Gewürz; Rosa ist Köchin.
   Ein Abend am Kessel ist gemeinsame Zeit (M29). Jedes Gericht einmal ist die Tat »Aus einem Topf«.
 
-#### A6 – Kürbisfest und Laternenumzug ✓ (Nr. 235)
-
-*Aus dem Ideen-Parkplatz »Kürbisfest im Herbst, Laternenumzug«:* ein Abend ohne Kampf, an dem die
-ganze Bucht zusammen etwas tut – und Mika mitten drin.
-
-- **Der Festtag:** der erste Tag ab dem 18. Oktober ohne Regen (spätestens der 28.). Der Bericht sagt
-  es am Morgen davor (»Hilde hat für jeden einen Kürbis beiseitegelegt«) und am Tag selbst.
-- **Die Kürbisbank:** am Festmorgen südöstlich vom Feuer, ein langes Brett auf drei Klötzen, ein
-  Kürbis für jeden in der Bucht (Bewohner, dazu Marthe und die Kinder) und einer für Mika, vorn. Sie
-  steht bis zum Frost, leuchtet jeden Abend und macht es gemütlicher (+1).
-- **Schnitzen:** Jede Person geht zu ihrer Stunde an die Bank und schnitzt ihr Gesicht – Hilde ein
-  Herz als Nase, Bert grimmig mit Zähnen, Juna Sterne als Augen, Yusuf staunt »Oh«. Mika schnitzt mit
-  E: Augen, Nase und Mund aus je vier, fünf Formen, das Fenster zeigt den Kürbis mit Licht dahinter.
-- **Der Umzug:** Ab sechs stellen sich alle mit Lampions (fünf Papierfarben) im Kreis ums Feuer auf.
-  Kommt Mika ans Feuer, geht es los – die Uhr steht: ein Stück ums Feuer, über den Hof bis ans Ende
-  des Stegs, Knopf hinterher. Sie singen »Kleines Licht« (eigenes Lied, Zeilen über den Köpfen,
-  eigene Musik im Dreiertakt), heben am Stegende die Lampions übers Wasser, Edda funkt, dass sie die
-  Lichter sieht; zurück am Feuer gehen die Kürbisse nacheinander an.
-- **Mitgegangen:** gemeinsame Zeit mit allen und die Tat »Lichterkette«. Kommt Mika nicht bis halb
-  acht, brennen die Kürbisse ohne Umzug. Am Festabend gibt es keine Karten, kein Angeln, keinen Kessel.
-
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.
@@ -2292,7 +2271,7 @@ ausbauen«
 ## 9. Ideen-Parkplatz
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni (umgesetzt: A5).
-- Kürbisfest im Herbst, Laternenumzug (umgesetzt: A6), erster Schnee (umgesetzt: M25).
+- Kürbisfest im Herbst, Laternenumzug, erster Schnee.
 - Krähen, die etwas bringen (oder stehlen) (umgesetzt: A3).
 - Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (umgesetzt: N7).
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.

@@ -168,8 +168,6 @@ export class Survivors {
   /** Wo steht jemand gerade (Ankunftsort, fester Platz, am Festmorgen am Feuer – frei von Bauten)? */
   standSpot(id) {
     const def = personOf(id);
-    const fest = this.game.festival?.spotOf(id); // A6: an der Kürbisbank bzw. im Kreis ums Feuer
-    if (fest) return { ...fest };
     const feast = this.resident(id) ? this.game.posts?.feastSpot(id) : null; // M23: Fest am Feuer
     if (feast) return { ...this.freeSpot(feast.x, feast.z, 0.28), facing: feast.facing };
     const drill = this.resident(id) ? this.game.training?.spotOf(id) : null; // M30: auf dem Übungsplatz
@@ -304,7 +302,6 @@ export class Survivors {
   placeOne(id, out, jump) {
     if (this.seat?.id === id) return; // M28: sitzt gerade am Kartentisch
     if (this.game.defense?.controls(id)) return; // M31: kämpft gerade nach der Lagerglocke
-    if (this.game.festival?.controls(id)) return; // A6: das Kürbisfest lenkt (Schnitzen, Kreis, Umzug)
     const def = personOf(id);
     const stage = this.stage(id);
     // M32: Wer von früher zu Besuch ist, sitzt tagsüber am Feuer
@@ -356,12 +353,6 @@ export class Survivors {
     else this.npcs.walkTo(n, p.x, p.z);
   }
 
-  /** A6: Geht jemand gerade im Laternenumzug mit (dann kein Gespräch)? */
-  marching(id) {
-    const f = this.game.festival;
-    return Boolean(f?.marching() && f.controls(id));
-  }
-
   /** Steht jemand gerade auf dem Posten (dann kein Gespräch, M23)? */
   onPost(id) {
     return Boolean(this.game.posts?.onDuty(id));
@@ -377,7 +368,7 @@ export class Survivors {
       if (!n) continue;
       // M32: Knopf nur aus der Nähe – er streunt umher und nahm sonst Briefkasten und Gästen das E weg
       const dog = Boolean(personOf(id).dog);
-      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: dog ? 0.9 : 1.35, prompt: personOf(id).prompt, npc: id, dog, enabled: n.model.root.visible && !this.onPost(id) && !this.game.defense?.controls(id) && !this.marching(id) });
+      list.push({ id: `npc-${id}`, x: n.x, z: n.z, radius: dog ? 0.9 : 1.35, prompt: personOf(id).prompt, npc: id, dog, enabled: n.model.root.visible && !this.onPost(id) && !this.game.defense?.controls(id) });
     }
     const edda = this.eddaHome() ? this.npcs.list.get('edda') : null; // M32: Edda ist zu Hause
     if (edda) list.push({ id: 'npc-edda', x: edda.x, z: edda.z, radius: 1.35, prompt: 'ansprechen', npc: 'edda', enabled: edda.model.root.visible });
@@ -403,7 +394,7 @@ export class Survivors {
       if (!n) continue;
       it.x = n.x;
       it.z = n.z;
-      it.enabled = n.model.root.visible && !this.onPost(it.npc) && !this.marching(it.npc);
+      it.enabled = n.model.root.visible && !this.onPost(it.npc);
     }
     // Neu angekommen: winkt, sobald Mika in der Nähe ist
     const p = g.player.position;

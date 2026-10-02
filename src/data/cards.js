@@ -14,8 +14,6 @@
 // dann, `fake` wie oft er sonst trotzdem kommt (Gegen-Tick). Beim Aufdecken lässt
 // er sich nachprüfen; nach drei Beobachtungen notiert Mika einen Verdacht.
 
-import { eveningTaken } from './cooking.js';
-
 export const CARD_PLAYERS = {
   bert: {
     style: { caution: 1.0, bluff: 0, aggro: 0, knockAt: -1, combo: 0.5, gamble: 0, mistake: 0.25 },
@@ -120,7 +118,7 @@ export function cardsOffered(state, id) {
   const c = state.cards;
   if (!c || !CARD_PLAYERS[id] || id === 'balduin') return false;
   if (state.survivors?.[id]?.stage !== 3) return false;
-  if (eveningTaken(state)) return false; // M33: schon am Steg gewesen, A5: am Kessel, A6: das Kürbisfest
+  if (c.lastDay === state.time?.day || state.fishing?.lastDay === state.time?.day || state.cooking?.lastDay === state.time?.day) return false; // M33: schon am Steg gewesen, A5: am Kessel
   const m = state.time?.minute ?? 0;
   if (m < EVENING.from || m > EVENING.until) return false;
   return Boolean(c.evenings) || id === 'bert';

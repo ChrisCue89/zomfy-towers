@@ -407,7 +407,6 @@ export class FogIsle {
         return;
       }
       if (this.glide) return; // sitzen im Kahn (updateGlide)
-      if (g.festival?.controls(id)) return; // A6: schnitzt gerade oder geht im Umzug mit
       const n = npcs.get(id, false);
       n.model.root.visible = true;
       n.sitTarget = 0;
@@ -653,7 +652,7 @@ export class FogIsle {
     const npcs = g.survivors.npcs;
     for (const id of ['pim', 'lu']) {
       const n = npcs.list.get(id);
-      if (!n?.model.root.visible || g.kite?.controls(id) || g.festival?.controls(id)) continue; // N9: beim Drachen lenkt kite.js die Kinder, A6: beim Kürbisfest das Fest
+      if (!n?.model.root.visible || g.kite?.controls(id)) continue; // N9: beim Drachen lenkt kite.js die Kinder
       const s = this.play[id];
       s.t -= dt;
       if (n.target) continue;

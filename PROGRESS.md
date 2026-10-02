@@ -5,44 +5,12 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
-## A6: Kürbisfest und Laternenumzug (unfertig, ungeprüft)
+## A6: Kürbisfest – angehalten und zurückgenommen
 
-**Aus dem Ideen-Parkplatz** (»Kürbisfest im Herbst, Laternenumzug«): ein Abend ohne Kampf, an dem die
-ganze Bucht zusammen etwas tut (OFFENE-FRAGEN 235).
-
-**Stand 02.10.: angehalten, bevor es je lief.** Alles unten ist geschrieben, aber noch nie im Browser
-gelaufen – weder die Probe noch der Abschnitt `fest`, die Bilder fehlen; geprüft ist nur die Syntax.
-Weiter: Abschnitt `fest` laufen lassen, ansehen, nachbessern, dann die volle Prüfung.
-
-- **Der Festtag** ist der erste Tag ab dem 18. Oktober ohne Regen (spätestens der 28.). Der Bericht
-  sagt es am Morgen davor (»Hilde hat für jeden einen Kürbis beiseitegelegt«) und am Tag selbst.
-- **Die Kürbisbank:** am Festmorgen südöstlich vom Feuer (außerhalb des Kreises, den der Umzug
-  braucht) – ein langes Brett auf drei Klötzen, ein Eimer mit Kernen, Schnitzel im Gras; hinten bis
-  zu sieben Kürbisse, vorn die übrigen und Mikas. Ihre Felder sind bis zum Frost nicht bebaubar.
-- **Schnitzen:** Jede Person geht zu ihrer Stunde an die Bank, schnitzt eine Weile und sagt etwas
-  dazu (Hilde ein Herz als Nase, Bert grimmig mit Zähnen, Juna Sterne, Yusuf »Oh«, Marthe wie ihr
-  Vater, Pim gruselig, Lu mit Herz). Mika schnitzt mit E: ein Fenster mit dem Kürbis und dem Licht
-  hinter den Löchern, Augen, Nase und Mund aus je vier, fünf Formen (W/S, A/D, E); die Uhr steht,
-  danach 20 Minuten. Die Gesichter sind 15 × 10 Felder wie die Kürbislaternen an der Tür
-  (`buildJackOLantern` nimmt jetzt ein Gesicht).
-- **Der Umzug:** Ab sechs stehen alle mit Lampions im Kreis ums Feuer, Knopf dabei. Die Lampions sind
-  Papierkugeln am Stab in fünf Farben (je Person fest) – als Voxel an der linken Hand (hängen senkrecht
-  und pendeln) und als eigener Sprite-Teil `laterne` mit der Pose `heben`. Kommt Mika ans Feuer, geht
-  der Zug los und die Uhr steht: ein Stück ums Feuer, über den Hof (Breitensuche um Bauten herum) bis
-  ans Ende des Stegs, alle auf einer Linie. Sie singen »Kleines Licht« (eigener Text, Zeilen mit ♪
-  über den Köpfen, eigene Musik in F-Dur im Dreiertakt). Am Stegende rücken sie auf und heben die
-  Lampions, Edda funkt (»Ich seh euch!«), wohnt Clara am Sturmhuk, blinkt es zurück. Zurück im Kreis
-  gehen die Kürbisse nacheinander an, Jubel; danach ist es 40 Minuten später.
-- **Mitgegangen:** gemeinsame Zeit mit allen (neue Art »Umzug«) und die Tat »Lichterkette« (jetzt 16
-  Taten). Kommt Mika bis halb acht nicht, brennen die Kürbisse ohne Umzug. Am Festabend keine Karten,
-  kein Angeln, kein Kessel (`eveningTaken` sieht das Fest). N ruft während des Umzugs keine Welle.
-- **Danach** bleibt die Kürbisreihe bis zum 32. Tag, brennt jeden Abend (Lichtinsel) und macht das
-  Zuhause gemütlicher (+1). E an der Bank gibt einen Gedanken.
-- **Speichern v36** (`state.festival`: Tag, Leute, Geschnitztes, Mikas Gesicht, Platz der Bank,
-  Umzug), Migration v35 → v36.
-- **Prüfung:** neuer Abschnitt `fest` (Festtag, Bank, Hildes Schnitzen, Mikas Schnitzen mit echten
-  Tasten, Kreis, Start mit echter Taste, Stegende, Jubel, ohne Mika, Lampion-Sprites, Speichern,
-  Migration); Bilder fest-bank, fest-schnitzen, fest-kreis, fest-umzug, fest-steg, fest-kuerbisse.
+Auf Wunsch des Auftraggebers (02.10.) angehalten, bevor die volle Prüfung durch war, und wieder aus
+dem Spiel genommen. Der eigene Abschnitt `fest` bestand schon (14 Punkte); offen blieb, ob alle
+anderen Abschnitte damit weiter bestehen. Der Stand liegt im Verlauf (Commits c94cd6f und 6900327) –
+zum Weitermachen von dort zurückholen und die volle Prüfung laufen lassen.
 
 ---
 
@@ -76,7 +44,9 @@ im Ideen-Parkplatz (»Kochen am Kamin mit kleinen Boni«): die dritte Abendaktiv
   gab; jetzt Kupfer im Material des Innenraums, mit Suppe und Dampf. Die Löffel auf der Karte lasen
   sich wie Pfeile; jetzt Holzlöffel mit runder Laffe. Die Kamera am Feuer zeigt das Gegenüber ganz.
 - **Prüfung:** Abschnitt `kochen` (echte Tasten, Bilder pilze, kochen-wahl, kochen-koecheln,
-  kochen-karte, kochen-kamin); die übrigen erwarten jetzt v35 und 15 Taten.
+  kochen-karte, kochen-kamin); die übrigen erwarten jetzt v35 und 15 Taten. Volle Prüfung: 620 Punkte
+  bestanden, einer fiel durch – beim Versionssprung war die Erwartung an Eddas Heimkehrtag
+  (`edda.home` 34) mit hochgezählt worden; im Prüfskript zurückgesetzt, das Spiel misst weiter 34.
 
 ---
 
