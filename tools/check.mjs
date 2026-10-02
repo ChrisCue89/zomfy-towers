@@ -14220,7 +14220,7 @@ async function runFestivalChecks(browser, url) {
   const gewaehlt = (await info()).carving;
   await still(page, 'fest-schnitzen');
   const steht = (await z(() => window.zomfy.game.state.time.minute)) === m0;
-  await tap('KeyE', 500);
+  await tap('KeyE', 60); // gleich danach messen – die Uhr läuft wieder
   f = await info();
   const mikaKuerbis = f.bench.slots.find((s) => s.slot === mikaPlatz.slot);
   if (hinweis === T.aktionen.schnitzen && offen.mode === 'schnitzen' && offen.px === 160 && gewaehlt?.face.join() === 'rund,herz,zaehne' && steht && f.face?.join() === '1,2,3' && f.mode === 'play' && Math.round(f.minute - m0) === 20 && mikaKuerbis?.carved && f.interaction?.prompt === 'ansehen') note(`✓ Kürbisfest: »${hinweis}« mit echten Tasten – Augen ${T.fest.augen.rund}, Nase ${T.fest.nase.herz}, Mund ${T.fest.mund.zaehne}; die Uhr steht, danach 20 Minuten, Mikas Kürbis grinst auf der Bank`);
@@ -14262,7 +14262,6 @@ async function runFestivalChecks(browser, url) {
   else fail(`Kürbisfest: Sammeln ${JSON.stringify({ phase: f.phase, carved: f.carved, train: f.train && f.train.members, abend })}`);
 
   // 6) Mika geht mit echter Taste ans Feuer – der Zug geht los, die Uhr steht, N ruft keine Nacht
-  const uhr0 = await z(() => window.zomfy.game.state.time.minute);
   await page.keyboard.down('KeyA');
   for (let k = 0; k < 30; k++) {
     await step(250);
@@ -14274,6 +14273,7 @@ async function runFestivalChecks(browser, url) {
     await step(400);
     if ((await info()).phase === 'zug') break;
   }
+  const uhr0 = await z(() => window.zomfy.game.state.time.minute); // ab hier steht die Uhr
   await step(1500);
   await tap('KeyN', 200);
   const los = await z(() => ({ i: window.zomfy.festival(), laterne: window.zomfy.game.player.holdingLantern, nacht: window.zomfy.game.nights.active, toasts: window.zomfy.game.hud.toasts.map((t) => t.text), lied: window.zomfy.game.festival.singing() }));
@@ -14295,7 +14295,7 @@ async function runFestivalChecks(browser, url) {
       for (let w = 0; w < 30; w++) {
         await step(400);
         const h = await info();
-        if (h.train.members.filter((m) => !m.dog).every((m) => m.raise > 0.9)) {
+        if (h.stats.edda > 0 && h.train.members.filter((m) => !m.dog).every((m) => m.raise > 0.9)) {
           halt = h;
           break;
         }
@@ -14318,11 +14318,15 @@ async function runFestivalChecks(browser, url) {
 
   // 8) Zurück in den Kreis: die Kürbisse gehen nacheinander an – Jubel, gemeinsame Zeit, die Tat, 40 Minuten später
   let lit = [];
+  let ende = null;
   for (let k = 0; k < 200; k++) {
     await step(400);
     const i = await info();
     if (i.bench) lit.push(i.bench.lit);
-    if (!i.phase) break;
+    if (!i.phase) {
+      ende = i.minute; // höchstens ein Schritt (0,4 s) nach dem Ende
+      break;
+    }
   }
   await step(3000);
   f = await info();
@@ -14333,12 +14337,12 @@ async function runFestivalChecks(browser, url) {
     return { umzug: ['hilde', 'bert', 'juna', 'yusuf', 'knopf'].map((id) => b[id]?.kinds?.umzug || 0), tat: Boolean(g.state.book.deeds.umzug), toasts: g.hud.toasts.map((t) => t.text), minute: g.state.time.minute };
   });
   const nacheinander = new Set(lit).size >= 3;
-  if (f.done && f.walked && f.lit >= 5 && f.bench.slots.every((s) => s.carved && s.glow) && nacheinander && nachher.umzug.every((n) => n === 1) && nachher.tat && Math.round(nachher.minute - uhr0) === 40 && nachher.toasts.includes(T.fest.vorbei) && f.cozy >= 1) note(`✓ Kürbisfest: zurück im Kreis gehen die Kürbisse nacheinander an, Jubel – gemeinsame Zeit mit allen, die Tat »${T.buch.taten.umzug[0]}«, 40 Minuten später, die Kürbisreihe macht es gemütlicher`);
-  else fail(`Kürbisfest: Ende ${JSON.stringify({ done: f.done, walked: f.walked, lit: f.lit, slots: f.bench?.slots, nacheinander: [...new Set(lit)], nachher, uhr0, cozy: f.cozy })}`);
+  if (f.done && f.walked && f.lit >= 5 && f.bench.slots.every((s) => s.carved && s.glow) && nacheinander && nachher.umzug.every((n) => n === 1) && nachher.tat && ende - uhr0 >= 40 && ende - uhr0 < 41.5 && nachher.toasts.includes(T.fest.vorbei) && f.cozy >= 1) note(`✓ Kürbisfest: zurück im Kreis gehen die Kürbisse nacheinander an, Jubel – gemeinsame Zeit mit allen, die Tat »${T.buch.taten.umzug[0]}«, 40 Minuten später, die Kürbisreihe macht es gemütlicher`);
+  else fail(`Kürbisfest: Ende ${JSON.stringify({ done: f.done, walked: f.walked, lit: f.lit, slots: f.bench?.slots, nacheinander: [...new Set(lit)], nachher, uhr0, ende, cozy: f.cozy })}`);
   await z((s) => {
     const Z = window.zomfy;
     Z.setTime(21, 0);
-    Z.teleport(s.x + 2.5, s.z + 2.2, Math.PI);
+    Z.teleport(s.x + 3.4, s.z + 2.8, Math.PI); // außerhalb der Einblendung – sie verdeckte die hintere Reihe
     Z.lookAt(s.x, s.z + 0.4);
   }, f.spot);
   await step(800);

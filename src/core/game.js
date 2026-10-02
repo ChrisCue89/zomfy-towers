@@ -4419,6 +4419,7 @@ export class Game {
         game.state.time.minute = 60;
         game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
         game.crowGifts.morning(); // A3: Vertrauen der Krähen, vielleicht eine Gabe
+        game.festival.newDay(); // A6: der Festtag steht fest, am Festmorgen die Kürbisbank
         return [...game.crowGifts.news(), ...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning(), ...game.festival.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post, A6: das Kürbisfest
       },
       /** M33: Angeln – Angel, Abende, Fänge, Korb, laufende Runde (Phase, Kescher, Karte), Zähler. */
@@ -4660,7 +4661,7 @@ export class Game {
       /** A5: gleich mit `id` kochen (wie die Antwort im Gespräch). */
       cookBegin: (id) => game.cooking.begin(id),
       /** A6: Kürbisfest – Festtag, Kürbisse, Gesichter, Bank, Abschnitt, Zug (Linie, Stellen), Zähler. */
-      festival: () => ({ ...game.festival.info(), day: game.state.time.day, minute: game.state.time.minute, mode: game.mode, bench: game.world.festBench ? { shown: Boolean(game.world.festBench.group?.visible), slots: [...game.world.festBench.slots.entries()].map(([k, o]) => ({ slot: k, carved: o.key !== '-', glow: game.world.festBench.glows[k]?.on ?? null })), lit: game.world.festBench.lit, at: game.world.festBench.at } : null }),
+      festival: () => ({ ...game.festival.info(), now: game.state.time.day, minute: game.state.time.minute, mode: game.mode, bench: game.world.festBench ? { shown: Boolean(game.world.festBench.group?.visible), slots: [...game.world.festBench.slots.entries()].map(([k, o]) => ({ slot: k, carved: o.key !== '-', glow: game.world.festBench.glows[k]?.on ?? null })), lit: game.world.festBench.lit, at: game.world.festBench.at } : null }),
       /** A6: den Festzustand setzen ({ day, … }) und alles neu aufbauen (wie nach dem Laden). */
       setFestival(o) {
         Object.assign(game.state.festival, o || {});

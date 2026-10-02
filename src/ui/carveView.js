@@ -96,19 +96,22 @@ export class CarveView {
     // Gesicht: 15 × 10 Felder, mittig, etwas unter der Mitte
     const fx = Math.round(cx - (15 * CELL) / 2);
     const fy = Math.round(cy - (10 * CELL) / 2 + 3);
+    // Jedes Loch ist eine Fläche aus Licht: oben die helle Schnittkante, unten ein Rand im Schatten –
+    // innen nichts, sonst zerfiele die Form in Streifen
     grid.forEach((row, r) => {
       for (let i = 0; i < row.length; i++) {
         if (row[i] !== '#') continue;
         const X = fx + i * CELL;
         const Y = fy + r * CELL;
-        ctx.fillStyle = GLOW_DEEP;
-        ctx.fillRect(X, Y, CELL, CELL);
         ctx.fillStyle = GLOW;
-        ctx.fillRect(X, Y + 1, CELL, CELL - 1);
-        // helle Schnittkante oben, wo kein Loch darüber ist
+        ctx.fillRect(X, Y, CELL, CELL);
         if (r === 0 || grid[r - 1][i] !== '#') {
           ctx.fillStyle = CUT;
           ctx.fillRect(X, Y, CELL, 1);
+        }
+        if (r === grid.length - 1 || grid[r + 1][i] !== '#') {
+          ctx.fillStyle = GLOW_DEEP;
+          ctx.fillRect(X, Y + CELL - 1, CELL, 1);
         }
       }
     });

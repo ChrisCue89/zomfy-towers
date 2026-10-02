@@ -1909,7 +1909,7 @@ Kraniche (in der Prüfung sonst aus), `craneFlock()` lässt gleich einen Keil ü
 zeigt `cooking()` Abende, Mahlzeit, Gerichte, Geschmack, warum es gerade nicht geht, die Wirkung und
 den laufenden Abend (Phase, Gericht, Messer, Marke, Schnitte, Gewürz und Hinweis, Kessel, Karte),
 `setCooking(o)` setzt den Koch-Zustand, `cookBegin(id)` lädt gleich ein (wie die Antwort im Gespräch);
-ab A6 zeigt `festival()` Festtag, Leute, Gesichter, Plätze, die Bank (Kürbisse, Glühen, belegte Felder),
+ab A6 zeigt `festival()` Festtag (`day`; der Spieltag ist `now`), Leute, Gesichter, Plätze, die Bank (Kürbisse, Glühen, belegte Felder),
 den Abschnitt, den Zug (Linie, Stellen, Lampions, Mika dabei) und Zähler, `setFestival(o)` setzt den
 Fest-Zustand und baut alles neu auf (wie nach dem Laden).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
