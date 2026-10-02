@@ -29,8 +29,9 @@ import { LOSSES_DEFAULT, newBell, sanitizeWounds } from '../data/bell.js';
 import { newPost, sanitizePost } from '../data/network.js';
 import { newFishing, sanitizeFishing } from '../data/fishing.js';
 import { newIsles, sanitizeIsles } from '../data/isles.js';
+import { newCrows, sanitizeCrows } from '../data/crows.js';
 
-export const SAVE_VERSION = 33;
+export const SAVE_VERSION = 34;
 
 /**
  * Leeres Herbstbuch (M25, Teil 2): Sterne je Nacht, Taten (Tag), erledigte Arten, früh gerufene
@@ -128,6 +129,9 @@ export function createNewState(config, mapSeed = 1) {
     fishing: newFishing(),
     // N6: die Inseln im See – besuchte Inseln, Gefundenes, ob die Katze mitgekommen ist
     isles: newIsles(),
+    // A3: die Krähen am Futterbrett – Vertrauen, letzte Krümel, wartende Gabe, Gaben, Krähenglas,
+    // was Mika zurückgeben will, Zurückgegebenes, Jakobs Schatulle (0, 1 Schlüssel, 2 offen)
+    crows: newCrows(),
     flags: {},
     stats: { nightsSlept: 0, gathered: 0, built: 0, kills: 0, nightsWon: 0, nightsLost: 0, champions: 0, chests: 0 },
   };
@@ -274,6 +278,7 @@ export function sanitizeState(data, config) {
   out.edda = { home: Math.floor(num(data.edda?.home, 0, 0, 1e6)), met: data.edda?.met === true };
   out.fishing = sanitizeFishing(data.fishing); // M33
   out.isles = sanitizeIsles(data.isles, out.fishing.bottles); // N6 (N7: mit der Nebelinsel)
+  out.crows = sanitizeCrows(data.crows); // A3
   const sc = data.skillChoice;
   if (sc && (sc.mode === 'lernen' || sc.mode === 'schaerfen') && Array.isArray(sc.options)) {
     const options = sc.options.filter((id) => SKILL_IDS.includes(id)).slice(0, 3);

@@ -3,12 +3,15 @@
 // ein Schlurfer) zu nahe, flattern sie krächzend auf – die Nachbarn gleich mit –
 // und verschwinden über dem Wald; nach einer Weile kommt eine zurück. Abends
 // ziehen sie in den Wald. Doppelt fein (1/32 m, M13g), die Flügel sind eigene Teile.
+// A3: Eine hat eine weiße Feder (Weißfeder). Wer sie füttert, dem trauen sie (`tame`: sie
+// bleiben sitzen); ans Futterbrett kommt eine, wenn Krümel darauf liegen (`call`, `feed`).
 
 import * as THREE from 'three';
 import { VoxelModel } from '../render/voxel.js';
 import { P } from '../render/palette.js';
 import { createWorldMaterial } from '../render/materials.js';
 import { Rng } from '../core/rng.js';
+import { CROW_FEED, TAME_SHY } from '../data/crows.js';
 
 const U = 1 / 32;
 const COUNT = 5;
@@ -17,7 +20,7 @@ const ZOMBIE_SHY = 2.4;
 const FLOCK = 4; // Nachbarn in diesem Umkreis fliegen mit auf
 const DAY = [6.5, 18.6]; // Stunden, in denen Krähen in der Bucht sind
 
-function buildBody() {
+function buildBody(white = false) {
   const m = new VoxelModel();
   // Blick nach +z: runder Rumpf mit Federkanten, Kopf mit hellem Auge, grauer
   // Schnabel, gefächerter Schwanz mit Kerbe, Füße mit Zehen
@@ -33,11 +36,13 @@ function buildBody() {
   m.box(-1, 7, 10, 0, 8, 11, (x, y) => (y === 8 ? P.s6 : P.s5)).box(-1, 7, 12, 0, 7, 13, P.s5).set(-1, 8, 12, P.s6);
   m.box(-3, 4, -9, 2, 5, -5, (x, y, z) => ((x === -1 || x === 0) && z === -9 ? null : y === 5 && (x === -1 || x === 0) ? P.n2 : P.n0));
   for (const x of [-2, 1]) m.box(x, 0, 0, x, 1, 1, P.s2).set(x, 0, 2, P.s2).set(x, 0, -1, P.s2);
+  // A3: Weißfeder – je eine weiße Schwungfeder an den angelegten Flügeln
+  if (white) for (const x of [-3, 2]) m.set(x, 5, -2, P.s9).set(x, 5, -3, P.s9).set(x, 4, -4, P.s8);
   return m;
 }
 
 /** Flügel als flache Platte nach außen (side = +1 rechts, -1 links): Deckfedern und gefingerte Schwungfedern. */
-function buildWing(side) {
+function buildWing(side, white = false) {
   const m = new VoxelModel();
   for (let k = 0; k < 8; k++) {
     const x = side > 0 ? k : -1 - k;
@@ -45,7 +50,7 @@ function buildWing(side) {
     const z1 = primary ? 5 - (k === 7 ? 2 : 0) : 5;
     for (let z = -4; z <= z1; z++) {
       if (primary && z === z1 && k % 2) continue; // gefingerte Spitzen
-      m.set(x, 0, z, primary || z <= -3 ? P.n0 : z === 2 && k < 4 ? P.n2 : P.n1);
+      m.set(x, 0, z, white && k === 5 ? P.s9 : primary || z <= -3 ? P.n0 : z === 2 && k < 4 ? P.n2 : P.n1);
     }
   }
   return m;
@@ -66,6 +71,14 @@ export class Crows {
     const body = buildBody().toGeometry({ size: U, jitter: 0.02, seed });
     const wingR = buildWing(1).toGeometry({ size: U, jitter: 0.02, seed });
     const wingL = buildWing(-1).toGeometry({ size: U, jitter: 0.02, seed });
+    // A3: Weißfeder (die erste Krähe) hat eigene Geometrie
+    const bodyW = buildBody(true).toGeometry({ size: U, jitter: 0.02, seed });
+    const wingRW = buildWing(1, true).toGeometry({ size: U, jitter: 0.02, seed });
+    const wingLW = buildWing(-1, true).toGeometry({ size: U, jitter: 0.02, seed });
+    this.tame = false; // A3: zahm – sie bleiben sitzen, wenn Mika vorbeigeht
+    this.crumbs = null; // A3: { perch, left } – Krümel auf dem Futterbrett
+    this.onCrumbs = null; // A3: () => … wenn die Krümel aufgepickt sind
+    this.pecks = 0; // für die Prüfung: Schnabelhiebe am Futterbrett
     this.group = new THREE.Group();
     this.group.name = 'Krähen';
     scene.add(this.group);
@@ -74,7 +87,8 @@ export class Crows {
       const root = new THREE.Group();
       const pose = new THREE.Group(); // picken, wippen
       root.add(pose);
-      const bodyMesh = new THREE.Mesh(body, this.material);
+      const white = i === 0;
+      const bodyMesh = new THREE.Mesh(white ? bodyW : body, this.material);
       bodyMesh.castShadow = true;
       pose.add(bodyMesh);
       const makeWing = (geo, side) => {
@@ -91,8 +105,10 @@ export class Crows {
         id: i,
         root,
         pose,
-        wingR: makeWing(wingR, 1),
-        wingL: makeWing(wingL, -1),
+        wingR: makeWing(white ? wingRW : wingR, 1),
+        wingL: makeWing(white ? wingLW : wingL, -1),
+        white,
+        want: null, // A3: zu diesem Platz will sie (Futterbrett)
         state: 'weg',
         perch: null,
         pos: new THREE.Vector3(),
@@ -143,10 +159,82 @@ export class Crows {
   leave(c, instant = false) {
     if (c.perch) c.perch.crow = null;
     c.perch = null;
+    c.called = false;
+    c.waitFor = null;
     c.state = instant ? 'weg' : 'fliegt';
     c.timer = this.rng.range(35, 80);
     c.root.visible = !instant;
     c.startle = -1;
+  }
+
+  /** A3: Ein Platz kommt dazu (das Futterbrett) – gibt ihn zurück. */
+  addPerch(p) {
+    const perch = { ...p, crow: null };
+    this.perches.push(perch);
+    return perch;
+  }
+
+  /** A3: Der Platz verschwindet (abgerissen, umgeworfen) – wer dort sitzt, fliegt auf. */
+  removePerch(perch) {
+    const k = this.perches.indexOf(perch);
+    if (k < 0) return;
+    if (perch.crow) {
+      const c = perch.crow;
+      if (c.state === 'sitzt') this.flee(c, { x: perch.x + 1, z: perch.z + 1 }, false);
+      else this.leave(c, true);
+    }
+    for (const c of this.list) if (c.want === perch) c.want = null;
+    if (this.crumbs?.perch === perch) this.crumbs = null;
+    this.perches.splice(k, 1);
+  }
+
+  /**
+   * A3: Krümel liegen auf dem Brett – eine Krähe kommt (eine aus dem Wald, sonst die nächste,
+   * die sitzt) und pickt `pecks`-mal, dann meldet `onCrumbs`, dass alles weg ist.
+   */
+  feed(perch, pecks = CROW_FEED.pecks) {
+    this.crumbs = { perch, left: pecks, t: 0 };
+    this.call(perch);
+  }
+
+  /** A3: eine Krähe zu diesem Platz rufen (gibt sie zurück, null wenn keine kann). */
+  call(perch) {
+    if (perch.crow) return perch.crow;
+    const waiting = this.list.find((o) => o.waitFor === perch);
+    if (waiting) return waiting; // eine wartet schon in der Nähe
+    let c = this.list.find((o) => o.state === 'weg');
+    if (c) {
+      c.want = perch;
+      c.timer = Math.min(c.timer, this.rng.range(CROW_FEED.call[0], CROW_FEED.call[1]));
+      return c;
+    }
+    // Sonst fliegt die nächste herüber, die gerade irgendwo sitzt
+    let best = null;
+    for (const o of this.list) {
+      if (o.state !== 'sitzt' || o.waitFor) continue;
+      const d = Math.hypot(o.pos.x - perch.x, o.pos.z - perch.z);
+      if (!best || d < best.d) best = { o, d };
+    }
+    if (!best) return null;
+    c = best.o;
+    if (c.perch) c.perch.crow = null;
+    c.state = 'kommt';
+    c.perch = perch;
+    c.called = true;
+    perch.crow = c;
+    return c;
+  }
+
+  /** A3: Ein Platz in der Nähe des Futterbretts, weit genug von Mika, um dort zu warten. */
+  waitPerch(target, p) {
+    let best = null;
+    for (const q of this.perches) {
+      if (q === target || q.crow || q.board || !this.isFree(q)) continue;
+      const d = Math.hypot(q.x - target.x, q.z - target.z);
+      if (d > 9 || Math.hypot(q.x - p.x, q.z - p.z) < SHY + 2.5) continue;
+      if (!best || d < best.d) best = { q, d };
+    }
+    return best ? best.q : null;
   }
 
   /** M30: Ein Knall – alle sitzenden Krähen im Umkreis fliegen krächzend auf. */
@@ -207,6 +295,14 @@ export class Crows {
     this.cawCooldown -= dt;
     const day = hours >= DAY[0] && hours <= DAY[1];
     const p = player.position;
+    // A3: Liegen Krümel auf dem Brett und keine pickt, sieht immer wieder eine nach
+    if (this.crumbs && day && !this.crumbs.perch.crow && dt > 0) {
+      this.crumbs.t -= dt;
+      if (this.crumbs.t <= 0) {
+        this.crumbs.t = this.rng.range(2, 4);
+        if (!this.list.some((o) => o.state === 'kommt' && o.perch === this.crumbs.perch)) this.call(this.crumbs.perch);
+      }
+    }
     const running = Math.hypot(player.velocity.x, player.velocity.z) > 4;
     for (const c of this.list) {
       if (c.state === 'sitzt') {
@@ -216,7 +312,7 @@ export class Crows {
           continue;
         }
         const d = Math.hypot(p.x - c.pos.x, p.z - c.pos.z);
-        if (!inside && d < SHY * (running ? 1.5 : 1)) {
+        if (!inside && d < (this.tame ? TAME_SHY : SHY * (running ? 1.5 : 1))) {
           this.flee(c, p, true);
           continue;
         }
@@ -237,6 +333,20 @@ export class Crows {
           this.flee(c, scared, true);
           continue;
         }
+        // A3: Sie wartet aufs Futterbrett – ist Mika weit genug weg, fliegt sie hinüber
+        if (c.waitFor) {
+          const bp = c.waitFor;
+          if (!this.perches.includes(bp) || bp.crow || !this.crumbs || this.crumbs.perch !== bp) c.waitFor = null;
+          else if (Math.hypot(p.x - bp.x, p.z - bp.z) > (this.tame ? TAME_SHY + 0.4 : SHY + 0.3)) {
+            if (c.perch) c.perch.crow = null;
+            c.state = 'kommt';
+            c.perch = bp;
+            bp.crow = c;
+            c.called = true;
+            c.waitFor = null;
+            continue;
+          }
+        }
         if (c.startle >= 0) {
           c.startle -= dt;
           if (c.startle < 0) {
@@ -244,10 +354,19 @@ export class Crows {
             continue;
           }
         }
-        // Picken, umdrehen, wippen
+        // Picken, umdrehen, wippen – am Futterbrett mit Krümeln nur picken (A3)
         c.idle -= dt;
         if (c.peck > 0) c.peck = Math.max(0, c.peck - dt);
-        if (c.idle <= 0) {
+        const eating = this.crumbs && this.crumbs.perch === c.perch && this.crumbs.left > 0;
+        if (c.idle <= 0 && eating) {
+          c.idle = this.rng.range(0.45, 0.8);
+          c.peck = 0.3;
+          this.pecks++;
+          if (--this.crumbs.left <= 0) {
+            this.crumbs = null;
+            if (this.onCrumbs) this.onCrumbs(c);
+          }
+        } else if (c.idle <= 0) {
           c.idle = this.rng.range(1.2, 4);
           if (this.rng.chance(0.6)) c.peck = 0.3;
           else c.turnTo = c.facing + (this.rng.chance(0.5) ? 1 : -1) * this.rng.range(0.8, 1.8);
@@ -277,13 +396,18 @@ export class Crows {
         if (!day) continue;
         c.timer -= dt;
         if (c.timer > 0) continue;
-        const perch = this.pickPerch(p, 7);
+        // A3: gerufen – oder es liegen noch Krümel auf dem Brett, und keine sitzt dort
+        const crumbs = this.crumbs && !this.crumbs.perch.crow ? this.crumbs.perch : null;
+        const called = (c.want && !c.want.crow && this.perches.includes(c.want) ? c.want : null) || crumbs;
+        c.want = null;
+        const perch = called || this.pickPerch(p, 7);
         if (!perch) {
           c.timer = this.rng.range(10, 20);
           continue;
         }
         // Aus dem Wald im Nordwesten zurück zu einem freien Platz
         c.state = 'kommt';
+        c.called = Boolean(called);
         c.perch = perch;
         perch.crow = c;
         c.pos.set(perch.x - 12, 8, perch.z - 9);
@@ -295,7 +419,21 @@ export class Crows {
         const dy = perch.y - c.pos.y;
         const dz = perch.z - c.pos.z;
         const dist = Math.hypot(dx, dy, dz);
-        const nearPlayer = Math.hypot(p.x - perch.x, p.z - perch.z) < SHY + 1.5;
+        // A3: Zum Futterbrett gerufen kommt sie näher heran, zahm fast bis an Mika
+        const near = this.tame ? TAME_SHY + 0.4 : c.called ? SHY : SHY + 1.5;
+        const nearPlayer = Math.hypot(p.x - perch.x, p.z - perch.z) < near;
+        // A3: Zum Brett gerufen, aber Mika steht noch dort – auf einem Pfosten in der Nähe warten
+        if (c.called && nearPlayer && day) {
+          const wait = this.waitPerch(perch, p);
+          if (wait) {
+            perch.crow = null;
+            c.waitFor = perch;
+            c.called = false;
+            c.perch = wait;
+            wait.crow = c;
+            continue;
+          }
+        }
         if (!day || nearPlayer || !this.isFree(perch)) {
           // Platz besetzt oder Mika steht da: abdrehen
           this.flee(c, { x: perch.x + 1, z: perch.z + 1 }, false);
@@ -319,6 +457,6 @@ export class Crows {
 
   /** Für die Prüfung: Zustand aller Krähen. */
   info() {
-    return this.list.map((c) => ({ id: c.id, state: c.state, x: c.pos.x, y: c.pos.y, z: c.pos.z, perch: c.perch ? this.perches.indexOf(c.perch) : -1 }));
+    return this.list.map((c) => ({ id: c.id, state: c.state, x: c.pos.x, y: c.pos.y, z: c.pos.z, perch: c.perch ? this.perches.indexOf(c.perch) : -1, white: c.white, board: Boolean(c.perch?.board) }));
   }
 }

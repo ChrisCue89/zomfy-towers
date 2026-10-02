@@ -10,6 +10,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { hash3 } from '../core/rng.js';
 import { shade, stoneBlob } from './voxelKit.js';
 import { buildPumpkin, buildJackOLantern, buildLeafPile, buildRainBarrel } from './decoModels.js';
+import { buildFeeder } from './crowModels.js';
 
 /** Alle Bauten sind doppelt fein gebaut (M13g; vorher 1/16 m). */
 export const BUILDING_UNIT = 1 / 32;
@@ -739,6 +740,7 @@ export const BUILDING_MODELS = {
   laternenpfahl: { model: buildLampPost, glow: buildLampPostGlow, pool: { y: 1.3, radius: 3.0 } },
   beet: { model: buildGardenPlot },
   bank: { model: buildBench },
+  futterbrett: { model: buildFeeder }, // A3
   hochsitz: { model: buildHochsitz },
   uebungsplatz: { model: buildTrainingGround }, // M30
   lagerglocke: { model: buildCampBell }, // M31

@@ -3,6 +3,7 @@
 // Hier wird abgestimmt; die Texte stehen in T.buch.
 
 import { HOUSE_MAX } from './buildings.js';
+import { CROW_DEED } from './crows.js';
 import { P } from '../render/palette.js';
 
 /**
@@ -35,6 +36,7 @@ export const DEEDS = [
   { id: 'sterne', of: 'stars', need: 50 },
   { id: 'frost', of: 'frost', need: 1 },
   { id: 'drachen', of: 'kite', need: 3 }, // N9: drei Loopings hintereinander mit Pims Drachen
+  { id: 'kraehen', of: 'crows', need: CROW_DEED }, // A3: Gaben am Futterbrett
 ];
 
 /** Herbstschmuck als Belohnung: nach 3, 6, 9 und 12 Taten ein Stück mehr (Bauten mit `deco`). */

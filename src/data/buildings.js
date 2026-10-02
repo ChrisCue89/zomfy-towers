@@ -35,6 +35,8 @@ export const BUILDINGS = {
   laternenpfahl: { w: 1, d: 1, cost: { holz: 2, schrott: 2, stoff: 1 }, icon: 'laternenpfahl', repeat: true, height: 2, raid: 25 },
   beet: { w: 2, d: 1, cost: { holz: 4, fasern: 4 }, icon: 'beet', use: 'ernten', harvest: { fasern: 3 }, height: 0.7, raid: 30 },
   bank: { w: 2, d: 1, cost: { holz: 5 }, icon: 'bank', use: 'bank', max: 3, height: 1, raid: 30 },
+  // A3: Futterbrett für die Krähen – einmal am Tag Krümel, mit der Zeit bringen sie etwas (data/crows.js)
+  futterbrett: { w: 1, d: 1, cost: { holz: 3 }, icon: 'futterbrett', use: 'fuettern', max: 1, height: 1.3, raid: 20 },
   // M23: Hochsitz neben dem Weg – nachts bezieht ein eingezogener Überlebender dort Posten (Reiter Einrichten)
   hochsitz: { w: 1, d: 1, cost: { holz: 10, schrott: 3 }, icon: 'hochsitz', post: true, max: 4, height: 2.4 },
   // M30: Übungsplatz – Heuballen, Kürbis-Zielscheibe, Strohpuppe, Dosen auf dem Zaun (Reiter Einrichten, einmal)
@@ -255,7 +257,7 @@ export function blockOf(b) {
  */
 export const TOWER_TAB = ['bolzen', 'katapult', 'sprenger', 'laternenturm', 'barrikade', 'glockenturm', 'windrad', 'bienenkorb', 'vogelscheuche'];
 export const TRAP_TAB = ['stachelbrett', 'leimtopf', 'klettenteppich', 'knallerbsen', 'oelspur'];
-export const YARD_TAB = ['werkbank', 'holzlager', 'beet', 'bank', 'laternenpfahl'];
+export const YARD_TAB = ['werkbank', 'holzlager', 'beet', 'bank', 'laternenpfahl', 'futterbrett'];
 
 /**
  * Ausbaustufen des Zuhauses (DESIGN.md 6.8, Meilenstein 11). Jede Stufe gibt

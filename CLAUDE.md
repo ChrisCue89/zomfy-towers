@@ -373,7 +373,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       halten, N9), wonders (kleine Wunder: Gedanken an den
                       Stümpfen, Blinken vom Sturmhuk, Eisgesang, G6), chores
                       (das Tagwerk der Bewohner: Arbeitsplatz, Sitz, Takt,
-                      Innehalten, A1), quests
+                      Innehalten, A1), crowGifts (Krähengaben: Futterbrett,
+                      Krümel, Vertrauen, Gabe am Morgen, Zurückgeben, Jakobs
+                      Schatulle, A3), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -447,6 +449,8 @@ src/world/            world (Zusammenbau + Update), map (Karte: Bucht fest,
                       Glockengestell, Wäsche, Kahn, Reuse, Seenebel, N7),
                       cardModels (Klapptisch, Hackklötze, Einsätze, M28),
                       keepsakeModels (die siebzehn Erinnerungsstücke, M29),
+                      crowModels (Futterbrett, Krümel, Gaben klein und fürs
+                      Foto, Krähenglas, Kompass, lose Diele, A3),
                       decoModels (Herbstschmuck: Regentonne, Kürbis,
                       Kürbislaterne, Laubhaufen – für Requisiten und
                       Herbstbuch, M25),
@@ -541,6 +545,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       G2; Stufen der Waldrand-Gedanken, G3), chores (das Tagwerk:
                       Arbeiten mit Takt, wer was wo tut, Zeiten, A1; mit
                       anpacken: Dauer, Ertrag je Person, Angebot, A2),
+                      crows (Krähengaben: Füttern, Vertrauen, Chance, die Gaben
+                      in ihrer Reihenfolge, Krähenglas, A3),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -1057,6 +1063,23 @@ Grundprinzipien:
     `chores.help(id)`: nur wenn die Person gerade arbeitet, `startWork` mit der Karte `T.anpacken.karte`,
     in der Abblende `HELP_GIFTS` (Vorrat, `xp`, `heal`) und `bonds.add(id, 'anpacken')`, danach Dank
     als Sprechblase. Einmal am Tag je Person über `flags.anpacken_<id>` (= Tag).
+- **Krähengaben (A3, `core/crowGifts.js`, `data/crows.js`, `world/crowModels.js`):**
+  - Das Futterbrett ist ein Bau (`use: 'fuettern'`, Reiter »Lager«); `crowGifts.sync` findet es und
+    legt einen Platz der Krähen darauf (`crows.addPerch`, gedreht wie der Bau über `feederOffset`),
+    `world.setFeeder` zeigt Krümel und Gabe im Raster des Baus.
+  - E streut Krümel (`state.crows.fed` = Tag, `crows.feed`): Solange welche liegen und keine pickt,
+    ruft `crows.call` immer wieder eine Krähe; steht Mika noch am Brett, wartet sie auf einem Pfosten
+    in der Nähe (`waitPerch`, `waitFor`). Auf dem Brett pickt sie `CROW_FEED.pecks`-mal (`onCrumbs`).
+  - `crowGifts.morning` (in `onNewDay`): Vertrauen ±1, ab `CROW_TRUST.tame` sind die Krähen zahm
+    (`crows.tame`, `TAME_SHY`), ab `gift` würfelt ein fester Zufall aus Kartenstartwert und Tag die
+    nächste Gabe (`nextGift`: Reihenfolge, Besitzer nur, wenn sie in der Bucht wohnen); die Zeile
+    kommt in den Morgenbericht (`news`).
+  - E nimmt die Gabe (Karte `{ crow, line }` in `DeliveryCard.drawCrow`): `jar` ins Krähenglas
+    (`world.refreshCrowJar`, Gemütlichkeit über `crowCozy`), `owner` in `carry` – das Gespräch bietet
+    das Zurückgeben an (`crowReturn` in dialogs.js, Aktion `kraehenfund`, Dank als Sprechblase),
+    `res`/`part` in Vorrat und Turmteile, `key` macht die lose Diele vor dem Kamin auf
+    (`world.setLooseBoard`, Einblendung `crowChest`, `openChest`: Jakobs Brief als Karte ohne
+    Porträt, der Kompass auf der Fensterbank, Edda über Funk nach der Karte).
 - **Der Fotomodus (K1, `core/photo.js`):** Eintrag im Pausenmenü (nicht vom Titelbild, nicht im
   Dialog); Modus `foto` – die Uhr steht, die Leute arbeiten im echten Takt weiter (Krähen, Balduin
   und die Horde stehen wie im Menü), `render` zeichnet nur Regen, Schnee und `photo.draw` (die
@@ -1585,7 +1608,14 @@ Grundprinzipien:
    Tasten, »Ich pack mit an.«, Abblende, +6 Holz, gemeinsame Zeit und Dank, am selben Tag kein
    zweites Angebot; ab K1 (Abschnitt `foto`): Esc, »Foto machen« mit echten Tasten, nur die
    Hinweiszeile, die Uhr steht, D schiebt den Blick, E lädt ein PNG herunter (mindestens 1080 Zeilen,
-   mit Inhalt, Name mit Tag und Uhrzeit), Esc zurück, die Konsole bleibt sauber (Bild: foto).
+   mit Inhalt, Name mit Tag und Uhrzeit), Esc zurück, die Konsole bleibt sauber (Bild: foto); ab A3
+   (Abschnitt `kraehen`): das Futterbrett im Reiter »Lager«, E streut Krümel (Gedanke, Edda funkt
+   einmal), ein zweites E sagt »Für heute haben sie Krümel«, Mika tritt zurück und eine Krähe pickt
+   sie auf dem Brett auf, nach einigen Morgen mit Krümeln glänzt etwas (Zeile im Bericht) und E nimmt
+   es (Karte), scheu fliegt eine Krähe auf 1,6 m auf, vertraut bleibt sie sitzen, Hildes Fingerhut geht
+   mit echten Tasten im Gespräch zurück, der Schlüssel öffnet mit »Diele anheben« Jakobs Schatulle
+   (Brief, Kompass, Edda), sechs Stücke im Krähenglas, die Tat »Krähenfreund«, Speichern v34 behält
+   alles (Bilder: kraehen-brett, kraehen-gabe, kraehen-brief, kraehen-glas).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1770,7 +1800,10 @@ und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft; ab
 sitzt, dazu die Arbeitsgeräusche, die Sätze des Tages, die letzte Hilfe (A2) und was die Sprites
 zeigen, `setChores(an)` schaltet das Tagwerk (in der Prüfung sonst aus); ab K1 zeigt `photo()`
 Modus, Blickpunkt, Kamera, ob gerade gelesen wird, die gespeicherten Bilder (Name, Größe, Faktor)
-und die Meldung.
+und die Meldung; ab A3 zeigt `crowGifts()` Vertrauen, Krümel, Gabe, Gaben, Krähenglas, was Mika
+trägt und zurückgab, die Schatulle, das Brett (mit der Krähe darauf), zahm, Schnabelhiebe und
+Zähler, `setCrows(o)` setzt den Krähen-Zustand, `crowMorning()` rechnet den Morgen der Krähen
+(`nextMorning()` tut es auch).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |

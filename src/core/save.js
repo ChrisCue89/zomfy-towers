@@ -15,6 +15,7 @@ import { newFishing } from '../data/fishing.js';
 import { newIsles } from '../data/isles.js';
 import { newFog } from '../data/fogIsle.js';
 import { newKite } from '../data/kite.js';
+import { newCrows } from '../data/crows.js';
 
 /** So viel kostete eine Barrikade vor M9.1 – alte Stände bekommen das zurück. */
 const OLD_BARRICADE_COST = { holz: 3 };
@@ -147,6 +148,8 @@ const MIGRATIONS = {
   // v32 -> v33: F3c (der vierte Stern auf »Wild«). Noch keine Nacht mit ihm; eine laufende Nacht
   // begann vor dem Stern und bringt ihn nicht.
   32: (data) => ({ ...data, version: 33, book: { ...(data.book || {}), wild: [] } }),
+  // v33 -> v34: A3 (Krähengaben). Noch kein Futterbrett, die Krähen kennen Mika noch nicht.
+  33: (data) => ({ ...data, version: 34, crows: newCrows() }),
   22: (data) => {
     const inside = (data.player?.x ?? 0) >= LAYOUT.interior.x - 2;
     return {

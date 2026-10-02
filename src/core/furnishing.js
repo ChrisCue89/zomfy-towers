@@ -18,6 +18,7 @@ import { pay, canAfford } from './inventory.js';
 import { hoursOf } from './state.js';
 import { houseCozy } from '../data/buildings.js';
 import { ABILITIES } from '../data/wanderers.js';
+import { crowCozy } from '../data/crows.js';
 
 export class Furnishing {
   /** @param {import('./game.js').Game} game */
@@ -34,7 +35,7 @@ export class Furnishing {
   }
 
   get cozy() {
-    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel) + (this.game.state.isles?.cat ? CAT.cozy : 0); // Schlafzimmer (M11), N6: die Katze
+    return coziness(this.owned) + houseCozy(this.game.state.world.houseLevel) + (this.game.state.isles?.cat ? CAT.cozy : 0) + crowCozy(this.game.state); // Schlafzimmer (M11), N6: die Katze, A3: das Krähenglas
   }
 
   /** Nach dem Laden: alles Gekaufte aufstellen. */

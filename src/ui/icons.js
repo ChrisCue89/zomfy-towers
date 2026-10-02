@@ -588,6 +588,25 @@ const ICONS = {
       '................',
     ],
   },
+  // A3: Futterbrett mit einer Krähe darauf
+  futterbrett: {
+    legend: { k: P.e1, B: P.e6, L: P.e4, S: P.s6, W: P.b4, C: P.n2, y: P.s6 },
+    rows: [
+      '................',
+      '.......CCy......',
+      '....CCCCC.......',
+      '...CCCCC........',
+      '..kkkkkkkkkkkk..',
+      '..kBBBBBBBBSWk..',
+      '..kkkkkkkkkkkk..',
+      '.......kLk......',
+      '......kkLkk.....',
+      '.......kLk......',
+      '.......kLk......',
+      '.....kkkLkkk....',
+      '.....kkkkkkk....',
+    ],
+  },
   bank: {
     legend: { k: P.e1, B: P.e4, S: P.e6, L: P.e3 },
     rows: [

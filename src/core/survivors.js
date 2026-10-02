@@ -556,6 +556,10 @@ export class Survivors {
       g.chores.help(id); // A2: Mika packt bei der Arbeit mit an
       return;
     }
+    if (aktion === 'kraehenfund') {
+      g.crowGifts.giveBack(id); // A3: was die Krähen gebracht haben, geht zurück
+      return;
+    }
     // M33: Angeln – Fiete bringt es bei, abends kommt jemand mit an den Steg
     if (aktion === 'angelnLernen') {
       g.startDialog('fieteAngeln', () => {

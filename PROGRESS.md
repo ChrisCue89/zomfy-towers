@@ -5,6 +5,35 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## A3: Krähengaben ✓
+
+**Aus dem Ideen-Parkplatz (DESIGN 9): »Krähen, die etwas bringen (oder stehlen)«.** Krähen merken
+sich Gesichter – wer sie füttert, dem bringen sie etwas.
+
+- **Das Futterbrett** (Reiter »Lager«, 3 Holz): ein Pfosten auf Kreuzfuß, offenes Brett mit Rand
+  und Blechschale. E streut einmal am Tag Krümel; Mika denkt »Na, ihr Schwarzen? Frühstück!«, und
+  Edda funkt von Kasimir, ihrer Krähe am Sturmhuk. Tritt Mika zurück, kommt eine Krähe und pickt –
+  steht Mika noch da, wartet sie auf einem Pfosten in der Nähe. Eine der fünf hat eine weiße Feder.
+- **Vertrauen:** jeder Tag mit Krümeln eins mehr, jeder ohne eins weniger; ab drei bleiben die
+  Krähen sitzen, wenn Mika vorbeigeht.
+- **Gaben am Morgen** (Zeile im Bericht, das Brett glänzt): ein Kronkorken mit Hirsch, ein blauer
+  Glasknopf, eine Murmel, eine Häherfeder, eine Spiegelscherbe, ein Gardinenring – sie kommen ins
+  Krähenglas auf der Fensterbank (ab drei Gemütlichkeit +1); Schrauben und ein Zahnrad für den
+  Vorrat, einmal eine Glücksmünze. Hildes Fingerhut, Yusufs Pinzette, Berts Bleistift und Junas
+  Klemme haben die Krähen gestohlen – Mika gibt sie im Gespräch zurück. Jede Gabe hat eine Karte
+  mit Foto.
+- **Jakobs Schatulle:** Zuletzt bringen sie einen Messingschlüssel mit »J. L.«. Edda erkennt ihren
+  Großvater; unter der Diele vor dem Kamin liegt seine Schatulle mit einem Brief an sie und seinem
+  Kompass (danach auf der Fensterbank).
+- Fünf Gaben sind die Tat »Krähenfreund« (jetzt 14 Taten). **Speichern v34** mit Migration
+  v33 → v34 (noch kein Brett, die Krähen kennen Mika noch nicht).
+- **Prüfung:** Abschnitt `kraehen` (echte Tasten, Bilder kraehen-brett, kraehen-gabe,
+  kraehen-brief, kraehen-glas) – bestanden. Die übrigen Prüfungen erwarten jetzt v34, 14 Taten und
+  das Futterbrett im Reiter »Lager«. Die volle Prüfung über K1 und A3 fand eine Stelle im Skript (das
+  Herbstbuch zählte noch 13 Zeilen Taten) – korrigiert, Abschnitt `buch` danach bestanden.
+
+---
+
 ## K1: Der Fotomodus ✓
 
 **Aus dem Ideen-Parkplatz (DESIGN 9):** Die Bucht ist schön geworden – man soll sie festhalten können,

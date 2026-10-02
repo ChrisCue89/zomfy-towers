@@ -2198,6 +2198,24 @@ Im Pausenmenü »Foto machen«: Die Uhr steht, die Oberfläche geht weg bis auf 
 ist frei (WASD, Z nah/weit), E speichert das Bild pixelgenau als PNG – ohne Oberfläche, mit Regen und
 Schnee. Esc kehrt zurück.
 
+#### A3 – Krähengaben ✓ (Nr. 232)
+
+*Aus dem Ideen-Parkplatz: »Krähen, die etwas bringen (oder stehlen)«.* Krähen merken sich Gesichter:
+
+- **Das Futterbrett** (Reiter »Lager«): einmal am Tag Krümel; tritt Mika zurück, kommt eine Krähe
+  (sonst wartet sie auf einem Pfosten in der Nähe) und pickt sie auf. Eine der fünf trägt eine
+  weiße Feder.
+- **Vertrauen:** jeder Tag mit Krümeln eins mehr, jeder ohne eins weniger. Ab drei bleiben die
+  Krähen sitzen, wenn Mika vorbeigeht.
+- **Gaben:** Morgens glänzt manchmal etwas auf dem Brett (Zeile im Bericht). Glänzendes kommt ins
+  Krähenglas auf der Fensterbank der Stube, Kleinkram in den Vorrat, einmal eine Glücksmünze; was
+  den Leuten gehört (Hildes Fingerhut, Yusufs Pinzette, Berts Bleistift, Junas Klemme), bringt Mika
+  im Gespräch zurück.
+- **Jakobs Schatulle:** Zuletzt bringen sie einen Messingschlüssel mit »J. L.«. Edda erkennt ihn –
+  unter der Diele vor dem Kamin liegt Großvaters Schatulle mit einem Brief an sie und seinem
+  Kompass, der danach auf der Fensterbank steht.
+- Fünf Gaben sind die Tat »Krähenfreund« im Herbstbuch.
+
 #### G7 – Die Ankunft, glaubhaft ✓
 
 *Auftrag (01.10.2026):* »wo kommt das Funkgerät her? arbeite an der story, das ist alles zu dünn.
@@ -2222,7 +2240,7 @@ ausbauen«
 
 - Angeln am Steg (umgesetzt: M33), Kochen am Kamin mit kleinen Boni.
 - Kürbisfest im Herbst, Laternenumzug, erster Schnee.
-- Krähen, die etwas bringen (oder stehlen).
+- Krähen, die etwas bringen (oder stehlen) (umgesetzt: A3).
 - Mit dem Boot die Inseln besuchen (umgesetzt: N6, mit Mikas Ruderboot); die Insel im Nebel (umgesetzt: N7).
 - Was macht Balduin mit den Teilen? Eine eigene Geschichte.
 - Briefe von Oma Hilde als Sammelobjekte (eingeplant: Netzwerk, M32).

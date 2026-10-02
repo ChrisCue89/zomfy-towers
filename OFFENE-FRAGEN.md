@@ -2955,6 +2955,30 @@ nie die Hinweiszeile.
 `readPixels` hielte die Grafikkarte an und schriebe eine Warnung (CLAUDE.md, Regel 5). Der
 Dateiname nennt Tag und Uhrzeit.
 
+### 232. Was bringen die Krähen – und was kostet es? (A3, DESIGN 9)
+**Entscheidung:** Ein Futterbrett (Reiter »Lager«, 3 Holz), einmal am Tag Krümel – kostenlos,
+die Gegenseite ist die Regelmäßigkeit: Jeder Tag mit Krümeln bringt Vertrauen, jeder ohne
+nimmt eines. Ab zwei liegt morgens manchmal etwas auf dem Brett (die Chance wächst mit dem
+Vertrauen), ab drei bleiben die Krähen sitzen, wenn Mika vorbeigeht. Die Gaben kommen in einer
+festen Reihenfolge: Glänzendes fürs Krähenglas auf der Fensterbank (ab drei Stücken
+Gemütlichkeit +1), Kleinkram für den Vorrat, eine Glücksmünze – und Dinge, die den Leuten in der
+Bucht gehören (Hildes Fingerhut, Yusufs Pinzette, Berts Bleistift, Junas Klemme): Die Krähen
+haben sie gestohlen, Mika bringt sie zurück (»oder stehlen« aus dem Ideen-Parkplatz). Fünf Gaben
+sind die Tat »Krähenfreund«.
+
+**Der Schlüssel:** Nach fünf Gaben, ab Vertrauen sechs, bringen sie einen kleinen
+Messingschlüssel mit »J. L.« – Jakob Lindqvist, Eddas Großvater, dem das Haus gehörte (DESIGN
+4.2). Edda erzählt schon beim ersten Füttern von ihrer Krähe Kasimir und dass Großvater schwor,
+die Krähen hätten ihm einen Schlüssel geklaut. Unter der Diele vor dem Kamin liegt seine
+Schatulle: ein Brief an Edda und sein Kompass, der danach auf der Fensterbank steht. Wehmut ja,
+Schuld nein – Edda bedankt sich, dass Mika ihn ihr vorgelesen hat.
+
+**Keine Bindung fürs Zurückgeben:** Bindung entsteht aus gemeinsamer Zeit, nicht aus Geschenken
+(Nr. 171); das Zurückgeben ist ein kleiner Moment mit einer Sprechblase, kein Punkt.
+
+**Warum nicht nachts:** Krähen sind tagsüber in der Bucht (wie seit M12); abends sagt das Brett,
+dass sie schon im Wald schlafen.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

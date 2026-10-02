@@ -16,6 +16,7 @@ import { stepsLeft } from './arms.js';
 import { REPAIR } from './isles.js';
 import { bellRings } from './fogIsle.js';
 import { choreOffered } from './chores.js';
+import { crowReturn } from './crows.js';
 
 // M30: Wer am Übungsplatz üben kann – eingezogene Menschen (kein Hund), heute noch nicht, nicht ganz geübt
 const UEBEN_ORDER = ['hilde', 'juna', 'bert', 'yusuf', ...Object.keys(WANDERERS)];
@@ -74,6 +75,8 @@ function guestAnswers(state, id, extra = []) {
   if (cardsOffered(state, id)) answers.push({ t: T.karten.einladen, aktion: 'karten' }); // M28: abends eine Runde
   if (fishingOffered(state, id)) answers.push({ t: T.angeln.einladen, aktion: 'angeln' }); // M33: oder zum Steg
   if (choreOffered(state, id)) answers.push({ t: T.anpacken.frage, aktion: 'anpacken' }); // A2: bei der Arbeit helfen
+  const found = crowReturn(state, id); // A3: was die Krähen gebracht haben, gehört ihr
+  if (found) answers.push({ t: T.kraehen.zurueck[found], aktion: 'kraehenfund' });
   if (!answers.length) return undefined;
   answers.push({ t: 'Bis später.', standard: true });
   return answers;

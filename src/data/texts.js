@@ -10,6 +10,7 @@ const LAGER_DINGE = {
   zelt: ['Ein Schlafzelt', 'einem Schlafzelt'],
   schlafhuette: ['Die Schlafhütte', 'der Schlafhütte'], // M27
   laternenpfahl: ['Ein Laternenpfahl', 'einem Laternenpfahl'],
+  futterbrett: ['Das Futterbrett', 'dem Futterbrett'], // A3
   vogelscheuche: ['Die Vogelscheuche', 'der Vogelscheuche'], // M19: fällt um, wenn die Gelockten sie zerschlagen
 };
 
@@ -89,6 +90,7 @@ export const T = {
     laternenpfahl: 'Laternenpfahl',
     beet: 'Flachsbeet',
     bank: 'Sitzbank',
+    futterbrett: 'Futterbrett', // A3
     huette: 'Küche anbauen', // G7: die alte Hütte bekommt einen Anbau
     huetteFertig: 'Hütte mit Küche',
     notunterkunft: 'Alte Hütte',
@@ -169,6 +171,7 @@ export const T = {
     laternenpfahl: 'Warmes Licht für lange Abende.',
     beet: 'Blüht blau – jeden Tag Fasern zum Ernten.',
     bank: 'Hinsetzen: voll geheilt und kurz kräftigere Schläge (alle 25 Sekunden).',
+    futterbrett: 'Für die Krähen. Wer ihnen jeden Tag ein paar Krümel streut, dem bringen sie mit der Zeit etwas mit.', // A3
     huette: 'Mehr Platz, mehr Wärme, stabilere Wände.',
     ausbau: [
       null,
@@ -695,6 +698,9 @@ export const T = {
     durchsuchen: 'Durchsuchen',
     werkbank: 'Werkbank benutzen',
     bank: 'Hinsetzen',
+    fuettern: 'Krümel streuen', // A3: das Futterbrett
+    gabeNehmen: 'Gabe nehmen',
+    diele: 'Diele anheben', // A3: Jakobs Schatulle
     axtNehmen: 'Axt nehmen',
     hineingehen: 'Hineingehen',
     auswaehlen: 'Auswählen',
@@ -1311,6 +1317,7 @@ export const T = {
       sterne: ['Sternenhimmel', 'Sammle fünfzig Sterne.'],
       frost: ['Der erste Frost', 'Halte die Frostnacht.'],
       drachen: ['Drachenwetter', 'Drei Loopings hintereinander mit Pims Drachen.'],
+      kraehen: ['Krähenfreund', 'Fünf Geschenke von den Krähen am Futterbrett.'], // A3
     },
     // Schlurferkunde mit Dr. Yusufs Notizen
     kundeZaehler: (n, von) => `${n} von ${von} Arten erledigt`,
@@ -2536,6 +2543,68 @@ export const T = {
       mara: 'Einunddreißig. Du hast richtig gezählt.',
       paula: 'Schön gerade Stiche, {name}. Der Stoff ist für dich.',
     },
+  },
+  // A3: Krähengaben – das Futterbrett, die Gaben, Jakobs Schatulle
+  kraehen: {
+    abends: 'Die Krähen schlafen schon im Wald.',
+    schonGefuettert: 'Für heute haben sie Krümel.',
+    erstesMal: 'Na, ihr Schwarzen? Frühstück!',
+    zahm: 'Sie bleiben sitzen, wenn ich komme. Wir kennen uns jetzt.',
+    glaenzt: 'Auf dem Futterbrett glänzt etwas.',
+    // Edda beim ersten Füttern (über Funk)
+    eddaErst: 'Fütterst du die Krähen, Mika? Am Sturmhuk hatte ich auch eine, Kasimir. Krähen merken sich Gesichter – er hat mir Knöpfe gebracht. Großvater schwor immer, sie hätten ihm einen Schlüssel geklaut.',
+    // Die Karte einer Gabe
+    karte: 'Ein Geschenk der Krähen',
+    namen: {
+      kronkorken: 'Ein Kronkorken mit einem Hirsch',
+      glasknopf: 'Ein blauer Glasknopf',
+      schrauben: 'Zwei rostige Schrauben',
+      fingerhut: 'Ein silberner Fingerhut',
+      murmel: 'Eine grüne Murmel',
+      zahnrad: 'Ein kleines Zahnrad',
+      pinzette: 'Eine Pinzette',
+      haeherfeder: 'Eine Feder vom Eichelhäher',
+      bleistift: 'Ein Zimmermannsbleistift',
+      klemme: 'Eine Krokodilklemme',
+      spiegelscherbe: 'Eine Spiegelscherbe',
+      muenze: 'Eine alte Münze',
+      gardinenring: 'Ein Gardinenring aus Messing',
+      schluessel: 'Ein kleiner Messingschlüssel',
+      nagelrest: 'Ein krummer Nagel und ein Span',
+      kompass: 'Jakobs Kompass',
+    },
+    // Unter dem Foto: wohin es kommt
+    glas: 'Kommt ins Krähenglas auf der Fensterbank.',
+    gehoert: {
+      hilde: 'Den hat doch Oma Hilde immer am Finger …',
+      yusuf: 'Sieht aus wie aus Dr. Yusufs Tasche.',
+      bert: 'Riecht nach Sägemehl. Bert?',
+      juna: 'Die hängt sonst an Junas Antenne!',
+    },
+    vorrat: (was) => `In den Vorrat: ${was}.`,
+    teil: (name) => `Ein Turmteil: ${name}!`,
+    schluessel: 'Eingeritzt: J. L.',
+    // Zurückgeben (Antwort im Gespräch)
+    zurueck: {
+      fingerhut: 'Ist das dein Fingerhut? Die Krähen hatten ihn.',
+      pinzette: 'Fehlt dir eine Pinzette? Die Krähen …',
+      bleistift: 'Dein Bleistift. Die Krähen haben ihn gebracht.',
+      klemme: 'Deine Klemme! Die Krähen hatten sie.',
+    },
+    // Der Dank (Sprechblase der Person; {name}: Mika oder der Spitzname)
+    dank: {
+      hilde: 'Mein Fingerhut! Den such ich seit Tagen, {name}. Diebisches Federvieh – aber Geschmack haben sie.',
+      yusuf: 'Meine Pinzette! Ich dachte schon, ich werde vergesslich. Danke, {name}.',
+      bert: 'Mein Bleistift. Und ich hab Juna verdächtigt. Sag ihr das nicht.',
+      juna: 'Meine Klemme! Ohne die rauscht die Antenne. Krähen sind schlimmer als jede Funkstörung!',
+    },
+    // Jakobs Schatulle (der Schlüssel)
+    eddaSchluessel: 'J. L.? Jakob Lindqvist – mein Großvater! Er hatte eine Schatulle unter der Diele vor dem Kamin. Wenn ich kam, war sie immer schon zu. Schau nach, Mika. Bitte.',
+    schatulle: 'Jakobs Schatulle',
+    brief: 'Liebe Edda,\nwenn du das liest, haben die Krähen meinen Schlüssel wieder hergegeben – oder du hast die Diele aufgestemmt, dann schimpf ich von oben. Mein Kompass ist für dich. Er zeigt nach Norden; nach Hause findest du auch ohne ihn: wo Licht im Fenster ist und einer Holz nachlegt. Pass gut auf die Holzlände auf.\nDein Großvater Jakob',
+    briefOrt: 'Holzlände 1, unter der Diele',
+    kompass: 'Jakobs Kompass – er steht jetzt auf der Fensterbank.',
+    eddaBrief: 'Du hast ihn mir vorgelesen … jedes Wort. Danke, Mika. Behalt den Kompass. Ich weiß ja, wo Licht im Fenster ist.',
   },
   // K1: der Fotomodus (Pausenmenü)
   foto: {

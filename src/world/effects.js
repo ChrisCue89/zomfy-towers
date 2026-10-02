@@ -10,6 +10,7 @@ const CHIPS = {
   stein: [c(P.s7), c(P.s5), c(P.s8)],
   gras: [c(P.g7), c(P.g6), c(P.g8)],
   schrott: [c(P.s6), c(P.r3), c(P.s4)],
+  kruemel: [c(P.e8), c(P.e9), c(P.f5)], // A3: Krümel fürs Futterbrett
 };
 const LEAVES = [c(P.g6), c(P.g7), c(P.g5), c(P.g8)];
 const DUST = [c(P.e8), c(P.e9), c(P.s8)];

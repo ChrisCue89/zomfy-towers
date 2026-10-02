@@ -80,6 +80,7 @@ import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
 import { Chores } from './chores.js';
+import { CrowGifts } from './crowGifts.js';
 import { Photo } from './photo.js';
 import { Wonders } from './wonders.js';
 import { FirstFire } from './firstFire.js';
@@ -388,6 +389,7 @@ export class Game {
     this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
     this.chores = new Chores(this); // A1: das Tagwerk der Bewohner
+    this.crowGifts = new CrowGifts(this); // A3: Futterbrett und Krähengaben
     this.photo = new Photo(this); // K1: der Fotomodus
     this.people = new PeopleSprites(this.scene); // F4: Mika, die Leute und Knopf als Sprites
     this.people.setActive(this.settings.figuren === '2d');
@@ -585,6 +587,9 @@ export class Game {
     this.world.setPumpkinsCarved(!this.state.flags.kuerbisseRoh); // G7: die Kürbisse an der Tür bis zum ersten Abend roh
     this.world.refreshStakes(this.state.cards?.stakes || []); // M28: gewonnene Einsätze auf dem Kaminsims
     this.world.refreshKeepsakes(this.bonds.keepsakes()); // M29: Erinnerungsstücke in der Stube
+    this.world.refreshCrowJar(st.crows.jar, st.crows.chest >= 2); // A3: Krähenglas und Jakobs Kompass
+    this.world.setLooseBoard(st.crows.chest === 1); // A3: die Diele wartet auf den Schlüssel
+    this.crowGifts.sync();
     this.world.refreshCabinet(this.arms.missing()); // M30: was noch im Waffenschrank steht (M31: ohne Verlorenes)
     this.defense.reset(); // M31: ein halber Kampf wird nicht gespeichert
     this.world.setMemorial(st.fallen, this.state.time.day); // M31: das Erinnerungsbrett am Steg
@@ -1027,6 +1032,8 @@ export class Game {
       this.hud.say(T.inseln.mieze[this.state.time.day % T.inseln.mieze.length], 3.5);
       this.sound.play('schnurren');
     }
+    else if (it.use === 'fuettern') this.crowGifts.use(); // A3: Krümel streuen oder die Gabe nehmen
+    else if (it.crowChest) this.crowGifts.openChest(); // A3: Jakobs Schatulle unter der Diele
     else if (it.use === 'ernten') this.harvest(it.building);
     else if (it.select) this.builder.select(it.select);
     else if (it.trader) this.trader.talk();
@@ -1555,7 +1562,7 @@ export class Game {
     this.world.weather.snap(st.time.day); // neues Wetter gleich beim Aufwachen (M12)
     this.world.crows.settle(hoursOf(st.time.minute), w); // und die Krähen sitzen wieder auf ihren Pfosten
     const wirkung = T.wetter.wirkung[this.world.weather.forecast(st.time.day)]; // M18: was das Wetter nachts bewirkt
-    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.natureLine(st.time.day), ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning()];
+    const extra = [{ text: this.weatherLine(st.time.day) }, ...this.natureLine(st.time.day), ...(wirkung ? [{ text: wirkung }] : []), ...this.defense.morning(), ...this.survivors.morning(), ...this.post.morning(), ...this.posts.morning(), ...this.furnishing.morning(), ...this.trader.morning(), ...this.cardNight.morning(), ...this.bonds.morning(), ...this.crowGifts.news()]; // A3: etwas glänzt auf dem Futterbrett
     this.arms.morning(); // M30: die Hülsen der Nacht sind aufgesammelt
     // M23: Heute bittet jemand um etwas (ein Auftrag auf einmal)
     const bitte = this.quests.offer();
@@ -1584,6 +1591,7 @@ export class Game {
     this.world.resources.apply(this.state.world, this.state.time.day);
     this.survivors.arrive(true);
     this.milled = this.grindMills(); // M19
+    this.crowGifts.morning(); // A3: Vertrauen der Krähen, vielleicht eine Gabe auf dem Brett
     // M25: Die letzten Tage vor dem ersten Frost zählen herunter
     const frost = this.autumn.morningLine(this.state.time.day);
     if (frost) this.hud.toast(frost, 'schnee', 6);
@@ -2879,6 +2887,7 @@ export class Game {
     const lively = this.mode === 'play' || this.mode === 'drachen' || this.mode === 'foto'; // N9: beim Drachen rennen die Kinder richtig, K1: im Foto arbeiten alle im echten Takt
     this.survivors.update(lively ? dt : dt * 0.5);
     this.chores.update(lively ? dt : dt * 0.5); // A1: das Tagwerk im Takt
+    this.crowGifts.update(dt); // A3: Futterbrett, Gabe, zahme Krähen
     this.quests.update(dt);
     this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
     this.kite.update(dt); // N9: Pims Drachen
@@ -3370,6 +3379,7 @@ export class Game {
       const b = this.world.buildings.get(it.building);
       if (b && b.day === st.time.day) return T.aktionen.heuteLeer;
     }
+    if (it.use === 'fuettern') return this.crowGifts.blocked(); // A3: abends schlafen sie, einmal am Tag
     // M33: Der Angelplatz sagt gleich, warum gerade nicht (abends, einmal am Tag)
     if (it.fishing) {
       const why = this.fishing.blocked();
@@ -3393,6 +3403,7 @@ export class Game {
     const fire = this.firstFire.prompt(it); // N10: solange es kalt ist
     if (fire) return fire;
     if (it.mailbox && this.post.waiting) return T.aktionen.postHolen; // M32
+    if (it.use === 'fuettern') return this.crowGifts.prompt(); // A3: Krümel streuen oder Gabe nehmen
     if (it.memorial) return this.memorialEvening() && !this.state.fallen.every((f) => f.lit === this.state.time.day) ? T.aktionen.erinnerung : T.aktionen.erinnerungAnsehen; // M31
     if ((it.id === 'sessel' || it.use === 'bank') && !this.nights.active && canRest(this.state)) return T.aktionen.ausruhen;
     return T.aktionen[it.prompt];
@@ -4353,7 +4364,8 @@ export class Game {
         game.state.time.day += 1;
         game.state.time.minute = 60;
         game.defense.heal(); // M31: Wunden heilen wie an einem echten Morgen
-        return [...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post
+        game.crowGifts.morning(); // A3: Vertrauen der Krähen, vielleicht eine Gabe
+        return [...game.crowGifts.news(), ...game.defense.morning(), ...game.survivors.morning(), ...game.post.morning(), ...game.furnishing.morning(), ...game.trader.morning(), ...game.cardNight.morning(), ...game.bonds.morning()].map((l) => ({ text: l.text })); // M29: auch die Grüße des Tages, M32: die Post
       },
       /** M33: Angeln – Angel, Abende, Fänge, Korb, laufende Runde (Phase, Kescher, Karte), Zähler. */
       fishing: () => ({ ...game.fishing.info(), mode: game.mode, pose: game.player.fishingPose ? { ...game.player.fishingPose } : null, spot: game.world.interactions.find((q) => q.id === 'angelplatz') || null }),
@@ -4568,6 +4580,21 @@ export class Game {
       setHordeLook(look) {
         game.applySettings({ horde: look });
         return game.settings.horde;
+      },
+      /** A3: Krähengaben – Vertrauen, Gabe, Glas, Brett, zahm, Krümel, Zähler. */
+      crowGifts: () => game.crowGifts.info(),
+      /** A3: Krähen-Zustand setzen (Prüfung), z. B. { trust: 5, fed: tag }. */
+      setCrows(o) {
+        Object.assign(game.state.crows, o || {});
+        game.world.refreshCrowJar(game.state.crows.jar, game.state.crows.chest >= 2);
+        game.world.setLooseBoard(game.state.crows.chest === 1);
+        game.crowGifts.sync();
+        return game.crowGifts.info();
+      },
+      /** A3: den Morgen der Krähen gleich rechnen (Vertrauen, Gabe) – ohne den Tag zu wechseln. */
+      crowMorning() {
+        game.crowGifts.morning();
+        return game.crowGifts.info();
       },
       /** A1: das Tagwerk der Bewohner an- oder ausschalten (in der Prüfung sonst aus). */
       setChores(on) {

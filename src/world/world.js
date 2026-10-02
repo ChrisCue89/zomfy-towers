@@ -37,6 +37,7 @@ import { Crows } from '../entities/crows.js';
 import { FLASH_TIME } from '../data/skills.js';
 import { buildCardTable, buildStump, buildStake, buildCandleFlame, TABLE_TOP } from './cardModels.js';
 import { createStaticVoxelObject } from '../render/staticMesh.js';
+import { buildCrumbs, buildBoardGift, buildCrowJar, buildSillCompass, buildLooseBoard } from './crowModels.js';
 import { STAKES } from '../data/cards.js';
 import { KEEPSAKES, KEEPSAKE_SPOTS, KEEPSAKE_BOARDS } from '../data/bonds.js';
 import { buildKeepsake } from './keepsakeModels.js';
@@ -81,6 +82,7 @@ export class World {
     this.questInteractions = []; // Fundstücke der Nebenaufträge (core/quests.js, M23)
     this.isleInteractions = []; // N6: Ruderboot und Fundstellen auf den Inseln (core/isles.js)
     this.fogInteractions = []; // N7: Nebelinsel, Marthe und die Kinder, Reuse (core/fogIsle.js)
+    this.crowInteractions = []; // A3: die lose Diele vor dem Kamin (core/crowGifts.js)
     this.beaconPool = null;
 
     const terrain = createTerrain(seed, this.map);
@@ -276,6 +278,88 @@ export class World {
     this.refreshInteractions();
   }
 
+  /**
+   * A3: Krümel und Gabe auf dem Futterbrett (`f` aus core/crowGifts.js: Lage, Drehung, Krümel,
+   * Gabe; null: kein Brett). Beide liegen im Raster des Baus und drehen mit ihm.
+   */
+  setFeeder(f) {
+    if (!this.feeder) {
+      this.feeder = { group: new THREE.Group(), key: null, crumbs: null, gift: null, giftId: null };
+      this.feeder.group.name = 'Futterbrett: Krümel und Gabe';
+      this.scene.add(this.feeder.group);
+    }
+    const fd = this.feeder;
+    const drop = (o) => {
+      if (!o) return;
+      fd.group.remove(o);
+      o.traverse((x) => x.geometry?.dispose());
+    };
+    fd.group.visible = Boolean(f);
+    if (!f) return;
+    const opts = { size: 1 / 32, turns: f.turns || 0, shadow: 'none', jitter: 0, seed: this.seed };
+    const key = `${f.x}|${f.z}|${f.turns || 0}`;
+    if (fd.key !== key) {
+      fd.key = key;
+      fd.group.position.set(f.x, 0, f.z);
+      drop(fd.crumbs);
+      drop(fd.gift);
+      fd.crumbs = createStaticVoxelObject(buildCrumbs(this.seed), this.materials.world, opts);
+      fd.group.add(fd.crumbs);
+      fd.gift = null;
+      fd.giftId = null;
+    }
+    fd.crumbs.visible = Boolean(f.crumbs);
+    if (fd.giftId !== (f.gift || null)) {
+      drop(fd.gift);
+      fd.gift = f.gift ? createStaticVoxelObject(buildBoardGift(f.gift), this.materials.world, opts) : null;
+      if (fd.gift) fd.group.add(fd.gift);
+      fd.giftId = f.gift || null;
+    }
+  }
+
+  /** A3: Das Krähenglas (mit den Stücken) und Jakobs Kompass auf der Fensterbank der Stube. */
+  refreshCrowJar(items = [], compass = false) {
+    const key = `${items.join(',')}|${compass}`;
+    if (this.crowJarKey === key) return;
+    this.crowJarKey = key;
+    const U16 = 1 / 16;
+    const { x: ox, z: oz } = LAYOUT.interior;
+    for (const o of [this.crowJar, this.crowCompass]) {
+      if (!o) continue;
+      this.scene.remove(o);
+      o.traverse((x) => x.geometry?.dispose());
+    }
+    const opts = { size: U16, shadow: 'none', jitter: 0, seed: this.seed };
+    const y = (19 - INTERIOR_FLOOR) * U16; // auf der Fensterbank (Oberkante y 18)
+    this.crowJar = items.length ? createStaticVoxelObject(buildCrowJar(items), this.materials.world, opts) : null;
+    if (this.crowJar) {
+      this.crowJar.name = 'Krähenglas';
+      this.crowJar.position.set(ox + 237 * U16, y, oz + 4 * U16);
+      this.scene.add(this.crowJar);
+    }
+    this.crowCompass = compass ? createStaticVoxelObject(buildSillCompass(), this.materials.world, opts) : null;
+    if (this.crowCompass) {
+      this.crowCompass.name = 'Jakobs Kompass';
+      this.crowCompass.position.set(ox + 244 * U16, y, oz + 4 * U16);
+      this.scene.add(this.crowCompass);
+    }
+  }
+
+  /** A3: Die lose Diele vor dem Kamin – mit dem Schlüssel der Krähen öffnet E Jakobs Schatulle. */
+  setLooseBoard(on) {
+    const U16 = 1 / 16;
+    const { x: ox, z: oz } = LAYOUT.interior;
+    if (on && !this.looseBoard) {
+      this.looseBoard = createStaticVoxelObject(buildLooseBoard(), this.materials.world, { size: U16, shadow: 'none', jitter: 0, seed: this.seed });
+      this.looseBoard.name = 'Lose Diele';
+      this.looseBoard.position.set(ox + 273 * U16, U16, oz + 44 * U16); // auf dem Teppich vor dem Kamin
+      this.scene.add(this.looseBoard);
+    }
+    if (this.looseBoard) this.looseBoard.visible = Boolean(on);
+    this.crowInteractions = on ? [{ id: 'diele', x: ox + 277 * U16, z: oz + 45 * U16, radius: 0.9, prompt: 'diele', crowChest: true }] : [];
+    this.refreshInteractions();
+  }
+
   /** M32: Fahne am Briefkasten – oben, solange Post darin liegt. */
   setMailFlag(on) {
     this.mailFlag = Boolean(on);
@@ -313,7 +397,7 @@ export class World {
 
   /** Liste aller Interaktionen neu zusammenstellen (nach Bauen, Abreißen, Ausbau). */
   refreshInteractions() {
-    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions];
+    this.interactions = [...this.shelter.interactions, ...this.interior.interactions, ...this.props.interactions, ...this.stumps.interactions, ...this.resources.interactions, ...this.buildings.interactions, ...this.npcInteractions, ...this.traderInteractions, ...this.questInteractions, ...this.isleInteractions, ...this.fogInteractions, ...this.crowInteractions];
   }
 
   /**

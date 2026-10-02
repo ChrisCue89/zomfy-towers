@@ -11,6 +11,7 @@ import { VoxelModel } from '../render/voxel.js';
 import { FURNITURE, FURNITURE_ORDER, CATALOG_ROOMS } from '../data/furniture.js';
 import { FURNITURE_MODELS } from '../world/furnitureModels.js';
 import { buildKeepsake } from '../world/keepsakeModels.js';
+import { buildGiftPhoto } from '../world/crowModels.js';
 import { T } from '../data/texts.js';
 import { measure, wrap, drawText, LINE_HEIGHT } from './font.js';
 import { drawIcon } from './icons.js';
@@ -32,6 +33,7 @@ const GOLD = hexToCss(P.f6);
 const PHOTO_BG = hexToCss(P.e7);
 const GREEN = hexToCss(P.g3); // Kopf der Geschenkkarte (M29)
 const DUSK = hexToCss(P.d1); // Kopf der Erinnerungskarte (M31)
+const NIGHT = hexToCss(P.n3); // A3: Kopf der Karte einer Krähengabe
 // M32: Briefe (Luftpost) und Pakete
 const LETTER = hexToCss(P.s9);
 const LETTER_LINE = hexToCss(P.s8);
@@ -100,6 +102,13 @@ export function keepsakePicture(item) {
   const key = `andenken:${item}`;
   if (pictures.has(key)) return pictures.get(key);
   return pictureOf(key, buildKeepsake(item));
+}
+
+/** A3: Foto einer Gabe der Krähen (crowModels.js) bzw. von Jakobs Kompass für die Karte. */
+export function crowGiftPicture(id) {
+  const key = `kraehe:${id}`;
+  if (pictures.has(key)) return pictures.get(key);
+  return pictureOf(key, buildGiftPhoto(id));
 }
 
 /** Ein Modell so groß wie möglich aufs Foto (ganze Pixel je Voxel), einmal gerechnet und gemerkt. */
@@ -400,6 +409,7 @@ export class DeliveryCard {
     if (id && typeof id === 'object' && id.memorial) return this.drawMemorial(ui, id); // M31
     if (id && typeof id === 'object' && id.letter) return this.drawLetter(ui, id); // M32
     if (id && typeof id === 'object' && id.parcel) return this.drawParcel(ui, id); // M32
+    if (id && typeof id === 'object' && id.crow) return this.drawCrow(ui, id); // A3
     const gift = typeof id === 'object' ? id : null; // M29: ein Geschenk { gift, from, name }
     const ctx = ui.ctx;
     const K = T.katalog;
@@ -488,6 +498,31 @@ export class DeliveryCard {
     drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15 + dy, INK_SOFT);
   }
 
+  /**
+   * A3: Ein Geschenk der Krähen (oder Jakobs Kompass): Kopf in Nachtblau, das Foto, der Name und
+   * darunter, wohin es kommt.
+   */
+  drawCrow(ui, m) {
+    const ctx = ui.ctx;
+    const K = T.kraehen;
+    const w = PIC.w + 40;
+    const lines = wrap(m.line || '', w - 24);
+    const h = PIC.h + 70 + lines.length * LINE_HEIGHT;
+    const title = m.crow === 'kompass' ? K.schatulle : K.karte;
+    const { x, y } = this.cardFrame(ui, w, h, PAPER, NIGHT, title);
+    drawPhoto(ctx, crowGiftPicture(m.crow), x + 16, y + 24);
+    const name = K.namen[m.crow] || m.crow;
+    let ty = y + PIC.h + 38;
+    drawText(ctx, name, x + Math.round((w - measure(name)) / 2), ty, INK);
+    ty += LINE_HEIGHT;
+    for (const line of lines) {
+      drawText(ctx, line, x + Math.round((w - measure(line)) / 2), ty, INK_SOFT);
+      ty += LINE_HEIGHT;
+    }
+    const hint = this.k + 1 < this.items.length ? T.katalog.weiter : T.katalog.fertig;
+    drawText(ctx, hint, x + Math.round((w - measure(hint)) / 2), y + h - 15, INK_SOFT);
+  }
+
   /** Rahmen einer Karte (Schatten, Papier, farbiger Kopf mit Titel); gibt Lage und Versatz zurück. */
   cardFrame(ui, w, h, paper, headColor, title) {
     const ctx = ui.ctx;
@@ -517,11 +552,26 @@ export class DeliveryCard {
     const w = 256;
     const text = m.text || (m.kind === 'brief2' ? N.zweite[m.letter] : T.wanderer.briefe[m.letter]) || N.stimmeAlle; // N6: eine Notiz bringt ihren Text mit
     const lines = wrap(text, w - 30);
-    const h = 104 + (2 + lines.length) * LINE_HEIGHT + 22;
-    const { x, y } = this.cardFrame(ui, w, h, LETTER, AIRMAIL, m.kind === 'notiz' ? T.inseln.notizTitel : N.brief);
+    const bare = m.kind === 'schatulle'; // A3: Jakobs Brief – kein Porträt, keine Marke
+    const h = (bare ? 30 : 104) + (2 + lines.length) * LINE_HEIGHT + 22;
+    const { x, y } = this.cardFrame(ui, w, h, LETTER, AIRMAIL, bare ? m.name : m.kind === 'notiz' ? T.inseln.notizTitel : N.brief);
     for (let i = 0; i < w; i += 8) {
       ctx.fillStyle = (i >> 3) % 2 ? RED : AIRMAIL_LIGHT; // Luftpost-Rand
       ctx.fillRect(x + i, y + 18, 5, 2);
+    }
+    if (bare) {
+      let by = y + 28;
+      drawText(ctx, m.from, x + Math.round((w - measure(m.from)) / 2), by, INK_SOFT);
+      by += LINE_HEIGHT + 4;
+      for (const line of lines) {
+        ctx.fillStyle = LETTER_LINE;
+        ctx.fillRect(x + 12, by + LINE_HEIGHT - 2, w - 24, 1);
+        drawText(ctx, line, x + 15, by, INK);
+        by += LINE_HEIGHT;
+      }
+      const next = this.k + 1 < this.items.length ? T.katalog.weiter : N.gelesen;
+      drawText(ctx, next, x + Math.round((w - measure(next)) / 2), y + h - 15, INK_SOFT);
+      return;
     }
     // Briefmarke oben rechts: gezackter Rand, ein Kürbis
     const sx = x + w - 30;
