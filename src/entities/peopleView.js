@@ -421,6 +421,7 @@ export class PeopleSprites {
     if (!kind) return null;
     if (n.dog) {
       if (n.bark > 0) return { part: 'base', anim: 'bellen', k: Math.floor(n.bark * 9) % 2, expr: 'normal' };
+      if (n.chore?.anim && n.moving <= 0.15) return { part: 'alltag', anim: n.chore.anim, k: n.chore.k, expr: 'normal' }; // A1: Mittagsschlaf
       if (n.moving > 0.15) return { part: 'base', anim: 'traben', k: this.walkFrame(n.phase, animsOf(n.id).traben), expr: 'normal' };
       if (n.sit > 0.5) return { part: 'base', anim: 'sitzen', k: Math.floor(time * 5) % 2, expr: 'normal' };
       return { part: 'base', anim: 'stehen', k: Math.floor(time * (n.target ? 4 : 6)) % 2, expr: 'normal' };
@@ -470,6 +471,10 @@ export class PeopleSprites {
     } else if (n.wave > 0) {
       anim = 'winken';
       k = Math.floor(n.wave * 7) % 2;
+    } else if (n.chore?.anim && n.moving <= 0.15 && (!n.chore.sit || n.sit > 0.5)) {
+      // A1: das Tagwerk (core/chores.js) – im Takt der Arbeit, beim Innehalten das erste Bild
+      anim = n.chore.anim;
+      k = n.chore.k;
     } else if (n.sit > 0.5) {
       anim = 'sitzen';
       k = Math.floor(time * 0.9 + n.x) % 2;

@@ -269,6 +269,11 @@ gilt bis auf Weiteres:
       selbst setzt, bekommt sie daraus (die Leute halten so Angel, Spule und Waffe).
   - Ansehen ohne Browser: `node tools/menschen-bogen.mjs datei.png --figur=mika --aussehen=…` (seit
     F7 mit den seltenen Posen und ihrem Werkzeug).
+  - **Das Tagwerk (A1):** Jede Figur hat den Teil `alltag` mit ihrer Arbeit (`withChores`), Knopf
+    `schlafen`. Was sie dabei in der Hand hält (Strickzeug, Buch, Hammer, Schüssel, Gießkanne,
+    Setzling …), gehört zum Bild (`choreProps`, `PROP_MATERIALS`) – kein eigenes Werkzeugbild; was die
+    rechte Hand führt, zeigt in Richtung `toolPhi`. Knopf liegt flach (`flat`) – nie `lie` an einem
+    Tier, das kippte im Bäcker das ganze Bild wie bei einem liegenden Menschen.
   - **Schöner gezeichnet (F5, `recherche/menschen-gestaltung.md`, Nr. 223):**
     - Frontaler als die Welt: `tiltFrame` kippt jedes Bild um `VIEW_TILT` (0,2 rad) zur Kamera, das
       Werkzeug um seinen Griff; den Kopf dreht `humanoid` über `HUMAN.headView` (0,25 rad) weiter.
@@ -366,7 +371,9 @@ src/core/             game.js (Schleife, Modi), input, events, rng, math,
                       Nebelfahrt, Marthe und die Kinder, Kahn, Reuse, N7), kite
                       (Pims Drachen: Wunsch, Steigen, Böen, Looping, Leine
                       halten, N9), wonders (kleine Wunder: Gedanken an den
-                      Stümpfen, Blinken vom Sturmhuk, Eisgesang, G6), quests
+                      Stümpfen, Blinken vom Sturmhuk, Eisgesang, G6), chores
+                      (das Tagwerk der Bewohner: Arbeitsplatz, Sitz, Takt,
+                      Innehalten, A1), quests
                       (Nebenaufträge:
                       Bitte, Fundstücke, Belohnung, M23), autumn (Herbst mit
                       Ende: Frostnacht, Moderherz, Abspann, danach, M25), book
@@ -529,7 +536,8 @@ src/data/             texts, dialogs, items, buildings, recipes, goals,
                       Stufen, N7), kite (Drachen: Bedarf, Zeiten, Wetter, Böen,
                       Looping, N9),
                       knots (Knoten der Geschichte: wer, wann, welcher Dialog,
-                      G2; Stufen der Waldrand-Gedanken, G3),
+                      G2; Stufen der Waldrand-Gedanken, G3), chores (das Tagwerk:
+                      Arbeiten mit Takt, wer was wo tut, Zeiten, A1),
                       risk (Moderlocke, makellose Nacht, Vorratskammer, M24),
                       autumn (Herbst mit Ende: 30 Tage, Kalender, Natur- und
                       Jahrestage (G4), Frostnacht, Moderherz,
@@ -1027,6 +1035,19 @@ Grundprinzipien:
     (Klang `eisgesang`).
   - Balduins Plane ist ein eigenes Mesh am Boot (`buildBoat().tarp`), sichtbar ab
     `TARP.fromDay` (`trader.enter`).
+- **Das Tagwerk (A1, `core/chores.js`, `data/chores.js`):**
+  - `survivors.standSpot` fragt nach Fest, Übung, Szene und Feuer `chores.spotOf(id)`: Bewohner,
+    8–18 Uhr (Knopf schläft 11–15), keine Nacht, nicht verletzt, im Regen nichts mit Wolle, Buch,
+    Papier oder Stoff (`dry`).
+  - Mit Sitz (`seat`, die Bänke am Feuer) setzt `chores.place` die Figur; sie geht zum Platz daneben
+    und die letzten Schritte ohne Kollision (`npcs.walkTo(n, x, z, true)`). Wer anderswo gebraucht
+    wird, steht auf (`release`), abends steigt sie von der Bank (`aufstehen`).
+  - `update` zählt den Takt (`beat`: [Bild, Sekunden], −1 heißt stehen), setzt `n.chore` ({ anim, k })
+    für `peopleView.poseOfNpc` und `npcs.poseChore`; Berts Spaltaxt hält `npcs.hold`, beim Hieb klopft
+    es und Späne fliegen. Kommt Mika näher als `CHORE.near`, hält die Figur inne (`paused`, wer steht,
+    schaut auf, Knopf wacht auf); beim ersten Mal am Tag sagt sie ein Wort (`say`, `T.alltag`,
+    Sprechblase – nicht, solange schon eine über ihr steht).
+  - Nichts davon wird gespeichert. In Prüfung und Playtest-Brücke aus (`CONFIG.chores`, `?alltag`).
 - **Kartenabend (M28, `core/cards.js`, `core/cardNight.js`, `ui/cardTable.js`):**
   Die Regeln sind reine Daten ohne three.js: `newGame`, `moves`, `play`,
   `view(g, p)` (was Spieler p sieht – verdeckte Karten des anderen ohne ID),
@@ -1537,7 +1558,14 @@ Grundprinzipien:
    Bauplänen Türme · Helfer · Fallen · Lager · Zuhause, »Leute« auf einer Seite, an der Werkbank
    wechselt D zur Seite »Figur«, S und E werten die Bratpfanne auf (Bild: werkbank-figur); ab B1
    (Abschnitt `nacht16`): Nacht 2 unverändert, Nacht 3 zäher, der Holzfäller in Nacht 5 mit der
-   Zähigkeit seiner Nacht.
+   Zähigkeit seiner Nacht; ab A1 (Abschnitt `alltag`, nur dort ist das Tagwerk an): um halb acht
+   arbeitet noch niemand, um neun gehen alle an ihren Platz – Hilde und Yusuf setzen sich auf die
+   Bänke am Feuer (stricken, lesen), Bert hackt mit der Spaltaxt (es klopft), Emil gießt, Hannes
+   hämmert, Juna funkt, die Bilder wechseln im Takt; alle Bilder der Arbeiten ohne leeres Bild, in
+   2D als Sprites; kommt Mika heran, halten Bert (schaut auf, sagt ein Wort – am selben Tag nicht
+   noch einmal) und Hilde (bleibt sitzen) inne und arbeiten danach weiter; mittags schläft Knopf am
+   Feuer und wacht auf, wenn Mika kommt; abends stehen alle auf, Bert legt die Axt weg; im Regen
+   strickt niemand draußen (Bilder: alltag, alltag-nah).
    **Jede Konsolenmeldung
    (Fehler oder Warnung) lässt die Prüfung scheitern.** Bildzeiten sind in
    Headless softwaregerendert und nur grobe Anhaltspunkte.
@@ -1717,7 +1745,10 @@ zeigt `uiInfo()` Zeilen, Breite, Faktor und die gewünschte und wirksame Verschi
 Oberfläche; ab G6 zeigt `wonders()` die Stümpfe, ob der Sturmhuk blinkt (Lampe, wer die Lampe
 hält, Randmarke), Abendgruß, Eisgesang, Plane und Mikas Gedanken; ab N10 zeigt `firstFire()`,
 was kalt ist, die Streichhölzer, Licht, Flammen, Modelle, das Wachsen, Zähler, Ziel, Zielpfeil
-und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft.
+und Holz, `coldFires()` macht Feuerstelle und Kamin kalt wie bei der Ankunft; ab A1 zeigt
+`chores()` je Bewohner Arbeit, Abschnitt (gehen, setzen, arbeiten, aufstehen), Stelle, Bild und ob er
+sitzt, dazu die Arbeitsgeräusche und was die Sprites zeigen, `setChores(an)` schaltet das Tagwerk
+(in der Prüfung sonst aus).
 Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 `probeWalk` (Endstelle) – beide bewegen die Figur ohne Zeichnen.
 | `?spawn=inside` | Spielfigur startet drinnen am Bett (Innenraum, M11) |
@@ -1726,6 +1757,7 @@ Zum Abtasten der Kollision gibt es `probeMove` (Weg in Metern) und
 | `?zoom=nah` / `?zoom=weit` | Ansicht draußen erzwingen (M13; Standard weit) |
 | `?horde=2d` / `?horde=3d` | Look der Schlurfer erzwingen (F2; Standard 2D, mit `?test`/`?playtest` 3D) |
 | `?figuren=2d` / `?figuren=3d` | Look der Menschen erzwingen (F4; Standard 2D, mit `?test`/`?playtest` 3D) |
+| `?alltag` | Das Tagwerk der Bewohner auch mit `?test`/`?playtest` (A1; sonst nur im Spiel) |
 
 ## Arbeitsweise
 

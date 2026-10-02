@@ -2909,6 +2909,28 @@ Leute backen erst, wenn sie gebraucht werden (bis dahin Voxel), Mikas Teile im H
 figur noch 3d!«). Der Tick am Kartentisch ist Spielmechanik (Menschenkunde) – er muss im Bild der
 Figur zu sehen sein, nicht nur als Voxel-Ersatz.
 
+### 229. Was tun die Bewohner tagsüber? (A1, »Die Bucht lebt«)
+**Entscheidung:** Jeder Bewohner hat ein festes Tagwerk an einem festen Platz, das zu Beruf und
+Geschichte passt (`data/chores.js`): Hilde strickt auf der Bank am Feuer, Yusuf liest gegenüber, Bert
+spaltet Holz am Hackklotz, Juna funkt am Mast, Knopf schläft mittags am Feuer; die Wanderer nach ihrem
+Beruf (Hannes hämmert am Zaun, Clara schraubt am Wrack, Ida setzt junge Bäume …). Gearbeitet wird von
+acht bis sechs im Takt der Arbeit, mit kleinen Pausen im Takt selbst (Bert legt nach, Hannes setzt den
+Hammer ab). Kommt Mika näher als zwei Meter, halten sie inne und schauen auf; wer sitzt oder kniet,
+bleibt sitzen. Beim ersten Mal am Tag sagt jeder ein Wort zu seiner Arbeit (eine Sprechblase, kein
+Dialog). Nicht gearbeitet wird nachts, verletzt, auf dem Übungsplatz und – bei Wolle, Buch,
+Papier und Stoff – im Regen. Fest, Szenen, Kartenabend und Posten gehen vor.
+
+**Wie:** Das Tagwerk folgt allein aus Uhrzeit, Wetter und Bewohnern, nichts davon wird gespeichert
+(kein neuer Spielstand). `survivors.standSpot` fragt `chores.spotOf`; Sitze (die beiden Bänke am Feuer)
+erreicht die Figur über einen Platz daneben und die letzten Schritte ohne Kollision. Die Dinge in der
+Hand sind Teil des Bildes (`choreProps`), nur Berts Spaltaxt ist ein Werkzeugbild. In der Prüfung ist
+das Tagwerk aus (die älteren Abschnitte erwarten die Leute an ihren Tagesplätzen); `?alltag` bzw.
+`setChores(true)` schaltet es ein.
+
+**Warum:** Eine Zuflucht lebt von den Menschen darin (Nr. 161–176). Still stehende Figuren lasen sich
+wie Kulissen; wer arbeitet, erzählt ohne ein Wort, wer er ist – und dass er bleiben will. Innehalten,
+wenn Mika kommt, macht aus Mika den Mittelpunkt, ohne dass ein Dialog das Spiel anhält.
+
 ## Technik mit Auswirkung aufs Design
 
 ### 12. Drehbare Kamera?

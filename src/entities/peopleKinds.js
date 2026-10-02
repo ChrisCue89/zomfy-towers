@@ -10,7 +10,8 @@
 // Kein three.js – der Worker backt mit denselben Bauplänen.
 
 import { P, RAMPS } from '../render/palette.js';
-import { humanoid, headEllipsoid, headCapsule, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
+import { humanoid, headEllipsoid, headCapsule, inFrame, add, sub, mul, norm, dot, hash } from './spriteFigure.js';
+import { axesOf } from '../render/spriteBaker.js';
 import { HUMAN, CHILD, DOG, quadruped, lanternShapes, LANTERN_MATERIALS, faceAt, rampAround, toneOf } from './peopleFigure.js';
 import { faceOf, FACE, FACE_CHILD } from './peopleFaces.js';
 import { ribs as knitRibs, folds, rings as ringFolds, strands, combine, locks } from './peopleRelief.js';
@@ -108,6 +109,126 @@ export function cardFan(ctx, arms) {
   for (const [i, roll] of [[-1, 0.38], [0, 0], [1, -0.38]]) {
     const at = add(c, [i * 0.038, 0.007 * (1 - Math.abs(i)), 0.005 * i]);
     ctx.box(at, [0.042, 0.058, 0.005], 0.007, 'karte', { ax: ctx.AX(-0.35, roll), matAt: (q) => (q[2] > 0 && Math.abs(q[0]) < 0.03 && Math.abs(q[1]) < 0.045 ? 'kartenRuecken' : null) });
+  }
+}
+
+/**
+ * A1: Stoffe der Dinge, die die Leute bei ihrem Tagwerk in den Händen halten (für alle Menschen wie
+ * die Karten).
+ */
+export const PROP_MATERIALS = {
+  dingNadel: { ramp: [R.s[5], R.s[6], R.s[7], R.s[8]], base: 2, shine: true },
+  dingWolle: { ramp: [R.f[3], R.f[4], R.f[5], R.f[6]], base: 2, pattern: (p) => (Math.floor((p[0] + p[2]) * 40 + 40) & 1 ? -1 : 0) },
+  dingSeite: { ramp: [R.s[6], R.s[7], R.s[8], R.s[9]], base: 2 },
+  dingBuch: { ramp: [R.r[0], R.r[1], R.r[2], R.r[3]], base: 2, seam: true },
+  dingNetz: { ramp: [R.e[5], R.e[6], R.e[7], R.e[8]], base: 2, pattern: (p) => ((Math.floor(p[0] * 30 + 60) + Math.floor(p[1] * 30 + 60)) % 3 === 0 ? -2 : 0) },
+  dingStoff: { ramp: [R.t[1], R.t[2], R.t[3], R.t[4], R.a[6]], base: 3, seam: true },
+  dingFaden: { ramp: [R.s[7], R.s[8], R.s[9]], base: 1 },
+  dingPapier: { ramp: [R.f[4], R.f[5], R.f[6], R.f[7]], base: 1, glow: true, flat: true, pattern: (p) => (Math.floor(p[1] * 36 + 40) % 3 === 0 ? -1 : 0) },
+  dingAkk: { ramp: [R.r[1], R.r[2], R.r[3], R.r[4]], base: 2, seam: true, shine: true },
+  dingBalg: { ramp: [R.n[1], R.n[2], R.n[3], R.n[4]], base: 2, pattern: (p) => (Math.floor((p[0] + p[2]) * 50 + 80) & 1 ? -1 : 1) },
+  dingTasten: { ramp: [R.s[7], R.s[8], R.s[9]], base: 2 },
+  dingFunk: { ramp: [R.s[1], R.s[2], R.s[3], R.s[4]], base: 2, seam: true, shine: true },
+  dingLed: { ramp: [R.a[5], R.a[6], R.g[8], R.g[9]], base: 2, glow: true, flat: true },
+  dingStiel: { ramp: [R.e[4], R.e[5], R.e[6], R.e[7]], base: 2, seam: true },
+  dingEisen: { ramp: [R.s[1], R.s[2], R.s[3], R.s[4]], base: 2, shine: true },
+  dingBlank: { ramp: [R.s[4], R.s[5], R.s[6], R.s[7], R.s[8]], base: 3, shine: true, gloss: 0.9 },
+  dingSchale: { ramp: [R.b[1], R.b[2], R.b[3], R.b[4]], base: 2, seam: true, shine: true }, // Emaille, blau gegen die weiße Schürze
+  dingTeig: { ramp: [R.f[5], R.f[6], R.f[7], R.s[9]], base: 2 },
+  dingKanne: { ramp: [R.r[0], R.r[1], R.r[2], R.r[3], R.r[4]], base: 3, seam: true, shine: true, gloss: 0.85 },
+  dingWasser: { ramp: [R.b[3], R.b[4], R.b[5], R.s[9]], base: 2, flat: true },
+  dingBlatt: { ramp: [R.g[3], R.g[4], R.g[5], R.g[6], R.g[7]], base: 3 },
+  dingErde: { ramp: [R.e[0], R.e[1], R.e[2], R.e[3]], base: 2, pattern: (p) => (Math.floor(p[0] * 40 + 40) * 3 + Math.floor(p[2] * 40 + 40)) % 4 === 0 ? -1 : 0 },
+};
+
+/**
+ * A1: Dinge in den Händen beim Tagwerk (Figurkoordinaten, aus den Händen von `humanoid`): Strickzeug,
+ * Buch, Netz, Stoff mit Faden, Papierlaterne, Akkordeon, Funkgerät, Hammer, Schüssel mit Kochlöffel,
+ * Gießkanne, Schraubenschlüssel und der Setzling. Sie gehören zum Bild der Figur (kein eigenes Bild
+ * wie die Werkzeuge) – was die rechte Hand führt, zeigt in Richtung `toolPhi` der Pose. `personShapes`
+ * setzt sie für jeden, der die Arbeit gerade tut.
+ */
+export function choreProps(ctx, anim, k, arms) {
+  const [l, r] = [arms[0].hand, arms[1].hand];
+  const mid = mul(add(l, r), 0.5);
+  const fwd = (p, z) => add(p, [0, 0, z]);
+  // Richtung dessen, was die rechte Hand führt (0 hängt, π/2 vorn, π oben), und ein um `pitch`
+  // vornüber geneigter Rahmen um `c` (Punkte darin: x rechts, y oben, z vorn)
+  const phi = ctx.pose.toolPhi ?? Math.PI / 2;
+  const along = (t) => add(r, [0, -Math.cos(phi) * t, Math.sin(phi) * t]);
+  const grip = ctx.AX(Math.PI - phi); // y entlang des Stiels, z quer dazu in Schlagrichtung
+  const tilted = (c, pitch) => {
+    const ax = axesOf(0, pitch, 0);
+    return (q) => inFrame(c, ax, q);
+  };
+  if (anim === 'stricken') {
+    // Zwei Nadeln über Kreuz, darunter das Gestrickte, das Knäuel liegt im Schoß
+    const c = fwd(add(mid, [0, 0.03, 0]), 0.03);
+    ctx.capsule(add(l, [-0.01, 0.03, 0.02]), add(c, [0.07, 0.07, 0.02]), 0.006, null, 'dingNadel');
+    ctx.capsule(add(r, [0.01, 0.03, 0.02]), add(c, [-0.07, 0.07 + 0.01 * k, 0.02]), 0.006, null, 'dingNadel');
+    ctx.box(add(c, [0, -0.05, 0.01]), [0.06, 0.05, 0.012], 0.01, 'dingWolle', { pitch: 0.25 });
+    ctx.ellipsoid(add(mid, [0.12, -0.1, -0.04]), [0.045, 0.04, 0.045], 'dingWolle');
+  } else if (anim === 'lesen') {
+    // Aufgeschlagen, der Leser blickt hinein: zwei Seiten im flachen V, davor (zur Kamera) der rote
+    // Einband – sonst läge Weiß auf Weiß (Yusufs Kittel)
+    const c = fwd(add(mid, [0, 0.05, 0]), 0.02);
+    for (const side of [-1, 1]) {
+      ctx.box(add(c, [side * 0.055, 0, -0.008]), [0.055, 0.075, 0.006], 0.004, 'dingSeite', { pitch: -0.45, roll: side * 0.25 });
+      ctx.box(add(c, [side * 0.058, -0.004, 0.004]), [0.058, 0.078, 0.005], 0.004, 'dingBuch', { pitch: -0.45, roll: side * 0.25 });
+    }
+  } else if (anim === 'netz') {
+    // Das Netz hängt von beiden Händen herab (Maschen als Muster)
+    ctx.box(fwd(add(mid, [0, -0.12, 0]), 0.03), [Math.max(0.09, Math.abs(r[0] - l[0]) * 0.55), 0.14, 0.008], 0.01, 'dingNetz', { pitch: 0.1 });
+  } else if (anim === 'naehen') {
+    // Links der Stoff, rechts der Faden zur Hand
+    const c = fwd(add(l, [0.05, 0.02, 0]), 0.03);
+    ctx.box(c, [0.08, 0.06, 0.008], 0.01, 'dingStoff', { pitch: -0.2 });
+    ctx.capsule(add(c, [0.04, 0.01, 0.01]), r, 0.004, null, 'dingFaden');
+  } else if (anim === 'basteln') {
+    // Eine runde Papierlaterne an einem Drahtbügel – sie leuchtet schon
+    const c = fwd(add(l, [0.03, 0.02, 0]), 0.05);
+    ctx.ellipsoid(c, [0.065, 0.075, 0.065], 'dingPapier');
+    ctx.capsule(add(c, [0, 0.07, 0]), add(c, [0, 0.11, 0]), 0.008, null, 'dingNadel');
+  } else if (anim === 'musizieren') {
+    // Akkordeon: zwei Kästen an den Händen, dazwischen der Balg mit Falten
+    const ends = [l, r].map((h) => fwd(h, 0.04));
+    for (const [i, e] of ends.entries()) ctx.box(e, [0.035, 0.1, 0.07], 0.012, 'dingAkk', { matAt: (q) => (i === 1 && q[2] > 0.02 && Math.abs(q[1]) < 0.08 && Math.floor((q[1] + 0.1) * 60) % 2 === 0 ? 'dingTasten' : null) });
+    const span = Math.abs(ends[1][0] - ends[0][0]) / 2 - 0.03;
+    if (span > 0.01) ctx.box(mul(add(ends[0], ends[1]), 0.5), [span, 0.09, 0.06], 0.012, 'dingBalg');
+  } else if (anim === 'funken') {
+    // Das alte Funkgerät in der linken Hand, kurze Antenne, ein grünes Lämpchen
+    const c = fwd(add(l, [0.02, 0.04, 0]), 0.03);
+    ctx.box(c, [0.035, 0.055, 0.025], 0.01, 'dingFunk');
+    ctx.capsule(add(c, [0.02, 0.05, 0]), add(c, [0.025, 0.14, -0.01]), 0.006, 0.005, 'dingFunk');
+    ctx.ellipsoid(add(c, [-0.015, 0.03, 0.026]), [0.009, 0.009, 0.006], 'dingLed');
+  } else if (anim === 'haemmern') {
+    // Der Hammer: heller Stiel aus der Faust, der schwere Kopf quer dazu, die Bahn blank
+    ctx.capsule(along(-0.05), along(0.25), 0.015, 0.013, 'dingStiel');
+    ctx.box(along(0.27), [0.022, 0.026, 0.058], 0.01, 'dingEisen', { ax: grip, matAt: (q) => (q[2] > 0.04 ? 'dingBlank' : null) });
+  } else if (anim === 'ruehren') {
+    // Die Schüssel liegt im linken Arm (oben der Teig), der Kochlöffel steckt darin
+    const bowl = fwd(add(l, [0.08, 0.035, 0]), 0.03);
+    ctx.box(bowl, [0.1, 0.045, 0.085], 0.04, 'dingSchale', { matAt: (q) => (q[1] > 0.03 ? 'dingTeig' : null) });
+    ctx.capsule(add(r, [0, 0.03, -0.01]), add(bowl, [(r[0] - bowl[0]) * 0.3, 0.03, (r[2] - bowl[2]) * 0.3]), 0.011, 0.01, 'dingStiel');
+  } else if (anim === 'giessen') {
+    // Die Gießkanne hängt am Bügel; zum Gießen kippt sie nach vorn, aus der Brause rinnt Wasser
+    const tilt = k ? 0.6 : 0.12;
+    const at = tilted(add(r, [0, -0.02, 0]), tilt);
+    ctx.capsule(at([0, 0, -0.07]), at([0, 0, 0.05]), 0.011, null, 'dingEisen');
+    ctx.box(at([0, -0.11, 0]), [0.065, 0.075, 0.1], 0.04, 'dingKanne', { ax: ctx.AX(tilt), matAt: (q) => (Math.abs(q[1] - 0.045) < 0.008 ? 'dingEisen' : null) });
+    ctx.capsule(at([0, -0.13, 0.08]), at([0, -0.03, 0.27]), 0.014, 0.01, 'dingKanne');
+    ctx.ellipsoid(at([0, -0.025, 0.29]), [0.026, 0.016, 0.026], 'dingBlank', { ax: ctx.AX(tilt + 0.7) });
+    if (k) for (let i = 0; i < 4; i++) ctx.ellipsoid(add(at([0, -0.04, 0.31]), [0.01 * (i % 2 ? 1 : -1), -0.035 - 0.055 * i, 0.012 * i]), [0.009, 0.018, 0.009], 'dingWasser');
+  } else if (anim === 'schrauben') {
+    // Der Schraubenschlüssel: flacher Griff, vorn das offene Maul
+    ctx.box(along(0.08), [0.011, 0.1, 0.02], 0.007, 'dingEisen', { ax: grip });
+    ctx.box(along(0.2), [0.013, 0.028, 0.04], 0.009, 'dingBlank', { ax: grip, matAt: (q) => (Math.abs(q[2]) < 0.013 && q[1] > 0.004 ? 'dingEisen' : null) });
+  } else if (anim === 'pflanzen') {
+    // Der Setzling zwischen den Händen: ein dünner Stamm mit ein paar Blättern, unten frische Erde
+    const foot = [mid[0] * 0.5, 0, mid[2] + 0.05];
+    ctx.ellipsoid(add(foot, [0, 0.005, 0]), [0.1, 0.035, 0.08], 'dingErde');
+    ctx.capsule(add(foot, [0, 0.02, 0]), add(foot, [0.01, 0.3, -0.01]), 0.011, 0.008, 'dingStiel');
+    for (const [x, y, z, s] of [[-0.05, 0.2, 0.01, 0.035], [0.05, 0.25, 0, 0.032], [0.0, 0.31, -0.005, 0.04], [-0.035, 0.27, 0.02, 0.028]]) ctx.ellipsoid(add(foot, [x, y, z]), [s, s * 0.6, s * 0.8], 'dingBlatt');
   }
 }
 
@@ -344,6 +465,9 @@ const FOLK_PARTS = {
   angeln: { anims: ['angeln'] },
   waffe: { anims: ['schiessen', 'anschlag', 'schwung', 'daumen', 'liegen'] }, // F7e: wer nach der Lagerglocke fällt, liegt
 };
+/** A1: Teile der Leute mit ihrem Tagwerk (`alltag`, nur die Arbeiten dieser Figur). */
+const withChores = (...anims) => ({ ...FOLK_PARTS, alltag: { anims } });
+
 /** F7: Pim und Lu – dazu den Drachen halten und ihm nachschauen. */
 const KID_PARTS = { base: FOLK_PARTS.base, drachen: { anims: ['drachen', 'gucken'] } };
 const FOLK_EXPRESSIONS = ['normal', 'froh', 'blinzeln'];
@@ -394,7 +518,7 @@ function skirt(ctx, body, mat, { drop = 0.1, rr = [0.25, 0.15, 0.2] } = {}) {
 const hilde = {
   size: 0.94,
   expressions: FOLK_EXPRESSIONS,
-  parts: FOLK_PARTS,
+  parts: withChores('stricken'), // A1: das Tagwerk
   tell: 'summen', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -473,7 +597,7 @@ const plaid = (p) => ((Math.floor(p[0] * 11 + 20) + Math.floor(p[1] * 11 + 20)) 
 const bert = {
   size: 1.04,
   expressions: FOLK_EXPRESSIONS,
-  parts: FOLK_PARTS,
+  parts: FOLK_PARTS, // A1: Bert spaltet Holz mit den Bildern »schwung« des Teils »waffe«
   tell: 'reiben', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
@@ -545,7 +669,7 @@ const bert = {
 const juna = {
   size: 0.92,
   expressions: FOLK_EXPRESSIONS,
-  parts: FOLK_PARTS,
+  parts: withChores('funken'), // A1: das Tagwerk
   tell: 'kichern', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h2, 1, 2, { shine: true, seam: false }),
@@ -623,7 +747,7 @@ const juna = {
 const yusuf = {
   size: 1.0,
   expressions: FOLK_EXPRESSIONS,
-  parts: FOLK_PARTS,
+  parts: withChores('lesen'), // A1: das Tagwerk
   tell: 'brille', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
     haut: cloth(P.h1, 1, 2, { shine: true, seam: false }),
@@ -808,12 +932,18 @@ const KNOPF_EYES = {
   SO: ['wk..wk.', 'kk..kk.'],
   O: ['.wk', '.kk'],
 };
+/** A1: im Schlaf zu – je Auge ein dunkler Strich. */
+const KNOPF_SLEEP = {
+  S: ['.......', 'kk...kk'],
+  SO: ['.......', 'kk..kk.'],
+  O: ['...', '.kk'],
+};
 const knopf = {
   size: 1.3,
   dog: true,
   expressions: [],
   shadowSize: { x: 0.26, z: 0.4 },
-  parts: { base: { anims: ['stehen', 'traben', 'sitzen', 'bellen'] } },
+  parts: { base: { anims: ['stehen', 'traben', 'sitzen', 'bellen'] }, alltag: { anims: ['schlafen'] } }, // A1: mittags schläft er am Feuer
   materials: {
     // F6c: struppig durch Zotteln im Relief statt Sprenkeln (die lasen sich als Schmutz), ein dunkler
     // Sattel auf dem Rücken, die Ohren deutlich dunkler
@@ -846,11 +976,12 @@ const knopf = {
     if (kopf) kopf.bump = locks(16, { amp: 0.35, seed: 3, fade: [0.04, 0.12] });
     // Halsband und der goldene Knopf. F6h: breiter als der Hals unter dem Kinn – vorher lag es im
     // Kopf und man sah nur den Knopf, nicht das rote Band, das ihm den Namen gab
-    const collar = add(res.headC, [0, -0.145, -0.075]);
+    // A1: liegend sitzt es am Hals zwischen Kopf und Brust (sonst läge es unter dem Kinn im Boden)
+    const collar = pose.flat ? add(res.headC, [0, 0.0, -0.13]) : add(res.headC, [0, -0.145, -0.075]);
     ctx.ellipsoid(collar, [0.115, 0.03, 0.11], 'halsband', { pitch: -0.4 });
     const face = faceAt(ctx, res.H([0, 0.015, 0.1]), 0.05);
     if (face) {
-      stamps.push({ stamp: { rows: KNOPF_EYES[face.view], legend: { k: P.n0, w: P.s8 } }, at: face.at, opts: { flip: face.flip, depth: 0.12 } });
+      stamps.push({ stamp: { rows: (pose.flat ? KNOPF_SLEEP : KNOPF_EYES)[face.view], legend: { k: P.n0, w: P.s8 } }, at: face.at, opts: { flip: face.flip, depth: 0.12 } });
       stamps.push({ stamp: STAMPS_FOLK.nase, at: W(res.H([0, -0.01, 0.2])), opts: { depth: 0.1 } });
     }
     if (dir <= 2 || dir >= 6) stamps.push({ stamp: STAMPS_FOLK.knopfGold, at: W(add(collar, [0, -0.03, 0.11])), opts: { need: false } });
@@ -895,6 +1026,7 @@ const rings = (stripe, n = 3, k = 13) => (l, p) => (Math.floor(p[1] * k + 40) % 
  */
 const hannes = {
   ...WANDER,
+  parts: withChores('haemmern'), // A1: das Tagwerk
   size: 1.02,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -953,6 +1085,7 @@ const hannes = {
  */
 const clara = {
   ...WANDER,
+  parts: withChores('schrauben'), // A1: das Tagwerk
   size: 0.98,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1016,6 +1149,7 @@ const clara = {
 const SCARF = ['schal1', 'schal2', 'schal3', 'schal4'];
 const lotte = {
   ...WANDER,
+  parts: withChores('basteln'), // A1: das Tagwerk
   size: 0.95,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -1075,6 +1209,7 @@ const lotte = {
  */
 const greta = {
   ...WANDER,
+  parts: withChores('spaehen'), // A1: das Tagwerk
   size: 0.97,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1135,6 +1270,7 @@ const greta = {
  */
 const fiete = {
   ...WANDER,
+  parts: withChores('netz'), // A1: das Tagwerk
   size: 1.0,
   tell: 'pfeife', // F7: der Tick am Kartentisch (cardNight.TELL_GESTURE)
   materials: {
@@ -1196,6 +1332,7 @@ const fiete = {
  */
 const ida = {
   ...WANDER,
+  parts: withChores('pflanzen'), // A1: das Tagwerk
   size: 0.98,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -1254,6 +1391,7 @@ const ida = {
  */
 const rosa = {
   ...WANDER,
+  parts: withChores('ruehren'), // A1: das Tagwerk
   size: 0.97,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1310,6 +1448,7 @@ const rosa = {
  */
 const anton = {
   ...WANDER,
+  parts: withChores('musizieren'), // A1: das Tagwerk
   size: 1.0,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1376,6 +1515,7 @@ const anton = {
  */
 const emil = {
   ...WANDER,
+  parts: withChores('giessen'), // A1: das Tagwerk
   size: 0.98,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),
@@ -1438,6 +1578,7 @@ const emil = {
  */
 const frieda = {
   ...WANDER,
+  parts: withChores('haemmern'), // A1: das Tagwerk
   size: 1.0,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1496,6 +1637,7 @@ const frieda = {
  */
 const mara = {
   ...WANDER,
+  parts: withChores('spaehen'), // A1: das Tagwerk
   size: 0.98,
   materials: {
     haut: cloth(P.h3, 2, 1, { shine: true, seam: false }),
@@ -1548,6 +1690,7 @@ const mara = {
  */
 const paula = {
   ...WANDER,
+  parts: withChores('naehen'), // A1: das Tagwerk
   size: 0.93,
   materials: {
     haut: cloth(P.h4, 2, 0, { shine: true, seam: false }),

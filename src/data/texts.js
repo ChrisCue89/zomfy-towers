@@ -2473,6 +2473,26 @@ export const T = {
       '„Das unter der Plane schläft jetzt. Wie der Moder. Frag nicht.“',
     ],
   },
+  // A1: ein Wort bei der Arbeit – wenn Mika zum ersten Mal am Tag herankommt ({name}: Mika oder der
+  // Spitzname); Knopf wacht nur auf
+  alltag: {
+    hilde: ['Noch drei Reihen, dann ist der Ärmel fertig.', 'Rate mal, für wen der Schal ist, {name}.'],
+    yusuf: ['Moose, {name}. Rein beruflich.', 'Noch ein Kapitel, dann sehe ich nach den Verbänden.'],
+    bert: ['Holz für den Winter. Der kommt bestimmt.', 'Füße weg, {name}. Späne.'],
+    juna: ['Psst, {name} – da rauscht wer! … Nur das Wetter.', 'Irgendwo ist immer wer auf Sendung.'],
+    hannes: ['Ein Nagel mehr, und der Zaun hält.', '(klopft) Hörst du? So klingt ein guter Pfosten.'],
+    clara: ['Das Wrack hat noch gute Schrauben, {name}.', 'Fast … fast … ha! Lose.'],
+    lotte: ['Jede Laterne kriegt ein Gesicht. Die hier lächelt.', 'Papier, Draht und ein bisschen Licht. Wo war der Draht?'],
+    greta: ['Alles ruhig auf den Wegen.', 'Ich seh dich, {name}. Sonst niemanden.'],
+    fiete: ['Ein Loch im Netz ist ein Fisch in Freiheit.', 'Morgen beißen sie. Ganz bestimmt.'],
+    ida: ['Jeder Baum ist ein Versprechen, {name}.', 'In zwanzig Jahren steht hier Wald. Gustav sagt das auch.'],
+    rosa: ['Kürbisbrot. Wenn es klappt, heute Abend.', 'Nicht naschen, {name}!'],
+    anton: ['Wünsch dir was, {name} – aber nichts Trauriges.', 'Das Lied kennt jeder hier am See. Fast jeder.'],
+    emil: ['Die Kürbisse … trinken mehr als ich.', 'Noch zwei Kannen. Dann ist das Beet satt.'],
+    frieda: ['WAS? Ach, {name}! Moment, ein Schlag noch.', 'Hörst du das? So klingt Ordnung.'],
+    mara: ['Die Wege sind ruhig. Noch.', 'Ich zähle Krähen, {name}. Einunddreißig.'],
+    paula: ['Ein Flicken hier, ein Flicken da.', 'Deine Jacke ist als Nächste dran, {name}.'],
+  },
   debug: {
     titel: 'Entwickler',
   },

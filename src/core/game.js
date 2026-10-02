@@ -79,6 +79,7 @@ import { FishingView } from '../ui/fishingView.js';
 import { Isles } from './isles.js';
 import { FogIsle } from './fogIsle.js';
 import { Kite } from './kite.js';
+import { Chores } from './chores.js';
 import { Wonders } from './wonders.js';
 import { FirstFire } from './firstFire.js';
 import { ISLE_VIEW } from '../data/isles.js';
@@ -385,6 +386,7 @@ export class Game {
     this.skills = new Skills(this); // Mikas Fähigkeiten (M16)
     this.towerRanks = new TowerRanks(this); // Türme mit Geschichte (M16)
     this.survivors = new Survivors(this);
+    this.chores = new Chores(this); // A1: das Tagwerk der Bewohner
     this.people = new PeopleSprites(this.scene); // F4: Mika, die Leute und Knopf als Sprites
     this.people.setActive(this.settings.figuren === '2d');
     this.trader = new Trader(this);
@@ -2869,6 +2871,7 @@ export class Game {
     this.posts.update(this.mode === 'play' ? dt : 0); // M23: vor den Überlebenden – wer steht auf dem Posten?
     this.towers.boost = this.nights.active ? this.posts.towerDamage() : 1; // nach dem Fest treffen die Türme härter
     this.survivors.update(this.mode === 'play' || this.mode === 'drachen' ? dt : dt * 0.5); // N9: beim Drachen rennen die Kinder richtig
+    this.chores.update(this.mode === 'play' || this.mode === 'drachen' ? dt : dt * 0.5); // A1: das Tagwerk im Takt
     this.quests.update(dt);
     this.fogIsle.update(dt); // N7: Glocke, Nebel, Marthe und die Kinder
     this.kite.update(dt); // N9: Pims Drachen
@@ -4388,6 +4391,7 @@ export class Game {
       /** N9: gleich eine Böe. */
       kiteGust: () => game.kite.gustNow(),
       /** N10: das erste Feuer – kalt?, Streichhölzer, Licht, Flammen, Modelle, Wachsen, Zähler, Ziel und Zielpfeil. */
+      chores: () => ({ ...game.chores.info(), minute: game.state.time.minute, drawn: game.people.lastPeople ? Object.fromEntries(Object.entries(game.people.lastPeople).map(([id, v]) => [id, { anim: v.anim, k: v.k, part: v.part, dir: v.dir }])) : null }),
       firstFire: () => ({ ...game.firstFire.info(), goal: game.goal ? { id: game.goal.id, text: game.goal.text, progress: game.goal.progress || null } : null, target: game.goalTarget(), holz: game.state.inventory.holz || 0 }),
       /** N10: Feuerstelle und Kamin kalt machen wie bei der Ankunft. */
       coldFires: () => game.firstFire.coldStart(),
@@ -4549,6 +4553,11 @@ export class Game {
       setHordeLook(look) {
         game.applySettings({ horde: look });
         return game.settings.horde;
+      },
+      /** A1: das Tagwerk der Bewohner an- oder ausschalten (in der Prüfung sonst aus). */
+      setChores(on) {
+        game.chores.enabled = Boolean(on);
+        game.chores.check = 0;
       },
       /** F4: Mika und die Leute als Voxel (3D) oder Sprites (2D). */
       setFigureLook(look) {

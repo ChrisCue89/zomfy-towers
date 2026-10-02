@@ -8,7 +8,7 @@ import { trace, paint, stampAt, toTexel, lightField, TEXEL } from '../render/spr
 import { encodeFrame, encodePatch } from '../render/spriteCode.js';
 import { frameContext, scaleFrame, add, sub, norm, dot, toWorld } from './spriteFigure.js';
 import { posePerson, poseDog, PERSON_ANIMS, DOG_ANIMS, VIEW_TILT, HUMAN, toneOf } from './peopleFigure.js';
-import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, toolBuckets, bucketOf, facesOf, cardFan, CARD_MATERIALS } from './peopleKinds.js';
+import { PEOPLE, TOOLS, TOOL_MATERIALS, BACK_BUCKET, TOOL_BUCKETS, buildTool, toolBuckets, bucketOf, facesOf, cardFan, CARD_MATERIALS, choreProps, PROP_MATERIALS } from './peopleKinds.js';
 import { mapFace, placeFace, stampFace } from './peopleFaces.js';
 import { rings, ribs, strands, folds, locks, beardLocks } from './peopleRelief.js';
 
@@ -206,6 +206,7 @@ export function personShapes(id, spec, part, d, anim, k) {
     // F7: Karten in der Hand am Tisch; Anker für das Werkzeug auch bei den Leuten (Angel, Spule,
     // Waffen) – wer sie nicht selbst setzt, bekommt sie aus dem Gerüst
     if (anim === 'karten' || (anim === 'tick' && kind.tell !== 'reiben')) cardFan(ctx, sk.arms); // wer sich die Hände reibt, hat die Karten abgelegt
+    choreProps(ctx, anim, k, sk.arms); // A1: Strickzeug, Buch, Netz … beim Tagwerk
     const m = ctx.marks;
     if (!m.handR) {
       ctx.mark('handR', sk.arms[1].hand);
@@ -249,7 +250,7 @@ const materialCache = new Map();
 function materialsOf(id, spec) {
   const kind = PEOPLE[id];
   const key = typeof kind.materials === 'function' ? `${id}:${JSON.stringify(spec)}` : id;
-  if (!materialCache.has(key)) materialCache.set(key, withOutlines({ ...CARD_MATERIALS, ...(typeof kind.materials === 'function' ? kind.materials(spec) : kind.materials) }));
+  if (!materialCache.has(key)) materialCache.set(key, withOutlines({ ...CARD_MATERIALS, ...PROP_MATERIALS, ...(typeof kind.materials === 'function' ? kind.materials(spec) : kind.materials) }));
   return materialCache.get(key);
 }
 

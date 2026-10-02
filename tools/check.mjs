@@ -796,6 +796,7 @@ async function runBrowserChecks() {
     if (want('probespiel')) await runPlaytestFixChecks(browser, url);
     if (want('ankunft')) await runArrivalChecks(browser, url);
     if (want('feuer')) await runFirstFireChecks(browser, url);
+    if (want('alltag')) await runChoreChecks(browser, url);
 
     // --- 7. Große Auflösung (Full HD) --------------------------------------------------
     if (want('hd')) {
@@ -13019,6 +13020,180 @@ function zoneShare(L) {
 }
 
 /** Ein Bild ohne Simulationsschritt (für Abschnitte, die mit `__zomfyHold` laufen). */
+/**
+ * A1 – Die Bucht lebt: Tagsüber gehen die Bewohner an ihre Arbeit – Hilde setzt sich auf die Bank am
+ * Feuer und strickt, Yusuf liest gegenüber, Bert spaltet Holz am Hackklotz (es klopft, Späne
+ * fliegen), Emil gießt das Beet, Hannes hämmert am Zaun, Juna funkt am Mast; mittags schläft Knopf
+ * am Feuer. Kommt Mika heran, halten sie inne (wer steht, schaut auf; Knopf wacht auf), danach geht
+ * die Arbeit weiter. Abends stehen sie auf und gehen an ihre Plätze; im Regen strickt niemand
+ * draußen. In 2D zeigen die Sprites die Arbeit. (In den übrigen Abschnitten ist das Tagwerk aus.)
+ */
+async function runChoreChecks(browser, url) {
+  const session = await openGame(browser, `${url}index.html?test&nosave&playtest&alltag`, 'Die Bucht lebt (A1)', { viewport: { width: 1920, height: 1080 } });
+  const { page } = session;
+  const z = (fn, arg) => page.evaluate(fn, arg);
+  const step = (ms) => z((t) => window.__zomfyStep(t), ms);
+  const WORKERS = ['hilde', 'yusuf', 'bert', 'juna', 'emil', 'hannes'];
+  await z(() => {
+    const Z = window.zomfy;
+    window.__zomfyHold = true;
+    for (const f of ['abendHinweis', 'spaetHinweis', 'abendHorde', 'ruheHinweis', 'introGesehen', 'ersterTurm', 'blitzHinweis']) Z.setFlag(f);
+    Z.setHorde(false);
+    Z.setWeather('klar', true);
+    Z.setTime(7, 30);
+    Z.game.funk.clear();
+    for (const id of ['knopf', 'hilde', 'juna', 'bert', 'yusuf', 'emil', 'hannes']) Z.setSurvivor(id, 3);
+    Z.teleport(9.5, 5.5, 0); // abseits am Strand – niemand hält inne
+  });
+  await step(300);
+  const frueh = await z(() => window.zomfy.chores());
+
+  // 1) Um neun gehen sie an die Arbeit: hin, Hilde und Yusuf setzen sich auf die Bänke am Feuer
+  await z(() => window.zomfy.setTime(9, 0));
+  let info = null;
+  for (let i = 0; i < 40; i++) {
+    await step(500);
+    info = await z(() => window.zomfy.chores());
+    if (WORKERS.every((id) => info.runs[id]?.phase === 'arbeiten')) break;
+  }
+  const working = WORKERS.filter((id) => info.runs[id]?.phase === 'arbeiten');
+  const r = info.runs;
+  // Im Takt: über zwei Sekunden wechseln die Bilder, Bert hackt (Geräusch, Spaltaxt in der Hand)
+  const takt = await z(() => {
+    const Z = window.zomfy;
+    const seen = {};
+    const hits0 = Z.chores().hits;
+    for (let i = 0; i < 24; i++) {
+      window.__zomfyStep(100);
+      const c = Z.chores().runs;
+      for (const [id, v] of Object.entries(c)) (seen[id] ||= new Set()).add(v.chore ? `${v.chore.anim}:${v.chore.k}` : 'stehen');
+    }
+    const bert = Z.game.survivors.npcs.list.get('bert');
+    return { seen: Object.fromEntries(Object.entries(seen).map(([k, v]) => [k, [...v]])), hits: Z.chores().hits - hits0, axe: Boolean(bert.model.parts.held?.spaltaxt?.visible) };
+  });
+  const seat = (id) => r[id]?.sitting && r[id].chore?.anim;
+  if (!Object.keys(frueh.runs).length && working.length === WORKERS.length && seat('hilde') === 'stricken' && seat('yusuf') === 'lesen' && r.emil.chore?.anim === 'giessen' && r.hannes.chore?.anim === 'haemmern' && r.juna.chore?.anim === 'funken' && !r.knopf && takt.seen.hilde.length >= 2 && takt.seen.bert.some((s) => s.startsWith('schwung')) && takt.hits > 0 && takt.axe) {
+    note(`✓ Alltag (A1): um halb acht noch nichts, um neun gehen alle an die Arbeit – Hilde strickt auf der Bank am Feuer (sitzt bei ${r.hilde.x}/${r.hilde.z}), Yusuf liest gegenüber, Bert spaltet mit der Spaltaxt Holz (${takt.hits}× in 2,4 s), Emil gießt, Hannes hämmert, Juna funkt; die Bilder wechseln im Takt, Knopf schläft erst mittags`);
+  } else fail(`Alltag: an die Arbeit ${JSON.stringify({ frueh: frueh.runs, working, runs: r, takt })}`);
+
+  // 2) In 2D zeigen die Sprites die Arbeit: alle Bilder der Arbeiten (16 Figuren) ohne leeres Bild,
+  //    im Spiel stricken, lesen, hacken, gießen und hämmern sie; Bild von der Feuerstelle
+  const ALLTAG = ['hilde', 'yusuf', 'juna', 'knopf', 'hannes', 'clara', 'lotte', 'greta', 'fiete', 'ida', 'rosa', 'anton', 'emil', 'frieda', 'mara', 'paula'];
+  const gebacken = await z((ids) => {
+    const Z = window.zomfy;
+    Z.setFigureLook('2d');
+    Z.people({ people: ids, parts: ['alltag'] });
+    Z.people({ people: ['hilde', 'yusuf', 'bert', 'juna', 'emil', 'hannes', 'knopf'], parts: ['base', 'waffe'] });
+    const r = Z.people({ tools: ['spaltaxt'] });
+    let leer = 0;
+    let bilder = 0;
+    for (const v of Z.game.people.variants.values()) {
+      if (!v.ready || !v.key.endsWith('|alltag')) continue;
+      for (const e of v.table.values()) {
+        bilder++;
+        if (!e.body.w || !e.body.solid) leer++;
+      }
+    }
+    return { fehlt: ids.filter((id) => !r.ready.includes(`${id}|fest|alltag`)), failed: r.failed, leer, bilder };
+  }, ALLTAG);
+  await z(() => {
+    const Z = window.zomfy;
+    Z.teleport(3.4, -0.4, -1.2);
+    Z.lookAt(1.0, -3.6);
+  });
+  await step(600);
+  const zwei = await z(() => window.zomfy.chores());
+  await still(page, 'alltag');
+  // Nah heran (echte Taste Z): Hilde strickt, Yusuf liest, dahinter hackt Bert
+  await z(() => window.zomfy.lookAt(0.2, -2.9));
+  await page.keyboard.press('KeyZ');
+  await step(500);
+  await still(page, 'alltag-nah');
+  await page.keyboard.press('KeyZ');
+  await step(300);
+  await z(() => window.zomfy.lookAt(null));
+  const d = zwei.drawn || {};
+  if (!gebacken.fehlt.length && !gebacken.failed.length && !gebacken.leer && d.hilde?.anim === 'stricken' && d.hilde.part === 'alltag' && d.yusuf?.anim === 'lesen' && ['schwung', 'stehen'].includes(d.bert?.anim) && d.emil?.anim === 'giessen' && d.hannes?.anim === 'haemmern') note(`✓ Alltag (A1): ${gebacken.bilder} Bilder der Arbeiten (16 Figuren) ohne leeres Bild; in 2D stricken, lesen, hacken, gießen und hämmern sie als Sprites`);
+  else fail(`Alltag: Sprites ${JSON.stringify({ gebacken, drawn: d, runs: zwei.runs })}`);
+
+  // 3) Kommt Mika heran, halten sie inne: Bert hält die Axt und schaut Mika an, Hilde bleibt sitzen;
+  //    geht Mika weiter, arbeiten sie weiter
+  const inne = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    const bert = g.survivors.npcs.list.get('bert');
+    Z.teleport(bert.x + 1.1, bert.z + 0.5, -1.5);
+    for (let i = 0; i < 20; i++) window.__zomfyStep(100);
+    const want = Math.atan2(g.player.position.x - bert.x, g.player.position.z - bert.z);
+    const turn = Math.abs(Math.atan2(Math.sin(want - bert.facing), Math.cos(want - bert.facing)));
+    const b = Z.chores().runs.bert;
+    const wort = g.hud.bubbles.find((q) => q.n === bert)?.text || null; // ein Wort bei der Arbeit
+    // Noch einmal heran (am selben Tag): kein zweites Wort
+    Z.teleport(9.5, 5.5, 0);
+    for (let i = 0; i < 40; i++) window.__zomfyStep(100);
+    Z.teleport(bert.x + 1.1, bert.z + 0.5, -1.5);
+    for (let i = 0; i < 6; i++) window.__zomfyStep(100);
+    const nochmal = g.hud.bubbles.find((q) => q.n === bert)?.text || null;
+    const hilde = g.survivors.npcs.list.get('hilde');
+    Z.teleport(hilde.x + 1.0, hilde.z + 0.7, -1.5);
+    for (let i = 0; i < 10; i++) window.__zomfyStep(100);
+    const h = Z.chores().runs.hilde;
+    const hildeWort = g.hud.bubbles.find((q) => q.n === hilde)?.text || null;
+    Z.teleport(9.5, 5.5, 0);
+    for (let i = 0; i < 25; i++) window.__zomfyStep(100);
+    const weiter = Z.chores().runs;
+    return { bert: b, turn: +turn.toFixed(2), wort, nochmal, hilde: h, hildeWort, weiter: { bert: weiter.bert.chore, hilde: weiter.hilde.chore } };
+  });
+  if (inne.bert.chore?.paused && inne.turn < 0.5 && inne.wort && !inne.nochmal && inne.hilde.chore?.paused && inne.hilde.sitting && !inne.weiter.bert?.paused && !inne.weiter.hilde?.paused) note(`✓ Alltag (A1): kommt Mika heran, hält Bert inne, schaut sie an und sagt »${inne.wort}« (am selben Tag nicht noch einmal), Hilde hört auf zu stricken und bleibt sitzen${inne.hildeWort ? ` (»${inne.hildeWort}«)` : ''}; geht Mika weiter, arbeiten beide weiter`);
+  else fail(`Alltag: innehalten ${JSON.stringify(inne)}`);
+
+  // 4) Mittags schläft Knopf am Feuer; kommt Mika, wacht er auf
+  const mittag = await z(() => {
+    const Z = window.zomfy;
+    Z.setTime(12, 0);
+    for (let i = 0; i < 40; i++) window.__zomfyStep(150);
+    const schlaf = Z.chores();
+    const dog = Z.game.survivors.npcs.list.get('knopf');
+    Z.teleport(dog.x + 1.0, dog.z + 0.8, 0);
+    for (let i = 0; i < 6; i++) window.__zomfyStep(100);
+    const wach = Z.chores().runs.knopf;
+    Z.teleport(9.5, 5.5, 0);
+    for (let i = 0; i < 20; i++) window.__zomfyStep(100);
+    return { schlaf: schlaf.runs.knopf, drawn: schlaf.drawn?.knopf, wach, wieder: Z.chores().runs.knopf };
+  });
+  if (mittag.schlaf?.chore?.anim === 'schlafen' && mittag.drawn?.anim === 'schlafen' && mittag.wach && !mittag.wach.chore && mittag.wieder?.chore?.anim === 'schlafen') note(`✓ Alltag (A1): mittags schläft Knopf am Feuer (Sprite »schlafen«), kommt Mika, wacht er auf, danach schläft er weiter`);
+  else fail(`Alltag: Knopf ${JSON.stringify(mittag)}`);
+
+  // 5) Abends stehen sie auf und gehen an ihre Plätze; Bert legt die Axt weg
+  const abend = await z(() => {
+    const Z = window.zomfy;
+    const g = Z.game;
+    Z.setTime(18, 5);
+    for (let i = 0; i < 60; i++) window.__zomfyStep(150);
+    const hilde = g.survivors.npcs.list.get('hilde');
+    const bert = g.survivors.npcs.list.get('bert');
+    return { runs: Z.chores().runs, hilde: { x: +hilde.x.toFixed(2), z: +hilde.z.toFixed(2), sit: hilde.sitTarget, seatY: hilde.seatY ?? null, chore: hilde.chore }, axe: Boolean(bert.model.parts.held?.spaltaxt?.visible) };
+  });
+  if (!Object.keys(abend.runs).length && !abend.hilde.sit && abend.hilde.seatY === null && !abend.hilde.chore && Math.hypot(abend.hilde.x + 2.25, abend.hilde.z - 5.0) < 1 && !abend.axe) note(`✓ Alltag (A1): abends stehen alle auf und gehen an ihre Plätze (Hilde von der Bank zu ${abend.hilde.x}/${abend.hilde.z}), Bert legt die Axt weg`);
+  else fail(`Alltag: Feierabend ${JSON.stringify(abend)}`);
+
+  // 6) Im Regen strickt niemand draußen (Hilde steht an ihrem Platz), Bert hackt weiter
+  const regen = await z(() => {
+    const Z = window.zomfy;
+    Z.setWeather('regen', true);
+    Z.setTime(10, 0);
+    for (let i = 0; i < 60; i++) window.__zomfyStep(150);
+    const r = Z.chores().runs;
+    Z.setWeather('klar', true);
+    return { hilde: r.hilde || null, bert: r.bert?.phase || null };
+  });
+  if (!regen.hilde && regen.bert === 'arbeiten') note(`✓ Alltag (A1): im Regen strickt Hilde nicht auf der Bank, Bert hackt weiter`);
+  else fail(`Alltag: Regen ${JSON.stringify(regen)}`);
+
+  checkMessages(session);
+  await session.context.close();
+}
+
 async function still(page, name) {
   await page.evaluate(() => window.zomfy.game.render());
   await page.waitForTimeout(150);

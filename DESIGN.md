@@ -2142,7 +2142,7 @@ Lektorat und die Reiter des Baumenüs.
 - **Form:** ein zum Kinn schmalerer Kopf, etwas schmalere Schultern, eigene Rampen für Violett,
   Rosa, Weiß, Türkis und Blond.
 
-#### F6 – Die Menschen auf dem Weg zu »Triple A« (in Arbeit)
+#### F6 – Die Menschen auf dem Weg zu »Triple A« ✓
 
 *Auftrag (01.10.2026):* »Die sehen noch nicht hochwertig aus. Die müssen Triple a sein. Du hast alle
 Zeit der Welt dafür.«
@@ -2164,6 +2164,26 @@ Zeit der Welt dafür.«
   schießen mit Rückstoß oder legen die Flinte an, pfeifen, wirbeln mit der Waffe herum und halten Pims
   Drachen an der Spule; Pim und Lu schauen ihm nach. Auch auf der Reifenschaukel (die Neigung in
   sieben gebackenen Stufen) und am Boden nach der Lagerglocke sind es Sprites (F7e).
+
+#### A1 – Die Bucht lebt ✓ (Nr. 229)
+
+*Selbst gewählt (02.10.2026) nach F7:* Tagsüber standen die Bewohner still an ihren Plätzen – die
+Bucht sah aus wie ein Bild. Jetzt hat jeder ein Tagwerk, das zu ihm passt und das man von Weitem
+liest:
+
+- **Die Stammfiguren:** Hilde strickt auf der Bank am Feuer, Yusuf liest auf der Bank gegenüber,
+  Bert spaltet Holz am Hackklotz (es klopft, Späne fliegen), Juna funkt am Mast, und mittags schläft
+  Knopf am Feuer.
+- **Die Wanderer nach ihrem Beruf:** Hannes hämmert am Zaun neben dem Tor, Clara schraubt am
+  Bootswrack, Lotte baut Papierlaternen, Greta und Mara halten Ausschau, Fiete flickt sein Netz, Ida
+  setzt junge Bäume, Rosa rührt Teig, Anton spielt Akkordeon, Emil gießt das Beet, Frieda hämmert,
+  Paula näht.
+- **Mika ist willkommen:** Kommt Mika heran, halten sie inne und schauen auf (wer sitzt oder kniet,
+  bleibt, wie er ist), Knopf wacht auf; beim ersten Mal am Tag sagt jeder ein Wort zu seiner Arbeit
+  (Sprechblase). Geht Mika weiter, arbeiten sie weiter.
+- **Glaubhaft:** Gearbeitet wird von acht bis sechs, nicht in der Nacht, nicht verletzt, nicht auf dem
+  Übungsplatz; im Regen bleiben Wolle, Buch, Papier und Stoff drinnen. Abends stehen alle auf und
+  gehen an ihre Plätze – das Fest, die Szenen am Feuer und der Kartenabend gehen vor.
 
 #### G7 – Die Ankunft, glaubhaft ✓
 

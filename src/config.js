@@ -74,6 +74,9 @@ export const CONFIG = {
   // Look der Menschen (F4): ?figuren=2d|3d erzwingt ihn; Prüfung und Playtest-Brücke bleiben bei 3D
   figuren: ['2d', '3d'].includes(params.get('figuren')) ? params.get('figuren') : params.has('test') || params.has('playtest') ? '3d' : null,
   debug: params.has('debug'),
+  // A1: das Tagwerk der Bewohner – in Prüfung und Playtest-Brücke aus (die älteren Abschnitte
+  // erwarten die Leute an ihren Tagesplätzen), ?alltag schaltet es dort ein
+  chores: params.has('alltag') || !(params.has('test') || params.has('playtest')),
   test: params.has('test'),
   playtest: params.has('playtest'),
   noSave: params.has('nosave'),

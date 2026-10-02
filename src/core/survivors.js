@@ -176,6 +176,12 @@ export class Survivors {
     if (scene) return { ...this.freeSpot(scene.x, scene.z, 0.28), facing: scene.facing };
     const fire = this.resident(id) ? this.game.bonds?.fireSpot(id) : null; // M29: abends zu Mika ans Feuer
     if (fire) return { ...this.freeSpot(fire.x, fire.z, 0.28), facing: fire.facing };
+    // A1: tagsüber an der Arbeit (core/chores.js) – mit Sitz bleibt der Platz daneben, wie er ist
+    const chore = this.resident(id) ? this.game.chores?.spotOf(id) : null;
+    if (chore) {
+      const at = chore.seat ? { x: chore.x, z: chore.z } : this.freeSpot(chore.x, chore.z, def.dog ? 0.2 : 0.28);
+      return { ...at, facing: chore.facing, seat: chore.seat, chore: { ...chore, ...at } };
+    }
     // M27: Gäste sitzen am Gästeplatz beim Feuer
     if (def.wanderer && this.stage(id) === 2) {
       const g = GUEST_SPOTS[this.st[id].guest || 0];
@@ -333,9 +339,15 @@ export class Survivors {
     // Menschen gehen nachts schlafen (Gäste am Feuer, Eingezogene ins Zelt)
     const visible = def.dog || out;
     n.model.root.visible = visible;
+    const p = visible ? this.standSpot(id) : null;
+    // A1: Arbeit im Sitzen (Hilde strickt auf der Bank) – hinsetzen übernimmt core/chores.js
+    if (p?.seat) {
+      this.game.chores.place(id, n, p.chore, jump);
+      return;
+    }
+    if (this.game.chores?.seated(id)) this.game.chores.release(id, n); // anderswo gebraucht: aufstehen
     n.sitTarget = def.dog && !out ? 1 : 0;
     if (!visible) return;
-    const p = this.standSpot(id);
     if (!def.dog) n.restFacing = p.facing ?? null; // am Festmorgen zum Feuer schauen
     if (jump) this.npcs.place(n, p.x, p.z, p.facing ?? 0);
     else this.npcs.walkTo(n, p.x, p.z);

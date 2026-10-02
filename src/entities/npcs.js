@@ -137,9 +137,10 @@ export class Npcs {
     this.sync(n);
   }
 
-  walkTo(n, x, z) {
+  /** Zu (x, z) gehen; `free`: ohne Kollision (A1: die letzten Schritte auf eine Bank und herunter). */
+  walkTo(n, x, z, free = false) {
     if (Math.hypot(n.x - x, n.z - z) < 0.05) return;
-    n.target = { x, z };
+    n.target = { x, z, free };
   }
 
   sync(n) {
@@ -174,7 +175,10 @@ export class Npcs {
         else {
           const step = Math.min(d, WALK_SPEED * (n.dog ? 1.3 : 1) * (n.rush || 1) * dt); // rush: Knopf auf den Pfiff (M16)
           const pos = { x: n.x, z: n.z };
-          this.world.colliders.move(pos, (dx / d) * step, (dz / d) * step, n.dog ? 0.2 : 0.25, { bounds: true });
+          if (n.target.free) {
+            pos.x += (dx / d) * step;
+            pos.z += (dz / d) * step;
+          } else this.world.colliders.move(pos, (dx / d) * step, (dz / d) * step, n.dog ? 0.2 : 0.25, { bounds: true });
           speed = Math.hypot(pos.x - n.x, pos.z - n.z) / Math.max(dt, 1e-4);
           if (speed < 0.05 && d > 0.3) n.target = null; // festgefahren: hier bleiben
           n.x = pos.x;
@@ -267,6 +271,7 @@ export class Npcs {
       p.armL.rotation.z = -0.32;
     }
     if (n.kite || n.skyward) p.head.rotation.x = -0.3; // der Blick geht hinauf zum Drachen
+    if (n.chore?.anim && !n.wave) this.poseChore(n, p);
     this.poseGesture(n, dt);
     // Lächeln beim Winken, bei Gesten und wenn Mika dabeisteht (M12)
     const happy = n.wave > 0 || n.near || n.gestures.length > 0;
@@ -276,6 +281,32 @@ export class Npcs {
     }
     if (this.time > n.blinkAt + 0.13) n.blinkAt = this.time + 2.5 + Math.random() * 3.5;
     p.eyelids.visible = this.time >= n.blinkAt && !(happy && n.model.smileEyes);
+  }
+
+  /**
+   * A1: Das Tagwerk (core/chores.js) als Voxel-Haltung – grob wie die Sprites: die Arme vorn bei
+   * der Handarbeit, der Hammer im Takt, die Hand über den Augen, der Kopf gesenkt beim Lesen.
+   */
+  poseChore(n, p) {
+    const { anim, k } = n.chore;
+    const t = this.time + n.x;
+    const arms = (l, r, zl = 0, zr = 0) => {
+      p.armL.rotation.x = l;
+      p.armR.rotation.x = r;
+      p.armL.rotation.z = zl;
+      p.armR.rotation.z = zr;
+    };
+    if (anim === 'schwung') arms(-0.4, [-2.7, -1.4, -0.35, -0.6][k] ?? -0.5, 0, 0.1);
+    else if (anim === 'haemmern') arms(-0.9, k ? -0.9 : -2.5, 0, k ? 0 : 0.25);
+    else if (anim === 'schrauben') arms(-1.0, -1.35 - (k ? 0.25 : 0), 0, -0.1);
+    else if (anim === 'giessen') arms(-0.2, k ? -0.75 : -0.95, 0, 0.1);
+    else if (anim === 'spaehen') arms(-0.1, -2.7, 0, -0.55);
+    else if (anim === 'funken') arms(-1.2, -2.6, -0.2, 0.75);
+    else if (anim === 'musizieren') arms(-1.25, -1.25, k ? 0.2 : 0.45, k ? -0.2 : -0.45);
+    else if (anim === 'ruehren') arms(-1.0, -1.1 + Math.sin(t * 7) * 0.12, -0.2, 0.15 * Math.cos(t * 7));
+    else if (anim === 'pflanzen') arms(-0.75, -0.65 - (k ? 0.12 : 0), 0, 0);
+    else arms(-1.05, -1.1 - (k ? 0.12 : 0), -0.15, 0.15); // stricken, lesen, netz, nähen, basteln
+    if (anim !== 'spaehen' && anim !== 'funken') p.head.rotation.x = 0.28; // der Blick auf die Arbeit
   }
 
   /**

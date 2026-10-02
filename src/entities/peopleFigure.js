@@ -181,6 +181,20 @@ export const PERSON_ANIMS = {
   // F7e: die letzten Voxel – auf der Reifenschaukel (Neigung in sieben Stufen) und am Boden liegen
   schaukeln: 7,
   liegen: 1,
+  // A1: das Tagwerk in der Bucht (je zwei Bilder im Wechsel)
+  stricken: 2,
+  lesen: 2,
+  haemmern: 2,
+  ruehren: 2,
+  giessen: 2,
+  spaehen: 2,
+  funken: 2,
+  netz: 2,
+  naehen: 2,
+  basteln: 2,
+  musizieren: 2,
+  schrauben: 2,
+  pflanzen: 2,
   muetze: 1,
   reiben: 2,
   daumen: 1,
@@ -342,6 +356,53 @@ export function posePerson(anim, k, n, { lantern = false, gait = 'gehen', tell =
     // F7e: nach der Lagerglocke am Boden – auf dem Rücken, der Kopf nach Norden (`lie`: wie die
     // Voxel-Figur um die x-Achse gekippt und ein wenig angehoben), die Arme seitlich
     Object.assign(p, { armL: 0.35, armR: 0.3, spreadL: 0.4, spreadR: 0.45, elbowL: 0.25, elbowR: 0.3, legL: 0.12, legR: -0.06, kneeL: 0.2, kneeR: 0.1, nod: 0.1, lie: true });
+  } else if (anim === 'stricken') {
+    // A1: Hilde strickt auf der Bank – beide Hände vor dem Bauch, die Nadeln kreuzen sich im Takt
+    const w = k ? 1 : -1;
+    Object.assign(p, SIT_LEGS, { reachL: [-0.06, -0.42, 0.24], reachR: [0.06 + 0.015 * w, -0.41 + 0.012 * w, 0.24], nod: 0.26, bob: -0.002 * k });
+  } else if (anim === 'lesen') {
+    // A1: Yusuf liest auf der Bank am Feuer – das offene Buch auf den Knien, der Blick hinein; im
+    // zweiten Bild blättert die rechte Hand um
+    Object.assign(p, SIT_LEGS, { reachL: [-0.09, -0.43, 0.27], reachR: k ? [0.0, -0.39, 0.3] : [0.09, -0.43, 0.27], nod: 0.32 });
+  } else if (anim === 'haemmern') {
+    // A1: rechts der Hammer – ausholen und zuschlagen, links hält die Hand das Werkstück (ausgeholt
+    // steht er seitlich neben dem Kopf – von vorn verschwände er sonst dahinter)
+    Object.assign(p, k ? { armR: 0.95, elbowR: 0.3, toolPhi: 0.8 } : { armR: 2.35, elbowR: 0.9, toolPhi: 2.8 });
+    Object.assign(p, { spreadR: k ? -0.05 : 0.28, reachL: [-0.06, -0.52, 0.34], lean: 0.16, nod: 0.22, legL: 0.16, legR: -0.08, kneeL: 0.12 });
+  } else if (anim === 'ruehren') {
+    // A1: Rosa rührt Teig – links die Schüssel am Bauch, rechts der Kochlöffel, der im Kreis geht
+    const a = k ? Math.PI : 0;
+    Object.assign(p, { reachL: [-0.07, -0.49, 0.22], reachR: [0.03 + 0.045 * Math.cos(a), -0.42, 0.27 + 0.035 * Math.sin(a + 0.6)], lean: 0.08, nod: 0.3 });
+  } else if (anim === 'giessen') {
+    // A1: Emil gießt das Beet – die Kanne hängt am Bügel vorn in der rechten Hand, im zweiten Bild
+    // kippt sie, und aus der Brause rinnt Wasser
+    Object.assign(p, { armR: 0.75, elbowR: 0.3, spreadR: 0.08, armL: 0.25, elbowL: 0.3, lean: 0.1, nod: 0.32, legL: 0.14, legR: -0.06 });
+  } else if (anim === 'spaehen') {
+    // A1: Greta und Mara halten Ausschau – die Hand als Schirm über den Augen, der Kopf wandert
+    Object.assign(p, { reachR: [0.07, 0.07, 0.25], armL: 0.08, nod: -0.08 + 0.04 * k, head: k ? 0.07 : -0.05, spread: 0.14 });
+  } else if (anim === 'funken') {
+    // A1: Juna funkt – rechts die Hand am Kopfhörer, links das Gerät vor der Brust
+    Object.assign(p, { reachR: k ? [0.18, 0.01, 0.07] : [0.17, -0.02, 0.05], reachL: [-0.06, -0.38, 0.25], nod: 0.12, head: k ? 0.06 : 0 });
+  } else if (anim === 'netz') {
+    // A1: Fiete flickt ein Netz – beide Hände halten es vor sich, die rechte zieht den Knoten fest
+    Object.assign(p, { reachL: [-0.13, -0.42, 0.28], reachR: k ? [0.12, -0.36, 0.27] : [0.07, -0.42, 0.29], nod: 0.26 });
+  } else if (anim === 'naehen') {
+    // A1: Paula näht – links der Stoff vor der Brust, rechts zieht die Hand den Faden heraus
+    Object.assign(p, { reachL: [-0.08, -0.37, 0.27], reachR: k ? [0.21, -0.25, 0.21] : [0.03, -0.36, 0.28], nod: 0.26 });
+  } else if (anim === 'basteln') {
+    // A1: Lotte baut Laternen – links die Papierlaterne, rechts die Hand daran
+    Object.assign(p, { reachL: [-0.07, -0.33, 0.29], reachR: [0.07, -0.31 + 0.03 * k, 0.3], nod: 0.24 });
+  } else if (anim === 'musizieren') {
+    // A1: Anton spielt Akkordeon – der Balg zieht auf und zu, der Kopf wiegt sich
+    const wide = k ? 0.13 : 0.2;
+    Object.assign(p, { reachL: [-wide, -0.37, 0.22], reachR: [wide, -0.37, 0.22], nod: 0.06, head: k ? 0.09 : -0.07, bob: k ? -0.006 : 0 });
+  } else if (anim === 'schrauben') {
+    // A1: Clara schraubt – rechts der Schlüssel, der sich im Takt dreht, links hält die Hand gegen
+    Object.assign(p, { armR: 1.35, elbowR: 0.45, spreadR: -0.06, toolPhi: Math.PI / 2 + (k ? 0.45 : -0.2), reachL: [-0.05, -0.42, 0.38], lean: 0.24, nod: 0.24, kneeL: 0.12, kneeR: 0.08 });
+  } else if (anim === 'pflanzen') {
+    // A1: Ida setzt junge Bäume – auf ein Knie gestützt (links der Fuß vorn, rechts das Knie am Boden),
+    // vornübergebeugt, beide Hände unten am Setzling; im zweiten Bild drückt die rechte die Erde an
+    Object.assign(p, { legL: 1.35, kneeL: 1.35, legR: -0.05, kneeR: 1.6, lean: 0.55, nod: 0.35, reachL: [-0.07, -0.66, 0.1], reachR: k ? [0.1, -0.72, 0.13] : [0.06, -0.64, 0.12] });
   } else if (anim === 'gucken') {
     // F7: dem Drachen nachschauen – der Kopf im Nacken, die Arme locker
     Object.assign(p, { nod: -0.34, lean: -0.05, spread: 0.18, armL: 0.08, armR: 0.1 - 0.04 * k, bob: -0.005 * k });
@@ -468,7 +529,7 @@ export const DOG = {
 };
 
 /** Posen des Hundes: traben, stehen (wedeln), sitzen, bellen. */
-export const DOG_ANIMS = { stehen: 2, traben: 6, sitzen: 2, bellen: 2 };
+export const DOG_ANIMS = { stehen: 2, traben: 6, sitzen: 2, bellen: 2, schlafen: 2 };
 
 export function poseDog(anim, k, n) {
   const ph = (n > 1 ? k / n : 0) * Math.PI * 2;
@@ -495,6 +556,17 @@ export function poseDog(anim, k, n) {
     p.headPitch = k ? -0.35 : -0.15;
     p.bob = k ? 0.012 : 0;
     p.tail = k ? 0.5 : -0.5;
+  } else if (anim === 'schlafen') {
+    // A1: Knopf schläft mittags am Feuer – flach auf dem Bauch, die Vorderläufe vorn flach am Boden,
+    // der Kopf darauf, die Hinterläufe seitlich untergeschlagen, der Schwanz liegt im Bogen; die Flanke
+    // hebt sich im Atem
+    p.flat = 1; // flach am Boden (nicht `lie`: das kippt beim Bäcker das ganze Bild wie bei Liegenden)
+    p.legs = [1.2, 1.2, 1.3, 1.3];
+    p.knees = [-0.37, -0.37, 2.6, 2.6];
+    p.headPitch = 0.3;
+    p.tail = 0.9;
+    p.tailUp = -2;
+    p.bob = k ? 0.007 : 0;
   }
   return p;
 }
@@ -505,7 +577,9 @@ export function poseDog(anim, k, n) {
  */
 export function quadruped(ctx, D, pose, M) {
   const sitDrop = 0.1 * pose.sit;
-  const bodyC = [0, D.bodyY + pose.bob - sitDrop, -0.02 * pose.sit];
+  // A1: liegend (schlafen) sinkt der Rumpf bis auf den Boden, der Kopf ruht auf den Pfoten
+  const lieDrop = pose.flat ? D.bodyY - D.body[1] - 0.012 : 0;
+  const bodyC = [0, D.bodyY + pose.bob - sitDrop - lieDrop, -0.02 * pose.sit];
   const pitch = -0.5 * pose.sit;
   const bodyAx = ctx.AX(pitch, 0);
   const B = (l) => {
@@ -520,7 +594,8 @@ export function quadruped(ctx, D, pose, M) {
   for (let i = 0; i < 4; i++) {
     const front = i < 2;
     const side = i % 2 ? 1 : -1;
-    const top = B([side * D.legX, -0.04, front ? D.frontZ : D.backZ]);
+    // A1: liegend liegen die untergeschlagenen Hinterläufe außen an der Flanke
+    const top = B([side * D.legX * (pose.flat && !front ? 1.55 : 1), -0.04, front ? D.frontZ : D.backZ]);
     let swing = pose.legs[i];
     let knee = pose.knees[i];
     if (!front && pose.sit) {
@@ -538,7 +613,8 @@ export function quadruped(ctx, D, pose, M) {
   }
   // Hals und Kopf
   const neckBase = B([0, 0.06, D.body[2] - 0.06]);
-  const headC = add([0, D.neck[1] + pose.bob - sitDrop * 0.4, D.neck[2]], [0, 0.0, 0.0]);
+  // A1: liegend ruht der Kopf vorn auf den Pfoten (der Atem hebt nur die Flanke)
+  const headC = pose.flat ? [0, 0.15, D.neck[2] + 0.1] : [0, D.neck[1] + pose.bob - sitDrop * 0.4, D.neck[2]];
   ctx.capsule(neckBase, add(headC, [0, -0.04, -0.03]), 0.085, 0.075, M.fell, { blend: 0.04 });
   const hAx = ctx.AX(pose.headPitch, pose.headRoll);
   const H = (l) => {

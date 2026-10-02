@@ -5,6 +5,41 @@ Testspieler gefunden haben, was geändert wurde, was offen bleibt.
 
 ---
 
+## A1: Die Bucht lebt ✓
+
+**Selbst gewählt nach F7:** Tagsüber standen die Bewohner still an ihren Plätzen – die Bucht wirkte
+wie eine Kulisse. Jetzt hat jeder ein Tagwerk, das zu ihm passt (Nr. 229).
+
+- **Wer was tut:** Hilde strickt auf der Bank am Feuer, Yusuf liest auf der Bank gegenüber, Bert
+  spaltet Holz am Hackklotz (mit der Spaltaxt, es klopft, Späne fliegen), Juna funkt am Mast, Knopf
+  schläft mittags am Feuer. Die Wanderer nach ihrem Beruf: Hannes hämmert am Zaun neben dem Tor,
+  Clara schraubt am Bootswrack, Lotte baut Papierlaternen, Greta und Mara halten Ausschau, Fiete
+  flickt sein Netz, Ida kniet und setzt junge Bäume, Rosa rührt Teig, Anton spielt Akkordeon, Emil
+  gießt das Beet, Frieda hämmert, Paula näht.
+- **Wie es abläuft** (`core/chores.js`, Werte in `data/chores.js`): von acht bis sechs geht jeder an
+  seinen Platz, wer einen Sitz hat, setzt sich (die letzten Schritte auf die Bank ohne Kollision);
+  gearbeitet wird im Takt (`beat`), mit kleinen Pausen darin. Kommt Mika heran, halten sie inne – wer
+  steht, schaut auf, wer sitzt, bleibt sitzen, Knopf wacht auf. Nicht nachts, nicht verletzt, nicht
+  auf dem Übungsplatz; Wolle, Buch, Papier und Stoff bleiben im Regen drinnen. Fest, Szenen,
+  Kartenabend und Posten gehen vor. Nichts davon wird gespeichert.
+- **Ein Wort bei der Arbeit:** Kommt Mika zum ersten Mal am Tag heran, sagt jeder in seiner Art etwas
+  über die Arbeit – eine Sprechblase, kein Dialog (Bert: »Füße weg, Mika. Späne.«, Hilde: »Rate mal,
+  für wen der Schal ist«, Emil: »Die Kürbisse … trinken mehr als ich.«; `T.alltag`).
+- **Bilder:** neue Posen je Arbeit (zwei Bilder im Wechsel), die Dinge in der Hand gehören zum Bild
+  (Strickzeug, Buch mit rotem Einband, Hammer, blaue Schüssel mit Kochlöffel, rote Gießkanne mit
+  Wasser, Schraubenschlüssel, Setzling mit Erde, Akkordeon, Funkgerät, Papierlaterne); Knopf liegt
+  flach mit dem Kopf auf den Pfoten und schläft (Augen zu). Als Voxel grob dieselben Haltungen.
+- **Nachgebessert beim Ansehen:** Ida stand mit vorgestreckten Armen da wie ein Schlurfer (jetzt kniet
+  sie); Yusufs Buch verschwand weiß auf seinem Kittel (jetzt zeigt der rote Einband zur Kamera), Rosas
+  Schüssel auf der weißen Schürze (jetzt blau emailliert); den ausgeholten Hammer verdeckte von vorn
+  der Kopf (jetzt seitlich daneben); Knopf lag zuerst auf dem Rücken – der Bäcker kippte ihn wie einen
+  liegenden Menschen (`flat` statt `lie`).
+- **Prüfung:** neuer Abschnitt `alltag` (Bilder alltag, alltag-nah); in den übrigen Abschnitten ist das Tagwerk aus,
+  sie erwarten die Leute an ihren Tagesplätzen (`?alltag` schaltet es ein). Ohne Browser zeigt
+  `node tools/menschen-bogen.mjs datei.png --figur=ida` die Arbeit einer Figur (Zeile »Tagwerk«).
+
+---
+
 ## F7: Alle Posen als Sprites ✓
 
 **Offen seit F4:** Am Kartentisch, beim Angeln, Schießen, Pfeifen, im Wirbel und mit Pims Drachen

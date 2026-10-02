@@ -206,6 +206,12 @@ const SFX = {
     s.tone('sine', 140, t, 0.09, { freqEnd: 90, peak: 0.22 * v, out: o });
     s.noise(t, 0.05, { type: 'lowpass', freq: 900, peak: 0.12 * v, out: o });
   },
+  // A1: Hammer auf Nagel – ein heller, kurzer Schlag, darunter etwas Holz
+  hammer: (s, t, v, o) => {
+    s.tone('triangle', 1650, t, 0.05, { freqEnd: 1400, peak: 0.06 * v, out: o });
+    s.noise(t, 0.04, { type: 'bandpass', freq: 1800, q: 3, peak: 0.08 * v, out: o });
+    s.tone('sine', 210, t, 0.07, { freqEnd: 140, peak: 0.1 * v, out: o });
+  },
   tipp: (s, t, v, o, opt) => s.tone('square', opt.pitch || 520, t, 0.028, { peak: 0.025 * v, filter: 2200, out: o }),
   welle: (s, t, v, o) => {
     s.tone('sawtooth', 110, t, 1.7, { attack: 0.35, peak: 0.12 * v, filter: 650, out: o });
